@@ -1,5 +1,6 @@
 // Performance harness: runs a race in the BUILT game (vite preview on :4173) and reports frame stats.
-// Usage: node scripts/perf.mjs [trackId] [--cpu 4] [--mobile] [--split] [--seconds 20] [--quality auto|low|medium|high]
+// Usage: node scripts/perf.mjs [trackId] [--cpu 4] [--mobile|--tablet] [--split] [--seconds 20] [--quality auto|low|medium|high]
+// --tablet = 1024×768 @ DPR 2 with touch (the "throttled tablet profile" when combined with --cpu 4).
 import { chromium } from '@playwright/test';
 
 const args = process.argv.slice(2);
@@ -13,11 +14,14 @@ const seconds = Number(opt('--seconds', '20'));
 const quality = opt('--quality', 'auto');
 const mobile = args.includes('--mobile');
 const split = args.includes('--split');
+const tablet = args.includes('--tablet');
 const swift = args.includes('--swiftshader');
 
 const browser = await chromium.launch({ args: swift ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 const ctx = await browser.newContext(
-  mobile
+  tablet
+    ? { viewport: { width: 1024, height: 768 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true, userAgent: 'Mozilla/5.0 (Linux; Android 13; SM-X200) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' }
+    : mobile
     ? { viewport: { width: 844, height: 390 }, deviceScaleFactor: 3, hasTouch: true, isMobile: true, userAgent: 'Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36' }
     : { viewport: { width: 1280, height: 720 } },
 );
@@ -128,5 +132,5 @@ const res = await page.evaluate(
   },
   { track, seconds, quality, split },
 );
-console.log(JSON.stringify({ cpuThrottle: cpu, mobile, split, ...res, errors }, null, 1));
+console.log(JSON.stringify({ cpuThrottle: cpu, mobile, tablet, split, ...res, errors }, null, 1));
 await browser.close();

@@ -77,3 +77,38 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - Chrome blocks localhost iframes inside about:blank (private network access) — host pages in e2e are served
   via `page.route` on the same origin.
 - Shared/cached geometries & materials set `userData.shared = true`; RaceView.dispose frees everything else.
+
+## Upgrade in progress (branch `calex-upgrade` — do NOT merge into main without user approval)
+Plan: `/Users/cliffsumalpong/.claude/plans/modular-herding-pancake.md` (approved). Work Phase 0→10, commit per phase.
+Stop and ask ONLY if a change would break existing saves, push the build over 2 MB, make a definition-of-done
+item impossible, or need a gameplay decision beyond the plan. Otherwise decide, note it below, keep going.
+
+Approved decisions: catch-up targets; staff = strong bot + 35 % of the gap to Pro AI; assist Auto = Light (touch) /
+Off (keyboard, gamepad), old `true` → Light; Champion/Mirror unlocks stay tied to the original 4 cups; Frost Cup
+unlocks with any Legend trophy (any class), playable in every class + Mirror once unlocked, not required for old
+unlocks; new racer Yuki (young yeti); WebKit for Playwright.
+Additions: storage budget ≤ 1.5 MB worst case (ghost for every track incl. Frost × 3 slots + full playtest log +
+settings), playtest log ring buffer ≈ 100 KB, graceful full-storage handling, never touch non-`calexcart.` keys,
+tests + measured numbers; "Playtest recording on" indicator + "Clear playtest data" button; optional self-hosted
+Mac runner workflow (private repo only, untrusted PRs must never run on the machine); Frost tracks validated in
+every class, normal + mirror, using corrected layout markers (no compatibility flag).
+
+### Progress
+- [x] Phase 0 — baseline: `docs/upgrade/baseline.json` (perf per tier, throttled tablet, sim, staff vs Pro AI,
+  storage), `docs/upgrade/baseline-balance.md`, `docs/upgrade/before/*.png`, real save fixture
+  `tests/fixtures/save-v2.json` (made by `scripts/makeFixture.mjs`). Tools: `scripts/capture.mjs` (screenshots),
+  `scripts/perf.mjs --tablet` (1024×768 DPR 2 touch profile).
+- [ ] Phase 1 — tuning file + playtest mode
+- [ ] Phase 2 — tuning fixes (staff, catch-up, assist levels)
+- [ ] Phase 3 — performance (benchmark, LOD, context loss, WebKit)
+- [ ] Phase 4 — game feel
+- [ ] Phase 5 — visuals
+- [ ] Phase 6 — ice + track fixes + marker flag
+- [ ] Phase 7 — Frost Cup, Driving School, replay, Coin Rush
+- [ ] Phase 8 — accessibility
+- [ ] Phase 9 — CI
+- [ ] Phase 10 — testing, balance, screenshot review, final report
+
+### Upgrade notes / decisions log
+- Baseline finding: on 9/16 tracks the plain Pro AI (best of 5 seeds) beats the staff ghost → fixed in Phase 2.
+- Baseline storage: ghosts ≈ 180 chars/s (≈ 23 K chars per run); 16 tracks × 3 slots ≈ 2.4 MB UTF-16 → must compress.
