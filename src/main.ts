@@ -1,6 +1,9 @@
 import './ui/styles.css';
 import { App } from './app/App';
 import { createNav } from './app/flow';
+import { BadgesScreen } from './app/screens/BadgesScreen';
+import { EncyclopediaScreen } from './app/screens/EncyclopediaScreen';
+import { SettingsScreen } from './app/screens/SettingsScreen';
 import { SaveStore } from './app/save';
 import { mapById } from './data/maps';
 import type { Difficulty } from './data/difficulty';
@@ -45,7 +48,17 @@ async function boot(): Promise<void> {
     showGallery(stage, atlas);
     return;
   }
-  const nav = createNav(app, {});
+  const nav = createNav(app, {
+    onRunEnd: (game, won, mode) => app.achievements.checkEnd(game, won, mode),
+    encyclopedia: (a, n) => new EncyclopediaScreen(a, n),
+    badges: (a, n) => new BadgesScreen(a, n),
+    settings: (a, _n, back) => new SettingsScreen(a, back),
+  });
+  if (import.meta.env.DEV && params.has('editor')) {
+    const { MapEditor } = await import('./dev/MapEditor');
+    app.show(new MapEditor(app, nav));
+    return;
+  }
   const play = params.get('map');
   const map = play ? mapById(play) : undefined;
   if (map) nav.play(map, (params.get('diff') as Difficulty | null) ?? 'normal', map.id === 'tutorial' ? 'tutorial' : params.has('endless') ? 'endless' : 'campaign');

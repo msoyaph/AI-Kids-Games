@@ -1179,3 +1179,90 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ------------------------------------------------------------------ tutorial */
+.tutorial {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--hud-h) + 8px);
+  left: calc(var(--safe-left) + 10px);
+  width: min(440px, calc(100% - 20px));
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px;
+  z-index: 30;
+}
+.tutorial.pop {
+  animation: popin 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.tutorial .face {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+}
+.tutorial .tut-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.tutorial .bubble {
+  background: #fff;
+  color: var(--ink);
+  border-radius: 16px;
+  padding: 10px 12px;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.tutorial .tut-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.tutorial .tut-actions .btn {
+  min-height: 44px;
+  padding: 4px 14px;
+  font-size: 15px;
+}
+.tut-glow {
+  animation: tutglow 1s ease-in-out infinite !important;
+  z-index: 25;
+}
+@keyframes tutglow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px #fff,
+      0 0 14px 4px rgba(255, 230, 120, 0.9);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px #ffe14a,
+      0 0 26px 10px rgba(255, 230, 120, 0.9);
+  }
+}
+@media (max-height: 520px) {
+  .tutorial {
+    width: min(380px, calc(100% - 20px));
+    padding: 6px;
+  }
+  .tutorial .face {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+  .tutorial .bubble {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+}
+.info-card h4 img.inline-icon {
+  width: 20px;
+  height: 20px;
+  vertical-align: -3px;
+}
+img.big-el {
+  width: 56px;
+  height: 56px;
+}

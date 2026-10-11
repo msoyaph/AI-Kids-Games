@@ -102,6 +102,7 @@ export class WorldView {
   private ghostBase: Sprite;
   private ghostHead: Sprite;
   private selectRing: Sprite;
+  private hint: Sprite;
   private pathDots: Sprite[] = [];
   private pathVersion = -1;
   private pathPreview: number[][] | null = null;
@@ -172,7 +173,10 @@ export class WorldView {
     this.ghostBase.visible = this.ghostHead.visible = false;
     this.selectRing = new Sprite(atlas.get('select'));
     this.selectRing.visible = false;
-    this.L.ghost.addChild(this.ghostBase, this.ghostHead, this.selectRing);
+    this.hint = new Sprite(atlas.get('cell_ok'));
+    this.hint.anchor.set(0.5);
+    this.hint.visible = false;
+    this.L.ghost.addChild(this.ghostBase, this.ghostHead, this.selectRing, this.hint);
 
     this.buildAmbient();
     this.setQuality(quality);
@@ -668,6 +672,13 @@ export class WorldView {
     }
     if (this.selectRing.visible) this.selectRing.rotation = t * 0.6;
     if (this.cellMark.visible) this.cellMark.alpha = 0.75 + Math.sin(t * 6) * 0.2;
+    if (this.hint.visible) {
+      this.hint.scale.set(1.05 + Math.sin(t * 6) * 0.1);
+      this.hint.alpha = 0.7 + Math.sin(t * 6) * 0.3;
+      // hide once something is built on it
+      const c = this.game.grid.cellAt(this.hint.x / TILE, this.hint.y / TILE);
+      if (c >= 0 && this.game.grid.tower[c]! >= 0) this.hint.visible = false;
+    }
   }
 
   // =========================================================== events → FX
@@ -929,6 +940,12 @@ export class WorldView {
     this.cellMark.position.set(cx * TILE, cy * TILE);
     this.cellMark.visible = true;
     this.drawRange(x, y, TOWERS[type].levels[0]!.range, ok ? 0xffffff : 0xff8a9a);
+  }
+
+  /** Pulsing "build here" marker (tutorial). Pass -1 to hide. */
+  setHint(cx: number, cy: number): void {
+    this.hint.visible = cx >= 0;
+    this.hint.position.set((cx + 0.5) * TILE, (cy + 0.5) * TILE);
   }
 
   setPreviewPath(paths: number[][] | null): void {

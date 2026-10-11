@@ -3,6 +3,7 @@ import type { Atlas } from '../render/atlas/bake';
 import { FpsGovernor, QUALITY_PROFILES, renderResolution, type QualityProfile, type QualityTier } from '../render/quality';
 import type { Stage } from '../render/Stage';
 import { clear } from '../ui/dom';
+import { AchievementTracker } from './achievements';
 import type { SaveStore } from './save';
 
 export interface Screen {
@@ -24,6 +25,7 @@ export interface Screen {
 export class App {
   current: Screen | null = null;
   readonly audio = new AudioEngine();
+  readonly achievements: AchievementTracker;
   readonly governor: FpsGovernor;
   quality: QualityProfile;
   private lastFrame = 0;
@@ -36,6 +38,7 @@ export class App {
     readonly deviceTier: QualityTier,
     readonly bakeScale: number,
   ) {
+    this.achievements = new AchievementTracker(save);
     const setting = save.data.settings.quality;
     const tier = setting === 'auto' ? deviceTier : setting;
     this.quality = QUALITY_PROFILES[tier];

@@ -59,7 +59,7 @@ export class Hud {
   private tpanelRefs: { upgrade?: HTMLButtonElement; sell?: HTMLButtonElement; target?: HTMLButtonElement; kills?: HTMLElement } = {};
   private toastEl: HTMLElement | null = null;
   private toastTimer = 0;
-  private last = { lives: -1, coins: -1, wave: -1, next: '', timer: -2, crystals: -1, unlocked: '', speed: 0, paused: false, early: -1, build: '' as string, sel: -1, selLevel: 0 };
+  private last = { lives: -1, coins: -1, wave: -1, next: '', timer: -2, crystals: -1, unlocked: '#', speed: 0, paused: false, early: -1, build: '' as string, sel: -1, selLevel: 0 };
   /** Drawer stays open (desktop / tall screens) vs. slides away (phones). */
   pinned = true;
   drawerOpen = true;

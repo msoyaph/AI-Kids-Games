@@ -9,6 +9,7 @@ import { pipSays, showModal, starsHtml, type ModalHandle } from '../ui/modals';
 import { mapThumbUrl } from '../ui/thumbs';
 import type { App, Screen } from './App';
 import { GameScreen } from './GameScreen';
+import { Tutorial, TUTORIAL_WAVES } from './tutorial';
 import { TitleScreen } from './screens/TitleScreen';
 import { WorldMapScreen } from './screens/WorldMapScreen';
 
@@ -152,9 +153,10 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
     play: (map, diff, mode) => {
       closeModal();
       const next = mode === 'campaign' ? nextMap(map.id) : null;
+      const extra = mode === 'tutorial' ? { waves: TUTORIAL_WAVES, startCoins: 60, startCrystals: 0, autoWaves: false } : {};
       const screen: GameScreen = new GameScreen(
         app,
-        { map, difficulty: diff, mode },
+        { map, difficulty: diff, mode, ...extra },
         {
           quit: () => (mode === 'endless' ? nav.endless() : mode === 'tutorial' ? nav.title() : nav.worlds()),
           restart: () => nav.play(map, diff, mode),
@@ -163,6 +165,13 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
         },
       );
       app.show(screen);
+      if (mode === 'tutorial')
+        new Tutorial(screen, () => {
+          save.data.tutorialDone = true;
+          save.flush();
+          app.achievements.checkEnd(null, false, null);
+          nav.title();
+        });
       hooks.onGameStart?.(screen, mode);
       if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__game = screen;
     },

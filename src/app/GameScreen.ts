@@ -1,6 +1,7 @@
 import { DIFFICULTIES, starsFor, type Difficulty } from '../data/difficulty';
 import { ELEMENT_ORDER, ELEMENTS, counterOf, type ElementId } from '../data/elements';
 import type { MapDef } from '../data/maps/types';
+import type { WaveDef } from '../data/waves';
 import { BUILD_FAIL_MSG, LOSE_LINES, TIPS, WIN_LINES } from '../data/strings';
 import { TARGET_MODES, TOWERS, type TowerId } from '../data/towers';
 import { elementIconUrl, towerIconUrl, type Atlas } from '../render/atlas/bake';
@@ -21,6 +22,10 @@ export interface GameScreenOpts {
   difficulty: Difficulty;
   mode: GameMode;
   seed?: number;
+  waves?: WaveDef[];
+  startCoins?: number;
+  startCrystals?: number;
+  autoWaves?: boolean;
 }
 
 export interface GameNav {
@@ -52,6 +57,7 @@ export class GameScreen implements Screen, HudHost {
   private ended = false;
   private previewPaths: number[][] = [];
   private eventListeners: ((e: GameEvent) => void)[] = [];
+  private frameListeners: ((dt: number) => void)[] = [];
   private cleanup: (() => void)[] = [];
 
   constructor(
@@ -66,12 +72,21 @@ export class GameScreen implements Screen, HudHost {
       difficulty: opts.difficulty,
       mode: opts.mode,
       seed: opts.seed ?? (Math.random() * 1e9) >>> 0,
+      waves: opts.waves,
+      startCoins: opts.startCoins,
+      startCrystals: opts.startCrystals,
+      autoWaves: opts.autoWaves,
     });
   }
 
   /** Extra listeners (tutorial, achievements) receive every sim event. */
   onEvent(fn: (e: GameEvent) => void): void {
     this.eventListeners.push(fn);
+  }
+
+  /** Called once per rendered frame with real seconds. */
+  onFrame(fn: (dt: number) => void): void {
+    this.frameListeners.push(fn);
   }
 
   enter(): void {
@@ -106,6 +121,10 @@ export class GameScreen implements Screen, HudHost {
       screen.orientation?.removeEventListener?.('change', onRotate);
     });
     this.hud.update();
+    this.app.achievements.onUnlock = (def) => {
+      this.hud.banner('🏅 New badge!', def.name);
+      this.app.audio.ui('star');
+    };
     // Re-fit the camera whenever HUD chrome changes size (drawer filled, fonts, rotation).
     if (typeof ResizeObserver !== 'undefined') {
       let last = '';
@@ -127,6 +146,7 @@ export class GameScreen implements Screen, HudHost {
   }
 
   exit(): void {
+    this.app.achievements.onUnlock = () => {};
     for (const c of this.cleanup) c();
     this.gestures?.destroy();
     this.modal?.close();
@@ -170,6 +190,8 @@ export class GameScreen implements Screen, HudHost {
     this.view.render(this.acc / DT, dt, running ? dt * this.speed : 0);
     this.updateConfirm();
     this.hud.update();
+    for (const fn of this.frameListeners) fn(dt);
+    if (running) this.app.achievements.tick(dt, this.game, this.opts.mode);
     if (this.game.state !== 'playing' && !this.ended) this.finish();
   }
 
