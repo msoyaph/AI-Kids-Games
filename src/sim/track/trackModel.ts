@@ -656,7 +656,9 @@ export class TrackModel implements GroundModel {
   /** Lower is better: prefer being on a road, then the ground closest below the kart. */
   private score(h: RibbonHit, y: number): number {
     let s = h.region === 0 ? 0 : h.region === 1 ? 1 : h.edge === EDGE_DROP ? 50 : 4;
-    if (h.gap) s += 40;
+    // Flying over a gap inside a ribbon's corridor beats another ribbon's out-of-bounds wall
+    // (otherwise a kart jumping a shortcut gap would be pushed onto the main road).
+    if (h.gap) s = h.region <= 1 ? 3 : s + 40;
     if (h.height > y + TUNING.stepUp) s += 20;
     s += Math.max(0, y - h.height) * 0.05;
     return s;
