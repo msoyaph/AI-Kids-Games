@@ -138,6 +138,7 @@ export const WINDMILL_SKY_ISLES: TrackData = {
     side: 0x8d6e63,
   },
   sky: {
+    light: { sunDir: [0.5, 0.9, 0.5], grade: 0xfffaf2 },
     top: 0x3fa7ff,
     bottom: 0xd6f1ff,
     fog: 0xdff4ff,

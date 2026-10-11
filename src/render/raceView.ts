@@ -9,7 +9,7 @@ import { buildTrackMeshes } from './trackMesh';
 import { buildTrackProps, type TrackProps } from './props';
 import { buildArenaMesh } from './arenaMesh';
 import type { GameRenderer, RenderView, ViewRect } from './renderer';
-import { Materials } from './materials';
+import { Materials, rimColor } from './materials';
 import { RespawnState } from '../sim/kart';
 import { Effects } from './effects';
 import type { SimEvent } from '../sim/events';
@@ -17,6 +17,7 @@ import { ItemVisuals } from './itemVisuals';
 import type { ItemSystem } from '../sim/items/itemSystem';
 import { buildBackdrop } from './backdrop';
 import { HazardVisuals } from './hazardVisuals';
+import { buildWaterSurfaces, fxTime, sheenTrackMaterial, shimmerMaterial, waterMaterial } from './surfaces';
 import type { HazardSystem } from '../sim/hazards';
 
 export type SplitMode = 'horizontal' | 'vertical';
@@ -37,6 +38,7 @@ export class RaceView {
   readonly visuals: KartVisual[] = [];
   readonly cams: ChaseCamera[] = [];
   readonly sun: THREE.DirectionalLight;
+  private readonly sunOffset: THREE.Vector3;
   private readonly dome: THREE.Mesh;
   private readonly domeBase: number;
   private readonly blobs: THREE.InstancedMesh;
@@ -70,14 +72,24 @@ export class RaceView {
     const sky = course.track ? course.track.data.sky : course.arena!.data.sky;
     const built = buildSky(this.scene, sky, profile.drawDistance);
     this.sun = built.sun;
+    this.sunOffset = built.sun.position.clone();
     this.dome = built.dome;
     this.domeBase = profile.drawDistance;
     this.backdrop = buildBackdrop(sky, course.track?.data.id ?? course.arena?.data.id ?? 'x');
     this.backdropY = sky.groundY ?? (course.track ? course.track.minY - 2 : 0);
     this.scene.add(this.backdrop);
+    const fancy = gr.quality.level !== 'low'; // shader extras on Medium/High only — Low stays as light as before
     if (course.track) {
       const tm = buildTrackMeshes(course.track);
       this.scene.add(tm.group);
+      if (fancy && sky.roadSheen) {
+        const road = tm.group.getObjectByName('track') as THREE.Mesh | undefined;
+        if (road) road.material = sheenTrackMaterial(Materials.flatDouble, sky.top, course.track.data.palette.line, sky.roadSheen);
+      }
+      if (fancy) {
+        const water = buildWaterSurfaces(course.track, sky.bottom);
+        if (water) this.scene.add(water);
+      }
       this.boostMat = tm.boostMaterial;
       const props = buildTrackProps(course.track, course.track.data.id, gr.renderer, sky);
       this.scene.add(props.group);
@@ -85,7 +97,8 @@ export class RaceView {
       this.disposers.push(() => props.dispose());
       this.disposers.push(gr.onContextRestored(() => props.rebuildAtlas()));
       if (sky.ground !== null) {
-        const g = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: sky.ground }));
+        const groundMat = fancy && sky.waterGround ? waterMaterial(sky.ground, sky.bottom) : new THREE.MeshLambertMaterial({ color: sky.ground });
+        const g = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000).rotateX(-Math.PI / 2), groundMat);
         g.position.y = (sky.groundY ?? course.track.minY - 0.5) - 0.05;
         g.receiveShadow = true;
         this.scene.add(g);
@@ -94,8 +107,10 @@ export class RaceView {
       this.scene.add(buildArenaMesh(course.arena.data));
     }
     const shared = buildSharedKartGeometry();
+    const look = gr.quality.level;
+    rimColor.value.setHex(sky.top).lerp(new THREE.Color(0xffffff), 0.55);
     for (const k of world.karts) {
-      const v = new KartVisual(k, shared);
+      const v = new KartVisual(k, shared, look);
       this.visuals.push(v);
       this.scene.add(v.root);
     }
@@ -201,6 +216,7 @@ export class RaceView {
 
   attachItems(items: ItemSystem): void {
     this.itemVisuals = new ItemVisuals(items, this.world, this.visuals, this.effects);
+    if (this.gr.quality.level !== 'low') this.itemVisuals.pods.material = shimmerMaterial(Materials.basic);
     this.scene.add(this.itemVisuals.group);
   }
 
@@ -245,6 +261,7 @@ export class RaceView {
 
   update(alpha: number, dt: number, lookBack: boolean[]): void {
     this.time += dt;
+    fxTime.value = this.time;
     for (const v of this.visuals) {
       v.update(alpha, dt, this.time);
       v.root.updateMatrixWorld(true);
@@ -301,7 +318,8 @@ export class RaceView {
     // shadow camera follows player 1
     if (this.sun.castShadow && this.targets.length > 0) {
       const k = this.world.karts[this.targets[0]];
-      this.sun.position.set(k.x + 30, k.y + 60, k.z + 20);
+      const so = this.sunOffset;
+      this.sun.position.set(k.x + so.x * 0.5, k.y + so.y * 0.5, k.z + so.z * 0.5);
       this.sun.target.position.set(k.x, k.y, k.z);
       this.sun.target.updateMatrixWorld();
     }

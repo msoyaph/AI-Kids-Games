@@ -101,6 +101,7 @@ export const FROSTPEAK_PASS: TrackData = {
     side: 0x9fb4d0,
   },
   sky: {
+    light: { sunDir: [0.5, 0.7, -0.5], sun: 0xf0f6ff, hemiGround: 0xc8d8f0, grade: 0xf4f8ff },
     top: 0x4f9ef5,
     bottom: 0xe6f4ff,
     fog: 0xeaf4ff,

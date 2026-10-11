@@ -132,6 +132,7 @@ export const JADEFALL_TEMPLE: TrackData = {
     side: 0x7a6a50,
   },
   sky: {
+    light: { sunDir: [0.6, 0.9, 0.1], sun: 0xfff0b0, hemiGround: 0x2a5a20, grade: 0xf4fff0 },
     top: 0x3fa8e0,
     bottom: 0xc8f0d8,
     fog: 0xb8e6c8,

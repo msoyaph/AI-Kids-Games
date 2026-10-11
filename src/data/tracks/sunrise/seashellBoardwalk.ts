@@ -72,6 +72,7 @@ export const SEASHELL_BOARDWALK: TrackData = {
     side: 0x8a5a33,
   },
   sky: {
+    light: { sunDir: [0.4, 1, 0.3], sunIntensity: 1.85, grade: 0xfff8ee }, waterGround: true,
     top: 0x3fb4ff,
     bottom: 0xc6f1ff,
     fog: 0xcdf3ff,

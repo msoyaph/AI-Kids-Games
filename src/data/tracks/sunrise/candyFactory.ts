@@ -76,6 +76,7 @@ export const CANDY_FACTORY: TrackData = {
     side: 0x8d5524,
   },
   sky: {
+    light: { sunIntensity: 1.5, hemiIntensity: 1.6, hemiGround: 0xd8a0c0, grade: 0xfff4fa },
     top: 0x8fd3ff,
     bottom: 0xffe1f0,
     fog: 0xffe9f5,

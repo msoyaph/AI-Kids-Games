@@ -86,6 +86,7 @@ export const ROOFTOP_RALLY: TrackData = {
     side: 0x8a8fa8,
   },
   sky: {
+    light: { sunDir: [-0.8, 0.55, 0.3], sun: 0xffd9a0, sunIntensity: 1.7, hemiGround: 0x7a6a5a, grade: 0xfff0e0 },
     top: 0x5aa9ff,
     bottom: 0xffd8b0,
     fog: 0xffe2c4,

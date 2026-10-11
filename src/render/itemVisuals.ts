@@ -26,7 +26,7 @@ const POD_COLORS = [0xff6fae, 0xffd23f, 0x4ce0d2, 0xb47bff, 0x8cff6b];
 /** Renders item pods, item entities (pooled meshes per type), telegraph rings, rockets and magnets. */
 export class ItemVisuals {
   readonly group = new THREE.Group();
-  private readonly pods: THREE.InstancedMesh;
+  readonly pods: THREE.InstancedMesh;
   private readonly pools = new Map<ItemId, THREE.Mesh[]>();
   private readonly rings: THREE.Mesh[] = [];
   private readonly rockets: THREE.Mesh[] = [];

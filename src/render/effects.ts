@@ -176,6 +176,25 @@ export class Effects {
         if (e.impact > 9) this.onShake?.(e.kart, 0.4);
         break;
       }
+      case 'launch': {
+        if (!e.glider) break;
+        const k = ks[e.kart];
+        this.burst(k.x, k.y + 1.8, k.z, 14, 0xffffff, 5, 0.6, 0.5, false, -0.5); // whoomph as the glider opens
+        break;
+      }
+      case 'finish': {
+        // confetti for podium finishers (bigger fountain for the winner)
+        const k = ks[e.kart];
+        if (e.rank > 3 || !this.near(k, 120)) break;
+        const n = e.rank === 1 ? 70 : 30;
+        const cols = [0xff6fae, 0xffd23f, 0x4ce0d2, 0x8cff6b, 0xb47bff, 0xff9f1c];
+        for (let i = 0; i < n; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const v = 3 + Math.random() * 5;
+          this.soft.spawn(k.x, k.y + 2, k.z, Math.cos(a) * v * 0.6 + k.vx * 0.4, 6 + Math.random() * 6, Math.sin(a) * v * 0.6 + k.vz * 0.4, 1.8 + Math.random(), 0.32, 0.28, cols[i % cols.length], 1, 5, 0.6);
+        }
+        break;
+      }
       case 'trick': {
         const k = ks[e.kart];
         this.burst(k.x, k.y + 1.2, k.z, 12, 0xffffff, 5, 0.45, 0.45, true, 0);

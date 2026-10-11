@@ -107,6 +107,7 @@ export const CRATER_HOP_BASE: TrackData = {
     side: 0x7d828f,
   },
   sky: {
+    light: { sunDir: [0.7, 0.8, 0.2], sunIntensity: 2.0, hemiIntensity: 0.8, hemiGround: 0x303448 },
     top: 0x05061a,
     bottom: 0x1d2350,
     fog: 0x1d2350,

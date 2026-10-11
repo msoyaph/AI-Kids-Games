@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PROPS } from '../data/props/index';
-import type { PropPlacement, PropScatter } from '../data/types';
+import type { PropPlacement, PropScatter, SkyData } from '../data/types';
+import { skyLights } from './sky';
 import { Rng } from '../core/rng';
 import { buildRecipe } from './lowpoly';
 import { Materials } from './materials';
@@ -324,7 +325,7 @@ export interface TrackProps {
 /**
  * Build chunked LOD scenery for a track from its scatter rules and explicit placements.
  */
-export function buildTrackProps(track: TrackModel, seed: string, renderer: THREE.WebGLRenderer | null, sky: { ambient: number; sun: number; night?: boolean }): TrackProps {
+export function buildTrackProps(track: TrackModel, seed: string, renderer: THREE.WebGLRenderer | null, sky: SkyData): TrackProps {
   const all = placeInstances(track, seed);
   const group = new THREE.Group();
   group.name = 'props';
@@ -359,9 +360,11 @@ export function buildTrackProps(track: TrackModel, seed: string, renderer: THREE
   const renderAtlas = (): void => {
     if (!renderer || !rt) return;
     const scene = new THREE.Scene();
-    scene.add(new THREE.HemisphereLight(sky.ambient, sky.night ? 0x221a44 : 0x8a7a5a, sky.night ? 1.1 : 1.45));
-    const sun = new THREE.DirectionalLight(sky.sun, sky.night ? 0.9 : 1.75);
-    sun.position.set(40, 80, 60);
+    const L = skyLights(sky);
+    scene.add(new THREE.HemisphereLight(L.hemiSky, L.hemiGround, L.hemiIntensity));
+    const sun = new THREE.DirectionalLight(L.sun, L.sunIntensity);
+    // light the impostors from the front-ish so they read well from any side
+    sun.position.set(L.sunOffset.x * 0.3, Math.abs(L.sunOffset.y), 120);
     scene.add(sun);
     const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 2000);
     const prevTarget = renderer.getRenderTarget();

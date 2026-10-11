@@ -54,8 +54,8 @@ export const CORAL_DOME_DASH: TrackData = {
   start: 0.5,
   points: L.points,
   zones: [
-    { from: m.t1 - 0.6, to: m.tubeIn - 1.2, kind: 'water' },
-    { from: m.tubeExit - 0.2, to: m.t6 + 0.4, kind: 'water' },
+    { from: m.t1 - 0.6, to: m.tubeIn - 1.2, kind: 'water', surface: false },
+    { from: m.tubeExit - 0.2, to: m.t6 + 0.4, kind: 'water', surface: false },
   ],
   edges: [
     { from: m.kelp + 0.6, to: m.tubeExit, side: 'both', type: 'wall' },
@@ -107,6 +107,7 @@ export const CORAL_DOME_DASH: TrackData = {
     side: 0x6c8fa8,
   },
   sky: {
+    light: { sunDir: [0, 1, 0.2], sun: 0x9fe8ff, hemiGround: 0x206080, grade: 0xe0f8ff },
     top: 0x0b3d6b,
     bottom: 0x2a9fd6,
     fog: 0x1f8ac0,

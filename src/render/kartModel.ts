@@ -3,7 +3,8 @@ import type { KartConfig } from '../data/types';
 import { findBody, findGlider, findPaint, findWheels } from '../data/parts';
 import { findRacer } from '../data/racers';
 import { buildRecipe, type ColorTokens } from './lowpoly';
-import { Materials } from './materials';
+import { Materials, kartMaterials, type KartLook } from './materials';
+import { DriverRig, type DriverPose } from './driverRig';
 import { lerpAngle, clamp, damp } from '../core/math';
 import { Kart, RespawnState } from '../sim/kart';
 import { buildDecalGeometry } from './decals';
@@ -88,7 +89,10 @@ export class KartVisual {
   readonly drone: THREE.Group;
   /** Little stars circling the driver's head after a spin-out. */
   readonly stars: THREE.Mesh;
+  /** Animated driver (Medium/High); Low keeps the single static mesh with a little bob. */
+  readonly rig: DriverRig | null = null;
   private dizzy = 0;
+  private readonly seatY: number;
   private wheelR: number;
   private wheelSpin = 0;
   private driftAngle = 0;
@@ -96,6 +100,7 @@ export class KartVisual {
   private pitch = 0;
   private spinAngle = 0;
   private gliderScale = 0;
+  private gliderVel = 0;
   private flip = 0;
   /** Exhaust/drift particle anchor points in body space. */
   readonly rearLeft = new THREE.Vector3();
@@ -104,10 +109,18 @@ export class KartVisual {
   constructor(
     readonly kart: Kart,
     shared: SharedKartGeometry,
+    look: KartLook = 'low',
   ) {
     const m = buildKartMeshes(kart.racerId, kart.kart);
+    const mats = kartMaterials(look);
     this.chassis = m.chassis;
-    this.driver = m.driver;
+    this.chassis.material = mats.chassis;
+    if (look !== 'low') {
+      this.rig = new DriverRig(findRacer(kart.racerId), mats.driver);
+      this.rig.mesh.position.copy(m.driver.position);
+      this.driver = this.rig.mesh;
+    } else this.driver = m.driver;
+    this.seatY = m.driver.position.y;
     this.wheels = m.wheels;
     this.pivots = m.wheelPivots;
     this.glider = m.glider;
@@ -192,11 +205,31 @@ export class KartVisual {
       this.wheels[i].rotation.x = this.wheelSpin;
       if (i < 2) this.pivots[i].rotation.y = steerAngle;
     }
-    // Glider
+    // Driver pose
+    if (this.rig) {
+      let pose: DriverPose = 'drive';
+      if (k.spinTime > 0 || k.tumbleTime > 0) pose = 'hit';
+      else if (k.finished) pose = k.rank <= 3 ? 'celebrate' : 'disappointed';
+      else if (k.input.lookBack || (k.trailing && !k.isPlayer)) pose = 'lookBack';
+      this.rig.update(dt, time + k.index, pose, steer, spd);
+    } else {
+      this.driver.position.y = this.seatY + Math.sin(time * 9 + k.index) * 0.012 * spd;
+    }
+    // Glider: springs open with a little overshoot, unfolds from the back, flutters in the wind
     const gTarget = k.gliding ? 1 : 0;
-    this.gliderScale = damp(this.gliderScale, gTarget, 8, dt);
+    const acc = (gTarget - this.gliderScale) * 140 - this.gliderVel * (gTarget ? 13 : 22);
+    this.gliderVel += acc * Math.min(dt, 0.05);
+    this.gliderScale = Math.max(0, this.gliderScale + this.gliderVel * Math.min(dt, 0.05));
+    if (!k.gliding && this.gliderScale < 0.03) {
+      this.gliderScale = 0;
+      this.gliderVel = 0;
+    }
     this.glider.visible = this.gliderScale > 0.02;
-    if (this.glider.visible) this.glider.scale.set(this.gliderScale, 1, this.gliderScale);
+    if (this.glider.visible) {
+      const s = this.gliderScale;
+      this.glider.scale.set(s, Math.min(1, 0.4 + s * 0.6), s);
+      this.glider.rotation.set(-(1 - Math.min(1, s)) * 1.1, 0, Math.sin(time * 7 + k.index) * 0.04 * Math.min(1, s));
+    }
     // Shield bubble
     this.shield.visible = k.shieldTime > 0 && (k.shieldTime > 1 || Math.floor(time * 10) % 2 === 0);
     if (this.shield.visible) this.shield.rotation.y = time * 1.5;

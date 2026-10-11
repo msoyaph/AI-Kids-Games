@@ -25,6 +25,8 @@ export interface ModelPart {
   seg?: number;
   /** Mirror across X (creates the part twice: as given and with p.x negated). */
   mirror?: boolean;
+  /** Driver models only: which animated bone the part follows (auto-detected when omitted). */
+  role?: 'body' | 'head' | 'arm';
 }
 
 // ---------------------------------------------------------------------------
@@ -251,6 +253,8 @@ export interface RampData {
 
 export interface ZoneData extends URange {
   kind: 'water' | 'lowgrav';
+  /** Water zones: draw a water surface over the road (default true; false for deep "underwater" stretches). */
+  surface?: boolean;
   /** Also applies on shortcuts that skip this stretch (default true). Set false for e.g. a bridge over a river. */
   shortcuts?: boolean;
 }
@@ -303,6 +307,21 @@ export interface SkyData {
   backdrop?: 'mountains' | 'stars' | 'clouds' | 'skyline' | 'dunes' | 'waves' | 'none';
   backdropColor?: number;
   night?: boolean;
+  /** Per-track lighting & colour grade (all optional; defaults give the original look). */
+  light?: {
+    /** Direction the sunlight comes FROM (any length). */
+    sunDir?: [number, number, number];
+    sun?: number;
+    sunIntensity?: number;
+    hemiGround?: number;
+    hemiIntensity?: number;
+    /** Multiplies every light colour: warm sunset, cool frost, purple neon… */
+    grade?: number;
+  };
+  /** Wet/glassy road: view-dependent sky reflection on the road (Medium/High only). 0..1 */
+  roadSheen?: number;
+  /** The ground plane is open water (animated water surface on Medium/High). */
+  waterGround?: boolean;
 }
 
 export interface TrackPalette {

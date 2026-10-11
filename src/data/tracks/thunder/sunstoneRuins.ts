@@ -96,6 +96,7 @@ export const SUNSTONE_RUINS: TrackData = {
     side: 0xb07a4a,
   },
   sky: {
+    light: { sunDir: [0.2, 1, 0.2], sunIntensity: 2.0, hemiGround: 0xb08850, grade: 0xfff4e0 },
     top: 0x3f9cff,
     bottom: 0xffe2a8,
     fog: 0xf6deb0,

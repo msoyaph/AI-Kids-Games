@@ -201,6 +201,7 @@ export const PRISM_PARKWAY: TrackData = {
     side: 0x2a1f6a,
   },
   sky: {
+    light: { sunDir: [0.4, 1, 0.4], sun: 0xe0d8ff, hemiGround: 0x281850 }, roadSheen: 0.6,
     top: 0x05031a,
     bottom: 0x2a0f5a,
     fog: 0x1c0d40,

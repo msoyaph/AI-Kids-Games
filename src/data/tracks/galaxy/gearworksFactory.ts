@@ -106,6 +106,7 @@ export const GEARWORKS_FACTORY: TrackData = {
     side: 0x4a4f5c,
   },
   sky: {
+    light: { sunDir: [-0.5, 0.9, 0.4], sun: 0xffd8a0, hemiGround: 0x403830, grade: 0xfff0e0 },
     top: 0x2b2d42,
     bottom: 0x9aa5b8,
     fog: 0x7a8296,

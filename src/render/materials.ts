@@ -25,3 +25,46 @@ for (const m of Object.values(Materials)) m.userData.shared = true;
 Materials.blob.polygonOffset = true;
 Materials.blob.polygonOffsetFactor = -2;
 Materials.blob.polygonOffsetUnits = -2;
+
+// ---------------------------------------------------------------------------------------------------------------
+// Kart & driver looks per quality tier: Low = plain Lambert (unchanged), Medium = Lambert + rim light,
+// High = Phong gloss + rim light. Rim colour follows the track's sky (set per race).
+// ---------------------------------------------------------------------------------------------------------------
+export const rimColor = { value: new THREE.Color(0xfff2d6) };
+
+function withRim<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(m: T, strength: number, key: string): T {
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.rimColor = rimColor;
+    sh.uniforms.rimStrength = { value: strength };
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 rimColor;\nuniform float rimStrength;')
+      .replace(
+        '#include <opaque_fragment>',
+        'outgoingLight += rimColor * pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 2.6) * rimStrength;\n#include <opaque_fragment>',
+      );
+  };
+  m.customProgramCacheKey = () => key;
+  m.userData.shared = true;
+  return m;
+}
+
+export type KartLook = 'low' | 'medium' | 'high';
+
+let looks: Record<KartLook, { chassis: THREE.Material; driver: THREE.Material }> | null = null;
+
+export function kartMaterials(look: KartLook): { chassis: THREE.Material; driver: THREE.Material } {
+  if (!looks) {
+    looks = {
+      low: { chassis: Materials.flat, driver: Materials.smooth },
+      medium: {
+        chassis: withRim(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }), 0.45, 'rim-l-flat'),
+        driver: withRim(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.4, 'rim-l-smooth'),
+      },
+      high: {
+        chassis: withRim(new THREE.MeshPhongMaterial({ vertexColors: true, flatShading: true, shininess: 70, specular: 0x4a4a4a }), 0.5, 'rim-p-flat'),
+        driver: withRim(new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 28, specular: 0x262626 }), 0.42, 'rim-p-smooth'),
+      },
+    };
+  }
+  return looks[look];
+}

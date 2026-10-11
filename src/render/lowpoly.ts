@@ -140,7 +140,7 @@ function lodSeg(shape: Shape, seg: number | undefined, lod: number): number | un
   }
 }
 
-function partGeometry(part: ModelPart, tokens: ColorTokens, mirrorX: boolean, lod = 0): THREE.BufferGeometry {
+export function partGeometry(part: ModelPart, tokens: ColorTokens, mirrorX: boolean, lod = 0): THREE.BufferGeometry {
   const g = unitGeometry(part.shape, lodSeg(part.shape, part.seg, lod)).clone();
   const p = part.p ?? [0, 0, 0];
   const s = part.s ?? [1, 1, 1];

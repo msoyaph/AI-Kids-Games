@@ -359,7 +359,7 @@ export class RaceSession {
         const h = hudFor(e.kart);
         if (h) {
           h.lapPop();
-          if (e.final) h.banner('FINAL LAP!', 'big', 2);
+          if (e.final) h.banner('FINAL LAP!', 'final', 2.2);
           else if (this.cfg.mode === 'timeTrial') h.banner(`Lap ${formatTime(e.time)}`, 'info', 2);
         }
         if (e.final && this.locals.includes(e.kart) && !this.finalLapAnnounced.has(e.kart)) {
@@ -493,7 +493,7 @@ export class RaceSession {
     if (this.locals.length === 1 && !this.ctx.settings.reduceEffects && w.phase === 'race') {
       const k = w.karts[this.locals[0]];
       const f = k.speed / Math.max(1, k.params.topSpeed);
-      blur = Math.min(1, Math.max(0, (f - 0.92) * 3) + (k.boosting ? 0.55 : 0) + (k.rocketTime > 0 ? 0.3 : 0));
+      blur = Math.min(1, Math.max(0, (f - 1.0) * 3) + (k.boosting ? 0.45 : 0) + (k.rocketTime > 0 ? 0.3 : 0));
     }
     this.blurLevel += (blur - this.blurLevel) * Math.min(1, dt * 6);
     this.ctx.gr.motionBlur = this.blurLevel;

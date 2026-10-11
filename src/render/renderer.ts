@@ -125,9 +125,9 @@ export class GameRenderer {
         fragmentShader: `uniform sampler2D tDiffuse; uniform float strength; varying vec2 vUv;
           void main() {
             vec2 dir = vUv - vec2(0.5, 0.55);
-            float amt = strength * smoothstep(0.12, 0.7, length(dir));
+            float amt = strength * smoothstep(0.22, 0.75, length(dir));
             vec4 c = vec4(0.0);
-            for (int i = 0; i < 8; i++) c += texture2D(tDiffuse, vUv - dir * amt * (float(i) / 7.0) * 0.14);
+            for (int i = 0; i < 8; i++) c += texture2D(tDiffuse, vUv - dir * amt * (float(i) / 7.0) * 0.08);
             gl_FragColor = c / 8.0;
             #include <colorspace_fragment>
           }`,

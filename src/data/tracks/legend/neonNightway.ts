@@ -166,6 +166,7 @@ export const NEON_NIGHTWAY: TrackData = {
     side: 0x4a4370,
   },
   sky: {
+    light: { sunDir: [0.3, 1, -0.5], sun: 0xd0a0ff, hemiGround: 0x401860, grade: 0xf4e8ff }, roadSheen: 0.85,
     top: 0x0a0620,
     bottom: 0x3a1a5c,
     fog: 0x2a1648,

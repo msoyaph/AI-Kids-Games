@@ -83,6 +83,7 @@ export const CANYON_RUN: TrackData = {
     side: 0xa1887f,
   },
   sky: {
+    light: { sunDir: [0.9, 0.45, -0.2], sun: 0xffc890, hemiGround: 0x8a6040, grade: 0xffeedd },
     top: 0x5ec4ff,
     bottom: 0xd6f5ff,
     fog: 0xd8f2e8,

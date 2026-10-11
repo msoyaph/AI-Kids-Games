@@ -132,7 +132,14 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   (hop 4.2→3.6, `TUNING.driftKick` 0.07), audio: engine timbre per weight class, pass-by doppler, tyre surface
   loops (`TrackData.roadSound`: road|metal; dirt/water/ice automatic), drift crackle, layered mini-turbo, finish
   celebrations by personality. Screen-shake setting now actually applies (it was ignored before).
-- [ ] Phase 5 — visuals
+- [x] Phase 5 — visuals: `SkyData.light` (sunDir/sun/intensities/hemiGround/grade) on all tracks via `skyLights()`;
+  kart looks per tier (`kartMaterials`: Low plain, Medium Lambert+rim, High Phong+rim; rim colour from sky);
+  `src/render/driverRig.ts` (one SkinnedMesh, 4 bones, roles auto-detected or `ModelPart.role`; poses drive /
+  lookBack / hit / celebrate / disappointed / wave / cheer / clap; Medium/High only); `src/render/surfaces.ts`
+  (water ground `SkyData.waterGround`, creek surfaces over water zones (`ZoneData.surface:false` to skip), road
+  sheen `SkyData.roadSheen`, pod shimmer; shared `fxTime`); glider spring/unfold, launch puff, podium confetti,
+  HUD gain/loss flash, FINAL LAP banner, item slot polish, results rows slide in. Podium karts now face the camera
+  (they showed their backs before). Low verified not heavier (Neon Low 41 draws / 58k tris).
 - [ ] Phase 6 — ice + track fixes + marker flag
 - [ ] Phase 7 — Frost Cup, Driving School, replay, Coin Rush
 - [ ] Phase 8 — accessibility

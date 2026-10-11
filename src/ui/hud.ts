@@ -223,7 +223,7 @@ export class Hud {
 
     // juice overlays
     const top = k.params.topSpeed;
-    const fast = c.showSpeedLines && !c.reduceEffects ? Math.max(0, (k.speed - top * 0.86) / (top * 0.3)) + (k.boosting ? 0.75 : 0) : 0;
+    const fast = c.showSpeedLines && !c.reduceEffects ? Math.max(0, (k.speed - top * 1.0) / (top * 0.25)) + (k.boosting ? 0.75 : 0) : 0;
     this.setOpacity('speedlines', this.el.speedlines, Math.min(0.9, fast));
     this.toggle('calm', this.root, 'calm', !!c.reduceEffects);
     this.setOpacity('threat', this.el.threat, Math.min(1, k.threat * 1.1));
@@ -268,7 +268,7 @@ export class Hud {
     this.minimap.draw(w.karts, hi, dt);
   }
 
-  banner(text: string, cls: 'info' | 'warn' | 'big' | 'gold', time = 1.8): void {
+  banner(text: string, cls: 'info' | 'warn' | 'big' | 'gold' | 'final', time = 1.8): void {
     const b = this.el.banner;
     if (this.last.bannerText !== text || !b.classList.contains('on')) {
       this.last.bannerText = text;
@@ -283,9 +283,9 @@ export class Hud {
     this.el.pop.textContent = `${up ? '▲' : '▼'} ${ordinal(to)}`;
     this.el.pop.className = `hud-pop on ${up ? 'up' : 'down'}`;
     this.popTimer = 1.1;
-    this.el.posBox.classList.remove('bump');
+    this.el.posBox.classList.remove('bump', 'gain', 'loss');
     void this.el.posBox.offsetWidth;
-    this.el.posBox.classList.add('bump');
+    this.el.posBox.classList.add('bump', up ? 'gain' : 'loss');
   }
 
   lapPop(): void {

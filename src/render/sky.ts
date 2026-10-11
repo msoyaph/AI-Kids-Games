@@ -25,11 +25,27 @@ export function buildSky(scene: THREE.Scene, sky: SkyData, drawDistance: number)
   scene.background = new THREE.Color(sky.bottom);
   const near = (sky.fogNear ?? 0.35) * drawDistance;
   scene.fog = new THREE.Fog(sky.fog, near, drawDistance * 0.92);
-  const hemi = new THREE.HemisphereLight(sky.ambient, sky.night ? 0x221a44 : 0x8a7a5a, sky.night ? 1.1 : 1.45);
+  const L = skyLights(sky);
+  const hemi = new THREE.HemisphereLight(L.hemiSky, L.hemiGround, L.hemiIntensity);
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight(sky.sun, sky.night ? 0.9 : 1.75);
-  sun.position.set(60, 120, 40);
+  const sun = new THREE.DirectionalLight(L.sun, L.sunIntensity);
+  sun.position.copy(L.sunOffset);
   scene.add(sun);
   scene.add(sun.target);
   return { sun, dome };
+}
+
+/** Resolved light setup for a sky (used by the race scene and the scenery impostor atlas). */
+export function skyLights(sky: SkyData): { hemiSky: THREE.Color; hemiGround: THREE.Color; hemiIntensity: number; sun: THREE.Color; sunIntensity: number; sunOffset: THREE.Vector3 } {
+  const l = sky.light ?? {};
+  const grade = new THREE.Color(l.grade ?? 0xffffff);
+  const dir = l.sunDir ? new THREE.Vector3(...l.sunDir).normalize() : new THREE.Vector3(60, 120, 40).normalize();
+  return {
+    hemiSky: new THREE.Color(sky.ambient).multiply(grade),
+    hemiGround: new THREE.Color(l.hemiGround ?? (sky.night ? 0x221a44 : 0x8a7a5a)).multiply(grade),
+    hemiIntensity: l.hemiIntensity ?? (sky.night ? 1.1 : 1.45),
+    sun: new THREE.Color(l.sun ?? sky.sun).multiply(grade),
+    sunIntensity: l.sunIntensity ?? (sky.night ? 0.9 : 1.75),
+    sunOffset: dir.multiplyScalar(140),
+  };
 }

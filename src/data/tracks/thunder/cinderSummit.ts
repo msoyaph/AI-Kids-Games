@@ -110,6 +110,7 @@ export const CINDER_SUMMIT: TrackData = {
     side: 0x2e2428,
   },
   sky: {
+    light: { sunDir: [0.3, 0.6, 0.8], sun: 0xff9a6a, hemiGround: 0x5a1a10, grade: 0xffe0d0 },
     top: 0x2a1838,
     bottom: 0xff9a5a,
     fog: 0xc0604a,

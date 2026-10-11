@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import type { KartConfig } from '../data/types';
 import { buildKartMeshes } from './kartModel';
+import { DriverRig, type DriverPose } from './driverRig';
+import { findRacer } from '../data/racers';
+import { kartMaterials } from './materials';
 import { buildSky } from './sky';
 import { Materials } from './materials';
 import { ParticlePool } from './particles';
@@ -95,17 +98,38 @@ export class MenuScene {
     if (v !== 'podium') this.confetti.clear();
   }
 
-  private makeKart(racerId: string, cfg: KartConfig): THREE.Group {
+  /** Posable drivers in the menus (turntable, podium) — updated every frame. */
+  private rigs: Array<{ rig: DriverRig; pose: DriverPose; root: THREE.Object3D }> = [];
+
+  private makeKart(racerId: string, cfg: KartConfig, pose?: DriverPose): THREE.Group {
     const m = buildKartMeshes(racerId, cfg);
     const g = new THREE.Group();
-    g.add(m.chassis, m.driver, ...m.wheelPivots);
+    if (pose && this.gr.quality.level !== 'low') {
+      const rig = new DriverRig(findRacer(racerId), kartMaterials('medium').driver);
+      rig.mesh.position.copy(m.driver.position);
+      m.chassis.material = kartMaterials('medium').chassis;
+      g.add(m.chassis, rig.mesh, ...m.wheelPivots);
+      this.rigs.push({ rig, pose, root: g });
+    } else g.add(m.chassis, m.driver, ...m.wheelPivots);
     return g;
+  }
+
+  private dropRigs(root: THREE.Object3D | null | undefined): void {
+    if (!root) return;
+    this.rigs = this.rigs.filter((r) => {
+      let inside = false;
+      r.root.traverseAncestors((a) => (inside = inside || a === root));
+      return !(inside || r.root === root);
+    });
   }
 
   /** Show one racer + kart on the turntable. */
   showKart(racerId: string, cfg: KartConfig): void {
-    if (this.current) this.stage.remove(this.current.group);
-    const g = this.makeKart(racerId, cfg);
+    if (this.current) {
+      this.stage.remove(this.current.group);
+      this.dropRigs(this.current.group);
+    }
+    const g = this.makeKart(racerId, cfg, 'wave');
     g.scale.setScalar(2.2);
     g.position.y = 0.48;
     const prevRot = this.current?.group.rotation.y ?? -0.6;
@@ -135,7 +159,10 @@ export class MenuScene {
 
   /** Podium with the top three (index 0 = winner). */
   showPodium(top: Array<{ racerId: string; cfg: KartConfig }>): void {
-    if (this.podiumKarts) this.stage.remove(this.podiumKarts);
+    if (this.podiumKarts) {
+      this.stage.remove(this.podiumKarts);
+      this.dropRigs(this.podiumKarts);
+    }
     const g = new THREE.Group();
     const spots: Array<[number, number]> = [
       [0, 3.0],
@@ -143,9 +170,9 @@ export class MenuScene {
       [4.6, 1.3],
     ];
     top.slice(0, 3).forEach((e, i) => {
-      const k = this.makeKart(e.racerId, e.cfg);
+      const k = this.makeKart(e.racerId, e.cfg, (['cheer', 'wave', 'clap'] as const)[i]);
       k.position.set(spots[i][0], spots[i][1], 0.2);
-      k.rotation.y = Math.PI + (i === 1 ? 0.25 : i === 2 ? -0.25 : 0);
+      k.rotation.y = i === 1 ? 0.3 : i === 2 ? -0.3 : 0; // face the camera
       k.scale.setScalar(1.35);
       k.userData.bounce = i;
       g.add(k);
@@ -188,6 +215,7 @@ export class MenuScene {
         break;
       }
     }
+    for (const r of this.rigs) if (r.root.visible && r.root.parent?.visible !== false) r.rig.update(dt, t, r.pose, 0, 0);
     this.confetti.update(dt);
   }
 

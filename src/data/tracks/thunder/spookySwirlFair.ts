@@ -91,6 +91,7 @@ export const SPOOKY_SWIRL_FAIR: TrackData = {
     side: 0x5a3f7a,
   },
   sky: {
+    light: { sunDir: [-0.4, 1, -0.3], sun: 0xb8c8ff, hemiGround: 0x2a1a44, grade: 0xf0e8ff },
     top: 0x1e0f3d,
     bottom: 0xc070e0,
     fog: 0x6a3f98,

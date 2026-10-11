@@ -113,3 +113,31 @@ test('performance test runs from the URL and reports numbers', async ({ page }) 
   expect(w.errors).toEqual([]);
   expect(w.external).toEqual([]);
 });
+
+test('High-tier shaders (water, road sheen, pod shimmer, rim light, skinned drivers, speed blur) compile', async ({ page }, info) => {
+  test.skip(!info.project.name.endsWith('desktop') && !info.project.name.endsWith('phone'), 'one desktop + one phone per engine');
+  const w = watch(page);
+  await boot(page);
+  for (const track of ['neon-nightway', 'seashell-boardwalk', 'canyon-run']) {
+    await page.evaluate((t) => {
+      const a = window.__calex.app;
+      if (!a.saves.data) a.saves.create(3, 'E2E');
+      a.saves.settings.quality = 'high';
+      a.applySettings();
+      a.gr.quality.setSetting('high');
+      void t;
+    }, track);
+    await quickRace(page, { track, ai: 3 });
+    await page.evaluate(() => {
+      const a = window.__calex.app;
+      a.gr.quality.adaptive = false;
+      a.gr.quality.setSetting('high');
+    });
+    await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: 20_000 });
+    await page.evaluate(() => window.__calex.app.session.world.karts[0].startBoost(2)); // speed blur on
+    await page.waitForTimeout(800);
+    expect(await page.evaluate(() => window.__calex.app.gr.stats().calls)).toBeGreaterThan(5);
+    await page.evaluate(() => window.__calex.app.quitToMenu());
+  }
+  expect(w.errors).toEqual([]);
+});

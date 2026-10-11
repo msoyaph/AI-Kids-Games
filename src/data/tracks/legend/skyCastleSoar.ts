@@ -181,6 +181,7 @@ export const SKY_CASTLE_SOAR: TrackData = {
     side: 0x9a8fb8,
   },
   sky: {
+    light: { sunDir: [-0.7, 0.5, 0.4], sun: 0xffd0e0, grade: 0xfff0f6 },
     top: 0x4a90ff,
     bottom: 0xffd9ef,
     fog: 0xf3e6ff,

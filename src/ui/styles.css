@@ -229,6 +229,20 @@
 .hud-pos.bump {
   animation: posBump 0.35s ease;
 }
+.hud-pos.gain .n {
+  animation: posGain 0.9s ease;
+}
+.hud-pos.loss .n {
+  animation: posLoss 0.9s ease;
+}
+@keyframes posGain {
+  0%, 60% { color: var(--green); text-shadow: 0 0 14px rgba(140, 255, 107, 0.9); }
+  100% { color: inherit; text-shadow: none; }
+}
+@keyframes posLoss {
+  0%, 60% { color: #ff8fa3; }
+  100% { color: inherit; }
+}
 @keyframes posBump {
   0% { transform: scale(1); }
   40% { transform: scale(1.35); }
@@ -293,8 +307,21 @@
   border: 4px solid rgba(255, 255, 255, 0.85);
   box-shadow: 0 4px 0 rgba(29, 18, 80, 0.5);
 }
+.hud-item {
+  background: radial-gradient(circle at 50% 40%, rgba(90, 70, 190, 0.55), rgba(29, 18, 80, 0.65) 70%);
+}
 .hud-item.has {
   border-color: var(--yellow);
+  box-shadow: 0 4px 0 rgba(29, 18, 80, 0.5), 0 0 16px rgba(255, 210, 63, 0.45), inset 0 0 12px rgba(255, 255, 255, 0.15);
+}
+.hud-item .count:not(:empty) {
+  min-width: 30px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 2px solid var(--yellow);
+  text-align: center;
+  font-size: 18px;
 }
 .hud-item.rolling {
   border-color: var(--pink);
@@ -430,6 +457,17 @@
 }
 .hud-banner.big {
   background: rgba(106, 76, 255, 0.9);
+}
+.hud-banner.final {
+  background: repeating-linear-gradient(-45deg, #ff4d6d 0 16px, #ff6f87 16px 32px);
+  font-size: clamp(30px, 8vh, 72px);
+  padding: 8px 30px;
+  border: 4px solid #fff;
+  animation: finalLap 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@keyframes finalLap {
+  0% { transform: scale(0.2) rotate(-6deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
 }
 .hud-banner.gold {
   background: linear-gradient(180deg, #ffe45c, #ff9f1c);
@@ -1100,4 +1138,35 @@
   font-weight: 900;
   font-size: clamp(20px, 4vh, 32px);
   color: var(--yellow);
+}
+
+/* Results: rows slide in one after another */
+.screen .table tr {
+  animation: rowIn 0.35s ease both;
+}
+.screen .table tr:nth-child(1) { animation-delay: 0.05s; }
+.screen .table tr:nth-child(2) { animation-delay: 0.1s; }
+.screen .table tr:nth-child(3) { animation-delay: 0.15s; }
+.screen .table tr:nth-child(4) { animation-delay: 0.2s; }
+.screen .table tr:nth-child(5) { animation-delay: 0.25s; }
+.screen .table tr:nth-child(6) { animation-delay: 0.3s; }
+.screen .table tr:nth-child(7) { animation-delay: 0.35s; }
+.screen .table tr:nth-child(8) { animation-delay: 0.4s; }
+.screen .table tr:nth-child(n + 9) { animation-delay: 0.45s; }
+@keyframes rowIn {
+  from { transform: translateX(-24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.screen .table tr.me td {
+  animation: meGlow 1.6s ease-in-out 0.6s 2;
+}
+@keyframes meGlow {
+  50% { background: rgba(255, 210, 63, 0.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen .table tr,
+  .screen .table tr.me td,
+  .hud-banner.final {
+    animation: none;
+  }
 }
