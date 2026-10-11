@@ -1,7 +1,7 @@
 // Builds anonymous playtest records from finished (or abandoned) races. See src/save/playtest.ts for storage.
 import { findRacer } from '../data/racers';
 import type { InputManager, InputSource } from '../input/manager';
-import type { PlaytestInput, PlaytestPlayer, PlaytestRecord } from '../save/playtest';
+import type { PlaytestInput, PlaytestPlayer, PlaytestRecord, PlaytestTouch } from '../save/playtest';
 import type { Settings } from '../save/save';
 import type { Kart } from '../sim/kart';
 import type { AssistLevel } from '../tuning/balance';
@@ -25,6 +25,15 @@ function inputFor(source: InputSource, input: InputManager, settings: Settings):
 
 const START = ['none', 'boost', 'perfect'] as const;
 
+function touchUsed(source: InputSource, input: InputManager): boolean {
+  return source.kind === 'touch' || (source.kind === 'any' && input.lastDevice === 'touch');
+}
+
+function touchSetup(input: InputManager, settings: Settings): PlaytestTouch {
+  const t = settings.touch;
+  return { steer: settings.touchSteer, stick: t.stick, size: t.size, leftHanded: t.leftHanded, highContrast: t.highContrast, custom: !!t.layout, glass: input.touch.glass };
+}
+
 function player(k: Kart, source: InputSource, input: InputManager, settings: Settings, total: number, quit: boolean): PlaytestPlayer {
   const s = k.raceStats;
   const assist: AssistLevel = k.assistLevel;
@@ -35,6 +44,7 @@ function player(k: Kart, source: InputSource, input: InputManager, settings: Set
     wheels: k.kart.wheels,
     glider: k.kart.glider,
     input: inputFor(source, input, settings),
+    ...(touchUsed(source, input) ? { touch: touchSetup(input, settings) } : {}),
     assist,
     autoAccel: k.autoAccel,
     pos: k.rank,

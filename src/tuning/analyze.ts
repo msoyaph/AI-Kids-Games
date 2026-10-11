@@ -260,3 +260,28 @@ export function groupSummaryRow(g: Group, b?: SimBaseline, staff?: number): stri
   const mtPer = g.finished ? (g.mt[0] + g.mt[1] + g.mt[2]) / g.finished : NaN;
   return `| ${g.track} | ${g.cls} | ${g.races} | ${(g.quits / Math.max(1, g.races) * 100).toFixed(0)}% | ${g.posNorm.length ? `${f(avg(g.posNorm) * 100, 0)}% · ${g.wins}W` : '—'} | ${f(median(g.times))}${b ? ` (AI ${f(b.winnerTime)})` : ''}${staff ? ` · staff ${f(staff)}` : ''} | ${f(avg(g.falls), 2)}${b ? ` (AI ${f(b.fallsPerRacer, 2)})` : ''} | ${f(mtPer)} | ${g.finished ? f((g.starts.perfect + g.starts.boost) / g.finished * 100, 0) : '—'}% |`;
 }
+
+/** Races per touch-controller setup (steering mode · size), plus left-handed / high-contrast / custom-layout use. */
+export function touchSummary(records: PlaytestRecord[]): string[] {
+  const combos = new Map<string, number>();
+  let lefty = 0;
+  let hc = 0;
+  let custom = 0;
+  let blur = 0;
+  let n = 0;
+  for (const r of records) {
+    for (const p of r.p) {
+      if (!p.touch) continue;
+      n++;
+      const key = `${p.touch.steer}${p.touch.steer === 'joystick' ? ` (${p.touch.stick})` : ''} · ${p.touch.size}`;
+      combos.set(key, (combos.get(key) ?? 0) + 1);
+      if (p.touch.leftHanded) lefty++;
+      if (p.touch.highContrast) hc++;
+      if (p.touch.custom) custom++;
+      if (p.touch.glass === 'blur') blur++;
+    }
+  }
+  if (!n) return ['No touch races recorded.'];
+  const rows = [...combos].sort((a, b) => b[1] - a[1]).map(([k, v]) => `| ${k} | ${v} | ${Math.round((v / n) * 100)}% |`);
+  return ['| Steering · size | Races | Share |', '|---|---|---|', ...rows, '', `Left-handed ${lefty} · high contrast ${hc} · custom layout ${custom} · real-blur glass ${blur} (of ${n} touch races)`];
+}

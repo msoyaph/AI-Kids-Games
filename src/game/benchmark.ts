@@ -19,6 +19,8 @@ export interface BenchResult {
   track: string;
   seconds: number;
   setting: QualitySetting;
+  /** Touch controls shown during the run (`?bench=1&controls=`), or null for the plain test. */
+  controls?: BenchControls | null;
   avgFps: number;
   /** Average FPS over the slowest 1 % of frames. */
   low1Fps: number;
@@ -102,7 +104,10 @@ export function benchConfig(app: App): SessionConfig {
  * Run the benchmark. `quality` overrides the tier for this run only (the saved setting is restored afterwards).
  * Resolves with the results when done (or null if it could not start).
  */
-export function runBenchmark(app: App, seconds = 60, quality?: QualitySetting, onTick?: (left: number) => void): Promise<BenchResult | null> {
+/** Benchmark variants for the touch controls' cost. */
+export type BenchControls = 'none' | 'fake' | 'blur';
+
+export function runBenchmark(app: App, seconds = 60, quality?: QualitySetting, onTick?: (left: number) => void, controls?: BenchControls): Promise<BenchResult | null> {
   return new Promise((resolve) => {
     const savedSetting = app.gr.quality.setting;
     const setting = quality ?? savedSetting;
@@ -114,6 +119,18 @@ export function runBenchmark(app: App, seconds = 60, quality?: QualitySetting, o
       resolve(null);
       return;
     }
+    // `controls`: measure the glass touch controls' cost — none, fake glass, or real blur (pinned for the run)
+    const touch = app.input.touch;
+    if (controls) {
+      touch.forceGlass = controls === 'blur' ? 'blur' : 'fake';
+      touch.setGlass(touch.forceGlass);
+      touch.show(controls !== 'none');
+    }
+    const restoreControls = (): void => {
+      if (!controls) return;
+      touch.forceGlass = null;
+      app.syncGlass();
+    };
     // the player's kart drives itself
     const k = s.world.karts[0];
     const p = k.player;
@@ -136,6 +153,7 @@ export function runBenchmark(app: App, seconds = 60, quality?: QualitySetting, o
     const tick = (now: number): void => {
       if (app.session !== s) {
         app.gr.quality.setSetting(savedSetting);
+        restoreControls();
         resolve(null); // left early
         return;
       }
@@ -212,8 +230,10 @@ export function runBenchmark(app: App, seconds = 60, quality?: QualitySetting, o
         heapPeakMB: heapPeak,
         sceneryChunks: ps ? `${ps.chunks} chunks (${ps.full} full / ${ps.lod} LOD / ${ps.far} far), ${ps.billboards} impostors` : '—',
         build: typeof __CALEX_VERSION__ === 'string' ? __CALEX_VERSION__ : 'dev',
+        controls: controls ?? null,
       };
       app.gr.quality.setSetting(savedSetting);
+      restoreControls();
       resolve(res);
     };
     requestAnimationFrame(tick);

@@ -93,7 +93,8 @@ async function boot(): Promise<void> {
     const { startBenchmark } = await import('./ui/screens/benchmark');
     const q = params.get('quality');
     const seconds = Math.max(5, Math.min(300, Number(params.get('seconds')) || 60));
-    startBenchmark(app, () => app.screens.title(), seconds, q === 'low' || q === 'medium' || q === 'high' || q === 'auto' ? q : undefined);
+    const c = params.get('controls');
+    startBenchmark(app, () => app.screens.title(), seconds, q === 'low' || q === 'medium' || q === 'high' || q === 'auto' ? q : undefined, c === 'none' || c === 'fake' || c === 'blur' ? c : undefined);
   } else {
     app.screens.title();
   }

@@ -115,8 +115,18 @@ Decisions: tablets may race in portrait, phones keep the rotate screen; vibratio
   `settings.touch.layout.{landscape,portrait}` as fractions + size multiples (`toSaved`/`applySaved`, mirrored
   when switching hands; `layoutFor(vp, config)` = the one layout rule). Rotate hint now phones only
   (max-width 600 px): tablets race upright.
-- [ ] Step 5 — performance (blur measurement, fake/real policy, crossfade)
-- [ ] Step 6 — accessibility
+- [x] Step 5 — glass modes: fake glass = background-image gradients + background-color tint (every tier); real
+  blur = a `.glass::before` frost layer with backdrop-filter that crossfades (300 ms) in/out (`TouchControls.setGlass`,
+  classes gc-fake / gc-blur / gc-blur-out; backdrop-filter removed after fading out). Icon/label are
+  `position:relative` so the frost never paints over them. Policy `App.syncGlass`: blur only on High at full
+  render scale, browser support, no high contrast, not test mode, and `App.watchGlass` drops it for the visit on a
+  slow average (> 17.6 ms for 0.6 s) or jank (> 2 % of frames over 25 ms per ~3 s) — measured: throttled phone at
+  High keeps ~60 fps average but blur doubles slow frames. Measure: `?bench=1&controls=none|fake|blur`,
+  `npm run bench -- --controls …`, `npm run bench-controls` (`scripts/benchControls.mjs --runs N` →
+  sim-report/touch-perf.md). Fake glass costs nothing measurable at Auto (phone 60.0→59.9, tablet 59.8→60.0).
+- [x] Step 6 — accessibility: `.touch-controls.calm` (Reduce effects) = no ripple/trail/pulse/rolling animation and
+  no knob glide; high contrast (`gc-hc`, solid fill, no blur); every touch target ≥ 48 px (button element = target,
+  `.face` = visual; resize handles 48 px hit areas); drift tier = colour + chevrons + word badge; labels + aria.
 - [ ] Step 7 — tests, visual review, playtest fields, report
 
 ## Upgrade in progress (branch `calex-upgrade` — do NOT merge into main without user approval)

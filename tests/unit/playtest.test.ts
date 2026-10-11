@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PLAYTEST_MAX_CHARS, PlaytestStore, trimToBudget, type PlaytestPlayer, type PlaytestRecord } from '../../src/save/playtest';
-import { collectRecords, groupRecords, suggest } from '../../src/tuning/analyze';
+import { collectRecords, groupRecords, suggest, touchSummary } from '../../src/tuning/analyze';
 import { BALANCE } from '../../src/tuning/balance';
 
 function fakePlayer(over: Partial<PlaytestPlayer> = {}): PlaytestPlayer {
@@ -88,6 +88,23 @@ describe('playtest log', () => {
 });
 
 describe('playtest analyzer', () => {
+  it('lists races per touch setup (steering mode · size) and counts left-handed / high contrast / custom layouts', () => {
+    const joy = { steer: 'joystick', stick: 'floating', size: 'medium', leftHanded: false, highContrast: false, custom: false, glass: 'fake' } as const;
+    const recs = [
+      fakeRecord(1, {}, { input: 'touch', touch: joy }),
+      fakeRecord(2, {}, { input: 'touch', touch: { ...joy, size: 'large', leftHanded: true } }),
+      fakeRecord(3, {}, { input: 'touch', touch: { ...joy, steer: 'buttons', highContrast: true, custom: true } }),
+      fakeRecord(4, {}, { input: 'keyboard' }),
+    ];
+    const lines = touchSummary(recs).join('\n');
+    expect(lines).toContain('| joystick (floating) · medium | 1 |');
+    expect(lines).toContain('| joystick (floating) · large | 1 |');
+    expect(lines).toContain('| buttons · medium | 1 |');
+    expect(lines).toContain('Left-handed 1 · high contrast 1 · custom layout 1');
+    expect(lines).toContain('of 3 touch races');
+    expect(touchSummary([fakeRecord(5)])).toEqual(['No touch races recorded.']);
+  });
+
   it('collects records from exports, arrays and bare records', () => {
     const rec = fakeRecord(1);
     const got = collectRecords([{ game: 'calex-cart', format: 1, build: 'x', races: [rec, rec] }, [rec], rec, 'junk', null]);

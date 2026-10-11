@@ -104,7 +104,7 @@ test('keyboard only: name entry, every main screen reachable with arrows and Tab
   }
   // settings tabs switch with Q/E, every tab is reachable, Esc goes back to the main menu
   await page.evaluate(() => window.__calex.app.screens.settings(() => window.__calex.app.screens.mainMenu()));
-  for (const tab of ['Graphics', 'Gameplay', 'Controls']) {
+  for (const tab of ['Graphics', 'Gameplay', 'Touch', 'Controls']) {
     await page.keyboard.press('KeyE');
     await expect(page.locator('.tabs .btn.active')).toContainText(tab);
     const r = await arrowsReachAll(page);

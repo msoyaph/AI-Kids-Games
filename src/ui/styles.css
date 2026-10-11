@@ -92,24 +92,41 @@
   letter-spacing: 0.05em;
   text-shadow: 0 1px 0 rgba(10, 6, 40, 0.55), 0 0 6px rgba(10, 6, 40, 0.35);
   opacity: var(--tc-opacity);
-  transition: transform 0.07s ease, filter 0.07s ease, opacity 0.14s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.07s ease, filter 0.07s ease, opacity 0.14s ease, border-color 0.12s ease, box-shadow 0.12s ease, background-color 0.3s ease;
 }
 /* fake glass (every tier): frost = sheen band + bottom glow + navy tint, no blur */
-.gc-fake .glass {
-  background:
+.touch-controls .glass {
+  background-image:
     linear-gradient(160deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.1) 38%, rgba(255, 255, 255, 0) 52%),
-    radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 60%),
-    rgba(30, 22, 86, 0.3);
+    radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 60%);
+  background-color: rgba(30, 22, 86, 0.3);
 }
-/* real blur (High only): lighter tint + frosted backdrop */
-.gc-blur .glass {
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.08) 38%, rgba(255, 255, 255, 0) 52%),
-    rgba(30, 22, 86, 0.18);
+/* real blur (High only): a frosted-backdrop layer that crossfades in/out over the fake glass (no pop when the
+   quality governor steps down); once faded out (.gc-fake) the backdrop-filter is gone, so it costs nothing */
+.touch-controls .glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.touch-controls.gc-blur .glass::before,
+.touch-controls.gc-blur-out .glass::before {
   -webkit-backdrop-filter: blur(9px) saturate(1.5);
   backdrop-filter: blur(9px) saturate(1.5);
 }
+.touch-controls.gc-blur .glass::before {
+  opacity: 1;
+}
+.touch-controls.gc-blur .glass {
+  background-color: rgba(30, 22, 86, 0.18);
+}
 /* high contrast: solid deep fill, thick white rim, black outline */
+.touch-controls.gc-hc .glass::before {
+  display: none;
+}
 .touch-controls.gc-hc .glass {
   background: rgba(16, 10, 52, 0.88);
   border: 3px solid #fff;
@@ -126,6 +143,11 @@
 }
 .touch-controls.gc-hc .glass .tint {
   display: none;
+}
+/* icon + word sit above the frost layer (an absolutely positioned ::before would otherwise paint over them) */
+.touch-controls .glass .ico,
+.touch-controls .glass .lbl {
+  position: relative;
 }
 .touch-controls .ico {
   font-size: calc(var(--d) * 0.24);

@@ -35,5 +35,8 @@ export default defineConfig({
     { name: 'webkit-desktop', use: { browserName: 'webkit', viewport: { width: 1280, height: 720 }, launchOptions: { args: [] } } },
     { name: 'webkit-tablet', use: { ...devices['iPad (gen 7) landscape'], browserName: 'webkit', launchOptions: { args: [] } } },
     { name: 'webkit-phone', use: { ...devices['iPhone 13 landscape'], browserName: 'webkit', launchOptions: { args: [] } } },
+    // tablets may race upright (phones keep the "turn sideways" screen)
+    { name: 'tablet-portrait', use: { browserName: 'chromium', viewport: { width: 810, height: 1080 }, hasTouch: true, isMobile: true, userAgent: devices['iPad (gen 7)'].userAgent } },
+    { name: 'webkit-tablet-portrait', use: { ...devices['iPad (gen 7)'], browserName: 'webkit', launchOptions: { args: [] } } },
   ],
 });

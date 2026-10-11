@@ -1,15 +1,15 @@
 import type { App } from '../../game/app';
-import { benchSummary, runBenchmark, type BenchResult } from '../../game/benchmark';
+import { benchSummary, runBenchmark, type BenchControls, type BenchResult } from '../../game/benchmark';
 import type { QualitySetting } from '../../render/quality';
 import { button, h, type Screen } from '../ui';
 import { copyOverlay } from './playtest';
 
 /** Start the performance test; `back` runs when the player leaves the results card. */
-export function startBenchmark(app: App, back: () => void, seconds = 60, quality?: QualitySetting): void {
+export function startBenchmark(app: App, back: () => void, seconds = 60, quality?: QualitySetting, controls?: BenchControls): void {
   const label = h('div', { class: 'bench-label', role: 'status' }, `Performance test — ${seconds} s left`);
   app.uiRoot.appendChild(label);
   app.audio.ui('start');
-  void runBenchmark(app, seconds, quality, (left) => (label.textContent = `Performance test — ${left} s left`)).then((r) => {
+  void runBenchmark(app, seconds, quality, (left) => (label.textContent = `Performance test — ${left} s left`), controls).then((r) => {
     label.remove();
     if (!r) return; // left early through the pause menu
     console.info(benchSummary(r));
@@ -21,7 +21,7 @@ export function startBenchmark(app: App, back: () => void, seconds = 60, quality
       back();
     }, () => {
       app.endSession();
-      startBenchmark(app, back, seconds, quality);
+      startBenchmark(app, back, seconds, quality, controls);
     }));
   });
 }

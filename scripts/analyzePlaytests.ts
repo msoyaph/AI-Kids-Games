@@ -6,7 +6,7 @@
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { collectRecords, groupRecords, groupSummaryRow, suggest, type SimBaseline } from '../src/tuning/analyze';
+import { collectRecords, groupRecords, groupSummaryRow, suggest, touchSummary, type SimBaseline } from '../src/tuning/analyze';
 import { runHeadlessRace } from '../src/sim/headless';
 import { RACERS } from '../src/data/racers';
 import { TRACKS } from '../src/data/tracks/index';
@@ -92,6 +92,9 @@ out.push(`Average FPS by tier: ${[...fpsRows].map(([t, f]) => `${t} ${(f.reduce(
 out.push('');
 
 const sug = suggest(groups, baselines, staffTimes);
+out.push('## Touch controls');
+for (const l of touchSummary(records)) out.push(l);
+out.push('');
 out.push('## Suggested edits (NOT applied)');
 if (!sug.length) out.push('No changes suggested — not enough data, or everything is within targets.');
 for (const s of sug) out.push(`- **${s.field}**: ${s.current} → ${s.suggested}  _(${s.confidence})_ — ${s.why}`);

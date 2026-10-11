@@ -11,6 +11,18 @@ export const PLAYTEST_FORMAT = 1;
 
 export type PlaytestInput = 'keyboard' | 'gamepad' | 'touch' | 'tilt';
 
+/** Touch players only: which glass-controller setup the race used (no personal data). */
+export interface PlaytestTouch {
+  steer: 'joystick' | 'buttons' | 'tilt';
+  stick: 'floating' | 'fixed';
+  size: 'small' | 'medium' | 'large';
+  leftHanded: boolean;
+  highContrast: boolean;
+  /** An edited (custom) layout was in use. */
+  custom: boolean;
+  glass: 'fake' | 'blur';
+}
+
 export interface PlaytestPlayer {
   racer: string;
   weight: string;
@@ -18,6 +30,8 @@ export interface PlaytestPlayer {
   wheels: string;
   glider: string;
   input: PlaytestInput;
+  /** Touch controls setup (touch players only). */
+  touch?: PlaytestTouch;
   assist: AssistLevel;
   autoAccel: boolean;
   /** Finish position and field size. */

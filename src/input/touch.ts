@@ -182,6 +182,39 @@ export class TouchControls {
     if (this.visible) this.relayout();
   }
 
+  /** 'blur' = real frosted glass (High tier only), 'fake' = layered gradients (every tier). */
+  glass: 'fake' | 'blur' = 'fake';
+  /** Benchmark override (`?bench=1&controls=fake|blur`): pins the glass mode regardless of the policy. */
+  forceGlass: 'fake' | 'blur' | null = null;
+  private glassTimer = 0;
+
+  /** Switch fake ↔ real glass with a 300 ms crossfade (never a visible pop). */
+  setGlass(mode: 'fake' | 'blur'): void {
+    const m = this.forceGlass ?? mode;
+    if (this.glass === m) return;
+    this.glass = m;
+    const r = this.root.classList;
+    window.clearTimeout(this.glassTimer);
+    if (m === 'blur') {
+      r.remove('gc-fake', 'gc-blur-out');
+      // let the frost layer exist at opacity 0 for a frame, then fade it in
+      r.add('gc-blur-out');
+      requestAnimationFrame(() => {
+        if (this.glass !== 'blur') return;
+        r.remove('gc-blur-out');
+        r.add('gc-blur');
+      });
+    } else {
+      // fade the frost out, then drop the backdrop-filter entirely
+      r.remove('gc-blur');
+      r.add('gc-blur-out');
+      this.glassTimer = window.setTimeout(() => {
+        r.remove('gc-blur-out');
+        r.add('gc-fake');
+      }, 340);
+    }
+  }
+
   /** Reduce effects: no shimmer, ripple, pulse or trail animation. */
   setCalm(on: boolean): void {
     this.root.classList.toggle('calm', on);

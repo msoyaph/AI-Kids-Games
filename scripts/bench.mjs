@@ -15,6 +15,7 @@ const seconds = opt('--seconds', '60');
 const profile = opt('--profile', 'desktop');
 const shot = opt('--shot', null);
 const json = opt('--json', null);
+const controls = opt('--controls', null); // none | fake | blur (touch controls on screen during the run)
 const swift = args.includes('--swiftshader');
 const PROFILES = {
   desktop: { viewport: { width: 1280, height: 720 } },
@@ -31,11 +32,11 @@ if (profile !== 'desktop') {
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-await page.goto(`http://localhost:4173/?bench=1&seconds=${seconds}&quality=${quality}`);
+await page.goto(`http://localhost:4173/?bench=1&seconds=${seconds}&quality=${quality}${controls ? `&controls=${controls}` : ''}`);
 await page.waitForSelector('.bench-card', { timeout: (Number(seconds) + 90) * 1000 });
 const text = await page.evaluate(() => document.querySelector('.bench-card').innerText);
 if (shot) await page.screenshot({ path: shot });
 const result = await page.evaluate(() => window.__calex.lastBench ?? null);
 if (json && result) writeFileSync(json, JSON.stringify({ profile, ...result }, null, 1));
-console.log(`[${profile} · ${quality}]\n${text}${errors.length ? `\nERRORS: ${errors.join(' | ')}` : ''}`);
+console.log(`[${profile} · ${quality}${controls ? ` · controls ${controls}` : ''}]\n${text}${errors.length ? `\nERRORS: ${errors.join(' | ')}` : ''}`);
 await browser.close();

@@ -111,6 +111,7 @@ export class App {
       if (!document.hidden && !this.paused && !this.gr.contextLost) this.audio.suspend(false);
     });
     this.gr.onContextLost(() => this.onContextLost());
+    this.gr.quality.onChange(() => this.syncGlass());
     this.gr.onContextRestored(() => this.onContextRestored());
   }
 
@@ -193,6 +194,47 @@ export class App {
   // ---------------------------------------------------------------------------
   // settings
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------------------
+  // Touch glass: real backdrop blur only on High (full render scale), where the browser supports it, without high
+  // contrast, outside test mode — and only while it costs no frames. If frame times creep up with blur on, blur is
+  // dropped first (before the quality governor lowers the tier) and stays off for this visit.
+  // ---------------------------------------------------------------------------------------------------------
+  private blurBlocked = false;
+  private blurSlow = 0;
+  private blurFrames = 0;
+  private blurJank = 0;
+  private readonly blurSupported = typeof CSS !== 'undefined' && (CSS.supports('backdrop-filter', 'blur(2px)') || CSS.supports('-webkit-backdrop-filter', 'blur(2px)'));
+
+  syncGlass(): void {
+    const q = this.gr.quality;
+    const ok = q.level === 'high' && q.renderScale >= 1 && this.blurSupported && !this.blurBlocked && !this.testMode && !this.saves.settings.touch.highContrast;
+    this.input.touch.setGlass(ok ? 'blur' : 'fake');
+  }
+
+  private watchGlass(frameDt: number): void {
+    const touch = this.input.touch;
+    if (!touch.shown || touch.glass !== 'blur' || touch.forceGlass) {
+      this.blurSlow = this.blurFrames = this.blurJank = 0;
+      return;
+    }
+    // the governor degrades at > 19.2 ms for 1.2 s; blur steps aside earlier — on a slow average, or on jank
+    // (measured: on a throttled phone the average stays near 60 fps while blur doubles the slow frames)
+    if (this.gr.quality.avgFrameMs > 17.6) this.blurSlow += frameDt;
+    else this.blurSlow = Math.max(0, this.blurSlow - frameDt);
+    this.blurFrames++;
+    if (frameDt > 0.025) this.blurJank++;
+    let drop = this.blurSlow > 0.6;
+    if (this.blurFrames >= 180) {
+      if (this.blurJank / this.blurFrames > 0.02) drop = true;
+      this.blurFrames = this.blurJank = 0;
+    }
+    if (drop) {
+      this.blurBlocked = true;
+      this.blurSlow = 0;
+      this.syncGlass();
+    }
+  }
+
   /** CI test mode (`?testmode=1`): lightest look so software-rendered test browsers stay quick. */
   testMode = false;
 
@@ -214,6 +256,7 @@ export class App {
     this.input.touch.setMode(s.touchSteer);
     this.input.touch.configure(s.touch, s.hudSize);
     this.input.touch.setCalm(s.reduceEffects);
+    this.syncGlass();
     this.input.rumbleOn = s.rumble;
     this.fpsEl.style.display = s.showFps ? '' : 'none';
     this.playtestBadge.style.display = s.playtest ? '' : 'none';
@@ -251,6 +294,7 @@ export class App {
     p.frames++;
     this.input.poll(frameDt);
     if (this.gr.quality.sample(frameDt)) this.gr.applyQuality();
+    this.watchGlass(frameDt);
     if (this.saves.data && !this.paused) this.saves.data.playSeconds += frameDt;
     if (this.session) {
       if (!this.paused) {
