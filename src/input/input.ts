@@ -25,7 +25,9 @@ export type Command =
   | 'rotate'
   | 'store'
   | 'tabNext'
-  | 'tabPrev';
+  | 'tabPrev'
+  | 'undo'
+  | 'fine';
 
 export interface InputFrame {
   moveX: number;
@@ -50,6 +52,8 @@ const KEYMAP: Record<string, Command[]> = {
   KeyQ: ['putAway', 'tabPrev'],
   KeyX: ['store'],
   KeyZ: ['tabNext'],
+  KeyU: ['undo'],
+  KeyF: ['fine'],
   BracketRight: ['toolNext', 'tabNext'],
   BracketLeft: ['toolPrev', 'tabPrev'],
   Digit1: ['tool1'],
@@ -76,7 +80,9 @@ const PAD: Record<number, Command[]> = {
   3: ['toolRing'],
   4: ['toolPrev', 'tabPrev'],
   5: ['toolNext', 'tabNext'],
+  6: ['undo'],
   8: ['map'],
+  10: ['fine'],
   9: ['phone', 'pause'],
   12: ['up'],
   13: ['down'],

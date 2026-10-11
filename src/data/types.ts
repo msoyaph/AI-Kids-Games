@@ -127,7 +127,18 @@ export type FurnModel =
   | 'birdhouse'
   | 'cushion'
   | 'stove'
-  | 'frame';
+  | 'frame'
+  // wall decorations
+  | 'painting'
+  | 'poster'
+  | 'wallclock'
+  | 'wallshelf'
+  | 'wreath'
+  | 'sconce'
+  | 'kite';
+
+/** Where a piece goes: on the floor (default), on a wall, or small enough to sit on a table/shelf too. */
+export type FurnLayer = 'floor' | 'wall' | 'small';
 
 export interface FurnitureInfo {
   w: number;
@@ -142,6 +153,8 @@ export interface FurnitureInfo {
   rug?: boolean;
   /** decor points for the island rating */
   decor: number;
+  /** placement layer (default 'floor'). Wall pieces use `w` as their width along the wall. */
+  layer?: FurnLayer;
 }
 
 export interface ItemDef {

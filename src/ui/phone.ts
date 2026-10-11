@@ -138,6 +138,7 @@ registerPhoneApp({
       ['Neighbors', b.residents, 'More residents make the island lively.'],
       ['Museum', b.museum, 'Donate fish, bugs and fossils.'],
       ['Decorations', b.decor, 'Place outdoor furniture around the island.'],
+      ['Home décor', b.homeDecor, 'Decorate inside your home — walls and tables too!'],
       ['Flowers', b.flowers, 'Plant and breed flowers.'],
       ['Your home', b.home, 'Upgrade your house.'],
       ['Bridges & ramps', b.paths, 'Connect the island.'],

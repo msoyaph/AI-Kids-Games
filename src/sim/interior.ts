@@ -119,7 +119,7 @@ export function buildHomeRoom(g: Game): Room {
   for (const f of room.fixtures) fill(room, f.x, f.z, f.w, f.d);
   for (const pf of g.state.home.furniture) {
     const def = item(pf.id).furn;
-    if (!def || def.rug) continue;
+    if (!def || def.rug || pf.on !== undefined) continue;
     const fp = footprint(pf.id, pf.rot);
     fill(room, pf.x, pf.z, fp.w, fp.d);
   }

@@ -4,6 +4,7 @@ import type { Display } from '../sim/interior';
 import { sleep } from '../sim/housing';
 import { boardPanel, CraftPanel, exhibitPanel, HallPanel, MuseumPanel, ShopPanel, StoragePanel } from './panels';
 import { EditorPanel } from './editor';
+import { DecorEditPanel } from './decorEdit';
 import { weekdayOf } from '../sim/clock';
 import { VILLAGER_BY_ID } from '../data/villagers';
 import { talkToNpc, talkToVillager } from './conversation';
@@ -29,6 +30,7 @@ export function registerPanels(app: App): void {
     app.ui.closeAll();
     app.ui.push(new EditorPanel(app.ui, g(), app.view.interior, app.canvas));
   };
+  P.decorEdit = (anchor) => app.ui.push(new DecorEditPanel(app.ui, g(), anchor as number));
   P.talk = (id) => {
     const who = id as string;
     void (VILLAGER_BY_ID[who] ? talkToVillager(app, g(), who) : talkToNpc(app, g(), who));

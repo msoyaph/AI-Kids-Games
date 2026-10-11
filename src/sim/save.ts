@@ -1,6 +1,7 @@
 // Save slots (3), versioned save files with a migration chain, a compact on-disk format,
 // and storage that never throws (and never corrupts an existing save when the quota is full).
 import { SAVE_VERSION, type Appearance, type GameState, type TileObj } from './state';
+import { STARTER_RECIPES } from '../data/recipes';
 
 export const SLOT_COUNT = 3;
 export const PREFIX = 'lightcrossing.';
@@ -255,7 +256,12 @@ export const MIGRATIONS: Record<number, (s: any) => any> = {
     };
   },
   // v2 → v3 (upgrade release): new fields are added by fillDefaults; nothing existing changes shape.
-  2: (s) => ({ ...s, version: 3 }),
+  // Starter furniture recipes were never handed out in v2: grant them to anyone who has a home.
+  2: (s) => {
+    const recipes: string[] = [...(s.recipes ?? [])];
+    if ((s.home?.level ?? -1) >= 0) for (const id of STARTER_RECIPES) if (!recipes.includes(id)) recipes.push(id);
+    return { ...s, recipes, version: 3 };
+  },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -292,6 +298,7 @@ function fillDefaults(s: GameState): GameState {
   s.challenges ??= { day: 0, list: [], completedTotal: 0 };
   s.home.storage ??= [];
   s.home.furniture ??= [];
+  s.home.walls ??= [];
   s.world.objects ??= {};
   s.world.structures ??= [];
   while (s.player.inv.length < s.player.invSize) s.player.inv.push(null);

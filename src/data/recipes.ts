@@ -46,6 +46,14 @@ export const RECIPES: RecipeDef[] = [
   { id: 'r_furn_sunpeek_sundial', result: 'furn_sunpeek_sundial', ingredients: [{ id: 'stone', qty: 6 }, { id: 'iron', qty: 1 }], unlock: 'mission' },
   { id: 'r_furn_scribbler_desk', result: 'furn_scribbler_desk', ingredients: [{ id: 'timber', qty: 6 }, { id: 'iron', qty: 1 }], unlock: 'mission' },
 
+  // ---- Wall decorations ----
+  { id: 'r_furn_plank_wallshelf', result: 'furn_plank_wallshelf', ingredients: [{ id: 'timber', qty: 3 }], unlock: 'start' },
+  { id: 'r_furn_leafy_wreath', result: 'furn_leafy_wreath', ingredients: [{ id: 'fiber', qty: 8 }, { id: 'branch', qty: 3 }], unlock: 'start' },
+  { id: 'r_furn_sunny_wallclock', result: 'furn_sunny_wallclock', ingredients: [{ id: 'timber', qty: 2 }, { id: 'iron', qty: 1 }], unlock: 'card' },
+  { id: 'r_furn_shell_wallshelf', result: 'furn_shell_wallshelf', ingredients: [{ id: 'timber', qty: 3 }, { id: 'shell_spiral', qty: 2 }], unlock: 'card' },
+  { id: 'r_furn_lantern_sconce', result: 'furn_lantern_sconce', ingredients: [{ id: 'iron', qty: 1 }, { id: 'glowstone', qty: 1 }], unlock: 'card' },
+  { id: 'r_furn_sunset_painting', result: 'furn_sunset_painting', ingredients: [{ id: 'timber', qty: 2 }, { id: 'fiber', qty: 4 }, { id: 'flower_sun_red', qty: 2 }], unlock: 'card' },
+
   // ---- Furniture: Message-bottle recipe cards ----
   { id: 'r_furn_moonbeam_lamp', result: 'furn_moonbeam_lamp', ingredients: [{ id: 'glowstone', qty: 1 }, { id: 'clay', qty: 2 }, { id: 'flower_moon_white', qty: 2 }], unlock: 'card' },
   { id: 'r_furn_puffcloud_sofa', result: 'furn_puffcloud_sofa', ingredients: [{ id: 'furn_puffmoss_cushion', qty: 2 }, { id: 'timber', qty: 6 }, { id: 'fiber', qty: 4 }], unlock: 'card' },
@@ -81,3 +89,6 @@ export const RECIPES: RecipeDef[] = [
   { id: 'r_furn_critter_terrarium', result: 'furn_critter_terrarium', ingredients: [{ id: 'iron', qty: 2 }, { id: 'timber', qty: 4 }, { id: 'fiber', qty: 6 }, { id: 'flower_star_yellow', qty: 2 }], unlock: 'museum' },
   { id: 'r_furn_wingbone_statue', result: 'furn_wingbone_statue', ingredients: [{ id: 'stone', qty: 12 }, { id: 'iron', qty: 2 }, { id: 'clay', qty: 2 }], unlock: 'museum' },
 ];
+
+/** Furniture recipes you know once your tent is up. */
+export const STARTER_RECIPES = RECIPES.filter((r) => r.unlock === 'start').map((r) => r.id);

@@ -42,6 +42,9 @@ export interface TileObj {
   pd?: number;
   /** buried in this tile was an extra (e.g. lost item owner id) */
   tag?: string;
+  /** fine visual offset of an outdoor decoration, in tiles (±0.375) */
+  nx?: number;
+  nz?: number;
 }
 
 export type StructType =
@@ -135,6 +138,17 @@ export interface PlacedFurniture {
   x: number;
   z: number;
   rot: number;
+  /** set for small items sitting on another piece: the parent's uid and a tile slot on its top */
+  on?: number;
+  slot?: number;
+}
+
+/** A decoration hanging on a wall: 0 = back wall, 1 = left wall, 2 = right wall; pos = tile along it. */
+export interface WallItem {
+  uid: number;
+  id: string;
+  wall: number;
+  pos: number;
 }
 
 export interface HomeState {
@@ -144,6 +158,8 @@ export interface HomeState {
   loanTotal: number;
   upgradeReadyDay: number;
   furniture: PlacedFurniture[];
+  /** wall decorations (paintings, clocks, shelves...) */
+  walls: WallItem[];
   nextUid: number;
   wallpaper: string;
   flooring: string;
@@ -306,6 +322,7 @@ export function newGameState(seed: number, name: string, look: Appearance = DEFA
       loanTotal: 0,
       upgradeReadyDay: 0,
       furniture: [],
+      walls: [],
       nextUid: 1,
       wallpaper: 'wall_canvas',
       flooring: 'floor_grass',

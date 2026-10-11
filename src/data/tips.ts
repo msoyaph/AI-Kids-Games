@@ -25,5 +25,5 @@ export const TIPS: Record<string, TipDef> = {
   placement: { id: 'placement', title: 'Placing', text: 'Walk around to move the preview. Green means it fits. Press the action button to place, or Esc to cancel.' },
   museum: { id: 'museum', title: 'The museum', text: 'Donate every new fish, bug and fossil. Completing a wing earns a special reward.' },
   challenge: { id: 'challenge', title: 'Daily challenges', text: 'Three new challenges appear each day. They earn Lumens to spend at the Lumen Exchange in Lantern Hall.' },
-  decor: { id: 'decor', title: 'Decorating outside', text: 'Use outdoor furniture from your pockets to place it in front of you. Decorations raise the Island Glow rating.' },
+  decor: { id: 'decor', title: 'Decorating outside', text: 'Use furniture from your pockets to place it in front of you. Face it and press E to move it, turn it, or slide it a little. Decorations make the island glow!' },
 };

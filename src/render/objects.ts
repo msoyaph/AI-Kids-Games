@@ -154,7 +154,7 @@ export class ObjectRenderer {
         case 'deco': {
           if (o.tag === 'fill') break;
           seenDecor.add(i);
-          const dk = `${o.item}|${o.r ?? 0}`;
+          const dk = `${o.item}|${o.r ?? 0}|${o.nx ?? 0}|${o.nz ?? 0}`;
           const cur = this.decorMap.get(i);
           if (cur && cur.key === dk) break;
           if (cur) this.decor.remove(cur.obj);
@@ -170,7 +170,7 @@ export class ObjectRenderer {
               maxZ = Math.max(maxZ, Math.floor(+k2 / N));
             }
           }
-          f.position.set((tx + maxX + 1) / 2, y, (tz + maxZ + 1) / 2);
+          f.position.set((tx + maxX + 1) / 2 + (o.nx ?? 0), y, (tz + maxZ + 1) / 2 + (o.nz ?? 0));
           f.rotation.y = -(o.r ?? 0) * (Math.PI / 2);
           this.decor.add(f);
           this.decorMap.set(i, { key: dk, obj: f });

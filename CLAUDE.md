@@ -131,12 +131,28 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   - Markers: `src/sim/markers.ts` `markerPos(g, m, 'view'|'island')` — outside: the door of the room the person is in;
     inside: the person, or the exit. `GameView.project` uses the interior camera indoors. Door fade = cut + 0.5 s fade-in.
 
+- Phase 3 done: better decorating.
+  - Furniture `layer`: 'floor' (default) | 'wall' | 'small'. 12 wall pieces (`furn_*` in data/furniture.ts; 6 recipes,
+    6 shop-only) with models painting/poster/wallclock/wallshelf/wreath/sconce/kite. Wall pieces never go on floors
+    or outdoors.
+  - `home.walls: WallItem {uid,id,wall 0=back 1=left 2=right,pos}`; small pieces can sit on a surface piece:
+    `PlacedFurniture.on = parentUid, slot` (slots row-major over the parent footprint; they ride along when the
+    parent moves/turns, and are stored with it). `surfaceTop(id)` gives top height by model.
+  - Undo: `homeSnapshot`/`restoreHomeSnapshot` (editor keeps 10). Editor (src/ui/editor.ts) has a big button bar,
+    a wall cursor (strip around the 3 walls; F toggles walls, U undo), snaps small pieces onto the surface under
+    the cursor, and hides carried pieces via `InteriorView.hidden` (never by mutating saved state).
+  - Outdoors: facing a decoration → "Edit" → `DecorEditPanel` (src/ui/decorEdit.ts): `moveDecor`, `rotateDecor`
+    (shifts long pieces to fit), `nudgeDecor` (`nx`/`nz` ±0.375 in 1/8 steps, visual only), put away, undo via
+    `decorSnap`/`restoreDecor`.
+  - Rating: `homeDecor` = floor(home decor points / 4), capped at `HOME_DECOR_MAX` 6 (only ever adds).
+  - Fix: starter furniture recipes (`STARTER_RECIPES`) were never taught — now learned on `pitchTent`, and granted to
+    v2 saves with a home in `MIGRATIONS[2]`.
+
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
-(152 unit tests incl. a full new-game → festival playthrough; 2 e2e tests.)
+(162 unit tests incl. a full new-game → festival playthrough; 2 e2e tests.)
 
 ## Known issues / limitations
-- Outdoor decorations auto-face the player; move them by picking up and re-placing.
 - Pacing is a model estimate (scripts/pacing.ts), not measured with real players.
 - Off macOS, headless e2e falls back to SwiftShader (very slow but functional).
 - `npm audit` flags `braces` via vite-plugin-singlefile → micromatch (dev-only build dependency).

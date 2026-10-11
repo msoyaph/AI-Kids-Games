@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { BUG_BY_ID, FISH_BY_ID, FOSSIL_BY_ID, item } from '../data/registry';
 import type { Game } from '../sim/game';
-import { footprint } from '../sim/housing';
+import { footprint, slotTile, surfaceTop } from '../sim/housing';
 import { interiorRT, MUSEUM_WING_W, roomVillager, type Room } from '../sim/interior';
 import { agents } from '../sim/agents';
 import { NPC_BY_ID, VILLAGER_BY_ID } from '../data/villagers';
@@ -72,6 +72,8 @@ export class InteriorView {
   private fish: { g: THREE.Group; base: THREE.Vector3; t: number }[] = [];
   private people: { id: string; rig: Rig; x: number; z: number; facing: number; bubble: THREE.Group | null }[] = [];
   private key = '';
+  /** uids hidden while the editor carries them */
+  hidden = new Set<number>();
   private camX = 0;
   private time = 0;
   cursor: THREE.Group;
@@ -115,7 +117,7 @@ export class InteriorView {
     const kind = room.kind;
     const key =
       kind === 'home'
-        ? `home|${h.level}|${h.wallpaper}|${h.flooring}|${h.furniture.map((f) => `${f.uid}:${f.x},${f.z},${f.rot}`).join(';')}`
+        ? `home|${h.level}|${h.wallpaper}|${h.flooring}|${h.furniture.map((f) => `${f.uid}:${f.x},${f.z},${f.rot},${f.on ?? ''}.${f.slot ?? ''}`).join(';')}|${(h.walls ?? []).map((w) => `${w.uid}:${w.wall},${w.pos}`).join(';')}|${[...this.hidden].join(',')}`
         : kind === 'museum'
           ? `museum|${g.state.museum.donated.length}`
           : `${kind}|${g.state.clock.day}|${room.shelves.map((sh) => `${sh.stock?.id ?? ''}${sh.sold ? '!' : ''}`).join(',')}|${room.decor.map((d) => d.id).join(',')}`;
@@ -165,10 +167,14 @@ export class InteriorView {
     const shell = new THREE.Mesh(merge(P), mat);
     shell.receiveShadow = true;
     this.room.add(shell);
-    // a window on the back wall
-    const win = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.05), glowMat);
-    win.position.set(w * 0.62, 1.55, 0.02);
-    this.room.add(win);
+    // a window on the back wall (unless a wall decoration hangs there)
+    const winX = w * 0.62;
+    const covered = isHome && (g.state.home.walls ?? []).some((wi) => wi.wall === 0 && winX + 0.6 > wi.pos && winX - 0.6 < wi.pos + (item(wi.id).furn?.w ?? 1));
+    if (!covered) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.05), glowMat);
+      win.position.set(winX, 1.55, 0.02);
+      this.room.add(win);
+    }
 
     if (isHome) this.buildHome(g, room);
     else if (isMuseum) this.buildMuseum(g, room);
@@ -322,13 +328,49 @@ export class InteriorView {
       m.castShadow = true;
       this.room.add(m);
     }
+    const byUid = new Map(g.state.home.furniture.map((f) => [f.uid, f]));
     for (const pf of g.state.home.furniture) {
+      if (this.hidden.has(pf.uid) || (pf.on !== undefined && this.hidden.has(pf.on))) continue;
       const obj = furnitureObject(pf.id);
       if (!obj) continue;
-      const fp = footprint(pf.id, pf.rot);
-      obj.position.set(pf.x + fp.w / 2, 0, pf.z + fp.d / 2);
-      obj.rotation.y = -pf.rot * (Math.PI / 2);
+      const parent = pf.on !== undefined ? byUid.get(pf.on) : undefined;
+      const top = parent ? surfaceTop(parent.id) : null;
+      if (parent && top) {
+        // small piece sitting on a table / desk / shelf
+        const t = slotTile(parent, pf.slot ?? 0);
+        const th = -parent.rot * (Math.PI / 2);
+        // the top's back offset turns with the parent
+        obj.position.set(t.x + 0.5 + Math.sin(th) * top.z, top.y, t.z + 0.5 + Math.cos(th) * top.z);
+        obj.rotation.y = th;
+        obj.scale.setScalar(0.55);
+      } else {
+        const fp = footprint(pf.id, pf.rot);
+        obj.position.set(pf.x + fp.w / 2, 0, pf.z + fp.d / 2);
+        obj.rotation.y = -pf.rot * (Math.PI / 2);
+      }
       this.room.add(obj);
+    }
+    for (const wi of g.state.home.walls ?? []) {
+      if (this.hidden.has(wi.uid)) continue;
+      const obj = furnitureObject(wi.id);
+      if (!obj) continue;
+      this.placeOnWall(obj, room, wi.wall, wi.pos, item(wi.id).furn?.w ?? 1);
+      this.room.add(obj);
+    }
+  }
+
+  /** Hang a wall piece: wall 0 = back, 1 = left, 2 = right; pos = first tile along that wall. */
+  placeOnWall(obj: THREE.Object3D, room: { w: number; d: number }, wall: number, pos: number, width: number): void {
+    const mid = pos + width / 2;
+    if (wall === 0) {
+      obj.position.set(mid, 0, 0.5);
+      obj.rotation.y = 0;
+    } else if (wall === 1) {
+      obj.position.set(0.5, 0, mid);
+      obj.rotation.y = Math.PI / 2;
+    } else {
+      obj.position.set(room.w - 0.5, 0, mid);
+      obj.rotation.y = -Math.PI / 2;
     }
   }
 
