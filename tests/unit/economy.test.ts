@@ -80,15 +80,16 @@ describe('economy', () => {
   });
 
   it('interest is a small % of saved coins, capped per wave', () => {
-    expect(waveClearBonus(1)).toBe(5);
-    expect(waveClearBonus(10)).toBe(19);
+    expect(waveClearBonus(1)).toBe(10);
+    expect(waveClearBonus(10)).toBe(28);
     expect(coinScale(1)).toBe(1);
-    expect(coinScale(21)).toBeCloseTo(2.1, 5);
+    expect(coinScale(21)).toBeCloseTo(2.8, 5);
   });
 
   it('difficulty changes lives and starting coins', () => {
     expect(game(100, 'easy').lives).toBe(30);
     expect(game(100, 'easy').coins).toBe(150);
     expect(game(100, 'hard').lives).toBe(10);
+    expect(game(100, 'hard').coins).toBe(100);
   });
 });

@@ -30,18 +30,19 @@ export interface WaveDef {
 /** Creature health curve. Tuned with the headless autoplay sim (npm run sim). */
 export function hpScale(w: number): number {
   const k = w - 1;
-  const base = 1 + 0.17 * k + 0.0105 * k * k;
+  // gentle early (kids are still learning to maze), steeper later
+  const base = 1 + 0.12 * k + 0.0125 * k * k;
   // Endless: keep growing a little faster after the campaign length.
   return w > 40 ? base * Math.pow(1.035, w - 40) : base;
 }
 
 export function coinScale(w: number): number {
-  return 1 + 0.055 * (w - 1);
+  return 1 + 0.09 * (w - 1);
 }
 
 /** Coins for clearing a wave. */
 export function waveClearBonus(w: number): number {
-  return 4 + Math.floor(w * 1.5);
+  return 8 + w * 2;
 }
 
 /** Element crystal milestones (after clearing these waves). A first crystal is given at the start. */

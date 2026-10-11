@@ -1,6 +1,6 @@
 import { swapRemove } from '../core/pool';
 import { Rng } from '../core/rng';
-import { DIFFICULTIES, type Difficulty, type DifficultyDef } from '../data/difficulty';
+import { DIFFICULTIES, difficultyHp, type Difficulty, type DifficultyDef } from '../data/difficulty';
 import { ELEMENT_ORDER, ELEMENTS, elementMultiplier, type ElementId } from '../data/elements';
 import { ENEMIES, type EnemyDef, type EnemyId } from '../data/enemies';
 import type { MapDef } from '../data/maps/types';
@@ -186,7 +186,7 @@ export class Game {
     this.autoWaves = opts.autoWaves ?? true;
     this.maxLives = this.diff.lives;
     this.lives = this.maxLives;
-    this.coins = Math.round((opts.startCoins ?? opts.map.startCoins ?? 110) * this.diff.startCoins);
+    this.coins = Math.round((opts.startCoins ?? opts.map.startCoins ?? 160) * this.diff.startCoins);
     this.crystals = opts.startCrystals ?? 1;
     this.crystalWaves = opts.crystalWaves ?? CRYSTAL_WAVES;
     const shortest = this.pathLength();
@@ -307,7 +307,7 @@ export class Game {
     if (this.enemies.length >= MAX_ENEMIES) return null;
     let e = this.enemyFree.pop();
     if (!e) e = new Enemy(this.enemySlots++);
-    const hp = Math.max(1, Math.round(def.hp * wave.hp * this.diff.hp));
+    const hp = Math.max(1, Math.round(def.hp * wave.hp * difficultyHp(this.diff, wave.n)));
     const coins = Math.max(1, Math.round(def.coins * wave.coins * this.diff.coins));
     e.init(this.nextEnemyId++, def, el, hp, coins, waveIndex);
     e.speed = def.speed * this.diff.speed;
@@ -793,13 +793,18 @@ export class Game {
     }
     // Creatures move, so only cache the spawn check; enemy cells are re-checked live.
     let spawnOk = this.buildCache.get(cell);
+    let filled = false;
     if (spawnOk === undefined) {
       this.flow.fill(this.scratchDist, this.scratchNext, cell);
+      filled = true;
       spawnOk = this.flow.spawnsConnected(this.scratchDist);
       this.buildCache.set(cell, spawnOk);
-      if (!spawnOk) return false;
-    } else if (!spawnOk) return false;
-    else this.flow.fill(this.scratchDist, this.scratchNext, cell);
+    }
+    if (!spawnOk) return false;
+    let groundEnemies = false;
+    for (let i = 0; i < this.enemies.length && !groundEnemies; i++) groundEnemies = this.enemies[i]!.alive && !this.enemies[i]!.flying;
+    if (!groundEnemies) return true;
+    if (!filled) this.flow.fill(this.scratchDist, this.scratchNext, cell);
     for (let i = 0; i < this.enemies.length; i++) {
       const e = this.enemies[i]!;
       if (!e.alive || e.flying) continue;

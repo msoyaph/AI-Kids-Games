@@ -5,8 +5,10 @@ export interface DifficultyDef {
   label: string;
   blurb: string;
   lives: number;
-  /** Creature health multiplier. */
+  /** Creature health multiplier (reached by wave 20). */
   hp: number;
+  /** Health multiplier on wave 1; ramps toward `hp` so early waves stay fair. */
+  hpEarly: number;
   /** Creature speed multiplier. */
   speed: number;
   startCoins: number;
@@ -25,6 +27,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyDef> = {
     blurb: 'Lots of lives and slow, sleepy creatures. Great for learning!',
     lives: 30,
     hp: 0.6,
+    hpEarly: 0.6,
     speed: 0.9,
     startCoins: 1.5,
     coins: 1.2,
@@ -37,6 +40,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyDef> = {
     blurb: 'A fair fight. Plan your maze!',
     lives: 20,
     hp: 1,
+    hpEarly: 1,
     speed: 1,
     startCoins: 1,
     coins: 1,
@@ -49,8 +53,9 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyDef> = {
     blurb: 'Tough creatures and only 10 lives. For heroes!',
     lives: 10,
     hp: 1.3,
-    speed: 1.05,
-    startCoins: 0.9,
+    hpEarly: 1.05,
+    speed: 1.0,
+    startCoins: 1,
     coins: 0.95,
     breather: 0.85,
     interest: 0.03,
@@ -66,4 +71,10 @@ export function starsFor(livesLeft: number, maxLives: number): number {
   if (f >= 0.8) return 3;
   if (f >= 0.4) return 2;
   return 1;
+}
+
+/** Health multiplier for a wave on this difficulty. */
+export function difficultyHp(d: DifficultyDef, wave: number): number {
+  const t = Math.min(1, Math.max(0, (wave - 1) / 19));
+  return d.hpEarly + (d.hp - d.hpEarly) * t;
 }
