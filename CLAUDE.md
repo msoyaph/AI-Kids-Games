@@ -12,7 +12,9 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
    records source paths, sizes, and verified SHA-256 hashes. Import helper now copies
    without inserting policies or changing compiled code. Removed leftover files in
    the five game directories.
-2. Pending: provided site art plus original TheaBonk and Light Crossing SVGs.
+2. COMPLETE: copied three provided banner/thumbnail pairs unchanged; created original
+   16:9 and square SVG art for TheaBonk (glowing Bonk Ring at dusk) and
+   Light Crossing (Driftlight Isle, lighthouse and floating lanterns).
 3. Pending: five-game registry, accurate controls/devices, categories and minimum-age filter.
 4. Pending: embed permissions and interaction checks.
 5. Pre-import safety gate CLEAN: inspected compiled storage operations and original

@@ -1,0 +1,251 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" role="img" aria-labelledby="t d">
+  <title id="t">Vanex Defense</title>
+  <desc id="d">A glowing crystal castle on a sunny meadow, defended by elemental towers from cute slimes and puffball bats.</desc>
+  <defs>
+    <radialGradient id="sky" cx="0.35" cy="0.15" r="1">
+      <stop offset="0" stop-color="#7a4fe0"/>
+      <stop offset="0.45" stop-color="#3b2a9e"/>
+      <stop offset="1" stop-color="#1b1446"/>
+    </radialGradient>
+    <linearGradient id="hill1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8be36f"/>
+      <stop offset="1" stop-color="#3fae4a"/>
+    </linearGradient>
+    <linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6fcf5a"/>
+      <stop offset="1" stop-color="#2c8a3a"/>
+    </linearGradient>
+    <linearGradient id="path" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f3d9a4"/>
+      <stop offset="1" stop-color="#e2b978"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3defb"/>
+      <stop offset="1" stop-color="#a59ddc"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a48bff"/>
+      <stop offset="1" stop-color="#6a48e8"/>
+    </linearGradient>
+    <linearGradient id="gem" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8fdff"/>
+      <stop offset="0.45" stop-color="#7ee8ff"/>
+      <stop offset="1" stop-color="#3a8cf0"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#bff8ff" stop-opacity="0.95"/>
+      <stop offset="0.4" stop-color="#7ee8ff" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#7ee8ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="slime" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#d4ffc4"/>
+      <stop offset="0.45" stop-color="#7be06a"/>
+      <stop offset="1" stop-color="#3f9e36"/>
+    </radialGradient>
+    <radialGradient id="slimeBlue" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#d8f4ff"/>
+      <stop offset="0.45" stop-color="#5fb8ff"/>
+      <stop offset="1" stop-color="#2a6fc8"/>
+    </radialGradient>
+    <radialGradient id="bat" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#f1e4ff"/>
+      <stop offset="0.5" stop-color="#c79bff"/>
+      <stop offset="1" stop-color="#8a5ae0"/>
+    </radialGradient>
+    <radialGradient id="gremlin" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#ffe2b8"/>
+      <stop offset="0.5" stop-color="#ffa94d"/>
+      <stop offset="1" stop-color="#d06a1a"/>
+    </radialGradient>
+    <radialGradient id="fireOrb" cx="0.4" cy="0.6" r="0.7">
+      <stop offset="0" stop-color="#fff3b0"/>
+      <stop offset="0.5" stop-color="#ffb347"/>
+      <stop offset="1" stop-color="#ff6a2b"/>
+    </radialGradient>
+    <radialGradient id="water" cx="0.35" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#e3f6ff"/>
+      <stop offset="0.5" stop-color="#5fb8ff"/>
+      <stop offset="1" stop-color="#2f6fd0"/>
+    </radialGradient>
+    <radialGradient id="gold" cx="0.35" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#fffbd6"/>
+      <stop offset="0.5" stop-color="#ffd52e"/>
+      <stop offset="1" stop-color="#c99600"/>
+    </radialGradient>
+    <radialGradient id="plate" cx="0.4" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#cfc9e8"/>
+      <stop offset="1" stop-color="#6a6487"/>
+    </radialGradient>
+    <radialGradient id="fox" cx="0.4" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#ffd3a8"/>
+      <stop offset="0.5" stop-color="#ff9a5a"/>
+      <stop offset="1" stop-color="#d0642a"/>
+    </radialGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.2" stop-color="#ffffff"/>
+      <stop offset="0.65" stop-color="#cdbdff"/>
+      <stop offset="1" stop-color="#ff9be6"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#1b0a4a" flood-opacity="0.45"/>
+    </filter>
+    <g id="eyes">
+      <ellipse cx="-11" cy="0" rx="8" ry="9" fill="#fff" stroke="#21123d" stroke-width="2"/>
+      <ellipse cx="11" cy="0" rx="8" ry="9" fill="#fff" stroke="#21123d" stroke-width="2"/>
+      <ellipse cx="-10" cy="1.5" rx="4.6" ry="5.2" fill="#21123d"/>
+      <ellipse cx="12" cy="1.5" rx="4.6" ry="5.2" fill="#21123d"/>
+      <circle cx="-12" cy="-1.5" r="1.9" fill="#fff"/>
+      <circle cx="10" cy="-1.5" r="1.9" fill="#fff"/>
+      <path d="M -6 13 Q 0 18 6 13" fill="none" stroke="#21123d" stroke-width="2.4" stroke-linecap="round"/>
+      <ellipse cx="-19" cy="10" rx="4.5" ry="2.6" fill="#ff7aa0" opacity="0.55"/>
+      <ellipse cx="19" cy="10" rx="4.5" ry="2.6" fill="#ff7aa0" opacity="0.55"/>
+    </g>
+    <g id="sparkle">
+      <path d="M 0 -10 L 2.4 -2.4 L 10 0 L 2.4 2.4 L 0 10 L -2.4 2.4 L -10 0 L -2.4 -2.4 Z" fill="#fff"/>
+    </g>
+  </defs>
+
+  <!-- sky -->
+  <rect width="1280" height="720" fill="url(#sky)"/>
+  <g opacity="0.85">
+    <use href="#sparkle" transform="translate(120 90) scale(0.9)"/>
+    <use href="#sparkle" transform="translate(300 40) scale(0.5)"/>
+    <use href="#sparkle" transform="translate(820 70) scale(0.7)"/>
+    <use href="#sparkle" transform="translate(1180 120) scale(0.6)"/>
+    <use href="#sparkle" transform="translate(1010 30) scale(0.45)"/>
+    <use href="#sparkle" transform="translate(640 150) scale(0.4)"/>
+    <circle cx="210" cy="190" r="2.5" fill="#fff"/>
+    <circle cx="560" cy="60" r="2" fill="#fff"/>
+    <circle cx="930" cy="190" r="2.5" fill="#fff"/>
+    <circle cx="1240" cy="260" r="2" fill="#fff"/>
+  </g>
+
+  <!-- hills -->
+  <path d="M0 470 C 180 400 330 430 470 460 C 640 500 760 390 960 410 C 1110 425 1200 380 1280 400 L1280 720 L0 720 Z" fill="url(#hill2)"/>
+  <path d="M0 540 C 220 480 420 520 600 545 C 800 572 980 500 1280 520 L1280 720 L0 720 Z" fill="url(#hill1)"/>
+
+  <!-- winding path to the castle -->
+  <path d="M -20 650 C 180 600 260 560 420 590 C 600 625 700 560 820 545 C 930 532 990 520 1040 505" fill="none" stroke="#b88d52" stroke-width="70" stroke-linecap="round"/>
+  <path d="M -20 650 C 180 600 260 560 420 590 C 600 625 700 560 820 545 C 930 532 990 520 1040 505" fill="none" stroke="url(#path)" stroke-width="56" stroke-linecap="round"/>
+
+  <!-- flowers -->
+  <g>
+    <circle cx="90" cy="560" r="5" fill="#ff7ac8"/><circle cx="160" cy="590" r="4" fill="#ffe14a"/>
+    <circle cx="520" cy="660" r="5" fill="#fff"/><circle cx="700" cy="680" r="4" fill="#ff7ac8"/>
+    <circle cx="1100" cy="620" r="5" fill="#ffe14a"/><circle cx="1200" cy="680" r="4" fill="#9fd0ff"/>
+    <circle cx="880" cy="640" r="4" fill="#fff"/><circle cx="330" cy="680" r="5" fill="#ffe14a"/>
+  </g>
+
+  <!-- castle -->
+  <g filter="url(#soft)">
+    <ellipse cx="1070" cy="520" rx="220" ry="200" fill="url(#glow)"/>
+    <rect x="950" y="380" width="240" height="140" rx="16" fill="url(#stone)" stroke="#3b2f7a" stroke-width="6"/>
+    <g fill="#ece8ff" stroke="#3b2f7a" stroke-width="5">
+      <rect x="950" y="358" width="34" height="28" rx="6"/><rect x="1002" y="358" width="34" height="28" rx="6"/>
+      <rect x="1054" y="358" width="34" height="28" rx="6"/><rect x="1106" y="358" width="34" height="28" rx="6"/>
+      <rect x="1156" y="358" width="34" height="28" rx="6"/>
+    </g>
+    <path d="M 1040 520 L 1040 470 A 30 30 0 0 1 1100 470 L 1100 520 Z" fill="#6a4ac8" stroke="#3b2f7a" stroke-width="5"/>
+    <rect x="910" y="300" width="70" height="220" rx="14" fill="url(#stone)" stroke="#3b2f7a" stroke-width="6"/>
+    <rect x="1160" y="300" width="70" height="220" rx="14" fill="url(#stone)" stroke="#3b2f7a" stroke-width="6"/>
+    <path d="M 900 306 L 945 236 L 990 306 Z" fill="url(#roof)" stroke="#3b2f7a" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M 1150 306 L 1195 236 L 1240 306 Z" fill="url(#roof)" stroke="#3b2f7a" stroke-width="5" stroke-linejoin="round"/>
+    <circle cx="945" cy="360" r="11" fill="#ffe9a8" stroke="#3b2f7a" stroke-width="4"/>
+    <circle cx="1195" cy="360" r="11" fill="#ffe9a8" stroke="#3b2f7a" stroke-width="4"/>
+    <path d="M 945 236 L 945 200 L 978 212 L 945 224" fill="#ff6fa8" stroke="#3b2f7a" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 1195 236 L 1195 200 L 1228 212 L 1195 224" fill="#5fd4ff" stroke="#3b2f7a" stroke-width="4" stroke-linejoin="round"/>
+    <!-- great crystal -->
+    <path d="M 1070 210 L 1118 252 L 1100 330 L 1040 330 L 1022 252 Z" fill="url(#gem)" stroke="#1a4a8a" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M 1022 252 L 1070 280 L 1118 252 M 1070 280 L 1070 330" fill="none" stroke="#e8fdff" stroke-width="3" opacity="0.9"/>
+    <use href="#sparkle" transform="translate(1104 228) scale(0.9)"/>
+  </g>
+
+  <!-- towers -->
+  <g filter="url(#soft)">
+    <!-- Flame Spire -->
+    <g transform="translate(330 470)">
+      <ellipse cx="4" cy="58" rx="62" ry="18" fill="#1b0a4a" opacity="0.3"/>
+      <polygon points="0,-52 45,-26 45,26 0,52 -45,26 -45,-26" fill="url(#plate)" stroke="#3a3456" stroke-width="5"/>
+      <circle r="34" fill="#c45a3a" stroke="#7a2a12" stroke-width="4"/>
+      <circle r="58" fill="url(#glow)" opacity="0.7"/>
+      <path d="M 0 -42 C 14 -22 34 -12 26 10 C 20 30 -20 30 -26 10 C -32 -6 -14 -14 -10 -26 C -6 -16 -4 -30 0 -42 Z" fill="url(#fireOrb)" stroke="#9c2a0c" stroke-width="4"/>
+      <path d="M 0 -6 C 10 4 12 18 0 20 C -12 18 -10 4 0 -6 Z" fill="#fff3b0"/>
+    </g>
+    <!-- Bubble Fountain -->
+    <g transform="translate(560 420)">
+      <ellipse cx="4" cy="54" rx="56" ry="16" fill="#1b0a4a" opacity="0.3"/>
+      <polygon points="0,-48 42,-24 42,24 0,48 -42,24 -42,-24" fill="url(#plate)" stroke="#3a3456" stroke-width="5"/>
+      <circle r="34" fill="#dbe6f4" stroke="#4a5a78" stroke-width="4"/>
+      <circle r="26" fill="url(#water)" stroke="#134f9e" stroke-width="3"/>
+      <path d="M 0 -20 C 6 -10 16 -2 16 8 A 16 16 0 0 1 -16 8 C -16 -2 -6 -10 0 -20 Z" fill="url(#water)" stroke="#134f9e" stroke-width="3"/>
+      <circle cx="-30" cy="-44" r="9" fill="#9fe0ff" fill-opacity="0.35" stroke="#e8fbff" stroke-width="2.5"/>
+      <circle cx="-10" cy="-70" r="6" fill="#9fe0ff" fill-opacity="0.35" stroke="#e8fbff" stroke-width="2"/>
+    </g>
+    <!-- Sun Prism -->
+    <g transform="translate(760 640)">
+      <ellipse cx="4" cy="52" rx="56" ry="16" fill="#1b0a4a" opacity="0.3"/>
+      <polygon points="0,-48 42,-24 42,24 0,48 -42,24 -42,-24" fill="url(#plate)" stroke="#3a3456" stroke-width="5"/>
+      <polygon points="36,0 18,31 -18,31 -36,0 -18,-31 18,-31" fill="url(#gold)" stroke="#8a6a00" stroke-width="4"/>
+      <polygon points="0,-20 6,-6 21,-6 9,4 13,19 0,10 -13,19 -9,4 -21,-6 -6,-6" fill="#fff6b0" stroke="#a77c00" stroke-width="3" stroke-linejoin="round"/>
+    </g>
+    <!-- chain zap from the prism -->
+    <path d="M 760 600 L 790 575 L 778 560 L 820 540" fill="none" stroke="#fff6b0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
+    <!-- fireball in flight -->
+    <circle cx="430" cy="520" r="26" fill="url(#glow)"/>
+    <circle cx="430" cy="520" r="12" fill="url(#fireOrb)" stroke="#9c2a0c" stroke-width="3"/>
+  </g>
+
+  <!-- creatures -->
+  <g filter="url(#soft)">
+    <!-- green slime -->
+    <g transform="translate(470 590)">
+      <path d="M -46 26 C -50 -6 -28 -40 0 -40 C 28 -40 50 -6 46 26 Q 0 40 -46 26 Z" fill="url(#slime)" stroke="#2a6a24" stroke-width="5"/>
+      <ellipse cx="-18" cy="-22" rx="12" ry="7" fill="#fff" opacity="0.7"/>
+      <use href="#eyes" transform="translate(0 -4)"/>
+    </g>
+    <!-- blue slime -->
+    <g transform="translate(160 615) scale(0.8)">
+      <path d="M -46 26 C -50 -6 -28 -40 0 -40 C 28 -40 50 -6 46 26 Q 0 40 -46 26 Z" fill="url(#slimeBlue)" stroke="#1a4a8a" stroke-width="5"/>
+      <ellipse cx="-18" cy="-22" rx="12" ry="7" fill="#fff" opacity="0.7"/>
+      <use href="#eyes" transform="translate(0 -4)"/>
+    </g>
+    <!-- gremlin on skates -->
+    <g transform="translate(640 580) scale(0.85)">
+      <path d="M -18 -26 L -52 -48 L -34 -6 Z" fill="url(#gremlin)" stroke="#7a3a0a" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M 18 -26 L 52 -48 L 34 -6 Z" fill="url(#gremlin)" stroke="#7a3a0a" stroke-width="4" stroke-linejoin="round"/>
+      <rect x="-34" y="30" width="26" height="9" rx="4" fill="#ff4f9a" stroke="#7a1040" stroke-width="3"/>
+      <rect x="8" y="30" width="26" height="9" rx="4" fill="#ff4f9a" stroke="#7a1040" stroke-width="3"/>
+      <circle r="36" fill="url(#gremlin)" stroke="#7a3a0a" stroke-width="5"/>
+      <use href="#eyes" transform="translate(0 -4)"/>
+    </g>
+    <!-- puffball bat -->
+    <g transform="translate(700 300)">
+      <path d="M -26 -4 Q -70 -40 -86 -20 Q -66 -10 -64 6 Q -50 0 -40 14 Z" fill="url(#bat)" stroke="#5a2a9e" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M 26 -4 Q 70 -40 86 -20 Q 66 -10 64 6 Q 50 0 40 14 Z" fill="url(#bat)" stroke="#5a2a9e" stroke-width="4" stroke-linejoin="round"/>
+      <circle r="34" fill="url(#bat)" stroke="#5a2a9e" stroke-width="5"/>
+      <path d="M -14 -30 L -8 -46 L -2 -30 M 2 -30 L 8 -46 L 14 -30" fill="url(#bat)" stroke="#5a2a9e" stroke-width="4" stroke-linejoin="round"/>
+      <use href="#eyes" transform="translate(0 -2) scale(0.9)"/>
+    </g>
+  </g>
+
+  <!-- Pip the crystal fox -->
+  <g transform="translate(110 470)" filter="url(#soft)">
+    <path d="M 26 40 Q 80 30 70 -10 Q 62 18 34 22 Z" fill="url(#fox)" stroke="#8a3a1a" stroke-width="4"/>
+    <ellipse cx="0" cy="44" rx="36" ry="24" fill="url(#fox)" stroke="#8a3a1a" stroke-width="4"/>
+    <path d="M -22 -24 L -46 -70 L -54 -8 Z" fill="url(#fox)" stroke="#8a3a1a" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M 22 -24 L 46 -70 L 54 -8 Z" fill="url(#fox)" stroke="#8a3a1a" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M -40 -58 L -46 -70 L -50 -52 Z M 40 -58 L 46 -70 L 50 -52 Z" fill="#9ff3ff" stroke="#2a6a8a" stroke-width="2"/>
+    <path d="M -52 -6 Q -52 -44 0 -44 Q 52 -44 52 -6 Q 48 26 0 34 Q -48 26 -52 -6 Z" fill="url(#fox)" stroke="#8a3a1a" stroke-width="4"/>
+    <path d="M -30 6 Q 0 -6 30 6 Q 22 30 0 32 Q -22 30 -30 6 Z" fill="#fff4ea"/>
+    <use href="#eyes" transform="translate(0 -10) scale(0.85)"/>
+    <ellipse cx="0" cy="6" rx="5" ry="3.6" fill="#3a1a2a"/>
+    <path d="M 0 -42 L 8 -32 L 5 -22 L -5 -22 L -8 -32 Z" fill="#9b8bff" stroke="#3a2a7a" stroke-width="2"/>
+  </g>
+
+  <!-- title -->
+  <g filter="url(#soft)">
+    <text x="640" y="150" text-anchor="middle" font-family="'Arial Rounded MT Bold', 'Trebuchet MS', 'Verdana', sans-serif" font-weight="900" font-size="118" fill="#2a1a66" stroke="#2a1a66" stroke-width="22" stroke-linejoin="round">Vanex Defense</text>
+    <text x="640" y="150" text-anchor="middle" font-family="'Arial Rounded MT Bold', 'Trebuchet MS', 'Verdana', sans-serif" font-weight="900" font-size="118" fill="url(#title)">Vanex Defense</text>
+  </g>
+  <text x="640" y="205" text-anchor="middle" font-family="'Arial Rounded MT Bold', 'Trebuchet MS', 'Verdana', sans-serif" font-weight="700" font-size="32" fill="#ffffff" opacity="0.95">Build elemental towers. Protect the crystals!</text>
+</svg>
