@@ -299,10 +299,7 @@ export class Menus {
       'div',
       { class: 'select-screen' },
       h('div', { class: 'title small' }, 'Choose your hero'),
-      h('div', { class: 'map-row' }, ...mapTabs),
-      mapNote,
-      h('div', { class: 'diff-row' }, ...diffTabs, tierRow),
-      diffNote,
+      h('div', { class: 'select-picks' }, h('div', { class: 'map-row' }, ...mapTabs), mapNote, h('div', { class: 'diff-row' }, ...diffTabs, tierRow), diffNote),
       h('div', { class: 'char-row' }, ...cards),
       details,
       h('div', { class: 'row select-actions' }, h('button', { class: 'btn ghost', onclick: back }, 'Back'), startBtn),
@@ -826,7 +823,7 @@ export class Menus {
       this.g.hudPreview(false);
       onBack();
     };
-    const el = layoutEditor({ touch: this.g.touchControls(), size: t.size, leftHanded: t.leftHanded, layout: t.layout, onDone: done });
+    const el = layoutEditor({ touch: this.g.touchControls(), size: t.size, leftHanded: t.leftHanded, fixedStick: t.fixedStick, layout: t.layout, onDone: done });
     this.g.ui.show('layout', el, () => done(null));
   }
 

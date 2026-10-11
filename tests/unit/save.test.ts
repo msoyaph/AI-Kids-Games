@@ -258,3 +258,54 @@ describe('save format upgrades', () => {
     expect(sanitizeSave({ ...v1, version: 2, unlockedMaps: ['meadow', 'rimewood', 'moon'], lastMap: 'rimewood' }).unlockedMaps).toEqual(['meadow', 'rimewood']);
   });
 });
+
+describe('touch controls settings', () => {
+  it('old saves get the touch defaults; the v1 fixture keeps everything else', () => {
+    const v1 = JSON.parse(readFileSync('tests/fixtures/save-v1.json', 'utf8'));
+    const d = sanitizeSave(v1);
+    expect(d.settings.touch).toEqual(defaultSave().settings.touch);
+    expect(d.settings.touch.autoCamera).toBe(true);
+    expect(d.settings.touch.layout).toEqual({});
+  });
+
+  it('sanitizes garbage and clamps the layout', () => {
+    const d = sanitizeSave({
+      ...defaultSave(),
+      settings: {
+        ...defaultSave().settings,
+        touch: {
+          size: 'xl',
+          opacity: 0.05,
+          leftHanded: 'yes',
+          lookSensitivity: 99,
+          layout: {
+            jump: { ax: 1, ay: 1, dx: 0.3, dy: 0.2, s: 7 },
+            slide: { ax: 'left', ay: 0, dx: -4, dy: 'x', s: 0.1 },
+            confetti: { ax: 0, ay: 0, dx: 0, dy: 0, s: 1 },
+            pause: 'nope',
+          },
+        },
+      },
+    });
+    const t = d.settings.touch;
+    expect(t.size).toBe('m');
+    expect(t.opacity).toBe(0.4);
+    expect(t.leftHanded).toBe(false);
+    expect(t.lookSensitivity).toBe(3);
+    expect(t.layout.jump).toEqual({ ax: 1, ay: 1, dx: 0.3, dy: 0.2, s: 1.25 });
+    expect(t.layout.slide).toEqual({ ax: 0, ay: 0, dx: 0, dy: 0.2, s: 0.8 });
+    expect(Object.keys(t.layout).sort()).toEqual(['jump', 'slide']);
+  });
+
+  it('reset progress keeps the touch settings', () => {
+    const store = new MemoryStore();
+    const m = new SaveManager(store);
+    m.data.settings.touch.size = 'l';
+    m.data.settings.touch.layout = { jump: { ax: 1, ay: 1, dx: 0.2, dy: 0.2, s: 1 } };
+    m.data.gold = 500;
+    m.reset();
+    expect(m.data.gold).toBe(0);
+    expect(m.data.settings.touch.size).toBe('l');
+    expect(m.data.settings.touch.layout.jump).toBeTruthy();
+  });
+});

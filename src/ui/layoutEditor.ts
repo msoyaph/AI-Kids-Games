@@ -38,6 +38,8 @@ export interface LayoutEditorOptions {
   touch: TouchControls;
   size: GlassSize;
   leftHanded: boolean;
+  /** The stick stays put (otherwise its spot here only matters once that's switched on). */
+  fixedStick?: boolean;
   layout: CustomLayout;
   /** The new layout, or null when cancelled. */
   onDone: (layout: CustomLayout | null) => void;
@@ -190,7 +192,7 @@ export function layoutEditor(o: LayoutEditorOptions): HTMLElement {
       return;
     }
     drag = { id: e.pointerId, mode: 'move', ox: e.clientX - p[id].x, oy: e.clientY - p[id].y };
-    say(`Moving ${LABELS[id]}.`);
+    say(id === 'stick' && !o.fixedStick ? 'The stick sits here when Stick is set to "Stays put".' : `Moving ${LABELS[id]}.`);
   });
   const move = (e: PointerEvent): void => {
     if (!drag || e.pointerId !== drag.id || !selected) return;

@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium, firefox, webkit-tablet, webkit-phone, chromium-tablet]
+        project: [chromium, firefox, webkit-tablet, webkit-phone, chromium-tablet, chromium-phone]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

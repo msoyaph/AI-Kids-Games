@@ -369,3 +369,68 @@ test('Edit layout: drag a button, no overlaps or HUD cover, size limits, and it 
   expect(p.jump.x).toBeCloseTo(p0.jump.x, 0);
   expect(problems, problems.join('\n')).toEqual([]);
 });
+
+test('accessibility: reduced motion, high-contrast controls, 48 px at Small, never over the HUD', async ({ page }) => {
+  const problems = watch(page);
+  await open(page, '/?seed=7');
+  // reduced motion on (Settings), then Small + high-contrast controls (Touch controls)
+  await page.getByRole('button', { name: 'Settings', exact: true }).tap();
+  const rm = page.locator('.setting', { hasText: 'Reduced motion' }).getByRole('button');
+  for (let k = 0; k < 3 && (await rm.textContent()) !== 'On'; k++) await rm.tap();
+  await expect(rm).toHaveText('On');
+  await page.locator('.setting', { hasText: 'Touch controls' }).getByRole('button').tap();
+  const size = page.locator('.setting', { hasText: 'Size' }).getByRole('button');
+  for (let k = 0; k < 3 && (await size.textContent()) !== 'Small'; k++) await size.tap();
+  await expect(size).toHaveText('Small');
+  await page.locator('.setting', { hasText: 'High-contrast controls' }).getByRole('button').tap();
+  await expect(page.locator('.glass-ui.hc.rm')).toBeVisible();
+  await page.getByRole('button', { name: 'Done' }).first().tap();
+  await page.getByRole('button', { name: 'Done' }).first().tap();
+  await page.getByRole('button', { name: 'Play', exact: true }).tap();
+  await page.getByRole('button', { name: 'Start run' }).tap();
+  await expect(page.locator('.glass-ui:not(.preview)')).toBeVisible();
+  // every control is still a 48 px target at Small
+  for (const sel of ['.gbtn-jump', '.gbtn-slide', '.gbtn-pause']) {
+    const b = (await page.locator(sel).boundingBox())!;
+    expect(Math.min(b.width, b.height), `${sel} ≥ 48 px`).toBeGreaterThanOrEqual(47.5);
+  }
+  // nothing covers the timer / boss bar / counters / health, and thumbs start below the top band
+  const rects = await page.evaluate(() => {
+    const r = (sel: string): DOMRect => document.querySelector(sel)!.getBoundingClientRect();
+    return { tc: r('.hud-tc'), tr: r('.hud-tr'), bc: r('.hud-bc'), zone: r('.tzone-stick'), buttons: ['.gbtn-jump', '.gbtn-slide', '.gbtn-pause'].map(r) };
+  });
+  const hit = (a: DOMRect, b: DOMRect): boolean => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  for (const b of rects.buttons) for (const hud of [rects.tc, rects.tr, rects.bc]) expect(hit(b, hud), 'a control overlaps the HUD').toBe(false);
+  expect(rects.zone.top, 'thumb zones start below the timer').toBeGreaterThanOrEqual(rects.tc.bottom - 1);
+  // reduced motion: pressing a button lights it up but makes no ripple
+  await page.locator('.gbtn-jump').dispatchEvent('pointerdown', { pointerId: 5, pointerType: 'touch' });
+  await expect(page.locator('.gbtn-jump.down')).toBeVisible();
+  const rippling = await page.evaluate(() => [...document.querySelectorAll('.g-ripple')].some((el) => el.getAnimations().length > 0));
+  expect(rippling, 'no ripple animation with reduced motion').toBe(false);
+  await page.locator('.gbtn-jump').dispatchEvent('pointerup', { pointerId: 5, pointerType: 'touch' });
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('the quality governor steps Auto down on a struggling device, behind a covering screen', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CPU throttling needs CDP (Chromium)');
+  test.setTimeout(240_000);
+  const problems = watch(page);
+  await startTouchRun(page);
+  const quality = (): Promise<{ q: string; glass: string }> =>
+    page.evaluate(() => {
+      const g = (window as unknown as { __theabonk: { renderer: { quality: string }; touch: { glassMode: string } } }).__theabonk;
+      return { q: g.renderer.quality, glass: g.touch.glassMode };
+    });
+  expect((await quality()).q).toBe('tablet');
+  // a very slow device: well under 48 fps for seconds on end
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 24 });
+  await expect.poll(async () => (await quality()).q, { timeout: 150_000, intervals: [2000] }).toBe('low');
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  const after = await quality();
+  expect(after.glass, 'stepped-down tiers use fake glass').toBe('fake');
+  // it sticks for the session (the next run starts on Low), never steps back up
+  await page.waitForTimeout(3000);
+  expect((await quality()).q).toBe('low');
+  expect(problems, problems.join('\n')).toEqual([]);
+});

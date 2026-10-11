@@ -28,13 +28,15 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
   },
   projects: [
-    { name: 'chromium', testIgnore: /touch\.spec/, use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 }, launchOptions: { args: gpuArgs } } },
+    { name: 'chromium', testIgnore: /touch(-playthrough)?\.spec/, use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 }, launchOptions: { args: gpuArgs } } },
     // Firefox: raw gamepad layouts, different pointer-lock / WebGL paths
-    { name: 'firefox', testIgnore: /touch\.spec/, use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 720 } } },
+    { name: 'firefox', testIgnore: /touch(-playthrough)?\.spec/, use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 720 } } },
     // touch devices (twin-stick controls, tablet tier, rotate hint): Safari engine + Android
     { name: 'webkit-tablet', testMatch: /touch\.spec/, use: { ...devices['iPad Pro 11 landscape'] } },
     { name: 'webkit-phone', testMatch: /touch\.spec/, use: { ...devices['iPhone 15 landscape'] } },
     { name: 'chromium-tablet', testMatch: /touch\.spec/, use: { ...devices['Galaxy Tab S9 landscape'], launchOptions: { args: gpuArgs } } },
+    // a Chromium phone: real CDP multi-touch at phone size, and the 5-minute touch playthrough
+    { name: 'chromium-phone', testMatch: /touch(-playthrough)?\.spec/, use: { ...devices['Pixel 7 landscape'], launchOptions: { args: gpuArgs } } },
   ],
   webServer: {
     command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
