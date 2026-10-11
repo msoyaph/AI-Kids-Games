@@ -276,6 +276,16 @@ quality governor) → accessibility → tests → handoff. `npx tsx scripts/glas
   flash.ts `stickHurt`), setFast() glow + chevrons from Game.touchFeedback (sliding faster
   than 1.35 × walkSpeed, angle in camera space). setGlass('fake' | 'blur') cross-fades.
   main.ts shows a "couldn't start" card (and sets window.__theabonkError) if Game throws.
+- [x] 4. Auto camera (render/autoCamera.ts + `tuning.camera.autoCam*`; Game.autoCamera):
+  eases yaw behind Thea's velocity — full rate within 60° of straight ahead, a third when
+  sideways, never past 120° (retreating). Rate is low (0.6 rad/s) on purpose: holding a
+  diagonal makes camera and movement chase each other, so the rate sets how tight Thea's
+  circle is. A camera finger blocks it; it resumes `autoCamDelay` (1.2 s) after the lift
+  with a 0.6 s ease-in. Haptics: TouchControls.buzz (navigator.vibrate where present, after
+  user activation, ≥ 70 ms apart): hurt 25, level-up 40, boss spawn [30, 60, 30], hostile
+  blast within 6 m 35. Real-touch e2e (Chromium CDP): multi-touch, auto camera, slide-jump.
+  CDP gotcha: only touchEnd lifts fingers and it lifts all of them — Fingers.up re-presses
+  the rest (new pointers), so tests holding the stick across it use the fixed stick.
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

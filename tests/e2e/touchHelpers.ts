@@ -34,10 +34,15 @@ export class Fingers {
     for (let k = 1; k <= steps; k++) await this.move(id, from.x + ((x - from.x) * k) / steps, from.y + ((y - from.y) * k) / steps);
   }
 
+  /**
+   * Lift a finger. Chromium's CDP can only lift every finger at once (touchEnd), so the
+   * others are put straight back down where they were — as new pointers: a floating stick
+   * re-centres, so tests that keep a thumb on the stick across this use the fixed stick.
+   */
   async up(id: number): Promise<void> {
     this.active.delete(id);
-    // touchEnd lists the fingers still down
-    await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: this.points() });
+    await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    if (this.active.size > 0) await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: this.points() });
   }
 
   async tap(x: number, y: number, id = 9): Promise<void> {

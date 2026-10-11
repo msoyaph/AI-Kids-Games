@@ -30,6 +30,7 @@ import { ENEMIES } from '../config/enemies';
 import { enemyIconUrl } from '../ui/icons';
 import { TouchControls } from '../input/touch';
 import { touchFirstDevice } from '../input/mode';
+import { autoCameraTurn } from '../render/autoCamera';
 import type { Quality as RenderQuality } from '../render/Renderer';
 import { applyAccessClasses, reducedMotionOn, watchReducedMotion } from '../ui/access';
 import { BENCH, BenchRecorder, GAME_VERSION, gpuName, tierForGpu, type BenchResult } from './benchmark';
@@ -688,6 +689,7 @@ export class Game implements GameApi {
         if (id >= 1 && id <= 3) this.bossLine = bannerText(w.map, id);
         else this.ui.hud.showBanner(bannerText(w.map, id), false);
       } else if (t === Ev.BossSpawn) {
+        if (this.input.touchMode) this.touch.buzz([30, 60, 30]);
         const def = ENEMIES[ev.i[n]];
         if (def) this.ui.hud.bossIntro(enemyIconUrl(def.id, def.color, true, true), def.name, def.epithet ?? '', this.bossLine);
         this.bossLine = '';
@@ -695,14 +697,21 @@ export class Game implements GameApi {
       } else if (t === Ev.PlayerHurt) {
         this.ui.hud.hurt();
         this.renderer.playerView.hurt();
-        if (this.input.touchMode) this.touch.hurt();
+        if (this.input.touchMode) {
+          this.touch.hurt();
+          this.touch.buzz(25);
+        }
         this.input.rumble(0.7, 0.45, 160);
       } else if (t === Ev.Explosion) {
         // boss slams / blasts close by thump through the controller
         const d = Math.hypot(ev.get(n, 0) - w.player.x, ev.get(n, 2) - w.player.z);
-        if (ev.get(n, 4) === 1 && d < 9) this.input.rumble(0.55 * (1 - d / 9), 0.3 * (1 - d / 9), 140);
+        if (ev.get(n, 4) === 1 && d < 9) {
+          this.input.rumble(0.55 * (1 - d / 9), 0.3 * (1 - d / 9), 140);
+          if (this.input.touchMode && d < 6) this.touch.buzz(35);
+        }
       } else if (t === Ev.LevelUp) {
         this.input.rumble(0.1, 0.35, 90);
+        if (this.input.touchMode) this.touch.buzz(40);
       } else if (t === Ev.Land) {
         this.renderer.playerView.land(ev.get(n, 3));
       } else if (t === Ev.Evolve) {
@@ -740,6 +749,7 @@ export class Game implements GameApi {
         } else {
           this.input.consumeLook(dt, this.look);
           this.renderer.rig.look(this.look.x, this.look.y);
+          if (this.input.touchMode) this.autoCamera(w, dt);
           if (this.input.wheel !== 0) {
             const rig = this.renderer.rig;
             rig.zoom = Math.max(6 - rig.tuning.distance, Math.min(20 - rig.tuning.distance, rig.zoom + this.input.wheel * 0.8));
@@ -798,6 +808,20 @@ export class Game implements GameApi {
     this.frameMs = this.frameMs * 0.9 + (performance.now() - t0) * 0.1;
     this.updateDebug(dt);
   };
+
+  /**
+   * Touch auto camera: swings in behind Thea's movement; a camera drag takes over at once,
+   * and it eases back in `autoCamDelay` seconds after the finger lifts.
+   */
+  private autoCamera(w: World, dt: number): void {
+    const t = this.touch;
+    if (!t.autoCamera || t.looking) return;
+    const rig = this.renderer.rig;
+    const since = (performance.now() - t.lookReleasedAt) / 1000 - rig.tuning.autoCamDelay;
+    if (since <= 0) return;
+    const gain = Math.min(1, since / 0.6) * (this.renderer.reducedMotion ? 0.6 : 1);
+    rig.yaw += autoCameraTurn(rig.yaw, w.player.vx, w.player.vz, dt, rig.tuning, gain);
+  }
 
   /** Fast slides light up the touch stick, with chevrons along the way Thea is going. */
   private touchFeedback(w: World): void {

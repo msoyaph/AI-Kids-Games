@@ -57,6 +57,11 @@ export class TouchControls {
   onPause: (() => void) | null = null;
   /** When the camera finger last lifted (performance.now ms; auto camera waits on it). */
   lookReleasedAt = -1e9;
+  /** The camera swings in behind Thea's movement (settings; touch only). */
+  autoCamera = true;
+  /** Short vibrations on damage / level-up / boss warnings where supported (settings). */
+  haptics = true;
+  private lastBuzz = -1e9;
 
   private look: TouchLook = { ...DEFAULT_TOUCH_LOOK };
   private glass: GlassMode = 'fake';
@@ -384,6 +389,27 @@ export class TouchControls {
     if (on === this.fast) return;
     this.fast = on;
     this.stick.classList.toggle('fast', on);
+  }
+
+  /** The browser can vibrate (Android; iOS Safari has no web vibration). */
+  static canVibrate(): boolean {
+    return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+  }
+
+  /** A short vibration (quietly nothing where unsupported, before a tap, or too soon). */
+  buzz(pattern: number | number[]): void {
+    if (!this.haptics || !TouchControls.canVibrate()) return;
+    // browsers only allow vibration after the page has been tapped
+    const act = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+    if (act && !act.hasBeenActive) return;
+    const now = performance.now();
+    if (now - this.lastBuzz < 70) return;
+    this.lastBuzz = now;
+    try {
+      navigator.vibrate(pattern);
+    } catch {
+      /* blocked (e.g. a sandboxed iframe) */
+    }
   }
 
   private ripple(btn: HTMLElement, e: PointerEvent): void {

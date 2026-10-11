@@ -78,6 +78,14 @@ export interface Tuning {
     followSharpness: number;
     /** Extra distance per unit of speed. */
     speedPullback: number;
+    /** Touch auto camera: max turn rate toward Thea's movement, radians per second. */
+    autoCamRate: number;
+    /** Touch auto camera: seconds after a camera drag before it takes over again. */
+    autoCamDelay: number;
+    /** Touch auto camera: Thea's speed below which it doesn't turn. */
+    autoCamMinSpeed: number;
+    /** Touch auto camera: degrees off straight ahead beyond which it never turns (retreating). */
+    autoCamMaxAngle: number;
   };
   /** Warning (telegraph) durations — how long players get to react. */
   telegraphs: {
@@ -194,6 +202,10 @@ export const TUNING_RANGES: { [G in TuningGroup]: { [K in keyof Tuning[G]]: Tuni
     fovKickPerSpeed: [0, 3, 0.05],
     followSharpness: [2, 40, 0.5],
     speedPullback: [0, 0.5, 0.01],
+    autoCamRate: [0, 4, 0.05],
+    autoCamDelay: [0, 4, 0.1],
+    autoCamMinSpeed: [0, 10, 0.1],
+    autoCamMaxAngle: [30, 180, 1],
   },
   telegraphs: {
     chargerWindupMult: [0.3, 3, 0.05],
@@ -275,6 +287,10 @@ export const TUNING_DEFAULTS: Tuning = {
     fovKickPerSpeed: 0.7,
     followSharpness: 18,
     speedPullback: 0.12,
+    autoCamRate: 0.6,
+    autoCamDelay: 1.2,
+    autoCamMinSpeed: 2,
+    autoCamMaxAngle: 120,
   },
   telegraphs: {
     chargerWindupMult: 1,

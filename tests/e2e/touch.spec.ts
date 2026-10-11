@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { Fingers } from './touchHelpers';
 
 /** Touch devices (run under the webkit-tablet, webkit-phone and chromium-tablet projects). */
 
@@ -102,5 +103,117 @@ test('portrait shows the rotate hint and pauses the run', async ({ page }) => {
   expect((await game(page)).paused).toBe(true);
   await page.setViewportSize(vp);
   await expect(page.locator('.rotate-hint')).toBeHidden();
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+/** Position, camera yaw and jump count, for the real-touch tests. */
+const probe = (page: Page): Promise<{ x: number; z: number; yaw: number; jumps: number }> =>
+  page.evaluate(() => {
+    const g = (window as unknown as { __theabonk: { world: { player: { x: number; z: number }; stats: { jumps: number } }; renderer: { rig: { yaw: number } } } }).__theabonk;
+    return { x: g.world.player.x, z: g.world.player.z, yaw: g.renderer.rig.yaw, jumps: g.world.stats.jumps };
+  });
+
+async function startTouchRun(page: Page): Promise<void> {
+  await open(page, '/?seed=7');
+  await page.getByRole('button', { name: 'Play', exact: true }).tap();
+  await page.getByRole('button', { name: 'Start run' }).tap();
+  await expect(page.locator('.touch-ui')).toBeVisible();
+  await page.waitForTimeout(400);
+}
+
+test('real multi-touch: moving, turning the camera and jumping all at once', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'real multi-touch needs CDP (Chromium)');
+  const problems = watch(page);
+  await startTouchRun(page);
+  const f = await Fingers.attach(page);
+  const vp = page.viewportSize()!;
+  const a = await probe(page);
+  // left thumb pushes forward and keeps holding
+  await f.down(1, vp.width * 0.2, vp.height * 0.7);
+  await f.drag(1, vp.width * 0.2, vp.height * 0.7 - 80);
+  // right finger drags the camera while the thumb holds
+  await f.down(2, vp.width * 0.62, vp.height * 0.45);
+  await f.drag(2, vp.width * 0.62 + 120, vp.height * 0.45, 8);
+  // a third finger taps Jump with both still down
+  const jump = (await page.locator('.gbtn-jump').boundingBox())!;
+  await f.down(3, jump.x + jump.width / 2, jump.y + jump.height / 2);
+  await page.waitForTimeout(900);
+  const b = await probe(page);
+  await f.up(3);
+  await f.up(2);
+  await f.up(1);
+  expect(Math.hypot(b.x - a.x, b.z - a.z), 'the stick kept moving Thea').toBeGreaterThan(1);
+  expect(Math.abs(b.yaw - a.yaw), 'the camera turned').toBeGreaterThan(0.2);
+  expect(b.jumps, 'the jump registered').toBeGreaterThan(a.jumps);
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('auto camera swings behind the movement; a drag takes over and it resumes after', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'real multi-touch needs CDP (Chromium)');
+  const problems = watch(page);
+  await startTouchRun(page);
+  // fixed stick: the thumb's deflection survives the test harness lifting / re-pressing it
+  await page.evaluate(() => (window as unknown as { __theabonk: { touch: { setLook(l: object): void } } }).__theabonk.touch.setLook({ fixedStick: true }));
+  const f = await Fingers.attach(page);
+  const vp = page.viewportSize()!;
+  // hold the stick up-right: Thea runs diagonally, the camera follows round
+  await f.down(1, vp.width * 0.2, vp.height * 0.72);
+  await f.drag(1, vp.width * 0.2 + 55, vp.height * 0.72 - 55);
+  const y0 = (await probe(page)).yaw;
+  await page.waitForTimeout(1500);
+  const y1 = (await probe(page)).yaw;
+  expect(Math.abs(y1 - y0), 'auto camera turns while moving diagonally').toBeGreaterThan(0.15);
+  // a resting camera finger holds the view still
+  await f.down(2, vp.width * 0.62, vp.height * 0.45);
+  const ya = (await probe(page)).yaw;
+  await page.waitForTimeout(800);
+  const yb = (await probe(page)).yaw;
+  expect(Math.abs(yb - ya), 'no auto turn while a finger is on the camera').toBeLessThan(0.03);
+  // lift it: a short wait first, then auto camera eases back in
+  await f.up(2);
+  const yc = (await probe(page)).yaw;
+  await page.waitForTimeout(400);
+  const yd = (await probe(page)).yaw;
+  expect(Math.abs(yd - yc), 'auto camera waits after a drag').toBeLessThan(0.05);
+  await page.waitForTimeout(2600);
+  const ye = (await probe(page)).yaw;
+  expect(Math.abs(ye - yd), 'auto camera resumed').toBeGreaterThan(0.1);
+  await f.up(1);
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('slide-jumping by touch keeps the slide speed, as on a keyboard', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'real multi-touch needs CDP (Chromium)');
+  const problems = watch(page);
+  await startTouchRun(page);
+  await page.evaluate(() => (window as unknown as { __theabonk: { touch: { setLook(l: object): void } } }).__theabonk.touch.setLook({ fixedStick: true }));
+  const move = (): Promise<{ speed: number; sliding: boolean; onGround: boolean; walk: number }> =>
+    page.evaluate(() => {
+      const g = (window as unknown as { __theabonk: { world: { player: { vx: number; vz: number; sliding: boolean; onGround: boolean }; tuning: { movement: { walkSpeed: number } } } } }).__theabonk;
+      const p = g.world.player;
+      return { speed: Math.hypot(p.vx, p.vz), sliding: p.sliding, onGround: p.onGround, walk: g.world.tuning.movement.walkSpeed };
+    });
+  const f = await Fingers.attach(page);
+  const vp = page.viewportSize()!;
+  // run forward at full stick
+  await f.down(1, vp.width * 0.12, vp.height * 0.6);
+  await f.drag(1, vp.width * 0.12, vp.height * 0.6 - 120);
+  await page.waitForTimeout(700);
+  // slide (held), then jump out of it with another finger
+  const slide = (await page.locator('.gbtn-slide').boundingBox())!;
+  await f.down(2, slide.x + slide.width / 2, slide.y + slide.height / 2);
+  await page.waitForTimeout(220);
+  const sliding = await move();
+  const jump = (await page.locator('.gbtn-jump').boundingBox())!;
+  await f.down(3, jump.x + jump.width / 2, jump.y + jump.height / 2);
+  await page.waitForTimeout(120);
+  const air = await move();
+  await f.up(3);
+  await f.up(2);
+  await f.up(1);
+  expect(sliding.sliding, 'the Slide button slides').toBe(true);
+  expect(sliding.speed, 'the slide boost kicked in').toBeGreaterThan(sliding.walk * 1.1);
+  expect(air.onGround, 'the Jump button jumped out of the slide').toBe(false);
+  expect(air.speed, 'the jump kept the slide speed').toBeGreaterThan(sliding.walk * 1.1);
   expect(problems, problems.join('\n')).toEqual([]);
 });

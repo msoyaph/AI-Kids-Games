@@ -14,10 +14,11 @@ const SWIFTSHADER_COMPOSITOR_NOISE = /GL Driver Message \(OpenGL, Performance, G
 const usingSwiftShader = process.platform !== 'darwin';
 /**
  * Firefox-only browser notices, not game errors: a one-time note that hardware shadow-map
- * filtering is "implementation-defined" (three.js PCF shadows), and headless Firefox refusing
- * pointer lock (the game falls back to drag-to-look).
+ * filtering is "implementation-defined" (three.js PCF shadows), headless Firefox refusing
+ * pointer lock (the game falls back to drag-to-look), and its anti-tracking note about the
+ * test server (a long test on localhost without clicks looks like a "bounce tracker").
  */
-const FIREFOX_NOTICES = [/Depth texture comparison requests .* Filtering, but behavior is implementation-defined/, /Request for pointer lock was denied/];
+const FIREFOX_NOTICES = [/Depth texture comparison requests .* Filtering, but behavior is implementation-defined/, /Request for pointer lock was denied/, /has been classified as a bounce tracker/];
 
 /** Collect every console error/warning and uncaught page error. */
 function watchConsole(page: Page): string[] {
