@@ -16,6 +16,7 @@ const mobile = args.includes('--mobile');
 const split = args.includes('--split');
 const tablet = args.includes('--tablet');
 const swift = args.includes('--swiftshader');
+const url = opt('--url', 'http://localhost:4173/');
 
 const browser = await chromium.launch({ args: swift ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 const ctx = await browser.newContext(
@@ -33,7 +34,7 @@ if (cpu > 1) {
   const cdp = await ctx.newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: cpu });
 }
-await page.goto('http://localhost:4173/');
+await page.goto(url);
 await page.waitForFunction(() => !!window.__calex?.app, null, { timeout: 60000 });
 const res = await page.evaluate(
   async ({ track, seconds, quality, split }) => {
@@ -42,42 +43,12 @@ const res = await page.evaluate(
     a.saves.create(1, 'Perf');
     a.saves.settings.quality = quality;
     a.applySettings();
-    a.flow.mode = 'versus';
-    a.flow.players = split ? 2 : 1;
-    a.flow.racers = ['calex', 'pip'];
-    a.flow.vs.aiCount = split ? 6 : 7;
-    a.flow.vs.items = true;
-    a.screens.trackSelect();
-    await sleep(200);
-    // find the track button in any cup tab
-    const tryClick = () => {
-      const b = [...document.querySelectorAll('.screen [data-nav]')].find((x) => x.textContent.toLowerCase().replace(/[^a-z]/g, '').includes(track.replace(/-/g, '')));
-      if (b) {
-        b.click();
-        return true;
-      }
-      return false;
-    };
-    let ok = tryClick();
-    if (!ok) {
-      for (const tab of [...document.querySelectorAll('.screen .tabs [data-nav]')]) {
-        tab.click();
-        await sleep(100);
-        if ((ok = tryClick())) break;
-      }
-    }
-    if (!ok) {
-      // direct start (locked cups etc.)
-      a.saves.data.unlocks.cups = ['sunrise', 'thunder', 'galaxy', 'legend'];
-      a.screens.trackSelect();
-      await sleep(100);
-      for (const tab of [...document.querySelectorAll('.screen .tabs [data-nav]')]) {
-        tab.click();
-        await sleep(100);
-        if ((ok = tryClick())) break;
-      }
-    }
-    if (!ok) return { error: 'track not found' };
+    // start the race directly (the menus now show a one-time controls card and some cups are locked)
+    const kart = (body, paint) => ({ body, wheels: 'standard', glider: 'kite', paint, decal: 'none' });
+    const humans = (split ? ['calex', 'pip'] : ['calex']).map((id, i) => ({ racerId: id, kart: kart('zoomster', i ? 'ocean' : 'cherry'), source: split ? { kind: 'keyboard', scheme: i ? 'right' : 'left' } : { kind: 'any' } }));
+    const ai = ['juno', 'mochi', 'grumbo', 'bo', 'fennel', 'luma', 'zing'].slice(0, split ? 6 : 7).map((id, i) => ({ racerId: id, kart: kart(['bubble', 'brick', 'pickup', 'scooter', 'royal', 'bubble', 'zoomster'][i], ['grape', 'lime', 'sunny', 'tangerine', 'gold', 'bubblegum', 'ocean'][i]) }));
+    a.startSession({ mode: 'versus', trackId: track, speedClass: 'pro', mirror: false, items: true, itemSet: 'all', laps: 3, players: humans, ai, seed: 7, intro: true }, () => {});
+    if (!a.session) return { error: 'track not found' };
     await sleep(500);
     const s = a.session;
     for (let i = 0; i < (split ? 2 : 1); i++) {
@@ -100,6 +71,9 @@ const res = await page.evaluate(
     };
     requestAnimationFrame(tick);
     let maxCalls = 0;
+    let sumCalls = 0;
+    let sumTris = 0;
+    let samples = 0;
     let maxTris = 0;
     const qualitySeen = new Set();
     while (performance.now() - t0 < seconds * 1000) {
@@ -107,6 +81,9 @@ const res = await page.evaluate(
       const st = a.gr.stats();
       maxCalls = Math.max(maxCalls, st.calls);
       maxTris = Math.max(maxTris, st.triangles);
+      sumCalls += st.calls;
+      sumTris += st.triangles;
+      samples++;
       qualitySeen.add(`${a.gr.quality.level}@${a.gr.quality.renderScale}`);
     }
     running = false;
@@ -122,6 +99,8 @@ const res = await page.evaluate(
       p99ms: +p(0.99).toFixed(1),
       simMs: +a.perf.step.toFixed(2),
       cpuRenderMs: +a.perf.render.toFixed(2),
+      avgDrawCalls: +(sumCalls / Math.max(1, samples)).toFixed(1),
+      avgTriangles: Math.round(sumTris / Math.max(1, samples)),
       maxDrawCalls: maxCalls,
       maxTriangles: maxTris,
       quality: [...qualitySeen],

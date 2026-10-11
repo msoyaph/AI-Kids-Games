@@ -178,7 +178,7 @@ export class RaceView {
       }
     }
     for (const [geo, wheels] of byGeo) {
-      const mesh = new THREE.InstancedMesh(geo, Materials.flat, wheels.length);
+      const mesh = new THREE.InstancedMesh(geo, Materials.flatInst, wheels.length);
       mesh.frustumCulled = false;
       mesh.name = 'wheels';
       this.scene.add(mesh);

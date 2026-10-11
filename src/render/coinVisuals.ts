@@ -24,7 +24,7 @@ export class CoinVisuals {
       ]);
       coinGeo.userData.shared = true;
     }
-    this.mesh = new THREE.InstancedMesh(coinGeo, Materials.basic, rules.coins.length);
+    this.mesh = new THREE.InstancedMesh(coinGeo, Materials.basicInstPlain, rules.coins.length);
     this.mesh.frustumCulled = false;
     this.mesh.count = 0;
     this.mesh.name = 'coins';

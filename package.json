@@ -18,7 +18,8 @@
     "bench": "node scripts/bench.mjs",
     "size": "node scripts/checkSize.mjs",
     "validate": "tsx scripts/validateTracks.ts",
-    "test:e2e:ci": "playwright test"
+    "test:e2e:ci": "playwright test",
+    "balance-report": "tsx scripts/balanceReport.ts"
   },
   "dependencies": {
     "three": "^0.186.1"

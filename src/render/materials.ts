@@ -19,6 +19,14 @@ export const Materials = {
     depthWrite: false,
   }),
   blob: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false }),
+  // Instanced twins: three.js keys shader programs on "instanced or not" (and per-instance colours), so one
+  // material shared by both kinds of mesh re-resolves its program for every object, every frame.
+  /** `flat` for InstancedMesh (wheels). */
+  flatInst: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
+  /** `basic` for InstancedMesh with per-instance colours (item pods). */
+  basicInst: new THREE.MeshBasicMaterial({ vertexColors: true }),
+  /** `basic` for InstancedMesh without per-instance colours (coins). */
+  basicInstPlain: new THREE.MeshBasicMaterial({ vertexColors: true }),
 };
 
 for (const m of Object.values(Materials)) m.userData.shared = true;
