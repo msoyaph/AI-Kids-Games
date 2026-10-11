@@ -44,6 +44,8 @@ export class RaceView {
   readonly props: TrackProps | null = null;
   private readonly camPositions: THREE.Vector3[] = [];
   split: SplitMode = 'horizontal';
+  /** Player comfort settings (screen shake / reduce effects). */
+  feel: { shake: boolean; reduce: boolean };
   time = 0;
   /** Local player kart indices (camera targets). */
   readonly targets: number[];
@@ -104,6 +106,7 @@ export class RaceView {
     this.blobs.renderOrder = 1;
     this.scene.add(this.blobs);
     for (let i = 0; i < targets.length; i++) this.cams.push(new ChaseCamera(profile.drawDistance));
+    this.feel = { shake: true, reduce: false };
     this.batchWheels();
     this.effects = new Effects(world, this.scene);
     if (course.track) this.effects.offroadColor = course.track.data.palette.offroad;
@@ -116,6 +119,20 @@ export class RaceView {
     this.applyQuality();
     const off = gr.quality.onChange(() => this.applyQuality());
     this.disposers.push(off);
+  }
+
+  setFeel(shake: boolean, reduce: boolean): void {
+    this.feel = { shake, reduce };
+    for (const c of this.cams) {
+      c.shakeEnabled = shake;
+      c.reduceMotion = reduce;
+    }
+  }
+
+  /** Camera punch for a local player's kart. */
+  kick(kart: number, amount: number): void {
+    const ci = this.targets.indexOf(kart);
+    if (ci >= 0) this.cams[ci].kick(amount);
   }
 
   private balloons: THREE.Group[] = [];

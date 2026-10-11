@@ -139,4 +139,5 @@ export const CRATER_HOP_BASE: TrackData = {
     { type: 'ga_flag', ...offset(P.startStraight, -146, -14), y: GY, scale: 1.2 },
   ],
   music: 'galaxy1',
+  roadSound: 'metal',
 };

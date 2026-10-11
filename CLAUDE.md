@@ -124,7 +124,14 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   WebKit Playwright projects (webkit-desktop/tablet/phone), storage budget (ghost format G2, GHOST_MAX_SECONDS 240,
   `SaveManager.write` single path + freeSpace/onStorageProblem, startup re-encode of CGH1 ghosts, tests in
   tests/unit/storage.test.ts → sim-report/storage.json), chase cam hides rivals in the line of sight.
-- [ ] Phase 4 — game feel
+- [x] Phase 4 — game feel: camera speed pull + FOV + kick (`ChaseCamera.kick`, `RaceView.setFeel/kick`), hit-stop
+  (`RaceSession.hitStop`, single player, not TT), rumble (`InputManager.rumble`: gamepad dual-rumble / Android
+  vibrate, Settings → Gameplay → Rumble), dizzy stars + spin squash (KartVisual.stars), tier-coloured mini-turbo
+  bursts/rings, HUD spark pulse, stronger speed lines, radial speed blur post-pass on High (`GameRenderer.motionBlur`),
+  Settings → Graphics → Reduce effects (default from prefers-reduced-motion; `.hud.calm`), snappier drift
+  (hop 4.2→3.6, `TUNING.driftKick` 0.07), audio: engine timbre per weight class, pass-by doppler, tyre surface
+  loops (`TrackData.roadSound`: road|metal; dirt/water/ice automatic), drift crackle, layered mini-turbo, finish
+  celebrations by personality. Screen-shake setting now actually applies (it was ignored before).
 - [ ] Phase 5 — visuals
 - [ ] Phase 6 — ice + track fixes + marker flag
 - [ ] Phase 7 — Frost Cup, Driving School, replay, Coin Rush
@@ -145,6 +152,8 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
 - Balance changes: topSpeed perStat 0.005→0.003 (weight-class spread 0.28→0.25); AI pace 0.9+0.1·skill →
   0.82+0.18·skill (skill matters: skill-1.0 racer wins 56 %/top-3 86 % vs Pro AI; Rookie AI gentler);
   catchUp.behindStart 15→25 m. Catch-up metrics swing ±5 % with item luck — judge changes on ≥ 80 races.
+- Phase 4 rebalance: last-place item weights softened (rocketDash 14→9, turbo3 15→12, magnet 13→11, bumper 5→8);
+  catch-up test now uses 160 races/scenario (10 seeds) because item luck swings small samples by ±9 %.
 - `SPEED_CLASSES[c]` IS `BALANCE.classes[c]` (same object) so experiments that mutate BALANCE apply live.
 - Phase 3 results: Low Neon 115k→60k tris / 48→43 draws, Jadefall 74k→43k / 41→35; throttled tablet Medium 60 fps.
   Worst-case storage (16 tracks) 0.89 MB (ghost 15.6 KB per 240 s max run). Medium/High gained a few draws

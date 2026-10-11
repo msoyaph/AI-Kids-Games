@@ -182,8 +182,24 @@ export class Effects {
         break;
       }
       case 'miniTurbo': {
+        // tier-coloured burst out of the exhaust, a backward streak, and (orange/pink) a ring on the road
         const k = ks[e.kart];
-        this.burst(k.x - Math.sin(k.yaw) * 1.2, k.y + 0.6, k.z - Math.cos(k.yaw) * 1.2, 10 + e.tier * 6, TIER_COLORS[e.tier], 7, 0.5, 0.4, true);
+        const fx = Math.sin(k.yaw);
+        const fz = Math.cos(k.yaw);
+        const col = TIER_COLORS[e.tier];
+        this.burst(k.x - fx * 1.2, k.y + 0.6, k.z - fz * 1.2, 12 + e.tier * 8, col, 7 + e.tier, 0.5 + e.tier * 0.08, 0.45, true);
+        for (let i = 0; i < 6 + e.tier * 4; i++) {
+          const s = 10 + Math.random() * 8;
+          const side = (Math.random() - 0.5) * 1.4;
+          this.glow.spawn(k.x - fx * 1.3 - fz * side, k.y + 0.4 + Math.random() * 0.4, k.z - fz * 1.3 + fx * side, -fx * s + k.vx * 0.3, Math.random() * 2, -fz * s + k.vz * 0.3, 0.25, 0.32, 0.05, col, 1, 4, 2);
+        }
+        if (e.tier >= 2) {
+          const n = e.tier === 3 ? 22 : 14;
+          for (let i = 0; i < n; i++) {
+            const a = (i / n) * Math.PI * 2;
+            this.glow.spawn(k.x, k.y + 0.25, k.z, Math.cos(a) * 9 + k.vx * 0.5, 0.6, Math.sin(a) * 9 + k.vz * 0.5, 0.3, 0.3, 0.05, col, 1, 0, 3);
+          }
+        }
         break;
       }
       case 'driftTier': {

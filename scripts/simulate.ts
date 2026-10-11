@@ -121,8 +121,8 @@ log(`Per race: ${(used / races).toFixed(1)} items used, ${(hits / races).toFixed
 // ---------------------------------------------------------------- 5. catch-up targets (simulated human)
 if (!quick && !fairOnly) {
   log('');
-  log('## 5. Catch-up targets (Pro, 8 racers, a simulated human vs Pro AI, every track × 5 seeds)');
-  const cu = measureCatchUp({ seeds: [11, 23, 37, 41, 53] });
+  log('## 5. Catch-up targets (Pro, 8 racers, a simulated human vs Pro AI, every track × 10 seeds)');
+  const cu = measureCatchUp({ seeds: [11, 23, 37, 41, 53, 61, 73, 89, 97, 101] });
   const mark = (ok: boolean): string => (ok ? '✅' : '❌');
   log('| Target | Result | |');
   log('|---|---|---|');

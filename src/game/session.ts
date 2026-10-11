@@ -116,6 +116,9 @@ export class RaceSession {
   private readonly hudLayer: HTMLDivElement;
   onComplete?: (r: SessionResult) => void;
   time = 0;
+  /** Hit-stop: the world holds still for a few frames when a local player hits or gets hit. */
+  private freeze = 0;
+  private blurLevel = 0;
 
   /** Hide the HUD and touch controls while a full screen (e.g. benchmark results) sits on top of the race. */
   hideHud(): void {
@@ -198,6 +201,7 @@ export class RaceSession {
     ctx.gr.applyQuality();
     this.view = new RaceView(ctx.gr, this.world, { track: this.track ?? undefined, arena: this.arena ?? undefined }, this.locals);
     this.view.split = ctx.settings.splitMode as SplitMode;
+    this.view.setFeel(ctx.settings.screenShake, ctx.settings.reduceEffects);
     for (const c of this.view.cams) c.distanceSetting = ctx.settings.cameraDistance;
     if (this.items) this.view.attachItems(this.items);
     if (this.hazards) this.view.attachHazards(this.hazards);
@@ -244,6 +248,10 @@ export class RaceSession {
   step(dt: number): void {
     const w = this.world;
     this.time += dt;
+    if (this.freeze > 0) {
+      this.freeze -= dt;
+      return;
+    }
     this.checkSkip();
     // player input
     for (let i = 0; i < this.locals.length; i++) {
@@ -269,6 +277,26 @@ export class RaceSession {
     this.checkDone();
   }
 
+  /** Freeze the world for `sec` (single player only, never in Time Trial or with Reduce effects). */
+  private hitStop(sec: number): void {
+    if (this.locals.length !== 1 || this.ctx.settings.reduceEffects || this.cfg.mode === 'timeTrial' || this.cfg.benchmark) return;
+    if (this.freeze > 0) return;
+    this.freeze = sec;
+    // hold the interpolation still so nothing jitters while frozen
+    for (const k of this.world.karts) {
+      k.px = k.x;
+      k.py = k.y;
+      k.pz = k.z;
+      k.pyaw = k.yaw;
+    }
+  }
+
+  /** Haptics for local players (gamepad rumble / phone vibration). */
+  private feel(kart: number, strong: number, weak: number, ms: number): void {
+    const i = this.locals.indexOf(kart);
+    if (i >= 0) this.ctx.input.rumble(i, strong, weak, ms);
+  }
+
   private onEvent = (e: SimEvent): void => {
     this.view.onEvent(e);
     this.ctx.audio.onSimEvent(e, this.world, this.locals);
@@ -276,6 +304,49 @@ export class RaceSession {
       const i = this.locals.indexOf(kart);
       return i >= 0 ? this.huds[i] : null;
     };
+    // ---- impact feel: hit-stop, camera kick, rumble
+    switch (e.type) {
+      case 'itemHit':
+        if (this.locals.includes(e.kart)) {
+          this.hitStop(0.085);
+          this.view.kick(e.kart, e.effect === 'tumble' ? 0.9 : 0.65);
+          this.feel(e.kart, e.effect === 'goo' || e.effect === 'cloud' ? 0.25 : 0.85, 0.5, e.effect === 'tumble' ? 380 : 260);
+        } else if (e.by >= 0 && this.locals.includes(e.by)) {
+          this.hitStop(0.06);
+          this.feel(e.by, 0.2, 0.45, 110);
+        }
+        break;
+      case 'wall':
+        if (e.strength > 0.3) this.feel(e.kart, e.strength * 0.5, e.strength * 0.6, 90);
+        break;
+      case 'bump':
+        this.feel(e.kart, 0.2 * e.strength, 0.4 * e.strength, 70);
+        this.feel(e.other, 0.2 * e.strength, 0.4 * e.strength, 70);
+        break;
+      case 'land':
+        if (e.impact > 9) {
+          this.view.kick(e.kart, 0.25);
+          this.feel(e.kart, 0.35, 0.25, 90);
+        }
+        break;
+      case 'miniTurbo':
+        this.feel(e.kart, 0.1 * e.tier, 0.25 + 0.15 * e.tier, 100 + 50 * e.tier);
+        break;
+      case 'boostPad':
+        this.feel(e.kart, 0, 0.3, 110);
+        break;
+      case 'startBoost':
+        if (e.good) this.feel(e.kart, 0.4, 0.4, 220);
+        break;
+      case 'fall':
+        this.feel(e.kart, 0.5, 0.2, 220);
+        break;
+      case 'balloonPop':
+        if (this.locals.includes(e.kart)) this.feel(e.kart, 0.6, 0.4, 200);
+        break;
+      default:
+        break;
+    }
     switch (e.type) {
       case 'go':
         break;
@@ -412,10 +483,20 @@ export class RaceSession {
         ghostDelta: null,
         screenShake: this.ctx.settings.screenShake,
         showSpeedLines: this.ctx.gr.quality.profile.speedLines,
+        reduceEffects: this.ctx.settings.reduceEffects,
       });
     }
     this.ctx.audio.update(w, this.locals, dt);
     this.ctx.input.touch.setCountdown(w.phase === 'countdown' || w.phase === 'intro');
+    // speed blur (High tier only, one player, not with Reduce effects)
+    let blur = 0;
+    if (this.locals.length === 1 && !this.ctx.settings.reduceEffects && w.phase === 'race') {
+      const k = w.karts[this.locals[0]];
+      const f = k.speed / Math.max(1, k.params.topSpeed);
+      blur = Math.min(1, Math.max(0, (f - 0.92) * 3) + (k.boosting ? 0.55 : 0) + (k.rocketTime > 0 ? 0.3 : 0));
+    }
+    this.blurLevel += (blur - this.blurLevel) * Math.min(1, dt * 6);
+    this.ctx.gr.motionBlur = this.blurLevel;
     this.view.render();
   }
 
@@ -429,6 +510,7 @@ export class RaceSession {
   }
 
   dispose(): void {
+    this.ctx.gr.motionBlur = 0;
     this.ctx.input.inRace = false;
     this.ctx.input.touch.show(false);
     this.ctx.input.players = [{ kind: 'any' }];

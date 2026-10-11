@@ -373,6 +373,8 @@ export interface TrackData {
   props?: PropPlacement[];
   /** Song id from data/songs.ts. */
   music: string;
+  /** Tyre sound on the main road surface (default 'road'). Off-road, water and ice are detected automatically. */
+  roadSound?: 'road' | 'metal';
   /** Draw sloped terrain verges from the road down to the ground plane (default true). */
   verge?: boolean;
   /** Structures drawn under elevated road (bridges, buildings, floating rock). */

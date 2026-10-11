@@ -6,6 +6,8 @@ import type { ItemId } from '../data/types';
 import type { GameAudio, UiSound } from './types';
 import { Synth, midiToFreq } from './synth';
 import { MusicPlayer } from './music';
+import { findRacer } from '../data/racers';
+import type { TrackData, WeightClass } from '../data/types';
 
 interface EngineVoice {
   osc1: OscillatorNode;
@@ -15,7 +17,21 @@ interface EngineVoice {
   drift: GainNode;
   driftFilter: BiquadFilterNode;
   wind: GainNode;
+  /** Tyre-on-surface loop (road hum, dirt crunch, metal rattle, water swish, ice hiss). */
+  surf: GainNode;
+  surfFilter: BiquadFilterNode;
+  surface: string;
+  /** Racer whose engine this voice currently plays (timbre by weight class). */
+  racer: string;
+  weight: WeightClass;
 }
+
+/** Engine character per weight class: pitch, brightness and the second oscillator's shape/ratio. */
+const ENGINE: Record<WeightClass, { pitch: number; bright: number; wave2: OscillatorType; ratio2: number; mix2: number }> = {
+  light: { pitch: 1.24, bright: 1.3, wave2: 'square', ratio2: 2.01, mix2: 0.3 },
+  medium: { pitch: 1, bright: 1, wave2: 'square', ratio2: 0.5, mix2: 0.5 },
+  heavy: { pitch: 0.78, bright: 0.75, wave2: 'sawtooth', ratio2: 0.5, mix2: 0.8 },
+};
 
 /**
  * All game audio, synthesised live with the Web Audio API (no audio files):
@@ -225,8 +241,16 @@ export class AudioEngine implements GameAudio {
       case 'miniTurbo': {
         const v = this.near(world, ks[e.kart], locals);
         if (v <= 0) break;
+        // layered whoosh: every tier adds a layer
         this.noise(0.45 + e.tier * 0.12, 0.16 * v, 'bandpass', 500, 3000 + e.tier * 800);
-        if (isLocal(e.kart)) this.tone(220 + e.tier * 80, 0.35, 'sawtooth', 0.04, 0, 2);
+        if (isLocal(e.kart)) {
+          this.tone(220 + e.tier * 80, 0.35, 'sawtooth', 0.04, 0, 2);
+          if (e.tier >= 2) this.tone(1175 + e.tier * 200, 0.3, 'bell', 0.05, 0.03);
+          if (e.tier >= 3) {
+            this.tone(70, 0.3, 'sine', 0.14, 0, 0.7); // thump
+            this.noise(0.8, 0.1, 'highpass', 2000, 8000, 0.05);
+          }
+        }
         break;
       }
       case 'boostPad': {
@@ -276,8 +300,12 @@ export class AudioEngine implements GameAudio {
         break;
       case 'finish':
         if (isLocal(e.kart)) {
-          if (e.rank <= 3) this.fanfare([0, 4, 7, 12, 7, 12, 16], 0.1, 'square', 0.08, 67);
+          if (e.rank === 1) {
+            this.fanfare([0, 4, 7, 12, 7, 12, 16, 19], 0.1, 'square', 0.08, 67);
+            this.fanfare([12, 16, 19, 24], 0.2, 'bell', 0.05, 67);
+          } else if (e.rank <= 3) this.fanfare([0, 4, 7, 12, 7, 12, 16], 0.1, 'square', 0.08, 67);
           else this.fanfare([0, 4, 7, 5, 9, 12], 0.12, 'triangle', 0.08, 67);
+          this.celebrate(ks[e.kart], e.rank);
         }
         break;
       case 'rank':
@@ -455,9 +483,15 @@ export class AudioEngine implements GameAudio {
     const wind = ctx.createGain();
     wind.gain.value = 0;
     noise.connect(windFilter).connect(wind).connect(this.sfx);
+    const surfFilter = ctx.createBiquadFilter();
+    surfFilter.type = 'lowpass';
+    surfFilter.frequency.value = 260;
+    const surf = ctx.createGain();
+    surf.gain.value = 0;
+    noise.connect(surfFilter).connect(surf).connect(this.sfx);
     noise.start();
     void gainScale;
-    return { osc1, osc2, filter, gain, drift, driftFilter, wind };
+    return { osc1, osc2, filter, gain, drift, driftFilter, wind, surf, surfFilter, surface: '', racer: '', weight: 'medium' };
   }
 
   private disposeVoice(v: EngineVoice): void {
@@ -470,6 +504,7 @@ export class AudioEngine implements GameAudio {
     v.gain.disconnect();
     v.drift.disconnect();
     v.wind.disconnect();
+    v.surf.disconnect();
   }
 
   update(world: World | null, locals: number[], dt: number): void {
@@ -506,24 +541,123 @@ export class AudioEngine implements GameAudio {
       }
     }
     if (this.pack) {
-      if (nearest && nd < 30) this.driveVoice(this.pack, nearest, t, 0.03 * (1 - nd / 30), world);
-      else this.pack.gain.gain.setTargetAtTime(0, t, 0.1);
+      if (nearest && nd < 30) {
+        // pass-by: pitch rises while a rival closes in and drops as it pulls away (exaggerated doppler)
+        let doppler = 1;
+        const l = world.karts[locals[0]];
+        const dx = nearest.x - l.x;
+        const dz = nearest.z - l.z;
+        const d = Math.hypot(dx, dz) || 1;
+        const away = ((nearest.vx - l.vx) * dx + (nearest.vz - l.vz) * dz) / d; // + = separating
+        doppler = 1 - Math.max(-0.22, Math.min(0.22, away * 0.025));
+        this.driveVoice(this.pack, nearest, t, 0.03 * (1 - nd / 30), world, doppler);
+      } else {
+        this.pack.gain.gain.setTargetAtTime(0, t, 0.1);
+        this.pack.surf.gain.setTargetAtTime(0, t, 0.1);
+      }
     }
   }
 
-  private driveVoice(v: EngineVoice, k: Kart, t: number, vol: number, world: World): void {
+  private driveVoice(v: EngineVoice, k: Kart, t: number, vol: number, world: World, doppler = 1): void {
+    if (v.racer !== k.racerId) {
+      v.racer = k.racerId;
+      v.weight = findRacer(k.racerId).weight;
+      const e = ENGINE[v.weight];
+      v.osc2.type = e.wave2;
+    }
+    const eng = ENGINE[v.weight];
     const running = world.phase === 'race' || world.phase === 'countdown' || world.phase === 'done';
     const speed = Math.max(0, Math.abs(k.speed));
     const rev = k.input.throttle > 0.1 && world.phase === 'countdown' ? 18 : 0;
-    const base = 52 + (speed + rev) * 4.4 * (k.boosting ? 1.18 : 1);
+    const base = (52 + (speed + rev) * 4.4 * (k.boosting ? 1.18 : 1)) * eng.pitch * doppler;
     v.osc1.frequency.setTargetAtTime(base, t, 0.05);
-    v.osc2.frequency.setTargetAtTime(base * 0.5 + 3, t, 0.05);
-    v.filter.frequency.setTargetAtTime(500 + speed * 40 + (k.boosting ? 800 : 0), t, 0.05);
+    v.osc2.frequency.setTargetAtTime(base * eng.ratio2 + 3, t, 0.05);
+    v.filter.frequency.setTargetAtTime((500 + speed * 40 + (k.boosting ? 800 : 0)) * eng.bright, t, 0.05);
     const alive = running && k.respawnState === RespawnState.None;
+    const scale = vol / 0.055;
     v.gain.gain.setTargetAtTime(alive ? vol * (0.6 + Math.min(1, speed / 25) * 0.4) : 0, t, 0.08);
     const sliding = k.grounded && (k.drifting || Math.abs(k.slip) > 4) && !k.offroad;
-    v.drift.gain.setTargetAtTime(alive && sliding ? 0.035 * (vol / 0.055) : 0, t, 0.05);
-    v.driftFilter.frequency.setTargetAtTime(k.drifting ? 2200 + k.driftTier * 500 : 2600, t, 0.05);
-    v.wind.gain.setTargetAtTime(alive && (k.gliding || (!k.grounded && k.airTime > 0.3)) ? 0.08 * (vol / 0.055) : k.offroad && speed > 5 ? 0.05 * (vol / 0.055) : 0, t, 0.1);
+    // drift hiss crackles and climbs in pitch as the sparks charge
+    const crackle = k.drifting ? 0.55 + Math.random() * (0.6 + k.driftTier * 0.25) : 1;
+    v.drift.gain.setTargetAtTime(alive && sliding ? 0.035 * scale * crackle : 0, t, k.drifting ? 0.012 : 0.05);
+    v.driftFilter.frequency.setTargetAtTime(k.drifting ? 1900 + Math.min(2.6, k.driftCharge) * 650 : 2600, t, 0.03);
+    v.wind.gain.setTargetAtTime(alive && (k.gliding || (!k.grounded && k.airTime > 0.3)) ? 0.08 * scale : 0, t, 0.1);
+    // tyres on the surface
+    const g = k.ground;
+    const track = (world.ground as { data?: TrackData }).data;
+    const surface = !k.grounded ? 'air' : g.water ? 'water' : g.surface === 'ice' ? 'ice' : k.offroad ? 'dirt' : (track?.roadSound ?? 'road');
+    if (surface !== v.surface) {
+      v.surface = surface;
+      const f = v.surfFilter;
+      if (surface === 'dirt') {
+        f.type = 'bandpass';
+        f.frequency.setTargetAtTime(900, t, 0.03);
+        f.Q.value = 0.9;
+      } else if (surface === 'metal') {
+        f.type = 'bandpass';
+        f.frequency.setTargetAtTime(1700, t, 0.03);
+        f.Q.value = 7;
+      } else if (surface === 'water') {
+        f.type = 'lowpass';
+        f.frequency.setTargetAtTime(700, t, 0.03);
+        f.Q.value = 4;
+      } else if (surface === 'ice') {
+        f.type = 'highpass';
+        f.frequency.setTargetAtTime(5200, t, 0.03);
+        f.Q.value = 0.7;
+      } else {
+        f.type = 'lowpass';
+        f.frequency.setTargetAtTime(260, t, 0.03);
+        f.Q.value = 0.7;
+      }
+    }
+    const sp = Math.min(1, speed / 24);
+    const surfGain =
+      surface === 'air' ? 0 : surface === 'dirt' ? 0.075 * sp * (0.7 + Math.random() * 0.6) : surface === 'metal' ? 0.03 * sp : surface === 'water' ? 0.05 * sp * (0.8 + 0.4 * Math.sin(t * 9)) : surface === 'ice' ? 0.022 * sp : 0.028 * sp;
+    v.surf.gain.setTargetAtTime(alive ? surfGain * scale : 0, t, 0.06);
+  }
+
+  /** A short synthesized "voice" for a local racer finishing: flavour by personality, pitch by racer. */
+  private celebrate(k: Kart, rank: number): void {
+    if (!this.ctx) return;
+    const r = findRacer(k.racerId);
+    const p = r.voice;
+    const at = 0.75; // after the fanfare starts
+    const happy = rank <= 3;
+    const yay = (f0: number, f1: number, dur: number, delay: number, gain = 0.06): void => {
+      // two detuned saws through a vowel-ish band = a cartoon "yay"
+      this.tone(f0 * p, dur, 'sawtooth', gain, delay, f1 / f0);
+      this.tone(f0 * p * 1.5, dur, 'triangle', gain * 0.6, delay, f1 / f0);
+      this.noise(dur * 0.6, gain * 0.5, 'bandpass', 1100 * p, 1600 * p, delay, 2);
+    };
+    if (!happy) {
+      yay(420, 280, 0.45, at, 0.05); // "aww"
+      return;
+    }
+    switch (r.personality) {
+      case 'aggressive':
+        yay(260, 300, 0.12, at);
+        yay(260, 330, 0.16, at + 0.18);
+        this.tone(110 * p, 0.25, 'sawtooth', 0.05, at + 0.05, 0.8);
+        break;
+      case 'careful':
+        yay(520, 620, 0.12, at, 0.045);
+        yay(620, 740, 0.12, at + 0.15, 0.045);
+        yay(740, 990, 0.2, at + 0.3, 0.045);
+        break;
+      case 'itemFocused':
+        [0, 4, 7, 12].forEach((n, i) => this.tone(midiToFreq(76 + n) * p * 0.7, 0.08, 'square', 0.04, at + i * 0.09));
+        break;
+      case 'showoff':
+        this.tone(900 * p, 0.6, 'sine', 0.05, at, 2.2, 0.03); // whistle
+        yay(440, 660, 0.3, at + 0.55);
+        this.fanfare([0, 4, 7, 12], 0.06, 'bell', 0.05, 84);
+        break;
+      default:
+        yay(400, 640, 0.32, at);
+        if (rank === 1) yay(500, 800, 0.3, at + 0.38);
+        break;
+    }
+    if (rank === 1) this.ui('cheer');
   }
 }

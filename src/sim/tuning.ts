@@ -14,7 +14,9 @@ export const TUNING = {
   overspeedDecay: 9,
   /** Speed needed to start a drift. */
   driftMinSpeed: 9,
-  driftHopVel: 4.2,
+  driftHopVel: 3.6,
+  /** Instant yaw kick (rad) into the corner when a drift starts — makes drift entry feel snappy. */
+  driftKick: 0.07,
   /** Drift yaw rate range as a fraction of the turn rate (stick fully outward … fully inward). */
   driftRateMin: 0.15,
   driftRateMax: 1.3,

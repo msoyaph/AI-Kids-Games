@@ -81,6 +81,8 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
         h('div', { class: 'hint' }, 'Auto picks the best look your device can run smoothly, and lowers detail if the game slows down.'),
         choice('Show FPS', [[false, 'Off'], [true, 'On']], () => s.showFps, (v) => ((s.showFps = v), save())),
         choice('Screen shake', [[true, 'On'], [false, 'Off']], () => s.screenShake, (v) => ((s.screenShake = v), save())),
+        choice('Reduce effects', [[false, 'Off'], [true, 'On']], () => s.reduceEffects, (v) => ((s.reduceEffects = v), save())),
+        h('div', { class: 'hint' }, 'Turns off camera shake, speed blur and lines, hit pauses and flashing for a calmer view.'),
         choice('Split-screen', [['horizontal', 'Top / bottom'], ['vertical', 'Side by side']], () => s.splitMode, (v) => ((s.splitMode = v), save())),
         h(
           'div',
@@ -96,6 +98,7 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
         h('div', { class: 'hint' }, ASSIST_HINTS[s.assist]),
         choice('Auto-accelerate', [[false, 'Off'], [true, 'On']], () => s.autoAccel, (v) => ((s.autoAccel = v), save())),
         choice('Camera distance', [[0.85, 'Close'], [1, 'Normal'], [1.18, 'Far']], () => s.cameraDistance, (v) => ((s.cameraDistance = v), save())),
+        choice('Rumble', [[true, 'On'], [false, 'Off']], () => s.rumble, (v) => ((s.rumble = v), save())),
         choice('Touch steering', [['buttons', 'Buttons'], ['tilt', 'Tilt']], () => s.touchSteer, (v) => {
           if (v === 'tilt') {
             void TouchControls.requestTiltPermission().then((ok) => {

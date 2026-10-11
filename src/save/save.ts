@@ -87,6 +87,10 @@ export interface Settings {
   screenShake: boolean;
   /** Playtest mode: record anonymous per-race numbers on this device (`calexcart.playtest`). */
   playtest: boolean;
+  /** Calmer view: no camera shake/kick, speed blur, speed lines, hit pauses or flashing (default: OS reduced motion). */
+  reduceEffects: boolean;
+  /** Gamepad rumble / phone vibration. */
+  rumble: boolean;
   keyBindings?: Record<KeyScheme, KeyBindings>;
   padBindings?: PadBindings;
 }
@@ -139,6 +143,14 @@ export function newSave(name: string, now = Date.now()): SaveData {
   };
 }
 
+function prefersReducedMotion(): boolean {
+  try {
+    return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
+}
+
 export function defaultSettings(touch = false): Settings {
   return {
     v: SETTINGS_VERSION,
@@ -154,6 +166,8 @@ export function defaultSettings(touch = false): Settings {
     splitMode: 'horizontal',
     screenShake: true,
     playtest: false,
+    reduceEffects: prefersReducedMotion(),
+    rumble: true,
   };
 }
 

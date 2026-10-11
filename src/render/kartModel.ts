@@ -86,6 +86,9 @@ export class KartVisual {
   readonly shield: THREE.Mesh;
   readonly goo: THREE.Mesh;
   readonly drone: THREE.Group;
+  /** Little stars circling the driver's head after a spin-out. */
+  readonly stars: THREE.Mesh;
+  private dizzy = 0;
   private wheelR: number;
   private wheelSpin = 0;
   private driftAngle = 0;
@@ -100,7 +103,7 @@ export class KartVisual {
 
   constructor(
     readonly kart: Kart,
-    shared: { shield: THREE.BufferGeometry; goo: THREE.BufferGeometry; drone: THREE.BufferGeometry; prop: THREE.BufferGeometry },
+    shared: SharedKartGeometry,
   ) {
     const m = buildKartMeshes(kart.racerId, kart.kart);
     this.chassis = m.chassis;
@@ -128,6 +131,10 @@ export class KartVisual {
     this.drone.visible = false;
     this.root.add(this.drone);
     const body = findBody(kart.kart.body);
+    this.stars = new THREE.Mesh(shared.stars, Materials.basic);
+    this.stars.position.set(0, body.seatY + 1.45, -0.3);
+    this.stars.visible = false;
+    this.root.add(this.stars);
     this.rearLeft.set(body.wheelBack[0], 0.15, body.wheelBack[2] - 0.2);
     this.rearRight.set(-body.wheelBack[0], 0.15, body.wheelBack[2] - 0.2);
   }
@@ -166,7 +173,17 @@ export class KartVisual {
     this.body.rotation.set(this.pitch, this.driftAngle + this.spinAngle, this.lean + (k.trickAnim > 0 ? this.flip : 0), 'YXZ');
     if (k.tumbleTime > 0) this.body.rotation.x = this.flip;
     const wob = k.wobble > 0 ? Math.sin(k.wobble * 40) * k.wobble * 0.25 : 0;
-    this.body.scale.set(1 + wob, 1 - wob, 1 + wob);
+    // spin-outs squash and bounce the kart like a cartoon
+    const squash = k.spinTime > 0 || k.tumbleTime > 0 ? Math.abs(Math.sin(time * 17)) * 0.12 : 0;
+    this.body.scale.set(1 + wob + squash * 0.5, 1 - wob - squash, 1 + wob + squash * 0.5);
+    // dizzy stars linger a moment after the spin
+    if (k.spinTime > 0 || k.tumbleTime > 0) this.dizzy = 0.7;
+    else this.dizzy = Math.max(0, this.dizzy - dt);
+    this.stars.visible = this.dizzy > 0 || k.spinTime > 0 || k.tumbleTime > 0;
+    if (this.stars.visible) {
+      this.stars.rotation.y = time * 7;
+      this.stars.scale.setScalar(Math.min(1, (this.dizzy + (k.spinTime > 0 ? 1 : 0)) / 0.35));
+    }
 
     // Wheels
     this.wheelSpin += (k.speed / this.wheelR) * dt;
@@ -198,8 +215,16 @@ export class KartVisual {
   }
 }
 
+export interface SharedKartGeometry {
+  shield: THREE.BufferGeometry;
+  goo: THREE.BufferGeometry;
+  drone: THREE.BufferGeometry;
+  prop: THREE.BufferGeometry;
+  stars: THREE.BufferGeometry;
+}
+
 /** Shared geometry for all karts. */
-export function buildSharedKartGeometry(): { shield: THREE.BufferGeometry; goo: THREE.BufferGeometry; drone: THREE.BufferGeometry; prop: THREE.BufferGeometry } {
+export function buildSharedKartGeometry(): SharedKartGeometry {
   const shield = new THREE.IcosahedronGeometry(1.55, 1);
   const goo = buildRecipe([
     { shape: 'ico', p: [0.3, 0.8, 0.6], s: [0.6, 0.35, 0.6], c: 0xb34dff, seg: 1 },
@@ -215,5 +240,9 @@ export function buildSharedKartGeometry(): { shield: THREE.BufferGeometry; goo: 
     { shape: 'cyl', p: [0.35, -0.75, 0], s: [0.05, 1.2, 0.05], c: 0x555566, seg: 4, mirror: true },
   ]);
   const prop = buildRecipe([{ shape: 'box', p: [0, 0, 0], s: [2.2, 0.04, 0.22], c: 0x3fa7ff }]);
-  return { shield, goo, drone, prop };
+  const stars = buildRecipe([0, 1, 2].map((i) => {
+    const a = (i / 3) * Math.PI * 2;
+    return { shape: 'ico' as const, p: [Math.cos(a) * 0.5, Math.sin(a * 2) * 0.06, Math.sin(a) * 0.5] as [number, number, number], s: [0.2, 0.2, 0.2] as [number, number, number], r: [0, a * 57, 45] as [number, number, number], c: i === 1 ? 0xffffff : 0xffe45c, seg: 0 };
+  }));
+  return { shield, goo, drone, prop, stars };
 }

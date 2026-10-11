@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { measureCatchUp } from '../../src/sim/catchup';
 
-// Deterministic: same tracks/seeds every run (all tracks × 5 seeds = 80 races per scenario, Pro, 8 racers,
+// Deterministic: same tracks/seeds every run (all tracks × 10 seeds = 160 races per scenario, Pro, 8 racers,
 // items + catch-up on). Item luck makes these numbers swing ±5 % between seed sets, so targets need real margin.
 describe('catch-up targets (Pro, 8 racers)', () => {
-  const r = measureCatchUp({ seeds: [11, 23, 37, 41, 53] });
+  const r = measureCatchUp({ seeds: [11, 23, 37, 41, 53, 61, 73, 89, 97, 101] });
   it('keeps equal-skill fields close', () => {
     expect(r.gap4).toBeLessThanOrEqual(4);
     expect(r.gap8).toBeLessThanOrEqual(12);

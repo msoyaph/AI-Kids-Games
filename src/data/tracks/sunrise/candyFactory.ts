@@ -100,4 +100,5 @@ export const CANDY_FACTORY: TrackData = {
     { type: 'icecream', ...offset(P.last, -20, 30), y: -1, scale: 2.5 },
   ],
   music: 'sunrise3',
+  roadSound: 'metal',
 };

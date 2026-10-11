@@ -26,6 +26,8 @@ export interface HudContext {
   ghostDelta?: number | null;
   screenShake: boolean;
   showSpeedLines: boolean;
+  /** Settings → Reduce effects: no flashing/pulsing overlays. */
+  reduceEffects?: boolean;
 }
 
 /**
@@ -205,16 +207,25 @@ export class Hud {
     const tier = k.drifting ? k.driftTier : 0;
     const sparkKey = k.drifting ? tier + 1 : 0;
     if (this.last.spark !== sparkKey) {
+      const prevTier = typeof this.last.spark === 'number' ? Math.max(0, (this.last.spark as number) - 1) : 0;
       this.last.spark = sparkKey;
       const pills = this.el.spark.children;
       for (let i = 0; i < 3; i++) (pills[i] as HTMLElement).style.background = tier > i ? TIER_CSS[tier] : 'rgba(255,255,255,0.18)';
       this.el.spark.classList.toggle('on', k.drifting);
+      this.el.spark.style.setProperty('--tier', TIER_CSS[tier]);
+      if (tier > prevTier && !c.reduceEffects) {
+        // a new spark tier: pulse the meter in the tier colour
+        this.el.spark.classList.remove('pulse');
+        void this.el.spark.offsetWidth;
+        this.el.spark.classList.add('pulse');
+      }
     }
 
     // juice overlays
     const top = k.params.topSpeed;
-    const fast = c.showSpeedLines ? Math.max(0, (k.speed - top * 0.92) / (top * 0.35)) + (k.boosting ? 0.6 : 0) : 0;
-    this.setOpacity('speedlines', this.el.speedlines, Math.min(0.85, fast));
+    const fast = c.showSpeedLines && !c.reduceEffects ? Math.max(0, (k.speed - top * 0.86) / (top * 0.3)) + (k.boosting ? 0.75 : 0) : 0;
+    this.setOpacity('speedlines', this.el.speedlines, Math.min(0.9, fast));
+    this.toggle('calm', this.root, 'calm', !!c.reduceEffects);
     this.setOpacity('threat', this.el.threat, Math.min(1, k.threat * 1.1));
     if (k.threat > 0.25 && k.threatItem) {
       this.setHtml('warn', this.el.warn, ITEM_ICONS[k.threatItem]);

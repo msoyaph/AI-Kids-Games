@@ -106,6 +106,41 @@ export class GameRenderer {
     this.renderer.shadowMap.enabled = this.quality.profile.shadowMap;
   }
 
+  // ---- radial speed blur (High tier, single view): scene → render target → blurred full-screen quad
+  /** 0..1, set each frame by the race session (0 = off). */
+  motionBlur = 0;
+  private blurRT: THREE.WebGLRenderTarget | null = null;
+  private blurQuad: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial> | null = null;
+  private readonly blurCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  private readonly blurScene = new THREE.Scene();
+
+  private ensureBlur(): void {
+    const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+    if (!this.blurRT) {
+      const gl2 = this.renderer.capabilities.isWebGL2;
+      this.blurRT = new THREE.WebGLRenderTarget(size.x, size.y, { samples: gl2 ? 4 : 0, depthBuffer: true });
+      const mat = new THREE.ShaderMaterial({
+        uniforms: { tDiffuse: { value: this.blurRT.texture }, strength: { value: 0 } },
+        vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+        fragmentShader: `uniform sampler2D tDiffuse; uniform float strength; varying vec2 vUv;
+          void main() {
+            vec2 dir = vUv - vec2(0.5, 0.55);
+            float amt = strength * smoothstep(0.12, 0.7, length(dir));
+            vec4 c = vec4(0.0);
+            for (int i = 0; i < 8; i++) c += texture2D(tDiffuse, vUv - dir * amt * (float(i) / 7.0) * 0.14);
+            gl_FragColor = c / 8.0;
+            #include <colorspace_fragment>
+          }`,
+        depthTest: false,
+        depthWrite: false,
+      });
+      this.blurQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat);
+      this.blurQuad.frustumCulled = false;
+      this.blurScene.add(this.blurQuad);
+    }
+    if (this.blurRT.width !== size.x || this.blurRT.height !== size.y) this.blurRT.setSize(size.x, size.y);
+  }
+
   /** Render one or more viewports. Cameras' aspect ratios are updated to match their rects. */
   render(views: readonly RenderView[]): void {
     const r = this.renderer;
@@ -118,6 +153,16 @@ export class GameRenderer {
         v.camera.updateProjectionMatrix();
       }
       r.setScissorTest(false);
+      if (this.motionBlur > 0.02 && this.quality.level === 'high' && !this.contextLost) {
+        this.ensureBlur();
+        r.setRenderTarget(this.blurRT);
+        r.render(v.scene, v.camera);
+        r.setRenderTarget(null);
+        r.setViewport(0, 0, this.width, this.height);
+        this.blurQuad!.material.uniforms.strength.value = this.motionBlur;
+        r.render(this.blurScene, this.blurCam);
+        return;
+      }
       r.setViewport(0, 0, this.width, this.height);
       r.render(v.scene, v.camera);
       return;

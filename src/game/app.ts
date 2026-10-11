@@ -201,6 +201,7 @@ export class App {
     if (s.keyBindings) this.input.keyBindings = { solo: cloneKeys(s.keyBindings.solo), left: cloneKeys(s.keyBindings.left), right: cloneKeys(s.keyBindings.right) };
     if (s.padBindings) this.input.padBindings = clonePad(s.padBindings);
     this.input.touch.setMode(s.touchSteer);
+    this.input.rumbleOn = s.rumble;
     this.fpsEl.style.display = s.showFps ? '' : 'none';
     this.playtestBadge.style.display = s.playtest ? '' : 'none';
   }

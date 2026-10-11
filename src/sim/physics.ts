@@ -313,6 +313,7 @@ function land(k: Kart, env: StepEnv, h: number): void {
     if (k.input.drift && k.hopSteer !== 0 && k.speed > TUNING.driftMinSpeed && k.controllable) {
       k.drifting = true;
       k.driftDir = k.hopSteer;
+      k.yaw -= k.driftDir * TUNING.driftKick;
       k.driftCharge = 0;
       k.driftTier = 0;
       k.driftTime = 0;

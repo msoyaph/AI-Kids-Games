@@ -134,4 +134,5 @@ export const GEARWORKS_FACTORY: TrackData = {
     { type: 'ga_gearflat', ...between(P.scA, P.scB, 0.7, -6, GY), scale: 1.3 },
   ],
   music: 'galaxy4',
+  roadSound: 'metal',
 };

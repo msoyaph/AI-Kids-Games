@@ -19,6 +19,12 @@ export class ChaseCamera {
   private lookBackBlend = 0;
   private shake = 0;
   private time = 0;
+  private distMul = 1;
+  /** Camera kick (hits): pushes the camera back/down for a moment. */
+  private kickAmt = 0;
+  /** Settings: allow shake, and the calmer "reduce effects" mode (smaller FOV changes, no kick/shake). */
+  shakeEnabled = true;
+  reduceMotion = false;
 
   constructor(far = 600) {
     this.camera = new THREE.PerspectiveCamera(66, 16 / 9, 0.2, far);
@@ -29,7 +35,14 @@ export class ChaseCamera {
   }
 
   addShake(amount: number): void {
+    if (!this.shakeEnabled || this.reduceMotion) return;
     this.shake = Math.min(1, this.shake + amount);
+  }
+
+  /** A short punch of the camera (being hit, big landings). */
+  kick(amount: number): void {
+    if (this.reduceMotion) return;
+    this.kickAmt = Math.min(1, this.kickAmt + amount);
   }
 
   update(k: Kart, alpha: number, dt: number, lookBack: boolean): void {
@@ -46,7 +59,11 @@ export class ChaseCamera {
       targetYaw = lerpAngle(kyaw, travel, 0.35);
     }
     if (k.respawnState === RespawnState.Falling) targetYaw = this.yaw;
-    const dist = 6.4 * this.distanceSetting * (k.gliding ? 1.25 : 1);
+    // pull back a little at high speed / boosting so speed reads on screen
+    const sf = clamp(k.speed / Math.max(1, k.params.topSpeed), 0, 1.4);
+    const pull = this.reduceMotion ? 1 : 1 + 0.1 * clamp((sf - 0.55) / 0.45, 0, 1) + (k.boosting ? 0.07 : 0);
+    this.distMul = damp(this.distMul, pull, k.boosting ? 5 : 2.5, dt);
+    const dist = 6.4 * this.distanceSetting * (k.gliding ? 1.25 : 1) * this.distMul;
     const height = 2.6 * this.distanceSetting + (k.gliding ? 0.8 : 0);
     if (!this.initialised) {
       this.yaw = targetYaw;
@@ -78,9 +95,9 @@ export class ChaseCamera {
       this.y = damp(this.y, Math.max(ty, ky + 1.2), k.grounded ? 9 : 4, dt);
     }
     // FOV kick when boosting, gentle widening with speed
-    const speedFrac = clamp(k.speed / Math.max(1, k.params.topSpeed), 0, 1.4);
-    let fovTarget = this.baseFov + speedFrac * 5;
-    if (k.boosting) fovTarget += 9;
+    const speedFrac = sf;
+    let fovTarget = this.baseFov + speedFrac * (this.reduceMotion ? 2.5 : 7);
+    if (k.boosting) fovTarget += this.reduceMotion ? 3 : 10;
     this.fov = damp(this.fov, fovTarget, k.boosting ? 8 : 3, dt);
     if (Math.abs(this.camera.fov - this.fov) > 0.05) {
       this.camera.fov = this.fov;
@@ -90,7 +107,10 @@ export class ChaseCamera {
     const sh = this.shake * this.shake * 0.35;
     const sx = sh ? Math.sin(this.time * 61) * sh : 0;
     const sy = sh ? Math.sin(this.time * 47 + 1) * sh : 0;
-    this.camera.position.set(this.x + sx, this.y + sy, this.z);
+    // kick: quick back-and-down punch that springs back
+    this.kickAmt = Math.max(0, this.kickAmt - dt * 4);
+    const kb = this.kickAmt * this.kickAmt * 0.9;
+    this.camera.position.set(this.x + sx - Math.sin(this.yaw) * kb, this.y + sy - kb * 0.35, this.z - Math.cos(this.yaw) * kb);
     const look = back ? -1 : 1;
     this.camera.lookAt(kx + Math.sin(this.yaw) * 3 * look, ky + 1.0, kz + Math.cos(this.yaw) * 3 * look);
   }
