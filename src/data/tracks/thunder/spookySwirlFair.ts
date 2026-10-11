@@ -20,7 +20,7 @@ const L = layout({ x: 0, z: 0, heading: 0, y: 0 }, [
   straight(10, { mark: 'patchOut' }),
   left(90, 46, { mark: 'last' }),
   straight(88),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 

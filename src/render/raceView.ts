@@ -17,7 +17,7 @@ import { ItemVisuals } from './itemVisuals';
 import type { ItemSystem } from '../sim/items/itemSystem';
 import { buildBackdrop } from './backdrop';
 import { HazardVisuals } from './hazardVisuals';
-import { buildWaterSurfaces, fxTime, sheenTrackMaterial, shimmerMaterial, waterMaterial } from './surfaces';
+import { buildWaterSurfaces, fxTime, iceMaterial, sheenTrackMaterial, shimmerMaterial, waterMaterial } from './surfaces';
 import type { HazardSystem } from '../sim/hazards';
 
 export type SplitMode = 'horizontal' | 'vertical';
@@ -89,7 +89,13 @@ export class RaceView {
       if (fancy) {
         const water = buildWaterSurfaces(course.track, sky.bottom);
         if (water) this.scene.add(water);
-      }
+        if (tm.iceGeometry) {
+          const ice = new THREE.Mesh(tm.iceGeometry, iceMaterial());
+          ice.name = 'ice';
+          ice.renderOrder = 1;
+          this.scene.add(ice);
+        }
+      } else tm.iceGeometry?.dispose();
       this.boostMat = tm.boostMaterial;
       const props = buildTrackProps(course.track, course.track.data.id, gr.renderer, sky);
       this.scene.add(props.group);

@@ -128,3 +128,29 @@ export function shimmerMaterial(base: THREE.MeshBasicMaterial): THREE.MeshBasicM
   m.customProgramCacheKey = () => 'shimmer';
   return m;
 }
+
+/** Glossy ice layer with tiny frost sparkles (Medium/High). */
+export function iceMaterial(): THREE.MeshPhongMaterial {
+  const m = new THREE.MeshPhongMaterial({ color: 0xeaf7ff, specular: 0xbfe3ff, shininess: 110, transparent: true, opacity: 0.45, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.fxTime = fxTime;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;')
+      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform float fxTime;')
+      .replace(
+        '#include <opaque_fragment>',
+        `{
+          vec2 p = vWPos.xz * 1.7;
+          float spark = step(0.992, fract(sin(dot(floor(p), vec2(12.9898, 78.233))) * 43758.5453));
+          float tw = 0.5 + 0.5 * sin(fxTime * 5.0 + dot(floor(p), vec2(3.1, 7.7)));
+          outgoingLight += vec3(0.9) * spark * tw;
+          diffuseColor.a = max(diffuseColor.a, spark * tw);
+        }
+        #include <opaque_fragment>`,
+      );
+  };
+  m.customProgramCacheKey = () => 'ice';
+  return m;
+}

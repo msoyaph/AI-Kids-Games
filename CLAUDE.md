@@ -75,8 +75,8 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - Track validation: `npx tsx scripts/validateTracks.ts` (all OK); balance report: `npm run sim`.
 
 ## Gotchas
-- `layout()` mark headings at the end of curves are skewed 10–15° (tracks compensate; don't "fix" the builder
-  without re-placing props in agent-authored tracks).
+- `layout()` marks: new tracks get exact tangents; the 16 original tracks use `{ legacyMarkHeadings: true }`
+  (their props were placed against the old 10–15° skew). Never remove that flag without re-placing their props.
 - Headless Playwright on macOS uses `--use-angle=metal`; SwiftShader is ~10× slower (CI fallback).
 - Chrome blocks localhost iframes inside about:blank (private network access) — host pages in e2e are served
   via `page.route` on the same origin.
@@ -140,7 +140,15 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   sheen `SkyData.roadSheen`, pod shimmer; shared `fxTime`); glider spring/unfold, launch puff, podium confetti,
   HUD gain/loss flash, FINAL LAP banner, item slot polish, results rows slide in. Podium karts now face the camera
   (they showed their backs before). Low verified not heavier (Neon Low 41 draws / 58k tris).
-- [ ] Phase 6 — ice + track fixes + marker flag
+- [x] Phase 6 — ice (`TrackData.ice` ranges, shortcut `surface: 'ice'`, `F_ICE` flag, ground surface 'ice',
+  TUNING.iceGrip/iceDriftGrip/iceAccel/iceCoast/iceDriftCharge, AI `iceCornerMul`, glossy sparkle ice layer on
+  Medium/High (`iceMaterial`), frost sparkles, skate hiss, minimap/validator/editor), Frostpeak icy slalom + icy
+  ski-jump shortcut, Canyon Run reshaped (lap 32–33 s, ~6 AI mini-turbos/race), `layout(…, { legacyMarkHeadings })`
+  with exact tangents by default (16 old tracks flagged; `src/data/tracks/fingerprint.ts`,
+  `scripts/trackHashes.ts --write`, tests/unit/trackHashes.test.ts; Canyon's fingerprint refreshed on purpose).
+  AI: one drift decision per bend (linked bends work), extra lane room when drifting; drift kick is now a 0.15 s
+  yaw-rate boost (`driftKickIn`) the AI accounts for (an instant yaw kick had halved AI drifting).
+  Full assist also steers in the air (`airBlend`) → no falls for the simulated beginner.
 - [ ] Phase 7 — Frost Cup, Driving School, replay, Coin Rush
 - [ ] Phase 8 — accessibility
 - [ ] Phase 9 — CI

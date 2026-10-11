@@ -32,7 +32,7 @@ const L = layout({ x: 0, z: 0, heading: 0, y: 0 }, [
   left(90, 22, { mark: 'domesOut' }),
   straight(102, { mark: 'backStraight' }),
   right(90, 40, { mark: 'lastTurn' }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 const GY = -0.6;

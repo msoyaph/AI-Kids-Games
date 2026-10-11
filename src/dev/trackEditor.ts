@@ -4,7 +4,7 @@
 import type { App } from '../game/app';
 import type { TrackData, TrackPoint } from '../data/types';
 import { TRACKS, DEV_TRACKS } from '../data/tracks/index';
-import { TrackModel } from '../sim/track/trackModel';
+import { F_ICE, TrackModel } from '../sim/track/trackModel';
 import { pickOpponents } from '../game/modes/roster';
 
 export function openEditor(app: App): void {
@@ -149,8 +149,18 @@ export function openEditor(app: App): void {
         else ctx.lineTo(sx(rb.px[j]), sy(rb.pz[j]));
       }
       ctx.stroke();
+      // icy stretches
+      ctx.strokeStyle = '#8fd8ff';
+      for (let i = 0; i < rb.n; i++) {
+        const j = (i + 1) % rb.n;
+        if (!(rb.flags[i] & F_ICE)) continue;
+        ctx.beginPath();
+        ctx.moveTo(sx(rb.px[i]), sy(rb.pz[i]));
+        ctx.lineTo(sx(rb.px[j]), sy(rb.pz[j]));
+        ctx.stroke();
+      }
       for (const sc of model.shortcuts) {
-        ctx.strokeStyle = '#ff9f1c';
+        ctx.strokeStyle = sc.flags[0] & F_ICE ? '#8fd8ff' : '#ff9f1c';
         ctx.lineWidth = sc.hw[0] * 2 * view.scale * devicePixelRatio;
         ctx.beginPath();
         for (let i = 0; i < sc.n; i++) (i ? ctx.lineTo : ctx.moveTo).call(ctx, sx(sc.px[i]), sy(sc.pz[i]));

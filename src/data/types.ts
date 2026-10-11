@@ -279,7 +279,7 @@ export interface ShortcutData {
   points: TrackPoint[];
   width: number;
   edge: EdgeType;
-  surface: 'road' | 'offroad';
+  surface: 'road' | 'offroad' | 'ice';
   /** Main-track u where the shortcut leaves and rejoins (used for progress mapping). */
   joinFrom: number;
   joinTo: number;
@@ -384,6 +384,8 @@ export interface TrackData {
   ramps?: RampData[];
   gaps?: URange[];
   zones?: ZoneData[];
+  /** Icy stretches of the main road: low grip, long slides, faster spark charge. */
+  ice?: URange[];
   hazards?: HazardData[];
   shortcuts: ShortcutData[];
   palette: TrackPalette;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { TrackPalette } from '../data/types';
-import { EDGE_DROP, EDGE_OPEN, EDGE_WALL, F_GAP, Ribbon, TrackModel } from '../sim/track/trackModel';
+import { EDGE_DROP, EDGE_OPEN, EDGE_WALL, F_GAP, F_ICE, Ribbon, TrackModel } from '../sim/track/trackModel';
 import { RAMP_GLIDER } from '../sim/ground';
 import { Materials } from './materials';
 import { mergeColored, prim } from './lowpoly';
@@ -131,6 +131,8 @@ function skirt(w: GeoWriter, rb: Ribbon, stride: number, side: -1 | 1, dAt: (i: 
 export interface TrackMeshes {
   group: THREE.Group;
   boostMaterial: THREE.MeshBasicMaterial;
+  /** Geometry of the icy stretches (for the glossy ice layer on Medium/High), or null. */
+  iceGeometry: THREE.BufferGeometry | null;
 }
 
 /** Build all static geometry for a track. One merged mesh for the surfaces + one for boost pads. */
@@ -140,8 +142,9 @@ export function buildTrackMeshes(track: TrackModel): TrackMeshes {
   const hasGround = track.data.sky.ground !== null && track.data.verge !== false;
   const w = new GeoWriter();
   const pads = new GeoWriter();
-  buildRibbon(w, pads, track.main, pal, groundY, hasGround, false);
-  for (const sc of track.shortcuts) buildRibbon(w, pads, sc, pal, groundY, hasGround, true);
+  const iceW = new GeoWriter();
+  buildRibbon(w, pads, track.main, pal, groundY, hasGround, false, iceW);
+  for (const sc of track.shortcuts) buildRibbon(w, pads, sc, pal, groundY, hasGround, true, iceW);
   // start line checkers
   const rb = track.main;
   const cols = 10;
@@ -173,17 +176,24 @@ export function buildTrackMeshes(track: TrackModel): TrackMeshes {
   group.add(buildStartGate(track));
   const sup = buildSupports(track, groundY);
   if (sup) group.add(sup);
-  return { group, boostMaterial };
+  return { group, boostMaterial, iceGeometry: iceW.pos.length ? iceW.build() : null };
 }
 
-function buildRibbon(w: GeoWriter, pads: GeoWriter, rb: Ribbon, pal: TrackPalette, groundY: number, hasGround: boolean, isShortcut: boolean): void {
+const ICE_A = 0xcfe6f7;
+const ICE_B = 0xc2ddf2;
+
+function buildRibbon(w: GeoWriter, pads: GeoWriter, rb: Ribbon, pal: TrackPalette, groundY: number, hasGround: boolean, isShortcut: boolean, iceW: GeoWriter | null = null): void {
   const stride = 2;
   const gap = (i: number): boolean => (rb.flags[i] & F_GAP) !== 0;
   const lift = isShortcut ? 0.04 : 0;
   const kerbW = 0.7;
-  const roadColor = rb.offroadSurface ? (s: number) => (Math.floor(s / 6) % 2 ? pal.offroad : shade(pal.offroad, 0.93)) : (s: number) => (Math.floor(s / 10) % 2 ? pal.road : pal.road2);
+  const baseRoad = rb.offroadSurface ? (s: number) => (Math.floor(s / 6) % 2 ? pal.offroad : shade(pal.offroad, 0.93)) : (s: number) => (Math.floor(s / 10) % 2 ? pal.road : pal.road2);
+  const icy = (i: number): boolean => (rb.flags[i] & F_ICE) !== 0;
+  const roadColor = (s: number, i: number): number => (icy(i) ? (Math.floor(s / 7) % 2 ? ICE_A : ICE_B) : baseRoad(s));
   // road
   strip(w, rb, stride, { d0: (i) => -rb.hw[i], d1: (i) => rb.hw[i], color: roadColor, lift, skip: gap });
+  // glossy ice layer (drawn only on Medium/High — Low just sees the icy road colour)
+  if (iceW) strip(iceW, rb, stride, { d0: (i) => -rb.hw[i] - 0.3, d1: (i) => rb.hw[i] + 0.3, color: () => 0xffffff, lift: lift + 0.02, skip: (i) => gap(i) || !icy(i) });
   if (!rb.offroadSurface) {
     // centre dashes
     for (let i = 0; i < rb.n - 4; i += 8) {

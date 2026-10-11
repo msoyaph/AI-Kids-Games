@@ -25,7 +25,7 @@ const L = layout({ x: 0, z: 0, heading: 0, y: Y }, [
   right(90, 36, { y: 19, mark: 't4' }),
   straight(76, { y: 20, mark: 'back' }),
   right(90, 40, { mark: 'last' }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 

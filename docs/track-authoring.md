@@ -28,6 +28,7 @@ offset(L.pos.x, fwd, right, y?) // a point relative to a mark — handy for shor
 ```
 
 Positions of features are in control-point units `u` (3.5 = halfway between points 3 and 4). Use marks.
+`layout(start, segs, { step })` sets the control-point spacing (default 22 m).
 
 ## Physics cheat-sheet (Pro class)
 - Top speed ≈ 26 m/s (Rookie 21, Champion 30). Good laps are ~900–1400 m → 35–50 s.
@@ -40,6 +41,8 @@ Positions of features are in control-point units `u` (3.5 = halfway between poin
 - Slopes over ~35% feel like walls; keep elevation changes gradual (the validator warns > 42%).
 
 ## Edges, shoulders and supports
+- `ice: [{ from, to }]` makes stretches of the main road icy (grip ×0.35, long slides, sparks charge faster, glossy
+  frosty look); a shortcut can use `surface: 'ice'`. Keep icy bends away from drop edges (the validator warns).
 - `edge` (default for both sides) and `edges` spans: `wall` (barrier), `drop` (fall off → drone respawn), `open` (low fence; the
   boundary is invisible unless a shortcut ribbon continues there).
 - `shoulder` = off-road strip width beyond the road (slows karts). Drop edges get a narrow kerb instead.
@@ -56,8 +59,10 @@ A shortcut is an open spline (`points`) with its own width/edge/surface, joining
   main road's railing can catch karts flying over them.
 - Water/low-gravity `zones` also apply to shortcuts that skip that stretch; set `shortcuts: false` on a zone for a
   dry bridge over a river.
-- `layout()` mark headings come from the last short segment of a curve, so a mark at the end of a curve can point
-  10–15° off the true tangent — allow for that when placing props with `offset()`.
+- `layout()` mark headings are the road's true tangent at the mark, so `offset(L.pos.mark, fwd, right)` points
+  exactly along / across the road. (The 16 original tracks pass `{ legacyMarkHeadings: true }` because their props
+  were placed against the old chord-based headings, which were skewed 10–15° at the ends of curves. Never use that
+  flag for new tracks; `tests/unit/trackHashes.test.ts` proves the flagged tracks are unchanged.)
 
 ## Items, boosts, hazards
 - `itemRows` (3–4 per track): rows of item pods across the road.

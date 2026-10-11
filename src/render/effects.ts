@@ -112,6 +112,15 @@ export class Effects {
           this.soft.spawn(side ? lx : rxp, gy + 0.1, side ? lz : rzp, (rnd() - 0.5) * 1.5, 0.8 + rnd(), (rnd() - 0.5) * 1.5, 0.55, 0.35, 1.1, 0xf2f0ff, 0.32, -0.5, 1.5);
         }
       }
+      // Frost sparkles kicked up on ice
+      if (k.grounded && k.ice && speed > 6) {
+        a.dust += dt * (k.drifting ? 26 : 10);
+        while (a.dust >= 1) {
+          a.dust -= 1;
+          const side = rnd() < 0.5;
+          this.glow.spawn(side ? lx : rxp, gy + 0.05, side ? lz : rzp, (rnd() - 0.5) * 2 - fx * 1.5, 1 + rnd() * 1.5, (rnd() - 0.5) * 2 - fz * 1.5, 0.35, 0.12, 0.03, 0xeaf8ff, 1, 4, 2);
+        }
+      }
       // Off-road dust
       if (k.grounded && k.offroad && speed > 5) {
         a.dust += dt * Math.min(30, speed * 1.2);

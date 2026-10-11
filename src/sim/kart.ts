@@ -127,6 +127,8 @@ export class Kart {
   driftTier = 0;
   driftTime = 0;
   hopTime = 0;
+  /** On an icy surface this step. */
+  ice = false;
   /** Steering sign captured while hopping, to start a drift on landing. */
   hopSteer = 0;
 

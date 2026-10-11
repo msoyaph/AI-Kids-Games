@@ -1,3 +1,4 @@
+import { F_ICE } from '../sim/track/trackModel';
 import type { TrackModel } from '../sim/track/trackModel';
 import type { ArenaModel } from '../sim/arena';
 import type { Kart } from '../sim/kart';
@@ -88,7 +89,18 @@ export class Minimap {
       };
       line(rb, 7, 'rgba(29,18,80,0.75)', true);
       line(rb, 4, 'rgba(255,255,255,0.95)', true);
-      for (const sc of t.shortcuts) line(sc, 2, 'rgba(255,210,63,0.9)', false);
+      // icy stretches in light blue
+      g.strokeStyle = '#8fd8ff';
+      g.lineWidth = 4;
+      for (let i = 0; i < rb.n; i += 3) {
+        const j = rb.idx(i + 3);
+        if (!(rb.flags[i] & F_ICE) || !(rb.flags[j] & F_ICE)) continue;
+        g.beginPath();
+        g.moveTo(this.toX(rb.px[i]), this.toY(rb.pz[i]));
+        g.lineTo(this.toX(rb.px[j]), this.toY(rb.pz[j]));
+        g.stroke();
+      }
+      for (const sc of t.shortcuts) line(sc, 2, sc.flags[0] & F_ICE ? 'rgba(143,216,255,0.95)' : 'rgba(255,210,63,0.9)', false);
       // start line
       g.fillStyle = '#ff4d6d';
       g.beginPath();

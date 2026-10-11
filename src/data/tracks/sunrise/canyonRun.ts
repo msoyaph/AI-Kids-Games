@@ -2,27 +2,28 @@ import type { TrackData } from '../../types';
 import { between, layout, left, offset, right, straight } from '../builder';
 
 // Forest canyon: glide across the gorge, splash through the creek, balance over the fallen-log bridge.
+// v0.2: tighter turn 1, switchback and summit plus a sharper S-bend (drift corners), longer climb and run-in.
 const L = layout({ x: 0, z: 0, heading: 0, y: 16 }, [
-  straight(120, { mark: 'rim' }),
-  right(90, 40, { mark: 'turn1' }),
+  straight(135, { mark: 'rim' }),
+  right(90, 30, { mark: 'turn1' }),
   straight(46, { mark: 'lip' }),
   straight(56, { y: 12, mark: 'gapEnd' }),
   straight(30, { mark: 'landed' }),
-  left(60, 45),
-  right(150, 32, { y: 5, mark: 'switchback' }),
+  left(75, 30),
+  right(165, 28, { y: 5, mark: 'switchback' }),
   straight(30, { y: 1, markStart: 'creekIn' }),
-  straight(50, { mark: 'creekOut' }),
+  straight(60, { mark: 'creekOut' }),
   straight(20, { mark: 'logA' }),
   left(60, 30, { y: 2 }),
   right(120, 30, { mark: 'bend' }),
   left(60, 30, { y: 3, mark: 'logB' }),
-  straight(55, { y: 10, mark: 'climb' }),
-  right(120, 40, { y: 16, mark: 'summit' }),
-  left(40, 50),
-  right(40, 50, { mark: 'trickLip' }),
-  straight(30),
+  straight(85, { y: 10, mark: 'climb' }),
+  right(120, 30, { y: 16, mark: 'summit' }),
+  left(55, 26),
+  right(55, 26, { mark: 'trickLip' }),
+  straight(45),
   right(60, 45, { mark: 'last' }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 

@@ -28,7 +28,7 @@ const L = layout({ x: 0, z: 0, heading: 0, y: 2 }, [
   straight(20, { y: 5, mark: 'jumpOut' }),
   right(90, 30, { y: 3.5 }),
   right(90, 30, { y: 2, mark: 'last' }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 const GROUND = -6;
@@ -64,6 +64,8 @@ export const FROSTPEAK_PASS: TrackData = {
     { at: m.downhill2 + 0.3, count: 4 },
   ],
   ramps: [{ at: m.climb - 1.4, kind: 'trick', length: 6, height: 1.3, offset: 0.4, width: 6 }],
+  // the long slalom sweeper is frozen over: slide it with a drift for fast sparks
+  ice: [{ from: m.slalom - 3.6, to: m.slalom + 0.4 }],
   hazards: [
     { kind: 'roller', at: m.downhill - 1.9, offset: 0, amp: 0.7, period: 4.4, model: 'th_snowball', radius: 1.8 },
     { kind: 'roller', at: m.downhill - 0.6, offset: 0, amp: 0.7, period: 5.2, phase: 0.4, model: 'th_snowball', radius: 1.8 },
@@ -79,13 +81,13 @@ export const FROSTPEAK_PASS: TrackData = {
       ],
       width: 10,
       edge: 'open',
-      surface: 'road',
+      surface: 'ice',
       joinFrom: m.jumpA,
       joinTo: m.jumpOut,
       boostPads: [{ at: 1.2, offset: 0, width: 3 }],
       ramps: [{ at: 1.92, kind: 'trick', length: 6, height: 1.4 }],
       gaps: [{ from: 1.96, to: 2.3 }],
-      hint: 'Take the ski jump over the icy crevasse! Hit the boost pad and keep your speed up — too slow and you will drop into the crack.',
+      hint: 'Slide down the frozen run and take the ski jump over the crevasse! Hit the boost pad and keep your speed up — the ice is slippery and too slow means a drop into the crack.',
       aiUse: 0.7,
     },
   ],

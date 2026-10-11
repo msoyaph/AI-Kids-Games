@@ -36,6 +36,8 @@ export interface AssistLevelBalance {
   lineFollow: number;
   /** Soft invisible rail on drop edges (metres inside the edge); 0 = off. Never on shortcuts/gaps/gliders. */
   edgeGuard: number;
+  /** Steering help while airborne (jumps, gliders): pull toward the racing line. */
+  airBlend: number;
 }
 
 export const BALANCE = {
@@ -120,6 +122,8 @@ export const BALANCE = {
     /** Only drift corners whose needed yaw rate sits inside the drift's range (TUNING.driftRateMin/Max) with margin. */
     driftMinRateMul: 1.2,
     driftMaxRateMul: 0.88,
+    /** Corner speed multiplier when ice is ahead (AI brakes earlier on slippery bends). */
+    iceCornerMul: 0.82,
     /** Release a drift when sliding toward an edge within this many metres of it. */
     driftEdgeMargin: 0.9,
     /** Hop this many seconds (× speed = metres) before a bend starts so the drift begins at turn-in. */
@@ -144,9 +148,9 @@ export const BALANCE = {
   // ------------------------------------------------------------------ steering assist
   assist: {
     levels: {
-      off: { lineBlend: 0, wallBlend: 0, dropBlend: 0, wallMargin: 0, dropMargin: 0, driftMul: 0, lineFollow: 0.6, edgeGuard: 0 },
-      light: { lineBlend: 0.2, wallBlend: 0.55, dropBlend: 0.85, wallMargin: 1.2, dropMargin: 2.5, driftMul: 0.5, lineFollow: 0.6, edgeGuard: 0 },
-      full: { lineBlend: 0.38, wallBlend: 0.75, dropBlend: 0.95, wallMargin: 1.8, dropMargin: 3.5, driftMul: 0.7, lineFollow: 0.8, edgeGuard: 1.2 },
+      off: { lineBlend: 0, wallBlend: 0, dropBlend: 0, wallMargin: 0, dropMargin: 0, driftMul: 0, lineFollow: 0.6, edgeGuard: 0, airBlend: 0 },
+      light: { lineBlend: 0.2, wallBlend: 0.55, dropBlend: 0.85, wallMargin: 1.2, dropMargin: 2.5, driftMul: 0.5, lineFollow: 0.6, edgeGuard: 0, airBlend: 0 },
+      full: { lineBlend: 0.38, wallBlend: 0.75, dropBlend: 0.95, wallMargin: 1.8, dropMargin: 3.5, driftMul: 0.7, lineFollow: 0.8, edgeGuard: 1.2, airBlend: 0.7 },
     } satisfies Record<AssistLevel, AssistLevelBalance>,
     /** What "Auto" means for each input device. */
     defaults: { touch: 'light', keyboard: 'off', gamepad: 'off' } as Record<'touch' | 'keyboard' | 'gamepad', AssistLevel>,
@@ -167,22 +171,22 @@ export const BALANCE = {
     /** Per-track staff run: pace multiplier + seed — written by `npm run calibrate-staff` (between the markers). */
     tracks: {
       // <staff-pace>
-      'candy-factory': { pace: 0.94, seed: 135 },
-      'canyon-run': { pace: 0.96, seed: 152 },
-      'cinder-summit': { pace: 0.98, seed: 169 },
-      'coral-dome-dash': { pace: 0.977, seed: 152 },
-      'crater-hop-base': { pace: 0.9645, seed: 169 },
-      'frostpeak-pass': { pace: 0.9685, seed: 101 },
-      'gearworks-factory': { pace: 0.9415, seed: 152 },
-      'jadefall-temple': { pace: 0.9585, seed: 169 },
-      'neon-nightway': { pace: 0.99, seed: 135 },
-      'prism-parkway': { pace: 0.973, seed: 118 },
-      'rooftop-rally': { pace: 0.98, seed: 152 },
-      'seashell-boardwalk': { pace: 0.972, seed: 101 },
-      'sky-castle-soar': { pace: 0.9685, seed: 169 },
-      'spooky-swirl-fair': { pace: 0.9555, seed: 152 },
-      'sunstone-ruins': { pace: 0.95, seed: 135 },
-      'windmill-sky-isles': { pace: 0.98, seed: 118 },
+      'candy-factory': { pace: 0.954, seed: 118 },
+      'canyon-run': { pace: 0.951, seed: 169 },
+      'cinder-summit': { pace: 0.973, seed: 118 },
+      'coral-dome-dash': { pace: 0.9855, seed: 118 },
+      'crater-hop-base': { pace: 0.96, seed: 169 },
+      'frostpeak-pass': { pace: 0.99, seed: 169 },
+      'gearworks-factory': { pace: 0.96, seed: 118 },
+      'jadefall-temple': { pace: 0.947, seed: 152 },
+      'neon-nightway': { pace: 0.981, seed: 169 },
+      'prism-parkway': { pace: 0.9575, seed: 118 },
+      'rooftop-rally': { pace: 0.956, seed: 118 },
+      'seashell-boardwalk': { pace: 0.9385, seed: 118 },
+      'sky-castle-soar': { pace: 0.9725, seed: 101 },
+      'spooky-swirl-fair': { pace: 0.97, seed: 118 },
+      'sunstone-ruins': { pace: 0.9785, seed: 101 },
+      'windmill-sky-isles': { pace: 0.9755, seed: 169 },
       // </staff-pace>
     } as Record<string, { pace: number; seed: number }>,
   },

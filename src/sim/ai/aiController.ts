@@ -114,9 +114,26 @@ export class AiController {
     }
   }
 
+  /** Full assist in the air (jumps, gliders): steer toward the racing line further ahead so landings are safe. */
+  private airAssist(k: Kart): void {
+    const A = BALANCE.assist.levels[k.assistLevel];
+    if (A.airBlend <= 0) return;
+    const rb = this.track.main;
+    const i = k.hint.sample;
+    const j = rb.idx(i + Math.round((14 + Math.max(0, k.speed) * 0.6) / rb.ds));
+    const tx = rb.px[j] + rb.rx[j] * this.track.line[j] * A.lineFollow;
+    const tz = rb.pz[j] + rb.rz[j] * this.track.line[j] * A.lineFollow;
+    const err = wrapAngle(Math.atan2(tx - k.x, tz - k.z) - k.yaw);
+    k.input.steer = clamp(k.input.steer * (1 - A.airBlend) + clamp(-err * 2.4, -1, 1) * A.airBlend, -1, 1);
+  }
+
   /** Smart steering: nudges toward the racing line and strongly away from drops and walls. */
   private assist(k: Kart): void {
-    if (!k.controllable || !k.grounded) return;
+    if (!k.controllable) return;
+    if (!k.grounded) {
+      this.airAssist(k);
+      return;
+    }
     const g = k.ground;
     if (g.ribbon !== 0) return;
     const rb = this.track.main;

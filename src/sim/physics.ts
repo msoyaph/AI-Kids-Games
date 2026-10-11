@@ -60,12 +60,12 @@ export function stepKart(k: Kart, ground: GroundModel, env: StepEnv, dt: number)
       if (vf < top) vf = Math.min(top, vf + TUNING.boostAccel * dt);
     } else if (throttle > 0.05) {
       if (vf < 0) vf += TUNING.brakeDecel * throttle * dt;
-      else if (vf < top) vf = Math.min(top, vf + p.accel * Math.max(0.12, 1.08 - vf / Math.max(top, 1)) * throttle * dt);
+      else if (vf < top) vf = Math.min(top, vf + p.accel * (k.ice ? TUNING.iceAccel : 1) * Math.max(0.12, 1.08 - vf / Math.max(top, 1)) * throttle * dt);
     } else if (throttle < -0.05) {
       if (vf > 0.5) vf -= TUNING.brakeDecel * -throttle * dt;
       else vf = Math.max(vf - 12 * -throttle * dt, -TUNING.reverseSpeed);
     } else {
-      vf = approach(vf, 0, TUNING.coastDecel * dt);
+      vf = approach(vf, 0, TUNING.coastDecel * (k.ice ? TUNING.iceCoast : 1) * dt);
     }
     if (vf > top) vf = approach(vf, top, TUNING.overspeedDecay * (k.offroad ? 3 : 1) * dt);
     if (k.spinTime > 0 || k.tumbleTime > 0) vf *= Math.exp(-2.6 * dt);
@@ -76,7 +76,9 @@ export function stepKart(k: Kart, ground: GroundModel, env: StepEnv, dt: number)
     const aspd = Math.abs(vf);
     if (k.drifting) {
       const t = (steer * k.driftDir + 1) * 0.5; // 0 = steering outward, 1 = steering into the drift
-      k.yaw -= k.driftDir * p.turnRate * (TUNING.driftRateMin + (TUNING.driftRateMax - TUNING.driftRateMin) * t) * Math.min(1, aspd / 10) * dt;
+      // snappy kick-in at the start of a drift (stronger on ice, where drifts snap in faster)
+      const kickIn = k.driftTime < TUNING.driftKickTime ? 1 + TUNING.driftKickIn * (k.ice ? 1.25 : 1) : 1;
+      k.yaw -= k.driftDir * p.turnRate * kickIn * (TUNING.driftRateMin + (TUNING.driftRateMax - TUNING.driftRateMin) * t) * Math.min(1, aspd / 10) * dt;
     } else {
       const lowSpeed = clamp(aspd / 7, 0, 1);
       const highSpeed = 1 - 0.18 * clamp((aspd - 0.6 * p.topSpeed) / (0.4 * p.topSpeed), 0, 1);
@@ -88,6 +90,7 @@ export function stepKart(k: Kart, ground: GroundModel, env: StepEnv, dt: number)
     // ---- lateral grip
     let grip = k.drifting ? p.driftGrip : p.grip;
     if (k.offroad) grip *= 0.8;
+    if (k.ice) grip *= k.drifting ? TUNING.iceDriftGrip : TUNING.iceGrip;
     if (k.gooTime > 0) grip *= 0.65;
     if (k.spinTime > 0 || k.tumbleTime > 0) grip = 2.5;
     const vlBefore = Math.abs(vl);
@@ -107,7 +110,7 @@ export function stepKart(k: Kart, ground: GroundModel, env: StepEnv, dt: number)
         releaseDrift(k, env);
       } else {
         const inward = Math.max(0, steer * k.driftDir);
-        k.driftCharge += dt * (0.72 + 0.55 * inward) * (k.offroad ? 0.35 : 1);
+        k.driftCharge += dt * (0.72 + 0.55 * inward) * (k.offroad ? 0.35 : 1) * (k.ice ? TUNING.iceDriftCharge : 1);
         k.driftTime += dt;
         k.raceStats.driftTotal += dt;
         if (k.driftTime > k.raceStats.longestDrift) k.raceStats.longestDrift = k.driftTime;
@@ -244,6 +247,7 @@ function finishStep(k: Kart, ground: GroundModel, env: StepEnv, dt: number, _was
   // ---- surfaces
   if (k.grounded && hit.hit) {
     k.offroad = hit.surface === 'offroad';
+    k.ice = hit.surface === 'ice';
     if (k.offroad && env.canDrive) k.raceStats.offroadTime += dt;
     if (hit.surface === 'boost' && k.boostTime < TUNING.boostPadTime - 0.15) {
       k.startBoost(TUNING.boostPadTime);
@@ -313,7 +317,6 @@ function land(k: Kart, env: StepEnv, h: number): void {
     if (k.input.drift && k.hopSteer !== 0 && k.speed > TUNING.driftMinSpeed && k.controllable) {
       k.drifting = true;
       k.driftDir = k.hopSteer;
-      k.yaw -= k.driftDir * TUNING.driftKick;
       k.driftCharge = 0;
       k.driftTier = 0;
       k.driftTime = 0;

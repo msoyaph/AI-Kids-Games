@@ -15,11 +15,19 @@ export const TUNING = {
   /** Speed needed to start a drift. */
   driftMinSpeed: 9,
   driftHopVel: 3.6,
-  /** Instant yaw kick (rad) into the corner when a drift starts — makes drift entry feel snappy. */
-  driftKick: 0.07,
+  /** Drift kick-in: for the first `driftKickTime` s of a drift the yaw rate is boosted by `driftKickIn` (snappy entry). */
+  driftKickIn: 0.6,
+  driftKickTime: 0.15,
   /** Drift yaw rate range as a fraction of the turn rate (stick fully outward … fully inward). */
   driftRateMin: 0.15,
   driftRateMax: 1.3,
+  /** Ice: grip multiplier, acceleration multiplier (wheelspin), coasting multiplier (glide), spark charge rate. */
+  iceGrip: 0.35,
+  /** Drift grip on ice (drifts slide longer but stay controllable). */
+  iceDriftGrip: 0.65,
+  iceAccel: 0.85,
+  iceCoast: 0.4,
+  iceDriftCharge: 1.15,
   /** Fraction of the sideways slide speed a drift turns back into forward speed (arcade: drifts keep their pace). */
   driftSpeedKeep: 0.5,
   /** Seconds of charge for each spark tier (blue, orange, pink). */

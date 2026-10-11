@@ -33,7 +33,7 @@ const L = layout({ x: 0, z: 0, heading: 0, y: 2 }, [
   left(70, 28, { y: 5, mark: 'bridgeB' }),
   straight(12, { y: 4.2, mark: 'bridgeOut' }),
   right(90, 40, { y: 2, mark: 'last' }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 const GROUND = -8;

@@ -30,7 +30,7 @@ const L = layout({ x: 0, z: 0, heading: 0, y: 0 }, [
   left(20, 26),
   straight(54, { mark: 'back' }),
   right(90, 32, { mark: 'last' }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 const GY = -6;

@@ -24,7 +24,7 @@ const L = layout({ x: 0, z: 0, heading: 0, y: Y }, [
   straight(50, { mark: 'trickLip' }),
   straight(30),
   right(90, 44, { mark: 'last' }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 

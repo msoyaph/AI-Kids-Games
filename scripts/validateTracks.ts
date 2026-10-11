@@ -8,7 +8,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { TRACKS } from '../src/data/tracks/index';
 import type { TrackData } from '../src/data/types';
-import { TrackModel, EDGE_DROP, EDGE_WALL, F_GAP, type Ribbon } from '../src/sim/track/trackModel';
+import { TrackModel, EDGE_DROP, EDGE_WALL, F_GAP, type Ribbon, F_ICE } from '../src/sim/track/trackModel';
 import { World } from '../src/sim/world';
 import { RaceTracker } from '../src/sim/race';
 import { AiController } from '../src/sim/ai/aiController';
@@ -80,6 +80,18 @@ function geometryChecks(t: TrackModel, r: Report): void {
   }
   r.info.push(`max slope ${(maxSlope * 100).toFixed(0)}%, tightest radius ${minR.toFixed(0)} m, elevation ${t.minY.toFixed(1)}..${Math.max(...rb.py).toFixed(1)}`);
   if (maxSlope > 0.42) r.warnings.push(`steep slope ${(maxSlope * 100).toFixed(0)}%`);
+  // ice coverage (main road + icy shortcuts)
+  let iceM = 0;
+  for (let i = 0; i < rb.n; i++) if (rb.flags[i] & F_ICE) iceM += rb.ds;
+  const iceSc = t.shortcuts.filter((sc) => sc.flags[0] & F_ICE).length;
+  if (iceM > 0 || iceSc) r.info.push(`ice: ${iceM.toFixed(0)} m of road (${((iceM / t.length) * 100).toFixed(0)}%)${iceSc ? `, ${iceSc} icy shortcut(s)` : ''}`);
+  for (let i = 0; i < rb.n; i++) {
+    // icy hairpins without a wall are a trap
+    if (rb.flags[i] & F_ICE && Math.abs(rb.curv[i]) > 1 / 18 && (rb.edgeL[i] === EDGE_DROP || rb.edgeR[i] === EDGE_DROP)) {
+      r.warnings.push(`tight icy bend beside a drop near u=${rb.u[i].toFixed(1)}`);
+      break;
+    }
+  }
   if (minR < 11) r.warnings.push(`very tight corner (R ${minR.toFixed(0)} m)`);
   // shortcuts join the road
   t.shortcuts.forEach((sc, idx) => {
@@ -185,6 +197,8 @@ function svg(t: TrackModel): string {
       }
     }
     void edgePath;
+    // ice
+    for (let i = 0; i < r.n; i += 2) if (r.flags[i] & F_ICE) parts.push(`<circle cx="${X(r.px[i])}" cy="${Y(r.pz[i])}" r="${(r.hw[i] * 0.6).toFixed(1)}" fill="#8fd8ff" opacity="0.5"/>`);
     // gaps
     for (let i = 0; i < r.n; i++) if (r.flags[i] & F_GAP) parts.push(`<circle cx="${X(r.px[i])}" cy="${Y(r.pz[i])}" r="${r.hw[i].toFixed(1)}" fill="#111" opacity="0.7"/>`);
     for (const p of r.pads) {

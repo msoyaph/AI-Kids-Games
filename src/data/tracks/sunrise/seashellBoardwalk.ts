@@ -18,7 +18,7 @@ const L = layout({ x: 0, z: 0, heading: 0, y: 0 }, [
   left(55, 34, { mark: 'duneB' }),
   straight(24),
   right(180, 54, { mark: 'lastTurn' }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 const duneLen = Math.hypot(P.duneA.x - P.duneB.x, P.duneA.z - P.duneB.z);

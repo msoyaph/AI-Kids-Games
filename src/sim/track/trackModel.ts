@@ -11,6 +11,7 @@ export const EDGE_DROP = 2;
 export const F_GAP = 1;
 export const F_WATER = 2;
 export const F_LOWGRAV = 4;
+export const F_ICE = 8;
 
 /** Rectangle in ribbon (s, d) space. */
 export interface SDRect {
@@ -372,6 +373,7 @@ export class TrackModel implements GroundModel {
         if (z.shortcuts !== false) this.scZoneFlags[i] |= f;
       });
     }
+    for (const r of data.ice ?? []) this.main.forURange(r, (i) => (this.main.flags[i] |= F_ICE));
     for (const p of data.boostPads ?? []) this.addPad(this.main, p.at, p.offset, p.width);
     for (const r of data.ramps ?? []) this.addRamp(this.main, r);
     this.main.computeBounds();
@@ -396,6 +398,7 @@ export class TrackModel implements GroundModel {
       rb.mainS0 = this.main.sAtU(sc.joinFrom);
       rb.mainS1 = this.main.sAtU(sc.joinTo);
       rb.offroadSurface = sc.surface === 'offroad';
+      if (sc.surface === 'ice') for (let i = 0; i < rb.n; i++) rb.flags[i] |= F_ICE;
       rb.computeBounds();
       this.shortcuts.push(rb);
     }
@@ -650,9 +653,10 @@ export class TrackModel implements GroundModel {
     out.wallNx = 0;
     out.wallNz = 0;
     const offroadRibbon = bestRibbon > 0 && this.shortcuts[bestRibbon - 1].offroadSurface;
-    out.surface = best.region === 0 ? (best.pad ? 'boost' : offroadRibbon ? 'offroad' : 'road') : 'offroad';
-    // Narrow kerb beside drop edges counts as road.
-    if (best.region === 1 && best.edge === EDGE_DROP) out.surface = 'road';
+    const icy = (best.flags & F_ICE) !== 0;
+    out.surface = best.region === 0 ? (best.pad ? 'boost' : offroadRibbon ? 'offroad' : icy ? 'ice' : 'road') : 'offroad';
+    // Narrow kerb beside drop edges counts as road (icy if the road is).
+    if (best.region === 1 && best.edge === EDGE_DROP) out.surface = icy ? 'ice' : 'road';
     out.hit = !best.gap;
     const ad = Math.abs(best.d);
     if (best.edge === EDGE_DROP) {

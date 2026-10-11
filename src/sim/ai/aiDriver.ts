@@ -2,7 +2,7 @@ import type { AiProfile } from '../../data/types';
 import { clamp, wrapAngle } from '../../core/math';
 import type { Rng } from '../../core/rng';
 import { Kart, RespawnState } from '../kart';
-import type { TrackModel, Ribbon } from '../track/trackModel';
+import { F_ICE, type TrackModel, type Ribbon } from '../track/trackModel';
 import { TUNING } from '../tuning';
 import { BALANCE } from '../../tuning/balance';
 import type { World } from '../world';
@@ -44,13 +44,14 @@ export class AiDriver {
   private laneTimer = 0;
   private avoid = 0;
   private seek = 0;
-  private cornerActive = false;
+  private lastBend = -2;
   private wantDrift = false;
   private driftHold = 0;
   private targetTier = 1;
   private stuckTime = 0;
   private reverseTime = 0;
   private trickPressed = false;
+  private iceAhead = false;
   /** False when the corner needs a yaw rate the current drift can't hold (→ release it). */
   private driftRateOk = true;
   private driftBadTime = 0;
@@ -151,7 +152,7 @@ export class AiDriver {
     } else {
       const j = rb.idx(i + Math.round(look / rb.ds));
       this.updateAvoidance(i, j);
-      const hwj = rb.hw[j] - 1.3;
+      const hwj = rb.hw[j] - (this.wantDrift || k.drifting ? 2.4 : 1.3); // leave room to slide when drifting
       const d = clamp(this.track.line[j] + this.lane + this.avoid + this.seek, -hwj, hwj);
       tx = rb.px[j] + rb.rx[j] * d;
       tz = rb.pz[j] + rb.rz[j] * d;
@@ -171,7 +172,8 @@ export class AiDriver {
     if (k.drifting && k.grounded && speed > 4) {
       const L = Math.max(5, Math.hypot(tx - k.x, tz - k.z));
       const omega = (speed * 2 * Math.sin(err)) / L; // + = turn left (yaw increases)
-      const tr = k.params.turnRate * Math.min(1, speed / 10);
+      const kickIn = k.driftTime < TUNING.driftKickTime ? 1 + TUNING.driftKickIn * (k.ice ? 1.25 : 1) : 1;
+      const tr = k.params.turnRate * Math.min(1, speed / 10) * kickIn;
       const span = TUNING.driftRateMax - TUNING.driftRateMin;
       const t = ((-omega * k.driftDir) / tr - TUNING.driftRateMin) / span; // drift yaw rate = −dir·tr·(min + span·t)
       // the corner needs a rate the drift can't hold for a while → let go (brief dips at turn-in are fine)
@@ -185,7 +187,11 @@ export class AiDriver {
     let maxK = 0;
     const scan = Math.round((10 + speed * 0.9) / rb.ds);
     for (let s = 3; s < scan; s += 2) maxK = Math.max(maxK, Math.abs(this.track.lineCurv[rb.idx(i + s)]));
-    const turnCap = k.params.turnRate * (this.wantDrift || k.drifting ? 1.25 : 0.95) * this.profile.cornerRisk;
+    // ice ahead: slippery, so brake earlier for bends
+    let iceAhead = k.ice;
+    if (!iceAhead) for (let s = 2; s < scan; s += 4) if (rb.flags[rb.idx(i + s)] & F_ICE) iceAhead = true;
+    this.iceAhead = iceAhead;
+    const turnCap = k.params.turnRate * (this.wantDrift || k.drifting ? 1.25 : 0.95) * this.profile.cornerRisk * (iceAhead ? BALANCE.ai.iceCornerMul : 1);
     const cornerSpeed = maxK > 1e-3 ? turnCap / maxK : 999;
     const cruise = k.params.topSpeed * w.speedMul[k.index] * this.pace * (k.cloudTime > 0 ? 0.92 : 1);
     let throttle = 1;
@@ -261,10 +267,14 @@ export class AiDriver {
     // A drift can only hold yaw rates inside TUNING.driftRateMin…Max × turn rate, so only drift bends whose
     // radius fits at this speed, and hop so the landing coincides with turn-in.
     const c1 = Math.round(70 / rb.ds);
+    // skip the bend we are already in (so linked bends — S-bends, switchbacks — each get their own decision)
+    let s0 = 0;
+    const cNow = curv[i];
+    if (Math.abs(cNow) > 1 / 80) while (s0 < c1 && Math.abs(curv[rb.idx(i + s0)]) > 1 / 120 && Math.sign(curv[rb.idx(i + s0)]) === Math.sign(cNow)) s0++;
     let startDist = -1;
     let kTurn = 0;
     let kLen = 0;
-    for (let s = 0; s < c1; s++) {
+    for (let s = s0; s < c1; s++) {
       const c = curv[rb.idx(i + s)];
       if (startDist < 0) {
         if (Math.abs(c) > 1 / 80) startDist = s * rb.ds;
@@ -274,20 +284,20 @@ export class AiDriver {
       kTurn += c * rb.ds;
       kLen += rb.ds;
     }
+    // one decision per bend: bends are identified by where they start
+    const bendKey = startDist >= 0 ? Math.round(((k.ground.s + startDist) % this.track.length) / 6) : -1;
     const need = kLen > 0 ? speed * (Math.abs(kTurn) / kLen) : 0; // yaw rate the bend needs (rad/s)
     const tr = k.params.turnRate;
     const driftable = need > tr * TUNING.driftRateMin * BALANCE.ai.driftMinRateMul && need < tr * TUNING.driftRateMax * BALANCE.ai.driftMaxRateMul;
     const turnIn = startDist >= 0 && startDist < speed * BALANCE.ai.driftHopLead + 2;
     const isCorner = turnIn && Math.abs(kTurn) > BALANCE.ai.cornerTurn && driftable;
-    if (isCorner && !this.cornerActive) {
-      this.cornerActive = true;
-      const chance = (BALANCE.ai.driftChanceBase + this.skill * BALANCE.ai.driftChancePerSkill) * (this.profile.id === 'showoff' ? 1.15 : this.profile.id === 'careful' ? 0.8 : 1);
+    if (isCorner && bendKey !== this.lastBend) {
+      this.lastBend = bendKey;
+      const chance = (BALANCE.ai.driftChanceBase + this.skill * BALANCE.ai.driftChancePerSkill) * (this.profile.id === 'showoff' ? 1.15 : this.profile.id === 'careful' ? 0.8 : 1) * (this.iceAhead ? 1.2 : 1);
       if (speed > TUNING.driftMinSpeed + 4 && k.grounded && this.shortcut < 0 && this.rng.chance(chance)) {
         this.wantDrift = true;
         this.driftHold = 0;
       }
-    } else if (startDist < 0 || startDist > 20) {
-      this.cornerActive = false;
     }
     if (this.wantDrift) {
       this.driftHold += dt;

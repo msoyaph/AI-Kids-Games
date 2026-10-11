@@ -49,10 +49,23 @@ export interface Layout {
   length: number;
 }
 
+export interface LayoutOptions {
+  /** Control-point spacing (metres) for straights / large arcs. Default 22. */
+  step?: number;
+  /**
+   * Compatibility for the 16 original tracks: mark headings from the chord of the polyline segment the mark sits
+   * on (10–15° skewed at the end of curves). Props in those tracks were placed against that skew, so they keep it.
+   * New tracks must NOT set this: by default a mark's heading is the road's true tangent there.
+   */
+  legacyMarkHeadings?: boolean;
+}
+
 /**
  * Heading convention matches the game: heading 0 drives toward +Z; a RIGHT turn rotates toward -X.
  */
-export function layout(start: { x: number; z: number; heading?: number; y?: number; w?: number }, segs: Seg[], defaultStep = 22): Layout {
+export function layout(start: { x: number; z: number; heading?: number; y?: number; w?: number }, segs: Seg[], opts: number | LayoutOptions = {}): Layout {
+  const o0: LayoutOptions = typeof opts === 'number' ? { step: opts } : opts;
+  const defaultStep = o0.step ?? 22;
   type P = { x: number; z: number; y: number; w?: number; bank?: number; dist: number };
   const pts: P[] = [];
   const marks: Record<string, number> = {};
@@ -64,14 +77,15 @@ export function layout(start: { x: number; z: number; heading?: number; y?: numb
   let w = start.w;
   let dist = 0;
   pts.push({ x, z, y, w, dist });
-  const markAt: Array<{ name: string; dist: number }> = [];
+  /** `h` = exact heading of the path at the mark (before loop closure). */
+  const markAt: Array<{ name: string; dist: number; h: number }> = [];
   for (const seg of segs) {
     const o = seg.o;
     const y0 = y;
     const y1 = o.y ?? y;
     const w0 = w;
     const w1 = o.w ?? w;
-    if (o.markStart) markAt.push({ name: o.markStart, dist });
+    if (o.markStart) markAt.push({ name: o.markStart, dist, h });
     const segLen = seg.kind === 'straight' ? seg.len : (Math.abs(seg.deg) * Math.PI * seg.r) / 180;
     const step = o.step ?? (seg.kind === 'arc' ? Math.min(defaultStep, Math.max(8, seg.r * 0.45)) : defaultStep);
     const n = Math.max(1, Math.round(segLen / step));
@@ -96,7 +110,7 @@ export function layout(start: { x: number; z: number; heading?: number; y?: numb
     }
     y = y1;
     w = w1;
-    if (o.mark) markAt.push({ name: o.mark, dist });
+    if (o.mark) markAt.push({ name: o.mark, dist, h });
   }
   // Close the loop: drop the final point if it lands on the start, then distribute the error.
   const last = pts[pts.length - 1];
@@ -130,7 +144,13 @@ export function layout(start: { x: number; z: number; heading?: number; y?: numb
     const px = a.x + (nb.x - a.x) * ff;
     const pz = a.z + (nb.z - a.z) * ff;
     const py = a.y + (nb.y - a.y) * ff;
-    pos[m.name] = { x: round(px), y: round(py), z: round(pz), heading: round((Math.atan2(nb.x - a.x, nb.z - a.z) * 180) / Math.PI, 1) };
+    let heading: number;
+    if (o0.legacyMarkHeadings) heading = Math.atan2(nb.x - a.x, nb.z - a.z);
+    else {
+      // true tangent: the path's exact heading there, tilted by the loop-closure correction (−error per metre)
+      heading = Math.atan2(Math.sin(m.h) - ex / total, Math.cos(m.h) - ez / total);
+    }
+    pos[m.name] = { x: round(px), y: round(py), z: round(pz), heading: round((heading * 180) / Math.PI, 1) };
   }
   return { points, marks, pos, length: total };
 }

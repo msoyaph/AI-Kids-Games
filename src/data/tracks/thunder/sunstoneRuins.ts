@@ -21,7 +21,7 @@ const L = layout({ x: 0, z: 0, heading: 90, y: 14 }, [
   straight(76, { y: 13.5, mark: 'landed' }),
   left(120, 38, { y: 13, mark: 'cornerC' }),
   straight(20, { y: 14 }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 const GROUND = 0;

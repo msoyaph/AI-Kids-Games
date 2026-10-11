@@ -18,7 +18,7 @@ const L = layout({ x: 0, z: 0, heading: 0, y: 0 }, [
   straight(60),
   left(60, 50),
   right(120, 38, { mark: 'last' }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 const P = L.pos;
 

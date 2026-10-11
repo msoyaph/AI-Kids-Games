@@ -32,7 +32,7 @@ const L = layout({ x: 0, z: 0, heading: 0, y: 0 }, [
   straight(25, { y: 0, mark: 'bellOut' }),
   right(90, 40, { markStart: 'lastIn', mark: 'lastTurn' }),
   straight(50, { mark: 'finish' }),
-]);
+], { legacyMarkHeadings: true });
 const m = L.marks;
 // Mark positions with the true road heading (a mark at the end of an arc otherwise carries the last chord's heading):
 // use the chord on the straight side of the mark, or the average across an arc-to-arc junction.
