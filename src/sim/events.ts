@@ -29,6 +29,16 @@ export const enum Ev {
   Split,
   Zone,
   Crit,
+  /** Telegraph: value = radius, value2 = windup s, kind = attack kind, tag = source enemy id. */
+  Warn,
+  /** Towers knocked offline: value = radius, value2 = duration. */
+  Disable,
+  /** Boss enters a new phase: value = phase number (2, 3), kind = phase key, tag = boss id. */
+  BossPhase,
+  /** A barrier shattered. */
+  BarrierBreak,
+  /** Tunneler goes under (value 1) or surfaces (value 0). */
+  Burrow,
 }
 
 export class GameEvent {

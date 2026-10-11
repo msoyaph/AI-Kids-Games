@@ -3,9 +3,9 @@ import { ELEMENT_ORDER, ELEMENTS, counterOf } from '../data/elements';
 import type { MapDef } from '../data/maps/types';
 import { waveIntel, type WaveDef } from '../data/waves';
 import { buildFailMsg, randomLine } from '../data/strings';
-import { ENEMIES, elementPrefix } from '../data/enemies';
+import { ENEMIES, elementPrefix, type EnemyId } from '../data/enemies';
 import { traitsOf } from '../data/traits';
-import { t } from '../i18n';
+import { t, type MessageKey } from '../i18n';
 import { enemyStatGrid, towerLevelTable } from '../ui/statTables';
 import { resultsReport } from '../ui/results';
 import { traitChip } from '../ui/traitIcons';
@@ -241,6 +241,14 @@ export class GameScreen implements Screen, HudHost {
         break;
       case Ev.Crystal:
         this.hud.banner(t('game.banner.core'), t('game.banner.chooseElement'));
+        break;
+      case Ev.BossPhase: {
+        const name = t(`boss.${e.tag}.${e.kind}` as MessageKey);
+        this.hud.banner(t('boss.phaseBanner', { n: e.value, name }), ENEMIES[e.tag as EnemyId]?.name);
+        break;
+      }
+      case Ev.Warn:
+        if (e.kind !== 'emp') this.hud.toast(t(`warn.${e.kind}` as MessageKey), true);
         break;
       case Ev.Leak:
         if (this.game.lives > 0 && this.game.lives <= 3) this.hud.toast(t('game.toast.critical'), true);
@@ -578,13 +586,14 @@ export class GameScreen implements Screen, HudHost {
           'div.intel-main',
           null,
           h('div.intel-name', null, h('b', null, def.name), h('span.intel-count', null, t('intel.count', { n: r.count }))),
-          h('div.chips', null, ...traitsOf(def).map((tr) => traitChip(tr))),
+          h('div.chips', null, ...traitsOf(def).map((tr) => traitChip(tr)), r.resists.length ? traitChip('resistant') : null),
           h(
             'div.intel-meta',
             null,
             h('span', null, t('intel.hpEach', { n: hp })),
             r.elements.length ? h('span.intel-els', null, t('intel.elements'), ' ', ...r.elements.map((e) => img(elementIconUrl(this.atlas, e, 40), ELEMENTS[e].name, 'inline-icon'))) : null,
             r.shields.length ? h('span.intel-els', null, t('intel.wards'), ' ', ...r.shields.map((e) => img(elementIconUrl(this.atlas, e, 40), ELEMENTS[e].name, 'inline-icon'))) : null,
+            r.resists.length ? h('span.intel-els', null, t('intel.resists'), ' ', ...r.resists.map((e) => img(atlasIconUrl(this.atlas, `resist_${e}`, 40), ELEMENTS[e].name, 'inline-icon'))) : null,
           ),
         ),
       );

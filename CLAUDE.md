@@ -79,6 +79,13 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   `th_<id>_<lv>_s<0|1>`), spec chooser in the tower panel (keys 1/2), after-match report (`src/ui/results.ts`;
   RunStats coinsSpent/leaksByWave/specsChosen/soldTowers), wave intel modal (`waveIntel`, key I), construct
   traits with icons (`src/data/traits.ts`, `src/ui/traitIcons.ts`). Bot picks the stronger path (`bestSpec`).
+- Phase 5 done: new constructs bulwark (barrier), phantom (cloak; detectors = Focus Lens, Fog Bank, Solar
+  Lance, Corona), borer (tunnels, untargetable while burrowed, `surface()`), jammer (static burst disables towers,
+  `Tower.disabled`), hulk (regen, blocked by burn/poison) + resistant groups (`SpawnGroup.resist`, ×0.5).
+  `TUNING.waves.mechanics` introduces them world by world. Bosses have 3 phases (`TUNING.enemies.*.phases`):
+  telegraphed attacks (`Ev.Warn` → red ring + windup, boss stands still; brood/swarm/stomp/nullfield),
+  `Ev.BossPhase` banner, boss bar pips. Summons never start within 5 tiles of the Citadel.
+  Balance: w4m3 Hard is the tight spot (bot wins with 1 life; `TUNING.economy.mapStartCoins.w4m3 = 200`).
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

@@ -28,6 +28,10 @@ import {
   drawStunStar,
   drawTuft,
   drawShard,
+  drawBarrier,
+  drawResist,
+  drawWarnIcon,
+  drawOffline,
   PROJECTILE_SIZE,
 } from './drawFx';
 import { drawTowerBase, drawTowerHead, drawTowerIcon, TOWER_BASE_SIZE, TOWER_HEAD_SIZE } from './drawTowers';
@@ -51,7 +55,7 @@ export const projectileName = (s: ProjectileStyle): string => `p_${s}`;
 
 function addEnemy(b: AtlasBuilder, def: EnemyDef, el: ElementId | null): void {
   const { w, h } = enemyBox(def);
-  const frames = def.look === 'wisp' || def.look === 'drone' ? 2 : 1;
+  const frames = def.look === 'wisp' || def.look === 'drone' || def.look === 'phantom' || def.look === 'jammer' ? 2 : 1;
   for (let f = 0; f < frames; f++) {
     b.add({
       name: enemyTexName(def.id, el, f),
@@ -121,6 +125,10 @@ export function registerParticleSprites(b: AtlasBuilder): void {
   b.add({ name: 'white', w: 8, h: 8, draw: (ctx, w, h) => drawRect(ctx, w, h, 0) });
   b.add({ name: 'shard', w: 22, h: 9, draw: (ctx, w, h) => drawShard(ctx, w, h) });
   for (const el of ELEMENT_ORDER) b.add({ name: `pel_${el}`, w: 20, h: 20, draw: (ctx, w) => drawElementToken(ctx, w, el) });
+  for (const el of ELEMENT_ORDER) b.add({ name: `resist_${el}`, w: 18, h: 18, draw: (ctx, w) => drawResist(ctx, w, el) });
+  b.add({ name: 'barrier', w: 72, h: 72, draw: (ctx, w) => drawBarrier(ctx, w) });
+  b.add({ name: 'warn', w: 26, h: 26, draw: (ctx, w) => drawWarnIcon(ctx, w) });
+  b.add({ name: 'offline', w: 22, h: 22, draw: (ctx, w) => drawOffline(ctx, w) });
 }
 
 export async function bakeAtlas(scale: number, maxTexture: number, onProgress?: (p: number) => void): Promise<Atlas> {

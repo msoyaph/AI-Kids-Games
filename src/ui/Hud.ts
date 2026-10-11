@@ -1,5 +1,5 @@
 import { ELEMENT_ORDER, ELEMENTS, type ElementId } from '../data/elements';
-import { formatNumber, t } from '../i18n';
+import { formatNumber, t, type MessageKey } from '../i18n';
 import { ENEMIES } from '../data/enemies';
 import { BASIC_TOWERS, comboFor, ELEMENT_TOWERS, MAX_LEVEL, sellValue, targetModeLabel, TOWERS, type TowerId } from '../data/towers';
 import { wavePreview } from '../data/waves';
@@ -58,6 +58,9 @@ export class Hud {
   private pauseBtn: HTMLButtonElement;
   private crystalWrap = h('div.crystal-btn');
   private bossBar = h('div.bossbar.panel', { 'aria-label': t('hud.bossHealth') });
+  private bossPips = h('span.bpips');
+  private bossBarrier = h('i.barrier');
+  private bossKey = '';
   private bossName = h('span.bname');
   private bossFill = h('i');
   private bossFrame = 0;
@@ -91,7 +94,7 @@ export class Hud {
     this.fab = h('div.build-fab', null, h('button.btn.gold', { onClick: () => this.setDrawerOpen(!this.drawerOpen), 'aria-label': t('hud.build') }, t('hud.build')));
     this.chip = h('div.picked-chip.panel');
     this.chip.style.display = 'none';
-    this.bossBar.append(this.bossName, h('span.bbar', null, this.bossFill));
+    this.bossBar.append(h('div.bhead', null, this.bossName, this.bossPips), h('span.bbar', null, this.bossFill, this.bossBarrier));
     this.bossBar.style.display = 'none';
     this.el.append(top, this.crystalWrap, this.bossBar, this.drawer, this.fab, this.chip);
     // Horizontal wheel scrolling on desktop for the tower row.
@@ -248,8 +251,17 @@ export class Hud {
       return;
     }
     this.bossBar.style.display = '';
-    setText(this.bossName, boss.def.name);
+    const phases = (boss.def.phases?.length ?? 0) + 1;
+    const key = `${boss.id}:${boss.phase}`;
+    if (this.bossKey !== key) {
+      this.bossKey = key;
+      const ph = boss.phase > 0 ? boss.def.phases![boss.phase - 1]! : null;
+      setText(this.bossName, ph ? `${boss.def.name} · ${t(`boss.${boss.def.id}.${ph.key}` as MessageKey)}` : boss.def.name);
+      this.bossPips.replaceChildren(...Array.from({ length: phases }, (_, i) => h('i', { class: i <= boss!.phase ? 'on' : '' })));
+      this.bossPips.setAttribute('aria-label', t('boss.phase', { n: boss.phase + 1 }));
+    }
     this.bossFill.style.width = `${Math.max(0, (boss.hp / boss.maxHp) * 100).toFixed(1)}%`;
+    this.bossBarrier.style.width = boss.barrier > 0 ? `${Math.min(100, (boss.barrier / boss.maxHp) * 100).toFixed(1)}%` : '0';
   }
 
   private flash(el: HTMLElement, cls: string): void {

@@ -1,5 +1,5 @@
 import { hashString, Rng } from '../core/rng';
-import { ELEMENT_ORDER, type ElementId } from './elements';
+import { ELEMENT_ORDER, ELEMENTS, type ElementId } from './elements';
 import type { EnemyId } from './enemies';
 import type { MapDef } from './maps/types';
 import { TUNING } from './tuning';
@@ -15,6 +15,8 @@ export interface SpawnGroup {
   elements?: (ElementId | null)[];
   /** Bubble shields cycle through these elements. */
   shields?: ElementId[];
+  /** Element this group resists (takes reduced damage from). */
+  resist?: ElementId;
 }
 
 export interface WaveDef {
@@ -70,7 +72,7 @@ function elementPicker(rng: Rng, favored: readonly ElementId[], chance: number):
  * Generate one wave. Every map gets its own seeded variety, but the overall
  * shape repeats in cycles of 10 so kids learn the rhythm (boss every 10th).
  */
-export function generateWave(w: number, map: Pick<MapDef, 'id' | 'favoredElements'>): WaveDef {
+export function generateWave(w: number, map: Pick<MapDef, 'id' | 'favoredElements'> & { world?: number }): WaveDef {
   const rng = new Rng(hashString(map.id) ^ Math.imul(w, 0x9e3779b1));
   const slot = ((w - 1) % 10) + 1;
   const cycle = Math.floor((w - 1) / 10);
@@ -136,6 +138,28 @@ export function generateWave(w: number, map: Pick<MapDef, 'id' | 'favoredElement
       break;
   }
 
+  // New mechanics arrive world by world (worlds 5+ and endless past wave 40 get all of them).
+  const world = map.world ?? 1;
+  const allMech = world >= 5 || w > TUNING.waves.length;
+  if (world > 0) {
+    for (const rule of TUNING.waves.mechanics) {
+      if ((allMech || world >= rule.world) && w >= rule.wave && rule.slots.includes(slot)) {
+        add(rule.enemy, Math.max(rule.min ?? 1, c * rule.share), 2.5, gap * 1.25);
+      }
+    }
+    const R = TUNING.waves.resist;
+    if ((allMech || world >= R.world) && w >= R.wave) {
+      for (const g of groups) {
+        if ((g.enemy === 'gloop' || g.enemy === 'zoomkin') && rng.chance(R.chance)) {
+          const own = g.elements?.find((e) => e) ?? null;
+          // resist an element that is neutral against the group's own element
+          const options = ELEMENT_ORDER.filter((e) => !own || (e !== own && ELEMENTS[e].beats !== own && ELEMENTS[own].beats !== e));
+          g.resist = rng.pick(options);
+        }
+      }
+    }
+  }
+
   // Later cycles mix in extra groups so waves never feel the same.
   const extras: EnemyId[] = ['gloop', 'zoomkin', 'clankbot', 'puffbat', 'splitblob', 'bubbleimp', 'mendy'];
   for (let i = 0; i < Math.min(cycle, 3); i++) {
@@ -176,6 +200,8 @@ export interface WaveIntelRow {
   elements: ElementId[];
   /** Ward elements (warded sentinels). */
   shields: ElementId[];
+  /** Resisted elements. */
+  resists: ElementId[];
 }
 
 /** Per-type breakdown of a wave for the wave-intel panel (bosses' children not included). */
@@ -183,10 +209,11 @@ export function waveIntel(w: WaveDef): WaveIntelRow[] {
   const out: WaveIntelRow[] = [];
   for (const g of w.groups) {
     let row = out.find((r) => r.enemy === g.enemy);
-    if (!row) out.push((row = { enemy: g.enemy, count: 0, elements: [], shields: [] }));
+    if (!row) out.push((row = { enemy: g.enemy, count: 0, elements: [], shields: [], resists: [] }));
     row.count += g.count;
     for (const e of g.elements ?? []) if (e && !row.elements.includes(e)) row.elements.push(e);
     for (const e of g.shields ?? []) if (!row.shields.includes(e)) row.shields.push(e);
+    if (g.resist && !row.resists.includes(g.resist)) row.resists.push(g.resist);
   }
   return out;
 }

@@ -14,9 +14,14 @@ export type EnemyId =
   | 'kinggloop'
   | 'bigclank'
   | 'mamapuff'
-  | 'grumbleking';
+  | 'grumbleking'
+  | 'bulwark'
+  | 'phantom'
+  | 'borer'
+  | 'jammer'
+  | 'hulk';
 
-export type EnemyLook = 'beetle' | 'drone' | 'golem' | 'wisp' | 'mender' | 'geode' | 'sentinel' | 'archon';
+export type EnemyLook = 'beetle' | 'drone' | 'golem' | 'wisp' | 'mender' | 'geode' | 'sentinel' | 'archon' | 'bulwark' | 'phantom' | 'borer' | 'jammer' | 'hulk';
 
 /** A construct type: identity + looks (here), numbers (TUNING.enemies), text (i18n `enemy.<id>.*`). */
 export interface EnemyDef extends EnemyTuning {
@@ -51,6 +56,11 @@ const IDENTITY: Record<EnemyId, EnemyIdentity> = {
   bigclank: { boss: true, look: 'golem', color: 0x8e98ae },
   mamapuff: { flying: true, boss: true, look: 'drone', color: 0xb07cff },
   grumbleking: { boss: true, look: 'archon', color: 0xff8f5a },
+  bulwark: { look: 'bulwark', color: 0x7fb3ff },
+  phantom: { look: 'phantom', color: 0x9b8cff },
+  borer: { look: 'borer', color: 0xc9925a },
+  jammer: { look: 'jammer', color: 0xffd25a },
+  hulk: { look: 'hulk', color: 0x5ff0b0 },
 };
 
 export const ENEMIES = {} as Record<EnemyId, EnemyDef>;

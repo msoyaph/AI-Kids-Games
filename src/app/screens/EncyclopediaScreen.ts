@@ -5,7 +5,7 @@ import { TOWER_IDS, TOWERS, type TowerId } from '../../data/towers';
 import { t, type MessageKey } from '../../i18n';
 import { atlasIconUrl, elementIconUrl, enemyTexName, towerIconUrl } from '../../render/atlas/bake';
 import { h, img } from '../../ui/dom';
-import { enemyStatGrid, specSummary, towerLevelTable } from '../../ui/statTables';
+import { bossPhaseList, enemyStatGrid, specSummary, towerLevelTable } from '../../ui/statTables';
 import { traitChip, traitIconUrl } from '../../ui/traitIcons';
 import type { App, Screen } from '../App';
 import type { Nav } from '../flow';
@@ -104,6 +104,7 @@ export class EncyclopediaScreen implements Screen {
             ),
           ),
           enemyStatGrid(d),
+          bossPhaseList(d),
           h('p.tip', null, d.tip),
         ),
       );

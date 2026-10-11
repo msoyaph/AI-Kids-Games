@@ -20,7 +20,16 @@ export function traitIconUrl(trait: Trait, size = 32): string {
   ctx.lineWidth = 2.4;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
-  const col = trait === 'boss' ? '#ff4d6a' : trait === 'repairs' ? '#3dffa0' : trait === 'ward' || trait === 'elemental' || trait === 'shifting' ? '#c49bff' : '#ffc845';
+  const col =
+    trait === 'boss' || trait === 'disabler'
+      ? '#ff4d6a'
+      : trait === 'repairs' || trait === 'regen'
+        ? '#3dffa0'
+        : trait === 'ward' || trait === 'elemental' || trait === 'shifting' || trait === 'resistant'
+          ? '#c49bff'
+          : trait === 'shield' || trait === 'cloaked'
+            ? '#3ee6ff'
+            : '#ffc845';
   ctx.strokeStyle = col;
   ctx.fillStyle = col;
   const path = (pts: [number, number][], close = false): void => {
@@ -76,6 +85,44 @@ export function traitIconUrl(trait: Trait, size = 32): string {
       ctx.arc(16, 16, 9, Math.PI * 0.95 + 0.1, Math.PI * 1.9);
       ctx.stroke();
       path([[24, 10], [25, 15], [20, 14]]);
+      break;
+    case 'shield': // barrier arc with crack
+      ctx.beginPath();
+      ctx.arc(16, 18, 11, Math.PI * 1.05, Math.PI * 1.95);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(16, 18, 6, Math.PI * 1.1, Math.PI * 1.9);
+      ctx.stroke();
+      path([[16, 7], [14, 12], [17, 14], [15, 19]]);
+      break;
+    case 'cloaked': // eye with slash
+      ctx.beginPath();
+      ctx.ellipse(16, 16, 11, 6.5, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(16, 16, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+      path([[7, 25], [25, 7]]);
+      break;
+    case 'tunneler': // drill down
+      path([[10, 6], [22, 6], [16, 26]], true);
+      path([[11, 12], [21, 12]]);
+      path([[13, 18], [19, 18]]);
+      break;
+    case 'disabler': // lightning bolt
+      path([[18, 4], [9, 18], [16, 18], [13, 28], [24, 12], [17, 12]], true);
+      break;
+    case 'regen': // looping arrow with plus
+      ctx.beginPath();
+      ctx.arc(16, 16, 10, 0.5, Math.PI * 1.85);
+      ctx.stroke();
+      path([[26, 13], [26, 19], [20, 17]]);
+      path([[16, 12], [16, 20]]);
+      path([[12, 16], [20, 16]]);
+      break;
+    case 'resistant': // shield with slash
+      path([[16, 5], [26, 9], [24, 20], [16, 27], [8, 20], [6, 9]], true);
+      path([[9, 23], [23, 9]]);
       break;
     case 'elemental': // diamond core
       path([[16, 5], [26, 16], [16, 27], [6, 16]], true);

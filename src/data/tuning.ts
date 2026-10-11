@@ -79,6 +79,60 @@ export interface EnemyTuning {
   ccResist?: number;
   /** Changes element every N seconds. */
   shiftElement?: number;
+  /** Breakable shield worth this fraction of max health (absorbs hits until it breaks). */
+  shield?: number;
+  /** Regenerates `pct` of max health per second after `delay` seconds without taking damage. */
+  regen?: { pct: number; delay: number };
+  /** Cloaked for `hidden` seconds, then visible for `visible` seconds (detectors reveal it). */
+  cloak?: { hidden: number; visible: number };
+  /** Burrows every `every` seconds for `duration` seconds, moving straight at `speed` × its speed. */
+  burrow?: { every: number; duration: number; speed: number };
+  /** Disables towers within `radius` for `duration` seconds every `every` seconds (warns `windup` seconds ahead). */
+  emp?: { every: number; windup: number; radius: number; duration: number };
+  /** Boss phases (phase 1 is the base stats); each starts when health drops below `at`. */
+  phases?: BossPhase[];
+}
+
+export type BossAttackKind = 'brood' | 'stomp' | 'swarm' | 'nullfield';
+
+export interface BossAttack {
+  kind: BossAttackKind;
+  every: number;
+  /** Telegraph time: the warning ring shows and the boss stands still. */
+  windup: number;
+  radius: number;
+  /** Tower disable time (stomp / null field). */
+  duration?: number;
+  /** Constructs summoned (brood / swarm). */
+  count?: number;
+  spawn?: EnemyId;
+}
+
+export interface BossPhase {
+  /** Starts below this share of max health. */
+  at: number;
+  /** Text key: `boss.<enemy>.<key>`. */
+  key: string;
+  attack?: BossAttack;
+  /** Gains on entering the phase. */
+  shield?: number;
+  speed?: number;
+  armor?: number;
+  regen?: { pct: number; delay: number };
+  cloak?: { hidden: number; visible: number };
+}
+
+/** When a mechanic starts showing up in generated waves. */
+export interface MechanicRule {
+  enemy: EnemyId;
+  /** First campaign world (endless uses the map's world; worlds 5+ get everything). */
+  world: number;
+  wave: number;
+  /** Wave slots (1–10 in each cycle) that get a group. */
+  slots: number[];
+  /** Group size as a share of the wave's base count. */
+  share: number;
+  min?: number;
 }
 
 // ------------------------------------------------------------------ tower stats
@@ -342,11 +396,49 @@ const ENEMY_STATS: Record<EnemyId, EnemyTuning> = {
   splitblob: { hp: 52, speed: 1.35, armor: 0, coins: 5, lives: 2, radius: 0.36, split: { into: 'minigloop', count: 3 } },
   bubbleimp: { hp: 42, speed: 1.55, armor: 0, coins: 6, lives: 1, radius: 0.3 },
   // bosses
-  kinggloop: { hp: 620, speed: 0.85, armor: 0.1, coins: 80, lives: 3, radius: 0.62, split: { into: 'gloop', count: 5 }, ccResist: 0.35 },
-  bigclank: { hp: 520, speed: 0.75, armor: 0.5, coins: 150, lives: 4, radius: 0.6, ccResist: 0.3 },
-  mamapuff: { hp: 430, speed: 0.95, armor: 0.15, coins: 180, lives: 4, radius: 0.62, split: { into: 'puffbat', count: 5 }, ccResist: 0.3 },
+  kinggloop: {
+    hp: 560,
+    speed: 0.85,
+    armor: 0.1,
+    coins: 80,
+    lives: 3,
+    radius: 0.62,
+    split: { into: 'gloop', count: 5 },
+    ccResist: 0.35,
+    phases: [
+      { at: 0.66, key: 'brood', attack: { kind: 'brood', every: 8, windup: 1.4, radius: 1.2, count: 3, spawn: 'minigloop' } },
+      { at: 0.33, key: 'carapace', shield: 0.2, speed: 1.1 },
+    ],
+  },
+  bigclank: {
+    hp: 520,
+    speed: 0.75,
+    armor: 0.5,
+    coins: 150,
+    lives: 4,
+    radius: 0.6,
+    ccResist: 0.3,
+    phases: [
+      { at: 0.6, key: 'stomp', attack: { kind: 'stomp', every: 6, windup: 1.5, radius: 2.4, duration: 3 } },
+      { at: 0.3, key: 'overdrive', armor: 0.2, speed: 1.4 },
+    ],
+  },
+  mamapuff: {
+    hp: 400,
+    speed: 0.95,
+    armor: 0.15,
+    coins: 180,
+    lives: 4,
+    radius: 0.62,
+    split: { into: 'puffbat', count: 5 },
+    ccResist: 0.3,
+    phases: [
+      { at: 0.66, key: 'swarm', attack: { kind: 'swarm', every: 8, windup: 1.2, radius: 1, count: 3, spawn: 'puffbat' } },
+      { at: 0.33, key: 'ionstorm', cloak: { hidden: 1.5, visible: 4.5 } },
+    ],
+  },
   grumbleking: {
-    hp: 600,
+    hp: 560,
     speed: 0.7,
     armor: 0.3,
     coins: 400,
@@ -355,7 +447,17 @@ const ENEMY_STATS: Record<EnemyId, EnemyTuning> = {
     shiftElement: 6,
     heal: { radius: 2.4, pct: 0.03, interval: 2 },
     ccResist: 0.25,
+    phases: [
+      { at: 0.66, key: 'nullfield', attack: { kind: 'nullfield', every: 9, windup: 1.6, radius: 3, duration: 2.5 } },
+      { at: 0.33, key: 'rift', shield: 0.2, regen: { pct: 0.01, delay: 2 } },
+    ],
   },
+  // mechanics (phase 5)
+  bulwark: { hp: 40, speed: 1.25, armor: 0, coins: 7, lives: 1, radius: 0.33, shield: 1 },
+  phantom: { hp: 26, speed: 2.1, armor: 0, coins: 6, lives: 1, radius: 0.27, cloak: { hidden: 3, visible: 1.5 } },
+  borer: { hp: 44, speed: 1.3, armor: 0.2, coins: 7, lives: 1, radius: 0.3, burrow: { every: 6, duration: 2.2, speed: 1.4 } },
+  jammer: { hp: 50, speed: 1.2, armor: 0.15, coins: 9, lives: 1, radius: 0.32, emp: { every: 7, windup: 1.2, radius: 2, duration: 2.5 } },
+  hulk: { hp: 70, speed: 1.0, armor: 0.1, coins: 9, lives: 2, radius: 0.38, regen: { pct: 0.08, delay: 1.5 } },
 };
 
 // ------------------------------------------------------------------ the table
@@ -364,6 +466,8 @@ export const TUNING = {
   economy: {
     /** Starting gold when a map doesn't set its own. */
     startCoins: 160,
+    /** Per-map starting gold overrides (map id → gold). */
+    mapStartCoins: { w4m3: 200 } as Readonly<Record<string, number>>,
     /** Element cores at the start of a run. */
     startCrystals: 1,
     /** Element cores are awarded after clearing these waves. */
@@ -407,6 +511,14 @@ export const TUNING = {
     splitPause: 0.35,
     /** First shot delay after building (s). */
     buildCooldown: 0.2,
+    /** Damage taken from a resisted element. */
+    resistMult: 0.5,
+    /** Seconds a detector keeps a cloaked construct revealed after it leaves range. */
+    revealLinger: 0.6,
+    /** Tunnelers surface on a walkable cell within this many tiles. */
+    surfaceSearch: 3,
+    /** Bosses only summon while at least this far (tiles) from the Citadel. */
+    summonMinDistance: 5,
   },
 
   /** Projectile travel speed, tiles per second. */
@@ -446,6 +558,16 @@ export const TUNING = {
     favoredChance: 0.6,
     /** Difficulty health ramps from hpEarly to hp over this many waves. */
     hpRampWaves: 19,
+    /** New mechanics arrive world by world (and only from a set wave). */
+    mechanics: [
+      { enemy: 'bulwark', world: 1, wave: 14, slots: [3, 8], share: 0.35 },
+      { enemy: 'hulk', world: 2, wave: 12, slots: [6], share: 0.3 },
+      { enemy: 'phantom', world: 3, wave: 12, slots: [2, 9], share: 0.35 },
+      { enemy: 'jammer', world: 3, wave: 16, slots: [7], share: 0.12, min: 2 },
+      { enemy: 'borer', world: 4, wave: 11, slots: [5], share: 0.3 },
+    ] as MechanicRule[],
+    /** Element-resistant groups (beetles/drones) from world 2, wave 11. */
+    resist: { world: 2, wave: 11, chance: 0.5 },
   },
 
   difficulties: {

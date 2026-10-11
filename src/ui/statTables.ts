@@ -65,3 +65,22 @@ export function specSummary(d: TowerDef): HTMLElement {
     }),
   );
 }
+
+/** Codex block for bosses: each phase, when it starts and what it does. */
+export function bossPhaseList(d: EnemyDef): HTMLElement | null {
+  if (!d.phases?.length) return null;
+  return h(
+    'div.spec-summary',
+    null,
+    h('h5', null, t('boss.phasesTitle')),
+    ...d.phases.map((p, i) =>
+      h(
+        'div.spec-row.boss-row',
+        null,
+        h('b', null, t(`boss.${d.id}.${p.key}` as MessageKey)),
+        h('p.dim', null, t('boss.phaseAt', { n: i + 2, pct: Math.round(p.at * 100) })),
+        h('p', null, t(`boss.${d.id}.${p.key}.desc` as MessageKey)),
+      ),
+    ),
+  );
+}

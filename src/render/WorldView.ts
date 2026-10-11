@@ -1,5 +1,6 @@
 import { Container, Graphics, Sprite, Texture, CanvasSource } from 'pixi.js';
 import { t as tr } from '../i18n';
+import type { Enemy } from '../sim/enemy';
 import { easeOutBack, lerp, lerpAngle } from '../core/math';
 import { ELEMENT_ORDER, ELEMENTS, type ElementId } from '../data/elements';
 import { ENEMIES } from '../data/enemies';
@@ -23,8 +24,25 @@ interface EnemyView {
   hpFill: Sprite;
   shield: Sprite;
   extra: Sprite;
+  /** Breakable barrier bubble + its bar, and the resisted-element token. */
+  barrier: Sprite;
+  barFill: Sprite;
+  resist: Sprite;
   stamp: number;
   numCooldown: number;
+}
+
+/** A telegraphed attack: danger ring that fills over the wind-up. */
+interface WarnView {
+  ring: Sprite;
+  fill: Sprite;
+  icon: Sprite;
+  x: number;
+  y: number;
+  r: number;
+  t: number;
+  dur: number;
+  slot: number;
 }
 
 interface TowerView {
@@ -33,8 +51,10 @@ interface TowerView {
   beam: Sprite | null;
   beamGlow: Sprite | null;
   level: number;
+  spec: number;
   stamp: number;
   angle: number;
+  off: Sprite | null;
 }
 
 interface ProjView {
@@ -284,6 +304,7 @@ export class WorldView {
     this.syncTowers(a);
     this.syncProjectiles(a);
     this.syncZones(gameDt);
+    this.syncWarns(dt);
     this.syncPath();
     this.animateScene(dt);
     this.particles.update(gameDt > 0 ? gameDt : 0);
@@ -318,7 +339,16 @@ export class WorldView {
     hpBg.alpha = 0.85;
     this.L.shadow.addChild(shadow);
     this.L.hp.addChild(hpBg, hpFill, extra);
-    v = { body, shadow, hpBg, hpFill, shield, extra, stamp: 0, numCooldown: 0 };
+    const barrier = new Sprite(this.atlas.get('barrier'));
+    barrier.anchor.set(0.5);
+    barrier.tint = 0x8ff3ff;
+    const barFill = new Sprite(this.atlas.get('hpbar'));
+    barFill.tint = 0x3ee6ff;
+    const resist = new Sprite(this.atlas.get('resist_fire'));
+    resist.anchor.set(0.5);
+    barrier.visible = barFill.visible = resist.visible = false;
+    this.L.hp.addChild(barFill, resist);
+    v = { body, shadow, hpBg, hpFill, shield, extra, barrier, barFill, resist, stamp: 0, numCooldown: 0 };
     this.enemyViews[slot] = v;
     return v;
   }
@@ -337,6 +367,7 @@ export class WorldView {
 
   private hideEnemyView(v: EnemyView): void {
     v.body.visible = v.shadow.visible = v.hpBg.visible = v.hpFill.visible = v.shield.visible = v.extra.visible = false;
+    v.barrier.visible = v.barFill.visible = v.resist.visible = false;
   }
 
   private syncEnemies(a: number, gameDt: number): void {
@@ -348,16 +379,38 @@ export class WorldView {
       if (v.numCooldown > 0) v.numCooldown -= gameDt;
       const def = e.def;
       // texture (element variants, bat flap frames)
-      const frame = (def.look === 'wisp' || def.look === 'drone') && Math.floor(t * (def.look === 'drone' ? 14 : 6) + e.slot) % 2 === 1 ? 1 : 0;
+      const flaps = def.look === 'wisp' || def.look === 'drone' || def.look === 'phantom' || def.look === 'jammer';
+      const frame = flaps && Math.floor(t * (def.look === 'drone' || def.look === 'jammer' ? 14 : 6) + e.slot) % 2 === 1 ? 1 : 0;
       const tex = this.enemyTexture(def.id, def.elemental ? e.element : null, frame);
       if (v.body.texture !== tex) v.body.texture = tex;
       const parent = e.flying ? this.L.air : this.L.enemy;
       if (v.body.parent !== parent) parent.addChild(v.body);
       if (v.shield.parent !== parent) parent.addChild(v.shield);
+      if (v.barrier.parent !== parent) parent.addChild(v.barrier);
 
       const x = (lerp(e.px, e.x, a) + e.laneX) * TILE;
       const y = (lerp(e.py, e.y, a) + e.laneY) * TILE;
       const R = e.radius * TILE;
+      if (e.burrowed) {
+        // underground: only a moving mound of rubble shows
+        this.hideEnemyView(v);
+        v.shadow.visible = true;
+        v.shadow.position.set(x, y + R * 0.2);
+        v.shadow.scale.set((R * 2.4) / 48, (R * 1.6) / 20);
+        v.shadow.alpha = 0.55 + Math.sin(t * 12 + e.slot) * 0.1;
+        if (gameDt > 0 && this.fxRng.chance(gameDt * 14)) {
+          const o = this.particles.begin(this.shardTex, x + this.fxRng.range(-R, R), y + this.fxRng.range(-R, R) * 0.4);
+          o.vy = -this.fxRng.range(20, 60);
+          o.gravity = 260;
+          o.life = 0.45;
+          o.scale = 0.6;
+          o.scaleEnd = 0.2;
+          o.rotation = this.fxRng.range(0, 6.28);
+          o.tint = 0xb08a5a;
+          this.particles.emit(o);
+        }
+        continue;
+      }
       const phase = t * 9 + e.slot * 1.7;
       let sx = 1;
       let sy = 1;
@@ -406,7 +459,11 @@ export class WorldView {
       else if (e.slowTime > 0) tint = 0xa8dcff;
       else if (e.poisonTime > 0) tint = 0xc8ff9e;
       else if (e.burnTime > 0) tint = 0xffc49e;
+      if (e.windup > 0) tint = Math.sin(t * 22) > 0 ? 0xffb0bc : WHITE;
       v.body.tint = tint;
+      // cloaked: a faint shimmer unless a detector reveals it
+      const hidden = e.cloaked && e.revealed <= 0;
+      v.body.alpha = hidden ? 0.16 + Math.sin(t * 7 + e.slot) * 0.06 : e.cloaked ? 0.85 : 1;
 
       v.shadow.visible = true;
       v.shadow.position.set(x, y + R * 0.55);
@@ -414,6 +471,13 @@ export class WorldView {
       v.shadow.scale.set(ss, ss);
       v.shadow.alpha = e.flying ? 0.45 : 0.7;
 
+      v.shadow.alpha *= hidden ? 0.3 : 1;
+      if (e.barrier > 0) {
+        v.barrier.visible = true;
+        v.barrier.position.set(x, y - lift - fly - R * 0.1);
+        v.barrier.scale.set(((R * 2.9) / 72) * pop * (1 + Math.sin(t * 5 + e.slot) * 0.02));
+        v.barrier.alpha = (0.45 + 0.5 * (e.barrier / Math.max(1, e.barrierMax))) * (hidden ? 0.2 : 1);
+      } else v.barrier.visible = false;
       if (e.shield) {
         v.shield.visible = true;
         v.shield.texture = this.shieldTex[e.shield];
@@ -433,6 +497,19 @@ export class WorldView {
         v.hpFill.scale.set((w * frac) / 32, e.boss ? 1.1 : 0.85);
         v.hpFill.tint = frac > 0.6 ? 0x6cf06a : frac > 0.3 ? 0xffd23f : 0xff5a6a;
       } else v.hpBg.visible = v.hpFill.visible = false;
+      const barW = e.boss ? 64 : 34;
+      const barY = y - fly - R * 1.35 - (e.boss ? 18 : 8);
+      if (e.barrier > 0 && !hidden) {
+        v.barFill.visible = true;
+        v.barFill.position.set(x - barW / 2, barY - (e.boss ? 9 : 6));
+        v.barFill.scale.set((barW * (e.barrier / Math.max(1, e.barrierMax))) / 32, e.boss ? 0.8 : 0.6);
+      } else v.barFill.visible = false;
+      if (e.resist && !hidden) {
+        v.resist.visible = true;
+        v.resist.texture = this.atlas.get(`resist_${e.resist}`);
+        v.resist.position.set(x + barW / 2 + 9, barY + 2);
+      } else v.resist.visible = false;
+      if (hidden) v.hpBg.visible = v.hpFill.visible = false;
 
       // extra: stun stars or Archon Null's element core
       if (stunned) {
@@ -450,8 +527,9 @@ export class WorldView {
       } else v.extra.visible = false;
 
       // trailing status particles (cheap, budgeted)
-      if (gameDt > 0 && this.fxRng.chance(gameDt * 6)) {
-        if (e.burnTime > 0) this.emitStatus(x, y - fly, R, 0xff8a3a, 'dot', true);
+      if (gameDt > 0 && !hidden && this.fxRng.chance(gameDt * 6)) {
+        if (e.regenPct > 0 && e.hp < e.maxHp && e.sinceHit >= e.regenDelay && e.burnTime <= 0 && e.poisonTime <= 0) this.emitStatus(x, y - fly, R, 0x3dffa0, 'sparkle', true);
+        else if (e.burnTime > 0) this.emitStatus(x, y - fly, R, 0xff8a3a, 'dot', true);
         else if (e.poisonTime > 0) this.emitStatus(x, y - fly, R, 0x8ae04a, 'dot', false);
         else if (e.slowTime > 0) this.emitStatus(x, y - fly, R, 0xbfe8ff, 'sparkle', true);
       }
@@ -487,7 +565,7 @@ export class WorldView {
         head.position.set(t.x * TILE, t.y * TILE - 4);
         this.L.base.addChild(base);
         this.L.head.addChild(head);
-        v = { base, head, beam: null, beamGlow: null, level: t.level, stamp: 0, angle: t.angle };
+        v = { base, head, beam: null, beamGlow: null, level: t.level, spec: t.spec, stamp: 0, angle: t.angle, off: null };
         if (t.def.behavior === 'beam') {
           v.beam = new Sprite(this.atlas.get('beam'));
           v.beamGlow = new Sprite(this.atlas.get('glow'));
@@ -498,8 +576,9 @@ export class WorldView {
         this.towerViews.set(t.id, v);
       }
       v.stamp = this.stamp;
-      if (v.level !== t.level) {
+      if (v.level !== t.level || v.spec !== t.spec) {
         v.level = t.level;
+        v.spec = t.spec;
         v.base.texture = this.atlas.get(towerBaseName(t.def.id, t.level));
         v.head.texture = this.atlas.get(towerHeadName(t.def.id, t.level, t.spec));
       }
@@ -526,6 +605,22 @@ export class WorldView {
         v.head.rotation = 0;
       }
       v.head.position.set(hx, hy);
+      // knocked offline by a jammer or boss attack
+      if (t.disabled > 0) {
+        if (!v.off) {
+          v.off = new Sprite(this.atlas.get('offline'));
+          v.off.anchor.set(0.5);
+          this.L.hp.addChild(v.off);
+        }
+        v.off.visible = true;
+        v.off.position.set(t.x * TILE + 16, t.y * TILE - 26);
+        v.head.tint = 0x6b7390;
+        v.base.tint = 0x8a90a8;
+      } else if (v.off?.visible) {
+        v.off.visible = false;
+        v.head.tint = WHITE;
+        v.base.tint = WHITE;
+      }
 
       if (v.beam && v.beamGlow) {
         const tg = t.beamTarget;
@@ -557,6 +652,7 @@ export class WorldView {
         v.head.destroy();
         v.beam?.destroy();
         v.beamGlow?.destroy();
+        v.off?.destroy();
         this.towerViews.delete(id);
       }
     }
@@ -1010,6 +1106,57 @@ export class WorldView {
           this.particles.emit(o);
         }
         break;
+      case Ev.Warn:
+        this.addWarn(X, Y, e.value * TILE, e.value2, e.id);
+        break;
+      case Ev.Disable: {
+        // static burst / stomp: a fast expanding ring and an OFFLINE call-out
+        const r = e.value * TILE;
+        {
+          const o = this.particlesAdd.begin(this.ringTex, X, Y);
+          o.life = 0.4;
+          o.scale = 0.2;
+          o.scaleEnd = (r * 2) / 120;
+          o.tint = e.kind === 'stomp' ? 0xffb347 : 0x9ff3ff;
+          o.alpha = 1;
+          this.particlesAdd.emit(o);
+        }
+        if (e.kind === 'stomp') this.addShake(6);
+        this.text.spawn(tr('fx.offline'), X, Y - 40, 0xff4d6a, 0.55, 1);
+        break;
+      }
+      case Ev.BossPhase:
+        this.addShake(7);
+        this.shatter(X, Y - 10, 0xff4d6a, 1.4);
+        {
+          const o = this.particlesAdd.begin(this.ringTex, X, Y);
+          o.life = 0.7;
+          o.scale = 0.3;
+          o.scaleEnd = 2.6;
+          o.tint = 0xff4d6a;
+          o.alpha = 1;
+          this.particlesAdd.emit(o);
+        }
+        break;
+      case Ev.BarrierBreak:
+        this.shatter(X, Y - 10, 0x8ff3ff, 1);
+        this.text.spawn(tr('fx.barrier'), X, Y - 34, 0x8ff3ff, 0.4, 0.8, -30);
+        break;
+      case Ev.Burrow:
+        for (let i = 0; i < 10; i++) {
+          const o = this.particles.begin(this.shardTex, X, Y);
+          const ang = this.fxRng.range(-Math.PI, 0);
+          o.vx = Math.cos(ang) * this.fxRng.range(40, 110);
+          o.vy = Math.sin(ang) * this.fxRng.range(60, 140);
+          o.gravity = 360;
+          o.life = 0.6;
+          o.scale = 0.8;
+          o.scaleEnd = 0.3;
+          o.rotation = this.fxRng.range(0, 6.28);
+          o.tint = 0xb08a5a;
+          this.particles.emit(o);
+        }
+        break;
       case Ev.BossSpawn:
         this.addShake(8);
         {
@@ -1075,6 +1222,69 @@ export class WorldView {
   }
 
   /** Constructs shatter into crystal shards inside a dissolving energy ring. */
+  private warns: WarnView[] = [];
+  private warnFree: WarnView[] = [];
+
+  /** Show a telegraph: a red ring at the attack radius that fills up over the wind-up. */
+  private addWarn(x: number, y: number, r: number, dur: number, slot: number): void {
+    let w = this.warnFree.pop();
+    if (!w) {
+      const ring = new Sprite(this.ringTex);
+      const fill = new Sprite(this.atlas.get('glow'));
+      const icon = new Sprite(this.atlas.get('warn'));
+      ring.anchor.set(0.5);
+      fill.anchor.set(0.5);
+      icon.anchor.set(0.5);
+      ring.tint = fill.tint = 0xff4d6a;
+      this.L.zone.addChild(fill, ring);
+      this.L.hp.addChild(icon);
+      w = { ring, fill, icon, x: 0, y: 0, r: 0, t: 0, dur: 1, slot: -1 };
+    }
+    w.x = x;
+    w.y = y;
+    w.r = r;
+    w.t = 0;
+    w.dur = Math.max(0.2, dur);
+    w.slot = slot;
+    w.ring.visible = w.fill.visible = w.icon.visible = true;
+    this.warns.push(w);
+  }
+
+  private syncWarns(dt: number): void {
+    for (let i = this.warns.length - 1; i >= 0; i--) {
+      const w = this.warns[i]!;
+      w.t += this.game.state === 'playing' ? dt : 0;
+      const f = Math.min(1, w.t / w.dur);
+      // follow the caster while it winds up
+      let e: Enemy | null = null;
+      const list = this.game.enemies;
+      for (let k = 0; k < list.length; k++) {
+        if (list[k]!.slot === w.slot && list[k]!.alive) {
+          e = list[k]!;
+          break;
+        }
+      }
+      if (e) {
+        w.x = (e.x + e.laneX) * TILE;
+        w.y = (e.y + e.laneY) * TILE;
+      }
+      const ringScale = (w.r * 2) / 120;
+      w.ring.position.set(w.x, w.y);
+      w.ring.scale.set(ringScale);
+      w.ring.alpha = 0.55 + 0.4 * Math.abs(Math.sin(w.t * 6));
+      w.fill.position.set(w.x, w.y);
+      w.fill.scale.set((w.r * 2 * f) / 70);
+      w.fill.alpha = 0.35;
+      w.icon.position.set(w.x, w.y - 46);
+      w.icon.scale.set(1 + 0.15 * Math.sin(w.t * 10));
+      if (f >= 1 || !e) {
+        w.ring.visible = w.fill.visible = w.icon.visible = false;
+        this.warns.splice(i, 1);
+        this.warnFree.push(w);
+      }
+    }
+  }
+
   private shatter(x: number, y: number, color: number, size: number): void {
     const rng = this.fxRng;
     const big = this.quality.particles > 200;

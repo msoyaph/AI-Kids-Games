@@ -1,5 +1,5 @@
 import { css, darken, lighten } from '../../core/math';
-import { ELEMENTS } from '../../data/elements';
+import { ELEMENTS, type ElementId } from '../../data/elements';
 import type { ProjectileStyle } from '../../data/towers';
 import {
   ballGradient,
@@ -610,4 +610,103 @@ export function drawShard(ctx: Ctx, w: number, h: number): void {
   ctx.lineTo(w * 0.55, h / 2);
   ctx.lineTo(w * 0.42, h);
   ctx.stroke();
+}
+
+/** Breakable barrier: a white hex-lattice bubble (tinted cyan at runtime). */
+export function drawBarrier(ctx: Ctx, w: number): void {
+  const c = w / 2;
+  const r = w * 0.46;
+  const g = ctx.createRadialGradient(c, c, r * 0.4, c, c, r);
+  g.addColorStop(0, 'rgba(255,255,255,0.02)');
+  g.addColorStop(0.8, 'rgba(255,255,255,0.18)');
+  g.addColorStop(1, 'rgba(255,255,255,0.55)');
+  circle(ctx, c, c, r);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.save();
+  circle(ctx, c, c, r);
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.32)';
+  ctx.lineWidth = Math.max(1, w * 0.012);
+  const hs = w * 0.12;
+  for (let y = -1; y < 9; y++) {
+    for (let x = -1; x < 9; x++) {
+      const hx = x * hs * 1.5;
+      const hy = y * hs * 1.732 + (x % 2 ? hs * 0.866 : 0);
+      ctx.beginPath();
+      for (let i = 0; i <= 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        const px = hx + Math.cos(a) * hs;
+        const py = hy + Math.sin(a) * hs;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+  circle(ctx, c, c, r);
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+  ctx.lineWidth = Math.max(1.5, w * 0.03);
+  ctx.stroke();
+}
+
+/** Element token with a slash: "resists this element". */
+export function drawResist(ctx: Ctx, w: number, el: ElementId): void {
+  const c = w / 2;
+  const E = ELEMENTS[el];
+  circle(ctx, c, c, w * 0.44);
+  ctx.fillStyle = css(0x070b16, 0.92);
+  ctx.fill();
+  ctx.strokeStyle = css(0xd9e2f5);
+  ctx.lineWidth = w * 0.07;
+  ctx.stroke();
+  elementIcon(ctx, E.icon, c, c, w * 0.26, E.color);
+  ctx.strokeStyle = css(0xff4d6a);
+  ctx.lineWidth = w * 0.09;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(c - w * 0.28, c + w * 0.28);
+  ctx.lineTo(c + w * 0.28, c - w * 0.28);
+  ctx.stroke();
+}
+
+/** Telegraph marker: a warning triangle. */
+export function drawWarnIcon(ctx: Ctx, w: number): void {
+  const c = w / 2;
+  ctx.beginPath();
+  ctx.moveTo(c, w * 0.1);
+  ctx.lineTo(w * 0.92, w * 0.86);
+  ctx.lineTo(w * 0.08, w * 0.86);
+  ctx.closePath();
+  ctx.fillStyle = css(0xff4d6a);
+  ctx.fill();
+  ctx.strokeStyle = css(0x070b16);
+  ctx.lineWidth = w * 0.06;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(c - w * 0.05, w * 0.36, w * 0.1, w * 0.28);
+  ctx.fillRect(c - w * 0.05, w * 0.7, w * 0.1, w * 0.08);
+}
+
+/** Offline marker for jammed towers: a lightning bolt in a slashed circle. */
+export function drawOffline(ctx: Ctx, w: number): void {
+  const c = w / 2;
+  circle(ctx, c, c, w * 0.44);
+  ctx.fillStyle = css(0x070b16, 0.9);
+  ctx.fill();
+  ctx.strokeStyle = css(0xff4d6a);
+  ctx.lineWidth = w * 0.08;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(c + w * 0.04, w * 0.18);
+  ctx.lineTo(c - w * 0.16, c + w * 0.04);
+  ctx.lineTo(c, c + w * 0.04);
+  ctx.lineTo(c - w * 0.06, w * 0.82);
+  ctx.lineTo(c + w * 0.18, c - w * 0.06);
+  ctx.lineTo(c + w * 0.02, c - w * 0.06);
+  ctx.closePath();
+  ctx.fillStyle = css(0xffd25a);
+  ctx.fill();
 }

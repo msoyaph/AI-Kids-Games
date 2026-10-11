@@ -2,15 +2,15 @@ import { css, darken, lighten, mixColor } from '../../core/math';
 import { ELEMENTS, type ElementId } from '../../data/elements';
 import type { EnemyDef } from '../../data/enemies';
 import { elementIcon, type Ctx } from './paint';
-import { chamferRect, crystal, energyCore, facets, glint, lens, metalGradient, rivet, runeRing, strokePath, TECH } from './tech';
+import { chamferPoly, chamferRect, crystal, energyCore, facets, glint, lens, metalGradient, rivet, runeRing, strokePath, TECH } from './tech';
 
 export const TILE = 64;
 
 /** Logical sprite box for an enemy (room for legs, rotors, ribbons and crowns). */
 export function enemyBox(def: EnemyDef): { w: number; h: number } {
   const d = def.radius * TILE * 2;
-  const wide = def.look === 'wisp' || def.look === 'drone' ? 1.9 : 1.55;
-  const tall = def.look === 'archon' || def.boss ? 1.7 : 1.45;
+  const wide = def.look === 'wisp' || def.look === 'drone' || def.look === 'phantom' || def.look === 'borer' ? 1.9 : 1.55;
+  const tall = def.look === 'archon' || def.look === 'jammer' || def.boss ? 1.7 : 1.45;
   return { w: Math.ceil(d * wide), h: Math.ceil(d * tall) };
 }
 
@@ -308,6 +308,170 @@ export function drawEnemy(ctx: Ctx, def: EnemyDef, el: ElementId | null, w: numb
       lens(ctx, cx + R * 0.12, cy - R * 0.04, R * 0.12, glow);
       for (const s of [-1, 1]) rivet(ctx, cx + s * R * 0.3, cy + R * 0.42, R * 0.06);
       glint(ctx, cx - R * 0.25, cy - R * 0.55, R * 0.16, 0.85);
+      break;
+    }
+    case 'bulwark': {
+      // squat tracked chassis carrying a barrier generator (the bubble is drawn live)
+      for (const s2 of [-1, 1]) {
+        chamferRect(ctx, cx - R * 0.85, cy + s2 * R * 0.42 - R * 0.14, R * 1.7, R * 0.28, R * 0.1);
+        ctx.fillStyle = metalGradient(ctx, cx - R, cy, cx + R, cy + R, TECH.steelDark);
+        ctx.fill();
+        strokePath(ctx, TECH.ink, lw);
+        for (let i = 0; i < 4; i++) rivet(ctx, cx - R * 0.6 + i * R * 0.4, cy + s2 * R * 0.42, R * 0.05);
+      }
+      chamferPoly(ctx, cx, cy - R * 0.05, 6, R * 0.62, R * 0.12, Math.PI / 6);
+      ctx.fillStyle = metalGradient(ctx, cx - R, cy - R, cx + R, cy + R, col);
+      ctx.fill();
+      strokePath(ctx, TECH.ink, lw * 1.1);
+      // generator dome
+      ctx.beginPath();
+      ctx.arc(cx - R * 0.08, cy - R * 0.12, R * 0.32, 0, Math.PI * 2);
+      const gd = ctx.createRadialGradient(cx - R * 0.16, cy - R * 0.22, R * 0.04, cx - R * 0.08, cy - R * 0.12, R * 0.32);
+      gd.addColorStop(0, '#ffffff');
+      gd.addColorStop(0.4, css(TECH.cyan));
+      gd.addColorStop(1, css(darken(TECH.cyan, 0.5)));
+      ctx.fillStyle = gd;
+      ctx.fill();
+      strokePath(ctx, TECH.ink, lw);
+      for (let i = 0; i < 3; i++) {
+        const a = -Math.PI / 2 + (i - 1) * 0.7;
+        ctx.strokeStyle = css(TECH.cyan, 0.8);
+        ctx.lineWidth = lw * 0.8;
+        ctx.beginPath();
+        ctx.arc(cx - R * 0.08, cy - R * 0.12, R * 0.48, a - 0.2, a + 0.2);
+        ctx.stroke();
+      }
+      lens(ctx, cx + R * 0.5, cy - R * 0.05, R * 0.1, glow);
+      break;
+    }
+    case 'phantom': {
+      // sleek stalker: blade-like hull with trailing cloak fins
+      for (const s2 of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(cx - R * 0.1, cy + s2 * R * 0.12);
+        ctx.lineTo(cx - R * 1.05, cy + s2 * R * (frame === 0 ? 0.62 : 0.5));
+        ctx.lineTo(cx - R * 0.55, cy + s2 * R * 0.1);
+        ctx.closePath();
+        const fg = ctx.createLinearGradient(cx - R, cy, cx, cy);
+        fg.addColorStop(0, css(col, 0.05));
+        fg.addColorStop(1, css(col, 0.75));
+        ctx.fillStyle = fg;
+        ctx.fill();
+      }
+      const pts: [number, number][] = [
+        [cx + R * 0.95, cy],
+        [cx + R * 0.15, cy - R * 0.42],
+        [cx - R * 0.55, cy - R * 0.18],
+        [cx - R * 0.55, cy + R * 0.18],
+        [cx + R * 0.15, cy + R * 0.42],
+      ];
+      facets(ctx, cx + R * 0.1, cy - R * 0.1, pts, col, TECH.ink, lw);
+      ctx.strokeStyle = css(lighten(col, 0.5), 0.8);
+      ctx.lineWidth = lw * 0.7;
+      ctx.beginPath();
+      ctx.moveTo(cx - R * 0.45, cy);
+      ctx.lineTo(cx + R * 0.8, cy);
+      ctx.stroke();
+      lens(ctx, cx + R * 0.45, cy - R * 0.08, R * 0.1, glow);
+      glint(ctx, cx + R * 0.1, cy - R * 0.25, R * 0.12, 0.8);
+      break;
+    }
+    case 'borer': {
+      // segmented body with a spiral drill head
+      for (let i = 2; i >= 0; i--) {
+        const sx = cx - R * 0.75 + i * R * 0.38;
+        chamferPoly(ctx, sx, cy, 6, R * (0.34 + i * 0.04), R * 0.06, 0);
+        ctx.fillStyle = metalGradient(ctx, sx - R * 0.4, cy - R * 0.4, sx + R * 0.4, cy + R * 0.4, i % 2 ? darken(col, 0.2) : col);
+        ctx.fill();
+        strokePath(ctx, TECH.ink, lw);
+      }
+      // drill cone
+      ctx.beginPath();
+      ctx.moveTo(cx + R * 0.25, cy - R * 0.42);
+      ctx.lineTo(cx + R * 1.0, cy);
+      ctx.lineTo(cx + R * 0.25, cy + R * 0.42);
+      ctx.closePath();
+      ctx.fillStyle = metalGradient(ctx, cx, cy - R * 0.4, cx + R, cy + R * 0.4, TECH.steelLight);
+      ctx.fill();
+      strokePath(ctx, TECH.ink, lw);
+      ctx.strokeStyle = css(TECH.ink, 0.8);
+      ctx.lineWidth = lw * 0.7;
+      for (let i = 0; i < 3; i++) {
+        const x0 = cx + R * (0.38 + i * 0.18);
+        const hh = R * 0.36 * (1 - i * 0.28);
+        ctx.beginPath();
+        ctx.moveTo(x0, cy - hh);
+        ctx.lineTo(x0 + R * 0.12, cy + hh);
+        ctx.stroke();
+      }
+      lens(ctx, cx + R * 0.05, cy - R * 0.12, R * 0.08, glow);
+      break;
+    }
+    case 'jammer': {
+      // walker with a dish antenna crackling with static
+      for (const s2 of [-1, 1]) {
+        ctx.strokeStyle = css(TECH.ink);
+        ctx.lineWidth = lw * 1.8;
+        ctx.beginPath();
+        ctx.moveTo(cx + s2 * R * 0.2, cy + R * 0.2);
+        ctx.lineTo(cx + s2 * R * 0.55, cy + R * 0.85);
+        ctx.stroke();
+      }
+      chamferRect(ctx, cx - R * 0.55, cy - R * 0.3, R * 1.1, R * 0.62, R * 0.14);
+      ctx.fillStyle = metalGradient(ctx, cx - R, cy - R, cx + R, cy + R, darken(col, 0.25));
+      ctx.fill();
+      strokePath(ctx, TECH.ink, lw);
+      // dish
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - R * 0.62, R * 0.62, R * 0.24, 0, 0, Math.PI * 2);
+      ctx.fillStyle = metalGradient(ctx, cx - R * 0.6, cy - R, cx + R * 0.6, cy - R * 0.4, TECH.steelLight);
+      ctx.fill();
+      strokePath(ctx, TECH.ink, lw);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - R * 0.62);
+      ctx.lineTo(cx, cy - R * 1.02);
+      ctx.strokeStyle = css(TECH.ink);
+      ctx.lineWidth = lw;
+      ctx.stroke();
+      energyCore(ctx, cx, cy - R * 1.05, R * 0.1, col, 2.6);
+      // static arcs
+      ctx.strokeStyle = css(lighten(col, 0.3), 0.9);
+      ctx.lineWidth = lw * 0.7;
+      for (const s2 of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(cx + s2 * R * 0.15, cy - R * 1.05);
+        ctx.lineTo(cx + s2 * R * 0.35, cy - R * (frame === 0 ? 1.2 : 1.0));
+        ctx.lineTo(cx + s2 * R * 0.5, cy - R * 1.1);
+        ctx.lineTo(cx + s2 * R * 0.72, cy - R * (frame === 0 ? 1.0 : 1.25));
+        ctx.stroke();
+      }
+      lens(ctx, cx + R * 0.25, cy, R * 0.1, glow);
+      break;
+    }
+    case 'hulk': {
+      // bulky lattice of crystal struts around a glowing core
+      const pts: [number, number][] = [];
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        pts.push([cx + Math.cos(a) * R * 0.95, cy + Math.sin(a) * R * 0.78]);
+      }
+      facets(ctx, cx - R * 0.1, cy - R * 0.1, pts, darken(col, 0.35), TECH.ink, lw * 1.1);
+      ctx.strokeStyle = css(lighten(col, 0.25), 0.9);
+      ctx.lineWidth = lw * 0.9;
+      for (let i = 0; i < 8; i += 2) {
+        const a = (i / 8) * Math.PI * 2;
+        const b = ((i + 3) / 8) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * R * 0.85, cy + Math.sin(a) * R * 0.7);
+        ctx.lineTo(cx + Math.cos(b) * R * 0.85, cy + Math.sin(b) * R * 0.7);
+        ctx.stroke();
+      }
+      for (let i = 0; i < 4; i++) {
+        const a = -Math.PI / 2 + (i - 1.5) * 0.5;
+        crystal(ctx, cx + Math.cos(a) * R * 0.7, cy + Math.sin(a) * R * 0.6, R * 0.5, R * 0.18, a, col, lw * 0.8);
+      }
+      energyCore(ctx, cx, cy + R * 0.05, R * 0.22, col, 2.2);
+      lens(ctx, cx + R * 0.55, cy + R * 0.1, R * 0.1, glow);
       break;
     }
     case 'archon': {

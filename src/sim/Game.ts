@@ -23,7 +23,7 @@ import {
   type SpawnGroup,
   type WaveDef,
 } from '../data/waves';
-import { TUNING } from '../data/tuning';
+import { TUNING, type BossAttack } from '../data/tuning';
 import { Enemy } from './enemy';
 import { Projectile, Tower, Zone } from './entities';
 import { Ev, EventQueue } from './events';
@@ -171,6 +171,9 @@ export class Game {
   private scratchDist: Float64Array;
   private scratchNext: Int32Array;
   private buildCache = new Map<number, boolean>();
+  /** Cloaked constructs this tick (detection only runs when there are some). */
+  private cloakedCount = 0;
+  private empAttacks = new Map<string, BossAttack>();
   private buildCacheVersion = -1;
 
   constructor(opts: GameOptions) {
@@ -190,7 +193,7 @@ export class Game {
     this.autoWaves = opts.autoWaves ?? true;
     this.maxLives = this.diff.lives;
     this.lives = this.maxLives;
-    this.coins = Math.round((opts.startCoins ?? opts.map.startCoins ?? ECO.startCoins) * this.diff.startCoins);
+    this.coins = Math.round((opts.startCoins ?? opts.map.startCoins ?? ECO.mapStartCoins[opts.map.id] ?? ECO.startCoins) * this.diff.startCoins);
     this.crystals = opts.startCrystals ?? ECO.startCrystals;
     this.crystalWaves = opts.crystalWaves ?? CRYSTAL_WAVES;
     const shortest = this.pathLength();
@@ -289,6 +292,7 @@ export class Game {
         const sp = this.grid.spawns[(c.spawnPoint + c.spawned) % this.grid.spawns.length]!;
         const e = this.spawnEnemy(ENEMIES[g.enemy], el, c.wave, c.waveIndex, this.grid.cellX(sp) + 0.5, this.grid.cellY(sp) + 0.5, sp);
         if (e && g.shields) e.shield = g.shields[c.spawned % g.shields.length]!;
+        if (e && g.resist) e.resist = g.resist;
         c.spawned++;
         c.timer += g.gap;
       }
@@ -383,6 +387,7 @@ export class Game {
     this.spatial.rebuild(this.enemies);
     this.updateEnemies();
     this.spatial.rebuild(this.enemies);
+    if (this.cloakedCount > 0) this.updateDetection();
     this.updateTowers();
     this.updateProjectiles();
     this.updateZones();
@@ -393,6 +398,7 @@ export class Game {
 
   private updateEnemies(): void {
     const g = this.grid;
+    this.cloakedCount = 0;
     for (let i = 0; i < this.enemies.length; i++) {
       const e = this.enemies[i]!;
       if (!e.alive) continue;
@@ -421,6 +427,26 @@ export class Game {
       }
 
       const def = e.def;
+      // ---- mechanics: regeneration, cloak, boss phases, attacks, tunnelling
+      e.sinceHit += DT;
+      if (e.revealed > 0) e.revealed -= DT;
+      if (e.regenPct > 0 && e.sinceHit >= e.regenDelay && e.burnTime <= 0 && e.poisonTime <= 0 && e.hp < e.maxHp) {
+        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * e.regenPct * DT);
+      }
+      if (e.cloakHidden > 0) {
+        e.cloakTimer += DT;
+        const cycle = e.cloakHidden + e.cloakVisible;
+        if (e.cloakTimer >= cycle) e.cloakTimer -= cycle;
+        e.cloaked = e.cloakTimer < e.cloakHidden;
+        if (e.cloaked) this.cloakedCount++;
+      }
+      if (def.phases) this.updateBossPhase(e);
+      const atk = this.attackOf(e);
+      if (atk) {
+        this.updateAttack(e, atk);
+        if (!e.alive) continue;
+      }
+      if (def.burrow && !e.flying && this.updateBurrow(e)) continue;
       if (def.heal) {
         e.healTimer -= DT;
         if (e.healTimer <= 0) {
@@ -595,9 +621,34 @@ export class Game {
         }
       }
     }
+    if (e.resist) {
+      for (let i = 0; i < elements.length; i++) {
+        if (elements[i] === e.resist) {
+          m *= C.resistMult;
+          break;
+        }
+      }
+    }
+    e.sinceHit = 0;
     const armor = dot ? 0 : e.effectiveArmor;
-    const dmg = amount * m * (1 - armor);
-    e.hp -= dmg;
+    let dmg: number;
+    if (e.barrier > 0 && !dot) {
+      // the barrier soaks the hit first (armor doesn't help it; ward breakers hit it harder)
+      const wb = sst?.wardBreak ?? 1;
+      const raw = amount * m * wb;
+      const absorbed = Math.min(e.barrier, raw);
+      e.barrier -= absorbed;
+      if (e.barrier <= 0) {
+        e.barrier = 0;
+        this.events.push(Ev.BarrierBreak, e.x, e.y).id = e.slot;
+      }
+      const through = ((raw - absorbed) / wb) * (1 - armor);
+      e.hp -= through;
+      dmg = absorbed + through;
+    } else {
+      dmg = amount * m * (1 - armor);
+      e.hp -= dmg;
+    }
     if (!dot) e.hitFlash = 0.1;
     if (src) {
       e.lastHitBy = towerId;
@@ -1021,6 +1072,7 @@ export class Game {
       let best: Enemy | null = null;
       for (let i = 0; i < n; i++) {
         const e = this.q[i]!;
+        if (!e.targetable) continue;
         let used = false;
         for (let j = 0; j < count; j++) if (this.picked[j] === e) used = true;
         if (used) continue;
@@ -1037,6 +1089,11 @@ export class Game {
       const t = this.towers[i]!;
       t.sinceFire += DT;
       t.sinceBuild += DT;
+      if (t.disabled > 0) {
+        t.disabled -= DT;
+        t.beamTarget = null;
+        continue;
+      }
       const st = t.stats;
       if (t.def.behavior === 'beam') {
         this.updateBeam(t, st);
@@ -1159,7 +1216,7 @@ export class Game {
       let bestD = Infinity;
       for (let i = 0; i < m; i++) {
         const o = this.q2[i]!;
-        if (!o.alive) continue;
+        if (!o.alive || !o.targetable) continue;
         let used = false;
         for (let j = 0; j < hitCount; j++) if (hit[j] === o) used = true;
         if (used) continue;
@@ -1199,7 +1256,7 @@ export class Game {
   private updateBeam(t: Tower, st: TowerStats): void {
     let e = t.beamTarget;
     const range = st.range;
-    if (e && (!e.alive || e.id !== t.beamTargetId || (e.x - t.x) ** 2 + (e.y - t.y) ** 2 > (range + e.radius) ** 2)) {
+    if (e && (!e.alive || !e.targetable || e.id !== t.beamTargetId || (e.x - t.x) ** 2 + (e.y - t.y) ** 2 > (range + e.radius) ** 2)) {
       e = null;
     }
     if (!e) {
@@ -1279,7 +1336,7 @@ export class Game {
       ev.value = st.splash;
       ev.kind = p.style;
       ev.tag = p.elements[0] ?? '';
-    } else if (p.target && p.target.alive && p.target.id === p.targetId) {
+    } else if (p.target && p.target.alive && p.target.id === p.targetId && !p.target.burrowed) {
       const target = p.target;
       const dealt = this.damage(target, p.damage, p.elements, p.towerId);
       this.applyEffects(target, st, p.towerId);
@@ -1344,6 +1401,192 @@ export class Game {
         this.zoneFree.push(z);
       }
     }
+  }
+
+  // ================================================================ mechanics
+
+  /** Detector towers reveal cloaked constructs in range. */
+  private updateDetection(): void {
+    for (let i = 0; i < this.towers.length; i++) {
+      const t = this.towers[i]!;
+      const st = t.stats;
+      if (!st.detect || t.disabled > 0) continue;
+      const n = this.spatial.query(t.x, t.y, st.range, 1, this.q2);
+      for (let k = 0; k < n; k++) {
+        const e = this.q2[k]!;
+        if (e.cloaked) e.revealed = C.revealLinger;
+      }
+    }
+  }
+
+  /** The attack this construct uses right now (jammer static burst or the boss's phase attack). */
+  private attackOf(e: Enemy): BossAttack | null {
+    const def = e.def;
+    if (def.emp) {
+      let a = this.empAttacks.get(def.id);
+      if (!a) {
+        a = { kind: 'stomp', every: def.emp.every, windup: def.emp.windup, radius: def.emp.radius, duration: def.emp.duration };
+        this.empAttacks.set(def.id, a);
+      }
+      return a;
+    }
+    const ph = def.phases;
+    if (!ph) return null;
+    for (let i = e.phase - 1; i >= 0; i--) if (ph[i]!.attack) return ph[i]!.attack!;
+    return null;
+  }
+
+  private updateBossPhase(e: Enemy): void {
+    const ph = e.def.phases!;
+    if (e.phase >= ph.length || e.hp / e.maxHp >= ph[e.phase]!.at) return;
+    const p = ph[e.phase]!;
+    e.phase++;
+    if (p.shield) e.barrier = e.barrierMax = Math.round(e.maxHp * p.shield);
+    if (p.speed) e.speedMult = p.speed;
+    if (p.armor !== undefined) e.armor = p.armor;
+    if (p.regen) {
+      e.regenPct = p.regen.pct;
+      e.regenDelay = p.regen.delay;
+    }
+    if (p.cloak) {
+      e.cloakHidden = p.cloak.hidden;
+      e.cloakVisible = p.cloak.visible;
+      e.cloakTimer = 0;
+    }
+    if (p.attack) e.attackTimer = 1.5;
+    const ev = this.events.push(Ev.BossPhase, e.x, e.y);
+    ev.value = e.phase + 1;
+    ev.kind = p.key;
+    ev.tag = e.def.id;
+    ev.id = e.slot;
+  }
+
+  private updateAttack(e: Enemy, atk: BossAttack): void {
+    if (e.windup > 0) {
+      e.windup -= DT;
+      if (e.windup <= 0) {
+        e.windup = 0;
+        e.attackTimer = atk.every;
+        this.executeAttack(e, atk);
+      }
+      return;
+    }
+    if (e.burrowed) return;
+    e.attackTimer -= DT;
+    // summons need room: no brood or swarm right at the Citadel gate
+    const summon = atk.kind === 'brood' || atk.kind === 'swarm';
+    if (e.attackTimer <= 0 && summon && e.remaining < C.summonMinDistance) e.attackTimer = 0.5;
+    if (e.attackTimer <= 0) {
+      e.windup = atk.windup;
+      const ev = this.events.push(Ev.Warn, e.x, e.y);
+      ev.value = atk.radius;
+      ev.value2 = atk.windup;
+      ev.kind = e.def.emp ? 'emp' : atk.kind;
+      ev.tag = e.def.id;
+      ev.id = e.slot;
+    }
+  }
+
+  private executeAttack(e: Enemy, atk: BossAttack): void {
+    if (atk.kind === 'brood' || atk.kind === 'swarm') {
+      const child = ENEMIES[atk.spawn ?? 'minigloop'];
+      const wave = this.getWave(e.waveIndex + 1)!;
+      const n = atk.count ?? 3;
+      for (let k = 0; k < n; k++) {
+        const a = (k / n) * Math.PI * 2;
+        const c = this.spawnEnemy(child, null, wave, e.waveIndex, e.x + Math.cos(a) * atk.radius * 0.5, e.y + Math.sin(a) * atk.radius * 0.5, e.cell);
+        if (!c) continue;
+        this.waveAlive[e.waveIndex]!++;
+        if (!c.flying && e.cell >= 0) {
+          c.cell = e.cell;
+          c.wcell = e.wcell;
+          c.wx = e.wx;
+          c.wy = e.wy;
+        }
+        c.stunTime = C.splitPause;
+        this.updateRemaining(c);
+      }
+      const sev = this.events.push(Ev.Split, e.x, e.y);
+      sev.kind = child.id;
+      return;
+    }
+    // stomp / null field / static burst: knock towers offline
+    const r2 = (atk.radius + 0.5) * (atk.radius + 0.5);
+    const dur = atk.duration ?? 2;
+    for (let i = 0; i < this.towers.length; i++) {
+      const t = this.towers[i]!;
+      const dx = t.x - e.x;
+      const dy = t.y - e.y;
+      if (dx * dx + dy * dy <= r2) t.disabled = Math.max(t.disabled, dur);
+    }
+    const ev = this.events.push(Ev.Disable, e.x, e.y);
+    ev.value = atk.radius;
+    ev.value2 = dur;
+    ev.kind = e.def.emp ? 'emp' : atk.kind;
+  }
+
+  /** Tunnelling: returns true while the construct moves underground this tick. */
+  private updateBurrow(e: Enemy): boolean {
+    const B = e.def.burrow!;
+    e.burrowTimer -= DT;
+    if (!e.burrowed) {
+      if (e.burrowTimer > 0 || e.stunTime > 0 || e.windup > 0) return false;
+      e.burrowed = true;
+      e.burrowTimer = B.duration;
+      e.slowTime = 0;
+      const ev = this.events.push(Ev.Burrow, e.x, e.y);
+      ev.value = 1;
+      ev.id = e.slot;
+    }
+    const g = this.grid;
+    const dx = g.castleX - e.x;
+    const dy = g.castleY - e.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    const move = e.speed * e.speedMult * B.speed * DT;
+    if (e.burrowTimer > 0 && d > 1.2) {
+      e.x += (dx / d) * Math.min(move, d);
+      e.y += (dy / d) * Math.min(move, d);
+      if (Math.abs(dx) > 0.01) e.facing = dx > 0 ? 1 : -1;
+      e.remaining = d;
+      return true;
+    }
+    this.surface(e);
+    return false;
+  }
+
+  /** Come up on the nearest open, reachable cell (never inside a tower). */
+  private surface(e: Enemy): void {
+    const g = this.grid;
+    const cx = Math.floor(e.x);
+    const cy = Math.floor(e.y);
+    const R = C.surfaceSearch;
+    let best = -1;
+    let bestD = Infinity;
+    for (let y = cy - R; y <= cy + R; y++) {
+      for (let x = cx - R; x <= cx + R; x++) {
+        if (!g.inBounds(x, y)) continue;
+        const i = g.idx(x, y);
+        if (!g.isOpen(i) || this.flow.dist[i]! >= UNREACHABLE) continue;
+        const ddx = x + 0.5 - e.x;
+        const ddy = y + 0.5 - e.y;
+        const dd = ddx * ddx + ddy * ddy;
+        if (dd < bestD) {
+          bestD = dd;
+          best = i;
+        }
+      }
+    }
+    if (best < 0) best = e.cell >= 0 && g.isOpen(e.cell) ? e.cell : this.grid.spawns[0]!;
+    e.burrowed = false;
+    e.burrowTimer = e.def.burrow!.every;
+    e.cell = best;
+    e.x = g.cellX(best) + 0.5;
+    e.y = g.cellY(best) + 0.5;
+    this.setWaypoint(e, this.flow.next[best]!);
+    this.updateRemaining(e);
+    const ev = this.events.push(Ev.Burrow, e.x, e.y);
+    ev.value = 0;
+    ev.id = e.slot;
   }
 
   // ================================================================ elements

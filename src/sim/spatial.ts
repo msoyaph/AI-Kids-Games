@@ -60,7 +60,7 @@ export class SpatialHash {
         let i = this.head[by * this.cols + bx]!;
         while (i >= 0) {
           const e = this.items[i];
-          if (e && e.alive && (air || !e.flying)) {
+          if (e && e.alive && !e.burrowed && (air || !e.flying)) {
             const dx = e.x - x;
             const dy = e.y - y;
             const rr = r + e.radius;

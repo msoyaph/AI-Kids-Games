@@ -53,6 +53,38 @@ export class Enemy {
   shiftTimer = 0;
   dotTimer = 0;
 
+  // mechanics (phase 5)
+  /** Breakable barrier (absorbs hits before health). */
+  barrier = 0;
+  barrierMax = 0;
+  /** Element taken at reduced damage. */
+  resist: ElementId | null = null;
+  /** Seconds since the last damage (regeneration waits for a pause). */
+  sinceHit = 99;
+  regenPct = 0;
+  regenDelay = 0;
+  /** Cloak cycle: hidden for cloakHidden s, then visible for cloakVisible s. */
+  cloakHidden = 0;
+  cloakVisible = 0;
+  cloakTimer = 0;
+  cloaked = false;
+  /** Seconds a detector keeps it revealed. */
+  revealed = 0;
+  /** Tunnelling. */
+  burrowed = false;
+  burrowTimer = 0;
+  /** Jammer / boss attack timer and telegraph. */
+  attackTimer = 0;
+  windup = 0;
+  /** Boss phase (0 = first). */
+  phase = 0;
+  speedMult = 1;
+
+  /** Can towers pick it as a target right now? */
+  get targetable(): boolean {
+    return !this.burrowed && (!this.cloaked || this.revealed > 0);
+  }
+
   /** Visual helpers (read by renderer). */
   hitFlash = 0;
   laneX = 0;
@@ -104,6 +136,23 @@ export class Enemy {
     this.lastHitBy = -1;
     this.cell = -1;
     this.wcell = -1;
+    this.barrierMax = def.shield ? Math.round(hp * def.shield) : 0;
+    this.barrier = this.barrierMax;
+    this.resist = null;
+    this.sinceHit = 99;
+    this.regenPct = def.regen?.pct ?? 0;
+    this.regenDelay = def.regen?.delay ?? 0;
+    this.cloakHidden = def.cloak?.hidden ?? 0;
+    this.cloakVisible = def.cloak?.visible ?? 0;
+    this.cloakTimer = 0;
+    this.cloaked = this.cloakHidden > 0;
+    this.revealed = 0;
+    this.burrowed = false;
+    this.burrowTimer = def.burrow ? def.burrow.every * 0.5 : 0;
+    this.attackTimer = def.emp ? def.emp.every * 0.6 : 0;
+    this.windup = 0;
+    this.phase = 0;
+    this.speedMult = 1;
   }
 
   get effectiveArmor(): number {
@@ -112,7 +161,8 @@ export class Enemy {
   }
 
   get currentSpeed(): number {
-    if (this.stunTime > 0) return 0;
-    return this.speed * (this.slowTime > 0 ? 1 - this.slowAmt : 1);
+    if (this.stunTime > 0 || this.windup > 0) return 0;
+    const sp = this.speed * this.speedMult;
+    return this.burrowed ? sp : sp * (this.slowTime > 0 ? 1 - this.slowAmt : 1);
   }
 }

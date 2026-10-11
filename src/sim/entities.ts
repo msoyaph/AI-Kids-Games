@@ -33,6 +33,8 @@ export class Tower {
   sinceFire = 99;
   /** Seconds since built / upgraded (renderer pop animation). */
   sinceBuild = 0;
+  /** Seconds left offline (jammers, boss attacks). */
+  disabled = 0;
 
   get stats(): TowerStats {
     return statsFor(this.def, this.level, this.spec);
