@@ -9,6 +9,8 @@ import { EDGE_DROP } from '../track/trackModel';
 import { AiDriver, type HazardInfo } from './aiDriver';
 import { SPEED_CLASSES } from '../tuning';
 import type { Kart } from '../kart';
+import { ItemBrain } from './itemBrain';
+import type { ItemSystem } from '../items/itemSystem';
 
 export interface AiOptions {
   /** Per-kart skill bonus (rivals), indexed by kart index. */
@@ -45,6 +47,15 @@ export class AiController {
       return d;
     });
     world.preStep.push((dt) => this.update(dt));
+  }
+
+  /** Enable item use for all AI drivers and share the item system's hazard list. */
+  attachItems(items: ItemSystem): void {
+    const rng = new Rng(items.rng.nextU32());
+    for (const d of this.drivers) {
+      d.brain = new ItemBrain(d.kart, this.world, this.track, d.profile, d.skill, new Rng(rng.nextU32()));
+      d.hazards = items.hazards;
+    }
   }
 
   driverFor(k: Kart): AiDriver | null {

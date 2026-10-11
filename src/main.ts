@@ -9,6 +9,7 @@ import { RaceTracker } from './sim/race';
 import { RaceView } from './render/raceView';
 import { formatTime, ordinal } from './core/math';
 import { AiController } from './sim/ai/aiController';
+import { ItemSystem } from './sim/items/itemSystem';
 
 function nextFrame(): Promise<void> {
   return new Promise((r) => requestAnimationFrame(() => r()));
@@ -54,15 +55,18 @@ async function boot(): Promise<void> {
   if (autodrive) world.karts[0].player = -1;
   const ai = new AiController(world, track);
   if (autodrive) world.karts[0].player = 0;
+  const items = new ItemSystem(world, track, track, { set: 'all' });
+  ai.attachItems(items);
   world.karts[0].autoAccel = gr.isTouch;
   bootUi?.set(0.6, 'Planting trees');
   await nextFrame();
   const view = new RaceView(gr, world, { track }, [0]);
+  view.attachItems(items);
 
   const hud = document.createElement('div');
   hud.style.cssText = 'position:absolute;top:8px;left:8px;font:700 14px monospace;color:#fff;text-shadow:0 1px 2px #000;pointer-events:none;white-space:pre';
   uiRoot.appendChild(hud);
-  (window as unknown as { __calex: unknown }).__calex = { world, input, track, race, ai };
+  (window as unknown as { __calex: unknown }).__calex = { world, input, track, race, ai, items };
 
   const loop = new GameLoop({
     step: (dt) => {
@@ -82,7 +86,7 @@ async function boot(): Promise<void> {
       hud.textContent =
         `${gr.quality.fps} fps · ${gr.quality.level} · dpr ${gr.quality.pixelRatio().toFixed(2)} · calls ${st.calls} · tris ${st.triangles}\n` +
         `${ordinal(k.rank)} · lap ${race.lapOf(k)}/3 · ${formatTime(world.raceTime)}${cd}\n` +
-        `speed ${(k.speed * 3.6).toFixed(0)} km/h  drift ${k.drifting ? k.driftTier : '-'}  boost ${k.boostTime.toFixed(2)}  ${k.grounded ? 'ground' : 'air'} ${k.offroad ? 'OFFROAD' : ''} ${k.wrongWayTime > 1.2 ? 'WRONG WAY' : ''}`;
+        `item ${k.rouletteTime > 0 ? '???' : k.item ?? '-'}${k.itemUses > 1 ? ' x' + k.itemUses : ''} threat ${k.threat.toFixed(2)}\nspeed ${(k.speed * 3.6).toFixed(0)} km/h  drift ${k.drifting ? k.driftTier : '-'}  boost ${k.boostTime.toFixed(2)}  ${k.grounded ? 'ground' : 'air'} ${k.offroad ? 'OFFROAD' : ''} ${k.wrongWayTime > 1.2 ? 'WRONG WAY' : ''}`;
     },
   });
   bootUi?.set(1, 'Ready');

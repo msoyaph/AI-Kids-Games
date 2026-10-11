@@ -5,6 +5,7 @@ import { Kart, RespawnState } from '../kart';
 import type { TrackModel, Ribbon } from '../track/trackModel';
 import { TUNING } from '../tuning';
 import type { World } from '../world';
+import { ItemBrain } from './itemBrain';
 
 /** Hazard positions the AI should steer around (filled by the item system). */
 export interface HazardInfo {
@@ -43,6 +44,8 @@ export class AiDriver {
   private wobblePhase: number;
   /** Optional hazards (items on the road). */
   hazards: HazardInfo[] = [];
+  /** Item decisions (only when items are enabled). */
+  brain: ItemBrain | null = null;
 
   constructor(
     readonly kart: Kart,
@@ -64,9 +67,12 @@ export class AiDriver {
     const k = this.kart;
     const w = this.world;
     const inp = k.input;
-    inp.item = false;
-    inp.aimBack = false;
     inp.lookBack = false;
+    if (this.brain && w.phase === 'race') this.brain.update(dt);
+    else {
+      inp.item = false;
+      inp.aimBack = false;
+    }
 
     if (w.phase === 'intro' || w.phase === 'countdown') {
       inp.steer = 0;
@@ -118,7 +124,8 @@ export class AiDriver {
     }
     const want = Math.atan2(tx - k.x, tz - k.z);
     const err = wrapAngle(want - k.yaw);
-    const wobble = (1 - this.skill) * 0.12 * Math.sin(w.time * 1.7 + this.wobblePhase);
+    let wobble = (1 - this.skill) * 0.12 * Math.sin(w.time * 1.7 + this.wobblePhase);
+    if (k.cloudTime > 0) wobble += 0.35 * Math.sin(w.time * 3.1 + this.wobblePhase);
     let steer = clamp(-err * (2.1 + this.skill * 0.8) + wobble, -1, 1);
 
     // --- speed control: slow for very tight bends we can't steer through
@@ -127,7 +134,7 @@ export class AiDriver {
     for (let s = 3; s < scan; s += 2) maxK = Math.max(maxK, Math.abs(this.track.lineCurv[rb.idx(i + s)]));
     const turnCap = k.params.turnRate * (this.wantDrift || k.drifting ? 1.25 : 0.95) * this.profile.cornerRisk;
     const cornerSpeed = maxK > 1e-3 ? turnCap / maxK : 999;
-    const cruise = k.params.topSpeed * w.speedMul[k.index] * this.pace;
+    const cruise = k.params.topSpeed * w.speedMul[k.index] * this.pace * (k.cloudTime > 0 ? 0.92 : 1);
     let throttle = 1;
     if (speed > cornerSpeed + 3) throttle = speed > cornerSpeed + 8 ? -0.6 : 0;
     else if (speed > cruise && k.boostTime <= 0) throttle = 0;

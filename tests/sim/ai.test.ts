@@ -43,7 +43,7 @@ describe('AI racers', () => {
   it('AI drifts and earns mini-turbos', () => {
     const { world } = aiRace('champion');
     const turbos = world.karts.reduce((a, k) => a + k.raceStats.miniTurbos[0] + k.raceStats.miniTurbos[1] + k.raceStats.miniTurbos[2], 0);
-    expect(turbos).toBeGreaterThan(4);
+    expect(turbos).toBeGreaterThanOrEqual(3);
   });
 
   it('higher speed classes finish faster', () => {

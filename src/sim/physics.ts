@@ -201,6 +201,18 @@ export function stepKart(k: Kart, ground: GroundModel, env: StepEnv, dt: number)
   k.z = nz;
   k.y = ny;
 
+  // ---- glider arming: passing over a glider ramp (even mid-hop) deploys the glider over the gap
+  if (hit.ramp === RAMP_GLIDER) k.gliderArm = 1.2;
+  else if (k.gliderArm > 0) k.gliderArm -= dt;
+  if (!k.grounded && !k.gliding && k.gliderArm > 0 && (!hit.hit || k.y - hit.height > 1.5)) {
+    k.gliding = true;
+    k.launched = true;
+    k.trickWindow = Math.max(k.trickWindow, 0.3);
+    if (k.vy < 4) k.vy = 4;
+    k.cancelDrift();
+    env.events.push({ type: 'launch', kart: k.index, glider: true });
+  }
+
   // ---- walls
   if (hit.wallHit) {
     k.x += hit.wallNx * hit.wallDepth;
@@ -267,6 +279,7 @@ function becomeAirborne(k: Kart, env: StepEnv, ramp: number): void {
     if (ramp === RAMP_GLIDER) {
       k.gliding = true;
       k.vy = Math.max(k.vy, 7);
+      k.cancelDrift();
     } else if (ramp !== RAMP_NONE) {
       k.vy = Math.max(k.vy, 8.5);
     }
@@ -290,6 +303,7 @@ function land(k: Kart, env: StepEnv, h: number): void {
   k.trickQueued = false;
   k.trickWindow = 0;
   k.gliding = false;
+  k.gliderArm = 0;
   // start a drift if the drift button is still held after a hop
   if (k.hopTime > 0 || k.hopSteer !== 0) {
     if (k.input.drift && k.hopSteer !== 0 && k.speed > TUNING.driftMinSpeed && k.controllable) {

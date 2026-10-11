@@ -95,7 +95,7 @@ export class Effects {
           const px = side < 0 ? lx : rxp;
           const pz = side < 0 ? lz : rzp;
           const out = k.driftDir * 2.5;
-          this.glow.spawn(px, gy, pz, -fx * 3 + rx * out * rnd() + (rnd() - 0.5) * 2, 2 + rnd() * 3, -fz * 3 + rz * out * rnd() + (rnd() - 0.5) * 2, 0.22 + rnd() * 0.15, k.driftTier > 0 ? 0.32 : 0.18, 0.05, col, 1, 12, 1);
+          this.glow.spawn(px, gy, pz, -fx * 3 + rx * out * rnd() + (rnd() - 0.5) * 2, 2 + rnd() * 3, -fz * 3 + rz * out * rnd() + (rnd() - 0.5) * 2, 0.22 + rnd() * 0.15, k.driftTier > 0 ? 0.26 : 0.14, 0.04, col, 1, 12, 1);
         }
       }
       if (this.skidsOn) {
@@ -105,11 +105,11 @@ export class Effects {
       }
       // Tyre smoke while drifting / sliding hard
       if (k.grounded && !k.offroad && (k.drifting || Math.abs(k.slip) > 4.5)) {
-        a.smoke += dt * 18;
+        a.smoke += dt * 14;
         while (a.smoke >= 1) {
           a.smoke -= 1;
           const side = rnd() < 0.5;
-          this.soft.spawn(side ? lx : rxp, gy + 0.1, side ? lz : rzp, (rnd() - 0.5) * 1.5, 0.8 + rnd(), (rnd() - 0.5) * 1.5, 0.7, 0.5, 1.6, 0xf2f0ff, 0.55, -0.5, 1.5);
+          this.soft.spawn(side ? lx : rxp, gy + 0.1, side ? lz : rzp, (rnd() - 0.5) * 1.5, 0.8 + rnd(), (rnd() - 0.5) * 1.5, 0.55, 0.35, 1.1, 0xf2f0ff, 0.32, -0.5, 1.5);
         }
       }
       // Off-road dust

@@ -122,6 +122,8 @@ export class Kart {
   trickQueued = false;
   trickAnim = 0;
   gliding = false;
+  /** Seconds left in which leaving the ground (or crossing a gap) auto-deploys the glider. */
+  gliderArm = 0;
   onRamp = 0;
   /** Seconds since the last boost started (for camera FOV kick). */
   boostKick = 0;
@@ -171,6 +173,12 @@ export class Kart {
   item: ItemId | null = null;
   itemUses = 0;
   rouletteTime = 0;
+  /** Item decided at pickup, revealed when the roulette ends. */
+  pendingItem: ItemId | null = null;
+  /** 0..1 how threatened this kart is right now (incoming plane/cloud etc.) — drives the HUD edge glow. */
+  threat = 0;
+  /** Item type of the nearest threat (for the warning icon). */
+  threatItem: ItemId | null = null;
   /** Holding the current item behind the kart as a shield. */
   trailing = false;
   itemHeld = false;

@@ -13,6 +13,8 @@ import { Materials } from './materials';
 import { RespawnState } from '../sim/kart';
 import { Effects } from './effects';
 import type { SimEvent } from '../sim/events';
+import { ItemVisuals } from './itemVisuals';
+import type { ItemSystem } from '../sim/items/itemSystem';
 
 export type SplitMode = 'horizontal' | 'vertical';
 
@@ -43,6 +45,7 @@ export class RaceView {
   readonly targets: number[];
   private readonly disposers: Array<() => void> = [];
   readonly effects: Effects;
+  itemVisuals: ItemVisuals | null = null;
   private readonly fogBase = new THREE.Color();
   private readonly waterFog = new THREE.Color(0x2a7fd4);
   private waterBlend = 0;
@@ -100,6 +103,11 @@ export class RaceView {
     this.applyQuality();
     const off = gr.quality.onChange(() => this.applyQuality());
     this.disposers.push(off);
+  }
+
+  attachItems(items: ItemSystem): void {
+    this.itemVisuals = new ItemVisuals(items, this.world, this.visuals, this.effects);
+    this.scene.add(this.itemVisuals.group);
   }
 
   applyQuality(): void {
@@ -172,6 +180,7 @@ export class RaceView {
       this.sun.target.position.set(k.x, k.y, k.z);
       this.sun.target.updateMatrixWorld();
     }
+    this.itemVisuals?.update(dt);
     this.effects.update(dt);
     // Underwater tint for player 1's view
     if (this.targets.length > 0 && this.scene.fog) {
@@ -213,6 +222,7 @@ export class RaceView {
 
   onEvent(e: SimEvent): void {
     this.effects.onEvent(e);
+    this.itemVisuals?.onEvent(e);
   }
 
   render(): void {
