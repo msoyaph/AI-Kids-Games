@@ -42,6 +42,8 @@ function disposeMaterial(m: Material, seen: Set<unknown>): void {
 export function disposeObject(root: Object3D): void {
   const seen = new Set<unknown>();
   root.traverse((o) => {
+    const onDispose = o.userData?.onDispose as (() => void) | undefined;
+    if (typeof onDispose === 'function') onDispose();
     const any = o as Object3D & { geometry?: BufferGeometry; material?: Material | Material[]; dispose?: () => void };
     if (any.geometry && !seen.has(any.geometry) && !isShared(any.geometry)) {
       seen.add(any.geometry);

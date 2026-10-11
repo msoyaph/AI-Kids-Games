@@ -45,6 +45,7 @@ export function codexListener(e: GameEvent, st: GameState): void {
     case 'launch':
       discover(st, 'rocket');
       discover(st, 'star');
+      discover(st, 'scale');
       discover(st, 'earth');
       discover(st, 'c_stella');
       break;

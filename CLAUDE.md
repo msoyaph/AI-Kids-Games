@@ -33,6 +33,19 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 - Scenes: `app/BaseScene.ts` (DOM + lifecycle) → `Scene3D` (`world`, `camera`, `time`) or legacy `Scene` (Pixi).
   `Game.go` compiles a 3D scene's shaders (`compileAsync`) behind the fade. Own rAF loop; pauses when hidden.
 - `index.html` checks WebGL2 before the bundle runs and shows a friendly "can't run" screen (`__noWebGL2`).
+- Planets (`r3/space/`): `recipes.ts` (per-body 3D look: true colors for real bodies, magic look for Zephyra,
+  tilt, rings, clouds, emissive), `planetShaders.ts` (ONE bake program, uniform `uKind`; cube rgb=albedo a=height;
+  runtime shader: bump, soft terminator, ocean glint, atmosphere, ring shadows; ring shader with planet shadow;
+  halo on back faces), `planets.ts` (`createPlanet(id, radius, {renderer, profile, detail})` → `PlanetView`,
+  call `update(time, sunDir)` each frame; bakes ref-counted in an LRU with a per-tier byte budget;
+  `group.userData.onDispose` releases them). `wormhole.ts` (billboard swirl). `?gallery[&focus=a,b]` review page.
+- `ui/pictures.ts`: 3D snapshots of bodies for the DOM (Codex, fact cards, map card) via `r3/snapshot.ts`
+  (HDR render target → CPU ACES + sRGB, transparent background); falls back to Canvas2D art.
+- Star map (`scenes/StarMapScene.ts`, `systems/orbitMap.ts`): orbit layout (not to scale), drag/pinch/wheel
+  orbit camera, screen-space tap picking (`pickTarget`), labels/mission flag as DOM, launch + warp cinematic
+  (tap to skip; Comfort = short, no tunnel/FOV kick), then `mapHooks.fly`.
+- `scripts/shot.mjs <path> <out.png> [w h waitMs js]` (env `NEWGAME=1`, `BASE=`) for headless screenshots
+  against the dev server (the desktop browser pane is portrait/hidden, so use this for visual review).
 - Tone mapping: ACES filmic (AgX looked too pastel for the vivid kid look). Space scenes use
   `world.environmentIntensity = 0.45`.
 
@@ -66,7 +79,9 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 ## 3D status (branch space-sky-3d)
 - [x] 3D Phase 1: deps pinned, WebGL2 gate, R3 core, quality tiers/governor/settings, post chain, sky, particles,
   Game/Scene port with lazy Pixi; Title, Slots, Creator, Credits, Complete on 3D backdrops.
-- [ ] 2 planets + star map · [ ] 3 rocket · [ ] 4 flight · [ ] 5 characters · [ ] 6 landing/explore · [ ] 7 hub/menus
+- [x] 3D Phase 2: planet library (all 28 bodies + Sun), rings/clouds/atmospheres, gallery, 3D star map with
+  warp cinematic, 3D Codex pictures, "Space Is Huge!" Codex page (`scale`, unlocked on launch).
+- [ ] 3 rocket · [ ] 4 flight · [ ] 5 characters · [ ] 6 landing/explore · [ ] 7 hub/menus
   (remove Pixi) · [ ] 8 cutscenes · [ ] 9 perf · [ ] 10 tests/review/handoff
 
 ## Current numbers

@@ -1,8 +1,9 @@
-import { DirectionalLight, Group, HemisphereLight, Vector3, type Mesh, type ShaderMaterial } from 'three';
+import { DirectionalLight, HemisphereLight, Vector3, type Group, type Mesh, type ShaderMaterial } from 'three';
 import { comfortOn } from '../app/comfort';
 import { Scene3D } from '../app/Scene3D';
 import { S } from '../app/services';
-import { simplePlanet, simpleRings, simpleRocket } from '../r3/models/placeholders';
+import { simpleRocket } from '../r3/models/placeholders';
+import { createPlanet, type PlanetView } from '../r3/space/planets';
 import { addSpaceSky } from '../r3/space/backdrop';
 import { SKIES, type SpaceSky } from '../r3/space/sky';
 import { h } from '../ui/dom';
@@ -14,9 +15,10 @@ export class TitleScene extends Scene3D {
   private sky: SpaceSky;
   private rocket: Group;
   private flame: Mesh;
-  private earth: Group;
-  private moon: Group;
-  private saturn = new Group();
+  private earth: PlanetView;
+  private moon: PlanetView;
+  private saturn: PlanetView;
+  private readonly sunDir: Vector3;
   private t = 0;
   private readonly tmp = new Vector3();
   private readonly prev = new Vector3();
@@ -27,26 +29,25 @@ export class TitleScene extends Scene3D {
     super('title');
     this.music = 'title';
     const sun = SKIES.title.sun!.dir;
-    const sunArr: [number, number, number] = [sun.x, sun.y, sun.z];
+    this.sunDir = sun.clone().normalize();
     this.sky = addSpaceSky(this.world, SKIES.title);
-    const key = new DirectionalLight('#fff4e0', 3.2);
+    const key = new DirectionalLight('#fff4e0', 3.0);
     key.position.copy(sun).multiplyScalar(50);
     this.world.add(key, new HemisphereLight('#7f8fff', '#1d0f3a', 0.35));
-    const seg = S.game.r3.profile.sphereSegments;
-    this.earth = simplePlanet(9, '#3f7bd8', '#6fb8ff', seg, sunArr);
-    this.earth.position.set(-12, -10, -24);
-    this.moon = simplePlanet(1.3, '#b9b4c4', null, 32, sunArr);
-    this.moon.position.set(-3.8, -2.6, -15);
-    const saturnBody = simplePlanet(3.2, '#e8cf94', '#ffe7b0', seg, sunArr);
-    const rings = simpleRings(4.3, 7.4, '#d9c08a');
-    this.saturn.add(saturnBody, rings);
-    this.saturn.position.set(14, 6.5, -32);
-    this.saturn.rotation.set(0.62, 0, -0.38);
+    const r3 = S.game.r3;
+    const opts = { renderer: r3.renderer, profile: r3.profile };
+    this.earth = createPlanet('earth', 9, { ...opts, detail: 'hero' });
+    this.earth.group.position.set(-12, -10, -24);
+    this.moon = createPlanet('moon', 1.3, { ...opts, detail: 'normal' });
+    this.moon.group.position.set(-9.5, 4.2, -22);
+    this.saturn = createPlanet('saturn', 3.0, { ...opts, detail: 'normal' });
+    this.saturn.group.position.set(14, 6.5, -32);
+    this.saturn.group.rotation.set(0.5, 0, -0.25);
     const r = simpleRocket();
     this.rocket = r.group;
     this.flame = r.flame;
     this.rocket.scale.setScalar(0.85);
-    this.world.add(this.earth, this.moon, this.saturn, this.rocket);
+    this.world.add(this.earth.group, this.moon.group, this.saturn.group, this.rocket);
     this.camera.fov = 45;
     this.camera.position.set(0, 0, 0);
     this.camera.lookAt(0, -0.3, -10);
@@ -64,7 +65,7 @@ export class TitleScene extends Scene3D {
   /** A lazy figure-eight in front of the camera. */
   private pathPoint(t: number, out: Vector3): Vector3 {
     const a = t * 0.32;
-    return out.set(Math.cos(a) * 6.2, -0.8 + Math.sin(a * 2) * 2.0, -12 + Math.sin(a) * 2.2);
+    return out.set(1.2 + Math.cos(a) * 6.5, -2.9 + Math.sin(a * 2) * 1.1, -12 + Math.sin(a) * 2.2);
   }
 
   override update(dt: number): void {
@@ -87,9 +88,9 @@ export class TitleScene extends Scene3D {
     const fm = this.flame.material as ShaderMaterial;
     fm.uniforms.uTime.value = time;
     this.flame.scale.set(1, 0.85 + Math.sin(time * 31) * 0.1, 1);
-    this.earth.rotation.y = time * 0.03;
-    this.moon.rotation.y = -time * 0.05;
-    this.saturn.rotation.y = time * 0.02;
+    this.earth.update(time, this.sunDir);
+    this.moon.update(time, this.sunDir);
+    this.saturn.update(time, this.sunDir);
     if (!this.still) {
       this.camera.position.set(Math.sin(time * 0.13) * 0.35, Math.sin(time * 0.17) * 0.2, 0);
       this.camera.lookAt(0, -0.3, -10);

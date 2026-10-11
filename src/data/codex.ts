@@ -36,6 +36,7 @@ export const CODEX: CodexEntry[] = [
   E({ id: 'sun', name: 'The Sun', category: 'star', real: true, picture: { body: 'sun' }, blurb: 'Our very own star.', hint: 'Visit Mercury, close to the Sun.' }),
   E({ id: 'star', name: 'Stars', category: 'star', real: true, picture: { glyph: 'star' }, blurb: 'Giant balls of glowing gas.', hint: 'Look up! Fly your first flight.' }),
   E({ id: 'galaxy', name: 'The Milky Way', category: 'star', real: true, picture: { glyph: 'swirl', color: '#c9b8ff' }, blurb: 'Our home galaxy.', hint: 'Explore far away.' }),
+  E({ id: 'scale', name: 'Space Is Huge!', category: 'space', real: true, picture: { glyph: 'telescope', color: '#4dd4ff' }, blurb: 'Real space is much, much bigger than in our game.', hint: 'Fly your rocket.' }),
   E({ id: 'mercury', name: 'Mercury', category: 'planet', real: true, picture: { body: 'mercury' }, blurb: 'The closest planet to the Sun.', hint: 'Fly to Mercury.' }),
   E({ id: 'venus', name: 'Venus', category: 'planet', real: true, picture: { body: 'venus' }, blurb: 'The hottest planet, wrapped in thick clouds.', hint: 'Fly to Venus.' }),
   E({ id: 'earth', name: 'Earth', category: 'planet', real: true, picture: { body: 'earth' }, blurb: 'Our home planet.', hint: 'Fly near Earth.' }),

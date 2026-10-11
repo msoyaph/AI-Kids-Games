@@ -33,6 +33,8 @@ import { pauseHooks } from './ui/pause';
 import { toast } from './ui/toast';
 import { StarMapScene } from './scenes/StarMapScene';
 import { TitleScene } from './scenes/TitleScene';
+import { GalleryScene } from './scenes/GalleryScene';
+import { FLAGS } from './app/flags';
 import { createSave } from './systems/save/schema';
 import { loadSettings } from './systems/save/settings';
 import { GameState } from './systems/state';
@@ -42,6 +44,8 @@ import { presenterHooks, pumpMessages } from './ui/presenter';
 import { menuNavStep } from './ui/menuNav';
 import { clearTips } from './ui/tips';
 import { initSpeech, setReadAloud } from './ui/speech';
+import { clearPlanetBakes } from './r3/space/planets';
+import { clearSkyBakes } from './r3/space/sky';
 
 function setLoad(pct: number, msg?: string): void {
   const fill = document.getElementById('boot-fill');
@@ -103,6 +107,7 @@ function registerScenes(game: Game): void {
     });
   game.register('slots', () => new SlotsScene());
   game.register('creator', (p) => new CreatorScene(p as unknown as CreatorParams));
+  game.register('gallery', () => new GalleryScene());
 }
 
 async function boot(): Promise<void> {
@@ -112,6 +117,11 @@ async function boot(): Promise<void> {
   S.game = game;
   S.settings = loadSettings();
   game.init(S.settings.quality);
+  // A lost GPU context wipes every baked texture: forget them so scenes re-bake.
+  game.r3.onRestore.unshift(() => {
+    clearPlanetBakes();
+    clearSkyBakes();
+  });
   setLoad(12, 'Warming up the engines...');
   initSpeech();
   setReadAloud(S.settings.readAloud);
@@ -172,7 +182,7 @@ async function boot(): Promise<void> {
   setupRotateHint();
   if (new URLSearchParams(location.search).has('debug')) (window as unknown as { __spacesky: unknown }).__spacesky = S;
   game.start();
-  await game.go('title', {}, false);
+  await game.go(FLAGS.gallery ? 'gallery' : 'title', {}, false);
   // Let the first frames (post-processing shaders) compile behind the loading screen.
   await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
   setLoad(100);

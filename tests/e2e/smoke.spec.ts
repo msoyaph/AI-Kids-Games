@@ -52,9 +52,11 @@ test('graphics quality can be switched in settings', async ({ page }) => {
   const tier = () => page.evaluate(() => (window as unknown as { __spacesky: { game: { r3: { tier: string } } } }).__spacesky.game.r3.tier);
   for (const q of ['low', 'medium', 'high']) {
     await page.getByTestId('btn-settings').click({ force: true });
+    await expect(page.getByTestId('settings')).toBeVisible();
     await page.getByTestId(`set-quality-${q}`).click({ force: true });
+    await expect.poll(tier).toBe(q);
     await page.getByTestId('btn-settings-done').click({ force: true });
-    expect(await tier()).toBe(q);
+    await expect(page.getByTestId('settings')).toHaveCount(0);
     await page.waitForTimeout(300);
   }
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('spacesky.settings') ?? '{}').quality);

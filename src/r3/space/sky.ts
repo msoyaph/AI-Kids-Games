@@ -37,7 +37,7 @@ export interface SkyStyle {
 }
 
 export const SKIES: Record<string, SkyStyle> = {
-  title: { key: 'title', nebula: ['#6a3dff', '#ff4fa8', '#2a7bff'], nebulaAmount: 0.9, base: '#05031a', milkyWay: true, sun: { dir: new Vector3(0.75, 0.32, -0.58), color: '#fff1c9', size: 1 } },
+  title: { key: 'title', nebula: ['#6a3dff', '#ff4fa8', '#2a7bff'], nebulaAmount: 0.9, base: '#05031a', milkyWay: true, sun: { dir: new Vector3(0.62, 0.34, 0.7), color: '#fff1c9', size: 1 } },
   menu: { key: 'menu', nebula: ['#5b3dff', '#ff6ad0', '#2fa8ff'], nebulaAmount: 0.8, base: '#05031a', milkyWay: true, sun: null },
   space: { key: 'space', nebula: ['#4b35c9', '#c2459c', '#1f5fd1'], nebulaAmount: 0.6, base: '#030212', milkyWay: true, sun: { dir: new Vector3(-1, 0.18, 0.1), color: '#fff3d6', size: 1 } },
   zephyra: { key: 'zephyra', nebula: ['#2fe0c4', '#b04dff', '#ff8fd0'], nebulaAmount: 1.0, base: '#05041a', milkyWay: false, sun: { dir: new Vector3(-0.8, 0.3, 0.2), color: '#ffb36b', size: 1.15 }, sun2: { dir: new Vector3(-0.55, 0.52, -0.45), color: '#ffd6f2', size: 0.55 } },

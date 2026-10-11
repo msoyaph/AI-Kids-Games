@@ -4,8 +4,7 @@ import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { CATEGORY_NAMES, CODEX, CODEX_BY_ID, type CodexCategory } from '../data/codex';
 import { factsFor } from '../data/facts';
-import { drawToCanvas } from '../gfx/canvas';
-import { drawCodexPicture } from '../gfx/art/codexPicture';
+import { codexPicture } from '../ui/pictures';
 import { drawLounge } from '../gfx/art/rooms';
 import { ensureTex } from '../gfx/textures';
 import { codexPercent } from '../systems/codex';
@@ -96,7 +95,7 @@ export class CodexScene extends Scene {
     const have = new Set(S.state.data.codex);
     for (const e of CODEX.filter((x) => x.category === this.cat)) {
       const known = have.has(e.id);
-      const pic = drawToCanvas(80, 80, (c, w, hh) => drawCodexPicture(c, e, w, hh));
+      const pic = codexPicture(e, 80);
       if (!known) pic.style.filter = 'brightness(0) opacity(.45)';
       const card = h('button', { class: `card codex-card ${this.selected === e.id ? 'sel' : ''}`, type: 'button', 'data-testid': `codex-${e.id}` }, pic, h('div', { class: 'card-name' }, known ? e.name : '???'));
       card.addEventListener('click', () => {
@@ -114,7 +113,7 @@ export class CodexScene extends Scene {
     const e = this.selected ? CODEX_BY_ID[this.selected] : null;
     if (!e) return;
     const known = S.state.data.codex.includes(e.id);
-    const pic = drawToCanvas(170, 170, (c, w, hh) => drawCodexPicture(c, e, w, hh));
+    const pic = codexPicture(e, 170);
     if (!known) {
       pic.style.filter = 'brightness(0) opacity(.45)';
       this.detail.append(h('div', { class: 'row' }, pic, h('div', { class: 'grow' }, h('div', { class: 'h2' }, 'Not found yet!'), h('div', { class: 'detail-text' }, e.hint))));

@@ -181,6 +181,12 @@ export const FACTS: Fact[] = [
     'Our Sun is one of billions of stars in the Milky Way galaxy.',
     'On a very dark night you can see the Milky Way as a cloudy band of light.',
   ]),
+  ...F('scale', [
+    'In our game, planets are much smaller and closer together than in real space, so you can fly between them fast.',
+    'Real space is huge! A car driving to the Sun without stopping would take more than 150 years.',
+    'If the Sun were as tall as a door, Earth would be the size of a coin about 200 meters away.',
+    'Real spacecraft take months or even years to reach other planets.',
+  ]),
   ...F('star', [
     'Stars are giant balls of hot, glowing gas.',
     'Stars seem to twinkle because the air around Earth is always moving.',

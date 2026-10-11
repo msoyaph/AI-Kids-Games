@@ -25,6 +25,11 @@ export function damp(rate: number, dt: number): number {
   return 1 - Math.exp(-rate * dt);
 }
 
+/** Frame-rate independent smoothing of `a` toward `b`. */
+export function approach(a: number, b: number, rate: number, dt: number): number {
+  return a + (b - a) * (1 - Math.exp(-rate * dt));
+}
+
 export function dist(ax: number, ay: number, bx: number, by: number): number {
   const dx = bx - ax;
   const dy = by - ay;

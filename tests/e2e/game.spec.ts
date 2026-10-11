@@ -129,6 +129,28 @@ test('every exploration area loads and the astronaut can walk', async ({ page })
   expect(errors).toEqual([]);
 });
 
+test('3D star map: tap a planet, read its card, launch and warp into flight', async ({ page }) => {
+  const errors = watchErrors(page);
+  await boot(page);
+  await newGame(page);
+  await go(page, 'map');
+  await expect(page.getByTestId('map-card')).toBeVisible();
+  await expect(page.getByTestId('map-scale')).toContainText('Not to scale');
+  await page.waitForTimeout(1500);
+  // Tap the Moon's planet (Earth system) on screen: find where Earth is drawn and tap there.
+  const spot = await page.evaluate(() => {
+    const S = (window as unknown as { __spacesky: { game: { current: { nodes: Array<{ sys: { id: string }; screen: { x: number; y: number; visible: boolean } }> }; metrics: { scale: number } } } }).__spacesky;
+    const n = S.game.current.nodes.find((k) => k.sys.id === 'earth')!;
+    return { x: n.screen.x * S.game.metrics.scale, y: n.screen.y * S.game.metrics.scale, visible: n.screen.visible };
+  });
+  expect(spot.visible).toBe(true);
+  await page.mouse.click(spot.x, spot.y);
+  await expect(page.getByTestId('map-card')).toContainText('Earth');
+  await page.getByTestId('btn-fly-there').click({ force: true });
+  await expect.poll(() => scene(page), { timeout: 15_000 }).toBe('flight');
+  expect(errors).toEqual([]);
+});
+
 test('star map, cutscenes, credits and the completion screen', async ({ page }) => {
   const errors = watchErrors(page);
   await boot(page);

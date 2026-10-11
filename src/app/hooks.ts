@@ -7,7 +7,6 @@ import { COURSES, COURSE_BY_ID, type Medal } from '../data/races';
 import { drawToCanvas } from '../gfx/canvas';
 import { drawBadge } from '../gfx/art/badges';
 import { boardHooks } from '../scenes/boardHooks';
-import { drawCodexPicture } from '../gfx/art/codexPicture';
 import { completeHooks } from '../scenes/completeHooks';
 import { crewHooks } from '../scenes/crewHooks';
 import { raceHooks } from '../scenes/director';
@@ -23,6 +22,7 @@ import { presenterHooks } from '../ui/presenter';
 import { readAloudOn, speak } from '../ui/speech';
 import { toast } from '../ui/toast';
 import { button, iconEl } from '../ui/widgets';
+import { codexPicture } from '../ui/pictures';
 import { S } from './services';
 
 /** Badge counts the hub shows as a little red dot until you look at the Awards screen. */
@@ -34,7 +34,7 @@ function factCard(subject: string): Promise<void> {
   const facts = factsFor(subject);
   if (!e || !facts.length) return Promise.resolve();
   const fact = facts[Math.floor(Math.random() * facts.length)];
-  const pic = drawToCanvas(90, 90, (c, w, hh) => drawCodexPicture(c, e, w, hh));
+  const pic = codexPicture(e, 90);
   const card = h(
     'div',
     { class: 'fact-card hit', 'data-testid': 'fact-card' },
