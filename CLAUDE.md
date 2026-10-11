@@ -27,7 +27,10 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
 6. COMPLETE: ADDING_A_GAME.md explicitly forbids third-party same-origin embedding
    and requires a separate domain. README/parent/About copy reflect persistent
    finished games. Removed obsolete adapted source copies and fixed art metadata.
-7. Pending: slow-download loading check and Vercel cache headers.
+7. COMPLETE: throttled download (40 KiB/s, 200 ms latency) kept loading screen
+   visible until iframe load; Playwright passed. Unhashed HTML/art revalidate;
+   hashed Vite assets cache immutably for one year. CDN uses deployment-specific
+   static caching; verify deployed ETag/headers in step 9.
 8. Pending: existing tests and desktop/tablet/phone integrated QA, persistence and network checks.
 9. Pending: Vercel preview deployment and real-device checklist. Production requires user approval.
 

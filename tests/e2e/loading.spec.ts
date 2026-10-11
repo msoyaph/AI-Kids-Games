@@ -1,0 +1,20 @@
+import { expect,test } from '@playwright/test';
+test('loading screen covers a throttled game download',async ({ page,context },info) => {
+  test.skip(info.project.name !== 'desktop','Run the network timing check once.');
+  test.setTimeout(90000);
+  await page.goto('/games');
+  await expect(page.locator('.game-grid')).toBeVisible();
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setCacheDisabled',{ cacheDisabled: true });
+  await cdp.send('Network.emulateNetworkConditions',{ offline: false,latency: 200,downloadThroughput: 40*1024,uploadThroughput: 20*1024 });
+  const started = Date.now();
+  await page.goto('/play/light-crossing',{ waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.game-loading')).toBeVisible({ timeout: 30000 });
+  await page.waitForTimeout(2000);
+  await expect(page.locator('.game-loading')).toBeVisible();
+  await expect(page.locator('.game-loading')).toBeHidden({ timeout: 60000 });
+  expect(Date.now()-started).toBeGreaterThan(5000);
+  await expect(page.frameLocator('iframe').locator('canvas')).toBeVisible();
+  await cdp.send('Network.emulateNetworkConditions',{ offline: false,latency: 0,downloadThroughput: -1,uploadThroughput: -1 });
+});
