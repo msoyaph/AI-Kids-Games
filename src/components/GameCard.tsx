@@ -11,7 +11,7 @@ export default function GameCard({ game, eager = false }: { game: Game; eager?: 
   return <article className={`game-card ${styles.card}`}>
     <Link to={`/game/${game.slug}`} className="game-card-link">
       <div className="game-card-art" style={{ backgroundColor: game.accentColor }}><img src={game.thumbnail} alt={`Original illustration for ${game.title}`} width="720" height="720" loading={eager ? 'eager' : 'lazy'} decoding="async" /><span className="age-badge">{game.ageGuidance}</span><span className="card-play"><Icon name="play" filled /></span></div>
-      <div className="card-copy"><div className="card-title-row"><h3>{game.title}</h3><Icon name="arrow" size={20} /></div><p>{game.tagline}</p><div className="card-meta"><span className={`category-label ${game.categories[0].toLowerCase()}`}>{game.categories[0]}</span><span><span className={`status-dot ${game.status === 'Ready to play' ? '' : 'preview'}`} />{game.status}</span></div></div>
+      <div className="card-copy"><div className="card-title-row"><h3>{game.title}</h3><Icon name="arrow" size={20} /></div><p>{game.tagline}</p>{game.slug !== 'light-crossing' && <div className="card-meta"><span className={`category-label ${game.categories[0].toLowerCase()}`}>{game.categories[0]}</span><span><span className={`status-dot ${game.status === 'Ready to play' ? '' : 'preview'}`} />{game.status}</span></div>}</div>
     </Link>
     <FavoriteButton game={game} />
   </article>;

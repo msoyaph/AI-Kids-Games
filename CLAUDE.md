@@ -67,3 +67,17 @@ Homepage review verification: 15 catalog browser checks pass across desktop,
 tablet and phone. All selected phrases are absent at 855 and 390 pixel widths
 in both versions, without overflow or page errors. Sites version 2 is published
 at the existing URL; five-game Vercel production is still not approved.
+
+## Page and card review changes
+
+Removed the selected Browse and Favorites eyebrow/intro text and the Parents
+eyebrow. Hide Light Crossing’s category/status row on every game card while
+keeping other games’ metadata and all filters, details and controls. Apply the
+same cosmetic edit to Sites and the five-game Vercel preview. Production approval
+for the five-game release is still pending.
+
+Verification: both production builds pass; 15 catalog tests pass on desktop,
+tablet and phone. Sixteen focused checks cover Home/Browse/Favorites/Parents
+in both versions at 889 and 390 pixel widths: requested text and Light Crossing
+metadata are absent, other card metadata remains, and there is no overflow or
+page error.
