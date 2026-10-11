@@ -34,6 +34,7 @@ import { toast } from './ui/toast';
 import { StarMapScene } from './scenes/StarMapScene';
 import { TitleScene } from './scenes/TitleScene';
 import { GalleryScene } from './scenes/GalleryScene';
+import { RocketGalleryScene } from './scenes/RocketGalleryScene';
 import { FLAGS } from './app/flags';
 import { createSave } from './systems/save/schema';
 import { loadSettings } from './systems/save/settings';
@@ -108,6 +109,7 @@ function registerScenes(game: Game): void {
   game.register('slots', () => new SlotsScene());
   game.register('creator', (p) => new CreatorScene(p as unknown as CreatorParams));
   game.register('gallery', () => new GalleryScene());
+  game.register('rockets', () => new RocketGalleryScene());
 }
 
 async function boot(): Promise<void> {
@@ -182,7 +184,7 @@ async function boot(): Promise<void> {
   setupRotateHint();
   if (new URLSearchParams(location.search).has('debug')) (window as unknown as { __spacesky: unknown }).__spacesky = S;
   game.start();
-  await game.go(FLAGS.gallery ? 'gallery' : 'title', {}, false);
+  await game.go(FLAGS.gallery ? 'gallery' : FLAGS.rockets ? 'rockets' : 'title', {}, false);
   // Let the first frames (post-processing shaders) compile behind the loading screen.
   await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
   setLoad(100);

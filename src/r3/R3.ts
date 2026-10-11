@@ -1,7 +1,7 @@
 import {
   ACESFilmicToneMapping,
   NoToneMapping,
-  PCFSoftShadowMap,
+  PCFShadowMap,
   PerspectiveCamera,
   Scene,
   SRGBColorSpace,
@@ -64,8 +64,8 @@ export class R3 {
   readonly onRestore: Array<() => void> = [];
   private post: PostChain | null = null;
   private postTier: QualityTier | null = null;
-  private cssW = 1;
-  private cssH = 1;
+  private cssW = Math.max(1, window.innerWidth);
+  private cssH = Math.max(1, window.innerHeight);
   private readonly forced: QualityTier | null;
   private readonly emptyScene = new Scene();
   private readonly emptyCam = new PerspectiveCamera();
@@ -92,7 +92,7 @@ export class R3 {
     const r = this.renderer;
     r.outputColorSpace = SRGBColorSpace;
     r.toneMappingExposure = 1;
-    r.shadowMap.type = PCFSoftShadowMap;
+    r.shadowMap.type = PCFShadowMap;
     r.info.autoReset = false;
     r.setClearColor(0x140d3a, 1);
     this.governor = new QualityGovernor(start, this.isAuto(), this.ceiling());
@@ -151,6 +151,9 @@ export class R3 {
     if (p.post) {
       if (!this.post || this.postTier !== p.tier) {
         this.post?.dispose();
+        // Size the renderer first: the bloom mip chain must be built at the real size.
+        r.setPixelRatio(this.pixelRatio);
+        r.setSize(this.cssW, this.cssH, true);
         this.post = new PostChain(r, p, this.emptyScene, this.emptyCam);
         this.postTier = p.tier;
       }

@@ -386,7 +386,14 @@ body.portrait #rotate-hint:not(.dismissed) { display: flex; }
 .diff-card .ico { width: 48px; height: 48px; }
 .diff-card.on { background: linear-gradient(180deg, #c6ff9e, #2ed47a); transform: translateY(-3px); }
 .wrap { flex-wrap: wrap; }
-.settings-panel { min-width: 600px; gap: 12px; }
+.settings-panel { min-width: 600px; gap: 12px; max-height: 100%; overflow-y: auto; }
+.set-cols { display: flex; gap: 28px; align-items: flex-start; }
+.set-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.set-col:first-child { flex: 1.25; }
+.set-col-right { flex: 1; padding-left: 24px; border-left: 3px solid rgba(255, 255, 255, 0.12); }
+.set-row-col { flex-direction: column; align-items: stretch; gap: 8px; }
+.seg.seg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.seg.seg-grid .btn { justify-content: center; }
 .set-row { display: flex; align-items: center; gap: 14px; font-size: 28px; }
 .set-row .ico { width: 44px; height: 44px; }
 .set-label { width: 260px; }
@@ -435,3 +442,5 @@ body.kbd-nav #ui button:focus, body.kbd-nav #ui [role=button]:focus, body.kbd-na
 .map-scale { pointer-events: auto; font-size: 18px; }
 @media (prefers-reduced-motion: reduce) { .map-goal { animation: none; } }
 .screen-map.launching .map-header, .screen-map.launching .map-label { opacity: 0; transition: opacity .3s; pointer-events: none; }
+.hangar-spin { width: 100%; flex: 1; min-height: 220px; cursor: grab; touch-action: none; pointer-events: auto; }
+.hangar-spin:active { cursor: grabbing; }

@@ -101,6 +101,7 @@ export function openSettings(): void {
   const st = S.settings;
   const inGame = !!S.state && S.state.data.slot >= 0;
   const items: HTMLElement[] = [];
+  let diffRow: HTMLElement | null = null;
   items.push(slider('Music', 'music', st.music, (v) => {
     st.music = v;
     settingsHooks.volume(st.music, st.sfx);
@@ -122,7 +123,8 @@ export function openSettings(): void {
       return b;
     };
     diff.append(mk('easy', 'Easy'), mk('normal', 'Normal'));
-    items.push(h('div', { class: 'set-row' }, iconEl('target'), h('span', { class: 'set-label' }, 'Difficulty'), diff));
+    diff.classList.add('seg-grid');
+    diffRow = h('div', { class: 'set-row set-row-col' }, h('div', { class: 'set-row' }, iconEl('target'), h('span', { class: 'set-label' }, 'Difficulty')), diff);
   }
   const canSpeak = speechAvailable();
   items.push(toggle(canSpeak ? 'Read aloud' : 'Read aloud (not on this device)', 'speaker', readAloudOn(), (v) => {
@@ -131,10 +133,12 @@ export function openSettings(): void {
     if (v) speak('Read aloud is on!', { force: true });
   }, 'set-read', !canSpeak));
   items.push(toggle('Helpful tips', 'question', st.tips, (v) => (st.tips = v), 'set-tips'));
-  const qual = h('div', { class: 'seg' });
+  const right: HTMLElement[] = [];
+  if (diffRow) right.push(diffRow);
+  const qual = h('div', { class: 'seg seg-grid' });
   const qOpts: Array<[QualitySetting, string]> = [['auto', 'Auto'], ['low', 'Low'], ['medium', 'Medium'], ['high', 'High']];
   for (const [q, label] of qOpts) {
-    const b = button(label, q === 'auto' ? 'sparkle' : 'star', () => {
+    const b = button(label, null, () => {
       st.quality = q;
       S.game.r3.setQuality(q);
       for (const c of qual.children) c.classList.toggle('on', c === b);
@@ -142,14 +146,15 @@ export function openSettings(): void {
     b.classList.toggle('on', st.quality === q);
     qual.append(b);
   }
-  items.push(h('div', { class: 'set-row' }, iconEl('sparkle'), h('span', { class: 'set-label' }, 'Graphics'), qual));
-  items.push(toggle('Comfort mode (calmer camera)', 'eye', comfortOn(), (v) => (st.comfort = v), 'set-comfort'));
-  items.push(toggle('Flip up and down', 'rocket', st.flipY, (v) => (st.flipY = v), 'set-flip'));
+  right.push(h('div', { class: 'set-row set-row-col' }, h('div', { class: 'set-row' }, iconEl('sparkle'), h('span', { class: 'set-label' }, 'Graphics')), qual));
+  items.push(toggle('Calm camera', 'eye', comfortOn(), (v) => (st.comfort = v), 'set-comfort'));
+  items.push(toggle('Flip up/down', 'rocket', st.flipY, (v) => (st.flipY = v), 'set-flip'));
   const btns = h('div', { class: 'row wrap' });
   if (fullscreenAvailable()) btns.append(button('Full screen', 'fullscreen', () => toggleFullscreen(), { size: 'small', color: 'white', id: 'btn-fullscreen' }));
   btns.append(button('How to play', 'question', () => controlsHelp(), { size: 'small', color: 'white', id: 'btn-help' }));
   if (inGame) btns.append(button('Erase game', 'trash', () => confirmReset(), { size: 'small', color: 'red', id: 'btn-reset' }));
-  const panel = h('div', { class: 'panel col settings-panel', 'data-testid': 'settings' }, h('div', { class: 'h2' }, 'Settings'), ...items, btns, button('Done', 'check', () => closeTopModal(), { color: 'green', id: 'btn-settings-done' }));
+  const cols = h('div', { class: 'set-cols' }, h('div', { class: 'set-col' }, ...items), h('div', { class: 'set-col set-col-right' }, ...right));
+  const panel = h('div', { class: 'panel col settings-panel scroll', 'data-testid': 'settings' }, h('div', { class: 'h2' }, 'Settings'), cols, btns, button('Done', 'check', () => closeTopModal(), { color: 'green', id: 'btn-settings-done' }));
   openModal(panel, {
     onClose: () => {
       saveSettings(st);

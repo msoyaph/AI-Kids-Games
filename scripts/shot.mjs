@@ -14,6 +14,7 @@ if (process.env.NEWGAME) {
   // Start a fresh game in slot 0 so a real session (missions, state) exists.
   await page.getByTestId('btn-play').waitFor({ timeout: 30000 });
   await page.evaluate(() => localStorage.clear());
+  await page.waitForTimeout(900);
   await page.getByTestId('btn-play').click({ force: true });
   await page.getByTestId('slot-0').waitFor();
   await page.waitForTimeout(400);

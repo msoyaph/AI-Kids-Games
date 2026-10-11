@@ -1,8 +1,11 @@
-import { DirectionalLight, HemisphereLight, Vector3, type Group, type Mesh, type ShaderMaterial } from 'three';
+import { DirectionalLight, HemisphereLight, Vector3, type Group } from 'three';
 import { comfortOn } from '../app/comfort';
 import { Scene3D } from '../app/Scene3D';
 import { S } from '../app/services';
-import { simpleRocket } from '../r3/models/placeholders';
+import { RocketModel } from '../r3/models/rocket';
+import { Trail } from '../r3/fx/trail';
+import { STARTER_LOADOUT } from '../data/parts';
+import { loadSlot } from '../systems/save/saveManager';
 import { createPlanet, type PlanetView } from '../r3/space/planets';
 import { addSpaceSky } from '../r3/space/backdrop';
 import { SKIES, type SpaceSky } from '../r3/space/sky';
@@ -14,7 +17,10 @@ import { fullscreenAvailable, openSettings, toggleFullscreen } from '../ui/setti
 export class TitleScene extends Scene3D {
   private sky: SpaceSky;
   private rocket: Group;
-  private flame: Mesh;
+  private model: RocketModel;
+  private trail = new Trail(40, 0.16, '#ffd27a', '#7a4dff', 0.1);
+  private nozzle = new Vector3();
+  private readonly nozzleW = new Vector3();
   private earth: PlanetView;
   private moon: PlanetView;
   private saturn: PlanetView;
@@ -43,11 +49,14 @@ export class TitleScene extends Scene3D {
     this.saturn = createPlanet('saturn', 3.0, { ...opts, detail: 'normal' });
     this.saturn.group.position.set(14, 6.5, -32);
     this.saturn.group.rotation.set(0.5, 0, -0.25);
-    const r = simpleRocket();
-    this.rocket = r.group;
-    this.flame = r.flame;
-    this.rocket.scale.setScalar(0.85);
-    this.world.add(this.earth.group, this.moon.group, this.saturn.group, this.rocket);
+    // Show the last cadet's own rocket (or the starter rocket on a fresh device).
+    const last = S.settings.lastSlot >= 0 ? loadSlot(S.settings.lastSlot) : null;
+    this.model = new RocketModel(last?.loadout ?? STARTER_LOADOUT, { glossy: r3.profile.tier === 'high' });
+    this.rocket = this.model.group;
+    this.rocket.scale.setScalar(0.62);
+    this.nozzle.copy(this.model.nozzles()[0] ?? new Vector3(0, -1.6, 0));
+    this.trail.power = 0.8;
+    this.world.add(this.earth.group, this.moon.group, this.saturn.group, this.rocket, this.trail.mesh);
     this.camera.fov = 45;
     this.camera.position.set(0, 0, 0);
     this.camera.lookAt(0, -0.3, -10);
@@ -85,9 +94,10 @@ export class TitleScene extends Scene3D {
       this.rocket.rotateY(this.t * 0.6);
     }
     this.prev.copy(p);
-    const fm = this.flame.material as ShaderMaterial;
-    fm.uniforms.uTime.value = time;
-    this.flame.scale.set(1, 0.85 + Math.sin(time * 31) * 0.1, 1);
+    this.model.update(1 / 60, 0.85, 0);
+    this.rocket.updateMatrixWorld();
+    this.trail.push(this.nozzleW.copy(this.nozzle).applyMatrix4(this.rocket.matrixWorld));
+    this.trail.update(this.camera);
     this.earth.update(time, this.sunDir);
     this.moon.update(time, this.sunDir);
     this.saturn.update(time, this.sunDir);

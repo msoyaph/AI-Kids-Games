@@ -44,6 +44,18 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 - Star map (`scenes/StarMapScene.ts`, `systems/orbitMap.ts`): orbit layout (not to scale), drag/pinch/wheel
   orbit camera, screen-space tap picking (`pickTarget`), labels/mission flag as DOM, launch + warp cinematic
   (tap to skip; Comfort = short, no tunnel/FOV kick), then `mapHooks.fly`.
+- Rocket (`r3/models/rocket.ts`, `rocketMaterials.ts`, `systems/rocketFit.ts`): `new RocketModel(loadout, {glossy})`,
+  origin at body middle, nose +y, windows/cargo +z. Every part is built from rocketFit numbers (body profile,
+  nose/engine/fin/pod/cargo placement), so all 46,656 outlines fit (unit-tested). `setLoadout(next, slot)` snaps
+  the part on (easeOutBack + `onSnap` callback). `update(dt, thrust, boost)` drives flames (`r3/fx/flame.ts`),
+  blinkers, party lights, spinners. Shared materials/geometries are cached + `markShared`; the painted body
+  CanvasTexture (pattern + stickers) is per rocket. `r3/fx/trail.ts` = camera-facing ribbon (ring buffer).
+- Hangar (`scenes/HangarScene.ts`, `r3/rooms/hangarBay.ts`): rocket hovering over a turntable in a hangar bay,
+  drag to spin (`hangar-spin`), camera focus per tab, `camera.setViewOffset` puts it in the left column; soft
+  shadows on High only (only MeshStandard parts cast); card thumbnails via `ui/rocketThumbs.ts` (queued 3D
+  snapshots). `?rockets[&n=4&seed=x&gloss=0]` = rocket contact sheet.
+- Post: NO multisampled render targets (they corrupted frames on ANGLE-Metal with many draws) → FXAA in its own
+  pass after the merged bloom/tone-map pass (FXAA merged with bloom caused dark halos). Bloom threshold 1.25.
 - `scripts/shot.mjs <path> <out.png> [w h waitMs js]` (env `NEWGAME=1`, `BASE=`) for headless screenshots
   against the dev server (the desktop browser pane is portrait/hidden, so use this for visual review).
 - Tone mapping: ACES filmic (AgX looked too pastel for the vivid kid look). Space scenes use
@@ -81,7 +93,9 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   Game/Scene port with lazy Pixi; Title, Slots, Creator, Credits, Complete on 3D backdrops.
 - [x] 3D Phase 2: planet library (all 28 bodies + Sun), rings/clouds/atmospheres, gallery, 3D star map with
   warp cinematic, 3D Codex pictures, "Space Is Huge!" Codex page (`scale`, unlocked on launch).
-- [ ] 3 rocket · [ ] 4 flight · [ ] 5 characters · [ ] 6 landing/explore · [ ] 7 hub/menus
+- [x] 3D Phase 3: rocket from all 52 hangar items (+ sticker decals), fit system + tests, flames, trails, 3D hangar
+  turntable with snap-on animation and sparkles, 3D card thumbnails, two-column settings panel.
+- [ ] 4 flight · [ ] 4 flight · [ ] 5 characters · [ ] 6 landing/explore · [ ] 7 hub/menus
   (remove Pixi) · [ ] 8 cutscenes · [ ] 9 perf · [ ] 10 tests/review/handoff
 
 ## Current numbers
@@ -102,4 +116,5 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 - Dialogue freezes gameplay; anything that can happen mid-flight/explore should use `radio` (non-blocking) or toasts, not `dialogue`.
 - `npm audit` flags `braces` via `vite-plugin-singlefile → micromatch` — build-time only, not shipped.
 - Port 5173 is used by another project on this machine; use 5391/4391/4392.
+- Don't put two surfaces at the same depth (the hangar wall touched the back panel → z-fighting line).
 - zsh: don't start an `echo` argument with `=` (equals expansion) and quote `--include='*.ts'` globs.

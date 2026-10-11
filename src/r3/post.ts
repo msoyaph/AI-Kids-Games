@@ -18,9 +18,9 @@ import { canRenderHalfFloat } from './bake';
 
 /** The look: tone mapping plus a gentle grade that keeps colors bright and friendly. */
 export const GRADE = {
-  bloomIntensity: 0.85,
-  bloomThreshold: 0.82,
-  bloomSmoothing: 0.25,
+  bloomIntensity: 0.9,
+  bloomThreshold: 1.25,
+  bloomSmoothing: 0.35,
   bloomRadius: 0.72,
   saturation: 0.05,
   contrast: 0.02,
@@ -31,7 +31,7 @@ export const GRADE = {
 
 /**
  * Post-processing chain for Medium/High: scene → (MSAA) HDR buffer → one merged effect pass
- * with bloom, ACES filmic tone mapping, vignette, saturation/contrast grade and optional FXAA.
+ * with bloom, ACES filmic tone mapping, vignette and a saturation/contrast grade, then FXAA (Medium).
  */
 export class PostChain {
   readonly composer: EffectComposer;
@@ -66,9 +66,11 @@ export class PostChain {
     effects.push(new HueSaturationEffect({ saturation: GRADE.saturation }));
     effects.push(new BrightnessContrastEffect({ contrast: GRADE.contrast, brightness: GRADE.brightness }));
     effects.push(new VignetteEffect({ offset: GRADE.vignetteOffset, darkness: GRADE.vignetteDarkness }));
-    if (p.fxaa) effects.push(new FXAAEffect());
     this.effectPass = new EffectPass(camera, ...effects);
     this.composer.addPass(this.effectPass);
+    // FXAA must run on the finished image in its own pass: merged with bloom it would throw the glow
+    // away along edges (dark halos).
+    if (p.fxaa) this.composer.addPass(new EffectPass(camera, new FXAAEffect()));
   }
 
   setSize(w: number, h: number): void {

@@ -1,4 +1,4 @@
-import { DataUtils, HalfFloatType, PerspectiveCamera, Scene, UnsignedByteType, Vector3, WebGLRenderTarget, type Object3D, type WebGLRenderer } from 'three';
+import { DataUtils, DirectionalLight, HalfFloatType, HemisphereLight, PerspectiveCamera, Scene, UnsignedByteType, Vector3, WebGLRenderTarget, type Object3D, type Texture, type WebGLRenderer } from 'three';
 import { canRenderHalfFloat } from './bake';
 
 /**
@@ -7,11 +7,18 @@ import { canRenderHalfFloat } from './bake';
  * the picture matches the game and keeps a transparent background.
  */
 let rt: WebGLRenderTarget | null = null;
-let rtSize = 0;
+let rtW = 0;
+let rtH = 0;
 let half16: Uint16Array | null = null;
 let bytes8: Uint8Array | null = null;
 const scene = new Scene();
 const camera = new PerspectiveCamera(30, 1, 0.1, 100);
+const key = new DirectionalLight('#fff4e0', 2.4);
+key.position.set(3, 5, 6);
+const rim = new DirectionalLight('#9fb4ff', 1.4);
+rim.position.set(-5, 2, -4);
+const hemi = new HemisphereLight('#d6dcff', '#3a2a66', 0.7);
+const lights = [key, rim, hemi];
 
 function aces(x: number): number {
   // Narkowicz ACES fit, with the same exposure boost three.js uses.
@@ -30,6 +37,11 @@ function srgb(x: number): number {
 
 export interface SnapshotOptions {
   size: number;
+  /** Non-square pictures: width/height in pixels (defaults to size x size). */
+  width?: number;
+  height?: number;
+  /** Studio lights and reflections (for rockets and characters; planets light themselves). */
+  lit?: Texture | null;
   /** Camera distance and field of view framing an object of radius ~1 at the origin. */
   distance?: number;
   fov?: number;
@@ -39,22 +51,30 @@ export interface SnapshotOptions {
 }
 
 export function snapshot(renderer: WebGLRenderer, object: Object3D, o: SnapshotOptions): HTMLCanvasElement {
-  const size = o.size;
+  const W = o.width ?? o.size;
+  const H = o.height ?? o.size;
   const half = canRenderHalfFloat(renderer);
-  if (!rt || rtSize !== size) {
+  if (!rt || rtW !== W || rtH !== H) {
     rt?.dispose();
-    rt = new WebGLRenderTarget(size, size, { type: half ? HalfFloatType : UnsignedByteType, depthBuffer: true, samples: 4 });
-    rtSize = size;
-    half16 = half ? new Uint16Array(size * size * 4) : null;
-    bytes8 = half ? null : new Uint8Array(size * size * 4);
+    // Supersample instead of MSAA (multisampled targets misbehave on some GPUs).
+    rt = new WebGLRenderTarget(W, H, { type: half ? HalfFloatType : UnsignedByteType, depthBuffer: true });
+    rtW = W;
+    rtH = H;
+    half16 = half ? new Uint16Array(W * H * 4) : null;
+    bytes8 = half ? null : new Uint8Array(W * H * 4);
   }
   camera.fov = o.fov ?? 30;
-  camera.aspect = 1;
+  camera.aspect = W / H;
   camera.position.set(0, 0, o.distance ?? 4.2);
   camera.lookAt(o.lookAt ?? new Vector3());
   camera.updateProjectionMatrix();
   const parent = object.parent;
   scene.add(object);
+  if (o.lit !== undefined) {
+    scene.add(...lights);
+    scene.environment = o.lit;
+    scene.environmentIntensity = 1;
+  }
   o.prepare?.();
   const prevTarget = renderer.getRenderTarget();
   const prevAlpha = renderer.getClearAlpha();
@@ -63,20 +83,20 @@ export function snapshot(renderer: WebGLRenderer, object: Object3D, o: SnapshotO
   renderer.clear(true, true, false);
   renderer.render(scene, camera);
   const out = document.createElement('canvas');
-  out.width = size;
-  out.height = size;
+  out.width = W;
+  out.height = H;
   const ctx = out.getContext('2d');
   try {
-    if (half16) renderer.readRenderTargetPixels(rt, 0, 0, size, size, half16);
-    else if (bytes8) renderer.readRenderTargetPixels(rt, 0, 0, size, size, bytes8);
+    if (half16) renderer.readRenderTargetPixels(rt, 0, 0, W, H, half16);
+    else if (bytes8) renderer.readRenderTargetPixels(rt, 0, 0, W, H, bytes8);
     if (ctx) {
-      const img = ctx.createImageData(size, size);
+      const img = ctx.createImageData(W, H);
       const d = img.data;
-      for (let y = 0; y < size; y++) {
+      for (let y = 0; y < H; y++) {
         // WebGL rows go bottom-up.
-        const src = (size - 1 - y) * size * 4;
-        const dst = y * size * 4;
-        for (let x = 0; x < size; x++) {
+        const src = (H - 1 - y) * W * 4;
+        const dst = y * W * 4;
+        for (let x = 0; x < W; x++) {
           const i = src + x * 4;
           const j = dst + x * 4;
           let r: number;
@@ -110,7 +130,8 @@ export function snapshot(renderer: WebGLRenderer, object: Object3D, o: SnapshotO
   }
   renderer.setRenderTarget(prevTarget);
   renderer.setClearAlpha(prevAlpha);
-  scene.remove(object);
+  scene.remove(object, ...lights);
+  scene.environment = null;
   if (parent) parent.add(object);
   return out;
 }

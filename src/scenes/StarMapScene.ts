@@ -31,7 +31,7 @@ import { BODY_BY_ID, SYSTEMS, systemOf, type SystemDef, type SystemId } from '..
 import { drawToCanvas } from '../gfx/canvas';
 import { drawGlyph } from '../gfx/art/glyphs';
 import { OUTPUT_GLSL } from '../r3/materials';
-import { simpleRocket } from '../r3/models/placeholders';
+import { RocketModel } from '../r3/models/rocket';
 import { addSpaceSky } from '../r3/space/backdrop';
 import { createPlanet, type PlanetView } from '../r3/space/planets';
 import { SKIES, type SpaceSky } from '../r3/space/sky';
@@ -139,7 +139,8 @@ export class StarMapScene extends Scene3D {
   // Decorations.
   private selRing: Mesh;
   private here: Group;
-  private hereFlame: Mesh;
+  private hereModel: RocketModel;
+  private flameBoost = 0;
   private route: InstancedMesh;
   private belt: Group;
   private worm: { mesh: Mesh; material: ShaderMaterial } | null = null;
@@ -286,10 +287,9 @@ export class StarMapScene extends Scene3D {
     this.route.count = 0;
     this.route.frustumCulled = false;
     this.world.add(this.route);
-    const rk = simpleRocket();
-    this.here = rk.group;
-    this.hereFlame = rk.flame;
-    this.here.scale.setScalar(0.28);
+    this.hereModel = new RocketModel(S.state.data.loadout, { detail: false });
+    this.here = this.hereModel.group;
+    this.here.scale.setScalar(0.16);
     this.world.add(this.here);
 
     // Warp tunnel (only visible during the launch cinematic).
@@ -538,7 +538,7 @@ export class StarMapScene extends Scene3D {
 
     // Your rocket circles the place you are.
     const cur = this.nodes.find((n) => n.sys.id === this.current);
-    (this.hereFlame.material as ShaderMaterial).uniforms.uTime.value = t;
+    this.hereModel.update(dt, this.launch ? 1 : 0.4, this.flameBoost);
     if (this.launch && cur) this.renderLaunch(dt);
     else if (cur) {
       const a = t * 0.7;
@@ -600,7 +600,7 @@ export class StarMapScene extends Scene3D {
     const travel = go * go * 6;
     this.here.position.copy(this.launchPos).addScaledVector(dir, travel).add(this.tmp.set(0, Math.min(t, 0.5) * 1.5, 0));
     this.here.quaternion.setFromUnitVectors(UP, dir);
-    this.hereFlame.scale.set(1, 1 + Math.min(2.5, t * 1.5), 1);
+    this.flameBoost = Math.min(1, t * 0.8);
     // Chase camera behind the rocket.
     const back = this.tmp.copy(dir).multiplyScalar(-(3.2 + Math.min(t, 1) * 1.5)).add(this.here.position);
     back.y += 1.2;

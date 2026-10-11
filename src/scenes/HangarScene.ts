@@ -1,17 +1,19 @@
-import { Sprite } from 'pixi.js';
-import { Scene } from '../app/Scene';
+import { Vector3 } from 'three';
+import { comfortOn } from '../app/comfort';
+import { Scene3D } from '../app/Scene3D';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { PARTS, PART_BY_ID } from '../data/parts';
 import { STICKER_BY_ID } from '../data/stickers';
 import { STAT_KEYS, type PartSlot, type RocketLoadout, type StatKey } from '../data/types';
 import { drawToCanvas } from '../gfx/canvas';
-import { drawRocket, ROCKET_H, ROCKET_W } from '../gfx/art/rocket';
-import { drawPlatform, drawHangar } from '../gfx/art/rooms';
 import { drawSticker } from '../gfx/art/stickers';
 import { drawPortrait } from '../gfx/art/characters';
 import { CHAR_BY_ID } from '../data/characters';
-import { ensureTex, updateRocketTex } from '../gfx/textures';
+import { updateRocketTex } from '../gfx/textures';
+import { Particles3 } from '../r3/fx/particles';
+import { RocketModel } from '../r3/models/rocket';
+import { buildHangarBay, type HangarBay } from '../r3/rooms/hangarBay';
 import { buy, canBuy, equipPart, equipSticker, isUnlocked, unlockHint } from '../systems/economy';
 import { statStars } from '../systems/rocketStats';
 import { clear, h, setText } from '../ui/dom';
@@ -19,6 +21,7 @@ import { icon } from '../ui/icons';
 import { speak } from '../ui/speech';
 import { toast } from '../ui/toast';
 import { button, iconEl, starIcon } from '../ui/widgets';
+import { clearThumbQueue, rocketThumb } from '../ui/rocketThumbs';
 
 type Tab = PartSlot | 'stickers';
 
@@ -41,12 +44,37 @@ const STAT_INFO: Record<StatKey, { label: string; icon: string }> = {
   shield: { label: 'Shield', icon: 'shield' },
 };
 
-export class HangarScene extends Scene {
-  private bg: Sprite;
+/** Where the camera looks for each tab (height on the rocket) and whether to turn the rocket's front to you. */
+const FOCUS: Record<Tab, { y: number; front: boolean; zoom: number }> = {
+  nose: { y: 0.5, front: false, zoom: 0.94 },
+  body: { y: 0.1, front: false, zoom: 1 },
+  engine: { y: -0.5, front: false, zoom: 0.94 },
+  fins: { y: -0.35, front: false, zoom: 0.97 },
+  tank: { y: 0, front: false, zoom: 1 },
+  cargo: { y: -0.2, front: true, zoom: 0.94 },
+  lights: { y: 0.15, front: true, zoom: 1 },
+  paint: { y: 0.1, front: false, zoom: 1 },
+  stickers: { y: 0, front: true, zoom: 0.94 },
+};
+
+export class HangarScene extends Scene3D {
+  private bay: HangarBay;
+  private rocket: RocketModel;
+  private sparkles = new Particles3(160, 'star');
+  private spin = 0.6;
+  private spinVel = 0;
+  private spinGoal: number | null = null;
+  private dragging = false;
+  private lastX = 0;
+  private idleT = 0;
+  private camY = 0.2;
+  private camZoom = 1;
+  private hover = 0;
+  private readonly tmp = new Vector3();
   private tab: Tab = 'nose';
   private tryLoadout: RocketLoadout;
   private selected: string | null = null;
-  private preview: HTMLCanvasElement;
+  private preview: HTMLElement;
   private statRows: Record<StatKey, HTMLElement> = {} as Record<StatKey, HTMLElement>;
   private tabBtns = new Map<Tab, HTMLButtonElement>();
   private cards: HTMLElement;
@@ -60,8 +88,18 @@ export class HangarScene extends Scene {
     this.music = 'hub';
     const st = S.state.data;
     this.tryLoadout = { ...st.loadout, stickers: [...st.loadout.stickers] };
-    this.bg = new Sprite(ensureTex('room_hangar', 1600, 720, (c, w, hh) => drawHangar(c, w, hh), 0.5, 0.5, 1));
-    this.root.addChild(this.bg);
+    const prof = S.game.r3.profile;
+    this.world.environmentIntensity = 0.9;
+    this.bay = buildHangarBay(prof);
+    this.world.add(this.bay.group);
+    this.rocket = new RocketModel(this.tryLoadout, { glossy: prof.tier === 'high' });
+    this.castShadows();
+    this.rocket.onSnap = (_slot, local) => this.snapFx(local);
+    this.world.add(this.rocket.group);
+    this.sparkles.gravity = 1.5;
+    this.sparkles.drag = 2;
+    this.world.add(this.sparkles.points);
+    this.camera.fov = 30;
 
     this.coinText = h('span', null, String(st.coins));
     const header = h(
@@ -72,8 +110,8 @@ export class HangarScene extends Scene {
       h('div', { class: 'spacer' }),
       h('div', { class: 'pill', 'data-testid': 'coins' }, iconEl('coin'), this.coinText),
     );
-    this.preview = document.createElement('canvas');
-    this.preview.className = 'hangar-rocket';
+    this.preview = h('div', { class: 'hangar-spin', 'data-testid': 'hangar-spin', 'aria-label': 'Drag to spin your rocket' });
+    this.bindSpin(this.preview);
     const stats = h('div', { class: 'panel stats-panel' });
     for (const k of STAT_KEYS) {
       const row = h('div', { class: 'stat-row', 'data-testid': `stat-${k}` });
@@ -84,9 +122,7 @@ export class HangarScene extends Scene {
     boltzy.className = 'tip-face';
     this.tip = h('div', { class: 'tip-text' }, 'Tap a part to try it on!');
     const tipBox = h('div', { class: 'tip-box' }, boltzy, this.tip);
-    const plat = drawToCanvas(300, 100, (c, w, hh) => drawPlatform(c, w, hh));
-    plat.className = 'hangar-platform';
-    const left = h('div', { class: 'hangar-left' }, h('div', { class: 'preview-wrap' }, this.preview, plat), stats);
+    const left = h('div', { class: 'hangar-left' }, h('div', { class: 'preview-wrap' }, this.preview), stats);
     const tabs = h('div', { class: 'tabs' });
     for (const t of TABS) {
       const b = button(t.label, t.icon, () => this.setTab(t.tab), { size: 'small', color: 'white', id: `tab-${t.tab}`, sound: 'tab' });
@@ -116,20 +152,103 @@ export class HangarScene extends Scene {
     return true;
   }
 
-  override resize(w: number, h: number): void {
-    this.bg.position.set(w / 2, h / 2);
-    this.bg.scale.set(Math.max(w / 1600, h / 720));
+  override exit(): void {
+    clearThumbQueue();
+  }
+
+  override resize(w: number, hh: number): void {
+    super.resize(w, hh);
+    this.sparkles.setScreen(window.innerHeight * S.game.r3.pixelRatio);
+    // Show the rocket in the left column: shift the picture so the turntable sits at ~20% across.
+    const cx = w * 0.205;
+    const cy = hh * 0.44;
+    this.camera.setViewOffset(w, hh, w / 2 - cx, hh / 2 - cy, w, hh);
+  }
+
+  /** Only solid, lit parts cast shadows (flames and glows use custom shaders). */
+  private castShadows(): void {
+    const on = S.game.r3.profile.shadows;
+    this.rocket.group.traverse((o) => {
+      const m = (o as { material?: { isMeshStandardMaterial?: boolean } }).material;
+      o.castShadow = on && !!m?.isMeshStandardMaterial;
+    });
+  }
+
+  private bindSpin(el: HTMLElement): void {
+    el.addEventListener('pointerdown', (e) => {
+      this.dragging = true;
+      this.lastX = e.clientX;
+      this.spinGoal = null;
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!this.dragging) return;
+      const dx = (e.clientX - this.lastX) / S.game.metrics.scale;
+      this.lastX = e.clientX;
+      this.spin += dx * 0.012;
+      this.spinVel = dx * 0.7;
+      this.idleT = 0;
+    });
+    const up = () => {
+      this.dragging = false;
+    };
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  }
+
+  private snapFx(local: Vector3): void {
+    const p = this.rocket.group.localToWorld(this.tmp.copy(local));
+    const colors = ['#ffe066', '#4dd4ff', '#ff7ad9', '#ffffff'];
+    for (let i = 0; i < 4; i++) this.sparkles.burst(p.x, p.y, p.z, comfortOn() ? 6 : 10, 3.2, 0.7, 0.16, colors[i]);
+    sfx('equip');
   }
 
   override update(dt: number): void {
     this.t += dt;
-    this.preview.style.transform = `translateY(${Math.sin(this.t * 2) * 6}px)`;
+    this.idleT += dt;
+    if (!this.dragging) {
+      if (this.spinGoal !== null) {
+        const d = Math.atan2(Math.sin(this.spinGoal - this.spin), Math.cos(this.spinGoal - this.spin));
+        this.spin += d * Math.min(1, dt * 5);
+        if (Math.abs(d) < 0.01) this.spinGoal = null;
+      } else {
+        this.spin += this.spinVel * dt;
+        this.spinVel *= Math.exp(-dt * 3);
+        if (this.idleT > 2.5 && !comfortOn()) this.spin += dt * 0.25;
+      }
+    }
+    this.sparkles.update(dt);
+  }
+
+  override render(): void {
+    const dt = 1 / 60;
+    const t = this.time;
+    this.bay.update(t);
+    const f = FOCUS[this.tab];
+    this.camY += (f.y - this.camY) * 0.06;
+    this.camZoom += (f.zoom - this.camZoom) * 0.06;
+    const e = this.rocket.extent;
+    const hoverY = this.bay.topY + 0.35 - e.bottom;
+    this.hover = comfortOn() ? 0 : Math.sin(t * 1.6) * 0.06;
+    this.rocket.group.position.set(0, hoverY + this.hover, 0);
+    this.rocket.group.rotation.set(0, this.spin, 0);
+    this.bay.turntable.rotation.y = this.spin * 0.35;
+    this.rocket.update(dt, 0.18, 0);
+    const lookY = hoverY + this.camY;
+    const dist = 21 * this.camZoom;
+    this.camera.position.set(0, lookY + 1.6, dist);
+    this.camera.lookAt(0, lookY, 0);
   }
 
   private setTab(tab: Tab): void {
     this.tab = tab;
     for (const [t, b] of this.tabBtns) b.classList.toggle('on', t === tab);
     this.selected = tab === 'stickers' ? null : (this.tryLoadout[tab] as string);
+    if (FOCUS[tab].front) this.spinGoal = 0;
     this.renderCards();
     this.renderDetail();
   }
@@ -158,10 +277,7 @@ export class HangarScene extends Scene {
       const owned = save.owned.includes(p.id);
       const equipped = save.loadout[slot] === p.id;
       const unlocked = isUnlocked(p.unlock, save);
-      const thumb = drawToCanvas(64, 88, (c) => {
-        c.scale(64 / ROCKET_W, 88 / ROCKET_H);
-        drawRocket(c, { ...this.tryLoadout, [slot]: p.id });
-      });
+      const thumb = rocketThumb({ ...this.tryLoadout, [slot]: p.id } as RocketLoadout, 64, 88);
       if (!unlocked) thumb.style.filter = 'brightness(.3) saturate(0)';
       let status: HTMLElement;
       if (equipped) status = h('div', { class: 'card-status ok' }, iconEl('check'), 'Equipped');
@@ -180,7 +296,12 @@ export class HangarScene extends Scene {
     this.selected = id;
     sfx('select');
     if (isUnlocked(p.unlock, S.state.data)) {
+      const changed = (this.tryLoadout as unknown as Record<string, string>)[p.slot] !== id;
       (this.tryLoadout as unknown as Record<string, string>)[p.slot] = id;
+      if (changed) {
+        this.rocket.setLoadout(this.tryLoadout, p.slot);
+        this.castShadows();
+      }
       setText(this.tip, S.state.data.owned.includes(id) ? 'Looking good! Tap Equip to use it.' : 'Trying it on! Buy it to keep it.');
     } else setText(this.tip, 'That part is still locked. Keep exploring!');
     this.redrawPreview();
@@ -201,6 +322,8 @@ export class HangarScene extends Scene {
       sfx('sticker');
     }
     this.tryLoadout.stickers = [...st.data.loadout.stickers];
+    this.rocket.setLoadout(this.tryLoadout, 'stickers');
+    this.castShadows();
     updateRocketTex(st.data.loadout);
     this.redrawPreview();
     this.renderCards();
@@ -264,17 +387,6 @@ export class HangarScene extends Scene {
   }
 
   private redrawPreview(): void {
-    const res = Math.min(2, window.devicePixelRatio || 1) * 1.6;
-    const W = ROCKET_W * 1.6;
-    const H = ROCKET_H * 1.6;
-    this.preview.width = Math.ceil(W * res);
-    this.preview.height = Math.ceil(H * res);
-    this.preview.style.width = `${W}px`;
-    this.preview.style.height = `${H}px`;
-    const c = this.preview.getContext('2d')!;
-    c.setTransform(res * 1.6, 0, 0, res * 1.6, 0, 0);
-    c.clearRect(0, 0, ROCKET_W, ROCKET_H);
-    drawRocket(c, this.tryLoadout, 0);
     // Stats: equipped vs. trying on.
     const now = statStars(S.state.data.loadout);
     const next = statStars(this.tryLoadout);

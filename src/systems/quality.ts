@@ -20,7 +20,10 @@ export interface QualityProfile {
   bloomLevels: number;
   /** Bloom resolution scale. */
   bloomScale: number;
-  /** MSAA samples for the post-processing render target. */
+  /**
+   * MSAA samples for the post-processing render target. Kept at 0: multisampled targets corrupted
+   * frames (black tiles) on ANGLE-Metal with many draw calls, so every post tier uses FXAA instead.
+   */
   msaa: number;
   /** Cheap FXAA inside the final effect pass (used when there is no MSAA). */
   fxaa: boolean;
@@ -57,7 +60,7 @@ export const PROFILES: Record<QualityTier, QualityProfile> = {
     asteroids: 260, asteroidLods: 2, particles: 700, dust: 150, stars: 2600, shadows: false,
   },
   high: {
-    tier: 'high', maxDpr: 2, minScale: 0.85, post: true, bloomLevels: 6, bloomScale: 0.5, msaa: 4, fxaa: false,
+    tier: 'high', maxDpr: 2, minScale: 0.85, post: true, bloomLevels: 6, bloomScale: 0.5, msaa: 0, fxaa: true,
     bakeSize: 512, skySize: 1024, octaves: 6, clouds: true, ringShadows: true, sphereSegments: 96,
     asteroids: 400, asteroidLods: 3, particles: 1500, dust: 300, stars: 4000, shadows: true,
   },
