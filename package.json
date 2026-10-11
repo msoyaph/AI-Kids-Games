@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5190",
-    "build": "tsx scripts/validate-games.ts && tsc --noEmit && vite build && tsx scripts/generate-route-shells.ts",
+    "build": "tsx scripts/check-deployment.ts && tsx scripts/validate-games.ts && tsc --noEmit && vite build && tsx scripts/generate-route-shells.ts",
     "preview": "vite preview --host 127.0.0.1 --port 4190",
     "test": "vitest run",
     "test:e2e": "playwright test",

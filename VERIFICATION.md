@@ -32,5 +32,9 @@ changes are required. Native iPad Safari, physical phones/controllers and
 device-specific audio/fullscreen behavior still need owner checks using the
 preview checklist in LAUNCH_REPORT.md. Chromium device profiles are not Safari.
 
-Vercel preview and deployed cache headers are recorded in LAUNCH_REPORT.md
-after deployment. Production requires explicit owner approval.
+Vercel preview is READY. All 13 hosted desktop checks pass, including all five
+game starts, 20-second error/network checks, saves, fullscreen and sequential
+storage preservation. Hosted game hashes match originals; unversioned game HTML
+revalidates with ETags/304, hashed assets cache immutably for one year. Direct
+route metadata and disabled toolbar verified. Preview URL and real-device
+checklist are in LAUNCH_REPORT.md. Production requires explicit owner approval.

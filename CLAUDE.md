@@ -39,7 +39,13 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
    Vanex towers, Light/Space movement and Calex driving/controls. Space/Calex need
    landscape on touch devices; registry guidance now says so. Native Safari and
    physical controller checks remain on the real-device checklist.
-9. Pending: Vercel preview deployment and real-device checklist. Production requires user approval.
+9. COMPLETE: Vercel preview READY at
+   https://ai-kids-games-icf8wmqhh-real-tours.vercel.app. All 13 hosted browser
+   checks pass; hosted game hashes, revalidation/304 and immutable asset cache
+   verified. Production was not published: a guard stopped Vercel's first-attempt
+   production classification; the second attempt is preview. Temporary QA access
+   revoked; normal Vercel sign-in retained. Real iPad/Safari/phone checklist is in
+   LAUNCH_REPORT.md. Production remains gated on explicit owner approval.
 
 Do not edit minified game builds. Any storage ownership defect must halt integration
 and be fixed in the original game's source project. Original game folders are read-only

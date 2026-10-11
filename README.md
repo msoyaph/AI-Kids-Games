@@ -51,5 +51,14 @@ caches hashed site assets. Static route shells and sitemap use SITE_ORIGIN
 when supplied, otherwise the Vercel preview hostname. No secrets are required.
 Keep hosting analytics and injected toolbar/telemetry disabled on the game site.
 
-Preview first; do not run a production deployment without owner approval.
-See LAUNCH_REPORT.md for final validation and real-device checks.
+Preview command: `vercel deploy --target preview --yes --build-env AIKG_PREVIEW_ONLY=1`.
+The build refuses any preview-only attempt that Vercel classifies as production,
+including its first-deployment behavior. Vercel production builds also require
+the explicit approval flag described in scripts/check-deployment.ts; set it only
+after owner approval. Do not promote or deploy to production without that approval.
+
+Preview authentication stays enabled. Use Vercel sign-in to review on real
+devices. For authenticated automated QA, use a temporary browser storage state
+with `AIKG_BASE_URL` and `AIKG_QA_STORAGE_STATE`; never commit access cookies or
+bypass tokens. Remote tests turn off traces to avoid recording those cookies.
+See LAUNCH_REPORT.md for the preview URL, validation and real-device checks.

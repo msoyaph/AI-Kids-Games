@@ -32,7 +32,7 @@ test('layout, touch targets and reduced motion',async ({ page }) => {
   expect(tiny).toEqual([]);
 });
 test('outbound links require the grown-up screen',async ({ page }) => {
-  await page.goto('/'); await expect(page.getByRole('heading',{ level: 1 })).toBeVisible(); await page.evaluate(() => { const a = document.createElement('a'); a.href = 'https://example.com'; a.textContent = 'Test outside link'; document.querySelector('main')!.prepend(a); });
+  await page.goto('/'); const home = page.url(); await expect(page.getByRole('heading',{ level: 1 })).toBeVisible(); await page.evaluate(() => { const a = document.createElement('a'); a.href = 'https://example.com'; a.textContent = 'Test outside link'; document.querySelector('main')!.prepend(a); });
   await page.getByRole('link',{ name: 'Test outside link' }).click(); await expect(page.getByRole('dialog')).toContainText('Ask a grown-up first!');
-  await page.getByRole('button',{ name: 'Stay here' }).click(); await expect(page.getByRole('dialog')).not.toBeVisible(); await expect(page).toHaveURL(/4190\/$/);
+  await page.getByRole('button',{ name: 'Stay here' }).click(); await expect(page.getByRole('dialog')).not.toBeVisible(); await expect(page).toHaveURL(home);
 });

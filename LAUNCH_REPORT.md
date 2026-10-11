@@ -83,5 +83,33 @@ separate saves; lists on the old Sites domain cannot automatically transfer.
 
 ## Deployment
 
-Vercel preview pending completion of local QA. Production is not authorized.
-The existing Sites production is unchanged.
+Preview: https://ai-kids-games-icf8wmqhh-real-tours.vercel.app
+
+Vercel project: real-tours/ai-kids-games. Deployment
+`dpl_4BNtZP4u56eeQuqHo8EDSkvAqXUh` is READY and is a preview (API target=null,
+CLI Preview, build VERCEL_ENV=preview). DEPLOYMENT.json records this identity.
+Vercel authentication is still enabled; sign in with the owner/team account on
+real devices. The site itself makes no other-origin runtime requests. The host
+sign-in flow is separate from game/site runtime verification.
+
+The initial explicit preview attempt was assigned to production by Vercel. The
+preview-only build guard stopped it before any site output was published. Its
+state is ERROR, not a successful production release. Keeping that failed attempt
+allowed the next explicit preview attempt to succeed. This is Vercel's documented
+[first-deploy behavior](https://github.com/vercel/vercel/pull/17206).
+
+All five hosted game responses match their original source bytes. Each responds
+with `Cache-Control: public, max-age=0, must-revalidate` and a valid ETag;
+conditional requests return 304. Hashed site assets use
+`public, max-age=31536000, immutable`. All five direct detail routes serve their
+own metadata. The injected Vercel toolbar is disabled for this project.
+
+Final hosted Playwright pass: 13/13 desktop checks passed, including all five
+20-second game runs and save reloads, sequential storage preservation, fullscreen,
+age/category filtering and existing catalog tests. No game/site errors or
+other-origin runtime requests. Temporary authenticated automation access was
+revoked after QA; access cookies are never shipped.
+
+Production is not authorized and has not been published. The existing Sites
+production is unchanged. After real-device checks, request owner approval before
+any production deployment or promotion.
