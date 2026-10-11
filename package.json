@@ -1,0 +1,31 @@
+{
+  "name": "cliff-valley",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Cliff Valley — a cozy farming life-sim for ages 8–14 (Ai Kids Games).",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && node scripts/check-build.mjs",
+    "build:only": "vite build && node scripts/check-build.mjs",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run tests/unit",
+    "test:sim": "vitest run tests/sim",
+    "test:all": "vitest run",
+    "test:e2e": "playwright test",
+    "pacing": "vitest run tests/sim/pacing.test.ts",
+    "analyze-playtests": "node scripts/analyze-playtests.mjs"
+  },
+  "dependencies": {
+    "pixi.js": "^8.22.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^24.19.2",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.4",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^5.0.3"
+  }
+}
