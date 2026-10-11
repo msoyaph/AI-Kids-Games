@@ -38,6 +38,24 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
 - Tile index i = z*80 + x. Objects: `state.world.objects[i]`, one per tile.
 - Structures footprints block tiles except dock/bridge/ramp (walkable).
 
+## Key modules
+- `src/app.ts` — screen flow (title → slots → creator → game), main loop, input routing, autosave (60s,
+  day start, visibilitychange/pagehide). `app.panels[name]` registry lets sim code open UI via `game.ui.open`.
+- `src/sim/systems.ts` — `installSystems(game)` registers daily hooks (order matters) + interaction resolvers;
+  `createGame(state)` is the one way to build a Game.
+- Interactions: resolvers return `{label, priority, run}`; highest priority wins; HUD shows the label.
+  Timed actions (`game.startAction`) lock movement and drive the animation (`view` reads `game.action`).
+- Items: `src/data/registry.ts` merges all content into `ITEMS`; `item(id)` lookup. Icons are canvas-drawn
+  (`src/ui/icons.ts`), furniture can use 3D thumbnails via `setThumbProvider`.
+- Save: `src/sim/save.ts` — `SafeStorage` (try/catch + memory fallback), `SaveManager` (3 slots + settings),
+  `MIGRATIONS[v]` upgrade chain, `SAVE_VERSION` in state.ts. Bump version + add migration on schema changes.
+- UI: `UIManager` panel stack (modal panels pause the clock via game.mode='menu'), spatial focus nav for
+  keyboard/gamepad (`[data-nav]` elements), `covers` panels hide those beneath.
+
 ## Status
 - Phase 1 done: scaffold, single-file build, worldgen, terrain/water/vegetation, curved world, camera,
   player movement + collision, clock + day/night lighting.
+- Phase 2 done: item registry (+ fish/bugs/fossils/furniture/recipes data), inventory w/ storage overflow,
+  tools + durability, foraging (shake/chop/mine/pluck/pickup/dig/plant/water/ladder), daily spawns,
+  gardening growth + breeding, save slots + migration, title/slots/creator/pause screens, HUD.
+  (Temporary: main.ts gives starter tools on new game until the story missions exist.)

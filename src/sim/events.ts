@@ -57,4 +57,5 @@ export interface GameEvents {
   tip: { id: string };
   finale: Record<string, never>;
   catalogNew: { id: string };
+  recipeLearned: { id: string; source: string };
 }

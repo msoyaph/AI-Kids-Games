@@ -8,6 +8,8 @@ import { animateRig, buildCharacter, OUTFIT_COLORS, SKIN_TONES, type Rig } from 
 import { ObjectRenderer, type ItemVisual } from './objects';
 import { Sky } from './sky';
 import { TerrainRenderer, WaterRenderer } from './terrain';
+import { equippedTool } from '../sim/tools';
+import { toolMesh } from './models/tools';
 import { LEVEL_HEIGHT } from '../world/types';
 
 export class GameView {
@@ -24,7 +26,10 @@ export class GameView {
   private islandRoot = new THREE.Group();
   private game!: Game;
   time = 0;
-  playerAnim = { action: -1, kind: '' as string };
+  /** 'title' orbits the island; 'creator' frames the player close up */
+  preview: 'title' | 'creator' | null = null;
+  private heldKey = '';
+  private orbit = 0;
 
   constructor(private canvas: HTMLCanvasElement, private itemVisual: ItemVisual) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -64,6 +69,19 @@ export class GameView {
     this.rig.snap(p.x, p.level * LEVEL_HEIGHT, p.z);
     game.bus.on('objectsChanged', () => (this.objects.dirty = true));
     game.bus.on('structuresChanged', () => this.syncStructures());
+    game.bus.on('fx', (f) => {
+      if (f.kind === 'rockHit') this.rig.shake = 0.6;
+    });
+  }
+
+  /** Project a world point (with the world curve applied) to CSS pixels. */
+  project(x: number, y: number, z: number): { x: number; y: number; visible: boolean } {
+    const o = sharedUniforms.uCurveOrigin.value;
+    const k = sharedUniforms.uCurveK.value;
+    const dx = x - o.x, dz = z - o.z;
+    const v = new THREE.Vector3(x, y - (dz * dz * k + dx * dx * k * 0.3), z).project(this.rig.camera);
+    const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
+    return { x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, visible: v.z < 1 };
   }
 
   rebuildPlayer(): void {
@@ -80,6 +98,16 @@ export class GameView {
       blush: look.blush,
     });
     this.islandRoot.add(this.player.root);
+    this.heldKey = '';
+  }
+
+  private syncHeld(): void {
+    const t = equippedTool(this.game);
+    const key = t ? t.kind + (t.sturdy ? 's' : 'f') : '';
+    if (key === this.heldKey) return;
+    this.heldKey = key;
+    this.player.hand.clear();
+    if (t) this.player.hand.add(toolMesh(t.kind, t.sturdy));
   }
 
   syncStructures(): void {
@@ -109,15 +137,31 @@ export class GameView {
     sharedUniforms.uTime.value = this.time;
     const p = g.state.player;
     if (this.objects.dirty) this.objects.rebuild();
+    this.syncHeld();
     const y = g.world.surfaceY(p.x, p.z);
     this.player.root.position.set(p.x, y, p.z);
     this.player.root.rotation.y = p.facing;
+    this.player.root.visible = p.location === 'island' && this.preview !== 'title';
+    const a = g.action;
     animateRig(this.player, dt, {
       speed: g.motion.speed,
-      action: this.playerAnim.action,
-      actionKind: this.playerAnim.kind,
+      action: a ? Math.min(1, a.t / a.dur) : -1,
+      actionKind: a ? a.kind : equippedTool(g) ? 'hold' : '',
     });
-    this.rig.follow(p.x, Math.max(0, y), p.z, dt);
+    if (this.preview === 'title') {
+      this.orbit += dt * 0.05;
+      const N = g.world.size;
+      const r = N * 0.28;
+      this.rig.follow(N / 2 + Math.cos(this.orbit) * r, 0, N / 2 + 6 + Math.sin(this.orbit) * r * 0.7, dt);
+    } else if (this.preview === 'creator') {
+      this.rig.zoomOverride = 0.28;
+      this.rig.pitchOverride = 14;
+      this.rig.follow(p.x + 1.3, y + 0.25, p.z, dt);
+    } else {
+      this.rig.zoomOverride = 1;
+      this.rig.pitchOverride = null;
+      this.rig.follow(p.x, Math.max(0, y), p.z, dt);
+    }
     sharedUniforms.uCurveOrigin.value.copy(this.rig.target);
     this.sky.update(g.state.clock.minute, g.state.weather.today, this.rig.target);
     this.renderer.render(this.scene, this.rig.camera);
