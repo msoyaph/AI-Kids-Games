@@ -2,10 +2,18 @@ import { expect, test, type Page } from '@playwright/test';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
+/** Low-quality CI mode (software rendering): ?quality=low and longer waits. */
+const LOW = !!process.env.E2E_LOW;
+const Q = LOW ? '?quality=low' : '';
+const wait = (page: Page, ms: number) => page.waitForTimeout(LOW ? ms * 3 : ms);
+
+/** Software GL is only used for headless CI; its "slow readPixels" warnings are not game errors. */
+const IGNORE = [/GPU stall due to ReadPixels/i, /swiftshader/i, /WebGL.*performance/i];
+
 function collectErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(m.text());
+    if (m.type() === 'error' && !IGNORE.some((re) => re.test(m.text()))) errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(String(e)));
   return errors;
@@ -23,20 +31,29 @@ async function newGame(page: Page): Promise<void> {
 
 test('new game starts, the player walks, and there are no console errors for 30s', async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto('/');
+  await page.goto(`/${Q}`);
   await expect(page.locator('.logo')).toContainText('Light Crossing');
   await newGame(page);
   // dismiss the opening narration
   for (let i = 0; i < 6; i++) {
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(400);
+    await wait(page, 400);
   }
   const before = await page.evaluate(() => {
     const p = (window as unknown as { __lc: { game: { state: { player: { x: number; z: number } } } } }).__lc.game.state.player;
     return { x: p.x, z: p.z };
   });
   await page.keyboard.down('KeyW');
-  await page.waitForTimeout(1500);
+  await wait(page, 1500);
+  if (LOW)
+    await page.waitForFunction(
+      (b) => {
+        const p = (window as unknown as { __lc: { game: { state: { player: { x: number; z: number } } } } }).__lc.game.state.player;
+        return Math.hypot(p.x - b.x, p.z - b.z) > 1;
+      },
+      before,
+      { timeout: 120_000 },
+    );
   await page.keyboard.up('KeyW');
   const after = await page.evaluate(() => {
     const p = (window as unknown as { __lc: { game: { state: { player: { x: number; z: number } } } } }).__lc.game.state.player;
@@ -48,30 +65,30 @@ test('new game starts, the player walks, and there are no console errors for 30s
   for (let s = 0; s < 10; s++) {
     const k = keys[s % keys.length]!;
     await page.keyboard.down(k);
-    await page.waitForTimeout(1200);
+    await wait(page, 1200);
     await page.keyboard.up(k);
     if (s === 3) {
       await page.keyboard.press('Tab');
-      await page.waitForTimeout(800);
+      await wait(page, 800);
       await page.keyboard.press('Escape');
     }
     if (s === 6) {
       await page.keyboard.press('KeyI');
-      await page.waitForTimeout(800);
+      await wait(page, 800);
       await page.keyboard.press('Escape');
     }
-    await page.waitForTimeout(1800);
+    await wait(page, 1800);
   }
   expect(errors).toEqual([]);
 });
 
 test('the single-file build runs from file:// and inside a sandboxed iframe', async ({ page }) => {
   const errors = collectErrors(page);
-  const file = pathToFileURL(resolve('dist/index.html')).href;
+  const file = pathToFileURL(resolve('dist/index.html')).href + Q;
   await page.goto(file);
   await expect(page.locator('.logo')).toContainText('Light Crossing');
   await newGame(page);
-  await page.waitForTimeout(1500);
+  await wait(page, 1500);
   expect(errors).toEqual([]);
 
   // sandboxed iframe without allow-same-origin: localStorage throws, saving falls back to memory
@@ -86,6 +103,6 @@ test('the single-file build runs from file:// and inside a sandboxed iframe', as
   await expect(frame.getByText('Saving is unavailable')).toBeVisible();
   await frame.getByText('New Game').first().click();
   await frame.getByRole('button', { name: 'Set sail!' }).click();
-  await page.waitForTimeout(3000);
+  await wait(page, 3000);
   expect(errors).toEqual([]);
 });

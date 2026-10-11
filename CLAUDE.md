@@ -12,6 +12,11 @@ all audio is Web Audio synthesis, no web fonts, no network requests.
 - `npm run e2e` — Playwright smoke test (`e2e/`), runs against `vite preview` of the built file.
 - `npm run pacing` — pacing simulation (`scripts/pacing.ts`) estimating minutes per chapter.
 - `npm run analyze-playtests -- <folder>` — compare playtest exports with the pacing model.
+- `npm run size` — fail if `dist/index.html` is over 2 MB. `npm run readability` — reading-level report.
+- `npm run bench` — headless GPU benchmark of Low/Medium/High (`scripts/bench.ts`, 2× screen, uncapped fps) →
+  `bench-results.json`. Options `--size WxH --dpr N --vsync --out f.json`.
+- `npm run e2e:low` / `E2E_LOW=1` — e2e at `?quality=low` with longer waits (standard CI runners);
+  `E2E_SOFTWARE=1` forces SwiftShader on a Mac to rehearse the CI job.
 
 ## Architecture (logic decoupled from rendering)
 - `src/core/` — seeded RNG (`Rng`, `hashInts`, `dayRng`), value noise, typed `EventBus`, math helpers.
@@ -228,13 +233,22 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
     through the main renderer into a render target (no second WebGL context); interior rooms dispose their GPU
     resources on rebuild/exit (`InteriorView.release`).
 
+- Phase 9 done: CI (see `docs/CI.md`; nothing pushed — the repo has no remote yet).
+  - `.github/workflows/ci.yml`: ubuntu-latest, push to main/lightcrossing-upgrade + same-repo PRs into main (fork
+    PRs skipped) → typecheck, build, size, unit tests, `pacing --check`, `E2E_LOW=1` e2e on SwiftShader; report +
+    traces uploaded on failure.
+  - `.github/workflows/gpu-e2e.yml`: `[self-hosted, macOS, ARM64, gpu]`, push + workflow_dispatch only (never PRs),
+    refuses to run if the repo is public; normal-quality e2e on Metal + `npm run bench` (artifact + step summary).
+  - Both: `permissions: contents: read`, `persist-credentials: false`, actions pinned by SHA. Lint with `actionlint`
+    (`.github/actionlint.yaml` declares the `gpu` label).
+
 ## Verification checklist
-`npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
+`npm run typecheck && npm test && npm run build && npm run size && npm run e2e && npm run pacing`
 (217 unit tests incl. full new-game → festival playthroughs, one per season, and the readability check; 2 e2e tests.)
 
 ## Known issues / limitations
 - Pacing is a model estimate (scripts/pacing.ts), not measured with real players.
-- Off macOS, headless e2e falls back to SwiftShader (very slow but functional).
+- Off macOS, headless e2e falls back to SwiftShader (slow): CI uses `E2E_LOW=1` for that.
 - `npm audit` flags `braces` via vite-plugin-singlefile → micromatch (dev-only build dependency).
 - Audio starts after the first user gesture (browser autoplay policy).
 

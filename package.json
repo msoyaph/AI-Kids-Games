@@ -14,7 +14,11 @@
     "e2e": "playwright test",
     "verify": "npm run typecheck && npm test && npm run e2e",
     "pacing": "tsx scripts/pacing.ts",
-    "analyze-playtests": "tsx scripts/analyze-playtests.ts"
+    "analyze-playtests": "tsx scripts/analyze-playtests.ts",
+    "bench": "tsx scripts/bench.ts",
+    "readability": "tsx scripts/readability.ts",
+    "size": "tsx scripts/check-size.ts",
+    "e2e:low": "E2E_LOW=1 playwright test"
   },
   "dependencies": {
     "three": "^0.186.1"
