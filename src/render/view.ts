@@ -16,6 +16,7 @@ import { AgentView } from './agents';
 import { PlacementView } from './placement';
 import { FestivalScene, LighthouseBeam } from './cutscene';
 import { agents as agentsOf } from '../sim/agents';
+import { Particles } from './particles';
 import { setThumbProvider } from '../ui/icons';
 import { LEVEL_HEIGHT } from '../world/types';
 
@@ -30,6 +31,7 @@ export class GameView {
   critters!: CritterView;
   agents!: AgentView;
   placement!: PlacementView;
+  particles!: Particles;
   festival = new FestivalScene();
   beam = new LighthouseBeam();
   onFestivalEnd: (() => void) | null = null;
@@ -118,7 +120,8 @@ export class GameView {
     this.critters = new CritterView(game);
     this.agents = new AgentView(game);
     this.placement = new PlacementView(game);
-    this.islandRoot.add(this.terrain.group, this.water.mesh, this.objects.group, this.structGroup, this.critters.group, this.agents.group, this.placement.group, this.festival.group, this.beam.pivot);
+    this.particles = new Particles(game);
+    this.islandRoot.add(this.terrain.group, this.water.mesh, this.objects.group, this.structGroup, this.critters.group, this.agents.group, this.placement.group, this.festival.group, this.beam.pivot, this.particles.group);
     this.objects.rebuild();
     this.syncStructures();
     this.rebuildPlayer();
@@ -257,6 +260,7 @@ export class GameView {
     this.critters.frame(dt, this.rig.target, this.sky.night);
     this.agents.frame(dt);
     this.beam.frame(g, this.time, this.sky.night);
+    this.particles.frame(dt, this.sky.night, this.rig.target);
     this.placement.frame();
     this.sky.update(g.state.clock.minute, g.state.weather.today, this.rig.target);
     this.renderer.render(this.scene, this.rig.camera);

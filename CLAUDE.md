@@ -83,6 +83,10 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   construction (sim/build.ts), region-visit tracking. Full playthrough test reaches the finale
   (tests/fullgame.test.ts).
 
+- Phase 9 done: Web Audio engine (src/audio/engine.ts: synthesized SFX, generative music by time/weather/
+  location, waves/rain/critter ambience, dialogue blips), particles (dust/leaves/chips/dirt/splash/sparkle,
+  fireflies), onboarding tips (data/tips.ts), touch controls, tool ring, adaptive pixel ratio, fades.
+
 ## Story / quest notes
 - Missions auto-start when `requires` are done and `minDay` reached, unless `startTalk` (then the giver
   shows the intro when talked to). Talk/deliver objectives surface through `talkScene`/`questOptions`, which

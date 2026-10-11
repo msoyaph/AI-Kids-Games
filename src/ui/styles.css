@@ -247,3 +247,20 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6
 .badge.t2 { background: #a8b4c4; }
 .badge.t3 { background: #f5c24d; }
 .contest-hud { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); padding: 8px 18px; border-radius: 999px; background: #fff6e0; border: 3px solid var(--gold); font-weight: 900; font-size: 17px; box-shadow: var(--shadow); z-index: 4; pointer-events: none; }
+/* ---------- tips / touch / ring ---------- */
+.tip { position: absolute; left: 12px; bottom: max(70px, calc(env(safe-area-inset-bottom) + 70px)); max-width: min(360px, 80vw); padding: 12px 16px; border-radius: 18px; background: #fffdf2; border: 3px solid var(--gold); box-shadow: var(--shadow); font-size: 14px; font-weight: 600; z-index: 6; cursor: pointer; animation: toastIn 0.35s cubic-bezier(.3,1.5,.5,1); }
+.tip-title { font-weight: 900; color: #c98a1a; margin-bottom: 4px; }
+.touch { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.tc-pad { position: absolute; left: 0; bottom: 0; width: 50%; height: 60%; pointer-events: auto; }
+.tc-stick { position: absolute; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; background: rgba(255,255,255,0.25); border: 3px solid rgba(255,255,255,0.6); display: none; pointer-events: none; }
+.tc-stick.on { display: block; }
+.tc-knob { position: absolute; left: 30px; top: 30px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,250,240,0.85); }
+.tc-buttons { position: absolute; right: 14px; bottom: max(110px, calc(env(safe-area-inset-bottom) + 110px)); display: grid; grid-template-columns: repeat(3, 58px); gap: 10px; pointer-events: auto; }
+.tc-btn { width: 58px; height: 58px; border-radius: 50%; border: none; background: rgba(255,250,240,0.88); box-shadow: var(--shadow); font-weight: 900; font-family: var(--font); color: var(--ink); font-size: 14px; }
+.tc-btn.a { background: var(--teal); color: #fff; font-size: 20px; grid-column: 3; grid-row: 2; }
+.tc-btn.b { background: var(--pink); color: #fff; font-size: 20px; grid-column: 2; grid-row: 2; }
+.ring { position: absolute; inset: 0; }
+.ring-btn { position: absolute; transform: translate(-50%, -50%); width: 92px; height: 92px; border-radius: 50%; border: 3px solid var(--line); background: var(--cream); box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-family: var(--font); color: var(--ink); font-weight: 800; outline: none; }
+.ring-btn .icon { width: 46px; height: 46px; }
+.ring-btn.focus, .ring-btn:hover { border-color: var(--gold); transform: translate(-50%, -50%) scale(1.08); }
+.fade.quick { transition: opacity 0.16s ease; }

@@ -11,8 +11,14 @@ import { talkToNpc, talkToVillager } from './conversation';
 export function registerPanels(app: App): void {
   const P = app.panels;
   const g = () => app.game!;
-  P.craft = () => app.ui.push(new CraftPanel(app.ui, g()));
-  P.shop = () => app.ui.push(new ShopPanel(app.ui, g()));
+  P.craft = () => {
+    app.tip('craft');
+    app.ui.push(new CraftPanel(app.ui, g()));
+  };
+  P.shop = () => {
+    app.tip('shop');
+    app.ui.push(new ShopPanel(app.ui, g()));
+  };
   P.hall = () => app.ui.push(new HallPanel(app.ui, g(), app.hallExtras()));
   P.storage = () => app.ui.push(new StoragePanel(app.ui, g()));
   P.museumDesk = () => app.ui.push(new MuseumPanel(app.ui, g()));

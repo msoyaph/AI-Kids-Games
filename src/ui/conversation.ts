@@ -33,7 +33,7 @@ export function speakerFor(id: string, playerName = ''): Speaker {
 }
 
 export function makeBox(app: App, id: string): DialogueBox {
-  return new DialogueBox(app.ui, speakerFor(id, app.game?.state.player.name), () => TEXT_CPS[app.settings.textSpeed], (v) => app.audio?.blip(v));
+  return new DialogueBox(app.ui, speakerFor(id, app.game?.state.player.name), () => TEXT_CPS[app.settings.textSpeed], (v) => app.audio.blip(v));
 }
 
 function pickItem(app: App, g: Game, title: string, filter: (id: string) => boolean): Promise<number | null> {

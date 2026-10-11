@@ -24,6 +24,13 @@ import { questRT } from './sim/quests';
 import { Phone } from './ui/phone';
 import { settingsBody, settingsPanel } from './ui/settings';
 import { runFinale } from './ui/finale';
+import { AudioEngine } from './audio/engine';
+import { TipManager } from './ui/tips';
+import { TouchControls } from './ui/touch';
+import { toolRing } from './ui/toolring';
+import { phaseOf } from './sim/clock';
+import { Ground } from './world/types';
+import { tileOf } from './sim/player';
 import { ContestHud, LumenPanel } from './ui/journal';
 import { BUILD_COSTS, canAfford, startBuildPlacement } from './sim/build';
 import { MEDAL_PRIZES, CONTESTS } from './data/challenges';
@@ -42,6 +49,8 @@ export class App {
   private reel: ReelBar;
   private tracker: QuestTracker;
   private contestHud: ContestHud;
+  private tips: TipManager;
+  private touch: TouchControls;
   readonly saves = new SaveManager();
   settings: Settings;
   game: Game | null = null;
@@ -52,8 +61,8 @@ export class App {
   private autosaveT = 0;
   private fadeEl = h('div', { class: 'fade' });
   private last = performance.now();
-  /** audio engine (set in phase 9) */
-  audio: { blip(voice: number): void } | null = null;
+  readonly audio = new AudioEngine();
+  private stepOdo = 0;
   /** story layer hooks into conversations */
   talkHooks: TalkHooks = { intro: async () => false, options: () => [] };
   /** panel factories other modules can open via game.ui.open */
@@ -76,12 +85,19 @@ export class App {
     this.reel = new ReelBar(root);
     this.tracker = new QuestTracker(root);
     this.contestHud = new ContestHud(root);
+    this.tips = new TipManager(this, root);
+    this.touch = new TouchControls(this, root);
     document.body.appendChild(this.fadeEl);
     this.applySettings();
     this.demo = createGame(newGameState(TITLE_SEED, 'Demo'));
     this.demo.state.clock.minute = 17.5 * 60;
     this.demo.mode = 'cutscene';
     this.ui.onChange = () => this.syncMode();
+    this.ui.sfx = (n) => this.audio.play(n);
+    const unlock = () => this.audio.unlock();
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    window.addEventListener('touchstart', unlock);
     registerPanels(this);
     installStory(this);
     this.panels.phone = (start) => this.game && this.ui.push(new Phone(this.ui, this, start as string | undefined));
@@ -89,6 +105,7 @@ export class App {
     this.panels.settingsInline = (body) => settingsBody(this, body as HTMLElement);
     this.panels.credits = () => this.titleCredits();
     this.panels.lumens = () => this.game && this.ui.push(new LumenPanel(this.ui, this.game));
+    this.panels.toolRing = () => this.game && this.ui.push(toolRing(this));
     this.hallHooks.push(() => {
       const g = this.game!;
       const q = g.state.quests;
@@ -122,6 +139,7 @@ export class App {
   }
 
   applySettings(): void {
+    this.audio.setVolumes(this.settings.master, this.settings.music, this.settings.sfx);
     this.view.rig.settings = { ...this.settings.camera };
     sharedUniforms.uCurveK.value = 0.0068 * this.settings.curve;
     this.view.sky.setShadows(this.settings.shadows);
@@ -244,11 +262,18 @@ export class App {
     });
     g.ui.open = (panel, arg) => this.panels[panel]?.(arg);
     g.bus.on('toast', (t) => this.hud.toast(t.text, t.kind, t.item));
+    g.bus.on('sfx', (e) => this.audio.play(e.name, { vol: e.vol, pitch: e.pitch }));
+    g.bus.on('location', () => {
+      this.fadeEl.classList.add('quick', 'on');
+      setTimeout(() => this.fadeEl.classList.remove('on'), 160);
+      setTimeout(() => this.fadeEl.classList.remove('quick'), 500);
+    });
     g.bus.on('dayStarted', () => this.saveNow(true));
     g.bus.on('fx', (f) => {
       if (f.kind === 'pop' && f.item) this.floatIcon(f.item, f.x, f.y + 1.6, f.z);
     });
     this.autosaveT = 0;
+    this.tips.bind(g);
     this.onEnterGame?.(g);
   }
 
@@ -275,6 +300,10 @@ export class App {
         onQuit: () => this.quitToTitle(),
       }),
     );
+  }
+
+  tip(id: string): void {
+    if (this.game) this.tips.trigger(this.game, id);
   }
 
   titleCredits(): void {
@@ -328,6 +357,7 @@ export class App {
         g.act();
         break;
       case 'inventory':
+        this.tip('inventory');
         this.ui.push(new InventoryPanel(this.ui, g));
         break;
       case 'pause':
@@ -364,9 +394,22 @@ export class App {
     for (let k = 0; k < frames; k++) this.tick(dt, k === frames - 1);
   }
 
+  private slowT = 0;
+  private pixelRatio = Math.min(2, window.devicePixelRatio || 1);
+
   private loop(now: number): void {
-    const dt = Math.min(0.05, (now - this.last) / 1000);
+    const raw = (now - this.last) / 1000;
+    const dt = Math.min(0.05, raw);
     this.last = now;
+    // adaptive resolution: drop pixel ratio if frames stay slow
+    if (raw > 0.024 && raw < 0.25) this.slowT += raw;
+    else this.slowT = Math.max(0, this.slowT - raw * 0.5);
+    if (this.slowT > 3 && this.pixelRatio > 1) {
+      this.pixelRatio = Math.max(1, this.pixelRatio - 0.25);
+      this.view.renderer.setPixelRatio(this.pixelRatio);
+      this.view.resize();
+      this.slowT = 0;
+    }
     this.tick(dt, true);
     requestAnimationFrame((t) => this.loop(t));
   }
@@ -390,10 +433,45 @@ export class App {
       this.reel.update(g);
       this.tracker.update(this);
       this.contestHud.update(g);
+      this.tips.update(dt, g);
       pumpInbox(this);
     } else {
       this.demo.update(dt, null);
     }
     if (render) this.view.frame(dt);
+    this.touch.update();
+    this.updateAudio(dt);
+  }
+
+  private updateAudio(dt: number): void {
+    const a = this.audio;
+    a.update();
+    const g = this.game;
+    if (!g || this.mode !== 'game') {
+      a.setMood('title');
+      a.setAmbience(false, 0.6, 0.2, this.view.time);
+      return;
+    }
+    const s = g.state;
+    const night = this.view.sky.night;
+    if (this.view.festival.active) a.setMood('festival');
+    else if (s.player.location !== 'island') a.setMood('indoor');
+    else if (s.weather.today === 'rain') a.setMood('rain');
+    else a.setMood(phaseOf(s.clock.minute) === 'night' ? 'night' : phaseOf(s.clock.minute));
+    const tile = tileOf(g.world, s.player.x, s.player.z);
+    const seaNear = s.player.location === 'island' ? Math.max(0, 1 - g.world.gen.oceanDist[tile]! / 9) : 0;
+    a.setAmbience(s.weather.today === 'rain' && s.player.location === 'island', seaNear, night, this.view.time);
+    // footsteps + dust
+    const odo = g.motion.odometer;
+    const stride = g.motion.running ? 1.1 : 0.85;
+    if (s.player.location === 'island' && odo - this.stepOdo > stride) {
+      this.stepOdo = odo;
+      const gr = g.world.ground(tile);
+      const st = g.world.structure(tile);
+      a.play(st && (st.type === 'bridge' || st.type === 'dock') ? 'stepWood' : gr === Ground.Sand ? 'stepSand' : 'step', { pitch: 0.9 + Math.random() * 0.2 });
+      if (g.motion.running || gr === Ground.Sand || gr === Ground.Dirt)
+        g.emit('fx', { kind: 'dust', x: s.player.x, y: g.world.surfaceY(s.player.x, s.player.z), z: s.player.z, color: gr === Ground.Sand ? 0xf3e2b6 : gr === Ground.Dirt ? 0xd9bf98 : 0xd8e8c8 });
+    } else if (odo < this.stepOdo) this.stepOdo = odo;
+    void dt;
   }
 }

@@ -86,7 +86,7 @@ function chapterBanner(app: App, title: string): Promise<void> {
   return new Promise((res) => {
     const el = h('div', { class: 'chapter-banner' }, h('div', { class: 'cb-small' }, 'A new chapter begins'), h('div', { class: 'cb-title' }, title));
     document.getElementById('ui')!.appendChild(el);
-    app.audio?.blip(0.6);
+    app.audio.play('quest');
     setTimeout(() => el.classList.add('out'), 2600);
     setTimeout(() => {
       el.remove();
