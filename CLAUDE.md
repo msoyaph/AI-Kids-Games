@@ -215,7 +215,7 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
 
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
-(202 unit tests incl. full new-game → festival playthroughs, one per season; 2 e2e tests.)
+(212 unit tests incl. full new-game → festival playthroughs, one per season, and the readability check; 2 e2e tests.)
 
 ## Known issues / limitations
 - Pacing is a model estimate (scripts/pacing.ts), not measured with real players.
