@@ -48,7 +48,13 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
 - Items: `src/data/registry.ts` merges all content into `ITEMS`; `item(id)` lookup. Icons are canvas-drawn
   (`src/ui/icons.ts`), furniture can use 3D thumbnails via `setThumbProvider`.
 - Save: `src/sim/save.ts` — `SafeStorage` (try/catch + memory fallback), `SaveManager` (3 slots + settings),
-  `MIGRATIONS[v]` upgrade chain, `SAVE_VERSION` in state.ts. Bump version + add migration on schema changes.
+  `MIGRATIONS[v]` upgrade chain, `SAVE_VERSION` in state.ts (now 3). Bump version + add migration on schema changes.
+  On-disk `format: 2` stores `world.objects` compactly (`encodeObjects`: string table + delta tile records);
+  `decodeSave` still reads plain-JSON v1/v2 files. Writes go through `SafeStorage.put` → `'ok'|'memory'|'quota'|'error'`:
+  verified by read-back, quota errors drop expendable `playtest.*` keys and retry; a failed write never touches
+  the previous value (`app.saveNow` shows a kid-friendly "Storage is full" notice once). Budget: `SLOT_BUDGET`
+  300 KB/slot (fresh ≈7 KB, maxed synthetic ≈151 KB — tests/storage.test.ts). All keys use the `lightcrossing.` prefix.
+  `tests/fixtures/save-v2-*.json` are real v2 saves from `main` — never recapture them.
 - UI: `UIManager` panel stack (modal panels pause the clock via game.mode='menu'), spatial focus nav for
   keyboard/gamepad (`[data-nav]` elements), `covers` panels hide those beneath.
 
@@ -93,9 +99,14 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
 - Post-phase QA fixes: ramp landing collision, delivery flow, festival framing, item ground models,
   notice board notes.
 
+## Upgrade branch (`lightcrossing-upgrade`) — plan in phases 0–10, one commit each
+- Phase 0 done: v2 save fixtures, before screenshots (`scripts/screenshots.ts` → docs/screenshots/before/,
+  GPU Chromium + vite dev server; `npx tsx scripts/screenshots.ts --out <dir> [--scenes a,b] [--quality q]`),
+  compact save format v3 + quota/verify handling + storage budget tests.
+
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
-(117 unit tests incl. a full new-game → festival playthrough; 2 e2e tests.)
+(129 unit tests incl. a full new-game → festival playthrough; 2 e2e tests.)
 
 ## Known issues / limitations
 - Villager homes, the shop and Lantern Hall have no walk-in interiors (conversation + panels instead).

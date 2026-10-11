@@ -2,7 +2,7 @@
 import { generateIsland } from '../world/worldgen';
 import { WORLD_SIZE } from '../world/types';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export type ObjKind =
   | 'tree'

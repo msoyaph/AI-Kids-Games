@@ -110,3 +110,32 @@ export function confirmPanel(ui: UIManager, text: string, yes: () => void, no?: 
   p.el.appendChild(box);
   ui.push(p);
 }
+
+/** One-button notice (e.g. storage full). */
+export function noticePanel(ui: UIManager, title: string, text: string, ok = 'OK', onClose?: () => void): void {
+  const close = () => {
+    ui.pop(p);
+    onClose?.();
+  };
+  const p: Panel = {
+    modal: true,
+    el: h('div', { class: 'screen', style: 'z-index:10' }, h('div', { class: 'dim' })),
+    command(c) {
+      if (c === 'back' || c === 'cancel') {
+        close();
+        return true;
+      }
+      return false;
+    },
+  };
+  p.el.appendChild(
+    h(
+      'div',
+      { class: 'panel center notice', style: 'padding:22px;max-width:440px;text-align:center' },
+      h('div', { style: 'font-weight:800;font-size:20px;margin-bottom:10px' }, title),
+      h('div', { style: 'font-size:16px;line-height:1.45;margin-bottom:18px' }, text),
+      h('div', { class: 'row', style: 'justify-content:center' }, btn(ok, close, 'primary')),
+    ),
+  );
+  ui.push(p);
+}

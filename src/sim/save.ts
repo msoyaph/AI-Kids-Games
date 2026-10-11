@@ -1,8 +1,18 @@
-// Save slots (3), versioned save files with a migration chain, and storage that never throws.
-import { SAVE_VERSION, type Appearance, type GameState } from './state';
+// Save slots (3), versioned save files with a migration chain, a compact on-disk format,
+// and storage that never throws (and never corrupts an existing save when the quota is full).
+import { SAVE_VERSION, type Appearance, type GameState, type TileObj } from './state';
 
 export const SLOT_COUNT = 3;
-const PREFIX = 'lightcrossing.';
+export const PREFIX = 'lightcrossing.';
+/** Storage budget per save slot (bytes, UTF-16 code units stored by localStorage ≈ string length). */
+export const SLOT_BUDGET = 300 * 1024;
+/** On-disk format: 1 = plain JSON state, 2 = compact world objects. */
+export const SAVE_FORMAT = 2;
+
+export type WriteResult = 'ok' | 'memory' | 'quota' | 'error';
+
+/** Keys that hold optional data we may drop to make room for a real save. */
+const EXPENDABLE = [/^playtest\./];
 
 /** localStorage wrapper: every access is guarded; falls back to memory (e.g. sandboxed iframes). */
 export class SafeStorage {
@@ -14,7 +24,7 @@ export class SafeStorage {
   static detect(): Storage | null {
     try {
       if (typeof localStorage === 'undefined') return null;
-      const k = '__lc_probe__';
+      const k = PREFIX + '__probe';
       localStorage.setItem(k, '1');
       localStorage.removeItem(k);
       return localStorage;
@@ -31,16 +41,61 @@ export class SafeStorage {
     return this.mem.get(key) ?? null;
   }
   set(key: string, value: string): boolean {
+    return this.put(key, value) === 'ok';
+  }
+
+  /**
+   * Write a value. localStorage.setItem is atomic, so a failed write leaves the previous value
+   * untouched. Quota errors free expendable keys (playtest logs) and retry once; the write is
+   * verified by reading it back.
+   */
+  put(key: string, value: string): WriteResult {
     this.mem.set(key, value);
-    try {
-      if (this.backing) {
-        this.backing.setItem(PREFIX + key, value);
-        return true;
+    if (!this.backing) return 'memory';
+    const attempt = (): WriteResult => {
+      try {
+        this.backing!.setItem(PREFIX + key, value);
+        return this.backing!.getItem(PREFIX + key) === value ? 'ok' : 'error';
+      } catch (e) {
+        return isQuotaError(e) ? 'quota' : 'error';
       }
-    } catch {
-      return false;
+    };
+    let r = attempt();
+    if (r === 'quota' && this.freeExpendable(key) > 0) r = attempt();
+    return r;
+  }
+
+  /** Remove optional data (never save slots or settings). Returns how many keys were removed. */
+  freeExpendable(except = ''): number {
+    let n = 0;
+    for (const k of this.keys()) {
+      if (k === except || !EXPENDABLE.some((re) => re.test(k))) continue;
+      this.remove(k);
+      n++;
     }
-    return false;
+    return n;
+  }
+
+  /** Our own keys (without the prefix). */
+  keys(): string[] {
+    const out = new Set<string>(this.mem.keys());
+    try {
+      if (this.backing)
+        for (let i = 0; i < this.backing.length; i++) {
+          const k = this.backing.key(i);
+          if (k && k.startsWith(PREFIX)) out.add(k.slice(PREFIX.length));
+        }
+    } catch {
+      /* ignore */
+    }
+    return [...out];
+  }
+
+  /** Approximate bytes used by our keys (localStorage stores UTF-16; we report string length). */
+  usage(): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const k of this.keys()) out[k] = (this.get(k) ?? '').length + PREFIX.length + k.length;
+    return out;
   }
   remove(key: string): void {
     this.mem.delete(key);
@@ -66,8 +121,107 @@ export interface SaveMeta {
 export interface SaveFile {
   version: number;
   savedAt: number;
+  /** on-disk format (absent = 1) */
+  format?: number;
   meta: SaveMeta;
   state: GameState;
+}
+
+export function isQuotaError(e: unknown): boolean {
+  const err = e as { name?: string; code?: number } | null;
+  return !!err && (err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED' || err.code === 22 || err.code === 1014);
+}
+
+// ---------------------------------------------------------------- compact world objects
+// world.objects is stored as { t: [strings], o: records } where records are
+// "<tile delta base36>:<kind code>[,<field>=<value>...]" joined by ';' (tiles ascending).
+// Numbers are written plain; strings are "'" + their index (base36) in the string table, so
+// repeated item ids cost a few bytes and any future field round-trips without a schema.
+export interface CompactObjects {
+  t: string[];
+  o: string;
+}
+const KIND_CODE: Record<string, string> = {
+  tree: 't', pine: 'p', palm: 'm', fruitTree: 'f', sapling: 's', rock: 'r', flower: 'w', weed: 'e', item: 'i', dig: 'd', hole: 'h', deco: 'c',
+};
+const CODE_KIND: Record<string, string> = Object.fromEntries(Object.entries(KIND_CODE).map(([k, v]) => [v, k]));
+/** Short names for multi-letter fields (single letters are stored as-is). */
+const FIELD_CODE: Record<string, string> = { item: 'i', tag: 't', pd: 'p', nx: 'x', nz: 'z' };
+const CODE_FIELD: Record<string, string> = Object.fromEntries(Object.entries(FIELD_CODE).map(([k, v]) => [v, k]));
+const SAFE_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
+
+export function encodeObjects(objs: Record<number, TileObj>): CompactObjects {
+  const table: string[] = [];
+  const index = new Map<string, number>();
+  const str = (v: string) => {
+    let n = index.get(v);
+    if (n === undefined) {
+      n = table.length;
+      table.push(v);
+      index.set(v, n);
+    }
+    return "'" + n.toString(36);
+  };
+  const parts: string[] = [];
+  let prev = 0;
+  for (const tile of Object.keys(objs).map(Number).sort((a, b) => a - b)) {
+    const o = objs[tile]! as unknown as Record<string, unknown>;
+    const kind = String(o.k);
+    let rec = `${(tile - prev).toString(36)}:${KIND_CODE[kind] ?? str(kind)}`;
+    prev = tile;
+    for (const f in o) {
+      const v = o[f];
+      if (f === 'k' || v === undefined || v === null || !SAFE_NAME.test(f)) continue;
+      rec += `,${FIELD_CODE[f] ?? f}=${typeof v === 'number' ? v : str(String(v))}`;
+    }
+    parts.push(rec);
+  }
+  return { t: table, o: parts.join(';') };
+}
+
+export function decodeObjects(c: CompactObjects): Record<number, TileObj> {
+  const out: Record<number, TileObj> = {};
+  if (!c || !c.o) return out;
+  const val = (raw: string): string | number => (raw[0] === "'" ? c.t[parseInt(raw.slice(1), 36)]! : Number(raw));
+  let tile = 0;
+  for (const rec of c.o.split(';')) {
+    const colon = rec.indexOf(':');
+    if (colon < 0) continue;
+    tile += parseInt(rec.slice(0, colon), 36);
+    const fields = rec.slice(colon + 1).split(',');
+    const code = fields[0]!;
+    const o: Record<string, unknown> = { k: code[0] === "'" ? val(code) : (CODE_KIND[code] ?? code) };
+    for (let i = 1; i < fields.length; i++) {
+      const eq = fields[i]!.indexOf('=');
+      if (eq <= 0) continue;
+      const name = fields[i]!.slice(0, eq);
+      o[CODE_FIELD[name] ?? name] = val(fields[i]!.slice(eq + 1));
+    }
+    out[tile] = o as unknown as TileObj;
+  }
+  return out;
+}
+
+/** Serialize a state for storage (compact format). */
+export function encodeSave(state: GameState, savedAt = Date.now()): string {
+  const { world, ...rest } = state;
+  const compactState = { ...rest, world: { ...world, objects: encodeObjects(world.objects) } };
+  return JSON.stringify({ version: SAVE_VERSION, format: SAVE_FORMAT, savedAt, meta: { ...metaOf(state), savedAt }, state: compactState });
+}
+
+/** Parse a stored save (any format, any known version) into a current GameState. */
+export function decodeSave(raw: string): GameState {
+  const file = JSON.parse(raw);
+  // Accept wrapped files and bare legacy states.
+  const st = file && file.state ? { ...file.state, version: file.state.version ?? file.version } : file;
+  const objs = st?.world?.objects;
+  if (objs && typeof objs.o === 'string' && Array.isArray(objs.t)) st.world = { ...st.world, objects: decodeObjects(objs) };
+  return migrate(st);
+}
+
+/** Bytes a state would take in its slot. */
+export function measureSave(state: GameState): number {
+  return encodeSave(state, 0).length;
 }
 
 /**
@@ -100,6 +254,8 @@ export const MIGRATIONS: Record<number, (s: any) => any> = {
       },
     };
   },
+  // v2 → v3 (upgrade release): new fields are added by fillDefaults; nothing existing changes shape.
+  2: (s) => ({ ...s, version: 3 }),
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -129,6 +285,11 @@ function fillDefaults(s: GameState): GameState {
   s.catalog ??= { seen: {}, owned: {} };
   s.museum ??= { donated: [] };
   s.shop ??= { day: 0, sold: [] };
+  s.events ??= { best: {}, medals: {}, active: null };
+  s.events.best ??= {};
+  s.events.medals ??= {};
+  s.events.active ??= null;
+  s.challenges ??= { day: 0, list: [], completedTotal: 0 };
   s.home.storage ??= [];
   s.home.furniture ??= [];
   s.world.objects ??= {};
@@ -157,23 +318,30 @@ export class SaveManager {
     return `slot${slot}`;
   }
 
+  /** Size (chars) of the last successful write per slot. */
+  lastSize: Record<number, number> = {};
+
   write(slot: number, state: GameState): boolean {
-    const file: SaveFile = { version: SAVE_VERSION, savedAt: Date.now(), meta: metaOf(state), state };
+    return this.writeResult(slot, state) === 'ok';
+  }
+
+  writeResult(slot: number, state: GameState): WriteResult {
+    let data: string;
     try {
-      return this.storage.set(this.key(slot), JSON.stringify(file));
+      data = encodeSave(state);
     } catch {
-      return false;
+      return 'error';
     }
+    const r = this.storage.put(this.key(slot), data);
+    if (r === 'ok' || r === 'memory') this.lastSize[slot] = data.length;
+    return r;
   }
 
   read(slot: number): { ok: true; state: GameState } | { ok: false; error: string } {
     const raw = this.storage.get(this.key(slot));
     if (!raw) return { ok: false, error: 'empty' };
     try {
-      const file = JSON.parse(raw);
-      // Accept both wrapped files and bare legacy states.
-      const state = file && file.state ? { ...file.state, version: file.state.version ?? file.version } : file;
-      return { ok: true, state: migrate(state) };
+      return { ok: true, state: decodeSave(raw) };
     } catch (e) {
       return { ok: false, error: (e as Error).message };
     }
@@ -185,8 +353,7 @@ export class SaveManager {
     try {
       const file = JSON.parse(raw);
       if (file?.meta) return file.meta as SaveMeta;
-      const st = file?.state ?? file;
-      return st?.player ? metaOf(migrate(st)) : null;
+      return file?.player || file?.state?.player ? metaOf(decodeSave(raw)) : null;
     } catch {
       return null;
     }
@@ -211,7 +378,7 @@ export class SaveManager {
     }
   }
 
-  saveSettings(s: object): void {
-    this.storage.set('settings', JSON.stringify(s));
+  saveSettings(s: object): WriteResult {
+    return this.storage.put('settings', JSON.stringify(s));
   }
 }

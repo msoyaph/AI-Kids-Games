@@ -4,7 +4,7 @@ import { GameView } from './render/view';
 import { item } from './data/registry';
 import type { Game } from './sim/game';
 import { newGameState, DEFAULT_LOOK, type Appearance } from './sim/state';
-import { SaveManager } from './sim/save';
+import { SaveManager, type WriteResult } from './sim/save';
 import { createGame } from './sim/systems';
 import { cycleTool, equipKind, putAway, TOOL_ORDER } from './sim/tools';
 import { DEFAULT_SETTINGS, type Settings } from './settings';
@@ -15,7 +15,7 @@ import { InventoryPanel } from './ui/inventory';
 import { ReelBar } from './ui/fishing';
 import { CreatorScreen } from './ui/screens/creator';
 import { controlsPanel, PauseMenu } from './ui/screens/pause';
-import { confirmPanel, SlotScreen } from './ui/screens/slots';
+import { confirmPanel, noticePanel, SlotScreen } from './ui/screens/slots';
 import { TitleScreen } from './ui/screens/title';
 import { registerPanels } from './ui/register';
 import { sharedUniforms } from './render/curve';
@@ -277,10 +277,27 @@ export class App {
     this.onEnterGame?.(g);
   }
 
+  /** Last non-ok save result we already told the player about (so autosaves don't nag). */
+  private saveWarned: WriteResult | '' = '';
+
   saveNow(quiet = false): boolean {
     if (!this.game || this.slot < 0 || this.mode !== 'game') return false;
-    const ok = this.saves.write(this.slot, this.game.state);
-    if (!quiet) this.hud.toast(ok ? 'Game saved.' : 'Saving is unavailable here — progress will be lost when the page closes.', ok ? 'good' : 'warn');
+    const r = this.saves.writeResult(this.slot, this.game.state);
+    const ok = r === 'ok';
+    if (ok) {
+      this.saveWarned = '';
+      if (!quiet) this.hud.toast('Game saved.', 'good');
+    } else if (r === 'quota') {
+      if (!quiet || this.saveWarned !== r)
+        noticePanel(
+          this.ui,
+          'Storage is full',
+          'There is no room to save right now. Your last save is safe! Ask a grown-up to clear some space for this site, then save again.',
+        );
+    } else if (!quiet || this.saveWarned !== r) {
+      this.hud.toast(r === 'memory' ? 'Saving is unavailable here — progress will be lost when the page closes.' : 'Could not save just now. Your last save is safe.', 'warn');
+    }
+    if (!ok) this.saveWarned = r;
     this.hud.saving.classList.add('on');
     setTimeout(() => this.hud.saving.classList.remove('on'), 900);
     return ok;
