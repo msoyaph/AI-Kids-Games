@@ -1,0 +1,192 @@
+/* Calex Cart UI. System fonts only (no web fonts). */
+:root {
+  --ink: #1d1250;
+  --ink2: #2b1d6b;
+  --panel: rgba(29, 18, 80, 0.86);
+  --panel2: rgba(58, 38, 150, 0.92);
+  --yellow: #ffd23f;
+  --pink: #ff6fae;
+  --teal: #4ce0d2;
+  --green: #8cff6b;
+  --red: #ff4d6d;
+  --blue: #3fa7ff;
+  --white: #ffffff;
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --font: "Trebuchet MS", "Segoe UI", "Arial Rounded MT Bold", system-ui, -apple-system, sans-serif;
+}
+
+#ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font);
+  color: var(--white);
+  overflow: hidden;
+}
+#ui > * {
+  pointer-events: auto;
+}
+.hidden {
+  display: none !important;
+}
+
+/* ---------------- Touch controls ---------------- */
+.touch-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none !important;
+  z-index: 20;
+  touch-action: none;
+}
+.touch-controls > *,
+.touch-controls .tc-btn {
+  pointer-events: auto;
+}
+.tc-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(29, 18, 80, 0.45);
+  border: 3px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  box-sizing: border-box;
+  transition: transform 0.06s ease, background 0.06s ease;
+}
+.tc-btn.down {
+  transform: scale(0.92);
+  background: rgba(255, 210, 63, 0.55);
+  border-color: #fff;
+}
+.tc-steer {
+  position: absolute;
+  left: calc(10px + var(--safe-l));
+  bottom: calc(10px + var(--safe-b));
+  width: min(42vw, 330px);
+  height: min(34vh, 170px);
+  touch-action: none;
+}
+.tc-steer .tc-btn {
+  width: min(17vw, 130px);
+  height: min(17vw, 130px);
+  max-width: 30vh;
+  max-height: 30vh;
+  bottom: 0;
+  font-size: 34px;
+  pointer-events: none;
+}
+.tc-left {
+  left: 0;
+}
+.tc-right {
+  right: 0;
+}
+.touch-controls.tilt .tc-steer {
+  display: none;
+}
+.tc-cluster {
+  position: absolute;
+  right: calc(10px + var(--safe-r));
+  bottom: calc(10px + var(--safe-b));
+  width: min(40vw, 300px);
+  height: min(62vh, 300px);
+  pointer-events: none !important;
+}
+.tc-drift {
+  width: min(19vw, 140px);
+  height: min(19vw, 140px);
+  max-width: 34vh;
+  max-height: 34vh;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 111, 174, 0.45);
+  font-size: 18px;
+}
+.tc-item {
+  width: min(14vw, 104px);
+  height: min(14vw, 104px);
+  max-width: 25vh;
+  max-height: 25vh;
+  right: min(18vw, 130px);
+  bottom: min(17vw, 120px);
+  background: rgba(76, 224, 210, 0.45);
+}
+.tc-brake {
+  width: min(11vw, 80px);
+  height: min(11vw, 80px);
+  max-width: 19vh;
+  max-height: 19vh;
+  right: min(21vw, 160px);
+  bottom: 0;
+  font-size: 12px;
+}
+.tc-accel {
+  width: min(11vw, 80px);
+  height: min(11vw, 80px);
+  max-width: 19vh;
+  max-height: 19vh;
+  right: 0;
+  bottom: min(21vw, 160px);
+  font-size: 14px;
+  background: rgba(140, 255, 107, 0.4);
+}
+.tc-look {
+  width: 54px;
+  height: 54px;
+  right: calc(12px + var(--safe-r));
+  top: calc(12px + var(--safe-t));
+  font-size: 22px;
+}
+.tc-pause {
+  width: 48px;
+  height: 48px;
+  left: 50%;
+  margin-left: -24px;
+  top: calc(8px + var(--safe-t));
+  font-size: 16px;
+  border-radius: 14px;
+}
+
+/* ---------------- Rotate hint ---------------- */
+.rotate-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  background: radial-gradient(circle at 50% 40%, #6a4cff, #1d1250);
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  padding: 24px;
+}
+.rotate-hint .phone {
+  width: 64px;
+  height: 110px;
+  border: 6px solid #fff;
+  border-radius: 14px;
+  animation: rotatePhone 1.8s ease-in-out infinite;
+}
+@keyframes rotatePhone {
+  0%, 20% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(-90deg); }
+}
+@media (orientation: portrait) and (pointer: coarse) {
+  .rotate-hint {
+    display: flex;
+  }
+}
