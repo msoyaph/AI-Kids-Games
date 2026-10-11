@@ -165,22 +165,4 @@ export function rebakeSingle(tex: Texture, draw: (ctx: Ctx, w: number, h: number
   source.update();
 }
 
-/** Draws a sprite to a standalone canvas element for use in the DOM UI (portraits, previews). */
-export function drawToCanvas(w: number, h: number, draw: (ctx: Ctx, w: number, h: number) => void, res = Math.min(2, window.devicePixelRatio || 1)): HTMLCanvasElement {
-  const canvas = makeCanvas(w * res, h * res);
-  const ctx = canvas.getContext('2d')!;
-  ctx.setTransform(res, 0, 0, res, 0, 0);
-  draw(ctx, w, h);
-  return canvas;
-}
-
-const urlCache = new Map<string, string>();
-/** Cached data URL of a procedural drawing, for <img> tags in the DOM UI. */
-export function drawToDataUrl(key: string, w: number, h: number, draw: (ctx: Ctx, w: number, h: number) => void): string {
-  let url = urlCache.get(key);
-  if (!url) {
-    url = drawToCanvas(w, h, draw).toDataURL('image/png');
-    urlCache.set(key, url);
-  }
-  return url;
-}
+export { drawToCanvas, drawToDataUrl } from './canvas';

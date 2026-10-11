@@ -1,25 +1,25 @@
-import { Scene } from '../app/Scene';
+import { comfortOn } from '../app/comfort';
+import { Scene3D } from '../app/Scene3D';
 import { S } from '../app/services';
 import { formatPlaytime } from '../core/mathx';
 import { STICKERS } from '../data/stickers';
 import { CHAR_BY_ID } from '../data/characters';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawPortrait } from '../gfx/art/characters';
-import { Starfield } from '../gfx/starfield';
+import { MenuBackdrop } from '../r3/space/backdrop';
 import { h } from '../ui/dom';
 import { celebrate } from '../ui/fx';
 import { button, iconEl } from '../ui/widgets';
 import { completeHooks } from './completeHooks';
 
 /** "You did it!" screen with play time, Codex %, missions and badges. */
-export class CompleteScene extends Scene {
-  private stars = new Starfield(['#ffe066', '#ff7ad9'], 'complete');
-  private t = 0;
+export class CompleteScene extends Scene3D {
+  private backdrop: MenuBackdrop;
 
   constructor() {
     super('complete');
     this.music = 'finale';
-    this.root.addChild(this.stars);
+    this.backdrop = new MenuBackdrop(this.world, this.camera);
     const d = S.state.data;
     const m = S.missions.counts();
     const codex = completeHooks.codexPercent();
@@ -56,11 +56,10 @@ export class CompleteScene extends Scene {
   }
 
   override resize(w: number, hh: number): void {
-    this.stars.resize(w, hh);
+    super.resize(w, hh);
   }
 
   override render(): void {
-    this.t += 1 / 60;
-    this.stars.update(this.t * 15, 0, 1 / 60);
+    this.backdrop.update(this.time, 1 / 60, comfortOn());
   }
 }

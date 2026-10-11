@@ -2,16 +2,11 @@ import { Sprite } from 'pixi.js';
 import { Scene } from '../app/Scene';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
-import { BODY_BY_ID } from '../data/bodies';
-import { CHAR_BY_ID } from '../data/characters';
-import { CATEGORY_NAMES, CODEX, CODEX_BY_ID, type CodexCategory, type CodexEntry } from '../data/codex';
+import { CATEGORY_NAMES, CODEX, CODEX_BY_ID, type CodexCategory } from '../data/codex';
 import { factsFor } from '../data/facts';
-import { drawToCanvas } from '../gfx/atlas';
-import { drawPortrait } from '../gfx/art/characters';
-import { drawGlyph } from '../gfx/art/glyphs';
-import { drawPlanet } from '../gfx/art/planets';
+import { drawToCanvas } from '../gfx/canvas';
+import { drawCodexPicture } from '../gfx/art/codexPicture';
 import { drawLounge } from '../gfx/art/rooms';
-import type { Ctx } from '../gfx/canvas';
 import { ensureTex } from '../gfx/textures';
 import { codexPercent } from '../systems/codex';
 import { clear, h } from '../ui/dom';
@@ -28,12 +23,6 @@ const TABS: Array<{ cat: CodexCategory; icon: string }> = [
   { cat: 'story', icon: 'alien' },
 ];
 
-export function drawCodexPicture(ctx: Ctx, e: CodexEntry, w: number, hh: number): void {
-  const p = e.picture;
-  if ('body' in p) drawPlanet(ctx, BODY_BY_ID[p.body].look, w, hh);
-  else if ('glyph' in p) drawGlyph(ctx, p.glyph, w / 2, hh / 2, w * 0.38, p.color);
-  else drawPortrait(ctx, CHAR_BY_ID[p.char], w, hh);
-}
 
 /** The Space Codex: an encyclopedia of everything you have discovered. */
 export class CodexScene extends Scene {

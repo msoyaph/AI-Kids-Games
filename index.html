@@ -25,6 +25,13 @@
       #boot .bar { width: 50vmin; height: 3.5vmin; border-radius: 2vmin; background: #0d0830; border: .6vmin solid #fff; overflow: hidden; }
       #boot .fill { height: 100%; width: 5%; border-radius: 2vmin; background: linear-gradient(90deg, #4dd4ff, #8cff66); transition: width .2s; }
       #boot .msg { font-size: 3.6vmin; opacity: .9; }
+      #nogl { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5vmin; padding: 6vmin; text-align: center;
+        background: radial-gradient(ellipse at 50% 40%, #3b2a8f 0%, #1d1456 55%, #120b33 100%); color: #fff; z-index: 60;
+        font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Nunito", "Varela Round", "Trebuchet MS", system-ui, sans-serif; }
+      #nogl svg { width: 26vmin; height: 26vmin; }
+      #nogl h1 { margin: 0; font-size: 6.5vmin; color: #ffe066; text-shadow: 0 .5vmin 0 #e8590c; }
+      #nogl p { margin: 0; max-width: 34em; font-size: 3.6vmin; line-height: 1.35; opacity: .92; }
+      #nogl button { font: inherit; font-weight: 800; font-size: 3.6vmin; padding: 1.6vmin 4vmin; border-radius: 3vmin; border: .7vmin solid #20124d; background: #ffe066; color: #20124d; cursor: pointer; }
     </style>
   </head>
   <body>
@@ -48,6 +55,40 @@
       <div class="msg" id="boot-msg">Fueling up the rocket...</div>
     </div>
     <div id="game"></div>
+    <script>
+      // Space Sky needs WebGL 2. Check before the game loads and show a friendly screen if it is missing.
+      (function () {
+        var ok = false;
+        try {
+          var c = document.createElement('canvas');
+          var gl = window.WebGL2RenderingContext ? c.getContext('webgl2') : null;
+          ok = !!gl;
+          var lose = gl && gl.getExtension('WEBGL_lose_context');
+          if (lose) lose.loseContext();
+        } catch (e) { ok = false; }
+        if (ok) return;
+        window.__noWebGL2 = true;
+        var boot = document.getElementById('boot');
+        if (boot) boot.remove();
+        var box = document.createElement('div');
+        box.id = 'nogl';
+        box.setAttribute('role', 'alert');
+        box.setAttribute('data-testid', 'no-webgl');
+        box.innerHTML =
+          '<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="64" r="44" fill="#2b1f73"/>' +
+          '<g transform="rotate(-28 60 60)"><path d="M60 14 C76 30 78 64 72 88 L48 88 C42 64 44 30 60 14 Z" fill="#f4f7ff" stroke="#20124d" stroke-width="4" stroke-linejoin="round"/>' +
+          '<path d="M60 14 C68 22 72 30 73 38 L47 38 C48 30 52 22 60 14 Z" fill="#ff5d73" stroke="#20124d" stroke-width="4" stroke-linejoin="round"/>' +
+          '<path d="M46 68 L32 92 L48 88 Z M74 68 L88 92 L72 88 Z" fill="#ff5d73" stroke="#20124d" stroke-width="4" stroke-linejoin="round"/>' +
+          '<circle cx="60" cy="56" r="8" fill="#4dd4ff" stroke="#20124d" stroke-width="4"/>' +
+          '<path d="M55 55 q2.5 2.5 5 0 M60 55 q2.5 2.5 5 0" stroke="#20124d" stroke-width="2" fill="none"/></g>' +
+          '<text x="88" y="30" font-size="16" fill="#ffe066" font-weight="800">z</text><text x="98" y="18" font-size="12" fill="#ffe066" font-weight="800">z</text></svg>' +
+          '<h1>This device can\u2019t run Space Sky</h1>' +
+          '<p>Space Sky needs 3D graphics (WebGL 2), and this browser can\u2019t do that right now.</p>' +
+          '<p>Try a different browser, or ask a grown-up to update this device. Then come fly with us!</p>' +
+          '<button type="button" onclick="location.reload()">Try again</button>';
+        document.body.appendChild(box);
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

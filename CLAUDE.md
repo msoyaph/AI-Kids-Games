@@ -1,7 +1,10 @@
 # Space Sky — notes for Claude
 
 A space exploration adventure game for kids aged 6–10, built for the "Ai Kids Games" site.
-Vite + TypeScript (strict) + PixiJS 8, shipped as ONE self-contained `dist/index.html`.
+Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, shipped as ONE self-contained
+`dist/index.html`. The 2D PixiJS version lives on `main`; the 3D upgrade is on branch `space-sky-3d`
+(plan: ~/.claude/plans/logical-toasting-walrus.md). During the port, screens not yet moved to 3D still use Pixi
+(created lazily); Pixi is deleted in 3D Phase 7.
 
 ## Commands
 - `npm run dev` — dev server (Vite). In the desktop app use `.claude/launch.json` → `spacesky-dev` (port 5391).
@@ -10,9 +13,30 @@ Vite + TypeScript (strict) + PixiJS 8, shipped as ONE self-contained `dist/index
 - `npm run test:e2e` — Playwright smoke tests on desktop/tablet/phone viewports (build first; serves dist on :4392).
 - `npm run pacing` — pacing simulation (estimated minutes per chapter on Easy/Normal).
 - `npm run svgs` — export the site banner + thumbnail SVGs to `site-assets/`.
-- URL flags: `?fps` shows an FPS meter, `?debug` exposes `window.__spacesky` test hooks.
+- URL flags: `?fps` (FPS + tier + draw calls/tris meter), `?debug` (`window.__spacesky` = S), `?q=low|medium|high`
+  (force a tier), `?stress` (heaviest settings, for perf runs).
+- Debug hooks: `__spacesky.game.advance(frames)` steps logic + renders even when the tab is hidden (the desktop
+  browser pane is usually "hidden", so rAF is throttled), `renderOnce()` repaints.
 
-## Architecture
+## 3D architecture (branch space-sky-3d)
+- `src/r3/` render core: `R3.ts` (WebGLRenderer, quality tier + governor, post chain, env map, context-loss screen),
+  `post.ts` (one merged EffectPass: mipmap bloom, ACES filmic tone mapping, saturation/contrast, vignette, FXAA on
+  Medium; MSAA×4 render target on High; Low = no post, renderer ACES), `env.ts` (procedural PMREM studio env),
+  `bake.ts` (`bakeCube`: GPU-bake a GLSL `vec4 bake(vec3 dir)` into a cube map once), `shaders/noise.ts`
+  (simplex/fbm/ridged/cells; fbm needs `OCTAVES` define), `space/sky.ts` (nebula cube bake cache, stars at
+  infinity, HDR sun quads), `fx/particles.ts` (pooled Points particles), `dispose.ts`, `materials.ts`.
+- Custom fragment shaders end with `OUTPUT_GLSL` (tonemapping + colorspace includes) so Low tier matches.
+- Shared GPU resources set `userData.shared = true` (`markShared`); `Scene3D.destroy` frees everything else.
+- `systems/quality.ts`: tier profiles (DPR cap, post, bake sizes, asteroid/particle/star budgets, shadows) and
+  `QualityGovernor` (render scale first, then tier; Auto ceiling = detected tier). Settings: `quality`, `comfort`
+  (null = follow prefers-reduced-motion, see `app/comfort.ts`), `flipY`.
+- Scenes: `app/BaseScene.ts` (DOM + lifecycle) → `Scene3D` (`world`, `camera`, `time`) or legacy `Scene` (Pixi).
+  `Game.go` compiles a 3D scene's shaders (`compileAsync`) behind the fade. Own rAF loop; pauses when hidden.
+- `index.html` checks WebGL2 before the bundle runs and shows a friendly "can't run" screen (`__noWebGL2`).
+- Tone mapping: ACES filmic (AgX looked too pastel for the vivid kid look). Space scenes use
+  `world.environmentIntensity = 0.45`.
+
+## Architecture (2D, still used by unported screens)
 - **Hybrid rendering**: Pixi draws the world (flight, map, landing, platformer, hub backdrop). A DOM layer (`#ui`)
   draws menus, HUD, dialogue, touch controls. `#ui` is laid out in *logical units* (≥960×720) and scaled with a CSS
   transform; Pixi's stage is scaled the same way (`app/stage.ts`). Safe-area insets are exposed as CSS vars `--safe-*`.
@@ -39,6 +63,12 @@ Vite + TypeScript (strict) + PixiJS 8, shipped as ONE self-contained `dist/index
 - [x] Phase 9: audio/audio.ts (Web Audio synth, ~45 SFX), audio/music.ts (seeded composer + lookahead sequencer, 14 tracks, crossfades), onboarding tips (data/tips.ts, ui/tips.ts), hub shooting stars.
 - [x] Phase 10: Playwright e2e (smoke, new game, save/reload, flight touch+keys, every level, cutscenes/credits, sandboxed iframe, file://) on desktop/tablet/phone; pacing model (systems/pacing.ts, `npm run pacing`); fact-check pass; menu nav (ui/menuNav.ts); story triggers (data/triggers.ts, non-blocking radio cards); hint timer; README + site SVGs.
 
+## 3D status (branch space-sky-3d)
+- [x] 3D Phase 1: deps pinned, WebGL2 gate, R3 core, quality tiers/governor/settings, post chain, sky, particles,
+  Game/Scene port with lazy Pixi; Title, Slots, Creator, Credits, Complete on 3D backdrops.
+- [ ] 2 planets + star map · [ ] 3 rocket · [ ] 4 flight · [ ] 5 characters · [ ] 6 landing/explore · [ ] 7 hub/menus
+  (remove Pixi) · [ ] 8 cutscenes · [ ] 9 perf · [ ] 10 tests/review/handoff
+
 ## Current numbers
 - Pacing model: Easy ≈ 6.7 h with all side missions (≈ 5.5 h story + free play); Normal ≈ 5.7 h.
 - Perf (tablet profile, DPR 2, M3 GPU): 60 fps, p95 16.7 ms in belt flight / big levels; still 60 fps with 4× CPU throttle.
@@ -57,3 +87,4 @@ Vite + TypeScript (strict) + PixiJS 8, shipped as ONE self-contained `dist/index
 - Dialogue freezes gameplay; anything that can happen mid-flight/explore should use `radio` (non-blocking) or toasts, not `dialogue`.
 - `npm audit` flags `braces` via `vite-plugin-singlefile → micromatch` — build-time only, not shipped.
 - Port 5173 is used by another project on this machine; use 5391/4391/4392.
+- zsh: don't start an `echo` argument with `=` (equals expansion) and quote `--include='*.ts'` globs.

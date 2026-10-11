@@ -1,12 +1,13 @@
-import { Scene } from '../app/Scene';
+import { comfortOn } from '../app/comfort';
+import { Scene3D } from '../app/Scene3D';
 import { S } from '../app/services';
 import { startSession } from '../app/session';
 import { sfx } from '../audio/sfx';
 import { Rng } from '../core/rng';
 import type { AstronautLook, Difficulty } from '../data/types';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawAstronautBust, drawAstronautSide, FACES, HAIR_COLORS, HAIR_STYLES, HELMETS, SKIN_TONES, SUIT_COLORS } from '../gfx/art/characters';
-import { Starfield } from '../gfx/starfield';
+import { MenuBackdrop } from '../r3/space/backdrop';
 import { createSave, defaultProfile } from '../systems/save/schema';
 import { clear, h } from '../ui/dom';
 import { speak } from '../ui/speech';
@@ -19,21 +20,20 @@ export interface CreatorParams {
 const NAMES = ['Nova', 'Comet', 'Astro', 'Luna', 'Orbit', 'Sky', 'Zoom', 'Juno', 'Kiko', 'Remy', 'Tali', 'Pixel', 'Echo', 'Sunny', 'Ziggy', 'Rory', 'Indy', 'Mika', 'Bo', 'Starling'];
 
 /** Make your astronaut: name, suit, helmet, face. */
-export class CreatorScene extends Scene {
-  private stars = new Starfield(['#4c7dff', '#ff7ad9'], 'creator');
+export class CreatorScene extends Scene3D {
+  private backdrop: MenuBackdrop;
   private look: AstronautLook;
   private difficulty: Difficulty = 'easy';
   private preview: HTMLElement;
   private side: HTMLElement;
   private nameInput: HTMLInputElement;
   private sections: HTMLElement;
-  private t = 0;
   private rng = new Rng(Date.now());
 
   constructor(private readonly p: CreatorParams) {
     super('creator');
     this.music = 'title';
-    this.root.addChild(this.stars);
+    this.backdrop = new MenuBackdrop(this.world, this.camera);
     this.look = { ...defaultProfile(), name: '' };
     this.look.skin = SKIN_TONES[this.rng.int(0, SKIN_TONES.length - 1)];
     this.look.suit = SUIT_COLORS[this.rng.int(0, SUIT_COLORS.length - 1)];
@@ -68,12 +68,11 @@ export class CreatorScene extends Scene {
   }
 
   override resize(w: number, hh: number): void {
-    this.stars.resize(w, hh);
+    super.resize(w, hh);
   }
 
   override render(): void {
-    this.t += 1 / 60;
-    this.stars.update(this.t * 15, 0, 1 / 60);
+    this.backdrop.update(this.time, 1 / 60, comfortOn());
   }
 
   private section(title: string, body: HTMLElement): HTMLElement {

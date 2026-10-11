@@ -2,7 +2,7 @@ import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { CHAR_BY_ID } from '../data/characters';
 import type { Line } from '../data/dialogueTypes';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawPortrait } from '../gfx/art/characters';
 import { fillName } from './dialogue';
 import { h } from './dom';

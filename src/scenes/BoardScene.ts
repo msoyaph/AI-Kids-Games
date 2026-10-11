@@ -8,7 +8,7 @@ import { CHAPTER_NAMES, MISSIONS, MISSION_BY_ID } from '../data/missions';
 import type { MissionDef } from '../data/missionTypes';
 import { PART_BY_ID } from '../data/parts';
 import { STICKER_BY_ID } from '../data/stickers';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawPortrait } from '../gfx/art/characters';
 import { drawGlyph } from '../gfx/art/glyphs';
 import { drawLounge } from '../gfx/art/rooms';

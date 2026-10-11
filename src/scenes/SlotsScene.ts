@@ -1,13 +1,14 @@
-import { Scene } from '../app/Scene';
+import { comfortOn } from '../app/comfort';
+import { Scene3D } from '../app/Scene3D';
 import { S } from '../app/services';
 import { startSession } from '../app/session';
 import { sfx } from '../audio/sfx';
 import { formatPlaytime } from '../core/mathx';
 import { CHAR_BY_ID } from '../data/characters';
 import { CHAPTER_NAMES } from '../data/missions';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawPortrait } from '../gfx/art/characters';
-import { Starfield } from '../gfx/starfield';
+import { MenuBackdrop } from '../r3/space/backdrop';
 import { deleteSlot, listSlots, loadSlot } from '../systems/save/saveManager';
 import { storageAvailable } from '../systems/save/storage';
 import { clear, h } from '../ui/dom';
@@ -16,15 +17,14 @@ import { openSettings } from '../ui/settings';
 import { button, iconEl } from '../ui/widgets';
 
 /** Pick one of three save slots (one per player in the family). */
-export class SlotsScene extends Scene {
-  private stars = new Starfield(['#9b6bff', '#4c7dff'], 'slots');
+export class SlotsScene extends Scene3D {
+  private backdrop: MenuBackdrop;
   private list: HTMLElement;
-  private t = 0;
 
   constructor() {
     super('slots');
     this.music = 'title';
-    this.root.addChild(this.stars);
+    this.backdrop = new MenuBackdrop(this.world, this.camera);
     this.list = h('div', { class: 'slot-list' });
     const header = h(
       'div',
@@ -49,12 +49,11 @@ export class SlotsScene extends Scene {
   }
 
   override resize(w: number, hh: number): void {
-    this.stars.resize(w, hh);
+    super.resize(w, hh);
   }
 
   override render(): void {
-    this.t += 1 / 60;
-    this.stars.update(this.t * 20, 0, 1 / 60);
+    this.backdrop.update(this.time, 1 / 60, comfortOn());
   }
 
   private renderSlots(): void {

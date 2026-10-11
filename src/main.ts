@@ -110,8 +110,9 @@ async function boot(): Promise<void> {
   const host = document.getElementById('game')!;
   const game = new Game(host);
   S.game = game;
-  await game.init();
   S.settings = loadSettings();
+  game.init(S.settings.quality);
+  setLoad(12, 'Warming up the engines...');
   initSpeech();
   setReadAloud(S.settings.readAloud);
   const audio = new AudioEngine();
@@ -172,6 +173,8 @@ async function boot(): Promise<void> {
   if (new URLSearchParams(location.search).has('debug')) (window as unknown as { __spacesky: unknown }).__spacesky = S;
   game.start();
   await game.go('title', {}, false);
+  // Let the first frames (post-processing shaders) compile behind the loading screen.
+  await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
   setLoad(100);
   const bootEl = document.getElementById('boot');
   if (bootEl) {
@@ -180,4 +183,6 @@ async function boot(): Promise<void> {
   }
 }
 
-boot().catch(showFatal);
+if ((window as unknown as { __noWebGL2?: boolean }).__noWebGL2) {
+  // index.html already shows the friendly "this device can't run Space Sky" screen.
+} else boot().catch(showFatal);

@@ -5,7 +5,7 @@ import { sfx } from '../audio/sfx';
 import { PARTS, PART_BY_ID } from '../data/parts';
 import { STICKER_BY_ID } from '../data/stickers';
 import { STAT_KEYS, type PartSlot, type RocketLoadout, type StatKey } from '../data/types';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawRocket, ROCKET_H, ROCKET_W } from '../gfx/art/rocket';
 import { drawPlatform, drawHangar } from '../gfx/art/rooms';
 import { drawSticker } from '../gfx/art/stickers';

@@ -4,7 +4,7 @@ import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { clamp } from '../core/mathx';
 import { BODY_BY_ID, SYSTEMS, systemOf, type SystemDef, type SystemId } from '../data/bodies';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawGlyph } from '../gfx/art/glyphs';
 import { drawPlanet } from '../gfx/art/planets';
 import { Starfield } from '../gfx/starfield';

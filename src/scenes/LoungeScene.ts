@@ -5,7 +5,7 @@ import { sfx } from '../audio/sfx';
 import { CHAR_BY_ID } from '../data/characters';
 import { dialogue } from '../data/dialogue';
 import { DECOR_BY_ID } from '../data/shop';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawNpcSide, drawPortrait } from '../gfx/art/characters';
 import { drawDecor, drawLounge } from '../gfx/art/rooms';
 import { ensureTex } from '../gfx/textures';

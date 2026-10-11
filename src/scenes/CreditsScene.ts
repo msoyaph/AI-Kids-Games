@@ -1,27 +1,30 @@
-import { Scene } from '../app/Scene';
+import { comfortOn } from '../app/comfort';
+import { Scene3D } from '../app/Scene3D';
 import { S } from '../app/services';
 import { CREDITS } from '../data/credits';
-import { Particles } from '../gfx/particles';
-import { Starfield } from '../gfx/starfield';
-import { tex } from '../gfx/textures';
+import { Particles3 } from '../r3/fx/particles';
+import { MenuBackdrop } from '../r3/space/backdrop';
+import { SKIES } from '../r3/space/sky';
 import { h } from '../ui/dom';
 import { button } from '../ui/widgets';
 
+const COLORS = ['#ff5d73', '#ffe066', '#8cff66', '#4dd4ff', '#ff7ad9'];
+
 /** Scrolling credits over a starry sky with fireworks. */
-export class CreditsScene extends Scene {
-  private stars = new Starfield(['#ff7ad9', '#9b6bff', '#2de0c7'], 'credits');
-  private fx = new Particles(200, true);
+export class CreditsScene extends Scene3D {
+  private backdrop: MenuBackdrop;
+  private fx = new Particles3(600, 'spark');
   private roll: HTMLElement;
-  private t = 0;
-  private w = 1280;
-  private h = 720;
   private boomT = 0;
   private finished = false;
 
   constructor() {
     super('credits');
     this.music = 'credits';
-    this.root.addChild(this.stars, this.fx);
+    this.backdrop = new MenuBackdrop(this.world, this.camera, SKIES.zephyra);
+    this.fx.gravity = 1.2;
+    this.fx.drag = 1.1;
+    this.world.add(this.fx.points);
     this.roll = h('div', { class: 'credits-roll', 'data-testid': 'credits' });
     for (const block of CREDITS) {
       this.roll.append(h('div', { class: 'credits-block' }, h('div', { class: 'h2' }, block.title), ...block.lines.map((l) => h('div', { class: 'credits-line' }, l))));
@@ -48,24 +51,26 @@ export class CreditsScene extends Scene {
   }
 
   override resize(w: number, hh: number): void {
-    this.w = w;
-    this.h = hh;
-    this.stars.resize(w, hh);
+    super.resize(w, hh);
+    this.fx.setScreen(window.innerHeight * S.game.r3.pixelRatio);
   }
 
   override update(dt: number): void {
-    this.t += dt;
     this.fx.update(dt);
     this.boomT -= dt;
     if (this.boomT <= 0) {
       this.boomT = 0.9 + Math.random();
-      const cols = ['#ff5d73', '#ffe066', '#8cff66', '#4dd4ff', '#ff7ad9'];
-      this.fx.burst(tex('spark'), this.w * (0.1 + Math.random() * 0.8), this.h * (0.1 + Math.random() * 0.5), 30, 380, 1.2, 0.8, cols[Math.floor(Math.random() * cols.length)], { gravity: 120 });
+      // Fireworks in front of the camera, which slowly turns: place them along its view.
+      const yaw = this.camera.rotation.y;
+      const d = 18;
+      const side = (Math.random() - 0.5) * 16;
+      const x = -Math.sin(yaw) * d + Math.cos(yaw) * side;
+      const z = -Math.cos(yaw) * d - Math.sin(yaw) * side;
+      this.fx.burst(x, 2 + Math.random() * 5, z, comfortOn() ? 24 : 40, 5, 1.4, 0.35, COLORS[Math.floor(Math.random() * COLORS.length)]);
     }
   }
 
-  override render(alpha: number): void {
-    this.stars.update(this.t * 20, -this.t * 30, 1 / 60);
-    this.fx.render(alpha);
+  override render(): void {
+    this.backdrop.update(this.time, 1 / 60, comfortOn());
   }
 }

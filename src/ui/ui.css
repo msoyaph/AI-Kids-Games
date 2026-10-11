@@ -20,7 +20,7 @@
 
 * { box-sizing: border-box; }
 #game { position: fixed; inset: 0; overflow: hidden; }
-#stage { position: absolute; left: 0; top: 0; display: block; touch-action: none; }
+#stage, #stage3 { position: absolute; left: 0; top: 0; display: block; touch-action: none; }
 #ui {
   position: absolute; left: 0; top: 0; transform-origin: 0 0; pointer-events: none; overflow: hidden;
   font-family: var(--font); color: var(--white); font-size: 28px; line-height: 1.25; font-weight: 700;
@@ -106,7 +106,7 @@
 .modal .h2 { text-align: center; }
 
 /* ---------------------------------------------------------------- FPS meter */
-.fps { position: fixed; right: 6px; bottom: 6px; z-index: 999; font: 12px monospace; color: #8cff66; background: rgba(0,0,0,.5); padding: 2px 6px; border-radius: 4px; pointer-events: none; }
+.fps { position: fixed; right: 6px; bottom: 6px; max-width: 70vw; z-index: 999; font: 12px monospace; color: #8cff66; background: rgba(0,0,0,.5); padding: 2px 6px; border-radius: 4px; pointer-events: none; }
 
 /* ---------------------------------------------------------------- Rotate hint */
 #rotate-hint { display: none; position: fixed; inset: 0; z-index: 60; background: radial-gradient(ellipse at 50% 40%, #3b2a8f, #140d3a); color: #fff; font-family: var(--font); font-weight: 800; flex-direction: column; align-items: center; justify-content: center; gap: 4vh; text-align: center; padding: 6vw; }
@@ -418,3 +418,9 @@ body.kbd-nav #ui button:focus, body.kbd-nav #ui [role=button]:focus, body.kbd-na
 .radio-card.out { opacity: 0; }
 .radio-name { font-size: 20px; color: #6b3fd4; font-weight: 900; }
 .radio-text { font-size: 26px; line-height: 1.2; }
+
+/* Lost WebGL context: friendly pause screen. */
+.gl-lost { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; background: rgba(20, 13, 58, 0.92); font-family: var(--font); color: #fff; }
+.gl-lost-box { display: flex; flex-direction: column; align-items: center; gap: 18px; font-size: 26px; font-weight: 700; text-align: center; padding: 24px; }
+.gl-lost-emoji { font-size: 64px; }
+.gl-lost button { font: inherit; font-weight: 800; padding: 14px 30px; border-radius: 24px; border: 4px solid #20124d; background: #ffe066; color: #20124d; cursor: pointer; }

@@ -4,7 +4,7 @@ import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { CHAR_BY_ID } from '../data/characters';
 import { CHAPTER_NAMES } from '../data/missions';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawAcademy } from '../gfx/art/rooms';
 import { drawNpcSide, drawPortrait } from '../gfx/art/characters';
 import { ensureTex, rocketTex, tex } from '../gfx/textures';

@@ -4,7 +4,7 @@ import { dialogue } from '../data/dialogue';
 import { MISSION_BY_ID, CHAPTER_NAMES } from '../data/missions';
 import { PART_BY_ID } from '../data/parts';
 import { STICKER_BY_ID } from '../data/stickers';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawSticker } from '../gfx/art/stickers';
 import type { UiMessage } from '../systems/state';
 import { showDialogue } from './dialogue';

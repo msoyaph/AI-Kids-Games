@@ -1,7 +1,9 @@
 import { S } from '../app/services';
+import { comfortOn } from '../app/comfort';
 import { saveNow } from '../app/session';
 import { sfx } from '../audio/sfx';
 import { deleteSlot } from '../systems/save/saveManager';
+import type { QualitySetting } from '../systems/quality';
 import { saveSettings } from '../systems/save/settings';
 import { h, setText } from './dom';
 import { closeTopModal, openModal } from './modal';
@@ -129,6 +131,20 @@ export function openSettings(): void {
     if (v) speak('Read aloud is on!', { force: true });
   }, 'set-read', !canSpeak));
   items.push(toggle('Helpful tips', 'question', st.tips, (v) => (st.tips = v), 'set-tips'));
+  const qual = h('div', { class: 'seg' });
+  const qOpts: Array<[QualitySetting, string]> = [['auto', 'Auto'], ['low', 'Low'], ['medium', 'Medium'], ['high', 'High']];
+  for (const [q, label] of qOpts) {
+    const b = button(label, q === 'auto' ? 'sparkle' : 'star', () => {
+      st.quality = q;
+      S.game.r3.setQuality(q);
+      for (const c of qual.children) c.classList.toggle('on', c === b);
+    }, { size: 'small', color: 'white', id: `set-quality-${q}` });
+    b.classList.toggle('on', st.quality === q);
+    qual.append(b);
+  }
+  items.push(h('div', { class: 'set-row' }, iconEl('sparkle'), h('span', { class: 'set-label' }, 'Graphics'), qual));
+  items.push(toggle('Comfort mode (calmer camera)', 'eye', comfortOn(), (v) => (st.comfort = v), 'set-comfort'));
+  items.push(toggle('Flip up and down', 'rocket', st.flipY, (v) => (st.flipY = v), 'set-flip'));
   const btns = h('div', { class: 'row wrap' });
   if (fullscreenAvailable()) btns.append(button('Full screen', 'fullscreen', () => toggleFullscreen(), { size: 'small', color: 'white', id: 'btn-fullscreen' }));
   btns.append(button('How to play', 'question', () => controlsHelp(), { size: 'small', color: 'white', id: 'btn-help' }));

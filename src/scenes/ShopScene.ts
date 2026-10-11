@@ -4,7 +4,7 @@ import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { CHAR_BY_ID } from '../data/characters';
 import { DECOR, OUTFITS } from '../data/shop';
-import { drawToCanvas } from '../gfx/atlas';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawAstronautBust, drawPortrait } from '../gfx/art/characters';
 import { drawDecor, drawLounge } from '../gfx/art/rooms';
 import { ensureTex } from '../gfx/textures';

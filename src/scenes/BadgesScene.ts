@@ -2,14 +2,12 @@ import { Sprite } from 'pixi.js';
 import { Scene } from '../app/Scene';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
-import { BADGES, type BadgeDef } from '../data/badges';
+import { BADGES } from '../data/badges';
 import { STICKERS } from '../data/stickers';
-import { drawToCanvas } from '../gfx/atlas';
-import { drawGlyph } from '../gfx/art/glyphs';
+import { drawToCanvas } from '../gfx/canvas';
 import { drawLounge } from '../gfx/art/rooms';
 import { drawSticker, drawStickerSlot } from '../gfx/art/stickers';
-import { circle, ink, poly, radial, type Ctx } from '../gfx/canvas';
-import { C, shade } from '../gfx/palette';
+import { drawBadge } from '../gfx/art/badges';
 import { ensureTex } from '../gfx/textures';
 import { clear, h } from '../ui/dom';
 import { toast } from '../ui/toast';
@@ -17,17 +15,6 @@ import { button, iconEl } from '../ui/widgets';
 
 type Tab = 'badges' | 'stickers';
 
-export function drawBadge(ctx: Ctx, b: BadgeDef, w: number, hh: number, earned: boolean): void {
-  const cx = w / 2;
-  const cy = hh * 0.56;
-  const r = w * 0.36;
-  ink(ctx, poly([cx - r * 0.7, cy - r * 1.35, cx - r * 0.2, cy - r * 1.35, cx + r * 0.1, cy - r * 0.6, cx - r * 0.4, cy - r * 0.6]), earned ? C.blue : '#5a5280', 3);
-  ink(ctx, poly([cx + r * 0.7, cy - r * 1.35, cx + r * 0.2, cy - r * 1.35, cx - r * 0.1, cy - r * 0.6, cx + r * 0.4, cy - r * 0.6]), earned ? C.red : '#5a5280', 3);
-  const col = earned ? b.color : '#4a4470';
-  ink(ctx, circle(cx, cy, r), radial(ctx, cx - r * 0.3, cy - r * 0.3, 2, r * 1.2, [[0, shade(col, 0.4)], [1, shade(col, -0.25)]]), 4);
-  ink(ctx, circle(cx, cy, r * 0.74), 'rgba(255,255,255,0.18)', 2);
-  drawGlyph(ctx, b.glyph, cx, cy, r * 0.5, earned ? C.white : '#8a84b0');
-}
 
 /** Badges and the sticker book. */
 export class BadgesScene extends Scene {
