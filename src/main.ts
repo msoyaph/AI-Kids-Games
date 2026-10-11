@@ -1,6 +1,6 @@
 import './ui/styles.css';
 import { App } from './app/App';
-import { GameScreen } from './app/GameScreen';
+import { createNav } from './app/flow';
 import { SaveStore } from './app/save';
 import { mapById } from './data/maps';
 import type { Difficulty } from './data/difficulty';
@@ -45,14 +45,11 @@ async function boot(): Promise<void> {
     showGallery(stage, atlas);
     return;
   }
-  const map = mapById(params.get('map') ?? 'w1m1') ?? mapById('w1m1')!;
-  const diff = (params.get('diff') as Difficulty) ?? 'normal';
-  const start = (): void => {
-    const gs: GameScreen = new GameScreen(app, { map, difficulty: diff, mode: 'campaign' }, { quit: start, restart: start });
-    app.show(gs);
-    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__game = gs;
-  };
-  start();
+  const nav = createNav(app, {});
+  const play = params.get('map');
+  const map = play ? mapById(play) : undefined;
+  if (map) nav.play(map, (params.get('diff') as Difficulty | null) ?? 'normal', map.id === 'tutorial' ? 'tutorial' : params.has('endless') ? 'endless' : 'campaign');
+  else nav.title();
 }
 
 boot().catch((err: unknown) => {

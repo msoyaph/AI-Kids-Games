@@ -39,7 +39,7 @@ export function showModal(root: HTMLElement, content: HTMLElement[], opts: { onB
   });
   root.appendChild(back);
   // focus first button for keyboard players
-  queueMicrotask(() => (box.querySelector('button') as HTMLButtonElement | null)?.focus({ preventScroll: true }));
+  queueMicrotask(() => ((box.querySelector('button.btn.green') ?? box.querySelector('button')) as HTMLButtonElement | null)?.focus({ preventScroll: true }));
   return {
     el: box,
     close: () => back.remove(),
