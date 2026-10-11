@@ -148,9 +148,25 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   - Fix: starter furniture recipes (`STARTER_RECIPES`) were never taught — now learned on `pitchTent`, and granted to
     v2 saves with a home in `MIGRATIONS[2]`.
 
+- Phase 4 done: seasons.
+  - `src/sim/seasons.ts`: `state.season {index 0..3, day 1..7, paused, lastDay}`; `dailySeason` is the first daily
+    hook (7 days per season, `seasonChanged` event; paused islands never advance). v2 saves derive the season from
+    `clock.day` in `fillDefaults`. `setSeason` for tests/screenshots. Settings → Seasons: Change / Stay in X.
+  - Content carries `seasons?: Season[]` (absent = all year): 8 fish + 8 bugs (filtered in `availableFish` /
+    `availableBugs`), 2 flower species (Blossomcup spring, Frostbell winter — wild ones spawn in season and fade
+    after; seeds only sold in season), forage `SEASONAL_ITEMS` (petals, sea glass, maple leaves, pumpkins, snow
+    crystals; snowberries from shaking pines in winter) via `seasonalSpawns` (own RNG stream). Picking one up
+    teaches that season's 11 `unlock: 'season'` recipes.
+  - Story safety: request pools and the museum rating use only all-year creatures (rating vs the core collection);
+    tests/seasons.test.ts plays the whole story locked in each season (`tests/fullstory.ts` `playFullStory`).
+  - Visuals: `SEASON_PALETTES` (render/palette.ts) recolor terrain chunks (`TerrainRenderer.setSeason`, rebuilt once
+    per season), canopies + grass blades (`ObjectRenderer.setSeason`; no blades under snow); winter ice rim on pond/
+    river banks; snow instead of rain (flurries when cloudy) in critters.ts; spring petals / autumn leaves drift in
+    particles.ts; sky tint per season. HUD shows "🌸 Spring 3 · Tuesday"; catalog shows season chips.
+
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
-(162 unit tests incl. a full new-game → festival playthrough; 2 e2e tests.)
+(177 unit tests incl. full new-game → festival playthroughs, one per season; 2 e2e tests.)
 
 ## Known issues / limitations
 - Pacing is a model estimate (scripts/pacing.ts), not measured with real players.

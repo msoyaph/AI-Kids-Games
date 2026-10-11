@@ -11,6 +11,13 @@ export const WEATHER_LABEL: Record<WeatherT, string> = {
   rainbow: 'Rainbow',
 };
 
+/** Weather name for the season (rain falls as snow in winter). */
+export function weatherName(w: WeatherT, seasonIndex: number): string {
+  if (seasonIndex === 3 && w === 'rain') return 'Snow';
+  if (seasonIndex === 3 && w === 'cloudy') return 'Flurries';
+  return WEATHER_LABEL[w];
+}
+
 export function rollWeather(seed: number, day: number): WeatherT {
   if (day <= 1) return 'sunny';
   const r = dayRng(seed, day, 'weather').next();

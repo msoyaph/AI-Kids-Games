@@ -28,6 +28,7 @@ export class Particles {
   private flies: { x: number; y: number; z: number; ph: number }[] = [];
   private dummy = new THREE.Object3D();
   private col = new THREE.Color();
+  private drift = 0;
   enabled = true;
 
   constructor(private game: Game) {
@@ -82,6 +83,17 @@ export class Particles {
   frame(dt: number, night: number, camTarget: THREE.Vector3): void {
     const g = this.game;
     this.group.visible = g.state.player.location === 'island';
+    // seasonal drifters: petals in spring, leaves in autumn
+    const season = g.state.season?.index ?? 0;
+    if (this.enabled && this.group.visible && (season === 0 || season === 2) && g.state.weather.today !== 'rain') {
+      this.drift += dt * 5;
+      const R = () => Math.random() - 0.5;
+      while (this.drift >= 1) {
+        this.drift -= 1;
+        const colors = season === 0 ? [0xffc2d4, 0xf7b0c8, 0xffe0ea] : [0xf2a65c, 0xe8875a, 0xf5c45e, 0xd9734e];
+        this.add(camTarget.x + R() * 26, 3 + Math.random() * 2.5, camTarget.z + R() * 20 - 3, 0.5 + R() * 0.6, -0.15, R() * 0.6, 6, 1.3, colors[Math.floor(Math.random() * colors.length)]!, 0.12);
+      }
+    }
     let n = 0;
     for (let i = this.ps.length - 1; i >= 0; i--) {
       const p = this.ps[i]!;

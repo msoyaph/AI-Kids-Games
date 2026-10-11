@@ -1,7 +1,8 @@
 import './ui/styles.css';
 import { App } from './app';
 import { questRT } from './sim/quests';
-import { rollWeather, WEATHER_LABEL } from './sim/weather';
+import { rollWeather, weatherName } from './sim/weather';
+import { SEASONS, SEASON_DAYS, SEASON_ICON, SEASON_NAME } from './sim/seasons';
 import { hotItem } from './sim/economy';
 import { item } from './data/registry';
 import { CHALLENGES } from './data/challenges';
@@ -36,7 +37,8 @@ app.boardHooks.push(() => {
   const g = app.game!;
   const s = g.state;
   const notes = [
-    `Weather tomorrow: ${WEATHER_LABEL[rollWeather(s.seed, s.clock.day + 1)]}.`,
+    `Weather tomorrow: ${weatherName(rollWeather(s.seed, s.clock.day + 1), s.season.day === SEASON_DAYS && !s.season.paused ? (s.season.index + 1) % 4 : s.season.index)}.`,
+    `${SEASON_ICON[SEASONS[s.season.index]!]} It's ${SEASON_NAME[SEASONS[s.season.index]!]}, day ${s.season.day} of ${SEASON_DAYS}.${s.season.paused ? ' (Seasons are paused.)' : ''}`,
     `The Curled Leaf's hot item today: ${item(hotItem(g)).name} — sells for double!`,
     `Today's challenges: ${s.challenges.list.map((c) => CHALLENGES.find((d) => d.id === c.id)?.label).filter(Boolean).join(' · ')}`,
   ];

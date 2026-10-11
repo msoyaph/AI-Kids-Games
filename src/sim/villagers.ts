@@ -106,8 +106,8 @@ export function giveGift(g: Game, id: string, slot: number): Reaction | null {
 
 // ---------------- requests ----------------
 
-const SAFE_FISH = () => FISH.filter((f) => f.hours[0] === 0 && f.hours[1] === 24 && f.weather === 'any' && f.rarity <= 2 && (f.where.includes('river') || f.where.includes('sea')));
-const SAFE_BUGS = () => BUGS.filter((b) => b.hours[0] === 0 && b.hours[1] === 24 && b.weather === 'any' && b.rarity <= 2 && ['ground', 'trees', 'rocks'].includes(b.habitat));
+const SAFE_FISH = () => FISH.filter((f) => !f.seasons && f.hours[0] === 0 && f.hours[1] === 24 && f.weather === 'any' && f.rarity <= 2 && (f.where.includes('river') || f.where.includes('sea')));
+const SAFE_BUGS = () => BUGS.filter((b) => !b.seasons && b.hours[0] === 0 && b.hours[1] === 24 && b.weather === 'any' && b.rarity <= 2 && ['ground', 'trees', 'rocks'].includes(b.habitat));
 
 let compCache: { key: string; comp: Int32Array } | null = null;
 /** Tiles reachable from the player's side of the island (home door / dock). */

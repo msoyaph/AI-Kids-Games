@@ -12,6 +12,7 @@ import { equippedTool } from '../sim/tools';
 import { toolMesh } from './models/tools';
 import { CritterView } from './critters';
 import { InteriorView, furnitureObject } from './interior';
+import { SEASONS } from '../sim/seasons';
 import { AgentView } from './agents';
 import { PlacementView } from './placement';
 import { FestivalScene, LighthouseBeam } from './cutscene';
@@ -114,7 +115,7 @@ export class GameView {
     this.islandRoot.clear();
     this.structMeshes.clear();
     this.structGroup = new THREE.Group();
-    this.terrain = new TerrainRenderer(game.world.gen);
+    this.terrain = new TerrainRenderer(game.world.gen, SEASONS[game.state.season?.index ?? 0]);
     this.water = new WaterRenderer(game.world.size / 2);
     this.objects = new ObjectRenderer(game.world, this.itemVisual);
     this.critters = new CritterView(game);
@@ -122,12 +123,14 @@ export class GameView {
     this.placement = new PlacementView(game);
     this.particles = new Particles(game);
     this.islandRoot.add(this.terrain.group, this.water.mesh, this.objects.group, this.structGroup, this.critters.group, this.agents.group, this.placement.group, this.festival.group, this.beam.pivot, this.particles.group);
+    this.objects.setSeason(SEASONS[game.state.season?.index ?? 0]!);
     this.objects.rebuild();
     this.syncStructures();
     this.rebuildPlayer();
     const p = game.state.player;
     this.rig.snap(p.x, p.level * LEVEL_HEIGHT, p.z);
     game.bus.on('objectsChanged', () => (this.objects.dirty = true));
+    game.bus.on('seasonChanged', () => this.applySeason());
     game.bus.on('structuresChanged', () => this.syncStructures());
     game.bus.on('fx', (f) => {
       if (f.kind === 'rockHit') this.rig.shake = 0.6;
@@ -142,6 +145,13 @@ export class GameView {
   stopFestival(): void {
     this.festival.stop();
     for (const a of agentsOf(this.game).values()) a.talking = false;
+  }
+
+  /** Recolor the island when the season changes. */
+  applySeason(): void {
+    const season = SEASONS[this.game.state.season?.index ?? 0]!;
+    this.terrain.setSeason(season);
+    this.objects.setSeason(season);
   }
 
   /** Project a world point (with the world curve applied) to CSS pixels. Indoors, (x,z) are room coordinates. */
@@ -270,6 +280,7 @@ export class GameView {
     this.beam.frame(g, this.time, this.sky.night);
     this.particles.frame(dt, this.sky.night, this.rig.target);
     this.placement.frame();
+    this.sky.season = g.state.season?.index ?? 1;
     this.sky.update(g.state.clock.minute, g.state.weather.today, this.rig.target);
     this.renderer.render(this.scene, this.rig.camera);
   }

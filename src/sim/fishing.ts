@@ -10,6 +10,7 @@ import { give, markSeen, roomFor, stat } from './inventory';
 import { facingVec } from './player';
 import { wearTool } from './tools';
 import { weatherOk } from './weather';
+import { inSeason } from './seasons';
 
 export interface Shadow {
   id: number;
@@ -104,7 +105,7 @@ function nearLand(g: Game, i: number, r: number): boolean {
 
 export function availableFish(g: Game, where: FishWhere): FishDef[] {
   const h = Math.floor(g.state.clock.minute / 60);
-  return FISH.filter((f) => f.where.includes(where) && hourInWindow(h, f.hours[0], f.hours[1]) && weatherOk(f.weather, g.state.weather.today));
+  return FISH.filter((f) => f.where.includes(where) && inSeason(g, f.seasons) && hourInWindow(h, f.hours[0], f.hours[1]) && weatherOk(f.weather, g.state.weather.today));
 }
 
 export function rollFish(g: Game, where: FishWhere, rng: Rng): FishDef | undefined {

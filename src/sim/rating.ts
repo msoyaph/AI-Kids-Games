@@ -25,7 +25,8 @@ export const RATING_STEPS = [0, 20, 40, 60, 80];
 export function ratingBreakdown(g: Game): RatingBreakdown {
   const s = g.state;
   const res = residents(g);
-  const museumTotal = FISH.length + BUGS.length + FOSSILS.length;
+  // measured against the core (all-year) collection, so seasonal additions never lower the score
+  const museumTotal = FISH.filter((f) => !f.seasons).length + BUGS.filter((b) => !b.seasons).length + FOSSILS.length;
   let flowers = 0, weeds = 0;
   for (const key in s.world.objects) {
     const o = s.world.objects[key]!;
@@ -37,7 +38,7 @@ export function ratingBreakdown(g: Game): RatingBreakdown {
   const heartSum = res.reduce((a, id) => a + hearts(s.villagers[id]!.friendship), 0);
   const b = {
     residents: res.length * 5,
-    museum: Math.round((s.museum.donated.length / museumTotal) * 20),
+    museum: Math.round(Math.min(1, s.museum.donated.length / museumTotal) * 20),
     decor: Math.min(20, islandDecorPoints(g)),
     homeDecor: Math.min(HOME_DECOR_MAX, Math.floor(homeDecorPoints(g) / 4)),
     flowers: Math.min(12, Math.floor(flowers / 6)),

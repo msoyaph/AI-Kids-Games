@@ -6,6 +6,7 @@ import { flowerItemId } from '../data/items';
 import { item } from '../data/registry';
 import { DIRS8, Ground, LEVEL_HEIGHT, isWaterGround } from '../world/types';
 import type { Game, InteractCtx, Interaction } from './game';
+import { seasonOf } from './seasons';
 import { give, money, roomFor, stat } from './inventory';
 import { ladderTarget, tileOf } from './player';
 import type { TileObj } from './state';
@@ -101,7 +102,10 @@ function shake(g: Game, i: number, o: TileObj): void {
     } else if (!o.b) {
       o.b = 1;
       const r = rngFor(g, i);
-      if (r.chance(0.04)) {
+      if (o.k === 'pine' && seasonOf(g) === 'winter' && r.chance(0.6)) {
+        dropped = 'snowberry';
+        dropAround(g, i, 'snowberry', 1 + (r.chance(0.35) ? 1 : 0));
+      } else if (r.chance(0.04)) {
         dropped = 'pouch';
         dropAround(g, i, 'pouch', 1);
       } else if (o.k !== 'palm' && r.chance(0.55)) {

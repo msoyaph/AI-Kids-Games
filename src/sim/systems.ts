@@ -15,6 +15,7 @@ import { homeResolver, talkResolver, updateAgents } from './agents';
 import { confirmPlacement, placementRT, updatePlacement } from './placement';
 import { installQuests, tryStart } from './quests';
 import { stepHints } from './hints';
+import { dailySeason, installSeasons, seasonalSpawns } from './seasons';
 import { dailyChallenges, installChallenges } from './challenges';
 import { tileOf } from './player';
 import { Game } from './game';
@@ -23,6 +24,7 @@ import type { GameState } from './state';
 export function installSystems(g: Game): void {
   // Daily rollover — order matters: weather first, garden uses yesterday's watering,
   // spawns reset per-day counters.
+  g.onDay(dailySeason);
   g.onDay(dailyWeather);
   g.onDay(dailyConstruction);
   g.onDay(dailyHome);
@@ -30,6 +32,7 @@ export function installSystems(g: Game): void {
   g.onDay(dailyVillagers);
   g.onDay(dailyGarden);
   g.onDay(dailySpawns);
+  g.onDay(seasonalSpawns);
   g.onDay(resetFishing);
   g.onDay(resetBugs);
   g.addResolver(foragingResolver);
@@ -50,6 +53,7 @@ export function installSystems(g: Game): void {
     fishingPress(game);
     return true;
   });
+  installSeasons(g);
   installQuests(g);
   installChallenges(g);
   g.onUpdate(stepHints);

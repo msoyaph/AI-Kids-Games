@@ -23,7 +23,7 @@ import {
 } from '../src/sim/housing';
 import { decorAnchor, decorSnap, decorTilesOf, moveDecor, NUDGE_MAX, nudgeDecor, pickUpOutdoor, placeOutdoor, restoreDecor, rotateDecor } from '../src/sim/decor';
 import { HOME_DECOR_MAX, homeDecorPoints, ratingBreakdown } from '../src/sim/rating';
-import { STARTER_RECIPES } from '../src/data/recipes';
+import { RECIPES, STARTER_RECIPES } from '../src/data/recipes';
 import { FURNITURE } from '../src/data/furniture';
 import { decodeSave, encodeSave } from '../src/sim/save';
 import type { Game } from '../src/sim/game';
@@ -233,8 +233,9 @@ describe('starter furniture recipes', () => {
     for (const r of STARTER_RECIPES) expect(g.state.recipes).toContain(r);
   });
 
-  it('there are 12 wall pieces, half craftable, half sold in the shop', () => {
-    const walls = FURNITURE.filter((f) => f.furn.layer === 'wall');
+  it('there are 12 year-round wall pieces, half craftable, half sold in the shop', () => {
+    const seasonal = new Set(RECIPES.filter((r) => r.unlock === 'season').map((r) => r.result));
+    const walls = FURNITURE.filter((f) => f.furn.layer === 'wall' && !seasonal.has(f.id));
     expect(walls).toHaveLength(12);
     expect(walls.filter((f) => f.buy > 0)).toHaveLength(6);
   });

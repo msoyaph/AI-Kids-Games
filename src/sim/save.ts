@@ -296,6 +296,11 @@ function fillDefaults(s: GameState): GameState {
   s.events.medals ??= {};
   s.events.active ??= null;
   s.challenges ??= { day: 0, list: [], completedTotal: 0 };
+  // seasons began with the upgrade: older islands pick up the season their calendar is in
+  if (!s.season) {
+    const d = Math.max(0, (s.clock?.day ?? 1) - 1);
+    s.season = { index: Math.floor(d / 7) % 4, day: (d % 7) + 1, paused: false, lastDay: s.clock?.day ?? 1 };
+  }
   s.home.storage ??= [];
   s.home.furniture ??= [];
   s.home.walls ??= [];

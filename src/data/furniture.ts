@@ -381,6 +381,63 @@ export const FURNITURE: FurnitureDef[] = [
     desc: 'A wooden clock with a little bird that pops out to say hi.',
     furn: { w: 1, d: 1, model: 'wallclock', color: 0x9b6a4a, color2: 0xf3dcb5, outdoor: false, decor: 2, layer: 'wall' },
   },
+
+  // ---- Seasonal pieces (recipes learned by gathering that season's treasures) ----
+  {
+    id: 'furn_blossom_garland', name: 'Blossom Garland', price: 300, buy: 0, tags: ['cute', 'nature'],
+    desc: 'A ring of spring petals for your wall.',
+    furn: { w: 1, d: 1, model: 'wreath', color: 0xffc2d4, color2: 0xf28fae, outdoor: false, decor: 2, layer: 'wall' },
+  },
+  {
+    id: 'furn_petal_lamp', name: 'Petal Lamp', price: 330, buy: 0, tags: ['cute', 'cozy'],
+    desc: 'A little lamp with a shade made of pink petals.',
+    furn: { w: 1, d: 1, model: 'lantern', color: 0xffc2d4, color2: 0xf28fae, outdoor: true, decor: 2, layer: 'small' },
+  },
+  {
+    id: 'furn_blossom_bonsai', name: 'Blossom Bonsai', price: 320, buy: 0, tags: ['nature', 'cute'],
+    desc: 'A tiny tree that blooms all year long.',
+    furn: { w: 1, d: 1, model: 'plant', color: 0xffb8cc, color2: 0xc98d62, outdoor: true, decor: 2, layer: 'small' },
+  },
+  {
+    id: 'furn_seaglass_chime', name: 'Sea Glass Chime', price: 480, buy: 0, tags: ['sea', 'music'],
+    desc: 'Clinks softly in the summer breeze.',
+    furn: { w: 1, d: 1, model: 'windchime', color: 0x9fe0d0, color2: 0xd8f4ee, outdoor: true, decor: 3 },
+  },
+  {
+    id: 'furn_seaglass_lantern', name: 'Sea Glass Lantern', price: 520, buy: 0, tags: ['sea', 'shiny'],
+    desc: 'Sea glass panes glow green and blue at night.',
+    furn: { w: 1, d: 1, model: 'lantern', color: 0x9fe0d0, color2: 0x5fae9e, outdoor: true, decor: 3, layer: 'small' },
+  },
+  {
+    id: 'furn_sandy_castle', name: 'Sandy Castle', price: 360, buy: 0, tags: ['sea', 'cute'],
+    desc: 'A proud little castle with a sea glass flag.',
+    furn: { w: 1, d: 1, model: 'statue', color: 0xf3e2b6, color2: 0x9fe0d0, outdoor: true, decor: 3 },
+  },
+  {
+    id: 'furn_maple_rug', name: 'Maple Leaf Rug', price: 380, buy: 0, tags: ['cozy', 'nature'],
+    desc: 'A crunchy-looking rug the colors of autumn.',
+    furn: { w: 2, d: 2, model: 'rug', color: 0xe8875a, color2: 0xf5c45e, outdoor: false, decor: 2, rug: true },
+  },
+  {
+    id: 'furn_pumpkin_lantern', name: 'Pumpkin Lantern', price: 260, buy: 0, tags: ['cozy', 'food'],
+    desc: 'A grinning pumpkin with a warm glow inside.',
+    furn: { w: 1, d: 1, model: 'lantern', color: 0xf2953c, color2: 0x6aa851, outdoor: true, decor: 3, layer: 'small' },
+  },
+  {
+    id: 'furn_snow_globe', name: 'Snow Globe', price: 410, buy: 0, tags: ['shiny', 'cute'],
+    desc: 'Shake it and a tiny island gets a tiny snowstorm.',
+    furn: { w: 1, d: 1, model: 'globe', color: 0xe0f0ff, color2: 0x9fc8f0, outdoor: false, decor: 2, layer: 'small' },
+  },
+  {
+    id: 'furn_snowpal', name: 'Snowpal', price: 400, buy: 0, tags: ['cute', 'nature'],
+    desc: 'A friendly snow buddy with twig arms. It never melts here!',
+    furn: { w: 1, d: 1, model: 'statue', color: 0xffffff, color2: 0xf2953c, outdoor: true, decor: 4 },
+  },
+  {
+    id: 'furn_snowberry_wreath', name: 'Snowberry Wreath', price: 420, buy: 0, tags: ['cozy', 'cute'],
+    desc: 'Green leaves, white berries and a red bow.',
+    furn: { w: 1, d: 1, model: 'wreath', color: 0x5fae86, color2: 0xe0475b, outdoor: false, decor: 2, layer: 'wall' },
+  },
 ];
 
 export const SURFACES: SurfaceDef[] = [

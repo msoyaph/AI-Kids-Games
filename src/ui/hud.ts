@@ -5,11 +5,12 @@ import { formatTime, weekdayOf } from '../sim/clock';
 import type { Game } from '../sim/game';
 import { equippedTool, TOOL_LABEL } from '../sim/tools';
 import type { WeatherT } from '../sim/state';
-import { WEATHER_LABEL } from '../sim/weather';
+import { weatherName } from '../sim/weather';
+import { SEASONS, SEASON_ICON, SEASON_NAME } from '../sim/seasons';
 import { h } from './dom';
 import { iconImg, iconURL } from './icons';
 
-export function weatherSvg(w: WeatherT, size = 26): string {
+export function weatherSvg(w: WeatherT, size = 26, winter = false): string {
   const sun = `<circle cx="16" cy="16" r="7" fill="#ffd166"/><g stroke="#ffd166" stroke-width="2.5" stroke-linecap="round">${[0, 45, 90, 135, 180, 225, 270, 315]
     .map((a) => {
       const r = (a * Math.PI) / 180;
@@ -26,7 +27,9 @@ export function weatherSvg(w: WeatherT, size = 26): string {
       body = `<g transform="translate(-3,-3) scale(0.8)">${sun}</g>` + cloud('#dfe6f2');
       break;
     case 'rain':
-      body = cloud('#b9c4d8') + `<g stroke="#7fb2ff" stroke-width="2.5" stroke-linecap="round"><line x1="11" y1="25" x2="9" y2="30"/><line x1="17" y1="25" x2="15" y2="30"/><line x1="23" y1="25" x2="21" y2="30"/></g>`;
+      body = winter
+        ? cloud('#c9d2e2') + `<g fill="#ffffff" stroke="#9fb4d8" stroke-width="0.8"><circle cx="10" cy="27" r="2"/><circle cx="16.5" cy="29" r="2"/><circle cx="23" cy="27" r="2"/></g>`
+        : cloud('#b9c4d8') + `<g stroke="#7fb2ff" stroke-width="2.5" stroke-linecap="round"><line x1="11" y1="25" x2="9" y2="30"/><line x1="17" y1="25" x2="15" y2="30"/><line x1="23" y1="25" x2="21" y2="30"/></g>`;
       break;
     case 'rainbow':
       body = ['#f27c7c', '#ffd166', '#8fd18a', '#7fb2ff', '#b48cf0']
@@ -96,11 +99,13 @@ export class Hud {
     if (!this.visible) return;
     const s = g.state;
     this.time.textContent = formatTime(s.clock.minute);
-    this.date.textContent = `${weekdayOf(s.clock.day)} · Day ${s.clock.day}`;
-    if (this.lastWeather !== s.weather.today) {
-      this.lastWeather = s.weather.today;
-      this.weather.innerHTML = weatherSvg(s.weather.today, 30);
-      this.weather.title = WEATHER_LABEL[s.weather.today];
+    const season = SEASONS[s.season?.index ?? 0]!;
+    this.date.textContent = `${SEASON_ICON[season]} ${SEASON_NAME[season]} ${s.season?.day ?? 1} · ${weekdayOf(s.clock.day)}`;
+    const wKey = `${s.weather.today}|${s.season?.index ?? 0}`;
+    if (this.lastWeather !== wKey) {
+      this.lastWeather = wKey;
+      this.weather.innerHTML = weatherSvg(s.weather.today, 30, (s.season?.index ?? 0) === 3);
+      this.weather.title = weatherName(s.weather.today, s.season?.index ?? 0);
     }
     this.glints.textContent = fmt(s.player.glints);
     this.lumens.textContent = fmt(s.player.lumens);

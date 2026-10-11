@@ -177,11 +177,16 @@ export interface ItemDef {
   /** key/quest items cannot be sold or dropped */
   key?: boolean;
   rarity?: number;
+  /** seasonal: only found / sold in these seasons */
+  seasons?: Season[];
 }
 
 // ---------- creatures ----------
 export type FishWhere = 'river' | 'pond' | 'sea' | 'mouth';
 export type WeatherNeed = 'any' | 'rain' | 'clear' | 'rainbow';
+
+/** The four seasons (7 in-game days each). */
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
 
 export interface FishDef {
   id: string;
@@ -200,6 +205,8 @@ export interface FishDef {
   shape: 'fish' | 'eel' | 'ray' | 'puffer' | 'jelly' | 'crab';
   /** body, fin, accent */
   colors: [number, number, number];
+  /** only around in these seasons (absent = all year) */
+  seasons?: Season[];
 }
 
 export type BugHabitat = 'flowers' | 'air' | 'trees' | 'ground' | 'rocks' | 'beach' | 'water' | 'fruit';
@@ -219,6 +226,8 @@ export interface BugDef {
   speed: 1 | 2 | 3;
   /** how easily it notices you 1..3 */
   wariness: 1 | 2 | 3;
+  /** only around in these seasons (absent = all year) */
+  seasons?: Season[];
 }
 
 export interface FossilDef {
@@ -231,7 +240,7 @@ export interface FossilDef {
 }
 
 // ---------- crafting ----------
-export type RecipeUnlock = 'start' | 'mission' | 'card' | 'friend' | 'lumen' | 'museum';
+export type RecipeUnlock = 'start' | 'mission' | 'card' | 'friend' | 'lumen' | 'museum' | 'season';
 
 export interface RecipeDef {
   id: string;
@@ -242,6 +251,8 @@ export interface RecipeDef {
   unlock: RecipeUnlock;
   /** Lumen price when unlock === 'lumen' */
   lumenCost?: number;
+  /** unlock === 'season': learned when you first gather that season's treasures */
+  season?: Season;
 }
 
 export interface FurnitureDef {

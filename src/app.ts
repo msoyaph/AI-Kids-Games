@@ -38,6 +38,8 @@ import { item as itemDef } from './data/registry';
 import type { TalkHooks } from './ui/conversation';
 import { cancelPlacement, placementRT } from './sim/placement';
 import { PlaytestRecorder } from './sim/playtest';
+import { SEASON_ICON, SEASON_NAME, SEASON_NEWS } from './sim/seasons';
+import type { Season } from './data/types';
 
 const AUTOSAVE_SEC = 60;
 const TITLE_SEED = 20261011;
@@ -327,6 +329,11 @@ export class App {
       setTimeout(() => f.classList.remove('door'), 700);
     });
     g.bus.on('dayStarted', () => this.saveNow(true));
+    g.bus.on('seasonChanged', (e) => {
+      const season = e.season as Season;
+      questRT(g).inbox.push({ speaker: '', title: `${SEASON_ICON[season]} ${SEASON_NAME[season]}`, lines: [] });
+      this.hud.toast(SEASON_NEWS[season], 'good');
+    });
     g.bus.on('fx', (f) => {
       if (f.kind === 'pop' && f.item) this.floatIcon(f.item, f.x, f.y + 1.6, f.z);
     });

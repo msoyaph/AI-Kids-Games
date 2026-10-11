@@ -6,7 +6,7 @@ import { Ground, LEVEL_HEIGHT } from '../world/types';
 import type { World } from '../sim/world';
 import { InstancedLayer } from './instanced';
 import { natureGeo } from './models/nature';
-import { PAL, FLOWER_COLORS } from './palette';
+import { PAL, FLOWER_COLORS, SEASON_PALETTES, type SeasonPalette } from './palette';
 import { vcolMat } from './curve';
 import { furnitureObject } from './interior';
 
@@ -20,6 +20,8 @@ export class ObjectRenderer {
   private decor = new THREE.Group();
   private decorMap = new Map<number, { key: string; obj: THREE.Object3D }>();
   dirty = true;
+  private P: SeasonPalette = SEASON_PALETTES.summer;
+  private season = 'summer';
 
   constructor(private world: World, private itemVisual: ItemVisual) {
     const mat = vcolMat();
@@ -53,10 +55,25 @@ export class ObjectRenderer {
     this.buildGrass();
   }
 
+  /** Recolor canopies and grass for a season. */
+  setSeason(season: string): void {
+    if (season === this.season) return;
+    this.season = season;
+    this.P = SEASON_PALETTES[season as keyof typeof SEASON_PALETTES] ?? SEASON_PALETTES.summer;
+    this.buildGrass();
+    this.dirty = true;
+  }
+
   private buildGrass(): void {
     const g = this.world.gen;
     const layer = this.layers.grass!;
     layer.begin();
+    const blades = this.P.blades;
+    if (!blades) {
+      // snow covers the grass
+      layer.end();
+      return;
+    }
     for (let z = 0; z < g.size; z++)
       for (let x = 0; x < g.size; x++) {
         const i = z * g.size + x;
@@ -67,7 +84,7 @@ export class ObjectRenderer {
         for (let k = 0; k < n; k++) {
           const ox = hash01(x, z, 402 + k) * 0.8 + 0.1, oz = hash01(x, z, 403 + k) * 0.8 + 0.1;
           const lvl = g.height[i]!;
-          const col = lvl === 0 ? 0x8cc76f : lvl === 1 ? 0x86bf78 : 0x8fc58a;
+          const col = blades[Math.min(2, lvl)]!;
           layer.push(x + ox, lvl * LEVEL_HEIGHT, z + oz, h * 30, 0.8 + hash01(x, z, 404) * 0.5, col);
         }
       }
@@ -94,7 +111,8 @@ export class ObjectRenderer {
         case 'tree':
         case 'fruitTree': {
           Ls.trunk!.push(x, y, z, rot, s, 0xffffff);
-          const leaf = o.k === 'fruitTree' ? 0x8ccf7d : PAL.leaf[(o.v ?? 0) % PAL.leaf.length]!;
+          const P = this.P;
+          const leaf = o.k === 'fruitTree' ? (this.season === 'winter' ? 0xdfe9e2 : this.season === 'autumn' ? 0xc9c46a : 0x8ccf7d) : P.leaf[(o.v ?? 0) % P.leaf.length]!;
           Ls.canopy!.push(x, y, z, rot, s, leaf);
           if (o.k === 'fruitTree' && (o.f ?? 0) > 0) {
             const fc = FRUITS[o.v ?? 0]?.color ?? 0xffffff;
@@ -113,7 +131,7 @@ export class ObjectRenderer {
         }
         case 'pine':
           Ls.pineTrunk!.push(x, y, z, rot, s, 0xffffff);
-          Ls.pineCanopy!.push(x, y, z, rot, s, PAL.pine[(o.v ?? 0) % PAL.pine.length]!);
+          Ls.pineCanopy!.push(x, y, z, rot, s, this.P.pine[(o.v ?? 0) % this.P.pine.length]!);
           break;
         case 'palm': {
           Ls.palm!.push(x, y, z, rot, s, 0xffffff);

@@ -246,6 +246,17 @@ export interface GameState {
   shop: { day: number; sold: string[] };
   flags: Record<string, number>;
   tips: Record<string, number>;
+  /** 0 spring, 1 summer, 2 autumn, 3 winter; day 1..7 within the season */
+  season: SeasonState;
+}
+
+export interface SeasonState {
+  index: number;
+  day: number;
+  /** "Pause seasons" setting (per island) */
+  paused: boolean;
+  /** clock day the season last advanced on */
+  lastDay: number;
 }
 
 export const DEFAULT_LOOK: Appearance = {
@@ -340,5 +351,6 @@ export function newGameState(seed: number, name: string, look: Appearance = DEFA
     shop: { day: 0, sold: [] },
     flags: {},
     tips: {},
+    season: { index: 0, day: 1, paused: false, lastDay: 0 },
   };
 }

@@ -291,3 +291,4 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6
 .decor-edit { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; pointer-events: none; }
 .decor-edit-panel { position: relative; pointer-events: auto; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; max-width: 96vw; }
 @media (max-width: 720px) { .editor-bar { right: 12px; bottom: calc(40vh + 20px); } .editor { top: auto; height: 40vh; width: auto; left: 12px; } }
+.cat-season { position: absolute; left: 2px; top: 1px; font-size: 11px; line-height: 1; pointer-events: none; }

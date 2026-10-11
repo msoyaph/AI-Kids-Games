@@ -91,10 +91,17 @@ export class Sky {
     this.sun.castShadow = on;
   }
 
+  /** 0 spring, 1 summer, 2 autumn, 3 winter */
+  season = 1;
+
   update(minute: number, weather: WeatherT, target: THREE.Vector3, indoor = false): void {
     const h = (minute / 60) % 24;
     const k = sample(h);
     let sky = k.sky;
+    // a cooler, paler sky in winter; a warmer one in autumn; a touch of pink in spring
+    if (this.season === 3) sky = mixHex(sky, 0xd6e2f0, 0.22);
+    else if (this.season === 2) sky = mixHex(sky, 0xffd9b0, 0.12);
+    else if (this.season === 0) sky = mixHex(sky, 0xffe4ee, 0.08);
     let sunI = k.sunI;
     let hemiI = k.hemi;
     if (weather === 'cloudy') {

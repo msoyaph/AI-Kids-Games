@@ -54,6 +54,19 @@ export const RECIPES: RecipeDef[] = [
   { id: 'r_furn_lantern_sconce', result: 'furn_lantern_sconce', ingredients: [{ id: 'iron', qty: 1 }, { id: 'glowstone', qty: 1 }], unlock: 'card' },
   { id: 'r_furn_sunset_painting', result: 'furn_sunset_painting', ingredients: [{ id: 'timber', qty: 2 }, { id: 'fiber', qty: 4 }, { id: 'flower_sun_red', qty: 2 }], unlock: 'card' },
 
+  // ---- Seasonal (learned when you first gather that season's treasure) ----
+  { id: 'r_furn_blossom_garland', result: 'furn_blossom_garland', ingredients: [{ id: 'blossom_petals', qty: 5 }, { id: 'fiber', qty: 4 }], unlock: 'season', season: 'spring' },
+  { id: 'r_furn_petal_lamp', result: 'furn_petal_lamp', ingredients: [{ id: 'blossom_petals', qty: 4 }, { id: 'clay', qty: 2 }], unlock: 'season', season: 'spring' },
+  { id: 'r_furn_blossom_bonsai', result: 'furn_blossom_bonsai', ingredients: [{ id: 'blossom_petals', qty: 3 }, { id: 'clay', qty: 3 }], unlock: 'season', season: 'spring' },
+  { id: 'r_furn_seaglass_chime', result: 'furn_seaglass_chime', ingredients: [{ id: 'sea_glass', qty: 4 }, { id: 'branch', qty: 2 }, { id: 'fiber', qty: 2 }], unlock: 'season', season: 'summer' },
+  { id: 'r_furn_seaglass_lantern', result: 'furn_seaglass_lantern', ingredients: [{ id: 'sea_glass', qty: 3 }, { id: 'iron', qty: 1 }], unlock: 'season', season: 'summer' },
+  { id: 'r_furn_sandy_castle', result: 'furn_sandy_castle', ingredients: [{ id: 'sea_glass', qty: 1 }, { id: 'stone', qty: 6 }, { id: 'shell_spiral', qty: 1 }], unlock: 'season', season: 'summer' },
+  { id: 'r_furn_maple_rug', result: 'furn_maple_rug', ingredients: [{ id: 'maple_leaves', qty: 8 }, { id: 'fiber', qty: 6 }], unlock: 'season', season: 'autumn' },
+  { id: 'r_furn_pumpkin_lantern', result: 'furn_pumpkin_lantern', ingredients: [{ id: 'hearth_pumpkin', qty: 1 }, { id: 'fiber', qty: 2 }], unlock: 'season', season: 'autumn' },
+  { id: 'r_furn_snow_globe', result: 'furn_snow_globe', ingredients: [{ id: 'snow_crystal', qty: 4 }, { id: 'iron', qty: 1 }], unlock: 'season', season: 'winter' },
+  { id: 'r_furn_snowpal', result: 'furn_snowpal', ingredients: [{ id: 'snow_crystal', qty: 6 }, { id: 'branch', qty: 2 }], unlock: 'season', season: 'winter' },
+  { id: 'r_furn_snowberry_wreath', result: 'furn_snowberry_wreath', ingredients: [{ id: 'snowberry', qty: 3 }, { id: 'fiber', qty: 6 }], unlock: 'season', season: 'winter' },
+
   // ---- Furniture: Message-bottle recipe cards ----
   { id: 'r_furn_moonbeam_lamp', result: 'furn_moonbeam_lamp', ingredients: [{ id: 'glowstone', qty: 1 }, { id: 'clay', qty: 2 }, { id: 'flower_moon_white', qty: 2 }], unlock: 'card' },
   { id: 'r_furn_puffcloud_sofa', result: 'furn_puffcloud_sofa', ingredients: [{ id: 'furn_puffmoss_cushion', qty: 2 }, { id: 'timber', qty: 6 }, { id: 'fiber', qty: 4 }], unlock: 'card' },

@@ -1,7 +1,7 @@
 // Base items: materials, tools, shells, fruit, flowers, seeds, saplings, misc/key items.
 // Fish, bugs, fossils and furniture live in their own data files and are merged by registry.ts.
 import { COCONUT, FRUITS } from './fruit';
-import type { ItemDef } from './types';
+import type { ItemDef, Season } from './types';
 
 export const MATERIALS: ItemDef[] = [
   { id: 'branch', name: 'Twiggy Branch', cat: 'material', price: 5, stack: 30, desc: 'A bendy branch. Handy for simple crafts.', icon: { s: 'branch', c: 0xa47a52 }, tags: ['nature'] },
@@ -62,6 +62,8 @@ export interface FlowerSpecies {
   id: string;
   name: string;
   colors: string[];
+  /** seasonal species: seeds are sold and wild ones grow only in these seasons */
+  seasons?: Season[];
 }
 
 export const FLOWER_SPECIES: FlowerSpecies[] = [
@@ -71,6 +73,9 @@ export const FLOWER_SPECIES: FlowerSpecies[] = [
   { id: 'star', name: 'Starwort', colors: ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'] },
   { id: 'puff', name: 'Puffcap', colors: ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'] },
   { id: 'lantern', name: 'Lanternflower', colors: ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'] },
+  // seasonal species
+  { id: 'blossom', name: 'Blossomcup', colors: ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'], seasons: ['spring'] },
+  { id: 'frost', name: 'Frostbell', colors: ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'], seasons: ['winter'] },
 ];
 
 export const FLOWER_COLOR_NAMES = ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'];
@@ -117,8 +122,19 @@ export const SEED_ITEMS: ItemDef[] = FLOWER_SPECIES.flatMap((sp, si) =>
     desc: `Plant to grow a ${color} ${sp.name}.`,
     icon: { s: 'seed' as const, c: FLOWER_HEX[color]!, c2: 0xd9b98a },
     plant: { kind: 'flower' as const, v: si * 16 + ci },
+    ...(sp.seasons ? { seasons: sp.seasons } : {}),
   })),
 );
+
+/** Seasonal treasures: forage that only appears in its season (and teaches that season's recipes). */
+export const SEASONAL_ITEMS: ItemDef[] = [
+  { id: 'blossom_petals', name: 'Blossom Petals', cat: 'material', price: 40, stack: 30, desc: 'Soft pink petals from the spring trees.', icon: { s: 'flower', c: 0xffc2d4, c2: 0xf28fae }, tags: ['nature', 'cute'], seasons: ['spring'] },
+  { id: 'sea_glass', name: 'Sea Glass', cat: 'material', price: 80, stack: 30, desc: 'Smooth, frosty glass polished by summer waves.', icon: { s: 'gem', c: 0x9fe0d0, c2: 0xd8f4ee }, tags: ['sea', 'shiny'], seasons: ['summer'] },
+  { id: 'maple_leaves', name: 'Maple Leaves', cat: 'material', price: 30, stack: 30, desc: 'Crunchy red and orange leaves. Fun to jump in!', icon: { s: 'flower', c: 0xe8875a, c2: 0xf5c45e }, tags: ['nature', 'cozy'], seasons: ['autumn'] },
+  { id: 'snow_crystal', name: 'Snow Crystal', cat: 'material', price: 60, stack: 30, desc: 'A snowflake that never melts. Cold to the touch!', icon: { s: 'gem', c: 0xe0f0ff, c2: 0x9fc8f0 }, tags: ['shiny', 'cute'], seasons: ['winter'] },
+  { id: 'hearth_pumpkin', name: 'Hearth Pumpkin', cat: 'fruit', price: 150, stack: 10, desc: 'A round orange pumpkin that grows wild in autumn fields.', icon: { s: 'fruit', c: 0xf2953c, c2: 0x6aa851 }, tags: ['food', 'cozy'], seasons: ['autumn'] },
+  { id: 'snowberry', name: 'Snowberry', cat: 'fruit', price: 120, stack: 10, desc: 'A tiny white berry. Shake a pine tree in winter to find some.', icon: { s: 'fruit', c: 0xf4f7fb, c2: 0x5fae86 }, tags: ['food', 'sweet'], seasons: ['winter'] },
+];
 
 export const SAPLING_ITEMS: ItemDef[] = [
   { id: 'sapling_round', name: 'Roundleaf Sapling', cat: 'sapling', price: 160, stack: 10, desc: 'Plant it and in a few days a leafy tree will grow.', icon: { s: 'sapling', c: 0x7fc77a }, tags: ['nature'], plant: { kind: 'sapling', v: 0, item: 'tree' } },

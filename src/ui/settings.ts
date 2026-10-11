@@ -3,6 +3,7 @@ import type { App } from '../app';
 import { sharedUniforms } from '../render/curve';
 import { btn, h, type Panel } from './dom';
 import { playtestSettings } from './playtest';
+import { SEASONS, SEASON_NAME, setSeasonsPaused } from '../sim/seasons';
 
 export function settingsBody(app: App, body: HTMLElement): void {
   const s = app.settings;
@@ -49,6 +50,19 @@ export function settingsBody(app: App, body: HTMLElement): void {
     choice('Reduce motion', [['off', 'Off'], ['on', 'On']], () => (s.reduceMotion ? 'on' : 'off'), (v) => (s.reduceMotion = v === 'on')),
     choice('Touch controls', [['auto', 'Auto'], ['on', 'Always'], ['off', 'Hidden']], () => s.touch, (v) => (s.touch = v)),
     choice('Tutorial tips', [['on', 'On'], ['off', 'Off']], () => (s.tips ? 'on' : 'off'), (v) => (s.tips = v === 'on')),
+    ...(app.game
+      ? [
+          choice(
+            'Seasons',
+            [
+              ['go', 'Change'],
+              ['stay', `Stay in ${SEASON_NAME[SEASONS[app.game.state.season.index]!]}`],
+            ],
+            () => (app.game!.state.season.paused ? 'stay' : 'go'),
+            (v) => setSeasonsPaused(app.game!, v === 'stay'),
+          ),
+        ]
+      : []),
     h('div', { class: 'row', style: 'margin-top:8px' }, btn('Show tips again', () => {
       if (app.game) app.game.state.tips = {};
       app.hud.toast('Tutorial tips will show again.');

@@ -11,6 +11,7 @@ import { RARITY_WEIGHT } from './fishing';
 import { facingVec } from './player';
 import { wearTool } from './tools';
 import { weatherOk } from './weather';
+import { inSeason } from './seasons';
 
 export interface Bug {
   id: number;
@@ -58,7 +59,7 @@ export function availableBugs(g: Game, habitat: BugHabitat): BugDef[] {
   const h = Math.floor(g.state.clock.minute / 60);
   const w = g.state.weather.today;
   return BUGS.filter((b) => {
-    if (b.habitat !== habitat) return false;
+    if (b.habitat !== habitat || !inSeason(g, b.seasons)) return false;
     if (!hourInWindow(h, b.hours[0], b.hours[1]) || !weatherOk(b.weather, w)) return false;
     // most flying bugs shelter from the rain unless they love it
     if (w === 'rain' && FLYERS.has(b.habitat) && b.weather !== 'rain' && b.habitat !== 'water') return false;

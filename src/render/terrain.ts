@@ -5,7 +5,7 @@ import { fbm2 } from '../core/noise';
 import { mixHex } from '../core/math';
 import type { IslandGen } from '../world/worldgen';
 import { DIRS4, Ground, LEVEL_HEIGHT } from '../world/types';
-import { PAL } from './palette';
+import { PAL, SEASON_PALETTES, type SeasonPalette } from './palette';
 import { curved } from './curve';
 
 const CHUNK = 16;
@@ -53,10 +53,18 @@ export class TerrainRenderer {
   readonly floor: THREE.Mesh;
   private N: number;
   private seaDist: Uint8Array;
+  /** season-dependent colors */
+  private P: SeasonPalette = SEASON_PALETTES.summer;
+  private season = 'summer';
+  private chunks: { mesh: THREE.Mesh; cx: number; cz: number }[] = [];
+  /** winter: a rim of ice along pond and river banks */
+  private ice: THREE.Mesh | null = null;
 
-  constructor(private gen: IslandGen) {
+  constructor(private gen: IslandGen, season = 'summer') {
     this.N = gen.size;
     this.seaDist = this.computeSeaDist();
+    this.season = season;
+    this.P = SEASON_PALETTES[season as keyof typeof SEASON_PALETTES] ?? SEASON_PALETTES.summer;
     for (let cz = 0; cz < this.N; cz += CHUNK)
       for (let cx = 0; cx < this.N; cx += CHUNK) {
         const mesh = new THREE.Mesh(this.buildChunk(cx, cz), this.material);
@@ -65,12 +73,58 @@ export class TerrainRenderer {
         // the world curve moves geometry, so bounding-sphere culling can drop visible chunks
         mesh.frustumCulled = false;
         this.group.add(mesh);
+        this.chunks.push({ mesh, cx, cz });
       }
+    this.syncIce();
     // Deep sea floor beyond the grid (follows the camera).
     this.floor = new THREE.Mesh(new THREE.PlaneGeometry(220, 220, 24, 24).rotateX(-Math.PI / 2), curved(new THREE.MeshLambertMaterial({ color: PAL.oceanDeep })));
     this.floor.position.set(this.N / 2, OCEAN_FLOOR_Y - 0.02, this.N / 2);
     this.floor.frustumCulled = false;
     this.group.add(this.floor);
+  }
+
+  /** Recolor the island for a new season (rebuilds the chunk geometry once). */
+  setSeason(season: string): void {
+    if (season === this.season) return;
+    this.season = season;
+    this.P = SEASON_PALETTES[season as keyof typeof SEASON_PALETTES] ?? SEASON_PALETTES.summer;
+    for (const c of this.chunks) {
+      const old = c.mesh.geometry;
+      c.mesh.geometry = this.buildChunk(c.cx, c.cz);
+      old.dispose();
+    }
+    this.syncIce();
+  }
+
+  private syncIce(): void {
+    if (this.ice) {
+      this.group.remove(this.ice);
+      this.ice.geometry.dispose();
+      this.ice = null;
+    }
+    if (this.season !== 'winter') return;
+    // strips of ice along every bank of the pond and river
+    const B = new GeoBuilder();
+    const N = this.N, y = WATER_Y + 0.08, wdt = 0.45, up: V3 = [0, 1, 0];
+    const isW = (x: number, z: number) => {
+      const g = this.g(x, z);
+      return g === Ground.River || g === Ground.Pond;
+    };
+    for (let z = 0; z < N; z++)
+      for (let x = 0; x < N; x++) {
+        if (!isW(x, z)) continue;
+        const land = (dx: number, dz: number) => !isW(x + dx, z + dz) && this.g(x + dx, z + dz) !== Ground.Ocean;
+        const c = (k: number) => mixHex(0xf2f9ff, 0xd6eaf6, hash01(x, z, k) * 0.7);
+        if (land(0, -1)) B.quad([x, y, z], [x, y, z + wdt], [x + 1, y, z + wdt], [x + 1, y, z], c(1), up);
+        if (land(0, 1)) B.quad([x, y, z + 1 - wdt], [x, y, z + 1], [x + 1, y, z + 1], [x + 1, y, z + 1 - wdt], c(2), up);
+        if (land(-1, 0)) B.quad([x, y, z], [x, y, z + 1], [x + wdt, y, z + 1], [x + wdt, y, z], c(3), up);
+        if (land(1, 0)) B.quad([x + 1 - wdt, y, z], [x + 1 - wdt, y, z + 1], [x + 1, y, z + 1], [x + 1, y, z], c(4), up);
+      }
+    this.ice = new THREE.Mesh(B.build(), curved(new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.95 })));
+    this.ice.renderOrder = 3;
+    this.ice.frustumCulled = false;
+    this.ice.receiveShadow = true;
+    this.group.add(this.ice);
   }
 
   private computeSeaDist(): Uint8Array {
@@ -150,19 +204,19 @@ export class TerrainRenderer {
     const h1 = hash01(x, z, 3);
     switch (g) {
       case Ground.Grass: {
-        const pal =
-          lvl === 2 ? [PAL.grassTop0, PAL.grassTop1] : lvl === 1 ? [PAL.grassHigh0, PAL.grassHigh1] : [PAL.grass0, PAL.grass1];
+        const P = this.P;
+        const pal = lvl === 2 ? [P.grassTop0, P.grassTop1] : lvl === 1 ? [P.grassHigh0, P.grassHigh1] : [P.grass0, P.grass1];
         const base = mixHex(pal[0]!, pal[1]!, Math.min(1, Math.max(0, n * 1.2 + 0.5)));
-        const c2 = mixHex(base, PAL.grass2, (x + z) % 2 === 0 ? 0.18 : 0.0);
+        const c2 = mixHex(base, P.grass2, (x + z) % 2 === 0 ? 0.18 : 0.0);
         return [c2, mixHex(c2, 0x000000, 0.025 + h1 * 0.02)];
       }
       case Ground.Dirt: {
-        const c2 = mixHex(PAL.dirt, PAL.dirtDark, h1 * 0.35);
-        return [c2, mixHex(c2, PAL.dirtDark, 0.15)];
+        const c2 = mixHex(this.P.dirt, this.P.dirtDark, h1 * 0.35);
+        return [c2, mixHex(c2, this.P.dirtDark, 0.15)];
       }
       case Ground.Sand: {
         const minH = Math.min(a, b, c, d);
-        const c2 = minH < -0.05 ? PAL.sandWet : mixHex(PAL.sand, PAL.sandWet, h1 * 0.25);
+        const c2 = minH < -0.05 ? this.P.sandWet : mixHex(this.P.sand, this.P.sandWet, h1 * 0.25);
         return [c2, mixHex(c2, 0x000000, 0.02)];
       }
       case Ground.River:

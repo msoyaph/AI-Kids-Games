@@ -5,6 +5,7 @@ import { FOREIGN_FRUIT_MULT, FRUITS } from '../data/fruit';
 import { BUY_PRICE, FURNITURE_SHOP, RECIPES, SURFACE_SHOP, item } from '../data/registry';
 import { SEED_ITEMS } from '../data/items';
 import type { Game } from './game';
+import { inSeason } from './seasons';
 import { give, money, removeAt, roomFor, stat } from './inventory';
 
 export function isNativeFruit(g: Game, id: string): boolean {
@@ -70,8 +71,11 @@ export function dailyStock(g: Game, stage: ShopStage): StockEntry[] {
   const rng = dayRng(g.state.seed, g.state.clock.day, 'shop');
   const out: StockEntry[] = [];
   const add = (id: string, limited: boolean) => out.push({ id, price: buyPrice(id), limited });
-  const seeds = rng.shuffle([...SEED_ITEMS]).slice(0, stage === 'cart' ? 2 : 4);
+  const seeds = rng.shuffle(SEED_ITEMS.filter((s) => !s.seasons)).slice(0, stage === 'cart' ? 2 : 4);
   seeds.forEach((s) => add(s.id, false));
+  // seasonal flower seeds, only in their season
+  const seasonal = SEED_ITEMS.filter((s) => s.seasons && inSeason(g, s.seasons));
+  if (seasonal.length) add(seasonal[g.state.clock.day % seasonal.length]!.id, false);
   add('sapling_round', false);
   if (stage === 'shop') add('sapling_pine', false);
   // an imported (non-native) fruit every day

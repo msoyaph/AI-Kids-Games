@@ -63,6 +63,7 @@ export interface GameEvents {
   ratingChanged: { stars: number };
   tip: { id: string };
   finale: Record<string, never>;
+  seasonChanged: { season: string };
   catalogNew: { id: string };
   recipeLearned: { id: string; source: string };
   regionVisited: { region: number };
