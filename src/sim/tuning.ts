@@ -93,13 +93,13 @@ export function combineStats(base: Stats, ...mods: Array<Partial<Stats>>): Stats
 /** Map 0..10 stat bars to physical parameters. Kept gentle so skill matters more than setup. */
 export function deriveParams(stats: Stats, speedScale: number): KartParams {
   return {
-    topSpeed: TUNING.baseTopSpeed * speedScale * (0.95 + 0.01 * stats.speed),
+    topSpeed: TUNING.baseTopSpeed * speedScale * (0.975 + 0.005 * stats.speed),
     accel: (11 + 1.25 * stats.accel) * Math.sqrt(speedScale),
-    turnRate: 1.8 + 0.07 * stats.handling,
+    turnRate: 1.78 + 0.085 * stats.handling,
     mass: 1 + 0.08 * stats.weight,
     grip: 7.5 + 0.5 * stats.traction,
     driftGrip: 2.2 + 0.12 * stats.traction,
     offroadMul: 0.5 + 0.028 * stats.traction,
-    miniTurboMul: 1 + 0.01 * (stats.accel + stats.handling - 10),
+    miniTurboMul: 1 + 0.03 * (stats.accel + stats.handling - 10),
   };
 }
