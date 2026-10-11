@@ -59,3 +59,27 @@ export function removeKey(key: string): void {
     /* ignore */
   }
 }
+
+/** Keys starting with `prefix` (callers only ever pass a `calexcart.` prefix). Includes memory-only keys. */
+export function ourKeys(prefix: string): string[] {
+  const out = new Set<string>();
+  if (storageAvailable()) {
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith(prefix)) out.add(k);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  for (const k of memory.keys()) if (k.startsWith(prefix)) out.add(k);
+  return [...out];
+}
+
+/** Total UTF-16 bytes used by keys + values under `prefix` (what browsers count against the quota). */
+export function usedBytes(prefix: string): number {
+  let chars = 0;
+  for (const k of ourKeys(prefix)) chars += k.length + (readKey(k)?.length ?? 0);
+  return chars * 2;
+}

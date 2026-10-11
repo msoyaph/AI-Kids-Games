@@ -65,6 +65,19 @@ export class App {
     this.gr = new GameRenderer(canvas);
     this.input = new InputManager(uiRoot);
     this.saves = new SaveManager(this.gr.isTouch);
+    // Full storage: first give up our own playtest log, then tell the player (once) — saves are never corrupted.
+    this.saves.freeSpace = () => this.playtest.shrink(0.5) > 0;
+    const told = new Set<string>();
+    this.saves.onStorageProblem = (kind) => {
+      if (told.has(kind)) return;
+      told.add(kind);
+      this.toast(
+        kind === 'full'
+          ? 'Storage is full, so your newest progress could not be saved. Your earlier saves are safe.'
+          : 'Saving is switched off in this browser, so progress lasts until you close the game.',
+        5000,
+      );
+    };
     this.ui = new Ui(uiRoot, this.input, audio);
     this.menu = new MenuScene(this.gr);
     this.flow = {
@@ -95,8 +108,78 @@ export class App {
       },
     });
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && !this.paused) this.audio.suspend(false);
+      if (!document.hidden && !this.paused && !this.gr.contextLost) this.audio.suspend(false);
     });
+    this.gr.onContextLost(() => this.onContextLost());
+    this.gr.onContextRestored(() => this.onContextRestored());
+  }
+
+  // ---------------------------------------------------------------------------
+  // WebGL context loss: pause everything, wait for the browser to give the GPU back, then "Tap to continue".
+  // ---------------------------------------------------------------------------
+  private ctxOverlay: HTMLDivElement | null = null;
+  private ctxWasRacing = false;
+  private ctxUnsub: (() => void) | null = null;
+
+  private onContextLost(): void {
+    this.saves.flush();
+    this.ctxWasRacing = !!this.session && !this.paused && !this.session.completed;
+    this.loop.simPaused = true;
+    this.audio.suspend(true);
+    this.input.touch.show(false);
+    if (!this.ctxOverlay) {
+      this.ctxOverlay = h('div', { class: 'ctx-lost', role: 'alertdialog', 'aria-live': 'assertive' });
+      this.uiRoot.appendChild(this.ctxOverlay);
+    }
+    this.ctxOverlay.innerHTML = '';
+    this.ctxOverlay.append(h('div', { class: 'ctx-title' }, 'Graphics are taking a break…'), h('div', { class: 'hint' }, 'Hang on — your race is paused and your progress is saved.'));
+    // Some browsers never give the context back on their own: after a moment offer to reload.
+    setTimeout(() => {
+      if (this.gr.contextLost && this.ctxOverlay) this.showContinue(true);
+    }, 4000);
+  }
+
+  private onContextRestored(): void {
+    if (!this.ctxOverlay) return;
+    this.showContinue(false);
+  }
+
+  private showContinue(reload: boolean): void {
+    const el = this.ctxOverlay;
+    if (!el) return;
+    el.innerHTML = '';
+    const go = (): void => this.continueAfterContext(reload && this.gr.contextLost);
+    const btn = h('button', { class: 'btn yellow', 'data-nav': '1' }, 'Tap to continue') as HTMLButtonElement;
+    btn.addEventListener('click', go);
+    el.append(h('div', { class: 'ctx-title' }, reload ? 'Graphics need a restart' : 'Ready!'), btn);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') go();
+    });
+    this.ctxUnsub?.();
+    this.ctxUnsub = this.input.onMenu((a) => {
+      if (a === 'confirm') go();
+    });
+    btn.focus();
+  }
+
+  private continueAfterContext(reload: boolean): void {
+    this.ctxUnsub?.();
+    this.ctxUnsub = null;
+    if (reload) {
+      this.saves.flush();
+      location.reload();
+      return;
+    }
+    this.ctxOverlay?.remove();
+    this.ctxOverlay = null;
+    this.loop.resetClock();
+    if (this.session && this.ctxWasRacing) {
+      this.paused = true; // resume() expects a paused race
+      this.resume();
+    } else if (!this.paused) {
+      this.loop.simPaused = !!this.session?.completed;
+      this.audio.suspend(false);
+    }
   }
 
   get save(): SaveData {
@@ -245,7 +328,7 @@ export class App {
   /** Playtest mode: log this session's anonymous numbers (`quit` = left before the end). */
   private recordPlaytest(quit: boolean): void {
     const s = this.session;
-    if (!s || !this.saves.settings.playtest || s.cfg.trackData) return;
+    if (!s || !this.saves.settings.playtest || s.cfg.trackData || s.cfg.benchmark) return;
     if (quit && s.world.raceTime < 5) return; // backed out before really racing
     const secs = Math.max(0.001, (performance.now() - this.sessionStart) / 1000);
     try {

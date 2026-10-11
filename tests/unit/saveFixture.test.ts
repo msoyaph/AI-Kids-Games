@@ -1,27 +1,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { FakeStorage, installFakeStorage } from './fakeStorage';
 
 // A real save exported from the shipped build (main @ 5ea2ca9: save v2, settings v1, two Time Trial ghosts).
 const fixture = JSON.parse(readFileSync('tests/fixtures/save-v2.json', 'utf8')) as { keys: Record<string, string> };
-
-class FakeStorage {
-  map = new Map<string, string>();
-  get length(): number {
-    return this.map.size;
-  }
-  key(i: number): string | null {
-    return [...this.map.keys()][i] ?? null;
-  }
-  getItem(k: string): string | null {
-    return this.map.get(k) ?? null;
-  }
-  setItem(k: string, v: string): void {
-    this.map.set(k, String(v));
-  }
-  removeItem(k: string): void {
-    this.map.delete(k);
-  }
-}
 
 let store: FakeStorage;
 type SaveMod = typeof import('../../src/save/save');
@@ -32,9 +14,7 @@ beforeAll(async () => {
   store = new FakeStorage();
   for (const [k, v] of Object.entries(fixture.keys)) store.setItem(k, v);
   store.setItem('othergame.save', 'do-not-touch');
-  const g = globalThis as unknown as Record<string, unknown>;
-  g.window = { localStorage: store, addEventListener: () => {} };
-  g.document = { addEventListener: () => {}, hidden: false };
+  installFakeStorage(store);
   mod = await import('../../src/save/save');
   ghostMod = await import('../../src/sim/ghost');
 });
@@ -75,14 +55,24 @@ describe('real v2 save fixture', () => {
     }
   });
 
-  it('old ghosts still decode and play back', () => {
+  it('old ghosts are re-encoded to the compact format and still play back identically', () => {
     const sm = new mod.SaveManager(false);
     sm.load(1);
     for (const track of ['seashell-boardwalk', 'frostpeak-pass']) {
       const enc = sm.loadGhost(track);
       expect(enc).toBeTruthy();
+      expect(ghostMod.GhostData.isLegacy(enc!)).toBe(false);
+      expect(enc!.length).toBeLessThan(fixture.keys[`calexcart.ghost.1.${track}`].length / 3);
       const g = ghostMod.GhostData.decode(enc!);
+      const old = ghostMod.GhostData.decode(fixture.keys[`calexcart.ghost.1.${track}`])!;
       expect(g).toBeTruthy();
+      expect(g!.n).toBe(old.n);
+      for (let i = 0; i < old.n; i++) {
+        expect(g!.x[i]).toBeCloseTo(old.x[i], 4);
+        expect(g!.z[i]).toBeCloseTo(old.z[i], 4);
+        expect(g!.yaw[i]).toBeCloseTo(old.yaw[i], 4);
+        expect(g!.flags[i]).toBe(old.flags[i]);
+      }
       const rec = JSON.parse(fixture.keys['calexcart.slot.1']).records[track];
       expect(Math.abs(g!.duration - rec.bestTime)).toBeLessThan(0.5);
     }

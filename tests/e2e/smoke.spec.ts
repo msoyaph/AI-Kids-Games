@@ -47,7 +47,7 @@ test('boots to the title with no errors or network requests', async ({ page }) =
 });
 
 test('menus → versus race → pause → quit', async ({ page }, info) => {
-  const touch = info.project.name !== 'desktop';
+  const touch = !info.project.name.endsWith('desktop');
   const w = watch(page);
   await boot(page);
   if (touch) await page.locator('.title-screen').tap();
@@ -108,7 +108,7 @@ test('saves survive a reload', async ({ page }) => {
 });
 
 test('gamepad navigates menus and drives', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'gamepad check runs once');
+  test.skip(!info.project.name.endsWith('desktop'), 'gamepad check runs once');
   await page.addInitScript(() => {
     const pad = { id: 'Test Pad', index: 0, connected: true, mapping: 'standard', axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, touched: false })), timestamp: 0 };
     (window as unknown as { __pad: typeof pad }).__pad = pad;
@@ -145,7 +145,7 @@ test('gamepad navigates menus and drives', async ({ page }, info) => {
 });
 
 test('runs from file:// (double-click) and inside a sandboxed iframe', async ({ page, browser }, info) => {
-  test.skip(info.project.name !== 'desktop', 'embedding check runs once');
+  test.skip(!info.project.name.endsWith('desktop'), 'embedding check runs once');
   // file://
   const fileUrl = pathToFileURL(resolve('dist/index.html')).href;
   const w = watch(page);

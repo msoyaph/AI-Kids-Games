@@ -57,6 +57,8 @@ export interface SessionConfig {
   ghost?: { data: GhostData; racerId: string; kart: KartConfig } | null;
   staffGhost?: { data: GhostData; racerId: string; kart: KartConfig } | null;
   battleTime?: number;
+  /** Performance test run: nothing is recorded (no progress, playtest log or ghosts). */
+  benchmark?: boolean;
   intro?: boolean;
 }
 
@@ -114,6 +116,13 @@ export class RaceSession {
   private readonly hudLayer: HTMLDivElement;
   onComplete?: (r: SessionResult) => void;
   time = 0;
+
+  /** Hide the HUD and touch controls while a full screen (e.g. benchmark results) sits on top of the race. */
+  hideHud(): void {
+    this.hudLayer.style.display = 'none';
+    this.ctx.input.touch.show(false);
+    this.ctx.input.inRace = false;
+  }
 
   /** True once the results have been produced (the race/battle is over). */
   get completed(): boolean {

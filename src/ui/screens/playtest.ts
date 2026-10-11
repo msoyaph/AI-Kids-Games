@@ -32,7 +32,7 @@ function tryDownload(name: string, text: string): boolean {
 }
 
 /** Copy-box overlay used inside the iframe (or when downloads fail). */
-export function copyOverlay(app: App, title: string, text: string): Screen {
+export function copyOverlay(app: App, title: string, text: string, hint = 'Copy this text and save it as a .json file for the analyzer.'): Screen {
   const area = h('textarea', { readonly: 'readonly', 'aria-label': title }) as HTMLTextAreaElement;
   area.value = text;
   const close = (): void => app.ui.closeOverlay();
@@ -56,7 +56,7 @@ export function copyOverlay(app: App, title: string, text: string): Screen {
     'div',
     { class: 'panel menu-col playtest-export', style: 'width:min(640px,92vw)' },
     h('div', { style: 'font-weight:900;font-size:clamp(16px,2.6vh,22px)' }, title),
-    h('div', { class: 'hint' }, 'Copy this text and save it as a .json file for the analyzer.'),
+    h('div', { class: 'hint' }, hint),
     area,
     h('div', { class: 'menu-row', style: 'justify-content:center' }, button('Copy', () => void copy(), 'yellow'), button('Close', close, 'ghost')),
   );

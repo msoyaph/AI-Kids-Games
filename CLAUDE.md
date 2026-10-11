@@ -81,6 +81,9 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - Chrome blocks localhost iframes inside about:blank (private network access) — host pages in e2e are served
   via `page.route` on the same origin.
 - Shared/cached geometries & materials set `userData.shared = true`; RaceView.dispose frees everything else.
+- Storage: only `src/save/` touches localStorage; every save write goes through `SaveManager.write` (atomic setItem,
+  frees the playtest log first when full, never touches non-`calexcart.` keys). Ghost strings use 15-bit chars.
+- Playwright: projects ending in `desktop` run the "once" tests; WebKit needs `npx playwright install webkit`.
 
 ## Upgrade in progress (branch `calex-upgrade` — do NOT merge into main without user approval)
 Plan: `/Users/cliffsumalpong/.claude/plans/modular-herding-pancake.md` (approved). Work Phase 0→10, commit per phase.
@@ -113,7 +116,14 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   `DriverStyle`), catch-up (`src/sim/catchup.ts` measureCatchUp; tests/sim/catchup.test.ts), assist Off/Light/Full
   (+ Full edge guard on drop edges) with settings v2 migration (`steeringAssist` → `assist`), `resolveAssist`.
   AI drift rewrite + drift physics retune (see decisions). Reports: `npm run sim` §5 catch-up, §6 staff.
-- [ ] Phase 3 — performance (benchmark, LOD, context loss, WebKit)
+- [x] Phase 3 — scenery LOD (`src/render/props.ts`: 120 m chunks of merged meshes, full/LOD1 (`buildRecipe(…, lod 1)`)
+  /impostor atlas billboards, tier distances in QualityProfile.propFullDist/propLodDist/propBigRadius; Low = LOD1 +
+  impostors from 60 m, draw distance 230), benchmark (`src/game/benchmark.ts`, `src/ui/screens/benchmark.ts`,
+  Settings → Graphics → Test performance, `?bench=1&seconds=&quality=`, `npm run bench -- --profile tablet`),
+  WebGL context loss (GameRenderer.onContextLost/Restored, App overlay "Tap to continue", atlas re-render),
+  WebKit Playwright projects (webkit-desktop/tablet/phone), storage budget (ghost format G2, GHOST_MAX_SECONDS 240,
+  `SaveManager.write` single path + freeSpace/onStorageProblem, startup re-encode of CGH1 ghosts, tests in
+  tests/unit/storage.test.ts → sim-report/storage.json), chase cam hides rivals in the line of sight.
 - [ ] Phase 4 — game feel
 - [ ] Phase 5 — visuals
 - [ ] Phase 6 — ice + track fixes + marker flag
@@ -136,4 +146,7 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   0.82+0.18·skill (skill matters: skill-1.0 racer wins 56 %/top-3 86 % vs Pro AI; Rookie AI gentler);
   catchUp.behindStart 15→25 m. Catch-up metrics swing ±5 % with item luck — judge changes on ≥ 80 races.
 - `SPEED_CLASSES[c]` IS `BALANCE.classes[c]` (same object) so experiments that mutate BALANCE apply live.
+- Phase 3 results: Low Neon 115k→60k tris / 48→43 draws, Jadefall 74k→43k / 41→35; throttled tablet Medium 60 fps.
+  Worst-case storage (16 tracks) 0.89 MB (ghost 15.6 KB per 240 s max run). Medium/High gained a few draws
+  (chunked meshes) but lost 20–35 % triangles.
 - Baseline storage: ghosts ≈ 180 chars/s (≈ 23 K chars per run); 16 tracks × 3 slots ≈ 2.4 MB UTF-16 → must compress.

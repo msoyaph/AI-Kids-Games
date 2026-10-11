@@ -6,7 +6,7 @@ import { KartVisual, buildSharedKartGeometry } from './kartModel';
 import { ChaseCamera } from './camera';
 import { buildSky } from './sky';
 import { buildTrackMeshes } from './trackMesh';
-import { buildTrackProps } from './props';
+import { buildTrackProps, type TrackProps } from './props';
 import { buildArenaMesh } from './arenaMesh';
 import type { GameRenderer, RenderView, ViewRect } from './renderer';
 import { Materials } from './materials';
@@ -41,7 +41,8 @@ export class RaceView {
   private readonly domeBase: number;
   private readonly blobs: THREE.InstancedMesh;
   private readonly boostMat: THREE.MeshBasicMaterial | null = null;
-  private readonly setPropDensity: (f: number) => void = () => {};
+  readonly props: TrackProps | null = null;
+  private readonly camPositions: THREE.Vector3[] = [];
   split: SplitMode = 'horizontal';
   time = 0;
   /** Local player kart indices (camera targets). */
@@ -76,9 +77,11 @@ export class RaceView {
       const tm = buildTrackMeshes(course.track);
       this.scene.add(tm.group);
       this.boostMat = tm.boostMaterial;
-      const props = buildTrackProps(course.track, course.track.data.id);
+      const props = buildTrackProps(course.track, course.track.data.id, gr.renderer, sky);
       this.scene.add(props.group);
-      this.setPropDensity = props.setDensity;
+      this.props = props;
+      this.disposers.push(() => props.dispose());
+      this.disposers.push(gr.onContextRestored(() => props.rebuildAtlas()));
       if (sky.ground !== null) {
         const g = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: sky.ground }));
         g.position.y = (sky.groundY ?? course.track.minY - 0.5) - 0.05;
@@ -198,7 +201,7 @@ export class RaceView {
       c.camera.far = p.drawDistance;
       c.camera.updateProjectionMatrix();
     }
-    this.setPropDensity(p.propDensity);
+    this.props?.setProfile(p);
     this.effects?.applyQuality(p);
     const useMap = p.shadowMap && this.targets.length === 1;
     this.sun.castShadow = useMap;
@@ -229,19 +232,36 @@ export class RaceView {
       v.update(alpha, dt, this.time);
       v.root.updateMatrixWorld(true);
     }
-    // Rivals squeezed between the camera and your kart would block the view: hide them while very close.
+    // Rivals between the chase camera and your kart would block the view: hide them while they are in the
+    // line of sight (or very close to the lens).
     if (this.cams.length === 1) {
       const cp = this.cams[0].camera.position;
+      const tp = this.visuals[this.targets[0]].root.position;
+      const lx = tp.x - cp.x;
+      const ly = tp.y - cp.y;
+      const lz = tp.z - cp.z;
+      const len = Math.hypot(lx, ly, lz) || 1;
       for (const v of this.visuals) {
         if (v.kart.index === this.targets[0]) continue;
-        const d2 = (v.root.position.x - cp.x) ** 2 + (v.root.position.y - cp.y) ** 2 + (v.root.position.z - cp.z) ** 2;
-        v.root.visible = d2 > 4.2 * 4.2;
+        const rx = v.root.position.x - cp.x;
+        const ry = v.root.position.y - cp.y;
+        const rz = v.root.position.z - cp.z;
+        const d2 = rx * rx + ry * ry + rz * rz;
+        const t = (rx * lx + ry * ly + rz * lz) / len; // distance along the line of sight
+        const lat2 = d2 - t * t;
+        const blocking = t > 0 && t < len - 0.8 && lat2 < 1.8 * 1.8;
+        v.root.visible = d2 > 4.2 * 4.2 && !blocking;
       }
     }
     this.syncWheels();
     for (let i = 0; i < this.targets.length; i++) {
       const k = this.world.karts[this.targets[i]];
       this.cams[i].update(k, alpha, dt, lookBack[i] ?? false);
+    }
+    if (this.props) {
+      this.camPositions.length = 0;
+      for (const c of this.cams) this.camPositions.push(c.camera.position);
+      this.props.update(this.camPositions);
     }
     // blob shadows
     for (let i = 0; i < this.world.karts.length; i++) {

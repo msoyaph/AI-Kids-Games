@@ -5,6 +5,7 @@ import type { QualitySetting } from '../../render/quality';
 import { button, h, type Screen } from '../ui';
 import { choice } from './setup';
 import { renderPlaytest } from './playtest';
+import { startBenchmark } from './benchmark';
 import type { AssistSetting } from '../../tuning/balance';
 
 const ASSIST_HINTS: Record<AssistSetting, string> = {
@@ -81,6 +82,13 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
         choice('Show FPS', [[false, 'Off'], [true, 'On']], () => s.showFps, (v) => ((s.showFps = v), save())),
         choice('Screen shake', [[true, 'On'], [false, 'Off']], () => s.screenShake, (v) => ((s.screenShake = v), save())),
         choice('Split-screen', [['horizontal', 'Top / bottom'], ['vertical', 'Side by side']], () => s.splitMode, (v) => ((s.splitMode = v), save())),
+        h(
+          'div',
+          { class: 'setting-row' },
+          h('div', null, 'Performance'),
+          button('Test performance (60 s)', () => startBenchmark(app, () => app.screens.settings(back, 'graphics')), 'small'),
+        ),
+        h('div', { class: 'hint' }, 'Races a busy track by itself for a minute and shows how smoothly this device runs the game.'),
       );
     } else if (t === 'gameplay') {
       body.append(

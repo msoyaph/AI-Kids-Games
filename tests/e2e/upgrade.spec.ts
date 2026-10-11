@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { boot, quickRace, watch } from './helpers';
 
 test('playtest mode: badge, records a race, export and clear', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'runs once');
+  test.skip(!info.project.name.endsWith('desktop'), 'runs once');
   const w = watch(page);
   await boot(page, '/?playtest=1');
   await expect(page.locator('.playtest-badge')).toBeVisible();
@@ -40,7 +40,7 @@ test('playtest mode: badge, records a race, export and clear', async ({ page }, 
 });
 
 test('playtest export inside the sandboxed iframe shows a copy box', async ({ browser }, info) => {
-  test.skip(info.project.name !== 'desktop', 'runs once');
+  test.skip(!info.project.name.endsWith('desktop'), 'runs once');
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   const host = await ctx.newPage();
   await host.route('http://localhost:4173/__host.html', (r) =>
@@ -65,4 +65,51 @@ test('playtest export inside the sandboxed iframe shows a copy box', async ({ br
   const text = await area.inputValue();
   expect(JSON.parse(text).game).toBe('calex-cart');
   await ctx.close();
+});
+
+test('recovers from a lost WebGL context with "Tap to continue"', async ({ page }, info) => {
+  const w = watch(page);
+  await boot(page);
+  await quickRace(page);
+  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: 20_000 });
+  const lost = await page.evaluate(() => {
+    const c = document.getElementById('gl') as HTMLCanvasElement;
+    const gl = (c.getContext('webgl2') ?? c.getContext('webgl')) as WebGLRenderingContext | null;
+    const ext = gl?.getExtension('WEBGL_lose_context');
+    if (!ext) return false;
+    (window as unknown as { __lose: WEBGL_lose_context }).__lose = ext;
+    ext.loseContext();
+    return true;
+  });
+  test.skip(!lost, 'WEBGL_lose_context not available in this browser');
+  await expect(page.locator('.ctx-lost')).toBeVisible();
+  expect(await page.evaluate(() => window.__calex.app.loop.simPaused)).toBe(true);
+  const t0 = await page.evaluate(() => window.__calex.app.session.world.raceTime);
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.__calex.app.session.world.raceTime)).toBe(t0); // frozen while lost
+  await page.evaluate(() => (window as unknown as { __lose: WEBGL_lose_context }).__lose.restoreContext());
+  const btn = page.locator('.ctx-lost button');
+  await expect(btn).toHaveText(/Tap to continue/);
+  if (info.project.name.endsWith('desktop')) await btn.click();
+  else await btn.tap();
+  await expect(page.locator('.ctx-lost')).toHaveCount(0);
+  await page.waitForFunction((t) => window.__calex.app.session.world.raceTime > t + 0.5, t0, { timeout: 10_000 });
+  // still rendering: draw calls are being issued again
+  await page.waitForFunction(() => window.__calex.app.gr.stats().calls > 5, null, { timeout: 10_000 });
+  expect(w.errors.filter((e) => !/context/i.test(e))).toEqual([]);
+});
+
+test('performance test runs from the URL and reports numbers', async ({ page }) => {
+  const w = watch(page);
+  await page.goto('/?bench=1&seconds=4&quality=low');
+  await expect(page.locator('.bench-card')).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('.bench-card')).toContainText('average FPS');
+  const r = await page.evaluate(() => (window.__calex as unknown as { lastBench: { avgFps: number; maxDraws: number; timeline: unknown[] } }).lastBench);
+  expect(r.avgFps).toBeGreaterThan(5);
+  expect(r.maxDraws).toBeGreaterThan(5);
+  expect(r.timeline.length).toBeGreaterThanOrEqual(3);
+  // nothing saved: no slot was created by the test
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('calexcart.slot')).length)).toBe(0);
+  expect(w.errors).toEqual([]);
+  expect(w.external).toEqual([]);
 });

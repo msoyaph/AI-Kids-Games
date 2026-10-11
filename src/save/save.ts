@@ -5,7 +5,8 @@ import { CUPS } from '../data/cups';
 import { ARENAS } from '../data/arenas';
 import type { QualitySetting } from '../render/quality';
 import type { KeyBindings, KeyScheme, PadBindings } from '../input/bindings';
-import { readKey, removeKey, writeKey } from './storage';
+import { readKey, removeKey, writeKeyStatus, ourKeys, type WriteStatus } from './storage';
+import { GhostData } from '../sim/ghost';
 import type { AssistSetting } from '../tuning/balance';
 
 export const SAVE_VERSION = 2;
@@ -246,11 +247,16 @@ export class SaveManager {
   settings: Settings;
   private dirty = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
-  /** Set when a write failed (quota/blocked) — UI can show a gentle notice. */
+  /** Set when the last write failed because storage is full. */
   lastWriteFailed = false;
+  /** Called when a write can't be stored ('full') or storage is unavailable ('memory'). */
+  onStorageProblem?: (kind: 'full' | 'memory') => void;
+  /** Frees space from expendable data of OUR OWN (the playtest log). Returns true if anything was freed. */
+  freeSpace?: () => boolean;
 
   constructor(touch = false) {
     this.settings = this.loadSettings(touch);
+    this.migrateGhosts();
     if (typeof window !== 'undefined') {
       window.addEventListener('pagehide', () => this.flush());
       document.addEventListener('visibilitychange', () => {
@@ -274,8 +280,30 @@ export class SaveManager {
     }
   }
 
+  /**
+   * The one write path for saves: `setItem` is atomic, so a failed write leaves the previous value intact.
+   * When storage is full we first shrink our own playtest log and retry; other games' keys are never touched.
+   */
+  private write(key: string, value: string): WriteStatus {
+    let st = writeKeyStatus(key, value);
+    for (let i = 0; st === 'full' && i < 4 && this.freeSpace?.(); i++) st = writeKeyStatus(key, value);
+    this.lastWriteFailed = st === 'full';
+    if (st !== 'ok') this.onStorageProblem?.(st);
+    return st;
+  }
+
+  /** Re-encode ghosts saved in the old (5× larger) format. Safe: a failed write keeps the old, still-readable ghost. */
+  private migrateGhosts(): void {
+    for (const k of ourKeys(`${PREFIX}.ghost.`)) {
+      const v = readKey(k);
+      if (!v || !GhostData.isLegacy(v)) continue;
+      const enc = GhostData.reencode(v);
+      if (enc) writeKeyStatus(k, enc);
+    }
+  }
+
   saveSettings(): void {
-    this.lastWriteFailed = !writeKey(`${PREFIX}.settings`, JSON.stringify(this.settings));
+    this.write(`${PREFIX}.settings`, JSON.stringify(this.settings));
   }
 
   readSlot(slot: number): SaveData | null {
@@ -305,7 +333,7 @@ export class SaveManager {
     this.slot = slot;
     this.data = newSave(name);
     this.save();
-    writeKey(`${PREFIX}.lastSlot`, String(slot));
+    this.write(`${PREFIX}.lastSlot`, String(slot));
     return this.data;
   }
 
@@ -314,7 +342,7 @@ export class SaveManager {
     if (!d) return null;
     this.slot = slot;
     this.data = d;
-    writeKey(`${PREFIX}.lastSlot`, String(slot));
+    this.write(`${PREFIX}.lastSlot`, String(slot));
     return d;
   }
 
@@ -350,7 +378,7 @@ export class SaveManager {
     this.dirty = false;
     if (this.slot === null || !this.data) return;
     this.data.updatedAt = Date.now();
-    this.lastWriteFailed = !writeKey(this.key(this.slot), JSON.stringify(this.data));
+    this.write(this.key(this.slot), JSON.stringify(this.data));
   }
 
   // ---- ghosts are stored separately so slot JSON stays small
@@ -359,21 +387,17 @@ export class SaveManager {
   }
 
   private ghostKeys(slot: number): string[] {
-    const keys: string[] = [];
-    try {
-      for (let i = 0; i < window.localStorage.length; i++) {
-        const k = window.localStorage.key(i);
-        if (k && k.startsWith(`${PREFIX}.ghost.${slot}.`)) keys.push(k);
-      }
-    } catch {
-      /* ignore */
-    }
-    return keys;
+    return ourKeys(`${PREFIX}.ghost.${slot}.`);
   }
 
   saveGhost(track: string, encoded: string): boolean {
     if (this.slot === null) return false;
-    return writeKey(this.ghostKey(this.slot, track), encoded);
+    return this.write(this.ghostKey(this.slot, track), encoded) !== 'full';
+  }
+
+  /** Remove this slot's ghost for a track (e.g. a new best time whose ghost couldn't be stored). */
+  removeGhost(track: string): void {
+    if (this.slot !== null) removeKey(this.ghostKey(this.slot, track));
   }
 
   loadGhost(track: string): string | null {

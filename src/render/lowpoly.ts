@@ -119,8 +119,29 @@ function colored(g: THREE.BufferGeometry, hex: number): THREE.BufferGeometry {
   return g;
 }
 
-function partGeometry(part: ModelPart, tokens: ColorTokens, mirrorX: boolean): THREE.BufferGeometry {
-  const g = unitGeometry(part.shape, part.seg).clone();
+/** Segment count for a lower level of detail (LOD1 ≈ half the segments, never below the shape's minimum). */
+function lodSeg(shape: Shape, seg: number | undefined, lod: number): number | undefined {
+  if (lod <= 0) return seg;
+  switch (shape) {
+    case 'sphere':
+      return Math.max(5, Math.round((seg ?? 10) * 0.5));
+    case 'cyl':
+      return Math.max(4, Math.round((seg ?? 10) * 0.5));
+    case 'cone':
+      return Math.max(4, Math.round((seg ?? 8) * 0.5));
+    case 'torus':
+      return Math.max(5, Math.round((seg ?? 12) * 0.5));
+    case 'capsule':
+      return Math.max(4, Math.round((seg ?? 8) * 0.5));
+    case 'ico':
+      return 0;
+    default:
+      return seg;
+  }
+}
+
+function partGeometry(part: ModelPart, tokens: ColorTokens, mirrorX: boolean, lod = 0): THREE.BufferGeometry {
+  const g = unitGeometry(part.shape, lodSeg(part.shape, part.seg, lod)).clone();
   const p = part.p ?? [0, 0, 0];
   const s = part.s ?? [1, 1, 1];
   const r = part.r ?? [0, 0, 0];
@@ -133,12 +154,31 @@ function partGeometry(part: ModelPart, tokens: ColorTokens, mirrorX: boolean): T
   return colored(g, resolveColor(part.c, tokens));
 }
 
-/** Build one merged, vertex-coloured geometry from a list of primitive parts. */
-export function buildRecipe(parts: readonly ModelPart[], tokens: ColorTokens = {}, extra: THREE.BufferGeometry[] = []): THREE.BufferGeometry {
+/** Rough size of a recipe (largest extent of any part from the origin), used to spot tiny details. */
+function recipeSize(parts: readonly ModelPart[]): number {
+  let size = 0;
+  for (const p of parts) {
+    const s = p.s ?? [1, 1, 1];
+    const c = p.p ?? [0, 0, 0];
+    size = Math.max(size, Math.hypot(c[0], c[1], c[2]) + Math.max(s[0], s[1], s[2]) * 0.5);
+  }
+  return Math.max(0.001, size);
+}
+
+/**
+ * Build one merged, vertex-coloured geometry from a list of primitive parts.
+ * `lod` 1 = fewer segments per part and tiny details (< 7 % of the model's size) dropped — for far scenery.
+ */
+export function buildRecipe(parts: readonly ModelPart[], tokens: ColorTokens = {}, extra: THREE.BufferGeometry[] = [], lod = 0): THREE.BufferGeometry {
   const geos: THREE.BufferGeometry[] = [];
+  const minPart = lod > 0 ? recipeSize(parts) * 0.07 : 0;
   for (const part of parts) {
-    geos.push(partGeometry(part, tokens, false));
-    if (part.mirror) geos.push(partGeometry(part, tokens, true));
+    if (minPart > 0) {
+      const s = part.s ?? [1, 1, 1];
+      if (Math.max(s[0], s[1], s[2]) < minPart) continue;
+    }
+    geos.push(partGeometry(part, tokens, false, lod));
+    if (part.mirror) geos.push(partGeometry(part, tokens, true, lod));
   }
   for (const e of extra) geos.push(e);
   if (geos.length === 0) return new THREE.BufferGeometry();

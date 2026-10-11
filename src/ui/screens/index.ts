@@ -5,7 +5,7 @@ import { pickOpponents } from '../../game/modes/roster';
 import { staffGhost } from '../../game/modes/timeTrial';
 import { addStats, awardTrophy, checkProgressUnlocks, updateRecord } from '../../game/progression';
 import { evaluateChallenges } from '../../game/challenges';
-import { GhostData } from '../../sim/ghost';
+import { GhostData, GHOST_MAX_SECONDS } from '../../sim/ghost';
 import { medalFor } from '../../sim/rules';
 import { findTrack } from '../../data/tracks/index';
 import { formatTime } from '../../core/math';
@@ -227,7 +227,10 @@ export function registerScreens(app: App): void {
           const imp = updateRecord(app.save, trackId, me.finishTime, me.bestLap, ps[0].racerId, ps[0].kart);
           if (imp.best) {
             notes.unshift('🏁 NEW BEST TIME!');
-            if (r.ghost && !app.saves.saveGhost(trackId, r.ghost)) app.save.records[trackId].hasGhost = false;
+            // ghosts are stored for runs up to GHOST_MAX_SECONDS (bounded storage); the record is kept either way
+            const keep = !!r.ghost && me.finishTime <= GHOST_MAX_SECONDS && app.saves.saveGhost(trackId, r.ghost);
+            app.save.records[trackId].hasGhost = keep;
+            if (!keep) app.saves.removeGhost(trackId); // an older, slower ghost is no use any more
           } else if (imp.lap) notes.unshift('⚡ New best lap!');
           if (me.finishTime < staff.time && !app.save.records[trackId].beatStaff) {
             app.save.records[trackId].beatStaff = true;

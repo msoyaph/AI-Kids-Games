@@ -23,7 +23,11 @@ export class GameRenderer {
   readonly quality: QualityManager;
   width = 1;
   height = 1;
+  /** True while the browser has taken the WebGL context away (GPU reset, memory pressure, tab switch on iOS…). */
+  contextLost = false;
   private resizeListeners: Array<(w: number, h: number) => void> = [];
+  private lostListeners: Array<() => void> = [];
+  private restoredListeners: Array<() => void> = [];
 
   constructor(readonly canvas: HTMLCanvasElement) {
     // Probe the GPU before choosing antialias (cannot be changed after context creation).
@@ -47,6 +51,16 @@ export class GameRenderer {
     this.renderer.setClearColor(0x87d0ff, 1);
     this.renderer.info.autoReset = false;
     this.quality.onChange(() => this.applyQuality());
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault(); // allow the browser to restore it
+      this.contextLost = true;
+      for (const l of this.lostListeners) l();
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.contextLost = false;
+      // three.js re-creates its GL state and re-uploads buffers lazily; render targets need redrawing
+      for (const l of this.restoredListeners) l();
+    });
     window.addEventListener('resize', this.onResize);
     window.addEventListener('orientationchange', this.onResize);
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(this.onResize).observe(canvas.parentElement ?? canvas);
@@ -71,6 +85,16 @@ export class GameRenderer {
 
   onResizeEvent(fn: (w: number, h: number) => void): void {
     this.resizeListeners.push(fn);
+  }
+
+  onContextLost(fn: () => void): () => void {
+    this.lostListeners.push(fn);
+    return () => (this.lostListeners = this.lostListeners.filter((f) => f !== fn));
+  }
+
+  onContextRestored(fn: () => void): () => void {
+    this.restoredListeners.push(fn);
+    return () => (this.restoredListeners = this.restoredListeners.filter((f) => f !== fn));
   }
 
   applyQuality(): void {

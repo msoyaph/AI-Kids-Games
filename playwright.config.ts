@@ -25,5 +25,9 @@ export default defineConfig({
     { name: 'desktop', use: { browserName: 'chromium', viewport: { width: 1280, height: 720 } } },
     { name: 'tablet', use: { browserName: 'chromium', viewport: { width: 1024, height: 768 }, hasTouch: true, isMobile: true, userAgent: devices['iPad (gen 7) landscape'].userAgent } },
     { name: 'phone', use: { browserName: 'chromium', viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, userAgent: devices['iPhone 13 landscape'].userAgent } },
+    // Safari engine (iPad / iPhone are where most kids play): `npx playwright install webkit`
+    { name: 'webkit-desktop', use: { browserName: 'webkit', viewport: { width: 1280, height: 720 }, launchOptions: { args: [] } } },
+    { name: 'webkit-tablet', use: { ...devices['iPad (gen 7) landscape'], browserName: 'webkit', launchOptions: { args: [] } } },
+    { name: 'webkit-phone', use: { ...devices['iPhone 13 landscape'], browserName: 'webkit', launchOptions: { args: [] } } },
   ],
 });

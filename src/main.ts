@@ -86,6 +86,12 @@ async function boot(): Promise<void> {
       s.ai.takeOver(k);
       k.player = 0;
     }
+  } else if (params.has('bench')) {
+    // ?bench=1[&seconds=60][&quality=low|medium|high|auto] — performance test straight from the URL
+    const { startBenchmark } = await import('./ui/screens/benchmark');
+    const q = params.get('quality');
+    const seconds = Math.max(5, Math.min(300, Number(params.get('seconds')) || 60));
+    startBenchmark(app, () => app.screens.title(), seconds, q === 'low' || q === 'medium' || q === 'high' || q === 'auto' ? q : undefined);
   } else {
     app.screens.title();
   }

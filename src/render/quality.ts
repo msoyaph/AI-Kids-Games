@@ -20,6 +20,11 @@ export interface QualityProfile {
   speedLines: boolean;
   /** Skid marks on the road. */
   skidmarks: boolean;
+  /** Scenery LOD: full-detail props within this distance (m), simplified LOD1 out to propLodDist, then impostors. */
+  propFullDist: number;
+  propLodDist: number;
+  /** Props with a bounding radius above this (m) never become impostors (big landmarks stay 3D). */
+  propBigRadius: number;
 }
 
 export const PROFILES: Record<QualityLevel, QualityProfile> = {
@@ -28,11 +33,14 @@ export const PROFILES: Record<QualityLevel, QualityProfile> = {
     maxDpr: 1,
     shadowMap: false,
     shadowMapSize: 0,
-    drawDistance: 260,
-    propDensity: 0.45,
+    drawDistance: 230,
+    propDensity: 0.4,
     particleBudget: 300,
     speedLines: false,
     skidmarks: false,
+    propFullDist: 0,
+    propLodDist: 60,
+    propBigRadius: 22,
   },
   medium: {
     level: 'medium',
@@ -44,6 +52,9 @@ export const PROFILES: Record<QualityLevel, QualityProfile> = {
     particleBudget: 700,
     speedLines: true,
     skidmarks: true,
+    propFullDist: 80,
+    propLodDist: 170,
+    propBigRadius: 12,
   },
   high: {
     level: 'high',
@@ -55,6 +66,9 @@ export const PROFILES: Record<QualityLevel, QualityProfile> = {
     particleBudget: 1400,
     speedLines: true,
     skidmarks: true,
+    propFullDist: 150,
+    propLodDist: 320,
+    propBigRadius: 10,
   },
 };
 
@@ -160,6 +174,8 @@ export class QualityManager {
       shadowMap: false,
       drawDistance: base.drawDistance * 0.75,
       propDensity: base.propDensity * 0.7,
+      propFullDist: base.propFullDist * 0.7,
+      propLodDist: base.propLodDist * 0.75,
       particleBudget: Math.floor(base.particleBudget * 0.6),
       speedLines: base.speedLines && base.level === 'high',
     };
