@@ -490,27 +490,34 @@ export type UnlockRef =
   | { kind: 'cup'; id: CupId }
   | { kind: 'class'; id: SpeedClass | 'mirror' };
 
-/** Conditions are evaluated against race results and the save file (see game/progression.ts). */
+/** Conditions are evaluated against race results and the save file (see game/challenges.ts). */
 export type ChallengeGoal =
-  | { type: 'winRace'; track?: string; speedClass?: SpeedClass; noItems?: boolean; mirror?: boolean }
-  | { type: 'finishPosition'; maxPosition: number; track?: string; speedClass?: SpeedClass }
+  /** Win a race (optionally on a track / class / mirror / without using items). */
+  | { type: 'winRace'; track?: string; speedClass?: SpeedClass; mirror?: boolean; noItemsUsed?: boolean }
+  /** Finish at or above a position (optionally on a speed class). */
+  | { type: 'finishPosition'; maxPosition: number; speedClass?: SpeedClass }
   | { type: 'driftSeconds'; seconds: number }
-  | { type: 'miniTurbos'; count: number; tier?: 1 | 2 | 3 }
+  /** Mini-turbos of at least `tier` (cumulative). */
+  | { type: 'miniTurbos'; count: number; tier: 1 | 2 | 3 }
   | { type: 'tricks'; count: number }
+  /** Item hits on rivals (cumulative), optionally a specific item. */
   | { type: 'hitWithItem'; count: number; item?: ItemId }
   | { type: 'dodge'; count: number }
-  | { type: 'shortcut'; count: number; track?: string }
+  | { type: 'shortcut'; count: number }
   | { type: 'perfectStart'; count: number }
-  | { type: 'timeTrial'; track: string; beatStaff: boolean }
-  | { type: 'trophy'; cup?: CupId; speedClass?: SpeedClass; medal: 'gold' | 'silver' | 'bronze'; count?: number }
-  | { type: 'battleWin'; arena?: string }
+  | { type: 'boostPads'; count: number }
+  | { type: 'trophies'; count: number }
+  | { type: 'trophy'; cup: CupId; medal: 'gold' | 'silver' | 'bronze' }
+  | { type: 'staffGhosts'; count: number }
+  | { type: 'timeTrials'; count: number }
+  | { type: 'battleWins'; count: number; arena?: string }
   | { type: 'battlePops'; count: number }
+  /** Win after having been at `fromPosition` or worse during the race. */
   | { type: 'comeback'; fromPosition: number }
+  /** Finish a race with items on without being hit. */
   | { type: 'noHitRace' }
-  | { type: 'coinsLike'; boosts: number }
   | { type: 'totalRaces'; count: number }
-  | { type: 'leadWholeRace' }
-  | { type: 'boostPads'; count: number };
+  | { type: 'leadWholeRace' };
 
 export interface ChallengeData {
   id: string;

@@ -74,5 +74,8 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
   Dev shortcuts (dev server only): `/?track=<id>[&autodrive][&mirror][&class=pro][&ai=7][&nointro]`, `/?arena=<id>`.
   Headless e2e: `node scripts/probe.mjs <url> <script.js>` uses Metal GPU (set SWIFTSHADER=1 to force software).
   `window.__calex.app` exposes the App (flows can be driven via `app.screens.*`, `app.loop.timeScale` speeds up sims).
+- Phase 10 ✅ 12 racers (6 unlocked), 8 bodies / 6 wheels / 5 gliders / 12 paints / 12 decals with stat mods,
+  garage, 34 challenges (`data/challenges.ts`, evaluated in `game/challenges.ts`) — every locked item is a
+  challenge reward (unit-tested); cups/classes unlock via trophies (`game/progression.ts`).
 - Phase 9 ✅ local split-screen (2 players; H/V split; per-view HUD/minimap/camera; input auto-assignment:
   2 pads → pad+pad, 1 pad → keyboard+pad, none → shared keyboard WASD | arrows; split quality profile).

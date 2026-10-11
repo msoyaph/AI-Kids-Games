@@ -122,7 +122,7 @@ export class MenuScene {
       const n = list.length;
       const a = ((i - (n - 1) / 2) / n) * 1.6;
       k.position.set(Math.sin(a) * 12, 0, -Math.cos(a) * 4 + 2);
-      k.rotation.y = Math.PI * 0.85 + a * 0.4;
+      k.rotation.y = -a * 0.5;
       k.scale.setScalar(1.8);
       g.add(k);
     });
