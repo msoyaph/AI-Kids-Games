@@ -64,7 +64,7 @@ async function boot(): Promise<void> {
       const k = world.karts[0];
       input.fillKartInput(0, k.input, k.autoAccel, world.phase === 'race');
       world.step(dt);
-      world.events.clear();
+      world.events.drain((e) => view.onEvent(e));
     },
     render: (alpha, frameDt) => {
       input.poll(frameDt);

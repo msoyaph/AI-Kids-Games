@@ -11,6 +11,8 @@ import { buildArenaMesh } from './arenaMesh';
 import type { GameRenderer, RenderView, ViewRect } from './renderer';
 import { Materials } from './materials';
 import { RespawnState } from '../sim/kart';
+import { Effects } from './effects';
+import type { SimEvent } from '../sim/events';
 
 export type SplitMode = 'horizontal' | 'vertical';
 
@@ -40,6 +42,10 @@ export class RaceView {
   /** Local player kart indices (camera targets). */
   readonly targets: number[];
   private readonly disposers: Array<() => void> = [];
+  readonly effects: Effects;
+  private readonly fogBase = new THREE.Color();
+  private readonly waterFog = new THREE.Color(0x2a7fd4);
+  private waterBlend = 0;
 
   constructor(
     readonly gr: GameRenderer,
@@ -83,6 +89,14 @@ export class RaceView {
     this.blobs.renderOrder = 1;
     this.scene.add(this.blobs);
     for (let i = 0; i < targets.length; i++) this.cams.push(new ChaseCamera(profile.drawDistance));
+    this.effects = new Effects(world, this.scene);
+    if (course.track) this.effects.offroadColor = course.track.data.palette.offroad;
+    for (let i = 0; i < targets.length; i++) this.effects.camPos.push(this.cams[i].camera.position);
+    this.effects.onShake = (kart, amount) => {
+      const ci = this.targets.indexOf(kart);
+      if (ci >= 0) this.cams[ci].addShake(amount);
+    };
+    if (this.scene.fog) this.fogBase.copy((this.scene.fog as THREE.Fog).color);
     this.applyQuality();
     const off = gr.quality.onChange(() => this.applyQuality());
     this.disposers.push(off);
@@ -102,6 +116,7 @@ export class RaceView {
       c.camera.updateProjectionMatrix();
     }
     this.setPropDensity(p.propDensity);
+    this.effects?.applyQuality(p);
     const useMap = p.shadowMap && this.targets.length === 1;
     this.sun.castShadow = useMap;
     if (useMap) {
@@ -157,6 +172,15 @@ export class RaceView {
       this.sun.target.position.set(k.x, k.y, k.z);
       this.sun.target.updateMatrixWorld();
     }
+    this.effects.update(dt);
+    // Underwater tint for player 1's view
+    if (this.targets.length > 0 && this.scene.fog) {
+      const k = this.world.karts[this.targets[0]];
+      this.waterBlend += ((k.ground.water ? 1 : 0) - this.waterBlend) * Math.min(1, dt * 4);
+      const fog = this.scene.fog as THREE.Fog;
+      fog.color.copy(this.fogBase).lerp(this.waterFog, this.waterBlend * 0.8);
+      (this.scene.background as THREE.Color | null)?.copy(fog.color);
+    }
     if (this.boostMat) {
       const p = 0.8 + Math.sin(this.time * 10) * 0.2;
       this.boostMat.color.setRGB(p, p, p);
@@ -181,7 +205,14 @@ export class RaceView {
 
   /** Sky dome must follow whichever camera is rendering. */
   beforeRender(camIndex: number): void {
-    this.dome.position.copy(this.cams[camIndex].camera.position);
+    const cam = this.cams[camIndex].camera;
+    this.dome.position.copy(cam.position);
+    const rect = this.rectFor(camIndex, this.cams.length);
+    this.effects.setViewport(this.gr.height * rect.h * this.gr.renderer.getPixelRatio(), cam.fov);
+  }
+
+  onEvent(e: SimEvent): void {
+    this.effects.onEvent(e);
   }
 
   render(): void {
@@ -200,6 +231,7 @@ export class RaceView {
 
   dispose(): void {
     for (const d of this.disposers) d();
+    this.effects.dispose();
     this.scene.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (mesh.geometry && !(mesh as unknown as { userData: { shared?: boolean } }).userData.shared) {

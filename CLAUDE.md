@@ -49,3 +49,6 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - Phase 1 ✅ scaffold, single-file build, renderer + adaptive DPR, inline loading screen.
 - Phase 2 ✅ kart physics, keyboard/gamepad/touch input, chase camera on a test arena; physics unit tests.
 - Phase 3 ✅ spline track system + mesh generator, laps/positions/wrong-way/respawn; sim tests (tests/sim).
+- Phase 4 ✅ drift tiers/mini-turbo/hop/tricks/boost pads/gliders/water+low-grav in physics; visual feedback via
+  `render/particles.ts` (pooled THREE.Points, 2 draw calls) + `effects.ts` (sparks by tier, smoke, dust, flames,
+  trails, bubbles, bursts on events, skid marks, camera shake), underwater fog tint.
