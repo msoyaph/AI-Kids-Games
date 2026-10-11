@@ -127,6 +127,8 @@ export function buildFarmhouse(level: number): MapDef {
   b.rect(1, 1, 1, 1, Ter.WALL);
   b.prop('bed', 2, 2);
   b.trigger(2, 2, 'bed', undefined, 1, 2);
+  b.prop('crate', 4, 2);
+  b.trigger(4, 2, 'lostfound');
   b.prop('radio', 9, 1);
   b.trigger(9, 1, 'radio');
   b.prop('window', 5, 1);

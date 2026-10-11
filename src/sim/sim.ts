@@ -39,6 +39,9 @@ export interface SimEvents extends Record<string, unknown> {
   anim: { kind: string; x: number; y: number };
 }
 
+/** Systems that need per-Sim setup (warp guards etc.) register here. */
+export const simInitHooks: ((sim: Sim) => void)[] = [];
+
 /** Festival-day check is provided by the festival system (set at startup). */
 export const calendarHooks = {
   isFestival: (_day: number): boolean => false,
@@ -64,6 +67,7 @@ export class Sim {
   constructor(state: GameState, savedLocs: Record<string, SavedLoc> = {}) {
     this.state = state;
     this.pending = savedLocs;
+    for (const f of simInitHooks) f(this);
   }
 
   static newGame(opts: NewGameOptions): Sim {
@@ -170,6 +174,9 @@ export class Sim {
     return { x: t.x + DIR_DX[this.p.dir], y: t.y + DIR_DY[this.p.dir] };
   }
 
+  /** Guards that can block a warp with a friendly message (closed shops, locked homes…). */
+  warpGuards: ((sim: Sim, to: string) => string | null)[] = [];
+
   private checkWarp(): void {
     const t = this.playerTile();
     if (this.warpLock) {
@@ -184,6 +191,15 @@ export class Sim {
       this.p.x -= DIR_DX[this.p.dir] * 6;
       this.p.y -= DIR_DY[this.p.dir] * 6;
       return;
+    }
+    for (const g of this.warpGuards) {
+      const msg = g(this, w.to);
+      if (msg) {
+        this.ev.emit('toast', { text: msg });
+        this.p.x -= DIR_DX[this.p.dir] * 6;
+        this.p.y -= DIR_DY[this.p.dir] * 6;
+        return;
+      }
     }
     if (!this.hasLoc(w.to)) {
       this.ev.emit('toast', { text: 'This path is still overgrown. Come back later!' });

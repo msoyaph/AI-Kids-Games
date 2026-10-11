@@ -218,6 +218,8 @@ export interface GameState {
   suspended: boolean;
   /** items that didn't fit in the bag wait in the Lost & Found box at home */
   overflow: ItemStack[];
+  /** purchases today per shop.item (daily limits) */
+  shopToday: Record<string, number>;
 }
 
 export const seasonOf = (day: number): number => Math.floor(day / 10) % 4;

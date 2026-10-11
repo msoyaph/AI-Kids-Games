@@ -77,7 +77,8 @@ export const CSS = `
 
 /* Modal */
 .modal-bg { position: absolute; inset: 0; background: rgba(20, 16, 28, .45); display: flex; align-items: center; justify-content: center; pointer-events: auto; padding: 12px; }
-.modal { max-width: min(94vw, 560px); max-height: 92vh; overflow: auto; padding: 18px 20px; }
+.modal { max-width: min(96vw, 680px); max-height: 92vh; overflow: auto; padding: 16px 16px; }
+@media (max-width: 520px) { .modal { padding: 12px 10px; } }
 .modal h2 { margin: 0 0 10px; font-size: 1.4em; }
 .actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 14px; }
 .modal p { margin: 6px 0; }

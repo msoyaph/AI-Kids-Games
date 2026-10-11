@@ -2,6 +2,7 @@
 import type { Dir } from '../../core/math';
 import { Rng } from '../../core/rng';
 import { Ter, type TerId } from '../../sim/terrain';
+import { STRUCTURES } from '../structures';
 import type { MapDef, PropPlacement, StructurePlacement, Trigger, Warp, WaterZone } from './types';
 
 export class MapBuilder {
@@ -85,6 +86,8 @@ export class MapBuilder {
   }
   structure(kind: string, x: number, y: number, w: number, h: number, id?: string, door?: StructurePlacement['door']): this {
     this.structures.push({ kind, x, y, id, door });
+    const sd = STRUCTURES[kind] ?? STRUCTURES[kind + '0'];
+    if (sd?.door) this.reserve(x + sd.door.dx, y + sd.door.dy + 1, 1, 2); // keep the doorstep clear
     return this.reserve(x, y, w, h);
   }
   warp(x: number, y: number, to: string, tx: number, ty: number, opts: Partial<Warp> = {}): this {
@@ -163,6 +166,9 @@ export function interior(
   music = 'home',
 ): MapBuilder & { meta: { id: string; name: string; music: string } } {
   const h = rows.length, w = rows[0].length;
+  rows.forEach((r, i) => {
+    if (r.length !== w) throw new Error(`interior ${id}: row ${i} has ${r.length} chars, expected ${w}`);
+  });
   const b = new MapBuilder(w, h, Ter.FLOOR) as MapBuilder & { meta: { id: string; name: string; music: string } };
   b.ascii(0, 0, rows, {
     '#': { t: Ter.WALLTOP },

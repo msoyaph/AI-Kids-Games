@@ -226,10 +226,13 @@ export function toolIcon(tool: string, tier: number): PixelCanvas {
       c.set(6, 11, P.w3);
       break;
     case 'axe':
-      handle(c, 3, 14, 10, 2);
-      c.rows(['..aaa..', '.aaaab.', 'aaaaab.', 'aaaabb.', '.aaab..', '..ab...'], { a: m, b: md }, 8, 2);
-      c.vline(8, 3, 6, ml);
-      c.set(9, 2, ml);
+      handle(c, 2, 14, 9, 4);
+      c.line(7, 2, 12, 7, md);
+      c.line(8, 2, 13, 7, m);
+      c.line(8, 1, 13, 6, m);
+      c.line(9, 1, 14, 6, m);
+      c.line(10, 1, 14, 5, ml);
+      c.set(14, 7, md);
       break;
     case 'pick':
       handle(c, 4, 14, 9, 5);

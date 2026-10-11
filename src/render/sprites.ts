@@ -57,6 +57,23 @@ export function objSprite(o: WorldObject, season: number, loc: Loc, x: number, y
       return one(`crop.${o.id}.${cropStage(o, loc, x, y)}`);
     case 'giant':
       return { name: `giant.${o.id}`, fw: 3, fh: 3 };
+    case 'chest':
+      return one(`obj.chest.${o.col ?? 0}`);
+    case 'scarecrow':
+      return one('obj.scarecrow');
+    case 'sprinkler':
+      return one(`obj.${o.id}`);
+    case 'torch':
+      return one('obj.torch');
+    case 'gate':
+      return one(`obj.gate.${o.open ? 1 : 0}`);
+    case 'fence': {
+      const e = loc.obj(x + 1, y), s = loc.obj(x, y + 1);
+      const m = (e && (e.k === 'fence' || e.k === 'gate') ? 1 : 0) | (s && (s.k === 'fence' || s.k === 'gate') ? 2 : 0);
+      return one(`obj.${o.id}.${m}`);
+    }
+    case 'path':
+      return { name: `floor.${o.id}`, fw: 1, fh: 1, flat: true };
     case 'part':
       return null;
     default:

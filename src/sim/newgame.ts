@@ -78,6 +78,7 @@ export function createState(o: NewGameOptions): GameState {
     lastShip: null,
     suspended: false,
     overflow: [],
+    shopToday: {},
   };
 }
 

@@ -1,33 +1,39 @@
 /** Game client: owns sim, renderer, input and UI; runs the main loop and mode flow. */
 import { Container, Sprite } from 'pixi.js';
 import { TILE, clamp } from '../core/math';
-import { storageMode } from '../core/storage';
+import { storageMode, usage } from '../core/storage';
+import type { ToolKind } from '../data/items';
+import { SHOPS } from '../data/shops';
 import { Input, type Action } from '../input/input';
 import { Atlas } from '../render/atlas';
 import { bakeAll, bakeCharacter } from '../render/art';
 import type { Look } from '../render/art/characters';
 import { bakeIcons } from '../render/art/icons';
-import { createRenderer, type RenderHost } from '../render/renderer';
 import { Fx } from '../render/fx';
+import { createRenderer, type RenderHost } from '../render/renderer';
 import { WorldView } from '../render/world-view';
-import type { ToolKind } from '../data/items';
-import type { WorldObject } from '../sim/types';
-import { INV_CSS } from '../ui/inventory';
-import { iconName, itemName } from '../ui/itemview';
-import { openShipping } from '../ui/ship';
-import { Controller } from './controller';
-import { loadSlot, saveToSlot } from '../sim/save';
 import { Sim } from '../sim';
-import { seasonOf } from '../sim/state';
 import type { NewGameOptions } from '../sim/newgame';
+import { loadSlot, saveToSlot, slotBytes } from '../sim/save';
+import { shopOpen } from '../sim/shops';
+import { seasonOf } from '../sim/state';
+import type { WorldObject } from '../sim/types';
 import { TUNING } from '../tuning';
+import { openChestUI, openLostAndFound } from '../ui/chest';
 import { dayEndView } from '../ui/dayend';
 import { h } from '../ui/dom';
 import { Hud } from '../ui/hud';
 import { initIcons } from '../ui/icons';
+import { INV_CSS } from '../ui/inventory';
+import { iconName, itemName } from '../ui/itemview';
+import { MENU_CSS, openMenu, registerTab, type MenuHost } from '../ui/menu';
+import { settingsPanel } from '../ui/settings';
+import { openShipping } from '../ui/ship';
+import { openShop } from '../ui/shop';
 import { CSS } from '../ui/style';
 import { TitleScreen } from '../ui/title';
 import { Fader, Modals, Toasts } from '../ui/widgets';
+import { Controller } from './controller';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
 
 export interface GameOptions {
@@ -39,7 +45,21 @@ export interface GameOptions {
 
 export type Mode = 'boot' | 'title' | 'play' | 'sleeping';
 
-export class Game {
+/** Hooks later systems plug into without editing the core loop. */
+export interface GameHooks {
+  trigger: Record<string, (g: Game, arg?: string) => void>;
+  onEnter: ((g: Game) => void)[];
+  onUpdate: ((g: Game, dt: number) => void)[];
+  onRender: ((g: Game, dt: number) => void)[];
+  onAttach: ((g: Game) => void)[];
+  interactNearby: ((g: Game) => boolean)[];
+  special: Partial<Record<ToolKind, (g: Game) => void>>;
+  inspect: ((g: Game, o: WorldObject, x: number, y: number) => boolean)[];
+}
+
+export const HOOKS: GameHooks = { trigger: {}, onEnter: [], onUpdate: [], onRender: [], onAttach: [], interactNearby: [], special: {}, inspect: [] };
+
+export class Game implements MenuHost {
   host!: RenderHost;
   atlas = new Atlas();
   playerAtlas = new Atlas();
@@ -54,11 +74,9 @@ export class Game {
   player = new Sprite();
   playerShadow = new Sprite();
   cam = { x: 0, y: 0 };
-  private last = 0;
-  private walkT = 0;
+  fx = new Fx();
+  ctl!: Controller;
   fps = 60;
-  private fpsAcc = 0;
-  private fpsN = 0;
   // UI
   uiRoot!: HTMLElement;
   hud!: Hud;
@@ -66,20 +84,26 @@ export class Game {
   modals!: Modals;
   fader!: Fader;
   title!: TitleScreen;
+  /** seconds of real time since the scene began (animations) */
+  time = 0;
+  private last = 0;
+  private walkT = 0;
+  private fpsAcc = 0;
+  private fpsN = 0;
   private titleT = 0;
   private busy = false;
   private unsub: (() => void)[] = [];
-  fx = new Fx();
-  ctl!: Controller;
 
   constructor(opts: GameOptions) {
     this.opts = opts;
     this.settings = loadSettings();
   }
 
+  // ── Boot ─────────────────────────────────────────────────
   async init(parent: HTMLElement): Promise<void> {
     this.host = await createRenderer(parent, this.opts.lowq || this.settings.quality === 'low');
     this.host.zoomBias = this.settings.zoom;
+    this.host.resize();
     bakeAll(this.atlas);
     bakeIcons(this.atlas);
     this.atlas.bake();
@@ -108,10 +132,11 @@ export class Game {
 
   private initUI(): void {
     const style = document.createElement('style');
-    style.textContent = CSS + INV_CSS;
+    style.textContent = CSS + INV_CSS + MENU_CSS;
     document.head.appendChild(style);
     initIcons(this.atlas);
     applySettingsToDom(this.settings);
+    this.fx.reduced = this.settings.reducedMotion;
     this.uiRoot = document.getElementById('ui')!;
     this.hud = new Hud(this.uiRoot);
     this.hud.onSlot = (i) => this.selectSlot(i);
@@ -121,14 +146,16 @@ export class Game {
     this.modals.onChange = (open) => {
       if (this.sim) this.sim.paused = open || this.mode !== 'play';
       this.input.clear();
+      this.input.holdUse = false;
     };
     this.fader = new Fader(this.uiRoot);
     this.title = new TitleScreen(this.uiRoot, this.modals, {
       onLoad: (slot) => this.loadGame(slot),
       onNew: (slot, o) => this.newGame(slot, o),
       onSettings: () => this.openSettings(),
-      onBench: () => this.toasts.show('The performance test arrives in a later update.'),
+      onBench: () => this.testPerformance(),
     });
+    registerTab({ id: 'settings', label: 'Settings', icon: 'ui.gear', render: (host) => host.settingsPanel(() => {}) });
     this.hud.show(false);
   }
 
@@ -137,7 +164,6 @@ export class Game {
     this.mode = 'title';
     this.hud.show(false);
     this.title.show(true);
-    // demo farm behind the title
     this.attachSim(Sim.newGame({ name: '', farm: '', pet: 'dog', petName: '', seed: 4242 }));
     this.sim.paused = true;
     this.sim.warpTo('farm', 30, 18, 0);
@@ -158,6 +184,7 @@ export class Game {
       ev.on('tired', () => this.toasts.show("You're out of energy! Eat a snack or head to bed.", 'ui.energy')),
       ev.on('pickup', (e) => this.toasts.pickup(iconName(e.id, this.sim.p.tools), `+${e.n} ${itemName(e.id)}`)),
       ev.on('levelUp', (e) => this.toasts.show(`Your ${e.skill} skill grew to level ${e.level}!`, 'ui.star2', 4500)),
+      ev.on('sound', (e) => this.sfx(e.id)),
       ev.on('anim', (e) => {
         if (e.kind === 'shake') {
           const s = this.view.spriteAt(this.sim.here, e.x, e.y);
@@ -165,6 +192,7 @@ export class Game {
         }
       }),
     );
+    for (const f of HOOKS.onAttach) f(this);
   }
 
   newGame(slot: number, o: NewGameOptions): void {
@@ -172,7 +200,6 @@ export class Game {
     this.attachSim(Sim.newGame(o));
     this.beginPlay();
     this.save(false);
-    this.toasts.show(`Welcome to Cliff Valley, ${this.sim.p.name}!`, 'ui.season0', 4500);
   }
 
   loadGame(slot: number): void {
@@ -189,6 +216,7 @@ export class Game {
   private beginPlay(): void {
     this.settings.lastSlot = this.slot;
     saveSettings(this.settings);
+    this.modals.closeAll();
     this.title.show(false);
     this.mode = 'play';
     this.sim.paused = false;
@@ -237,9 +265,7 @@ export class Game {
     this.save(false);
     this.enterLocation();
     const close = this.modals.show(
-      dayEndView(report, this.sim.state.day, () => {
-        close();
-      }),
+      dayEndView(report, this.sim.state.day, () => close()),
       { bare: true, onClose: () => void this.wakeUp() },
     );
     this.busy = false;
@@ -249,6 +275,12 @@ export class Game {
     this.mode = 'play';
     this.sim.paused = false;
     await this.fader.in(700);
+    this.afterWake();
+  }
+
+  /** Morning events (mail, cutscenes) plug in here. */
+  afterWake(): void {
+    for (const f of HOOKS.onEnter) f(this);
   }
 
   bakePlayer(): void {
@@ -264,11 +296,13 @@ export class Game {
     this.view.setLoc(loc, seasonOf(this.sim.state.day));
     this.view.sorted.addChild(this.playerShadow, this.player, this.ctl.tool);
     this.snapCamera();
+    if (this.mode === 'play') for (const f of HOOKS.onEnter) f(this);
   }
 
   locName(): string {
     const id = this.sim.p.loc;
     if (id === 'farm') return `${this.sim.p.farm} Farm`;
+    if (id === 'farmhouse') return `${this.sim.p.name}'s House`;
     return this.sim.here.def.name;
   }
 
@@ -277,22 +311,32 @@ export class Game {
     return { x: (cssX * dpr - this.view.root.x) / z, y: (cssY * dpr - this.view.root.y) / z };
   }
 
-  /** Sound hook (audio system plugs in here). */
+  /** Sound hook (the audio system replaces this). */
   sfx(_id: string): void {}
 
-  /** Fishing rod / bonk stick / slingshot — wired up by later systems. */
-  useSpecialTool(_k: ToolKind): void {
-    this.toasts.show('You can use this soon!');
+  useSpecialTool(k: ToolKind): void {
+    const f = HOOKS.special[k];
+    if (f) f(this);
+    else this.toasts.show('Nothing to do with that here.');
   }
 
-  /** Talk to nearby villagers / pet animals (later systems). */
-  interactNearby(): void {}
+  /** Talk to villagers / pet animals nearby. */
+  interactNearby(): void {
+    for (const f of HOOKS.interactNearby) if (f(this)) return;
+  }
 
-  openChest(_x: number, _y: number): void {}
+  openChest(x: number, y: number): void {
+    const o = this.sim.here.obj(x, y);
+    if (!o) return;
+    this.sfx('open');
+    openChestUI(this.sim, o, this.modals, (id) => this.sfx(id), () => this.sim.here.touch(x, y));
+  }
 
-  inspectObject(_o: WorldObject, _x: number, _y: number): void {}
+  inspectObject(o: WorldObject, x: number, y: number): void {
+    for (const f of HOOKS.inspect) if (f(this, o, x, y)) return;
+  }
 
-  // ── Input ────────────────────────────────────────────────
+  // ── Menus & triggers ─────────────────────────────────────
   private onRawAction(a: Action): void {
     if (a === 'menu' && this.modals.open) {
       this.modals.cancelTop();
@@ -305,74 +349,111 @@ export class Game {
     const p = this.sim.p;
     p.sel = clamp(i, 0, TUNING.toolbarSize - 1);
     const s = p.inv[p.sel];
-    if (s) this.hud.showToolName(s.id);
+    if (s) this.hud.showToolName(itemName(s.id, p.tools));
+    this.sfx('tick');
   }
 
-  openMenu(): void {
+  openMenu(tab = 'bag'): void {
     if (this.mode !== 'play' || this.modals.open) return;
-    const close = this.modals.show(
-      h('div', null,
-        h('h2', null, 'Menu'),
-        h('div', { class: 'title-menu', style: 'margin:auto' },
-          h('button', { class: 'btn gray', onclick: () => { close(); this.openSettings(); } }, 'Settings'),
-          h('button', { class: 'btn', onclick: () => { close(); this.quitToTitle(); } }, 'Save & quit to title'),
-          h('button', { class: 'btn green', onclick: () => close() }, 'Back to farm'),
-        ),
-      ),
-      { cancel: () => {} },
-    );
+    this.sfx('open');
+    openMenu(this, tab);
+  }
+
+  settingsPanel(onChange: () => void): HTMLElement {
+    return settingsPanel(this.settings, {
+      apply: (s) => {
+        applySettingsToDom(s);
+        this.fx.reduced = s.reducedMotion;
+        if (this.host.zoomBias !== s.zoom) {
+          this.host.zoomBias = s.zoom;
+          this.host.resize();
+          this.snapCamera();
+        }
+        this.applyAudioSettings();
+        onChange();
+      },
+      save: (s) => saveSettings(s),
+      testPerformance: () => this.testPerformance(),
+      speechAvailable: typeof window !== 'undefined' && 'speechSynthesis' in window,
+      inGame: this.mode === 'play',
+      quit: () => this.quitToTitle(),
+      storageInfo: () => {
+        const total = usage().reduce((t, u) => t + u.bytes, 0);
+        return storageMode() === 'memory'
+          ? 'Saving is off in this window (your browser blocked storage).'
+          : `Saves use ${(total / 1024).toFixed(0)} KB${this.mode === 'play' ? ` (this farm: ${(slotBytes(this.slot) / 1024).toFixed(0)} KB)` : ''}.`;
+      },
+    });
+  }
+
+  /** Audio system replaces this. */
+  applyAudioSettings(): void {}
+
+  /** Benchmark system replaces this. */
+  testPerformance(): void {
+    this.toasts.show('Performance test is getting ready...');
   }
 
   openSettings(): void {
-    // Full settings panel arrives in phase 12; basic text size + fps now.
-    const s = this.settings;
-    const close = this.modals.show(
-      h('div', null,
-        h('h2', null, 'Settings'),
-        h('div', { class: 'form-row' }, h('label', null, 'Text size'),
-          h('div', { class: 'choice-row' }, ...['Small', 'Normal', 'Large', 'Huge'].map((n, i) => {
-            const b = h('button', { class: 'choice' + (s.textSize === i ? ' on' : '') }, n);
-            b.addEventListener('click', () => { s.textSize = i; applySettingsToDom(s); saveSettings(s); close(); this.openSettings(); });
-            return b;
-          }))),
-        h('div', { class: 'actions' }, h('button', { class: 'btn green', onclick: () => close() }, 'Done')),
-      ),
-      { cancel: () => {} },
-    );
+    let close = () => {};
+    close = this.modals.show(h('div', { style: 'width:min(92vw,460px)' }, h('h2', null, 'Settings'), this.settingsPanel(() => {}), h('div', { class: 'actions' }, h('button', { class: 'btn green', onclick: () => close() }, 'Done'))), { cancel: () => {} });
+  }
+
+  runTrigger(action: string, arg?: string): void {
+    const hook = HOOKS.trigger[action];
+    if (hook) {
+      hook(this, arg);
+      return;
+    }
+    switch (action) {
+      case 'ship':
+        openShipping(this.sim, this.modals, (id) => this.sfx(id));
+        return;
+      case 'lostfound':
+        openLostAndFound(this.sim, this.modals, (id) => this.sfx(id));
+        return;
+      case 'shop': {
+        if (!arg) return;
+        const r = shopOpen(this.sim, arg);
+        if (!r.open) {
+          this.toasts.show(r.reason ?? 'Closed!');
+          return;
+        }
+        if (!this.shopKeeperHere(arg)) {
+          this.toasts.show(`${SHOPS[arg].name}: nobody is at the counter right now.`);
+          return;
+        }
+        openShop(this.sim, arg, this.modals, (id) => this.sfx(id), (t) => this.toasts.show(t));
+        return;
+      }
+      case 'bed': {
+        const late = this.sim.state.min >= TUNING.sleepyMin;
+        this.modals.ask('Go to bed?', late ? "It's late — a good sleep will restore your energy." : 'Sleeping ends the day and saves your game.', [
+          { label: 'Not yet', cls: 'gray' },
+          { label: 'Sleep', cls: 'green', primary: true, onClick: () => void this.goToBed(false) },
+        ]);
+        return;
+      }
+    }
+  }
+
+  /** Villager system replaces this to require the keeper at the counter. */
+  shopKeeperHere(_shop: string): boolean {
+    return true;
   }
 
   private handleActions(): void {
     for (const a of this.input.drain()) {
       if (this.modals.open) continue;
       if (a === 'menu') this.openMenu();
+      else if (a === 'inventory') this.openMenu('bag');
+      else if (a === 'map') this.openMenu('map');
+      else if (a === 'journal') this.openMenu('quests');
       else if (a.startsWith('slot')) this.selectSlot(parseInt(a.slice(4), 10));
       else if (a === 'interact') this.ctl.interact();
       else if (a === 'use') this.ctl.use(this.input.fromPointer);
       else if (a === 'prevTool') this.selectSlot((this.sim.p.sel + TUNING.toolbarSize - 1) % TUNING.toolbarSize);
       else if (a === 'nextTool') this.selectSlot((this.sim.p.sel + 1) % TUNING.toolbarSize);
-    }
-  }
-
-  /** Interact with whatever is in front of (or under) the player. */
-  interact(): void {
-    const sim = this.sim;
-    const ft = sim.facingTile();
-    const pt = sim.playerTile();
-    const trig = sim.here.triggerAt(ft.x, ft.y) ?? sim.here.triggerAt(pt.x, pt.y);
-    if (trig) this.runTrigger(trig.action, trig.arg);
-  }
-
-  runTrigger(action: string, _arg?: string): void {
-    if (action === 'ship') {
-      openShipping(this.sim, this.modals, (id) => this.sfx(id));
-      return;
-    }
-    if (action === 'bed') {
-      const late = this.sim.state.min >= TUNING.sleepyMin;
-      this.modals.ask('Go to bed?', late ? "It's late — a good sleep will restore your energy." : 'Sleeping ends the day and saves your game.', [
-        { label: 'Not yet', cls: 'gray' },
-        { label: 'Sleep', cls: 'green', primary: true, onClick: () => void this.goToBed(false) },
-      ]);
     }
   }
 
@@ -397,6 +478,7 @@ export class Game {
   update(dt: number): void {
     const input = this.input;
     input.frame();
+    this.time += dt;
     if (this.mode === 'title') {
       input.drain();
       this.titleT += dt;
@@ -408,17 +490,21 @@ export class Game {
     }
     this.handleActions();
     this.ctl.update(dt);
-    if (!this.modals.open && !this.ctl.locked) {
+    if (!this.modals.open && !this.ctl.locked && !this.inputBlocked) {
       const before = this.sim.p.loc;
       this.sim.movePlayer(input.moveX, input.moveY, dt);
       if (this.sim.p.loc !== before) this.enterLocation();
     } else this.sim.moving = false;
-    if (this.mode === 'play' && !this.modals.open) this.ctl.updateTarget();
+    if (!this.modals.open) this.ctl.updateTarget();
     this.sim.update(dt);
+    for (const f of HOOKS.onUpdate) f(this, dt);
     this.fx.update(dt);
     this.walkT = this.sim.moving ? this.walkT + dt : 0;
-    this.hud.update(this.sim, this.locName(), false);
+    this.hud.update(this.sim, this.locName(), this.sim.p.loc === 'mine');
   }
+
+  /** Set by cutscenes/minigames to stop walking. */
+  inputBlocked = false;
 
   snapCamera(): void {
     this.cam.x = this.sim.p.x;
@@ -435,9 +521,12 @@ export class Game {
     this.cam.y = mh <= vh ? mh / 2 : clamp(this.cam.y, vh / 2, mh - vh / 2);
   }
 
-  render(_dt: number): void {
+  /** Optional camera override (cutscenes / title). */
+  camTarget: { x: number; y: number } | null = null;
+
+  render(dt: number): void {
     const p = this.sim.p;
-    const frame = this.ctl?.pose ? 3 : this.sim.moving ? [0, 1, 0, 2][Math.floor(this.walkT * 8) % 4] : 0;
+    const frame = this.ctl.pose ? 3 : this.sim.moving ? [0, 1, 0, 2][Math.floor(this.walkT * 8) % 4] : 0;
     this.player.texture = this.playerAtlas.tex(`ch.player.${p.dir}.${frame}`);
     this.player.x = Math.round(p.x);
     this.player.y = Math.round(p.y) + 1;
@@ -449,9 +538,13 @@ export class Game {
     if (this.mode === 'title') {
       tx = 30 * TILE + Math.sin(this.titleT * 0.05) * 240;
       ty = 18 * TILE + Math.cos(this.titleT * 0.04) * 80;
+    } else if (this.camTarget) {
+      tx = this.camTarget.x;
+      ty = this.camTarget.y;
     }
-    this.cam.x += (tx - this.cam.x) * (this.mode === 'title' ? 0.02 : 0.2);
-    this.cam.y += (ty - this.cam.y) * (this.mode === 'title' ? 0.02 : 0.2);
+    const follow = this.mode === 'title' ? 0.02 : this.camTarget ? 0.06 : 0.2;
+    this.cam.x += (tx - this.cam.x) * follow;
+    this.cam.y += (ty - this.cam.y) * follow;
     this.clampCamera();
     const z = this.host.zoom;
     const camX = Math.round(this.cam.x * z) / z, camY = Math.round(this.cam.y * z) / z;
@@ -462,6 +555,7 @@ export class Game {
     this.view.view.y = camY - this.host.height / 2 / z;
     this.view.view.w = this.host.width / z;
     this.view.view.h = this.host.height / z;
+    for (const f of HOOKS.onRender) f(this, dt);
     this.view.update();
     if (this.mode === 'play') this.ctl.drawHighlights();
     this.host.app.render();

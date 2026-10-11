@@ -1,6 +1,9 @@
 /** Map registry: every location id → builder. Builders run once and are cached. */
 import { buildFarm, buildFarmhouse } from './farm';
+import { ROOMS, buildHall } from './interiors';
+import { buildTown } from './town';
 import type { MapDef } from './types';
+import { buildRoom } from './interiors';
 
 export interface MapContext {
   houseLevel: number;
@@ -11,7 +14,14 @@ type Builder = (ctx: MapContext) => MapDef;
 const BUILDERS: Record<string, Builder> = {
   farm: () => buildFarm(),
   farmhouse: (ctx) => buildFarmhouse(ctx.houseLevel),
+  town: () => buildTown(),
+  hall: () => buildHall(),
 };
+for (const r of ROOMS) BUILDERS[r.id] = () => roomDef(r.id);
+
+function roomDef(id: string): MapDef {
+  return buildRoom(ROOMS.find((r) => r.id === id)!);
+}
 
 const cache = new Map<string, MapDef>();
 

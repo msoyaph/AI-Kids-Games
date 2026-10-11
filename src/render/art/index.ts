@@ -3,6 +3,7 @@ import type { Atlas } from '../atlas';
 import { bakeBuildings } from './buildings';
 import { bakeCrops } from './crops';
 import { bakeResourceIcons } from './items';
+import { bakePlaceables } from './placeables';
 import { drawCharacter, FRAMES, shadowSprite, type Look } from './characters';
 import { bakeObjects } from './objects';
 import { bakeProps } from './props';
@@ -15,6 +16,7 @@ export function bakeAll(atlas: Atlas): void {
   bakeObjects(atlas);
   bakeCrops(atlas);
   bakeResourceIcons(atlas);
+  bakePlaceables(atlas);
   atlas.add('shadow', shadowSprite(12));
   atlas.add('shadow.big', shadowSprite(16));
 }

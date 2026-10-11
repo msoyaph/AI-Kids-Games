@@ -113,6 +113,6 @@ export const INV_CSS = `
 .info-line .sub { color: var(--ink2); font-size: .9em; margin-top: 2px; }
 .bin-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--paper2); border-radius: 8px; margin-bottom: 10px; font-weight: 700; }
 .bin-row .v { margin-left: auto; color: #7a4a10; }
-.wide-modal { width: min(96vw, 560px); }
+.wide-modal { width: min(90vw, 560px); }
 @media (max-width: 560px) { .inv-grid { gap: 3px; } }
 `;

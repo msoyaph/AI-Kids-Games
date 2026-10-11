@@ -2,4 +2,5 @@
 import './items';
 import './resources';
 import './crops';
+import './placeables';
 export { ITEMS, item, tryItem } from './items';
