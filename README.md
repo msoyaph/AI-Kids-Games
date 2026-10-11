@@ -54,20 +54,20 @@ action color).
 
 ## Deployment
 
-Vercel: build `npm run build`, output `dist`, Vite preset. vercel.json serves
-existing files before the SPA fallback, revalidates unversioned game HTML and
-caches hashed site assets. Static route shells and sitemap use SITE_ORIGIN
-when supplied, otherwise the Vercel preview hostname. No secrets are required.
-Keep hosting analytics and injected toolbar/telemetry disabled on the game site.
+Production: https://ai-kids-games-fawn.vercel.app (Vercel project real-tours/ai-kids-games).
+Vercel: build `npm run build`, output `dist`, Vite preset. vercel.json serves existing
+files before the SPA fallback, revalidates unversioned game HTML and caches hashed site
+assets. Route shells, robots.txt and the sitemap use SITE_ORIGIN, else the Vercel
+production domain. Preview builds are noindex. No secrets are required. Keep hosting
+analytics and injected toolbar/telemetry disabled on the game site.
 
-Preview command: `vercel deploy --target preview --yes --build-env AIKG_PREVIEW_ONLY=1`.
-The build refuses any preview-only attempt that Vercel classifies as production,
-including its first-deployment behavior. Vercel production builds also require
-the explicit approval flag described in scripts/check-deployment.ts; set it only
-after owner approval. Do not promote or deploy to production without that approval.
+Preview: `vercel deploy --target preview --yes --build-env AIKG_PREVIEW_ONLY=1`. The build
+refuses a preview-only deploy that Vercel classifies as production. A production build
+(`vercel deploy --prod`) runs only for a release the owner approved: DEPLOYMENT.json's
+productionApproval must name the package.json version (scripts/check-deployment.ts).
+Bump the version and record a new approval for each release.
 
-Preview authentication stays enabled. Use Vercel sign-in to review on real
-devices. For authenticated automated QA, use a temporary browser storage state
-with `AIKG_BASE_URL` and `AIKG_QA_STORAGE_STATE`; never commit access cookies or
-bypass tokens. Remote tests turn off traces to avoid recording those cookies.
-See LAUNCH_REPORT.md for the preview URL, validation and real-device checks.
+Deployment Protection is Standard Protection: previews and per-deployment URLs need Vercel
+sign-in, and the production domain is public. For hosted QA on a preview, create a temporary
+Protection Bypass for Automation, pass it as `AIKG_VERCEL_BYPASS` with `AIKG_BASE_URL`,
+and revoke it afterwards. Never commit it. Rollback steps are in LAUNCH_REPORT.md.

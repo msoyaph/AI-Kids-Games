@@ -19,7 +19,7 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
   favorites or recently played, need another origin, or make the definition of
   done impossible. Otherwise decide, note it here, and continue.
 
-## Redesign and production launch (in progress, started 2026-10-11)
+## Redesign and production launch (release 2.0.0, live 2026-10-11)
 
 Brief: visual/UX redesign, gameplay previews, new cover art, privacy and launch
 readiness, then production on Vercel. Approved design: DESIGN_PLAN.md.
@@ -91,7 +91,19 @@ Progress (one commit per step):
    mobile: home 95/100/100/100, details 97/100/100/100, play 64 (exempt)/98→fixed/100/100.
    Home initial load ≈180 KB (scripts/page-weight.ts). Full Playwright: 80 passed + fixes
    re-run green; unit tests green. After screenshots: docs/screenshots/after.
-9. TODO: preview deploy, hosted suite, production, smoke test, report.
+9. COMPLETE: release 2.0.0 is live at https://ai-kids-games-fawn.vercel.app (commit 783c343,
+   dpl_Ae5DWvTurreEjNvT3kkqeRdw8dVp). Approval recorded in DEPLOYMENT.json; guard allows
+   only that version. Hosted suite on protected preview pxkrj9q0w (temporary bypass,
+   revoked) and logged-out production suite: 84 passed / 0 failed each. Deployment
+   Protection switched to Standard (previews protected, production public). Production
+   Lighthouse mobile: home 99/100/100/100, details 98/100/100/100, play 45 (exempt)/100/100/100.
+   Pitfall: in zsh never name a loop variable `path` (it rewrites PATH).
+
+## Next: Light Crossing v2.0 (owner request, on hold)
+
+Owner wants Light Crossing v2.0 imported and released. On 2026-10-11 its project was on
+branch lightcrossing-upgrade (not main), had no v2.0.0 tag and had uncommitted changes, so
+nothing was imported. Start only when it is on main at v2.0.0 with a clean tree.
 
 ## Earlier launch checkpoints (2026-10-11, all complete)
 

@@ -1,4 +1,83 @@
-# Ai Kids Games launch report — 2026-10-11
+# Ai Kids Games launch report
+
+## Release 2.0.0: redesign, gameplay previews and production (2026-10-11)
+
+**Production:** https://ai-kids-games-fawn.vercel.app (public, no sign-in). Deployment
+`dpl_Ae5DWvTurreEjNvT3kkqeRdw8dVp`, commit `783c343`. DEPLOYMENT.json has the details.
+
+What changed (design: DESIGN_PLAN.md):
+- Calm neutral design system: Nunito, six colors, Go green only for Play and primary
+  buttons, sentence case, 48px+ targets, light and dark.
+- Real gameplay previews for all five games, captured from the unchanged builds with
+  `npm run capture-previews -- <slug>`: a 7–8 s loop (MP4 and WebM, 700–747 KB each), a
+  poster, and 4–6 screenshots. One preview plays at a time. They never play with
+  reduced motion or Save-Data, and nothing downloads until needed.
+- New hand-drawn SVG covers in one style (no titles; badge/heart safe area; idle layers),
+  transparent title logos, and 1200×630 Open Graph images.
+- Home: rotating hero, then one balanced "All games" grid with category and age filters.
+  Category rows return automatically at 12+ games.
+- Details: loop, logo, short description, Play, a facts row, a gallery with a lightbox,
+  quick-start steps plus all controls, and more games.
+- Play: a per-game loading screen with real progress. The iframe and its permissions are
+  unchanged.
+- Privacy page. robots.txt, sitemap, canonical URLs and favicons.
+- Game builds, storage keys, favorites/recent behavior, the age filter and cache headers
+  are unchanged.
+
+Verification:
+- **Unit tests:** 55 pass. They cover:
+  - preview files and size budgets, and cover/logo/OG art;
+  - game hashes against BUILD_IMPORTS.json;
+  - the grid rule and the deployment guard;
+  - registry, search and storage.
+- **Playwright** (desktop, tablet and phone), 84 passed with 21 intentional device skips
+  in each run below. It includes:
+  - reduced motion and Save-Data never playing previews;
+  - one preview at a time on touch;
+  - the grid with 1/4/5/6/7/12 mock games;
+  - metadata.
+
+  | Run | Failed |
+  |---|---|
+  | Local | 0 |
+  | Hosted against the protected preview `pxkrj9q0w`, with a temporary bypass that was revoked afterwards | 0 |
+  | Logged out against production | 0 |
+
+  The production run showed all five games running cleanly for 20 seconds, saves
+  surviving reloads, favorites persisting, no console errors and no requests to other
+  origins.
+- **Lighthouse on production (mobile):**
+
+  | Page | Performance | Accessibility | Best Practices | SEO |
+  |---|---|---|---|---|
+  | Home | 99 | 100 | 100 | 100 |
+  | Details | 98 | 100 | 100 | 100 |
+  | Play | 45 (exempt) | 100 | 100 | 100 |
+
+  The play page is exempt from Performance by owner decision, because it boots a 1 MB game.
+- **Home initial load:** 194 KB on phone and 197 KB on desktop, excluding preview videos
+  (budget: 500 KB).
+- **Hosting:** game files are byte-identical to their originals. Game HTML revalidates
+  (ETag → 304) and hashed assets are immutable.
+
+Deployment Protection is now Standard Protection: previews and per-deployment URLs
+still need Vercel sign-in, and the production domain is public. Before, it was
+"all except custom domains", which would have hidden the `.vercel.app` production
+domain.
+
+Rollback:
+- **Instant rollback:** Vercel dashboard → ai-kids-games → Deployments → pick an earlier
+  production deployment → Instant Rollback. From the CLI, `vercel rollback <deployment-url>`
+  does the same. This release is the project's first production deployment, so there is no
+  earlier one to roll back to yet; after the next release, this one becomes that target.
+- **To take this release offline now:** Settings → Deployment Protection → Vercel
+  Authentication → "All Deployments". Production then requires sign-in again.
+- **To redeploy older code:** check out the commit and run `vercel deploy --prod` with
+  `AIKG_ALLOW_PRODUCTION=approved` set as a build env.
+
+The older two-game ChatGPT Sites publish (.openai/hosting.json) was left untouched.
+
+## Earlier five-game preview launch
 
 ## Changes
 
