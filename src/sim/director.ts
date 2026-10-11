@@ -33,7 +33,7 @@ function ringPoint(w: World, minD: number, maxD: number, biasX: number, biasZ: n
     const d = minD + w.rng.next() * (maxD - minD);
     const x = p.x + Math.sin(a) * d;
     const z = p.z + Math.cos(a) * d;
-    if (x > -half && x < half && z > -half && z < half) {
+    if (x > -half && x < half && z > -half && z < half && w.flow.reachable(x, z)) {
       out[0] = x;
       out[1] = z;
       return;

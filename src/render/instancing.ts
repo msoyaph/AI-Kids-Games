@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { BAYER_GLSL } from './occlusion';
 
 /**
  * Writes a column-major matrix = T(x,y,z) · Ry(yaw) · Rz(roll) · S(sx,sy,sz)
@@ -129,7 +130,9 @@ export function flashLambert(): THREE.MeshLambertMaterial {
       .replace('#include <common>', '#include <common>\nattribute float aFlash;\nvarying float vFlash;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFlash = aFlash;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vFlash;')
+      .replace('#include <common>', `#include <common>\nvarying float vFlash;\n${BAYER_GLSL}`)
+      // creatures right in front of the lens dissolve so they never hide the player
+      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n  float camD = length(vViewPosition);\n  if (camD < 4.5 && bonkBayer4(gl_FragCoord.xy) < 1.0 - camD / 4.5) discard;')
       .replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0), clamp(vFlash, 0.0, 1.0));');
   };
   mat.customProgramCacheKey = () => 'flashLambert';

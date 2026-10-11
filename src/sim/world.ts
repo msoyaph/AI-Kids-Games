@@ -7,6 +7,7 @@ import { EventBuffer } from '../core/events';
 import { Rng } from '../core/rng';
 import { EnemyPool, EnemyProjectilePool, GemPool, HazardPool, PickupPool, ProjectilePool } from './pools';
 import { BOSS_ATTACKS, SOURCE_SLOTS } from './sources';
+import { FlowField } from './flowField';
 import { SpatialHash } from './spatialHash';
 import { Terrain } from './terrain';
 
@@ -205,6 +206,8 @@ export interface World {
   pickups: PickupPool;
   hazards: HazardPool;
   grid: SpatialHash;
+  /** Distance field toward the player for enemy pathing. */
+  flow: FlowField;
   shrines: Shrine[];
   events: EventBuffer;
   pendingLevels: number;
@@ -292,6 +295,7 @@ export function createWorld(opts: WorldOptions): World {
     pickups: new PickupPool(CAPS.pickups),
     hazards: new HazardPool(CAPS.hazards),
     grid: new SpatialHash(MAP_HALF, 4, Math.max(CAPS.enemies, stress + 200)),
+    flow: new FlowField(terrain),
     shrines: [],
     events: new EventBuffer(8192),
     pendingLevels: 0,

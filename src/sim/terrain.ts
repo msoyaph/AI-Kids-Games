@@ -47,6 +47,26 @@ export interface Spot {
 
 const GRID_CELL = 16;
 
+/** A structure (plateau / ramp) edge taller than this is a wall (≈ the player's step height). */
+export const WALL_STEP = 0.7;
+/** A ramp meeting its plateau rises at most ~1.1 per unit. */
+export const JOIN_STEP = 1.25;
+/** Natural slopes are only unwalkable above this rise per unit (steepest hills reach ~2.5). */
+export const MAX_NATURAL_STEP = 2.6;
+/** Lattice neighbour offsets: +x, -x, +z, -z, then the four diagonals. */
+export const DIRS: ReadonlyArray<readonly [number, number]> = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+  [1, 1],
+  [1, -1],
+  [-1, 1],
+  [-1, -1],
+];
+/** (dj+1)*3 + (di+1) → DIRS index. */
+const DIR_INDEX = Int8Array.from([7, 3, 5, 1, -1, 0, 6, 2, 4]);
+
 export class Terrain {
   readonly seed: number;
   readonly half = MAP_HALF;
@@ -74,6 +94,11 @@ export class Terrain {
   /** Precomputed height samples (1 unit spacing) for cheap, inlinable lookups. */
   readonly hcache: Float32Array;
   readonly hdim: number;
+  /**
+   * Walkability between neighbouring lattice points (bit d set = may step toward DIRS[d]).
+   * Plateau / ramp walls block both ways; natural slopes only when absurdly steep.
+   */
+  readonly pass: Uint8Array;
 
   constructor(seed: number) {
     this.seed = seed;
@@ -114,6 +139,128 @@ export class Terrain {
     for (let j = 0; j < this.hdim; j++) {
       for (let i = 0; i < this.hdim; i++) this.hcache[j * this.hdim + i] = this.height(i - this.half, j - this.half);
     }
+    this.pass = this.buildPassability();
+  }
+
+  /** Which structure (index + 1) covers a lattice point, 0 for open ground. */
+  private structureAt(x: number, z: number): number {
+    for (let k = 0; k < this.structures.length; k++) {
+      const s = this.structures[k];
+      const dx = x - s.x;
+      const dz = z - s.z;
+      const u = dx * s.cos + dz * s.sin;
+      const v = -dx * s.sin + dz * s.cos;
+      if (u >= -s.hu && u <= s.hu && v >= -s.hv && v <= s.hv) return k + 1;
+    }
+    return 0;
+  }
+
+  private buildPassability(): Uint8Array {
+    const d = this.hdim;
+    const h = this.hcache;
+    const owner = new Uint16Array(d * d);
+    for (let j = 0; j < d; j++) for (let i = 0; i < d; i++) owner[j * d + i] = this.structureAt(i - this.half, j - this.half);
+    const pass = new Uint8Array(d * d);
+    // orthogonal steps first; diagonals need both orthogonal legs (no corner cutting)
+    const stepOk = (a: number, b: number): boolean => {
+      const dh = Math.abs(h[a] - h[b]);
+      if (owner[a] !== owner[b]) {
+        // ground ↔ structure: a wall above step height; structure ↔ structure (a ramp
+        // meeting its plateau) only needs the ramp's own steepness
+        const join = owner[a] !== 0 && owner[b] !== 0;
+        if (dh > (join ? JOIN_STEP : WALL_STEP)) return false;
+      }
+      return dh <= MAX_NATURAL_STEP;
+    };
+    for (let j = 0; j < d; j++) {
+      for (let i = 0; i < d; i++) {
+        const c = j * d + i;
+        let m = 0;
+        for (let k = 0; k < 4; k++) {
+          const ni = i + DIRS[k][0];
+          const nj = j + DIRS[k][1];
+          if (ni < 0 || nj < 0 || ni >= d || nj >= d) continue;
+          if (stepOk(c, nj * d + ni)) m |= 1 << k;
+        }
+        pass[c] = m;
+      }
+    }
+    for (let j = 0; j < d; j++) {
+      for (let i = 0; i < d; i++) {
+        const c = j * d + i;
+        let m = pass[c];
+        for (let k = 4; k < 8; k++) {
+          const [dx, dz] = DIRS[k];
+          const ni = i + dx;
+          const nj = j + dz;
+          if (ni < 0 || nj < 0 || ni >= d || nj >= d) continue;
+          const xLeg = dx > 0 ? 0 : 1;
+          const zLeg = dz > 0 ? 2 : 3;
+          const viaX = j * d + ni;
+          const viaZ = nj * d + i;
+          const zFromX = dz > 0 ? 2 : 3;
+          const xFromZ = dx > 0 ? 0 : 1;
+          if ((pass[c] & (1 << xLeg)) && (pass[c] & (1 << zLeg)) && (pass[viaX] & (1 << zFromX)) && (pass[viaZ] & (1 << xFromZ)) && stepOk(c, nj * d + ni)) m |= 1 << k;
+        }
+        pass[c] = m;
+      }
+    }
+    return pass;
+  }
+
+  /** Lattice cell (nearest 1-unit sample point) for a world position, clamped to the map. */
+  cellOf(x: number, z: number): number {
+    const d = this.hdim;
+    let i = Math.round(x + this.half);
+    let j = Math.round(z + this.half);
+    if (i < 0) i = 0;
+    else if (i >= d) i = d - 1;
+    if (j < 0) j = 0;
+    else if (j >= d) j = d - 1;
+    return j * d + i;
+  }
+
+  /** True if one lattice step from cell a to the neighbouring cell b is walkable. */
+  canStep(a: number, b: number): boolean {
+    if (a === b) return true;
+    const d = this.hdim;
+    const di = (b % d) - (a % d);
+    const dj = ((b / d) | 0) - ((a / d) | 0);
+    if (di < -1 || di > 1 || dj < -1 || dj > 1) return false;
+    return (this.pass[a] & (1 << DIR_INDEX[(dj + 1) * 3 + (di + 1)])) !== 0;
+  }
+
+  /**
+   * Ground height that respects walls: bilinear over the surrounding samples that share the
+   * level of the nearest sample, so a creature hugging a plateau wall stays on its own level.
+   */
+  heightOnLevel(x: number, z: number): number {
+    const d = this.hdim;
+    let fx = x + this.half;
+    let fz = z + this.half;
+    if (fx < 0) fx = 0;
+    else if (fx > d - 1.001) fx = d - 1.001;
+    if (fz < 0) fz = 0;
+    else if (fz > d - 1.001) fz = d - 1.001;
+    const ix = fx | 0;
+    const iz = fz | 0;
+    const tx = fx - ix;
+    const tz = fz - iz;
+    const c = this.hcache;
+    const o = iz * d + ix;
+    const h00 = c[o];
+    const h10 = c[o + 1];
+    const h01 = c[o + d];
+    const h11 = c[o + d + 1];
+    // reference: the nearest sample
+    const ref = tx < 0.5 ? (tz < 0.5 ? h00 : h01) : tz < 0.5 ? h10 : h11;
+    const w00 = (1 - tx) * (1 - tz) * (Math.abs(h00 - ref) <= WALL_STEP ? 1 : 0);
+    const w10 = tx * (1 - tz) * (Math.abs(h10 - ref) <= WALL_STEP ? 1 : 0);
+    const w01 = (1 - tx) * tz * (Math.abs(h01 - ref) <= WALL_STEP ? 1 : 0);
+    const w11 = tx * tz * (Math.abs(h11 - ref) <= WALL_STEP ? 1 : 0);
+    const wsum = w00 + w10 + w01 + w11;
+    if (wsum < 1e-6) return ref;
+    return (h00 * w00 + h10 * w10 + h01 * w01 + h11 * w11) / wsum;
   }
 
   /**

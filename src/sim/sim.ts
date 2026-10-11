@@ -100,6 +100,7 @@ export function step(w: World, input: SimInput): void {
   savePrevious(w);
 
   updatePlayer(w, input);
+  w.flow.update(w);
   if (!w.director.dawn && w.director.victoryT <= 0) updateDirector(w);
   checkVictory(w);
 

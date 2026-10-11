@@ -4,10 +4,13 @@ import { Ev } from '../core/events';
 import { updateBoss } from './bosses';
 import { damageArea, damagePlayer, killEnemy } from './combat';
 import { placeOffscreen } from './director';
+import { UNREACHABLE } from './flowField';
+import type { EnemyPool } from './pools';
 import { bossSrc, CONTACT_SRC, src, SrcKind } from './sources';
+import type { Terrain } from './terrain';
+import type { World } from './world';
 
 const CLOCKJAW_CHARGE = bossSrc('clockjaw.charge');
-import type { World } from './world';
 
 /** Charger states */
 const CH_APPROACH = 0;
@@ -20,6 +23,9 @@ const EX_FUSE = 1;
 
 const push = new Float32Array(2);
 const bossMove = new Float32Array(2);
+const fdir = new Float32Array(2);
+/** Walker step scratch: candidate x, z in → corrected x, z and ground height out. */
+const wpos = new Float64Array(3);
 /** Per-type speed multipliers from tuning, refreshed each tick (live panel friendly). */
 const speedMul = new Float32Array(ENEMIES.length);
 const MAX_NEIGHBORS = 10;
@@ -65,6 +71,7 @@ export function updateEnemies(w: World): void {
   for (let t = 0; t < ENEMIES.length; t++) speedMul[t] = global * (per[ENEMIES[t].id] ?? 1);
   const px = p.x;
   const pz = p.z;
+  const flow = w.flow;
 
   for (let i = 0; i < e.count; i++) {
     if (!e.alive[i]) continue;
@@ -90,9 +97,21 @@ export function updateEnemies(w: World): void {
       continue;
     }
 
+    // Walkers follow the flow field around walls; when the straight line is (nearly) the
+    // shortest path they just head straight for the player.
+    const walker = beh !== 7 && TYPE_FLYING[type] === 0 && !flow.island;
+    let pdx = dx;
+    let pdz = dz;
+    let pathDirect = true;
+    if (walker && flow.targetCell >= 0 && flowSteer(w, i)) {
+      pdx = fdir[0];
+      pdz = fdir[1];
+      pathDirect = false;
+    }
+
     const speed = e.speed[i] * speedMul[type] * (1 - e.slowAmt[i]);
-    let mvx = dx * speed;
-    let mvz = dz * speed;
+    let mvx = pdx * speed;
+    let mvz = pdz * speed;
 
     switch (beh) {
       case 1: {
@@ -100,8 +119,8 @@ export function updateEnemies(w: World): void {
         const wob = Math.sin(e.age[i] * 3.2 + e.uid[i]) * 0.7;
         const c = Math.cos(wob);
         const s = Math.sin(wob);
-        mvx = (dx * c - dz * s) * speed;
-        mvz = (dx * s + dz * c) * speed;
+        mvx = (pdx * c - pdz * s) * speed;
+        mvz = (pdx * s + pdz * c) * speed;
         break;
       }
       case 3: {
@@ -134,7 +153,7 @@ export function updateEnemies(w: World): void {
         // charger
         const st = e.state[i];
         if (st === CH_APPROACH) {
-          if (dist < (def.range ?? 15)) {
+          if (pathDirect && dist < (def.range ?? 15)) {
             e.state[i] = CH_WINDUP;
             e.stT[i] = (def.windup ?? 0.7) * tel.chargerWindupMult;
             e.stA[i] = dx;
@@ -248,10 +267,18 @@ export function updateEnemies(w: World): void {
     else if (x > lim) x = lim;
     if (z < -lim) z = -lim;
     else if (z > lim) z = lim;
+    let gy: number;
+    if (walker) {
+      wpos[0] = x;
+      wpos[1] = z;
+      walkerStep(t, e, i);
+      x = wpos[0];
+      z = wpos[1];
+      gy = wpos[2];
+    } else gy = t.heightAt(x, z);
     e.x[i] = x;
     e.z[i] = z;
 
-    const gy = t.heightAt(x, z);
     const y = e.y[i];
     e.y[i] = gy > y ? y + (gy - y) * 0.35 : y + (gy - y) * 0.25;
 
@@ -263,6 +290,60 @@ export function updateEnemies(w: World): void {
       e.yaw[i] += d * 0.2;
     }
   }
+}
+
+// The walker helpers below take only integers and objects (doubles travel through typed
+// scratch arrays) and stay out of updateEnemies so V8 keeps inlining that loop's own calls
+// instead of boxing their double arguments.
+
+/**
+ * Flow-field steering for walker slot i: writes the downhill direction to fdir and returns
+ * true when the path bends — i.e. it is much longer than the straight line to the player.
+ */
+function flowSteer(w: World, i: number): boolean {
+  const e = w.enemies;
+  const x = e.x[i];
+  const z = e.z[i];
+  const dx = w.player.x - x;
+  const dz = w.player.z - z;
+  const dist = Math.sqrt(dx * dx + dz * dz) || 0.001;
+  const c = w.terrain.cellOf(x, z);
+  const cost = w.flow.dist[c];
+  return cost !== UNREACHABLE && cost > dist * 2.2 + 3 && w.flow.directionAt(c, fdir);
+}
+
+/**
+ * Walls are walls: undo walker slot i's step from its stored position to wpos[0..1] (walk,
+ * knockback, dash, crowd push) across a wall, sliding along it when only one axis is
+ * blocked. Then writes its level-aware ground height to wpos[2].
+ */
+function walkerStep(t: Terrain, e: EnemyPool, i: number): void {
+  let x = wpos[0];
+  let z = wpos[1];
+  const ox = e.x[i];
+  const oz = e.z[i];
+  const c0 = t.cellOf(ox, oz);
+  const c1 = t.cellOf(x, z);
+  if (c1 !== c0 && !t.canStep(c0, c1)) {
+    const cX = t.cellOf(x, oz);
+    if (cX === c0 || t.canStep(c0, cX)) {
+      z = oz;
+      e.kz[i] = 0;
+    } else {
+      const cZ = t.cellOf(ox, z);
+      if (cZ === c0 || t.canStep(c0, cZ)) {
+        x = ox;
+        e.kx[i] = 0;
+      } else {
+        x = ox;
+        z = oz;
+        e.kx[i] = e.kz[i] = 0;
+      }
+    }
+  }
+  wpos[0] = x;
+  wpos[1] = z;
+  wpos[2] = t.heightOnLevel(x, z);
 }
 
 function explode(w: World, i: number): void {

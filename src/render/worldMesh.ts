@@ -2,6 +2,15 @@ import * as THREE from 'three';
 import type { PropKind, Structure, Terrain } from '../sim/terrain';
 import { lowPolyMaterial } from './geo';
 import { propGeometry } from './models';
+import { fadeProps } from './occlusion';
+
+/** Props big enough to hide the player: [radius, height] at scale 1 (dissolve when in the way). */
+const OCCLUDERS: Partial<Record<PropKind, [number, number]>> = {
+  pine: [1.5, 4.4],
+  oak: [1.8, 4.0],
+  rock: [1.4, 1.4],
+  crystal: [0.8, 2.0],
+};
 
 const tmpC = new THREE.Color();
 const tmpC2 = new THREE.Color();
@@ -214,6 +223,8 @@ function buildProps(t: Terrain, shadows: boolean): THREE.InstancedMesh[] {
   for (const [kind, list] of byKind) {
     const geo = propGeometry(kind);
     const mat = lowPolyMaterial();
+    const occ = OCCLUDERS[kind];
+    if (occ) fadeProps(mat, occ[0], occ[1]);
     const mesh = new THREE.InstancedMesh(geo, mat, list.length);
     mesh.name = `prop:${kind}`;
     const big = kind === 'pine' || kind === 'oak' || kind === 'rock' || kind === 'crystal';

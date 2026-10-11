@@ -37,12 +37,13 @@ src/
              block), weapons, passives, enemies, waves, characters, evolutions, shop,
              achievements; balance.ts keeps structural constants only
   sim/       Pure game logic — NO three.js / DOM imports. Deterministic given seed + inputs.
-             world.ts (state), pools.ts (SoA typed-array pools), spatialHash.ts, terrain.ts,
-             player.ts (momentum movement), enemyAI.ts, director.ts (waves/bosses), combat.ts,
+             world.ts (state), pools.ts (SoA typed-array pools), spatialHash.ts, terrain.ts
+             (+ walkability lattice `pass`), flowField.ts (enemy pathing), player.ts (momentum movement), enemyAI.ts, director.ts (waves/bosses), combat.ts,
              weapons/*.ts (one behavior fn per weapon behavior), pickups.ts, leveling.ts,
              upgrades.ts, shrines.ts, sim.ts (fixed-step orchestration), bot.ts (AI player)
   render/    three.js only reads sim state: instanced meshes per enemy/projectile kind, gems,
-             particles, terrain/props, camera rig, damage numbers (2D canvas overlay)
+             particles, terrain/props, camera rig, damage numbers (2D canvas overlay),
+             occlusion.ts (GPU dithered fade of props between camera and player)
   audio/     Web Audio synth SFX + procedural music
   input/     keyboard/mouse/pointer-lock/gamepad (+ drag-look fallback in iframes)
   ui/        DOM screens (title, select, shop, settings, pause, level-up, chest, game over),
@@ -79,6 +80,10 @@ Key rules:
   `terrain.heightAt` (cached bilinear) not `height()` for non-player entities, walk
   `grid.cellStart/items` inline or use `queryCells` (integer args), and write instance
   transforms via the `TRS` scratch + `writeTRSFrom(array, offset)`.
+- `updateEnemies` is at V8's inlining budget: new per-enemy logic goes in a small helper
+  taking only ints/objects (doubles via typed scratch, see `flowSteer`/`walkerStep`). Adding
+  it inline made V8 stop inlining `resolveColliders` etc. → boxed doubles, 4× GC, +60% tick.
+- Flow field: ≈0.1 ms/tick at 1000 enemies (incremental Dial build, 9000 nodes/tick budget).
 - Instanced attribute uploads use `uploadPrefix` (only the used prefix, no per-frame range
   object allocation).
 
@@ -101,6 +106,16 @@ the golden "sim" fingerprints). Damage sources: sim/sources.ts codes passed to
 - `Terrain.height()` is exact (player physics); `heightAt()` is the cached approximation.
 - Enemy pool is compacted at end of tick → never keep raw indices across ticks (use uid).
 - Bosses live in the enemy pool (`behavior: 'boss'`); `director.bossUid` tracks the latest.
+- Pathing: `terrain.pass` (1-unit lattice = hcache, 8-bit masks) treats plateau/ramp edges
+  taller than `WALL_STEP` as walls both ways (ramp↔plateau joins use `JOIN_STEP`). Walkers
+  follow `w.flow` when the path is much longer than the straight line, have wall-crossing
+  steps undone, and use `heightOnLevel` (no riding up walls). Flyers (`FLYING` in combat.ts)
+  and bosses are exempt. `spawnEnemy` snaps ground spawns to reachable cells and returns -1
+  when there is none within 6 units. Player on an unreachable island → `flow.island` and
+  everyone chases directly.
+- Prop materials patched by `fadeProps` need `OCCLUSION_UNIFORMS` set each frame (Renderer
+  does it); `uFocus` far away in menus disables the fade. The player's ghost silhouette
+  (`GreaterDepth`) renders before the player mesh (renderOrder 1 → 2).
 - AudioContext is created only inside a user-gesture handler (no autoplay warnings).
 - Icon canvases use `willReadFrequently` so `toDataURL` doesn't trigger GPU readbacks.
 
@@ -114,6 +129,7 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
 - [x] 0. Safety nets
 - [x] 1. Tuning file + live panel + apply-tuning
 - [x] 2. Playtest recording, damage sources, analyze-playtests, sliding bot
+- [x] 3. Flow-field pathing + camera occlusion fade / player silhouette
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

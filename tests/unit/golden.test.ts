@@ -14,10 +14,11 @@ import type { World } from '../../src/sim/world';
  * When a change *intends* to alter either, update the hashes in the same commit and say why.
  */
 const GOLDEN: Array<{ kind: 'sim' | 'bot'; hero: string; seed: number; hash: string }> = [
-  { kind: 'sim', hero: 'thea', seed: 4242, hash: '2055916a' },
-  { kind: 'sim', hero: 'brindle', seed: 9001, hash: 'f4beddb6' },
-  { kind: 'bot', hero: 'thea', seed: 4242, hash: 'c74a80ff' },
-  { kind: 'bot', hero: 'brindle', seed: 9001, hash: 'b9b2a244' },
+  // phase 3: flow-field pathing, walls, reachable-only spawns (intentional sim change)
+  { kind: 'sim', hero: 'thea', seed: 4242, hash: '96c495cf' },
+  { kind: 'sim', hero: 'brindle', seed: 9001, hash: 'bf4db57b' },
+  { kind: 'bot', hero: 'thea', seed: 4242, hash: '8b5bea3b' },
+  { kind: 'bot', hero: 'brindle', seed: 9001, hash: 'b2cff5fa' },
 ];
 
 describe('golden determinism', () => {

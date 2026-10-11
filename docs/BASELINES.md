@@ -29,3 +29,11 @@ Recorded at the start of the `theabonk-upgrade` branch so every later phase can 
 
 ## Golden determinism fingerprints (tests/unit/golden.test.ts)
 - thea/4242 → `2055916a`, brindle/9001 → `f4beddb6` (120 s bot runs).
+
+## Upgrade phase 3 (pathing + occlusion), A/B vs main
+- Sim bench 1000 enemies: main 0.28 ms/tick → branch 0.39 ms/tick (flow field + wall
+  checks; p99 1.3 → 1.5 ms).
+- In-browser `?stress=1000` (fixed one-tick frames, median with GPU sync): main
+  1.2 ms CPU / 3.0 ms synced → branch 1.2 ms / 3.3 ms (within noise; load average ~9).
+- Balance after pathing (16 seeds, 0.7): Thea 8:45, Pip 15:16, Brindle 13:51, all 12:37 —
+  hero spread re-tuned in phase 13.

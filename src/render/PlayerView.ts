@@ -9,6 +9,16 @@ export class PlayerView {
   readonly root = new THREE.Group();
   private body = new THREE.Group();
   private mesh: THREE.Mesh | null = null;
+  /** Flat silhouette drawn only where something is in front of the player. */
+  private ghost: THREE.Mesh | null = null;
+  private ghostMat = new THREE.MeshBasicMaterial({
+    color: 0x9fe8ff,
+    depthFunc: THREE.GreaterDepth,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -4,
+  });
   private shadow: THREE.Mesh;
   private yaw = 0;
   private lean = 0;
@@ -32,16 +42,26 @@ export class PlayerView {
     this.charId = def.id;
     if (this.mesh) {
       this.body.remove(this.mesh);
+      if (this.ghost) this.body.remove(this.ghost);
       this.mesh.geometry.dispose();
     }
-    this.mesh = new THREE.Mesh(characterGeometry(def), this.material);
+    const geo = characterGeometry(def);
+    this.mesh = new THREE.Mesh(geo, this.material);
     this.mesh.castShadow = shadows;
-    this.body.add(this.mesh);
+    // draw order: world (0) → silhouette (1, only where occluded) → player (2). The player is
+    // drawn after the silhouette so her own limbs never show through her body.
+    this.ghost = new THREE.Mesh(geo, this.ghostMat);
+    this.ghost.renderOrder = 1;
+    this.mesh.renderOrder = 2;
+    this.body.add(this.ghost, this.mesh);
   }
 
   setShadows(on: boolean): void {
     if (this.mesh) this.mesh.castShadow = on;
   }
+
+  /** Silhouette only during runs (the menu showcase has nothing in front of her). */
+  showGhost = true;
 
   hurt(amount = 1): void {
     this.flash = amount;
@@ -88,5 +108,6 @@ export class PlayerView {
     const blink = invulnerable && Math.sin(time * 40) > 0;
     this.material.emissive.setRGB(this.flash * 0.9, this.flash * 0.2, this.flash * 0.2);
     if (this.mesh) this.mesh.visible = !blink || this.flash > 0.5;
+    if (this.ghost && this.mesh) this.ghost.visible = this.mesh.visible && this.showGhost;
   }
 }

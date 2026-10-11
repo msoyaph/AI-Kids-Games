@@ -9,6 +9,7 @@ import { EnemyRenderer } from './EnemyRenderer';
 import { Fx } from './Fx';
 import { Particles } from './Particles';
 import { PickupRenderer } from './PickupRenderer';
+import { OCCLUSION_UNIFORMS } from './occlusion';
 import { PlayerView } from './PlayerView';
 import { ProjectileRenderer } from './ProjectileRenderer';
 import { ShrineRenderer } from './ShrineRenderer';
@@ -173,6 +174,9 @@ export class GameRenderer {
       this.particles.emit(x + Math.cos(a) * 1.1, y + Math.random() * 2, z + Math.sin(a) * 1.1, 0, 1.5, 0, 0.5, 0.14, 0xfff2a8, 0);
     }
     this.rig.update(this.camera, x, y, z, speed, dt, w.terrain);
+    OCCLUSION_UNIFORMS.uCamPos.value.copy(this.camera.position);
+    OCCLUSION_UNIFORMS.uFocus.value.set(x, y + 1.1, z);
+    this.playerView.showGhost = true;
     this.followSun(x, z);
     const time = w.time + alpha / 60;
     this.enemies.update(w, alpha, time);
@@ -192,6 +196,8 @@ export class GameRenderer {
   renderMenu(dt: number): void {
     this.setDynamicVisible(false);
     this.sky.setMenu();
+    OCCLUSION_UNIFORMS.uFocus.value.set(0, -1e5, 0);
+    this.playerView.showGhost = false;
     this.menuT += dt;
     const t = this.terrain;
     const y = t ? t.height(0, 0) : 0;

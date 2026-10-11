@@ -10,19 +10,29 @@ import type { World } from './world';
 
 // ───────────────────────────── spawning ─────────────────────────────
 
+const snap = new Float32Array(2);
+/** Creatures that ignore ground pathing. */
+export const FLYING = Uint8Array.from(ENEMIES.map((d) => (d.id === 'gnatlet' || d.id === 'gloamRegent' ? 1 : 0)));
+
 export function spawnEnemy(w: World, type: number, x: number, z: number, elite = false): number {
   const e = w.enemies;
   if (e.count >= w.maxEnemies) return -1;
-  const i = e.alloc();
-  if (i < 0) return -1;
   const def = ENEMIES[type];
-  const minutes = w.time / 60;
   const boss = def.behavior === 'boss';
-  const hpScale = boss ? 1 + w.player.level * 0.03 : enemyHpScaleWith(minutes, w.tuning.combat);
-  const hp = def.hp * hpScale * (elite ? ELITE.hpMult : 1);
   const t = w.terrain;
   x = t.clampToMap(x);
   z = t.clampToMap(z);
+  // walkers must spawn where the ground connects to the player (not inside walls / on islands)
+  if (!boss && !FLYING[type] && !w.flow.reachable(x, z)) {
+    if (!w.flow.nearestReachable(x, z, 6, snap)) return -1;
+    x = snap[0];
+    z = snap[1];
+  }
+  const i = e.alloc();
+  if (i < 0) return -1;
+  const minutes = w.time / 60;
+  const hpScale = boss ? 1 + w.player.level * 0.03 : enemyHpScaleWith(minutes, w.tuning.combat);
+  const hp = def.hp * hpScale * (elite ? ELITE.hpMult : 1);
   const y = t.height(x, z);
   e.type[i] = type;
   e.x[i] = e.px[i] = x;
