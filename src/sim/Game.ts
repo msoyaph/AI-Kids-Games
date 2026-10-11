@@ -1,11 +1,11 @@
 import { swapRemove } from '../core/pool';
-import { Rng } from '../core/rng';
 import { DIFFICULTIES, difficultyHp, type Difficulty, type DifficultyDef } from '../data/difficulty';
 import { ELEMENT_ORDER, ELEMENTS, elementMultiplier, type ElementId } from '../data/elements';
 import { ENEMIES, type EnemyDef, type EnemyId } from '../data/enemies';
 import type { MapDef } from '../data/maps/types';
 import {
   MAX_LEVEL,
+  SELL_REFUND,
   SPEC_LEVEL,
   sellValue,
   TOWERS,
@@ -24,7 +24,10 @@ import {
   type SpawnGroup,
   type WaveDef,
 } from '../data/waves';
-import { TUNING, type BossAttack } from '../data/tuning';
+import { TUNING, type BossAttack, type ModifierId, type MutatorId } from '../data/tuning';
+import { NO_BONUSES, type RunBonuses } from '../data/research';
+import { MUTATOR_IDS } from '../data/modes';
+import { hashString, Rng } from '../core/rng';
 import { ABILITIES, type AbilityId, type HeroId } from '../data/heroes';
 import { Hero, HERO_SOURCE, heroPassable, heroPath } from './hero';
 import { Enemy } from './enemy';
@@ -37,9 +40,9 @@ import { SpatialHash } from './spatial';
 export const TICK_RATE = 30;
 export const DT = 1 / TICK_RATE;
 
-export type GameMode = 'campaign' | 'endless' | 'tutorial';
+export type GameMode = 'campaign' | 'endless' | 'tutorial' | 'daily';
 export type GameState = 'playing' | 'won' | 'lost';
-export type BuildFail = 'terrain' | 'occupied' | 'locked' | 'coins' | 'path' | 'outside';
+export type BuildFail = 'terrain' | 'occupied' | 'locked' | 'coins' | 'path' | 'outside' | 'modifier';
 
 export interface BuildCheck {
   ok: boolean;
@@ -61,6 +64,12 @@ export interface GameOptions {
   hero?: HeroId | null;
   /** Commander abilities available this run. */
   abilities?: AbilityId[];
+  /** Research bonuses (none in bot balance runs). */
+  bonuses?: RunBonuses;
+  /** Challenge modifiers for medals / the daily. */
+  modifiers?: ModifierId[];
+  /** Mutators active from wave 1 (the daily). Endless adds one every 10 waves. */
+  mutators?: MutatorId[];
 }
 
 /** Damage source for commander abilities. */
@@ -96,6 +105,8 @@ export interface RunStats {
   coinsSpent: number;
   /** Commander abilities and hero specials used. */
   abilitiesUsed: number;
+  /** Bosses defeated while in their last phase. */
+  finalPhaseKills: number;
   heroSpecials: number;
   /** Lives lost per wave (index = wave − 1). */
   leaksByWave: number[];
@@ -183,6 +194,15 @@ export class Game {
   unlocked: ElementId[] = [];
   crystals: number;
 
+  /** Research bonuses, challenge modifiers and active mutators for this run. */
+  readonly bonus: RunBonuses;
+  readonly modifiers: readonly ModifierId[];
+  readonly mutators: MutatorId[];
+  private readonly mutatorPlan: MutatorId[];
+  private readonly coinMult: number;
+  private readonly breatherMult: number;
+  private spawnCount = 0;
+
   /** Commander hero (null when the run has none). */
   readonly hero: Hero | null;
   readonly abilities: readonly AbilityId[];
@@ -222,15 +242,27 @@ export class Game {
     this.waves = opts.waves ?? buildWaves(opts.map);
     this.totalWaves = opts.mode === 'endless' ? Infinity : this.waves.length;
     this.autoWaves = opts.autoWaves ?? true;
-    this.maxLives = this.diff.lives;
+    this.bonus = opts.bonuses ?? NO_BONUSES;
+    this.modifiers = opts.modifiers ?? [];
+    this.mutators = [...(opts.mutators ?? [])];
+    const MOD = TUNING.modifiers;
+    this.maxLives = this.modifiers.includes('iron') ? MOD.iron.lives : Math.round(this.diff.lives * (1 + this.bonus.lives));
     this.lives = this.maxLives;
-    this.coins = Math.round((opts.startCoins ?? opts.map.startCoins ?? ECO.mapStartCoins[opts.map.id] ?? ECO.startCoins) * this.diff.startCoins);
-    this.crystals = opts.startCrystals ?? ECO.startCrystals;
+    const budget = this.modifiers.includes('budget');
+    this.coins =
+      Math.round((opts.startCoins ?? opts.map.startCoins ?? ECO.mapStartCoins[opts.map.id] ?? ECO.startCoins) * this.diff.startCoins * (budget ? MOD.budget.startCoins : 1)) +
+      this.bonus.startGold;
+    this.coinMult = budget ? MOD.budget.coins : 1;
+    this.breatherMult = this.modifiers.includes('speed') ? MOD.speed.breather : 1;
+    this.crystals = (opts.startCrystals ?? ECO.startCrystals) + this.bonus.startCores;
+    this.mutatorPlan = opts.mode === 'endless' ? new Rng(hashString(opts.map.id) ^ 0x5eed).shuffle(MUTATOR_IDS.slice()) : [];
     this.heroPrev = new Int32Array(n);
     this.heroQueue = new Int32Array(n);
     this.abilities = opts.abilities ?? [];
     this.hero = opts.hero ? new Hero(opts.hero, this.heroHome(), this.grid) : null;
-    this.crystalWaves = opts.crystalWaves ?? CRYSTAL_WAVES;
+    if (this.hero) for (let i = 0; i < this.bonus.heroLevel; i++) this.hero.gainXp(Math.max(0, this.hero.nextLevelXp - this.hero.xp));
+    // Pure Element: no element cores after the first
+    this.crystalWaves = this.modifiers.includes('pure') ? [] : (opts.crystalWaves ?? CRYSTAL_WAVES);
     const shortest = this.pathLength();
     this.stats = {
       kills: 0,
@@ -251,6 +283,7 @@ export class Game {
       longestPath: shortest,
       coinsSpent: 0,
       abilitiesUsed: 0,
+      finalPhaseKills: 0,
       heroSpecials: 0,
       leaksByWave: [],
       specsChosen: [],
@@ -310,13 +343,24 @@ export class Game {
     this.waveAlive[idx] = total;
     this.waveCleared[idx] = false;
     if (!this.allWavesStarted && this.autoWaves) {
-      this.nextWaveTimer = waveSpawnDuration(w) + ECO.breather.base * this.diff.breather + (w.boss ? ECO.breather.boss : 0);
+      this.nextWaveTimer = (waveSpawnDuration(w) + ECO.breather.base * this.diff.breather + (w.boss ? ECO.breather.boss : 0)) * this.breatherMult;
     } else {
       this.nextWaveTimer = -1;
     }
     const e = this.events.push(Ev.WaveStart);
     e.value = this.waveNum;
     e.kind = w.boss ?? '';
+    // endless: a new mutator every 10 waves
+    const every = TUNING.mutators.every;
+    if (this.mutatorPlan.length && this.waveNum > 1 && (this.waveNum - 1) % every === 0) {
+      const next = this.mutatorPlan[((this.waveNum - 1) / every - 1) % this.mutatorPlan.length]!;
+      if (!this.mutators.includes(next)) {
+        this.mutators.push(next);
+        const m = this.events.push(Ev.Mutator, this.grid.castleX, this.grid.castleY);
+        m.kind = next;
+        m.value = this.mutators.length;
+      }
+    }
   }
 
   private updateSpawns(): void {
@@ -357,9 +401,10 @@ export class Game {
     let e = this.enemyFree.pop();
     if (!e) e = new Enemy(this.enemySlots++);
     const hp = Math.max(1, Math.round(def.hp * wave.hp * difficultyHp(this.diff, wave.n)));
-    const coins = Math.max(1, Math.round(def.coins * wave.coins * this.diff.coins));
+    const coins = Math.max(1, Math.round(def.coins * wave.coins * this.diff.coins * this.coinMult));
     e.init(this.nextEnemyId++, def, el, hp, coins, waveIndex);
     e.speed = def.speed * this.diff.speed;
+    if (this.mutators.length) this.applyMutators(e);
     if (def.shiftElement) e.element = ELEMENT_ORDER[this.rng.int(0, 5)]!;
     e.x = e.px = x;
     e.y = e.py = y;
@@ -601,7 +646,7 @@ export class Game {
       const n = i + 1;
       const bonus = waveClearBonus(n);
       const cap = ECO.interestCap.base + n * ECO.interestCap.perWave;
-      const interest = Math.min(cap, Math.floor(this.coins * this.diff.interest));
+      const interest = Math.min(cap, Math.floor(this.coins * (this.diff.interest + this.bonus.interest)));
       this.addCoins(bonus + interest);
       this.stats.interestEarned += interest;
       const ev = this.events.push(Ev.WaveClear, this.grid.castleX, this.grid.castleY);
@@ -713,6 +758,7 @@ export class Game {
     if (e.boss) {
       this.stats.bossKills++;
       this.stats.bossesKilled.push(e.def.id);
+      if (e.def.phases && e.phase >= e.def.phases.length) this.stats.finalPhaseKills++;
     }
     // Sunflower coin aura
     let bonus = 0;
@@ -759,6 +805,23 @@ export class Game {
       }
       const sev = this.events.push(Ev.Split, e.x, e.y);
       sev.kind = split.into;
+    }
+    if (!e.boss && e.def.id !== 'minigloop' && this.mutators.includes('splinter') && this.rng.chance(TUNING.mutators.splinter.chance)) {
+      const shard = ENEMIES.minigloop;
+      const wave = this.getWave(e.waveIndex + 1)!;
+      for (let k = 0; k < TUNING.mutators.splinter.count; k++) {
+        const c = this.spawnEnemy(shard, null, wave, e.waveIndex, e.x + (k ? 0.2 : -0.2), e.y, e.cell);
+        if (!c) continue;
+        this.waveAlive[e.waveIndex]!++;
+        if (!c.flying && e.cell >= 0) {
+          c.cell = e.cell;
+          c.wcell = e.wcell;
+          c.wx = e.wx;
+          c.wy = e.wy;
+        }
+        c.stunTime = C.splitPause;
+        this.updateRemaining(c);
+      }
     }
     if (e.poisonSpread > 0 && e.poisonStacks > 0) {
       const n = this.spatial.query(e.x, e.y, C.poisonSpread.radius, 1, this.q2);
@@ -897,7 +960,8 @@ export class Game {
     if (!g.isBuildable(i)) return { ok: false, reason: 'terrain' };
     if (!towerUnlocked(type, this.unlocked)) return { ok: false, reason: 'locked' };
     if (!this.wouldKeepPath(i)) return { ok: false, reason: 'path' };
-    if (this.coins < TOWERS[type].levels[0]!.cost) return { ok: false, reason: 'coins' };
+    if (TOWERS[type].kind === 'combo' && this.modifiers.includes('nocombo')) return { ok: false, reason: 'modifier' };
+    if (this.coins < this.buildCost(type)) return { ok: false, reason: 'coins' };
     return { ok: true };
   }
 
@@ -966,7 +1030,7 @@ export class Game {
     const check = this.canBuild(type, cx, cy);
     if (!check.ok) return null;
     const def = TOWERS[type];
-    const cost = def.levels[0]!.cost;
+    const cost = this.buildCost(type);
     const t = new Tower();
     t.id = this.nextTowerId++;
     t.def = def;
@@ -998,8 +1062,22 @@ export class Game {
     return t;
   }
 
+  /** Build cost after research discounts. */
+  buildCost(type: TowerId): number {
+    return this.discounted(TOWERS[type].levels[0]!.cost);
+  }
+
+  private discounted(cost: number): number {
+    return this.bonus.buildDiscount > 0 ? Math.round(cost * (1 - this.bonus.buildDiscount)) : cost;
+  }
+
+  /** Gold back when selling (research raises the refund). */
+  refundOf(t: Tower): number {
+    return this.bonus.refund > 0 ? Math.floor(t.invested * (SELL_REFUND + this.bonus.refund)) : sellValue(t.invested);
+  }
+
   upgradeCost(t: Tower): number {
-    return t.level >= MAX_LEVEL ? 0 : t.def.levels[t.level]!.cost;
+    return t.level >= MAX_LEVEL ? 0 : this.discounted(t.def.levels[t.level]!.cost);
   }
 
   /** True when the next upgrade picks a specialization (level 2 → 3 on element/combo towers). */
@@ -1038,7 +1116,7 @@ export class Game {
   sell(t: Tower): number {
     const idx = this.towers.indexOf(t);
     if (idx < 0 || this.state !== 'playing') return 0;
-    const refund = sellValue(t.invested);
+    const refund = this.refundOf(t);
     this.coins += refund;
     this.stats.soldTowers.push({ type: t.def.id, level: t.level, spec: t.spec, damage: t.damageDone, kills: t.kills });
     this.towers.splice(idx, 1);
@@ -1155,7 +1233,7 @@ export class Game {
       let heroAura = 1;
       if (aura && (t.x - hx) * (t.x - hx) + (t.y - hy) * (t.y - hy) <= aura.radius * aura.radius) heroAura = 1 + aura.damage;
       t.rateNow = t.rateMult * t.buffRate;
-      t.dmgNow = t.dmgMult * t.buffDmg * heroAura;
+      t.dmgNow = t.dmgMult * t.buffDmg * heroAura * (1 + this.bonus.damage);
       if (t.disabled > 0) {
         t.disabled -= DT * (heroAura > 1 ? 2 : 1);
         t.beamTarget = null;
@@ -1192,7 +1270,7 @@ export class Game {
   }
 
   private fireBullets(t: Tower, st: TowerStats): boolean {
-    const n = this.pickTargets(t, st.range, st.shots ?? 1);
+    const n = this.pickTargets(t, st.range + this.bonus.range, st.shots ?? 1);
     if (n === 0) return false;
     for (let k = 0; k < n; k++) {
       const e = this.picked[k]!;
@@ -1253,7 +1331,7 @@ export class Game {
   }
 
   private fireChain(t: Tower, st: TowerStats): boolean {
-    const n = this.pickTargets(t, st.range, 1);
+    const n = this.pickTargets(t, st.range + this.bonus.range, 1);
     if (n === 0) return false;
     let cur = this.picked[0]!;
     t.angle = Math.atan2(cur.y - t.y, cur.x - t.x);
@@ -1304,7 +1382,7 @@ export class Game {
 
   private firePulse(t: Tower, st: TowerStats): boolean {
     const air: 0 | 1 = t.def.targets === 'both' ? 1 : 0;
-    const n = this.spatial.query(t.x, t.y, st.range, air, this.q);
+    const n = this.spatial.query(t.x, t.y, st.range + this.bonus.range, air, this.q);
     if (n === 0) return false;
     const dmg = st.damage * t.dmgNow;
     for (let i = 0; i < n; i++) {
@@ -1322,7 +1400,7 @@ export class Game {
 
   private updateBeam(t: Tower, st: TowerStats): void {
     let e = t.beamTarget;
-    const range = st.range;
+    const range = st.range + this.bonus.range;
     if (e && (!e.alive || !e.targetable || e.id !== t.beamTargetId || (e.x - t.x) ** 2 + (e.y - t.y) ** 2 > (range + e.radius) ** 2)) {
       e = null;
     }
@@ -1483,7 +1561,7 @@ export class Game {
       const t = this.towers[i]!;
       const st = t.stats;
       if (!st.detect || t.disabled > 0) continue;
-      const n = this.spatial.query(t.x, t.y, st.range, 1, this.q2);
+      const n = this.spatial.query(t.x, t.y, st.range + this.bonus.range, 1, this.q2);
       for (let k = 0; k < n; k++) {
         const e = this.q2[k]!;
         if (e.cloaked) e.revealed = C.revealLinger;
@@ -1664,6 +1742,48 @@ export class Game {
     const ev = this.events.push(Ev.Burrow, e.x, e.y);
     ev.value = 0;
     ev.id = e.slot;
+  }
+
+  // ================================================================ mutators
+
+  private applyMutators(e: Enemy): void {
+    const M = TUNING.mutators;
+    this.spawnCount++;
+    for (const m of this.mutators) {
+      switch (m) {
+        case 'armored':
+          e.armor = Math.min(0.8, e.armor + M.armored.armor);
+          break;
+        case 'swift':
+          e.speed *= 1 + M.swift.speed;
+          break;
+        case 'elite':
+          e.hp = e.maxHp = Math.round(e.maxHp * (1 + M.elite.hp));
+          break;
+        case 'barrier':
+          if (!e.boss) {
+            e.barrierMax += Math.round(e.maxHp * M.barrier.shield);
+            e.barrier = e.barrierMax;
+          }
+          break;
+        case 'regen':
+          if (e.regenPct <= 0) {
+            e.regenPct = M.regen.pct;
+            e.regenDelay = M.regen.delay;
+          }
+          break;
+        case 'cloak':
+          if (e.cloakHidden <= 0 && !e.boss && this.spawnCount % Math.round(1 / M.cloak.share) === 0) {
+            e.cloakHidden = M.cloak.hidden;
+            e.cloakVisible = M.cloak.visible;
+            e.cloakTimer = 0;
+            e.cloaked = true;
+          }
+          break;
+        case 'splinter':
+          break; // on defeat
+      }
+    }
   }
 
   // ================================================================ commander hero
@@ -1924,7 +2044,7 @@ export class Game {
         break;
       }
     }
-    this.abilityCooldown[id] = a.cooldown;
+    this.abilityCooldown[id] = a.cooldown * (1 - this.bonus.abilityCooldown);
     this.stats.abilitiesUsed++;
     const ev = this.events.push(Ev.Ability, x, y);
     ev.kind = id;

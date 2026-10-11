@@ -5,6 +5,8 @@ import { waveIntel, type WaveDef } from '../data/waves';
 import { buildFailMsg, randomLine } from '../data/strings';
 import { ENEMIES, elementPrefix, type EnemyId } from '../data/enemies';
 import { ABILITIES, type AbilityId, type HeroId } from '../data/heroes';
+import type { RunBonuses } from '../data/research';
+import type { ModifierId, MutatorId } from '../data/modes';
 import { traitsOf } from '../data/traits';
 import { t, type MessageKey } from '../i18n';
 import { enemyStatGrid, towerLevelTable } from '../ui/statTables';
@@ -36,6 +38,9 @@ export interface GameScreenOpts {
   autoWaves?: boolean;
   hero?: HeroId | null;
   abilities?: AbilityId[];
+  bonuses?: RunBonuses;
+  modifiers?: ModifierId[];
+  mutators?: MutatorId[];
 }
 
 export interface GameNav {
@@ -43,7 +48,17 @@ export interface GameNav {
   restart(): void;
   next?(): void;
   /** Called once when the run ends (for saving progress / achievements). */
-  onEnd?(game: Game, won: boolean): { newBest?: boolean; badges?: string[] } | void;
+  onEnd?(game: Game, won: boolean): RunResult | void;
+}
+
+/** What the flow reports back after recording a run. */
+export interface RunResult {
+  newBest?: boolean;
+  badges?: string[];
+  /** Challenge medals earned (modifier ids). */
+  medals?: string[];
+  dailyScore?: number;
+  dailyBest?: number;
 }
 
 /** One run of the game: sim + Pixi view + DOM HUD + input. */
@@ -90,6 +105,9 @@ export class GameScreen implements Screen, HudHost {
       autoWaves: opts.autoWaves,
       hero: opts.hero ?? null,
       abilities: opts.abilities ?? [],
+      bonuses: opts.bonuses,
+      modifiers: opts.modifiers,
+      mutators: opts.mutators,
     });
   }
 
@@ -258,6 +276,9 @@ export class GameScreen implements Screen, HudHost {
         this.hud.banner(t('boss.phaseBanner', { n: e.value, name }), ENEMIES[e.tag as EnemyId]?.name);
         break;
       }
+      case Ev.Mutator:
+        this.hud.banner(t('mutator.banner', { name: t(`mutator.${e.kind}` as MessageKey) }), t(`mutator.${e.kind}.desc` as MessageKey));
+        break;
       case Ev.Warn:
         if (e.kind !== 'emp') this.hud.toast(t(`warn.${e.kind}` as MessageKey), true);
         break;
@@ -743,8 +764,17 @@ export class GameScreen implements Screen, HudHost {
     this.clearGhost();
     const g = this.game;
     const won = g.state === 'won';
-    const result = this.nav.onEnd?.(g, won) ?? {};
+    const result: RunResult = this.nav.onEnd?.(g, won) ?? {};
     const stars = won ? starsFor(g.lives, g.maxLives) : 0;
+    const extras = (): (HTMLElement | null)[] => [
+      result.medals?.length
+        ? h('p.medal-line', null, t('medal.earned', { count: result.medals.length, names: result.medals.map((m) => t(`modifier.${m}` as MessageKey)).join(', ') }))
+        : null,
+      result.dailyScore !== undefined
+        ? h('p.medal-line', null, t('daily.scoreLine', { n: result.dailyScore, best: result.dailyBest ?? result.dailyScore }), result.newBest ? ` · ${t('daily.newBest')}` : '')
+        : null,
+      result.badges?.length ? h('p', null, t('end.newBadges', { count: result.badges.length, names: result.badges.join(', ') })) : null,
+    ];
     setTimeout(() => {
       if (won) {
         const line = randomLine('line.win');
@@ -753,7 +783,7 @@ export class GameScreen implements Screen, HudHost {
           starsHtml(stars, 3, true),
           pipSays(line, 'cheeky'),
           resultsReport(g, (id) => atlasIconUrl(this.atlas, `hero_${id}`, 64)),
-          result.badges?.length ? h('p', null, t('end.newBadges', { count: result.badges.length, names: result.badges.join(', ') })) : null,
+          ...extras(),
           h(
             'div.row',
             null,
@@ -771,7 +801,7 @@ export class GameScreen implements Screen, HudHost {
           pipSays(line),
           endless && result.newBest ? h('p', null, t('end.newBest')) : null,
           resultsReport(g, (id) => atlasIconUrl(this.atlas, `hero_${id}`, 64)),
-          result.badges?.length ? h('p', null, t('end.newBadges', { count: result.badges.length, names: result.badges.join(', ') })) : null,
+          ...extras(),
           h('p', null, randomLine('tip')),
           h('div.row', null, h('button.btn.green.big', { onClick: () => this.nav.restart() }, t('end.retry')), h('button.btn.ghost', { onClick: () => this.nav.quit() }, t('nav.sectorMap'))),
         ].filter(Boolean) as HTMLElement[], { cls: 'wide results-modal' });

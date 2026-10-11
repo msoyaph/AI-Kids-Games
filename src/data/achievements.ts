@@ -34,6 +34,8 @@ const onlyElement = (g: Game, el: ElementId): boolean =>
 
 const wonCampaign = (c: AchievementCtx): boolean => c.ended && c.won && c.mode === 'campaign' && !!c.game;
 
+const medalCount = (save: SaveData): number => Object.values(save.maps).reduce((n, m) => n + (m.medals?.length ?? 0), 0);
+
 const worldDone = (save: SaveData, world: number): boolean =>
   mapsOfWorld(world).every((m) => Object.values(save.maps[m.id]?.stars ?? {}).some((n) => (n ?? 0) > 0));
 
@@ -88,6 +90,17 @@ const BADGES: Omit<AchievementDef, 'name' | 'desc'>[] = [
   { id: 'world4', icon: 'shadow', color: 0x9b7cff, check: (c) => worldDone(c.save, 4) },
   { id: 'hard_win', icon: 'trophy', color: 0xff5a6a, check: (c) => wonCampaign(c) && c.game!.diff.id === 'hard' },
   { id: 'endless25', icon: 'clock', color: 0x7ee8ff, live: true, check: (c) => c.mode === 'endless' && (c.game?.waveNum ?? 0) >= 25 },
+  // ---- the 10–14 upgrade: specializations, research, medals, Expert, daily, mutators, commanders
+  { id: 'specialist', icon: 'tower', color: 0xffc845, live: true, check: (c) => (c.game?.stats.specsChosen.length ?? 0) >= 10 },
+  { id: 'researcher', icon: 'gem', color: 0x3ee6ff, check: (c) => Object.values(c.save.research).reduce((a, b) => a + b, 0) >= 5 },
+  { id: 'medal1', icon: 'trophy', color: 0xffc845, check: (c) => medalCount(c.save) >= 1 },
+  { id: 'medal10', icon: 'crown', color: 0xffc845, check: (c) => medalCount(c.save) >= 10 },
+  { id: 'expert_win', icon: 'trophy', color: 0xff4d6a, check: (c) => wonCampaign(c) && c.game!.diff.id === 'expert' },
+  { id: 'daily1', icon: 'clock', color: 0x3dffa0, check: (c) => c.ended && c.mode === 'daily' },
+  { id: 'mutators3', icon: 'shadow', color: 0xa06bff, live: true, check: (c) => c.mode === 'endless' && (c.game?.mutators.length ?? 0) >= 3 },
+  { id: 'hero5', icon: 'star', color: 0x3ee6ff, live: true, check: (c) => (c.game?.hero?.level ?? 0) >= 5 },
+  { id: 'command20', icon: 'poof', color: 0xff7a3d, live: true, check: (c) => (c.game?.stats.abilitiesUsed ?? 0) >= 20 },
+  { id: 'phases', icon: 'crown', color: 0xff4d6a, live: true, check: (c) => (c.game?.stats.finalPhaseKills ?? 0) >= 1 },
 ];
 
 export const ACHIEVEMENTS: AchievementDef[] = BADGES.map((b) => localized({ ...b } as AchievementDef, `badge.${b.id}`, ['name', 'desc'] as const));

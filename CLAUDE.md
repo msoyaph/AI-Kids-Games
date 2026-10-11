@@ -95,6 +95,15 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   abilities via research ids `hero.*` / `ability.*`). HUD command bar (keys H, Q, Z/X/C) with cooldown sweeps,
   targeting chip + preview ring, commander picker in the briefing, hero line in the report, one-time tip
   (`save.hints`). Bot runs have no hero unless `GameOptions.hero` is set. Dev: `__vanex.nav` / `mapById`.
+- Phase 7 done: difficulties Story(`easy`)/Normal/Hard/Expert, every difficulty earns its own stars
+  (`SaveStore.totalStars` sums; `TOTAL_STARS` = maps×3×4). Research (`TUNING.research`, `src/data/research.ts`,
+  `ResearchScreen`): stars − spent, free full reset, `bonusesFrom()` → `GameOptions.bonuses` (discount, damage,
+  range, refund, start gold, interest, cores, lives, ability cooldown, hero level; hero/ability unlocks).
+  Challenge modifiers iron/pure/budget/nocombo/speed (`GameOptions.modifiers`, chips in the briefing) → medals in
+  `save.maps[id].medals` (win on Normal+). Endless mutators (`TUNING.mutators`, one more every 10 waves,
+  `Ev.Mutator`). Daily (`src/data/modes.ts` `dailyFor(date)`: seeded map + 1 modifier + 2 mutators, 30 waves,
+  `dailyScore`, best in `save.daily`), `DailyScreen` (unlocks after the first secured sector). 10 new badges.
+  Balance suites cover Story/Normal/Hard; Expert is report-only (`npm run sim -- expert`).
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

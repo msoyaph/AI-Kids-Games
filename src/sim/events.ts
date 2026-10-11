@@ -51,6 +51,8 @@ export const enum Ev {
   Ability,
   /** Meteor impact: value = radius. */
   Meteor,
+  /** Endless mutator activated: kind = mutator id, value = how many are active. */
+  Mutator,
 }
 
 export class GameEvent {

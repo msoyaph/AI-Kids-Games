@@ -521,6 +521,62 @@ const ABILITY_STATS: Record<AbilityId, AbilityTuning> = {
   funds: { cooldown: 90, base: 40, perWave: 8 },
 };
 
+// ------------------------------------------------------------------ research, modifiers, mutators, daily
+
+export type ResearchBranch = 'arsenal' | 'economy' | 'citadel' | 'command';
+
+/** What one rank of a research node gives (summed over ranks). */
+export interface ResearchEffect {
+  /** Build and upgrade costs −x. */
+  buildDiscount?: number;
+  /** Tower damage +x. */
+  damage?: number;
+  /** Tower range +x tiles. */
+  range?: number;
+  /** Sell refund +x. */
+  refund?: number;
+  startGold?: number;
+  interest?: number;
+  startCores?: number;
+  /** Lives +x (share of the difficulty's lives). */
+  lives?: number;
+  /** Commander ability cooldowns −x. */
+  abilityCooldown?: number;
+  /** Commander starts this many levels higher. */
+  heroLevel?: number;
+  unlockHero?: HeroId;
+  unlockAbility?: AbilityId;
+}
+
+export interface ResearchNodeTuning {
+  branch: ResearchBranch;
+  /** Star cost of each rank. */
+  cost: number[];
+  per: ResearchEffect;
+  requires?: string[];
+}
+
+const RESEARCH: Record<string, ResearchNodeTuning> = {
+  'arsenal.forge': { branch: 'arsenal', cost: [3, 5, 8], per: { buildDiscount: 0.05 } },
+  'arsenal.calibration': { branch: 'arsenal', cost: [4, 6, 9], per: { damage: 0.04 }, requires: ['arsenal.forge'] },
+  'arsenal.optics': { branch: 'arsenal', cost: [5, 8], per: { range: 0.1 }, requires: ['arsenal.calibration'] },
+  'arsenal.salvage': { branch: 'arsenal', cost: [6], per: { refund: 0.1 }, requires: ['arsenal.forge'] },
+  'economy.supply': { branch: 'economy', cost: [2, 4, 6], per: { startGold: 25 } },
+  'economy.interest': { branch: 'economy', cost: [5, 8], per: { interest: 0.01 }, requires: ['economy.supply'] },
+  'economy.core': { branch: 'economy', cost: [12], per: { startCores: 1 }, requires: ['economy.interest'] },
+  'citadel.walls': { branch: 'citadel', cost: [3, 5, 8], per: { lives: 0.1 } },
+  'hero.warden': { branch: 'command', cost: [8], per: { unlockHero: 'warden' } },
+  'hero.seer': { branch: 'command', cost: [10], per: { unlockHero: 'seer' } },
+  'hero.engineer': { branch: 'command', cost: [10], per: { unlockHero: 'engineer' } },
+  'ability.chrono': { branch: 'command', cost: [6], per: { unlockAbility: 'chrono' } },
+  'ability.funds': { branch: 'command', cost: [8], per: { unlockAbility: 'funds' }, requires: ['ability.chrono'] },
+  'command.rapid': { branch: 'command', cost: [6, 9], per: { abilityCooldown: 0.1 }, requires: ['ability.chrono'] },
+  'command.training': { branch: 'command', cost: [8], per: { heroLevel: 1 } },
+};
+
+export type ModifierId = 'iron' | 'pure' | 'budget' | 'nocombo' | 'speed';
+export type MutatorId = 'armored' | 'swift' | 'barrier' | 'regen' | 'elite' | 'cloak' | 'splinter';
+
 // ------------------------------------------------------------------ the table
 
 export const TUNING = {
@@ -635,11 +691,41 @@ export const TUNING = {
     easy: { lives: 30, hp: 0.6, hpEarly: 0.6, speed: 0.9, startCoins: 1.5, coins: 1.2, breather: 1.5, interest: 0.05 },
     normal: { lives: 20, hp: 1, hpEarly: 1, speed: 1, startCoins: 1, coins: 1, breather: 1, interest: 0.04 },
     hard: { lives: 10, hp: 1.3, hpEarly: 1.05, speed: 1.0, startCoins: 1, coins: 0.95, breather: 0.85, interest: 0.03 },
+    expert: { lives: 5, hp: 1.6, hpEarly: 1.15, speed: 1.08, startCoins: 1, coins: 0.9, breather: 0.8, interest: 0.025 },
   } satisfies Record<Difficulty, DifficultyTuning>,
 
   /** Stars from the share of lives kept. */
   stars: { three: 0.8, two: 0.4 },
 
+  research: RESEARCH,
+  /** Challenge modifiers (medals are earned by winning on Normal or harder with them on). */
+  modifiers: {
+    iron: { lives: 1 },
+    pure: {},
+    budget: { startCoins: 0.5, coins: 0.75 },
+    nocombo: {},
+    speed: { breather: 0.4 },
+    /** Medals need at least this difficulty. */
+    medalMinDifficulty: 'normal' as Difficulty,
+  },
+  /** Endless mutators: one more every `every` waves (and two from the start in the daily). */
+  mutators: {
+    every: 10,
+    armored: { armor: 0.15 },
+    swift: { speed: 0.15 },
+    barrier: { shield: 0.2 },
+    regen: { pct: 0.01, delay: 2 },
+    elite: { hp: 0.3 },
+    cloak: { share: 0.25, hidden: 2, visible: 3 },
+    splinter: { chance: 0.25, count: 2 },
+  },
+  daily: {
+    waves: 30,
+    modifiers: 1,
+    mutators: 2,
+    /** Score = waves × wave + lives × life (+ win bonus). */
+    score: { wave: 100, life: 25, win: 1000 },
+  },
   heroes: HERO_STATS,
   hero: {
     /** XP needed to reach levels 2–5 (cumulative). */

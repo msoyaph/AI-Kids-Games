@@ -26,4 +26,5 @@ export function mapsOfWorld(id: number): MapDef[] {
   return CAMPAIGN_MAPS.filter((m) => m.world === id);
 }
 
-export const TOTAL_STARS = CAMPAIGN_MAPS.length * 3;
+/** Every map has 3 stars on each of the 4 difficulties. */
+export const TOTAL_STARS = CAMPAIGN_MAPS.length * 3 * 4;

@@ -4,7 +4,7 @@ import { ABILITIES, type AbilityId } from '../data/heroes';
 import { commandIconUrl } from './commandIcons';
 import { pipUrl } from './modals';
 import { ENEMIES } from '../data/enemies';
-import { BASIC_TOWERS, comboFor, ELEMENT_TOWERS, MAX_LEVEL, sellValue, targetModeLabel, TOWERS, type TowerId } from '../data/towers';
+import { BASIC_TOWERS, comboFor, ELEMENT_TOWERS, MAX_LEVEL, targetModeLabel, TOWERS, type TowerId } from '../data/towers';
 import { wavePreview } from '../data/waves';
 import { atlasIconUrl, elementIconUrl, enemyTexName, heroTexName, towerIconUrl, type Atlas } from '../render/atlas/bake';
 import type { Tower } from '../sim/entities';
@@ -399,7 +399,7 @@ export class Hud {
     let key = 1;
     const add = (id: TowerId): void => {
       const def = TOWERS[id];
-      const cost = def.levels[0]!.cost;
+      const cost = g.buildCost(id);
       const els = h('span.els', null, ...def.elements.map((e) => img(elementIconUrl(a, e, 40), ELEMENTS[e].name)));
       const el = h(
         'button.card',
@@ -447,6 +447,7 @@ export class Hud {
         if (c) combos.push(c);
       }
     }
+    if (g.modifiers.includes('nocombo')) combos.length = 0;
     if (combos.length) this.cardsEl.append(h('span.sep'));
     for (const c of combos) add(c);
     this.last.coins = -1; // force affordability refresh
@@ -542,7 +543,7 @@ export class Hud {
         ? undefined
         : h('button.btn.ghost', { onClick: () => this.host.cycleTargeting(), 'aria-label': t('hud.changeTarget') }, t('hud.target', { mode: targetModeLabel(tw.mode) }));
     const upgrade = h('button.btn.green', { onClick: () => this.host.upgradeSelected(), 'aria-label': t('hud.upgrade') });
-    const sell = h('button.btn.red', { onClick: () => this.host.sellSelected(), 'aria-label': t('hud.sell') }, t('hud.sellValue', { n: sellValue(tw.invested) }));
+    const sell = h('button.btn.red', { onClick: () => this.host.sellSelected(), 'aria-label': t('hud.sell') }, t('hud.sellValue', { n: this.host.game.refundOf(tw) }));
     const close = h('button.btn.round.ghost.close', { onClick: () => this.host.deselect(), 'aria-label': t('common.close') }, '✕');
     const panel = h(
       'div.tpanel.panel',
@@ -634,7 +635,7 @@ export class Hud {
       const afford = g.coins >= g.upgradeCost(tw);
       this.tpanel?.querySelectorAll<HTMLButtonElement>('.spec-card').forEach((b) => (b.disabled = !afford));
     }
-    if (r.sell) setText(r.sell, t('hud.sellValue', { n: sellValue(tw.invested) }));
+    if (r.sell) setText(r.sell, t('hud.sellValue', { n: this.host.game.refundOf(tw) }));
     if (r.target) setText(r.target, t('hud.target', { mode: targetModeLabel(tw.mode) }));
     if (r.kills) setText(r.kills, t('hud.towerRecord', { kills: tw.kills, dmg: Math.round(tw.damageDone) }));
   }

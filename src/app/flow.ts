@@ -3,7 +3,14 @@ import { CAMPAIGN_MAPS, nextMap, TUTORIAL_MAP } from '../data/maps';
 import type { MapDef } from '../data/maps/types';
 import { mapsOfWorld, WORLDS } from '../data/worlds';
 import { TOWERS } from '../data/towers';
-import { t } from '../i18n';
+import { t, type MessageKey } from '../i18n';
+import { bonusesFrom } from '../data/research';
+import { dailyFor, dailyScore, dateKey, MODIFIER_IDS, type ModifierId, type MutatorId } from '../data/modes';
+import { TUNING } from '../data/tuning';
+import { buildWaves, type WaveDef } from '../data/waves';
+import { ResearchScreen } from './screens/ResearchScreen';
+import { DailyScreen } from './screens/DailyScreen';
+import type { RunResult } from './GameScreen';
 import { HERO_IDS, HEROES } from '../data/heroes';
 import { atlasIconUrl, heroTexName } from '../render/atlas/bake';
 import { chosenHero, heroUnlocked, unlockedAbilities } from './unlocks';
@@ -25,8 +32,12 @@ export interface Nav {
   encyclopedia(): void;
   badges(): void;
   settings(): void;
+  research(): void;
+  daily(): void;
+  playDaily(): void;
+  dailyUnlocked(): boolean;
   briefing(map: MapDef, mode: GameMode): void;
-  play(map: MapDef, diff: Difficulty, mode: GameMode): void;
+  play(map: MapDef, diff: Difficulty, mode: GameMode, modifiers?: ModifierId[]): void;
   toast(msg: string): void;
   worldUnlocked(id: number): boolean;
   mapUnlocked(id: string): boolean;
@@ -51,6 +62,38 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
   const closeModal = (): void => {
     modal?.close();
     modal = null;
+  };
+
+  /** Start any run: campaign, endless, tutorial or the daily challenge. */
+  const startRun = (map: MapDef, diff: Difficulty, mode: GameMode, modifiers: ModifierId[], mutators: MutatorId[], fixedSeed: number | undefined, waves: WaveDef[] | undefined): void => {
+    closeModal();
+    const next = mode === 'campaign' ? nextMap(map.id) : null;
+    const extra =
+      mode === 'tutorial'
+        ? { waves: TUTORIAL_WAVES, startCoins: 60, startCrystals: 0, autoWaves: false }
+        : { hero: chosenHero(save.data), abilities: unlockedAbilities(save.data), bonuses: bonusesFrom(save.data.research), modifiers, mutators, waves };
+    // ?seed=N replays a run exactly (handy for bug reports)
+    const seed = fixedSeed ?? (Number(new URLSearchParams(location.search).get('seed')) || undefined);
+    const screen: GameScreen = new GameScreen(
+      app,
+      { map, difficulty: diff, mode, seed, ...extra },
+      {
+        quit: () => (mode === 'endless' ? nav.endless() : mode === 'tutorial' ? nav.title() : mode === 'daily' ? nav.daily() : nav.worlds()),
+        restart: () => (mode === 'daily' ? nav.playDaily() : startRun(map, diff, mode, modifiers, mutators, fixedSeed, waves)),
+        next: next ? () => (nav.mapUnlocked(next.id) && nav.worldUnlocked(next.world) ? nav.briefing(next, 'campaign') : nav.worlds()) : undefined,
+        onEnd: (game, won) => recordRun(app, game, won, mode, hooks),
+      },
+    );
+    app.show(screen);
+    if (mode === 'tutorial')
+      new Tutorial(screen, () => {
+        save.data.tutorialDone = true;
+        save.flush();
+        app.achievements.checkEnd(null, false, null);
+        nav.title();
+      });
+    hooks.onGameStart?.(screen, mode);
+    if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__game = screen;
   };
 
   const nav: Nav = {
@@ -92,6 +135,20 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
     badges: () => {
       closeModal();
       if (hooks.badges) app.show(hooks.badges(app, nav));
+    },
+    research: () => {
+      closeModal();
+      app.show(new ResearchScreen(app, nav));
+    },
+    daily: () => {
+      closeModal();
+      app.show(new DailyScreen(app, nav));
+    },
+    dailyUnlocked: () => Object.values(save.data.maps).some((m) => Object.values(m.stars).some((n) => (n ?? 0) > 0)),
+    playDaily: () => {
+      closeModal();
+      const d = dailyFor(dateKey());
+      startRun(d.map, 'normal', 'daily', d.modifiers, d.mutators, d.seed, buildWaves(d.map).slice(0, d.waves));
     },
     settings: () => {
       closeModal();
@@ -147,6 +204,33 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
         );
       };
       renderHeroes();
+      // challenge modifiers (campaign): each one earns a medal when you win on Normal or harder
+      const mods = new Set<ModifierId>();
+      const medals = save.medals(map.id);
+      const modRow = h('div.mod-row', { role: 'group', 'aria-label': t('modifier.title') });
+      const renderMods = (): void => {
+        modRow.replaceChildren(
+          h('span.hero-row-label', null, t('modifier.title')),
+          ...MODIFIER_IDS.map((m) =>
+            h(
+              'button.mod-chip',
+              {
+                class: `${mods.has(m) ? 'on' : ''} ${medals.includes(m) ? 'medal' : ''}`,
+                'aria-pressed': String(mods.has(m)),
+                title: t(`modifier.${m}.desc` as MessageKey),
+                onClick: () => {
+                  if (mods.has(m)) mods.delete(m);
+                  else mods.add(m);
+                  renderMods();
+                },
+              },
+              t(`modifier.${m}` as MessageKey),
+            ),
+          ),
+          h('p.note', null, t('modifier.help')),
+        );
+      };
+      renderMods();
       const best = save.data.endlessBest[map.id];
       const actions = h(
         'div.row',
@@ -158,7 +242,7 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
             onClick: () => {
               save.data.lastDifficulty = diff;
               save.save();
-              nav.play(map, diff, mode);
+              nav.play(map, diff, mode, mode === 'campaign' ? [...mods] : []);
             },
           },
           t('brief.deploy'),
@@ -175,10 +259,11 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
             h(
               'div.brief-right',
               null,
-              pipSays(mode === 'endless' ? t('brief.endlessStory') + (best ? ' ' + t('brief.endlessBest', { n: best }) : '') : map.story),
+              pipSays(mode === 'endless' ? `${t('brief.endlessStory')} ${t('endless.mutatorsEvery')}${best ? ' ' + t('brief.endlessBest', { n: best }) : ''}` : map.story),
               diffRow,
               blurb,
               mode === 'tutorial' ? null : heroRow,
+              mode === 'campaign' ? modRow : null,
               actions,
             ),
           ),
@@ -186,35 +271,9 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
         { onBackdrop: () => closeModal(), label: map.name, cls: 'wide' },
       );
     },
-    play: (map, diff, mode) => {
+    play: (map, diff, mode, modifiers = []) => {
       closeModal();
-      const next = mode === 'campaign' ? nextMap(map.id) : null;
-      const extra =
-        mode === 'tutorial'
-          ? { waves: TUTORIAL_WAVES, startCoins: 60, startCrystals: 0, autoWaves: false }
-          : { hero: chosenHero(save.data), abilities: unlockedAbilities(save.data) };
-      // ?seed=N replays a run exactly (handy for bug reports)
-      const seed = Number(new URLSearchParams(location.search).get('seed')) || undefined;
-      const screen: GameScreen = new GameScreen(
-        app,
-        { map, difficulty: diff, mode, seed, ...extra },
-        {
-          quit: () => (mode === 'endless' ? nav.endless() : mode === 'tutorial' ? nav.title() : nav.worlds()),
-          restart: () => nav.play(map, diff, mode),
-          next: next ? () => (nav.mapUnlocked(next.id) && nav.worldUnlocked(next.world) ? nav.briefing(next, 'campaign') : nav.worlds()) : undefined,
-          onEnd: (game, won) => recordRun(app, game, won, mode, hooks),
-        },
-      );
-      app.show(screen);
-      if (mode === 'tutorial')
-        new Tutorial(screen, () => {
-          save.data.tutorialDone = true;
-          save.flush();
-          app.achievements.checkEnd(null, false, null);
-          nav.title();
-        });
-      hooks.onGameStart?.(screen, mode);
-      if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__game = screen;
+      startRun(map, diff, mode, modifiers, [], undefined, undefined);
     },
     toast: (msg) => {
       const t = h('div.toast', { role: 'status', style: { bottom: 'calc(var(--safe-bottom) + 24px)' } }, msg);
@@ -250,7 +309,7 @@ function sessionStorageFlag(key: string): boolean {
 }
 
 /** Persist progress after a run. Returns info for the result screen. */
-function recordRun(app: App, game: Game, won: boolean, mode: GameMode, hooks: FlowHooks): { newBest?: boolean; badges?: string[] } {
+function recordRun(app: App, game: Game, won: boolean, mode: GameMode, hooks: FlowHooks): RunResult {
   const save = app.save;
   const d = save.data;
   const life = d.lifetime;
@@ -263,6 +322,23 @@ function recordRun(app: App, game: Game, won: boolean, mode: GameMode, hooks: Fl
     life.wins++;
     save.recordWin(game.map.id, game.diff.id, starsFor(game.lives, game.maxLives));
   }
+  let medals: string[] = [];
+  if (mode === 'campaign' && won && game.modifiers.length && DIFFICULTY_ORDER.indexOf(game.diff.id) >= DIFFICULTY_ORDER.indexOf(TUNING.modifiers.medalMinDifficulty)) {
+    medals = save.addMedals(game.map.id, game.modifiers);
+  }
+  let dailyScoreValue: number | undefined;
+  let dailyBest: number | undefined;
+  if (mode === 'daily') {
+    const key = dateKey();
+    const cleared = won ? game.waveNum : Math.max(0, game.waveNum - 1);
+    dailyScoreValue = dailyScore(cleared, game.lives, won);
+    const prev = d.daily[key] ?? 0;
+    if (dailyScoreValue > prev) {
+      d.daily[key] = dailyScoreValue;
+      newBest = true;
+    }
+    dailyBest = Math.max(prev, dailyScoreValue);
+  }
   if (mode === 'tutorial' && won) d.tutorialDone = true;
   if (mode === 'endless') {
     const reached = game.waveNum;
@@ -273,7 +349,7 @@ function recordRun(app: App, game: Game, won: boolean, mode: GameMode, hooks: Fl
   }
   const badges = hooks.onRunEnd?.(game, won, mode) ?? [];
   save.flush();
-  return { newBest, badges };
+  return { newBest, badges, medals, dailyScore: dailyScoreValue, dailyBest };
 }
 
 /** Pick a cleared map to play forever. */

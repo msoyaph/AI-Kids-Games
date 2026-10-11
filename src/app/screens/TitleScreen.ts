@@ -58,6 +58,19 @@ export class TitleScreen implements Screen {
           endlessOpen ? t('title.endless') : t('title.endlessLockedShort'),
         ),
       ),
+      h(
+        'div.row2',
+        null,
+        h(
+          'button.btn',
+          {
+            onClick: () => (nav.dailyUnlocked() ? nav.daily() : nav.toast(t('daily.locked'))),
+            class: nav.dailyUnlocked() ? '' : 'disabled',
+          },
+          t('title.daily'),
+        ),
+        h('button.btn', { onClick: () => nav.research() }, t('title.research')),
+      ),
       h('div.row2', null, h('button.btn', { onClick: () => nav.encyclopedia() }, t('title.codex')), h('button.btn', { onClick: () => nav.badges() }, t('title.badges'))),
       h('div.row2', null, h('button.btn', { onClick: () => nav.settings() }, t('title.settings')), fullscreenAvailable() ? h('button.btn.ghost', { onClick: () => toggleFullscreen() }, t('title.fullscreen')) : null),
     );

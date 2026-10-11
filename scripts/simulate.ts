@@ -13,7 +13,8 @@ const diffArg = args.find((a) => (DIFFICULTY_ORDER as string[]).includes(a)) as 
 const seeds = Number(args.find((a) => a.startsWith('--seeds='))?.split('=')[1] ?? 1);
 
 const maps = CAMPAIGN_MAPS.filter((m) => !mapArg || m.id === mapArg);
-const diffs = diffArg ? [diffArg] : DIFFICULTY_ORDER;
+// Expert is report-only: pass `expert` to include it.
+const diffs = diffArg ? [diffArg] : DIFFICULTY_ORDER.filter((d) => d !== 'expert');
 let failures = 0;
 const t0 = Date.now();
 console.log(`bot: ${casual ? 'casual' : 'good'}  seeds: ${seeds}`);

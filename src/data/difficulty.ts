@@ -2,7 +2,7 @@ import { localized } from '../i18n';
 import { TUNING, type DifficultyTuning } from './tuning';
 
 /** Difficulty ids are stable save keys: `easy` is shown as "Story". */
-export type Difficulty = 'easy' | 'normal' | 'hard';
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'expert';
 
 export interface DifficultyDef extends DifficultyTuning {
   id: Difficulty;
@@ -11,7 +11,7 @@ export interface DifficultyDef extends DifficultyTuning {
   readonly blurb: string;
 }
 
-export const DIFFICULTY_ORDER: Difficulty[] = ['easy', 'normal', 'hard'];
+export const DIFFICULTY_ORDER: Difficulty[] = ['easy', 'normal', 'hard', 'expert'];
 
 export const DIFFICULTIES = {} as Record<Difficulty, DifficultyDef>;
 for (const id of DIFFICULTY_ORDER) {

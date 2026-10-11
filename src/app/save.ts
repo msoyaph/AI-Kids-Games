@@ -1,4 +1,5 @@
 import type { Difficulty } from '../data/difficulty';
+import { researchSpent } from '../data/research';
 import type { LocaleSetting } from '../i18n';
 import type { QualitySetting } from '../render/quality';
 
@@ -301,10 +302,35 @@ export class SaveStore {
     return Math.max(0, ...Object.values(m.stars).map((n) => n ?? 0));
   }
 
+  /** Every difficulty earns its own stars (Story + Normal + Hard + Expert). */
   totalStars(): number {
     let n = 0;
-    for (const id of Object.keys(this.data.maps)) n += this.stars(id);
+    for (const m of Object.values(this.data.maps)) for (const v of Object.values(m.stars)) n += v ?? 0;
     return n;
+  }
+
+  /** Stars not spent on research. */
+  starsFree(): number {
+    return Math.max(0, this.totalStars() - researchSpent(this.data.research));
+  }
+
+  medals(mapId: string): string[] {
+    return this.data.maps[mapId]?.medals ?? [];
+  }
+
+  medalCount(): number {
+    let n = 0;
+    for (const m of Object.values(this.data.maps)) n += m.medals?.length ?? 0;
+    return n;
+  }
+
+  /** Award challenge medals; returns the newly earned ones. */
+  addMedals(mapId: string, ids: readonly string[]): string[] {
+    const m = (this.data.maps[mapId] ??= { stars: {} });
+    const have = (m.medals ??= []);
+    const fresh = ids.filter((id) => !have.includes(id));
+    have.push(...fresh);
+    return fresh;
   }
 
   recordWin(mapId: string, diff: Difficulty, stars: number): boolean {
