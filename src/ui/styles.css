@@ -1,0 +1,80 @@
+:root {
+  --ink: #2a2140;
+  --ink-soft: #4a3f66;
+  --paper: #fff8ec;
+  --accent: #ff8a3d;
+  --accent-2: #2fb8a6;
+  --gold: #ffcc33;
+  --danger: #ff5a5f;
+  --xp: #6dd6ff;
+  --panel: rgba(36, 28, 58, 0.86);
+  --panel-edge: rgba(255, 255, 255, 0.12);
+  font-size: calc(9px + 0.85vmin);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #1c1530;
+  color: var(--paper);
+  font-family: 'Trebuchet MS', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+}
+
+#game,
+#overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+}
+
+#overlay {
+  pointer-events: none;
+}
+
+#ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#ui > * {
+  pointer-events: auto;
+}
+
+.btn {
+  font: inherit;
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: none;
+  border-radius: 0.9rem;
+  padding: 0.7rem 1.8rem;
+  box-shadow: 0 0.35rem 0 #c9b79a;
+  cursor: pointer;
+}
+
+#start {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
