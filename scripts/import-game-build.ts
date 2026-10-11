@@ -1,0 +1,11 @@
+import { existsSync,readFileSync,writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { games } from '../src/data/games';
+const [slug,build] = process.argv.slice(2);
+if (!slug || !build || !games.some(game => game.slug === slug)) throw new Error('Usage: npx tsx scripts/import-game-build.ts <registered-slug> <path-to-built-index.html>');
+if (!existsSync(build)) throw new Error(`Game build not found: ${build}`);
+const policy = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; media-src data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">`;
+const html = readFileSync(build,'utf8');
+if (!html.includes('<head>')) throw new Error('Expected a complete HTML game build with a <head> element.');
+writeFileSync(resolve('public/games',slug,'index.html'),html.replace('<head>','<head>'+policy));
+console.log(`Imported ${slug} with a network-blocking policy.`);
