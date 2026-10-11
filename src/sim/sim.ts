@@ -10,7 +10,9 @@ import { TUNING } from '../tuning';
 import { moveBody } from './movement';
 import { createState, generateFarmClutter, type NewGameOptions } from './newgame';
 import type { GameState } from './state';
+import { SYSTEMS, type DayReport } from './systems';
 import type { WorldObject } from './types';
+import { rollWeather } from './weather';
 import { Loc } from './world';
 
 export interface SavedLoc {
@@ -25,7 +27,17 @@ export interface SimEvents extends Record<string, unknown> {
   fx: { kind: string; x: number; y: number; color?: number; text?: string };
   dialog: { text: string; who?: string };
   changed: { what: string };
+  clock: { min: number };
+  sleepy: { min: number };
+  passout: { min: number };
+  newDay: { day: number };
+  tired: { energy: number };
 }
+
+/** Festival-day check is provided by the festival system (set at startup). */
+export const calendarHooks = {
+  isFestival: (_day: number): boolean => false,
+};
 
 export class Sim {
   state: GameState;
@@ -184,9 +196,90 @@ export class Sim {
     this.ev.emit('warp', { from, to });
   }
 
+  // ── Clock ─────────────────────────────────────────────────
+  private lastTick = -1;
+  private sleepyShown = -1;
+  private passoutSent = -1;
+  /** multiplier for the clock (bench / tests) */
+  clockScale = 1;
+
+  minutesPerSecond(): number {
+    return ((TUNING.dayEndMin - TUNING.dayStartMin) / TUNING.dayRealSeconds) * this.clockScale;
+  }
+
   update(dt: number): void {
     if (this.paused) return;
-    this.state.playSec += dt;
+    const st = this.state;
+    st.playSec += dt;
+    this.advanceMinutes(dt * this.minutesPerSecond());
+  }
+
+  /** Advance the clock, running 10-minute ticks and bedtime events. */
+  advanceMinutes(m: number): void {
+    const st = this.state;
+    if (this.lastTick < 0) this.lastTick = Math.floor(st.min / 10);
+    st.min = Math.min(TUNING.dayEndMin, st.min + m);
+    const tick = Math.floor(st.min / 10);
+    while (this.lastTick < tick) {
+      this.lastTick++;
+      for (const s of SYSTEMS) s.tick?.(this);
+      this.ev.emit('clock', { min: this.lastTick * 10 });
+    }
+    if (st.min >= TUNING.sleepyMin && this.sleepyShown !== st.day) {
+      this.sleepyShown = st.day;
+      this.ev.emit('sleepy', { min: st.min });
+    }
+    if (st.min >= TUNING.dayEndMin && this.passoutSent !== st.day) {
+      this.passoutSent = st.day;
+      this.ev.emit('passout', { min: st.min });
+    }
+  }
+
+  absMinute(): number {
+    return this.state.day * 1440 + this.state.min;
+  }
+
+  // ── Energy ───────────────────────────────────────────────
+  /** Spend energy; returns false (and warns) if the player is too tired. */
+  useEnergy(n: number): boolean {
+    const p = this.p;
+    if (n <= 0) return true;
+    if (p.energy <= 0) {
+      this.ev.emit('tired', { energy: 0 });
+      return false;
+    }
+    p.energy = Math.max(0, p.energy - n);
+    if (p.energy === 0) this.ev.emit('tired', { energy: 0 });
+    return true;
+  }
+
+  gainEnergy(n: number): void {
+    this.p.energy = Math.min(this.p.maxEnergy, this.p.energy + n);
+  }
+
+  // ── Sleep / new day ──────────────────────────────────────
+  /** End the day: overnight systems run, then a new morning starts in bed. */
+  sleep(passedOut = false): DayReport {
+    const st = this.state;
+    const r: DayReport = { day: st.day, shipped: [], total: 0, levelUps: [], notes: [], passedOut };
+    if (st.min >= TUNING.sleepyMin) st.stats.sleepsLate++;
+    for (const s of SYSTEMS) s.endDay?.(this, r);
+    st.day++;
+    st.min = TUNING.dayStartMin;
+    st.weather = st.tomorrow;
+    st.tomorrow = rollWeather(st.seed, st.day + 1, calendarHooks.isFestival);
+    st.stats.daysPlayed++;
+    const p = this.p;
+    p.energy = p.maxEnergy;
+    p.hp = p.maxHp;
+    p.buffs = [];
+    const house = this.loc('farmhouse');
+    const bed = house.def.points.bed ?? { x: 3, y: 3 };
+    this.warpTo('farmhouse', bed.x, bed.y, 0);
+    this.lastTick = Math.floor(st.min / 10);
+    for (const s of SYSTEMS) s.startDay?.(this);
+    this.ev.emit('newDay', { day: st.day });
+    return r;
   }
 }
 

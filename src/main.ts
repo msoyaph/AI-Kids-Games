@@ -12,7 +12,7 @@ game
   .init(document.getElementById('game')!)
   .then(() => {
     document.getElementById('boot')?.remove();
-    game.startNew();
+    game.showTitle();
     if (import.meta.env.DEV) (window as unknown as { __cvdev: Game }).__cvdev = game;
   })
   .catch((err) => {

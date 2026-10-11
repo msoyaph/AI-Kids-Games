@@ -34,4 +34,5 @@ session; condensed plan in `docs/PLAN.md`. Ships as ONE self-contained `dist/ind
 
 ## Status
 - Phase 1 ✅ scaffold, single-file build, pixel-art pipeline, farm map, movement, camera.
-- Next: Phase 2 (time/day, sleep, saves+migrations, energy, HUD).
+- Phase 2 ✅ clock (12 min days, 10-min ticks, sleepy at midnight, pass out at 2am → wake at home, no loss), sleep → DayReport → save, 3 save slots (`cliffvalley.slot.N`, settings in `cliffvalley.settings`), migrations (sim/save.ts MIGRATIONS + fillDefaults), compact location tokens, DOM HUD/title/new-farm form/day summary.
+- Next: Phase 3 (tools & farming, shipping bin, economy).
