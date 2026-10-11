@@ -6,6 +6,7 @@ export type InputSource =
   | { kind: 'any' }
   | { kind: 'keyboard'; scheme: KeyScheme }
   | { kind: 'gamepad'; index: number }
+  | { kind: 'combo'; scheme: KeyScheme; index: number }
   | { kind: 'touch' };
 
 export type MenuAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'tabPrev' | 'tabNext';
@@ -96,6 +97,13 @@ export class InputManager {
 
   private onKeyDown = (e: KeyboardEvent): void => {
     this.lastDevice = 'keyboard';
+    const tag = (e.target as HTMLElement | null)?.tagName;
+    if ((tag === 'INPUT' || tag === 'TEXTAREA') && !this.captureKey) {
+      // typing a name: only Enter confirms, everything else belongs to the text field
+      if (e.code === 'Enter' || e.code === 'NumpadEnter') this.emitMenu('confirm', 'keyboard');
+      if (e.code === 'Escape') this.emitMenu('back', 'keyboard');
+      return;
+    }
     if (this.captureKey) {
       e.preventDefault();
       e.stopPropagation();
@@ -109,7 +117,8 @@ export class InputManager {
     this.keys.add(e.code);
     if (this.inRace) {
       if (fresh && this.isAction(e.code, 'pause')) {
-        if (this.players.length > 1 && this.players[1].kind === 'keyboard' && this.keyBindings.right.pause.includes(e.code)) this.pausePressed[1] = true;
+        const p2 = this.players[1];
+        if (this.players.length > 1 && p2 && p2.kind === 'keyboard' && this.keyBindings.right.pause.includes(e.code)) this.pausePressed[1] = true;
         else this.pausePressed[0] = true;
       }
       return;
@@ -134,6 +143,8 @@ export class InputManager {
       case 'Enter':
       case 'Space':
       case 'NumpadEnter':
+        // never let the browser also "click" a natively focused element
+        if ((e.target as HTMLElement)?.tagName !== 'INPUT') e.preventDefault();
         if (!e.repeat) this.emitMenu('confirm', 'keyboard');
         break;
       case 'Escape':
@@ -193,9 +204,9 @@ export class InputManager {
       let lookBack = false;
       let aimBack = false;
       let analogSteer = 0;
-      const useKeys = src.kind === 'any' || src.kind === 'keyboard';
+      const useKeys = src.kind === 'any' || src.kind === 'keyboard' || src.kind === 'combo';
       if (useKeys) {
-        const kb = this.keyBindings[src.kind === 'keyboard' ? src.scheme : 'solo'];
+        const kb = this.keyBindings[src.kind === 'keyboard' || src.kind === 'combo' ? src.scheme : 'solo'];
         if (this.keyDown(kb, 'left')) steerKeys -= 1;
         if (this.keyDown(kb, 'right')) steerKeys += 1;
         if (this.keyDown(kb, 'accel')) accel = 1;
@@ -205,12 +216,12 @@ export class InputManager {
         lookBack = this.keyDown(kb, 'lookBack');
         aimBack = brake > 0;
       }
-      const usePads = src.kind === 'any' || src.kind === 'gamepad';
+      const usePads = src.kind === 'any' || src.kind === 'gamepad' || src.kind === 'combo';
       if (usePads) {
         for (let i = 0; i < pads.length; i++) {
           const p = pads[i];
           if (!p || !p.connected) continue;
-          if (src.kind === 'gamepad' && src.index !== i) continue;
+          if ((src.kind === 'gamepad' || src.kind === 'combo') && src.index !== i) continue;
           const b = this.padBindings;
           const ax = p.axes[0] ?? 0;
           const ay = p.axes[1] ?? 0;

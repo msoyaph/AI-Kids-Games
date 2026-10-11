@@ -1,4 +1,4 @@
-import type { ArenaData } from './types';
+import type { ArenaData, TrackPalette } from './types';
 
 /** Test course used during development (Phase 2) and as a fallback. */
 export const TEST_ARENA: ArenaData = {
@@ -12,7 +12,10 @@ export const TEST_ARENA: ArenaData = {
     { kind: 'cyl', x: -25, z: 10, hx: 3, hz: 3, h: 2, color: 0x4ce0d2 },
     { kind: 'box', x: 0, z: -30, hx: 6, hz: 1.5, h: 1.5, rot: 20, color: 0xff6fae },
   ],
-  ramps: [{ x: -10, z: 25, dir: 0, width: 8, length: 9, height: 2.2 }],
+  ramps: [
+    { x: -10, z: 25, dir: 0, width: 8, length: 9, height: 2.2 },
+    { x: 30, z: -38, dir: 0, width: 8, length: 10, height: 2 },
+  ],
   platforms: [{ x: 30, z: -20, hx: 10, hz: 8, h: 2 }],
   itemBoxes: [],
   palette: {
@@ -31,10 +34,165 @@ export const TEST_ARENA: ArenaData = {
   unlocked: false,
 };
 
-// Ramps leading to the platform
-TEST_ARENA.ramps.push({ x: 30, z: -38, dir: 0, width: 8, length: 10, height: 2 });
+const CANDY: TrackPalette = { road: 0xffc1e3, road2: 0xffd6ec, line: 0xffffff, kerb: 0xff4d6d, kerb2: 0xffffff, offroad: 0xb9f6ca, wall: 0xffe0b2, wall2: 0xff8fc8, side: 0x8d5524 };
+const MOON: TrackPalette = { road: 0xb8bcc8, road2: 0xa9adba, line: 0xffffff, kerb: 0x4ce0d2, kerb2: 0x2b2b3a, offroad: 0x9aa0ad, wall: 0x5d6178, wall2: 0x4ce0d2, side: 0x6c7086 };
+const NEON: TrackPalette = { road: 0x2b2550, road2: 0x342d63, line: 0xff4dd2, kerb: 0x4ce0d2, kerb2: 0xff4dd2, offroad: 0x1f1a3d, wall: 0xff4dd2, wall2: 0x4ce0d2, side: 0x1a1533 };
+const REEF: TrackPalette = { road: 0xf2d79b, road2: 0xe8cb8a, line: 0xffffff, kerb: 0xff7b5c, kerb2: 0xffffff, offroad: 0xe0c27a, wall: 0x4ce0d2, wall2: 0xff8a65, side: 0x8a6a3a };
 
-export const ARENAS: ArenaData[] = [];
+export const ARENAS: ArenaData[] = [
+  {
+    id: 'gumdrop-garden',
+    name: 'Gumdrop Garden',
+    theme: 'candy',
+    shape: 'square',
+    size: 52,
+    obstacles: [
+      { kind: 'cyl', x: 24, z: 24, hx: 4, hz: 4, h: 4, color: 0x8cff6b },
+      { kind: 'cyl', x: -24, z: 24, hx: 4, hz: 4, h: 4, color: 0xb47bff },
+      { kind: 'cyl', x: 24, z: -24, hx: 4, hz: 4, h: 4, color: 0xffd23f },
+      { kind: 'cyl', x: -24, z: -24, hx: 4, hz: 4, h: 4, color: 0x4ce0d2 },
+      { kind: 'box', x: 0, z: 36, hx: 8, hz: 2, h: 2, color: 0x6d4c41 },
+      { kind: 'box', x: 0, z: -36, hx: 8, hz: 2, h: 2, color: 0x6d4c41 },
+    ],
+    ramps: [
+      { x: 0, z: -18, dir: 0, width: 7, length: 8, height: 2.4 },
+      { x: 0, z: 18, dir: 180, width: 7, length: 8, height: 2.4 },
+      { x: -18, z: 0, dir: 90, width: 7, length: 8, height: 2.4 },
+      { x: 18, z: 0, dir: 270, width: 7, length: 8, height: 2.4 },
+    ],
+    platforms: [{ x: 0, z: 0, hx: 10, hz: 10, h: 2.4 }],
+    itemBoxes: [
+      { x: 0, z: 0, y: 3.6 },
+      { x: 38, z: 0 },
+      { x: -38, z: 0 },
+      { x: 0, z: 46 },
+      { x: 0, z: -46 },
+      { x: 38, z: 38 },
+      { x: -38, z: -38 },
+      { x: 38, z: -38 },
+      { x: -38, z: 38 },
+    ],
+    palette: CANDY,
+    sky: { top: 0x8fd3ff, bottom: 0xffe1f0, fog: 0xffe9f5, sun: 0xfff8f0, ambient: 0xffffff, ground: 0xa5f3c6, backdrop: 'dunes', backdropColor: 0xffb3d9 },
+    music: 'battle1',
+    unlocked: true,
+    props: [
+      { type: 'lollipop', x: 62, z: 30, scale: 1.6 },
+      { type: 'lollipop', x: -64, z: -20, scale: 1.8 },
+      { type: 'cupcake', x: -60, z: 50, scale: 2 },
+      { type: 'candycane', x: 58, z: -55, scale: 1.8 },
+      { type: 'gingerhouse', x: 0, z: 70, scale: 2.2 },
+      { type: 'donut', x: 0, z: -70, scale: 2.4 },
+    ],
+  },
+  {
+    id: 'crater-bowl',
+    name: 'Crater Bowl',
+    theme: 'moon',
+    shape: 'circle',
+    size: 60,
+    gravity: 0.55,
+    obstacles: [
+      { kind: 'cyl', x: 0, z: 30, hx: 5, hz: 5, h: 2.2, color: 0x8a8f9c },
+      { kind: 'cyl', x: 26, z: -15, hx: 4, hz: 4, h: 3, color: 0x9aa0ad },
+      { kind: 'cyl', x: -26, z: -15, hx: 4, hz: 4, h: 3, color: 0x9aa0ad },
+      { kind: 'box', x: 0, z: -38, hx: 6, hz: 3, h: 2.5, rot: 0, color: 0xc0c8d8 },
+    ],
+    ramps: [
+      { x: 0, z: -5, dir: 0, width: 9, length: 10, height: 3.5 },
+      { x: -40, z: 10, dir: 60, width: 8, length: 9, height: 3 },
+      { x: 40, z: 10, dir: -60, width: 8, length: 9, height: 3 },
+    ],
+    platforms: [],
+    itemBoxes: [
+      { x: 0, z: 0 },
+      { x: 0, z: 45 },
+      { x: 40, z: -30 },
+      { x: -40, z: -30 },
+      { x: 45, z: 20 },
+      { x: -45, z: 20 },
+      { x: 0, z: -50 },
+      { x: 18, z: 14 },
+      { x: -18, z: 14 },
+    ],
+    palette: MOON,
+    sky: { top: 0x05051a, bottom: 0x1b1840, fog: 0x15123a, sun: 0xe8f0ff, ambient: 0xb8c4ff, ground: 0x7a7f8c, night: true, backdrop: 'stars' },
+    music: 'battle2',
+    unlocked: true,
+    props: [],
+  },
+  {
+    id: 'neon-crossroads',
+    name: 'Neon Crossroads',
+    theme: 'neon',
+    shape: 'cross',
+    size: 64,
+    inner: 17,
+    obstacles: [
+      { kind: 'cyl', x: 0, z: 0, hx: 4.5, hz: 4.5, h: 3, color: 0x4ce0d2 },
+      { kind: 'box', x: 0, z: 44, hx: 2, hz: 5, h: 2, color: 0xff4dd2 },
+      { kind: 'box', x: 0, z: -44, hx: 2, hz: 5, h: 2, color: 0xff4dd2 },
+      { kind: 'box', x: 44, z: 0, hx: 5, hz: 2, h: 2, color: 0xffd23f },
+      { kind: 'box', x: -44, z: 0, hx: 5, hz: 2, h: 2, color: 0xffd23f },
+    ],
+    ramps: [
+      { x: 8, z: 22, dir: 0, width: 7, length: 8, height: 2.2 },
+      { x: -8, z: -22, dir: 180, width: 7, length: 8, height: 2.2 },
+      { x: 22, z: -8, dir: 90, width: 7, length: 8, height: 2.2 },
+      { x: -22, z: 8, dir: 270, width: 7, length: 8, height: 2.2 },
+    ],
+    platforms: [],
+    itemBoxes: [
+      { x: 10, z: 10 },
+      { x: -10, z: -10 },
+      { x: 10, z: -10 },
+      { x: -10, z: 10 },
+      { x: 0, z: 56 },
+      { x: 0, z: -56 },
+      { x: 56, z: 0 },
+      { x: -56, z: 0 },
+    ],
+    palette: NEON,
+    sky: { top: 0x0b0620, bottom: 0x2b1050, fog: 0x1c0d38, sun: 0xd9c6ff, ambient: 0xc8b8ff, ground: 0x120c26, night: true, backdrop: 'skyline', backdropColor: 0x3a2a70 },
+    music: 'battle3',
+    unlocked: false,
+    props: [],
+  },
+  {
+    id: 'coral-ring',
+    name: 'Coral Ring',
+    theme: 'underwater',
+    shape: 'ring',
+    size: 58,
+    inner: 20,
+    obstacles: [
+      { kind: 'cyl', x: 38, z: 0, hx: 3, hz: 3, h: 3.5, color: 0xff7b5c },
+      { kind: 'cyl', x: -38, z: 0, hx: 3, hz: 3, h: 3.5, color: 0xff6fae },
+      { kind: 'cyl', x: 0, z: 38, hx: 3, hz: 3, h: 3.5, color: 0xffd23f },
+      { kind: 'cyl', x: 0, z: -38, hx: 3, hz: 3, h: 3.5, color: 0xb47bff },
+    ],
+    ramps: [
+      { x: 27, z: 27, dir: 135, width: 7, length: 7, height: 2 },
+      { x: -27, z: -27, dir: -45, width: 7, length: 7, height: 2 },
+    ],
+    platforms: [],
+    itemBoxes: [
+      { x: 30, z: 14 },
+      { x: -30, z: -14 },
+      { x: 14, z: -30 },
+      { x: -14, z: 30 },
+      { x: 46, z: 26 },
+      { x: -46, z: -26 },
+      { x: 26, z: -46 },
+      { x: -26, z: 46 },
+    ],
+    palette: REEF,
+    sky: { top: 0x0a4f8a, bottom: 0x2a9fd4, fog: 0x2a8fc8, fogNear: 0.2, sun: 0xd8f6ff, ambient: 0xbfe8ff, ground: 0xe0c27a, backdrop: 'dunes', backdropColor: 0x1a6aa0 },
+    music: 'battle4',
+    unlocked: false,
+    props: [],
+  },
+];
 
 export function findArena(id: string): ArenaData {
   return ARENAS.find((a) => a.id === id) ?? TEST_ARENA;

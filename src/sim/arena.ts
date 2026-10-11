@@ -19,13 +19,14 @@ interface RampBox {
  * flat floor, a boundary wall, solid obstacles, raised platforms and ramps.
  */
 export class ArenaModel implements GroundModel {
-  readonly gravityScale = 1;
+  readonly gravityScale: number;
   readonly killY = -40;
   readonly length = 0;
   private readonly ramps: RampBox[];
   readonly spawnPoints: SpawnPoint[] = [];
 
   constructor(readonly data: ArenaData) {
+    this.gravityScale = data.gravity ?? 1;
     this.ramps = data.ramps.map((r) => ({
       x: r.x,
       z: r.z,

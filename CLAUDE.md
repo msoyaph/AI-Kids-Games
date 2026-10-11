@@ -45,6 +45,18 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
   skill-dependent spark tier, shortcut decisions per lap, item-box seeking, kart/hazard avoidance, rocket-start
   timing, tricks, unstick-by-reversing); `aiController.ts` (spawns drivers per AI kart with class skill ± variance,
   mild rubber-band vs best human via World.speedMul, steering assist for players).
+- `src/game/` — `app.ts` (App: loop, renderer, input, audio, saves, UI, menu scene, session lifecycle, pause),
+  `session.ts` (RaceSession: one race/battle — builds world+AI+items+hazards+battle rules+view+HUDs, routes events,
+  records ghosts, reports SessionResult), `modes/` (GrandPrix points/grids, roster picking, staff ghosts),
+  `progression.ts` (trophies, records, unlock rules), `challenges.ts`.
+- `src/ui/` — DOM UI: `ui.ts` (Ui screen manager + spatial focus nav + `h()`/`button()` helpers), `hud.ts`,
+  `minimap.ts`, `icons.ts` (original SVG item icons), `screens/` (menus, setup, results/podium/unlocks, settings,
+  extras; `screens/index.ts` = registry + all mode flows). Menus are navigable by keyboard/gamepad/touch.
+- `src/save/` — `storage.ts` (try/catch localStorage + memory fallback), `save.ts` (3 slots, versioned, MIGRATIONS
+  chain, debounced autosave, settings, ghosts stored under separate keys).
+- `src/sim/` extras: `ghost.ts` (15 Hz quantised delta ghosts, base64), `battle.ts` (balloons, timed, refill),
+  `rules.ts` (GP points 15-12-10-8-6-4-2-1, standings, medals), `hazards.ts`, `ai/battleDriver.ts`, `ai/itemBrain.ts`.
+- `src/render/menuScene.ts` — 3D backdrop for menus (turntable, title lineup, podium + confetti).
 - `src/data/` — typed content (`types.ts` is the contract for everything).
 - `scripts/probe.mjs` — open the game in headless Chromium and evaluate JS (`window.__calex` debug hook).
   Note: headless SwiftShader renders slowly, so drive-tests belong in Vitest sim tests; use the browser pane for visuals.
@@ -57,4 +69,13 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
   `render/particles.ts` (pooled THREE.Points, 2 draw calls) + `effects.ts` (sparks by tier, smoke, dust, flames,
   trails, bubbles, bursts on events, skid marks, camera shake), underwater fog tint.
 - Phase 5 ✅ AI racers with personalities (data/aiProfiles.ts), rubber-banding, steering assist; AI sim tests.
-  Dev harness: `/?autodrive` lets the AI drive the player kart (handy for visual checks).
+- Phase 6 ✅ items (12), rolls, AI item use. Phase 7 🚧 tracks: Sunrise Cup done; other cups built by agents.
+- Phase 8 ✅ Grand Prix, Time Trial (+ghosts, staff ghosts), Versus (single/cup, options), Battle (4 arenas).
+  Dev shortcuts (dev server only): `/?track=<id>[&autodrive][&mirror][&class=pro][&ai=7][&nointro]`, `/?arena=<id>`.
+  Headless e2e: `node scripts/probe.mjs <url> <script.js>` uses Metal GPU (set SWIFTSHADER=1 to force software).
+  `window.__calex.app` exposes the App (flows can be driven via `app.screens.*`, `app.loop.timeScale` speeds up sims).
+- Phase 10 ✅ 12 racers (6 unlocked), 8 bodies / 6 wheels / 5 gliders / 12 paints / 12 decals with stat mods,
+  garage, 34 challenges (`data/challenges.ts`, evaluated in `game/challenges.ts`) — every locked item is a
+  challenge reward (unit-tested); cups/classes unlock via trophies (`game/progression.ts`).
+- Phase 9 ✅ local split-screen (2 players; H/V split; per-view HUD/minimap/camera; input auto-assignment:
+  2 pads → pad+pad, 1 pad → keyboard+pad, none → shared keyboard WASD | arrows; split quality profile).
