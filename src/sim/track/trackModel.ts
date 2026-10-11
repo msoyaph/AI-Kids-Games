@@ -628,8 +628,10 @@ export class TrackModel implements GroundModel {
     out.ny = best.ny;
     out.nz = best.nz;
     out.ramp = best.ramp;
-    out.water = (best.flags & F_WATER) !== 0;
-    out.lowGrav = (best.flags & F_LOWGRAV) !== 0;
+    // zones are authored on the main road; shortcuts inherit them at the mapped distance
+    const zf = bestRibbon === 0 ? best.flags : best.flags | this.main.flags[this.main.indexAtS(shortcutS)];
+    out.water = (zf & F_WATER) !== 0;
+    out.lowGrav = (zf & F_LOWGRAV) !== 0;
     out.wallHit = false;
     out.wallDepth = 0;
     out.wallNx = 0;

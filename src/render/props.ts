@@ -7,6 +7,8 @@ import { Materials } from './materials';
 import { EDGE_DROP, F_GAP, type TrackModel } from '../sim/track/trackModel';
 
 interface Instance {
+  /** Hand-placed landmark (never removed by the quality density setting). */
+  fixed?: boolean;
   x: number;
   y: number;
   z: number;
@@ -120,11 +122,11 @@ export function buildTrackProps(track: TrackModel, seed: string): { group: THREE
   }
   for (const p of track.data.props ?? []) placement(p);
   function placement(p: PropPlacement): void {
-    push(p.type, { x: p.x * mirror, y: p.y ?? groundY, z: p.z, rot: (p.rot ?? 0) * mirror, scale: p.scale ?? 1, color: p.color });
+    push(p.type, { fixed: true, x: p.x * mirror, y: p.y ?? groundY, z: p.z, rot: (p.rot ?? 0) * mirror, scale: p.scale ?? 1, color: p.color });
   }
 
   const group = new THREE.Group();
-  const meshes: Array<{ mesh: THREE.InstancedMesh; total: number }> = [];
+  const meshes: Array<{ mesh: THREE.InstancedMesh; total: number; fixed: number }> = [];
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const pos = new THREE.Vector3();
@@ -135,6 +137,9 @@ export function buildTrackProps(track: TrackModel, seed: string): { group: THREE
     const geo = propGeometry(type);
     if (!geo || list.length === 0) continue;
     rng.shuffle(list);
+    // landmarks first so density thinning (mesh.count) never drops them
+    list.sort((a, b) => (b.fixed ? 1 : 0) - (a.fixed ? 1 : 0));
+    const fixedCount = list.filter((i) => i.fixed).length;
     const mesh = new THREE.InstancedMesh(geo, Materials.flat, list.length);
     list.forEach((inst, idx) => {
       pos.set(inst.x, inst.y, inst.z);
@@ -152,12 +157,12 @@ export function buildTrackProps(track: TrackModel, seed: string): { group: THREE
     mesh.castShadow = false;
     mesh.name = `props:${type}`;
     group.add(mesh);
-    meshes.push({ mesh, total: list.length });
+    meshes.push({ mesh, total: list.length, fixed: fixedCount });
   }
   return {
     group,
     setDensity(f: number): void {
-      for (const e of meshes) e.mesh.count = Math.max(0, Math.round(e.total * Math.min(1, Math.max(0, f))));
+      for (const e of meshes) e.mesh.count = Math.max(e.fixed, e.fixed + Math.round((e.total - e.fixed) * Math.min(1, Math.max(0, f))));
     },
   };
 }

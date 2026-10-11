@@ -120,7 +120,8 @@ export class AiDriver {
       const j = Math.min(sc.n - 1, this.scIndex + Math.round(look / sc.ds));
       tx = sc.px[j];
       tz = sc.pz[j];
-      if (k.ground.ribbon === this.shortcut + 1) this.scTry = 0;
+      const offDist = Math.hypot(k.x - sc.px[this.scIndex], k.z - sc.pz[this.scIndex]);
+      if (k.ground.ribbon === this.shortcut + 1 || offDist < sc.hw[this.scIndex] + 2.5) this.scTry = 0;
       else this.scTry += dt;
       // give up if we can't get onto it (blocked, knocked off line…)
       if (this.scIndex >= sc.n - 3 || (k.ground.ribbon === 0 && this.scIndex > sc.n * 0.6) || this.scTry > 2.5) this.shortcut = -1;
