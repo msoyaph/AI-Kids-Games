@@ -91,6 +91,14 @@ export function objSprite(o: WorldObject, season: number, loc: Loc, x: number, y
       return one('obj.mineChest');
     case 'heartstone':
       return one('obj.heartstone.1');
+    case 'crabpot':
+      return one(`obj.crabpot.${o.out ? 1 : 0}`);
+    case 'bush': {
+      const b = (o.n ?? 0) > 0 ? (o.inp === 'wildRaspberry' ? 'ras.' : o.inp === 'blackberry' ? 'black.' : '') : '';
+      return one(`obj.bush.${b}s${season}`);
+    }
+    case 'spot':
+      return one('obj.spot');
     case 'grass':
       return one(`obj.grass.${(o.n ?? 0) % 2}.s${season}`);
     case 'part':

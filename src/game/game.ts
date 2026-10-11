@@ -37,6 +37,7 @@ import { Controller } from './controller';
 import { installVillagers, npcAtPointer, talkTo } from './villagers';
 import { installAnimals } from './animals';
 import { installMine } from './mine';
+import { installFishing } from './fishing';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
 
 export interface GameOptions {
@@ -131,6 +132,7 @@ export class Game implements MenuHost {
     installVillagers(this);
     installAnimals(this);
     installMine(this);
+    installFishing(this);
     this.input.onAction = (a) => this.onRawAction(a);
     window.addEventListener('pagehide', () => this.suspend());
     document.addEventListener('visibilitychange', () => {

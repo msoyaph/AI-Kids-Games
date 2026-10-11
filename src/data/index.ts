@@ -6,4 +6,5 @@ import './placeables';
 import './villagers';
 import './animals';
 import './minerals';
+import './fish';
 export { ITEMS, item, tryItem } from './items';

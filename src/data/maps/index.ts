@@ -3,6 +3,7 @@ import { buildFarm, buildFarmhouse } from './farm';
 import { ROOMS, buildHall } from './interiors';
 import { buildBarn, buildCoop, buildGreenhouse, buildShed } from './farmbuildings';
 import { buildMineLobby, buildMountain, buildQuarry } from './mountain';
+import { buildBeach, buildFishShop, buildForest } from './coast';
 import { buildTown } from './town';
 import type { MapDef } from './types';
 import { buildRoom } from './interiors';
@@ -27,6 +28,9 @@ const BUILDERS: Record<string, Builder> = {
   mountain: (ctx) => buildMountain(ctx),
   quarry: () => buildQuarry(),
   minelobby: () => buildMineLobby(),
+  beach: (ctx) => buildBeach(ctx),
+  fishshop: () => buildFishShop(),
+  forest: () => buildForest(),
 };
 for (const r of ROOMS) BUILDERS[r.id] = () => roomDef(r.id);
 

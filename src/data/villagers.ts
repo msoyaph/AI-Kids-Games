@@ -304,7 +304,7 @@ export const VILLAGERS: VillagerDef[] = [
     role: 'Runs the bait & tackle shop',
     age: 'elder',
     bio: 'A jolly old sailor with a seagull named Pickles and a tall tale for every fish.',
-    home: 'town',
+    home: 'fishshop',
     birthday: [1, 2],
     look: { skin: 0xd59a6a, hair: 0xe6e7ef, hairStyle: 'bald', shirt: 0x24548f, pants: 0x3d3c4e, beard: 0xe6e7ef, hat: { style: 'captain', color: 0xf3efe6 } },
     loves: ['tuna', 'sardine', 'fishStew', 'crabCakes'],
@@ -313,7 +313,9 @@ export const VILLAGERS: VillagerDef[] = [
     shop: 'fishshop',
     pitch: 0.7,
     schedule: {
-      default: [[H(6), 'town', 'riverbank'], [H(12), 'cafe', 'seat4'], [H(14), 'town', 'bridge'], [H(20), 'town', 'riverbank']],
+      default: [[H(6), 'fishshop', 'bed'], [H(8) + 30, 'fishshop', 'keeper'], [H(17) + 30, 'beach', 'dock'], [H(20), 'fishshop', 'bed']],
+      rest: [[H(6), 'fishshop', 'bed'], [H(9), 'beach', 'dock'], [H(12), 'cafe', 'seat4'], [H(15), 'town', 'bridge'], [H(19), 'fishshop', 'bed']],
+      rain: [[H(6), 'fishshop', 'bed'], [H(8) + 30, 'fishshop', 'keeper'], [H(18), 'fishshop', 'bed']],
     },
   },
 ];

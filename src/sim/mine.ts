@@ -118,6 +118,19 @@ export function buildMineFloor(): MapDef {
   if (floor >= TUNING.mineFloors) return buildHeartChamber();
   const rng = new Rng(hash32(seed, floor, day, 0x3113));
   const { ground, open } = genCave(rng);
+  const L0 = layerOf(floor);
+  if ((L0 === 1 || L0 === 2) && rng.chance(0.6)) {
+    // a little cave pool (with open space all around so paths stay connected)
+    for (const i of rng.shuffle(open.slice())) {
+      const x = i % MINE_W, y = (i / MINE_W) | 0;
+      let ok = x > 3 && y > 3 && x < MINE_W - 5 && y < MINE_H - 4;
+      for (let j = -2; j <= 2 && ok; j++) for (let k = -2; k <= 3 && ok; k++) if (ground[(y + j) * MINE_W + x + k] !== Ter.CAVE) ok = false;
+      if (!ok) continue;
+      for (const [dx, dy] of [[0, 0], [1, 0], [0, -1], [1, -1]]) ground[(y + dy) * MINE_W + x + dx] = Ter.WATER;
+      break;
+    }
+    for (let k = open.length - 1; k >= 0; k--) if (ground[open[k]] !== Ter.CAVE) open.splice(k, 1);
+  }
   const b = new MapBuilder(MINE_W, MINE_H, Ter.CAVEWALL);
   b.ground.set(ground);
   const roomy = open.filter((i) => openWithRoom(ground, i));
