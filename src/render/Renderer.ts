@@ -18,6 +18,9 @@ import { ShrineRenderer } from './ShrineRenderer';
 import { Sky } from './Sky';
 import { Snowfall } from './Snowfall';
 import { buildWorldMesh } from './worldMesh';
+import { ENEMIES } from '../config/enemies';
+import { lowPolyMaterial } from './geo';
+import { enemyGeometry, ROLLER_BODY } from './models';
 
 export type Quality = 'low' | 'medium' | 'high';
 
@@ -46,6 +49,11 @@ export class GameRenderer {
   map: MapDef = mapDef('meadow');
   private wind = new Float32Array(2);
   private clock = 0;
+  /** Bestiary preview: an enemy model shown in the menu instead of the hero. */
+  private showcase: THREE.Mesh | null = null;
+  private showcaseGeos = new Map<string, THREE.BufferGeometry>();
+  private showcaseMat = lowPolyMaterial();
+  private showcaseId: string | null = null;
   quality: Quality = 'high';
   private menuT = 0;
 
@@ -132,6 +140,30 @@ export class GameRenderer {
     this.worldGroup = buildWorldMesh(t, map, this.quality === 'high');
     this.scene.add(this.worldGroup);
     this.worldKey = key;
+  }
+
+  /** Show an enemy (or null: the hero again) in the menu backdrop. */
+  showcaseEnemy(id: string | null): void {
+    this.showcaseId = id;
+    if (!this.showcase) {
+      this.showcase = new THREE.Mesh(new THREE.BufferGeometry(), this.showcaseMat);
+      this.showcase.castShadow = true;
+      this.scene.add(this.showcase);
+    }
+    const def = id ? ENEMIES.find((e) => e.id === id) : undefined;
+    this.showcase.visible = !!def;
+    this.playerView.root.visible = !def;
+    if (!def) return;
+    let g = this.showcaseGeos.get(def.id);
+    if (!g) {
+      g = enemyGeometry(def);
+      this.showcaseGeos.set(def.id, g);
+    }
+    this.showcase.geometry = g;
+    // big bosses are shown smaller so they fit beside the menu
+    const s = Math.min(1.6, 2.6 / def.height);
+    this.showcase.scale.setScalar(s);
+    this.showcase.userData.lift = def.roll ? ROLLER_BODY * s : 0;
   }
 
   setCharacter(def: CharacterDef): void {
@@ -233,6 +265,10 @@ export class GameRenderer {
     this.menuT += dt;
     const t = this.terrain;
     const y = t ? t.height(0, 0) : 0;
+    if (this.showcase && this.showcaseId) {
+      this.showcase.position.set(0, y + (this.showcase.userData.lift as number), 0);
+      this.showcase.rotation.y = Math.PI * 0.15 + this.menuT * 0.5;
+    }
     this.playerView.update(0, y, 0, y, Math.PI * 0.15 + Math.sin(this.menuT * 0.4) * 0.3, 0, true, false, 0, dt, this.menuT, false);
     const a = Math.sin(this.menuT * 0.12) * 0.5;
     this.camera.position.set(Math.sin(a) * 8, y + 2.6, Math.cos(a) * 8);

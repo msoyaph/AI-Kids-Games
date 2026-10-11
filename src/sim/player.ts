@@ -2,6 +2,7 @@ import { DT, PLAYER_RADIUS } from '../config/balance';
 import { Ev } from '../core/events';
 import { clamp } from '../core/math';
 import { moveSpeedMult } from './stats';
+import { HeroPassive, landingBonk } from './heroes';
 import { Surface } from './terrain';
 import { playerWind } from './weather';
 import type { SimInput, World } from './world';
@@ -255,11 +256,15 @@ export function updatePlayer(w: World, input: SimInput): void {
       p.onGround = true;
       p.landT = 0;
       if (impact > 4) w.events.push(Ev.Land, p.x, p.y, p.z, impact);
+      if (impact > 7 && p.passive === HeroPassive.LandingBonk) landingBonk(w, impact);
     }
   }
 
   if (p.onGround) {
-    if (p.sliding) w.stats.slideTime += DT;
+    if (p.sliding) {
+      w.stats.slideTime += DT;
+      w.stats.slideDistance += hs * DT;
+    }
   } else w.stats.airTime += DT;
 
   if (hs > 0.5) p.yaw = Math.atan2(p.vx, p.vz);

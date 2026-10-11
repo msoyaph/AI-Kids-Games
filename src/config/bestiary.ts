@@ -1,0 +1,20 @@
+/** Bestiary notes (Collection screen), keyed by enemy id. */
+export const BESTIARY: Record<string, string> = {
+  gloomling: 'The Gloom’s footsoldier. Waddles straight at you, horns first.',
+  gnatlet: 'A buzzing pest that weaves as it flies. Fragile, but it brings friends.',
+  boulderback: 'A walking rockpile with a mossy back. Slow, sturdy and hard to push around.',
+  spitcap: 'A grumpy mushroom that keeps its distance and spits spores.',
+  ramhorn: 'Lowers its head, glows red… then charges in a straight line. Step aside!',
+  blobbin: 'A wobbly blob that splits in two when popped.',
+  blobbit: 'Half a Blobbin, twice as cross.',
+  fusewick: 'Runs up, lights its fuse and goes BOOM. Keep moving.',
+  grumblecap: 'The great mushroom. Stomps when you get close and fills the air with spores.',
+  clockjaw: 'A wind-up beast that charges and slams out shockwaves — jump them!',
+  gloamRegent: 'Lord of the Gloom. Blinks around, rains slams and sends rings of shadow.',
+  frostling: 'A Gloomling with frost in its veins. Its touch chills you to a crawl.',
+  snowRoller: 'Starts small, rolls faster and bigger the longer it goes. Dodge, don’t block.',
+  icicap: 'A Spitcap that grew icicles. Its shards slow you down.',
+  grumblecapFrost: 'Grumblecap under a cap of snow, flinging ice shards instead of spores.',
+  clockjawFrost: 'Clockjaw with frozen gears — just as eager to charge.',
+  oldRime: 'The ancient Frost Stag. Antler charges, lines of ice spikes, and a blizzard when wounded.',
+};

@@ -46,6 +46,9 @@ export const BASE_STATS: PlayerStats = {
   revival: 0,
   crit: 0.05,
   reroll: 0,
+  /** Every run starts with one free level-up skip. */
+  skip: 1,
+  banish: 0,
 };
 
 export const CRIT_MULT = 2;

@@ -3,6 +3,7 @@ import { EVOLUTIONS, PASSIVES, PASSIVE_INDEX, passiveDef } from '../config/passi
 import { WEAPONS, weaponDef, weaponMaxLevel } from '../config/weapons';
 import { Ev } from '../core/events';
 import { healPlayer } from './combat';
+import { HeroPassive } from './heroes';
 import { recomputePlayerStats } from './stats';
 import { addWeapon, evolveWeapon, isMaxed, levelUpWeapon, refreshWeapon } from './weapons';
 import type { ChoiceKind, UpgradeChoice, WeaponInstance, World } from './world';
@@ -29,26 +30,27 @@ export function eligibleEvolutions(w: World): Array<{ wi: WeaponInstance; into: 
 /** Every upgrade that could currently be offered, with weights. */
 export function upgradeCandidates(w: World): Candidate[] {
   const c: Candidate[] = [];
+  const ban = w.banished;
   for (const wi of w.weapons) {
-    if (!wi.def.evolved && wi.level < weaponMaxLevel(wi.def)) c.push({ kind: 'weaponLevel', id: wi.def.id, level: wi.level + 1, weight: wi.def.weight * 1.25 });
+    if (!wi.def.evolved && wi.level < weaponMaxLevel(wi.def) && !ban.has(wi.def.id)) c.push({ kind: 'weaponLevel', id: wi.def.id, level: wi.level + 1, weight: wi.def.weight * 1.25 });
   }
   if (w.weapons.length < WEAPON_SLOTS) {
     const owned = new Set(w.weapons.map((x) => x.def.id));
     // evolved forms also block their base weapon from re-appearing
     for (const evo of EVOLUTIONS) if (owned.has(evo.into)) owned.add(evo.weapon);
     for (const def of WEAPONS) {
-      if (def.evolved || owned.has(def.id)) continue;
+      if (def.evolved || owned.has(def.id) || ban.has(def.id)) continue;
       if (def.unlock && !w.unlockedWeapons.has(def.id)) continue;
       c.push({ kind: 'newWeapon', id: def.id, level: 1, weight: def.weight * (w.weapons.length < 3 ? 1 : 0.6) });
     }
   }
   for (const pi of w.passives) {
-    if (pi.level < pi.def.maxLevel) c.push({ kind: 'passiveLevel', id: pi.def.id, level: pi.level + 1, weight: pi.def.weight });
+    if (pi.level < pi.def.maxLevel && !ban.has(pi.def.id)) c.push({ kind: 'passiveLevel', id: pi.def.id, level: pi.level + 1, weight: pi.def.weight });
   }
   if (w.passives.length < PASSIVE_SLOTS) {
     const owned = new Set(w.passives.map((x) => x.def.id));
     for (const def of PASSIVES) {
-      if (owned.has(def.id)) continue;
+      if (owned.has(def.id) || ban.has(def.id)) continue;
       c.push({ kind: 'newPassive', id: def.id, level: 1, weight: def.weight * 0.85 });
     }
   }
@@ -62,7 +64,9 @@ export function upgradeCandidates(w: World): Candidate[] {
  */
 export function rollChoices(w: World, forceCount?: number): UpgradeChoice[] {
   const luck = w.player.stats.luck;
-  const count = forceCount ?? (w.rng.next() < Math.min(0.6, luck * 0.5) ? 4 : 3);
+  // Nova's Wise Eyes: one more card, always
+  const base = w.player.passive === HeroPassive.WiseEyes ? 4 : 3;
+  const count = forceCount ?? (w.rng.next() < Math.min(0.6, luck * 0.5) ? base + 1 : base);
   const out: UpgradeChoice[] = [];
   for (const evo of eligibleEvolutions(w)) {
     if (out.length < count) out.push({ kind: 'evolve', id: evo.wi.def.id, level: 1 });
@@ -93,6 +97,7 @@ export function applyChoice(w: World, c: UpgradeChoice): void {
     case 'newPassive':
       if (w.passives.length < PASSIVE_SLOTS && !w.passives.some((p) => p.def.id === c.id)) {
         w.passives.push({ def: passiveDef(c.id), index: PASSIVE_INDEX[c.id], level: 1 });
+        w.stats.acquiredPassives.add(c.id);
         afterPassiveChange(w);
       }
       break;
@@ -138,6 +143,10 @@ export const choiceKey = (c: UpgradeChoice): string => `${c.kind}:${c.id}`;
 export function resolveLevelUp(w: World, choice: UpgradeChoice | null): boolean {
   w.stats.picks.push({ t: w.time, level: w.player.level - w.pendingLevels + 1, offered: w.choices.map(choiceKey), picked: choice ? choiceKey(choice) : null });
   if (choice) applyChoice(w, choice);
+  else if (w.choices.length > 0 && w.player.skips > 0) {
+    w.player.skips--;
+    w.stats.skips++;
+  }
   w.pendingLevels = Math.max(0, w.pendingLevels - 1);
   if (w.pendingLevels > 0) {
     beginLevelUp(w);
@@ -146,6 +155,29 @@ export function resolveLevelUp(w: World, choice: UpgradeChoice | null): boolean 
   w.choices = [];
   if (w.state === 'levelup') w.state = 'playing';
   return false;
+}
+
+/** Can this offer be banished (items only — not evolutions, heals or gold)? */
+export function canBanish(c: UpgradeChoice): boolean {
+  return c.kind === 'newWeapon' || c.kind === 'weaponLevel' || c.kind === 'newPassive' || c.kind === 'passiveLevel';
+}
+
+/**
+ * Banish the offer at `index`: that weapon / item is never offered again this run, and the
+ * card is replaced by a fresh pick. Returns false when no banish is left or it can't go.
+ */
+export function banish(w: World, index: number): boolean {
+  const p = w.player;
+  const c = w.choices[index];
+  if (!c || p.banishes <= 0 || !canBanish(c)) return false;
+  p.banishes--;
+  w.stats.banishes++;
+  w.banished.add(c.id);
+  const offered = new Set(w.choices.map(choiceKey));
+  const pool = upgradeCandidates(w).filter((x) => !offered.has(`${x.kind}:${x.id}`));
+  const k = w.rng.weightedIndex(pool.map((x) => x.weight));
+  w.choices[index] = k >= 0 ? { kind: pool[k].kind, id: pool[k].id, level: pool[k].level } : offered.has('heal:heal') ? { kind: 'gold', id: 'gold', level: 0 } : { kind: 'heal', id: 'heal', level: 0 };
+  return true;
 }
 
 export function reroll(w: World): boolean {

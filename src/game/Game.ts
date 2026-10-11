@@ -1,5 +1,7 @@
 import { DT } from '../config/balance';
 import { bannerText, isMapId, mapDef, type MapId } from '../config/maps';
+import { isDifficultyId, type DifficultyId } from '../config/difficulty';
+import { dailySpec, utcDate } from '../meta/daily';
 import { BANNER } from '../config/waves';
 import { Ev } from '../core/events';
 import { randomSeed } from '../core/rng';
@@ -17,7 +19,7 @@ import { characterDef } from '../config/characters';
 import { newRun } from '../sim/run';
 import { closeChest, step } from '../sim/sim';
 import { Terrain } from '../sim/terrain';
-import { reroll, resolveLevelUp } from '../sim/upgrades';
+import { banish, reroll, resolveLevelUp } from '../sim/upgrades';
 import { emptyInput, type UpgradeChoice, type World } from '../sim/world';
 import { h } from '../ui/dom';
 import { Menus, rewardText, type GameApi } from '../ui/menus';
@@ -91,6 +93,8 @@ export class Game implements GameApi {
   ) {
     this.store = new SafeLocalStore();
     this.save = new SaveManager(this.store);
+    // unlocks added since the save was written (e.g. heroes earned by past progress) apply now
+    if (checkAchievements(this.save.data).length > 0) this.save.save();
     this.renderer = new GameRenderer(canvas, overlay, this.save.data.settings.quality);
     this.input = new InputManager(canvas);
     this.ui = new UI(uiRoot);
@@ -148,6 +152,7 @@ export class Game implements GameApi {
         result,
         input: this.padFrames > this.kbFrames ? 'gamepad' : 'kbm',
         quality: this.save.data.settings.quality,
+        difficulty: w.tier > 0 ? `${w.difficulty}${w.tier}` : w.difficulty,
       }),
     );
   }
@@ -205,6 +210,10 @@ export class Game implements GameApi {
     if (mapId && !this.world) this.showMenuMap(mapId);
   }
 
+  showcaseEnemy(id: string | null): void {
+    this.renderer.showcaseEnemy(id);
+  }
+
   /** Menu backdrop on a map (each built once, then cached). */
   private showMenuMap(id: string): void {
     const map = mapDef(id);
@@ -231,7 +240,10 @@ export class Game implements GameApi {
   /** Audio volume hook (set in main). */
   onSettings: (() => void) | null = null;
 
-  startRun(characterId: string, mapId?: string, seed = randomSeed()): void {
+  /** The run being played is today's daily (its UTC date), else null. */
+  private dailyDate: string | null = null;
+
+  startRun(characterId: string, mapId?: string, opts: { seed?: number; difficulty?: DifficultyId; tier?: number; daily?: string } = {}): void {
     const params = new URLSearchParams(location.search);
     const stress = Number(params.get('stress') || 0);
     const fixedSeed = params.get('seed');
@@ -240,17 +252,26 @@ export class Game implements GameApi {
     // ?map=rimewood (testing) > the requested map > the last one played
     const want = urlParam('map') ?? mapId ?? d.lastMap;
     const map: MapId = isMapId(want) ? want : 'meadow';
+    const daily = opts.daily ?? null;
+    const wantDiff = urlParam('difficulty') ?? opts.difficulty ?? d.lastDifficulty;
+    const difficulty: DifficultyId = daily ? 'normal' : isDifficultyId(wantDiff) ? wantDiff : 'normal';
+    this.dailyDate = daily;
     this.world = newRun({
-      seed: fixedSeed ? Number(fixedSeed) : seed,
+      seed: fixedSeed ? Number(fixedSeed) : (opts.seed ?? randomSeed()),
       characterId,
       map,
+      difficulty,
+      tier: difficulty === 'hard' ? Math.min(opts.tier ?? d.lastTier, d.unlockedTier) : 0,
+      daily: !!daily,
       stress,
-      meta: metaBonuses(d),
-      unlockedWeapons: d.unlockedWeapons,
+      // the daily is the same for everyone: no shop bonuses or unlocked extras
+      meta: daily ? undefined : metaBonuses(d),
+      unlockedWeapons: daily ? [] : d.unlockedWeapons,
       tuning: overrides,
       tuned: !!this.tuningPanel?.isTuned,
     });
     const w = this.world;
+    this.renderer.showcaseEnemy(null);
     this.renderer.setTerrain(w.terrain, w.map);
     this.renderer.setCharacter(w.player.character);
     this.renderer.rig.yaw = 0;
@@ -269,6 +290,12 @@ export class Game implements GameApi {
     this.onMode?.('run', w);
   }
 
+  /** Today's daily run (UTC date → seed, map, hero; Normal, no shop bonuses). */
+  startDaily(): void {
+    const spec = dailySpec(utcDate());
+    this.startRun(spec.hero, spec.map, { seed: spec.seed, daily: spec.date });
+  }
+
   resume(): void {
     if (!this.paused) return;
     this.paused = false;
@@ -285,7 +312,7 @@ export class Game implements GameApi {
       w.state = w.director.victoryT > 0 ? 'won' : 'dead';
       this.recordPlaytest(w, w.state === 'won' ? 'won' : 'quit');
       if (!w.options.tuned) {
-        applyRunResult(this.save.data, summarize(w));
+        applyRunResult(this.save.data, summarize(w, this.dailyDate));
         this.save.save();
       }
     }
@@ -373,13 +400,17 @@ export class Game implements GameApi {
   private finishRun(w: World): void {
     this.setGameplayInput(false);
     this.ui.hud.show(false);
-    const summary = summarize(w);
+    const summary = summarize(w, this.dailyDate);
     this.recordPlaytest(w, w.state === 'won' ? 'won' : 'dead');
     // tuned runs (?tune=1 with changed values) never touch the save
     const outcome = w.options.tuned ? unrecordedOutcome() : applyRunResult(this.save.data, summary);
     if (!w.options.tuned) this.save.save();
     this.onMode?.('end', w);
-    this.menus.gameOver(summary, outcome, () => this.startRun(summary.characterId, summary.mapId), w.options.tuned ? 'Tuned run — not recorded (gold, records and achievements unchanged).' : undefined);
+    const daily = this.dailyDate;
+    const retry = daily
+      ? () => this.startRun(summary.characterId, summary.mapId, { seed: w.seed, daily })
+      : () => this.startRun(summary.characterId, summary.mapId, { difficulty: summary.difficulty, tier: summary.tier });
+    this.menus.gameOver(summary, outcome, retry, w.options.tuned ? 'Tuned run — not recorded (gold, records and achievements unchanged).' : undefined);
   }
 
   private showLevelUp(w: World): void {
@@ -394,18 +425,29 @@ export class Game implements GameApi {
         this.setGameplayInput(true);
       }
     };
-    this.ui.showLevelUp(w, pick, () => {
-      if (reroll(w)) {
-        this.sound('click');
-        this.showLevelUp(w);
-      } else this.sound('error');
-    });
+    this.ui.showLevelUp(
+      w,
+      pick,
+      () => {
+        if (reroll(w)) {
+          this.sound('click');
+          this.showLevelUp(w);
+        } else this.sound('error');
+      },
+      (index) => {
+        if (banish(w, index)) {
+          this.sound('back');
+          this.showLevelUp(w);
+          this.liveAchievements(w);
+        } else this.sound('error');
+      },
+    );
   }
 
   /** Achievements can pop mid-run (e.g. kill counts); rewards apply immediately. */
   private liveAchievements(w: World): void {
     if (w.options.tuned) return;
-    const earned = checkAchievements(this.save.data, summarize(w));
+    const earned = checkAchievements(this.save.data, summarize(w, this.dailyDate));
     if (earned.length === 0) return;
     this.sound('achievement');
     for (const a of earned) {

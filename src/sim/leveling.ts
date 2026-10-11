@@ -14,7 +14,7 @@ export function gainXp(w: World, amount: number): void {
     p.xpNext = xpToNextWith(p.level, w.tuning.xp);
     w.pendingLevels++;
     // a small pick-me-up on every level
-    p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.maxHp * w.tuning.combat.levelHeal);
+    p.hp = Math.min(p.stats.maxHp, p.hp + p.stats.maxHp * w.tuning.combat.levelHeal * w.mods.heal);
     w.events.push(Ev.LevelUp, p.x, p.y, p.z, p.level);
   }
 }

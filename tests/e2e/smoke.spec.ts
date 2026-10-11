@@ -146,11 +146,26 @@ test('?playtest=1 records a run on the device and offers export', async ({ page 
 test('menus open and close without errors', async ({ page }) => {
   const problems = watchConsole(page);
   await page.goto('/');
-  for (const name of ['Workshop', 'Records', 'How to play', 'Settings']) {
+  for (const name of ['Workshop', 'Collection', 'Records', 'How to play', 'Settings']) {
     await page.getByRole('button', { name, exact: true }).click();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
   }
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('the daily run starts the day’s hero and map with no shop bonuses', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: /Daily run/ }).click();
+  await expect(page.locator('.hud')).toBeVisible();
+  await babysit(page, 6);
+  const info = await page.evaluate(() => {
+    const g = (window as unknown as { __theabonk: { world: { options: { daily: boolean }; difficulty: string; player: { character: { id: string } }; map: { id: string } } } }).__theabonk;
+    return { daily: g.world.options.daily, difficulty: g.world.difficulty, hero: g.world.player.character.id, map: g.world.map.id };
+  });
+  expect(info.daily).toBe(true);
+  expect(info.difficulty).toBe('normal');
   expect(problems, problems.join('\n')).toEqual([]);
 });
 

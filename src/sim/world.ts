@@ -2,13 +2,18 @@ import { BASE_STATS, CAPS, MAP_HALF } from '../config/balance';
 import { mergeTuning, TUNING_DEFAULTS, xpToNextWith, type Tuning, type TuningOverrides } from '../config/tuning';
 import { characterDef } from '../config/characters';
 import { mapDef, type MapDef, type MapId } from '../config/maps';
+import { runMods, type DifficultyId, type RunMods } from '../config/difficulty';
 import type { WeaponConfig } from '../config/weapons';
 import type { CharacterDef, PassiveDef, PlayerStats, ShrineKind, WeaponStats } from '../config/types';
 import { EventBuffer } from '../core/events';
 import { Rng } from '../core/rng';
 import { EnemyPool, EnemyProjectilePool, GemPool, HazardPool, PickupPool, ProjectilePool } from './pools';
 import { BOSS_ATTACKS, SOURCE_SLOTS } from './sources';
+import { ENEMIES } from '../config/enemies';
+
+const ENEMY_COUNT = ENEMIES.length;
 import { FlowField } from './flowField';
+import { passiveCode } from './heroes';
 import { SpatialHash } from './spatialHash';
 import { Terrain } from './terrain';
 
@@ -84,6 +89,9 @@ export interface Player {
   alive: boolean;
   revivals: number;
   rerolls: number;
+  /** Level-up skips / banishes left this run. */
+  skips: number;
+  banishes: number;
   /** Final stats (base + passives + buffs). */
   stats: PlayerStats;
   /** Character + permanent shop bonuses. */
@@ -95,6 +103,10 @@ export interface Player {
   hpMaxCache: number;
   /** Seconds left chilled (slowed) by frost attacks. */
   chill: number;
+  /** Signature passive code (HeroPassive). */
+  passive: number;
+  /** Ottie's slide is bowling Gloom over this tick (their touch can't hurt). */
+  bowling: boolean;
 }
 
 export type WorldState = 'playing' | 'levelup' | 'chest' | 'dead' | 'won';
@@ -162,6 +174,16 @@ export interface RunStats {
   jumps: number;
   picks: PickRecord[];
   chests: Array<{ t: number; rewards: string[] }>;
+  /** Level-up skips and banishes used. */
+  skips: number;
+  banishes: number;
+  /** Ground distance covered while sliding (units ≈ metres). */
+  slideDistance: number;
+  /** Kills per enemy type (bestiary). */
+  killsByType: Uint32Array;
+  /** Weapons (incl. evolutions) / items held at any point this run (collection). */
+  acquiredWeapons: Set<string>;
+  acquiredPassives: Set<string>;
 }
 
 export interface DirectorState {
@@ -205,6 +227,11 @@ export interface WorldOptions {
   characterId: string;
   /** Map to play (default Gloam Meadow). */
   map?: MapId;
+  difficulty?: DifficultyId;
+  /** Hard only: tier 1–5. */
+  tier?: number;
+  /** Daily run (recorded separately; shop bonuses are left out by the caller). */
+  daily?: boolean;
   /** Permanent bonuses from the shop (added to base stats). */
   meta?: Partial<PlayerStats>;
   unlockedWeapons?: string[];
@@ -227,6 +254,12 @@ export interface World {
   hazardRng: Rng;
   map: MapDef;
   weather: Weather;
+  difficulty: DifficultyId;
+  tier: number;
+  /** Difficulty / tier multipliers for this run. */
+  mods: RunMods;
+  /** Upgrade ids banished this run (never offered again). */
+  banished: Set<string>;
   terrain: Terrain;
   time: number;
   tick: number;
@@ -252,7 +285,7 @@ export interface World {
   director: DirectorState;
   stats: RunStats;
   unlockedWeapons: Set<string>;
-  options: { stress: number; god: boolean; tuned: boolean };
+  options: { stress: number; god: boolean; tuned: boolean; daily: boolean };
   /** This run's tuning (a private copy — the live panel edits it in place). */
   tuning: Tuning;
   /** Shared query scratch buffers (never hold across calls). */
@@ -273,11 +306,15 @@ export function createWorld(opts: WorldOptions): World {
   const tuning = mergeTuning(TUNING_DEFAULTS, opts.tuning);
   const map = mapDef(opts.map ?? 'meadow');
   const terrain = new Terrain(opts.seed, map.terrain);
+  const difficulty = opts.difficulty ?? 'normal';
+  const tier = difficulty === 'hard' ? Math.max(0, Math.min(5, Math.floor(opts.tier ?? 0))) : 0;
+  const mods = runMods(difficulty, tier);
   const character = characterDef(opts.characterId);
 
   const baseStats = makeStats();
   for (const [k, v] of Object.entries(character.stats)) baseStats[k as keyof PlayerStats] += v as number;
   if (opts.meta) for (const [k, v] of Object.entries(opts.meta)) baseStats[k as keyof PlayerStats] += v as number;
+  baseStats.maxHp *= mods.playerHp;
 
   const y = terrain.height(0, 0);
   const player: Player = {
@@ -304,7 +341,9 @@ export function createWorld(opts: WorldOptions): World {
     xpNext: xpToNextWith(1, tuning.xp),
     alive: true,
     revivals: baseStats.revival,
-    rerolls: baseStats.reroll,
+    rerolls: baseStats.reroll + mods.rerolls,
+    skips: baseStats.skip + mods.skips,
+    banishes: baseStats.banish + mods.banishes,
     stats: { ...baseStats },
     baseStats,
     buffs: { might: 0, haste: 0, ward: 0, fortune: 0 },
@@ -312,6 +351,8 @@ export function createWorld(opts: WorldOptions): World {
     hurtFlash: 0,
     hpMaxCache: baseStats.maxHp,
     chill: 0,
+    passive: passiveCode(character.passive.id),
+    bowling: false,
   };
 
   const stress = opts.stress ?? 0;
@@ -320,6 +361,10 @@ export function createWorld(opts: WorldOptions): World {
     rng,
     hazardRng: new Rng((opts.seed ^ 0x2c1b3c6d) >>> 0),
     map,
+    difficulty,
+    tier,
+    mods,
+    banished: new Set(),
     weather: {
       nextIcicle: map.hazards.icicles?.start ?? Infinity,
       nextGust: map.hazards.gusts?.start ?? Infinity,
@@ -378,9 +423,15 @@ export function createWorld(opts: WorldOptions): World {
       jumps: 0,
       picks: [],
       chests: [],
+      skips: 0,
+      banishes: 0,
+      slideDistance: 0,
+      killsByType: new Uint32Array(ENEMY_COUNT),
+      acquiredWeapons: new Set(),
+      acquiredPassives: new Set(),
     },
     unlockedWeapons: new Set(opts.unlockedWeapons ?? []),
-    options: { stress, god: !!opts.god || stress > 0, tuned: !!opts.tuned },
+    options: { stress, god: !!opts.god || stress > 0, tuned: !!opts.tuned, daily: !!opts.daily },
     tuning,
     scratch: new Int32Array(2048),
     scratch2: new Int32Array(512),

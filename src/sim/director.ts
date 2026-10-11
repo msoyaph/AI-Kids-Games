@@ -109,7 +109,7 @@ function runEvent(w: World, ev: WaveEvent): void {
       for (let k = 0; k < ev.count; k++) spawnOffscreen(w, type);
       break;
     case 'elite':
-      for (let k = 0; k < ev.count; k++) {
+      for (let k = 0; k < ev.count + w.mods.extraElites; k++) {
         ringPoint(w, 34, 42, 0, 0, tmp);
         spawnEnemy(w, type, tmp[0], tmp[1], true);
       }
@@ -152,8 +152,9 @@ export function updateDirector(w: World): void {
 
   const alive = aliveRegular(w);
   const sp = w.tuning.spawns;
-  if (alive < seg.maxAlive * sp.maxAliveMult) {
-    const base = seg.rate * sp.rateMult;
+  const mods = w.mods;
+  if (alive < seg.maxAlive * sp.maxAliveMult * mods.maxAlive) {
+    const base = seg.rate * sp.rateMult * mods.spawnRate;
     const rate = alive < seg.minAlive * sp.minAliveMult ? base * 3 : base;
     d.spawnAcc += rate * DT;
     let budget = 20;

@@ -93,7 +93,8 @@ function slam(w: World, x: number, z: number, r: number, damage: number, fuse: n
 export function updateBoss(w: World, i: number, dist: number, dx: number, dz: number, out: Float32Array): void {
   const e = w.enemies;
   const def = ENEMIES[e.type[i]];
-  const hpFrac = e.hp[i] / e.maxHp[i];
+  // Hard tier 5: bosses fight as if already in their last phase
+  const hpFrac = w.mods.bossEnraged ? Math.min(0.3, e.hp[i] / e.maxHp[i]) : e.hp[i] / e.maxHp[i];
   const speed = e.speed[i] * (1 - e.slowAmt[i] * 0.5);
   out[0] = dx * speed;
   out[1] = dz * speed;

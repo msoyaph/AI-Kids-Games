@@ -15,9 +15,9 @@ import type { World } from '../../src/sim/world';
  */
 const GOLDEN: Array<{ kind: 'sim' | 'bot'; hero: string; seed: number; hash: string }> = [
   // phase 3: flow-field pathing, walls, reachable-only spawns (intentional sim change)
-  { kind: 'sim', hero: 'thea', seed: 4242, hash: '96c495cf' },
+  { kind: 'sim', hero: 'thea', seed: 4242, hash: 'd885da25' },
   { kind: 'sim', hero: 'brindle', seed: 9001, hash: 'bf4db57b' },
-  { kind: 'bot', hero: 'thea', seed: 4242, hash: '8b5bea3b' },
+  { kind: 'bot', hero: 'thea', seed: 4242, hash: '5be157e5' },
   { kind: 'bot', hero: 'brindle', seed: 9001, hash: 'b2cff5fa' },
 ];
 

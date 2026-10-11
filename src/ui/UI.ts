@@ -1,8 +1,10 @@
 import type { UiAction } from '../input/InputManager';
+import { canBanish } from '../sim/upgrades';
 import type { UpgradeChoice, World } from '../sim/world';
 import { choiceCard, describeChoice } from './cards';
 import { isTypingTarget } from '../core/env';
 import { h, img } from './dom';
+import { iconUrl } from './icons';
 import { FocusNav } from './focus';
 import { Hud } from './Hud';
 
@@ -89,25 +91,37 @@ export class UI {
 
   // ───────────────────────────── in-run screens ─────────────────────────────
 
-  showLevelUp(w: World, pick: (c: UpgradeChoice | null) => void, reroll: () => void): void {
-    const cards = w.choices.map((c, i) => choiceCard(c, i, () => pick(c)));
+  /**
+   * Level-up picker. Rerolls, skips and banishes are limited charges (shop ranks, 1 free
+   * skip per run, +1 each on Relaxed); their buttons show what is left.
+   */
+  showLevelUp(w: World, pick: (c: UpgradeChoice | null) => void, reroll: () => void, banish: (index: number) => void): void {
+    const p = w.player;
+    const bn = p.banishes;
+    const cards = w.choices.map((c, i) => {
+      const card = choiceCard(c, i, () => pick(c));
+      if (bn <= 0 || !canBanish(c)) return h('div', { class: 'card-wrap' }, card);
+      return h('div', { class: 'card-wrap' }, card, h('button', { class: 'btn tiny ghost banish', onclick: () => banish(i), title: 'Never offer this again this run' }, `Banish (${bn})`));
+    });
     const hot: Record<string, () => void> = {};
     w.choices.forEach((c, i) => (hot[String(i + 1)] = () => pick(c)));
-    const rr = w.player.rerolls;
+    const rr = p.rerolls;
+    const sk = p.skips;
     hot.r = () => rr > 0 && reroll();
+    // no hotkey for skip: S is a movement key and may still be held when the picker opens
     const el = h(
       'div',
       { class: 'modal' },
       h('div', { class: 'title' }, 'Level up!'),
-      h('div', { class: 'subtitle' }, `Level ${w.player.level - w.pendingLevels + 1} · choose a boon`),
+      h('div', { class: 'subtitle' }, `Level ${p.level - w.pendingLevels + 1} · choose a boon`),
       h('div', { class: 'cards' }, ...cards),
       h(
         'div',
         { class: 'row' },
-        h('button', { class: 'btn small', onclick: reroll, disabled: rr <= 0 }, `Reroll (${rr})`),
-        h('button', { class: 'btn small ghost', onclick: () => pick(null) }, 'Skip'),
+        h('button', { class: 'btn small', onclick: reroll, disabled: rr <= 0 }, img(iconUrl('reroll', 'misc'), 'mini-icon'), `Reroll (${rr})`),
+        h('button', { class: 'btn small ghost', onclick: () => pick(null), disabled: sk <= 0 }, img(iconUrl('skip', 'misc'), 'mini-icon'), `Skip (${sk})`),
       ),
-      h('div', { class: 'hint' }, 'Press 1–4 or click a card'),
+      h('div', { class: 'hint' }, `Press 1–${w.choices.length} or click a card · R to reroll`),
     );
     this.show('levelup', el, null, hot, true);
   }

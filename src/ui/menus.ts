@@ -2,25 +2,33 @@ import { ACHIEVEMENTS, type AchievementDef } from '../config/achievements';
 import { CHARACTERS } from '../config/characters';
 import { ENEMIES } from '../config/enemies';
 import { MAPS, mapDef } from '../config/maps';
+import { DIFFICULTIES, difficultyDef, difficultyLabel, TIERS, type DifficultyId } from '../config/difficulty';
+import { dailySpec, utcDate } from '../meta/daily';
 import { SHOP } from '../config/meta';
-import { passiveDef } from '../config/passives';
+import { EVOLUTIONS, PASSIVES, passiveDef } from '../config/passives';
+import { BESTIARY } from '../config/bestiary';
+import { WEAPONS } from '../config/weapons';
 import type { CharacterDef } from '../config/types';
 import { weaponDef } from '../config/weapons';
 import { formatTime } from '../core/math';
-import { achievementContext, buy, nextCost, refundAll, shopRank, totalSpent, type RunOutcome, type RunSummary } from '../meta/progression';
+import { achievementContext, buy, COLLECTABLE, collectedCount, nextCost, refundAll, shopRank, totalSpent, type RunOutcome, type RunSummary } from '../meta/progression';
 import type { SaveManager, Settings } from '../meta/save';
 import type { World } from '../sim/world';
 import { h, img, setText } from './dom';
-import { iconUrl, portraitUrl } from './icons';
+import { enemyIconUrl, iconUrl, portraitUrl } from './icons';
 import type { UI } from './UI';
 
 export interface GameApi {
   ui: UI;
   save: SaveManager;
-  startRun(characterId: string, mapId?: string): void;
+  startRun(characterId: string, mapId?: string, opts?: { difficulty?: 'relaxed' | 'normal' | 'hard'; tier?: number }): void;
+  /** Today's daily run. */
+  startDaily(): void;
   applySettings(): void;
   /** Show a hero in the menu backdrop (and switch the backdrop to a map). */
   showcase(characterId: string, mapId?: string): void;
+  /** Show an enemy in the menu backdrop instead of the hero (null = back to the hero). */
+  showcaseEnemy(id: string | null): void;
   quitToTitle(): void;
   /** Drop the finished run so menus get the idle backdrop again. */
   clearRun(): void;
@@ -46,7 +54,9 @@ const SHOP_ICON: Record<string, [string, 'passive' | 'misc']> = {
   growth: ['scholarsBookmark', 'passive'],
   greed: ['gold', 'misc'],
   luck: ['cloverButton', 'passive'],
-  reroll: ['velocityFeather', 'passive'],
+  reroll: ['reroll', 'misc'],
+  skip: ['skip', 'misc'],
+  banish: ['banish', 'misc'],
   revival: ['heal', 'misc'],
   amount: ['echoShell', 'passive'],
 };
@@ -73,6 +83,8 @@ function statLine(def: CharacterDef): string {
 export class Menus {
   private selected = 'thea';
   private selectedMap = 'meadow';
+  private selectedDifficulty: DifficultyId = 'normal';
+  private selectedTier = 0;
 
   constructor(private g: GameApi) {}
 
@@ -95,7 +107,9 @@ export class Menus {
         'div',
         { class: 'menu-col' },
         h('button', { class: 'btn primary big', onclick: go(() => this.characterSelect()), 'data-autofocus': true }, 'Play'),
+        this.dailyButton(),
         h('button', { class: 'btn', onclick: go(() => this.shop()) }, 'Workshop'),
+        h('button', { class: 'btn', onclick: go(() => this.collection()) }, 'Collection'),
         h('button', { class: 'btn', onclick: go(() => this.records()) }, 'Records'),
         h('button', { class: 'btn', onclick: go(() => this.howToPlay()) }, 'How to play'),
         h('button', { class: 'btn', onclick: go(() => this.settings(() => this.title())) }, 'Settings'),
@@ -106,6 +120,26 @@ export class Menus {
       this.playtestRow(() => this.title()),
     );
     this.g.ui.show('title', el);
+  }
+
+  /** Title-screen button for today's daily run (hero + map + your best today). */
+  private dailyButton(): HTMLElement {
+    const d = this.g.save.data;
+    const spec = dailySpec(utcDate());
+    const hero = CHARACTERS.find((c) => c.id === spec.hero)!;
+    const rec = d.daily.find((r) => r.date === spec.date);
+    return h(
+      'button',
+      {
+        class: 'btn daily-btn',
+        onclick: () => {
+          this.g.sound('open');
+          this.g.startDaily();
+        },
+      },
+      img(iconUrl('daily', 'misc'), 'mini-icon'),
+      h('span', null, h('div', null, 'Daily run'), h('div', { class: 'daily-sub' }, `${hero.name} · ${mapDef(spec.map).name}${rec ? ` · best ${formatTime(rec.time)}${rec.won ? ' ★' : ''}` : ''}`)),
+    );
   }
 
   // ───────────────────────────── characters ─────────────────────────────
@@ -140,6 +174,44 @@ export class Menus {
       return tab;
     });
     setText(mapNote, mapDef(this.selectedMap).tagline);
+
+    // difficulty (+ Hard tiers once Hard has been won)
+    this.selectedDifficulty = d.lastDifficulty;
+    this.selectedTier = Math.min(d.lastTier, d.unlockedTier);
+    const diffNote = h('div', { class: 'map-note' });
+    const tierRow = h('div', { class: 'tier-row' });
+    const diffTabs: HTMLElement[] = [];
+    const renderDiff = (): void => {
+      diffTabs.forEach((t, k) => t.classList.toggle('sel', DIFFICULTIES[k].id === this.selectedDifficulty));
+      const dd = difficultyDef(this.selectedDifficulty);
+      setText(diffNote, dd.id === 'hard' && this.selectedTier > 0 ? `${dd.description} ${TIERS.slice(0, this.selectedTier).map((t) => t.description).join(' ')}` : dd.description);
+      tierRow.innerHTML = '';
+      tierRow.classList.toggle('hidden', this.selectedDifficulty !== 'hard');
+      if (this.selectedDifficulty !== 'hard') return;
+      if (d.unlockedTier === 0) {
+        tierRow.append(h('span', { class: 'tier-lock' }, 'Win on Hard to unlock tiers 1–5'));
+        return;
+      }
+      for (let t = 0; t <= d.unlockedTier; t++) {
+        const b = h('button', { class: `tier-tab${t === this.selectedTier ? ' sel' : ''}` }, t === 0 ? 'Hard' : `Tier ${t}`);
+        b.addEventListener('click', () => {
+          this.g.sound('click');
+          this.selectedTier = t;
+          renderDiff();
+        });
+        tierRow.append(b);
+      }
+    };
+    for (const dd of DIFFICULTIES) {
+      const b = h('button', { class: `diff-tab diff-${dd.id}` }, dd.name);
+      b.addEventListener('click', () => {
+        this.g.sound('click');
+        this.selectedDifficulty = dd.id;
+        renderDiff();
+      });
+      diffTabs.push(b);
+    }
+    renderDiff();
     const details = h('div', { class: 'char-details panel' });
     const startBtn = h('button', { class: 'btn primary big', onclick: () => this.begin() }, 'Start run');
     const render = (): void => {
@@ -152,6 +224,7 @@ export class Menus {
         h('div', { class: 'char-name' }, def.name, h('span', { class: 'char-title' }, ` ${def.title}`)),
         h('div', { class: 'char-desc' }, unlocked ? def.description : `Locked — ${ACHIEVEMENTS.find((a) => a.id === def.unlock)?.description ?? ''}`),
         unlocked ? h('div', { class: 'char-weapon' }, img(iconUrl(w.id, 'weapon'), 'mini-icon big'), h('div', null, h('div', { class: 'card-tag' }, 'Starting weapon'), h('div', { class: 'card-name' }, w.name), h('div', { class: 'small-desc' }, w.description))) : null,
+        unlocked ? h('div', { class: 'char-passive' }, h('b', null, def.passive.name), ` — ${def.passive.description}`) : null,
         unlocked ? h('div', { class: 'char-stats' }, statLine(def) || 'Balanced') : null,
         best ? h('div', { class: 'char-best' }, `Best: ${formatTime(best)}`) : null,
       ];
@@ -197,6 +270,8 @@ export class Menus {
       h('div', { class: 'title small' }, 'Choose your hero'),
       h('div', { class: 'map-row' }, ...mapTabs),
       mapNote,
+      h('div', { class: 'diff-row' }, ...diffTabs, tierRow),
+      diffNote,
       h('div', { class: 'char-row' }, ...cards),
       details,
       h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: back }, 'Back'), startBtn),
@@ -229,9 +304,11 @@ export class Menus {
     }
     d.lastCharacter = this.selected;
     if (d.unlockedMaps.includes(this.selectedMap)) d.lastMap = this.selectedMap;
+    d.lastDifficulty = this.selectedDifficulty;
+    d.lastTier = this.selectedDifficulty === 'hard' ? Math.min(this.selectedTier, d.unlockedTier) : 0;
     this.g.save.save();
     this.g.sound('open');
-    this.g.startRun(this.selected, d.lastMap);
+    this.g.startRun(this.selected, d.lastMap, { difficulty: d.lastDifficulty, tier: d.lastTier });
   }
 
   // ───────────────────────────── shop ─────────────────────────────
@@ -316,7 +393,12 @@ export class Menus {
       ['Shrines broken', String(s.shrinesBroken)],
       ['Top speed', s.topSpeed.toFixed(1)],
       ['Gold earned', s.totalGold.toLocaleString()],
+      ['Distance slid', `${(s.slideDistance / 1000).toFixed(2)} km`],
+      ...MAPS.map((m): [string, string] => [`Best in ${m.name}`, s.bestTimeByMap[m.id] ? formatTime(s.bestTimeByMap[m.id]) : '—']),
+      ['Wins on Hard', String(s.winsByDifficulty.hard ?? 0)],
+      ['Highest Hard tier won', s.bestHardTier > 0 ? `Tier ${s.bestHardTier}` : s.bestHardTier === 0 ? 'Hard' : '—'],
     ];
+    const dailyRows = d.daily.slice(0, 7).map((r) => h('div', { class: 'stat-row' }, h('span', null, `${r.date} · ${CHARACTERS.find((c) => c.id === r.hero)?.name ?? r.hero}`), h('b', null, `${formatTime(r.time)}${r.won ? ' ★' : ''}`)));
     const ach = ACHIEVEMENTS.map((a) => {
       const done = d.achievements.includes(a.id);
       const p = done ? 1 : a.progress(ctx);
@@ -340,12 +422,112 @@ export class Menus {
       h(
         'div',
         { class: 'records-cols' },
-        h('div', { class: 'panel stats-panel' }, h('div', { class: 'panel-title' }, 'Lifetime'), ...statRows.map(([k, v]) => h('div', { class: 'stat-row' }, h('span', null, k), h('b', null, v)))),
+        h(
+          'div',
+          { class: 'panel stats-panel' },
+          h('div', { class: 'panel-title' }, 'Lifetime'),
+          ...statRows.map(([k, v]) => h('div', { class: 'stat-row' }, h('span', null, k), h('b', null, v))),
+          dailyRows.length ? h('div', { class: 'panel-title' }, 'Daily runs') : null,
+          ...dailyRows,
+        ),
         h('div', { class: 'panel ach-panel' }, h('div', { class: 'panel-title' }, `Achievements ${d.achievements.length}/${ACHIEVEMENTS.length}`), h('div', { class: 'ach-list' }, ...ach)),
       ),
       h('button', { class: 'btn ghost', onclick: back, 'data-autofocus': true }, 'Back'),
     );
     this.g.ui.show('records', el, back);
+  }
+
+  // ───────────────────────────── collection ─────────────────────────────
+
+  collection(tab: 'bestiary' | 'weapons' | 'items' | 'evolutions' = 'bestiary'): void {
+    const d = this.g.save.data;
+    const col = d.collection;
+    const details = h('div', { class: 'panel col-details' });
+    const grid = h('div', { class: 'col-grid' });
+    const tabs = h('div', { class: 'col-tabs' });
+    const total = COLLECTABLE.enemies.length + COLLECTABLE.weapons.length + COLLECTABLE.passives.length;
+    const leave = (): void => {
+      this.g.sound('back');
+      this.g.showcaseEnemy(null);
+      this.title();
+    };
+    const evolvedIds = new Set(EVOLUTIONS.map((e) => e.into));
+    const show = (t: typeof tab): void => {
+      tab = t;
+      grid.innerHTML = '';
+      details.innerHTML = '';
+      this.g.showcaseEnemy(null);
+      tabs.querySelectorAll('.col-tab').forEach((b) => b.classList.toggle('sel', (b as HTMLElement).dataset.tab === t));
+      const tile = (icon: string, name: string, found: boolean, onSelect: () => void): HTMLElement => {
+        const b = h('button', { class: `col-tile${found ? '' : ' locked'}` }, img(icon, 'col-icon'), h('div', { class: 'col-name' }, found ? name : '???'));
+        b.addEventListener('focus', onSelect);
+        b.addEventListener('click', onSelect);
+        return b;
+      };
+      const detail = (...parts: Array<HTMLElement | string | null>): void => {
+        details.innerHTML = '';
+        for (const p of parts) if (p) details.append(typeof p === 'string' ? h('div', { class: 'small-desc' }, p) : p);
+      };
+      if (t === 'bestiary') {
+        for (const e of ENEMIES) {
+          const kills = col.kills[e.id] ?? 0;
+          const found = kills > 0;
+          grid.append(
+            tile(enemyIconUrl(e.id, e.color, e.behavior === 'boss', found), e.name, found, () => {
+              this.g.showcaseEnemy(found ? e.id : null);
+              detail(h('div', { class: 'char-name' }, found ? e.name : '???'), found ? BESTIARY[e.id] ?? '' : 'Defeat one to learn more.', found ? h('div', { class: 'char-best' }, `Defeated ${kills.toLocaleString()} ×`) : null);
+            }),
+          );
+        }
+      } else if (t === 'weapons' || t === 'evolutions') {
+        for (const wdef of WEAPONS.filter((x) => (t === 'evolutions') === evolvedIds.has(x.id))) {
+          const found = col.weapons.includes(wdef.id);
+          const evo = EVOLUTIONS.find((e) => e.into === wdef.id);
+          grid.append(
+            tile(found ? iconUrl(wdef.id, 'weapon') : iconUrl('?', 'locked'), wdef.name, found, () =>
+              detail(
+                h('div', { class: 'char-name' }, found ? wdef.name : '???'),
+                found ? wdef.description : t === 'evolutions' ? 'Evolve a weapon to discover it.' : 'Pick it up in a run to discover it.',
+                evo && found ? h('div', { class: 'char-best' }, `${weaponDef(evo.weapon).name} (max) + ${passiveDef(evo.passive).name}`) : null,
+              ),
+            ),
+          );
+        }
+      } else {
+        for (const pdef of PASSIVES) {
+          const found = col.passives.includes(pdef.id);
+          grid.append(tile(found ? iconUrl(pdef.id, 'passive') : iconUrl('?', 'locked'), pdef.name, found, () => detail(h('div', { class: 'char-name' }, found ? pdef.name : '???'), found ? pdef.description : 'Pick it up in a run to discover it.')));
+        }
+      }
+      (grid.firstElementChild as HTMLElement | null)?.setAttribute('data-autofocus', 'true');
+    };
+    const count = (ids: string[], has: (id: string) => boolean): string => `${ids.filter(has).length}/${ids.length}`;
+    const evoIds = WEAPONS.filter((x) => evolvedIds.has(x.id)).map((x) => x.id);
+    const baseIds = WEAPONS.filter((x) => !evolvedIds.has(x.id)).map((x) => x.id);
+    const tabDefs: Array<[typeof tab, string]> = [
+      ['bestiary', `Bestiary ${count(COLLECTABLE.enemies, (id) => (col.kills[id] ?? 0) > 0)}`],
+      ['weapons', `Weapons ${count(baseIds, (id) => col.weapons.includes(id))}`],
+      ['items', `Items ${count(COLLECTABLE.passives, (id) => col.passives.includes(id))}`],
+      ['evolutions', `Evolutions ${count(evoIds, (id) => col.weapons.includes(id))}`],
+    ];
+    for (const [id, label] of tabDefs) {
+      const b = h('button', { class: 'col-tab', 'data-tab': id }, label);
+      b.addEventListener('click', () => {
+        this.g.sound('click');
+        show(id);
+      });
+      tabs.append(b);
+    }
+    const el = h(
+      'div',
+      { class: 'collection-screen' },
+      h('div', { class: 'title small' }, 'Collection', h('span', { class: 'col-count' }, ` ${collectedCount(d)}/${total}`)),
+      tabs,
+      h('div', { class: 'col-body' }, grid, details),
+      h('button', { class: 'btn ghost', onclick: leave }, 'Back'),
+    );
+    this.g.ui.show('collection', el, leave);
+    show(tab);
   }
 
   // ───────────────────────────── how to play ─────────────────────────────
@@ -527,6 +709,7 @@ export class Menus {
       { class: 'modal panel gameover' },
       h('div', { class: `title${won ? ' win' : ''}` }, won ? 'Dawn breaks!' : 'Bonked!'),
       h('div', { class: 'subtitle' }, won ? mapDef(r.mapId).winText : `You held out for ${formatTime(r.time)} in ${mapDef(r.mapId).name}.${out.newBest ? ' A new personal best!' : ''}`),
+      h('div', { class: 'go-mode' }, r.daily ? `Daily run · ${r.daily}` : difficultyLabel(r.difficulty, r.tier)),
       note ? h('div', { class: 'subtitle warn' }, note) : null,
       ...out.newMaps.map((id) => h('div', { class: 'subtitle unlock' }, `New map unlocked: ${mapDef(id).name}! Pick it on the hero screen.`)),
       h(

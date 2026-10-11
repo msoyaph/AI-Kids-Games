@@ -93,7 +93,7 @@ export function recordRun(w: World, ctx: RecordContext = {}): PlaytestRun {
     at,
     hero: w.player.character.id,
     map: ctx.map ?? w.map.id,
-    difficulty: ctx.difficulty ?? 'normal',
+    difficulty: ctx.difficulty ?? (w.tier > 0 ? `${w.difficulty}${w.tier}` : w.difficulty),
     seed: w.seed,
     player: ctx.player ?? 'human',
     input: ctx.input ?? 'kbm',

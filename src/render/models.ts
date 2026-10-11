@@ -55,6 +55,61 @@ export function characterGeometry(c: CharacterDef): THREE.BufferGeometry {
     b.add(P.box(0.14, 0.32, 0.06), accent, [0.22, 0.78, -0.3], [0.3, 0, 0.3]);
     b.add(P.cone(0.1, 0.18, 4), primary, [-0.22, 1.12, 0.18], [0, 0, 0.3]);
     b.add(P.cone(0.1, 0.18, 4), primary, [0.22, 1.12, 0.18], [0, 0, -0.3]);
+  } else if (c.id === 'ottie') {
+    // Ottie — river otter standing tall, tail out behind, a disc slung on the back
+    const dark = new THREE.Color(primary).multiplyScalar(0.7).getHex();
+    b.add(P.box(0.17, 0.24, 0.3), dark, [-0.15, 0.12, 0.04]);
+    b.add(P.box(0.17, 0.24, 0.3), dark, [0.15, 0.12, 0.04]);
+    b.add(P.cyl(0.27, 0.36, 0.85, 7), primary, [0, 0.66, 0], [0.08, 0, 0], 1, 0.05);
+    b.add(P.ico(0.25, 0), secondary, [0, 0.7, 0.2], [0, 0, 0], [1, 1.3, 0.7]);
+    b.add(P.cone(0.17, 1.1, 5), dark, [0, 0.35, -0.55], [-1.15, 0, 0]);
+    b.add(P.cyl(0.06, 0.07, 0.45, 5), dark, [-0.3, 0.82, 0.12], [0.5, 0, 0.35]);
+    b.add(P.cyl(0.06, 0.07, 0.45, 5), dark, [0.3, 0.82, 0.12], [0.5, 0, -0.35]);
+    b.add(P.torus(0.24, 0.07, 4, 8), accent, [0, 1.08, 0.02], [Math.PI / 2, 0, 0]);
+    b.add(P.ico(0.3, 1), primary, [0, 1.36, 0.02], [0, 0, 0], [1.05, 0.95, 1]);
+    b.add(P.ico(0.16, 0), secondary, [0, 1.3, 0.24], [0, 0, 0], [1.3, 0.9, 1]);
+    b.add(P.box(0.09, 0.06, 0.05), DARK, [0, 1.34, 0.4]);
+    b.add(P.ico(0.08, 0), dark, [-0.24, 1.55, -0.02]);
+    b.add(P.ico(0.08, 0), dark, [0.24, 1.55, -0.02]);
+    eyes(b, 1.44, 0.27, 0.11, 0.065);
+    for (const sd of [-1, 1]) b.add(P.box(0.28, 0.015, 0.015), 0xf4ead6, [sd * 0.2, 1.3, 0.3], [0, 0, sd * 0.15]);
+    b.add(P.cyl(0.3, 0.3, 0.07, 8), 0x8ff0e8, [0, 0.82, -0.36], [Math.PI / 2 - 0.2, 0, 0]);
+    b.add(P.cyl(0.13, 0.13, 0.09, 6), 0x2a8a84, [0, 0.82, -0.37], [Math.PI / 2 - 0.2, 0, 0]);
+  } else if (c.id === 'bramble') {
+    // Bramble — beetle knight: horned helm, glossy shell, round shield
+    b.add(P.box(0.2, 0.42, 0.24), skin, [-0.17, 0.21, 0]);
+    b.add(P.box(0.2, 0.42, 0.24), skin, [0.17, 0.21, 0]);
+    b.add(P.cyl(0.3, 0.36, 0.7, 7), skin, [0, 0.76, 0.05]);
+    b.add(P.dodeca(0.55), primary, [0, 0.95, -0.2], [0.2, 0, 0], [1.05, 1.1, 0.75], 0.06);
+    b.add(P.box(0.03, 0.9, 0.05), 0x1c3a2c, [0, 0.98, -0.6], [0.2, 0, 0]);
+    b.add(P.ico(0.3, 1), secondary, [0, 1.38, 0.08], [0, 0, 0], [1, 0.95, 1.05]);
+    b.add(P.cone(0.09, 0.55, 5), secondary, [0, 1.75, 0.3], [0.7, 0, 0]);
+    b.add(P.cone(0.06, 0.25, 4), secondary, [0, 1.98, 0.5], [1.4, 0, 0]);
+    b.add(P.box(0.4, 0.09, 0.05), DARK, [0, 1.38, 0.36]);
+    b.add(P.box(0.08, 0.05, 0.03), accent, [-0.1, 1.38, 0.39]);
+    b.add(P.box(0.08, 0.05, 0.03), accent, [0.1, 1.38, 0.39]);
+    b.add(P.cyl(0.07, 0.08, 0.5, 5), skin, [-0.38, 0.88, 0.08], [0, 0, 0.4]);
+    b.add(P.cyl(0.07, 0.08, 0.5, 5), skin, [0.38, 0.88, 0.08], [0, 0, -0.4]);
+    b.add(P.cyl(0.3, 0.3, 0.07, 8), secondary, [-0.5, 0.82, 0.18], [0, 0, Math.PI / 2 - 0.25]);
+    b.add(P.ico(0.09, 0), accent, [-0.55, 0.82, 0.19]);
+    b.add(P.box(0.18, 0.2, 0.12), 0x8a5a36, [0.38, 0.62, 0.2]);
+  } else if (c.id === 'nova') {
+    // Nova — owl stargazer: round body, huge eyes, ear tufts, a starry little telescope
+    b.add(P.box(0.14, 0.12, 0.2), 0xffa23d, [-0.15, 0.06, 0.1]);
+    b.add(P.box(0.14, 0.12, 0.2), 0xffa23d, [0.15, 0.06, 0.1]);
+    b.add(P.ico(0.5, 1), primary, [0, 0.62, 0], [0, 0, 0], [1, 1.12, 0.95], 0.04);
+    b.add(P.ico(0.33, 1), secondary, [0, 0.52, 0.26], [0, 0, 0], [1, 1.2, 0.6]);
+    b.add(P.ico(0.42, 1), primary, [0, 1.22, 0.02], [0, 0, 0], [1.1, 0.95, 1]);
+    b.add(P.cone(0.09, 0.32, 4), skin, [-0.27, 1.58, 0], [0, 0, 0.35]);
+    b.add(P.cone(0.09, 0.32, 4), skin, [0.27, 1.58, 0], [0, 0, -0.35]);
+    for (const sd of [-1, 1]) {
+      b.add(P.cyl(0.15, 0.15, 0.05, 10), secondary, [sd * 0.16, 1.26, 0.35], [Math.PI / 2, 0, 0]);
+      b.add(P.cyl(0.07, 0.07, 0.06, 8), DARK, [sd * 0.16, 1.26, 0.38], [Math.PI / 2, 0, 0]);
+      b.add(P.ico(0.26, 0), new THREE.Color(primary).multiplyScalar(0.75).getHex(), [sd * 0.5, 0.7, -0.02], [0, 0, sd * 0.2], [0.45, 1.1, 0.8]);
+    }
+    b.add(P.cone(0.06, 0.16, 4), accent, [0, 1.14, 0.42], [Math.PI / 2 + 0.4, 0, 0]);
+    for (let k = 0; k < 4; k++) b.add(P.octa(0.06), accent, [Math.sin(k * 1.7) * 0.3, 0.45 + k * 0.17, -0.42 + Math.cos(k) * 0.05]);
+    b.add(P.cyl(0.05, 0.08, 0.5, 6), 0xb07a3a, [0.42, 0.55, 0.25], [0.4, 0, -0.9]);
   } else {
     // Brindle — tortoise sage with a lantern staff
     for (const [x, z] of [[-0.42, 0.35], [0.42, 0.35], [-0.42, -0.35], [0.42, -0.35]] as const) {

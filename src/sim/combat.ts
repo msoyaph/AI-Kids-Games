@@ -4,6 +4,7 @@ import { ELITE, ENEMIES, enemyIndex } from '../config/enemies';
 import { Ev } from '../core/events';
 import { damageAfterArmor, hitDamage, isCrit, knockbackImpulse } from './damage';
 import { PickupKind, type PickupKindT } from './pools';
+import { HeroPassive, SHELL_GUARD_HP, SHELL_GUARD_MULT } from './heroes';
 import { CHILL_BY_SOURCE, SrcKind } from './sources';
 import { goldMult } from './stats';
 import type { World } from './world';
@@ -32,7 +33,7 @@ export function spawnEnemy(w: World, type: number, x: number, z: number, elite =
   if (i < 0) return -1;
   const minutes = w.time / 60;
   const hpScale = boss ? 1 + w.player.level * 0.03 : enemyHpScaleWith(minutes, w.tuning.combat);
-  const hp = def.hp * hpScale * (elite ? ELITE.hpMult : 1);
+  const hp = def.hp * hpScale * (elite ? ELITE.hpMult : 1) * w.mods.enemyHp;
   const y = t.height(x, z);
   e.type[i] = type;
   e.x[i] = e.px[i] = x;
@@ -157,6 +158,7 @@ export function killEnemy(w: World, i: number, slot: number): void {
   const z = e.z[i];
   const elite = e.elite[i] === 1;
   w.stats.kills++;
+  w.stats.killsByType[type]++;
   const wi = w.weapons[slot];
   if (wi && slot >= 0) wi.kills++;
   w.events.push(Ev.EnemyDie, x, y, z, type, e.scale[i], elite ? 1 : 0);
@@ -176,8 +178,8 @@ export function killEnemy(w: World, i: number, slot: number): void {
     const r = w.rng.next();
     const c = w.tuning.combat;
     if (r < c.magnetChance * luck) spawnPickup(w, PickupKind.Magnet, x, y, z);
-    else if (r < (c.magnetChance + c.heartChance) * luck) spawnPickup(w, PickupKind.Heart, x, y, z, c.heartHeal);
-    else if (r < (c.magnetChance + c.heartChance + c.coinChance) * luck) spawnPickup(w, PickupKind.Coin, x, y, z, Math.max(1, Math.round(DROPS.coinValue * goldMult(w.player.stats))));
+    else if (r < (c.magnetChance + c.heartChance * w.mods.hearts) * luck) spawnPickup(w, PickupKind.Heart, x, y, z, c.heartHeal);
+    else if (r < (c.magnetChance + c.heartChance * w.mods.hearts + c.coinChance) * luck) spawnPickup(w, PickupKind.Coin, x, y, z, Math.max(1, Math.round(DROPS.coinValue * goldMult(w.player.stats))));
   }
 
   if (def.splitInto) {
@@ -209,7 +211,9 @@ export function setBossKilledHandler(fn: (w: World, i: number) => void): void {
 export function damagePlayer(w: World, raw: number, source = 0, inst = 0): boolean {
   const p = w.player;
   if (!p.alive || p.iframes > 0 || p.buffs.ward > 0 || w.options.god) return false;
-  const dmg = damageAfterArmor(raw, p.stats.armor);
+  // Brindle's Shell Guard
+  if (p.passive === HeroPassive.ShellGuard && p.hp < p.stats.maxHp * SHELL_GUARD_HP) raw *= SHELL_GUARD_MULT;
+  const dmg = damageAfterArmor(raw * w.mods.damageTaken, p.stats.armor);
   p.hp -= dmg;
   p.iframes = w.tuning.combat.playerIframes;
   p.hurtFlash = 1;

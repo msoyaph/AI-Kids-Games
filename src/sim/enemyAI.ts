@@ -8,6 +8,7 @@ import { UNREACHABLE } from './flowField';
 import type { EnemyPool } from './pools';
 import { bossSrc, CONTACT_SRC, src, SrcKind } from './sources';
 import type { Terrain } from './terrain';
+import { HeroPassive, thornshell } from './heroes';
 import { gustStrength } from './weather';
 import type { World } from './world';
 
@@ -76,7 +77,8 @@ export function updateEnemies(w: World): void {
   const recycleDist = w.tuning.spawns.recycleDist;
   const per = w.tuning.enemies.perType;
   const global = w.tuning.enemies.speedMult;
-  for (let t = 0; t < ENEMIES.length; t++) speedMul[t] = global * (per[ENEMIES[t].id] ?? 1);
+  const dMul = w.mods.enemySpeed;
+  for (let t = 0; t < ENEMIES.length; t++) speedMul[t] = global * (per[ENEMIES[t].id] ?? 1) * dMul;
   const px = p.x;
   const pz = p.z;
   const flow = w.flow;
@@ -426,9 +428,13 @@ export function enemyContacts(w: World): void {
   let best = 0;
   let bestSrc = 0;
   let bestInst = 0;
+  let bestI = -1;
+  const bowling = p.bowling;
   for (let k = 0; k < n; k++) {
     const i = buf[k];
     if (!e.alive[i] || e.damage[i] <= 0) continue;
+    // Ottie bowling through: regular Gloom can't land a hit
+    if (bowling && TYPE_BEHAVIOR[e.type[i]] !== 7) continue;
     const def = ENEMIES[e.type[i]];
     const dx = e.x[i] - p.x;
     const dz = e.z[i] - p.z;
@@ -445,9 +451,10 @@ export function enemyContacts(w: World): void {
       const chargeSrc = TYPE_CHARGE_SRC[type];
       bestSrc = chargeSrc !== 0 && e.state[i] === 2 ? chargeSrc : CONTACT_SRC[type];
       bestInst = e.atk[i];
+      bestI = i;
     }
   }
-  if (best > 0) damagePlayer(w, best, bestSrc, bestInst);
+  if (best > 0 && damagePlayer(w, best, bestSrc, bestInst) && p.passive === HeroPassive.Thornshell) thornshell(w, bestI, best);
 }
 
 export function updateEnemyShots(w: World): void {

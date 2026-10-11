@@ -9,6 +9,7 @@ import { updateGems, updatePickups } from './pickups';
 import { updateProjectiles } from './projectiles';
 import { updateShrines } from './shrines';
 import { updatePlayer } from './player';
+import { updateHero } from './heroes';
 import { recomputePlayerStats } from './stats';
 import { beginLevelUp, openChest } from './upgrades';
 import { updateWeapons } from './weapons';
@@ -101,6 +102,7 @@ export function step(w: World, input: SimInput): void {
   savePrevious(w);
 
   updatePlayer(w, input);
+  updateHero(w);
   w.flow.update(w);
   if (!w.director.dawn && w.director.victoryT <= 0) updateDirector(w);
   updateWeather(w);

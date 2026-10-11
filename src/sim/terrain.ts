@@ -191,15 +191,23 @@ export class Terrain {
 
   /** Which structure (index + 1) covers a lattice point, 0 for open ground. */
   private structureAt(x: number, z: number): number {
-    for (let k = 0; k < this.structures.length; k++) {
+    const cx = Math.floor((x + this.half) / GRID_CELL);
+    const cz = Math.floor((z + this.half) / GRID_CELL);
+    if (cx < 0 || cz < 0 || cx >= this.sCells || cz >= this.sCells) return 0;
+    const cell = cz * this.sCells + cx;
+    // lowest index first, like a scan over every structure would find
+    let found = 0;
+    for (let n = this.sCellStart[cell]; n < this.sCellStart[cell + 1]; n++) {
+      const k = this.sCellItems[n];
+      if (found && k + 1 >= found) continue;
       const s = this.structures[k];
       const dx = x - s.x;
       const dz = z - s.z;
       const u = dx * s.cos + dz * s.sin;
       const v = -dx * s.sin + dz * s.cos;
-      if (u >= -s.hu && u <= s.hu && v >= -s.hv && v <= s.hv) return k + 1;
+      if (u >= -s.hu && u <= s.hu && v >= -s.hv && v <= s.hv) found = k + 1;
     }
-    return 0;
+    return found;
   }
 
   private buildPassability(): Uint8Array {
@@ -208,26 +216,18 @@ export class Terrain {
     const owner = new Uint16Array(d * d);
     for (let j = 0; j < d; j++) for (let i = 0; i < d; i++) owner[j * d + i] = this.structureAt(i - this.half, j - this.half);
     const pass = new Uint8Array(d * d);
+    const dx = Int8Array.from(DIRS.map((v) => v[0]));
+    const dz = Int8Array.from(DIRS.map((v) => v[1]));
     // orthogonal steps first; diagonals need both orthogonal legs (no corner cutting)
-    const stepOk = (a: number, b: number): boolean => {
-      const dh = Math.abs(h[a] - h[b]);
-      if (owner[a] !== owner[b]) {
-        // ground ↔ structure: a wall above step height; structure ↔ structure (a ramp
-        // meeting its plateau) only needs the ramp's own steepness
-        const join = owner[a] !== 0 && owner[b] !== 0;
-        if (dh > (join ? JOIN_STEP : WALL_STEP)) return false;
-      }
-      return dh <= MAX_NATURAL_STEP;
-    };
     for (let j = 0; j < d; j++) {
       for (let i = 0; i < d; i++) {
         const c = j * d + i;
         let m = 0;
         for (let k = 0; k < 4; k++) {
-          const ni = i + DIRS[k][0];
-          const nj = j + DIRS[k][1];
+          const ni = i + dx[k];
+          const nj = j + dz[k];
           if (ni < 0 || nj < 0 || ni >= d || nj >= d) continue;
-          if (stepOk(c, nj * d + ni)) m |= 1 << k;
+          if (stepOk(h, owner, c, nj * d + ni)) m |= 1 << k;
         }
         pass[c] = m;
       }
@@ -235,19 +235,17 @@ export class Terrain {
     for (let j = 0; j < d; j++) {
       for (let i = 0; i < d; i++) {
         const c = j * d + i;
-        let m = pass[c];
+        const pc = pass[c];
+        let m = pc;
         for (let k = 4; k < 8; k++) {
-          const [dx, dz] = DIRS[k];
-          const ni = i + dx;
-          const nj = j + dz;
+          const sx = dx[k];
+          const sz = dz[k];
+          const ni = i + sx;
+          const nj = j + sz;
           if (ni < 0 || nj < 0 || ni >= d || nj >= d) continue;
-          const xLeg = dx > 0 ? 0 : 1;
-          const zLeg = dz > 0 ? 2 : 3;
-          const viaX = j * d + ni;
-          const viaZ = nj * d + i;
-          const zFromX = dz > 0 ? 2 : 3;
-          const xFromZ = dx > 0 ? 0 : 1;
-          if ((pass[c] & (1 << xLeg)) && (pass[c] & (1 << zLeg)) && (pass[viaX] & (1 << zFromX)) && (pass[viaZ] & (1 << xFromZ)) && stepOk(c, nj * d + ni)) m |= 1 << k;
+          const xBit = sx > 0 ? 1 : 2; // +x / -x leg
+          const zBit = sz > 0 ? 4 : 8; // +z / -z leg
+          if ((pc & xBit) && (pc & zBit) && (pass[j * d + ni] & zBit) && (pass[nj * d + i] & xBit) && stepOk(h, owner, c, nj * d + ni)) m |= 1 << k;
         }
         pass[c] = m;
       }
@@ -660,6 +658,20 @@ export class Terrain {
       this.shrineSpots.push({ x, z });
     }
   }
+}
+
+/**
+ * One lattice step between neighbouring cells a and b. Ground ↔ structure edges above step
+ * height are walls; structure ↔ structure (a ramp meeting its plateau) only needs the ramp's
+ * own steepness; natural slopes only stop you when absurdly steep.
+ */
+function stepOk(h: Float32Array, owner: Uint16Array, a: number, b: number): boolean {
+  const dh = Math.abs(h[a] - h[b]);
+  if (owner[a] !== owner[b]) {
+    const join = owner[a] !== 0 && owner[b] !== 0;
+    if (dh > (join ? JOIN_STEP : WALL_STEP)) return false;
+  }
+  return dh <= MAX_NATURAL_STEP;
 }
 
 function flatten(lists: number[][]): [Int32Array, Int32Array] {

@@ -110,6 +110,8 @@ export class EnemyPool extends SoAPool {
   readonly uid = this.i();
   /** Boss: instance id of the attack in progress (playtest hit attribution). */
   readonly atk = this.i();
+  /** Hero passive hit cooldown (Ottie's bowling): may be bowled again after this time. */
+  readonly bonkT = this.f();
   /** Per weapon-slot immunity end time (persistent damage sources). */
   readonly immune: Float32Array;
   private nextUid = 1;
@@ -143,6 +145,7 @@ export class EnemyPool extends SoAPool {
     this.state[i] = 0;
     this.elite[i] = 0;
     this.atk[i] = 0;
+    this.bonkT[i] = 0;
     this.age[i] = 0;
     this.scale[i] = 1;
     const o = i * WEAPON_SLOTS;

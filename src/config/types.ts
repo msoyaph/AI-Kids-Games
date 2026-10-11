@@ -17,7 +17,9 @@ export type StatKey =
   | 'greed'
   | 'revival'
   | 'crit'
-  | 'reroll';
+  | 'reroll'
+  | 'skip'
+  | 'banish';
 
 /**
  * Player stats. Everything except maxHp/regen/armor/magnet/amount/revival/reroll is a
@@ -224,6 +226,8 @@ export interface CharacterDef {
   move: { speed: number; jump: number; slideBoost: number; slideFriction: number };
   unlock?: string;
   colors: { primary: number; secondary: number; accent: number; skin: number };
+  /** Signature passive (sim/heroes.ts). */
+  passive: { id: string; name: string; description: string };
 }
 
 export interface ShopDef {

@@ -1,5 +1,6 @@
 import { ACHIEVEMENTS } from '../config/achievements';
 import { CHARACTERS } from '../config/characters';
+import { isDifficultyId, MAX_TIER, type DifficultyId } from '../config/difficulty';
 import { MAPS } from '../config/maps';
 import { SHOP } from '../config/meta';
 import { WEAPONS } from '../config/weapons';
@@ -37,6 +38,38 @@ export interface LifetimeStats {
   /** Wins / best survival per map id. */
   winsByMap: Record<string, number>;
   bestTimeByMap: Record<string, number>;
+  winsByDifficulty: Record<string, number>;
+  /** Highest Hard tier won (-1 = never won on Hard; 0 = Hard without a tier). */
+  bestHardTier: number;
+  /** Boss kills on Normal or harder (some unlocks need them). */
+  bossKillsNormalPlus: Record<string, number>;
+  slideDistance: number;
+  banishes: number;
+  dailyRuns: number;
+}
+
+/** A finished daily run (best per UTC date is kept, newest 30 dates). */
+export interface DailyRecord {
+  date: string;
+  map: string;
+  hero: string;
+  time: number;
+  won: boolean;
+  kills: number;
+  level: number;
+}
+
+/**
+ * Everything discovered so far. Unknown ids are kept (a newer build may know them), but
+ * every list / map is capped so the save stays small.
+ */
+export interface Collection {
+  /** Enemy id → lifetime defeats (discovered on the first). */
+  kills: Record<string, number>;
+  /** Weapon ids ever held (evolutions included). */
+  weapons: string[];
+  /** Passive item ids ever held. */
+  passives: string[];
 }
 
 export interface SaveData {
@@ -51,13 +84,24 @@ export interface SaveData {
   lastCharacter: string;
   unlockedMaps: string[];
   lastMap: string;
+  lastDifficulty: DifficultyId;
+  lastTier: number;
+  /** Highest Hard tier selectable (0 until Hard is won). */
+  unlockedTier: number;
+  daily: DailyRecord[];
+  collection: Collection;
 }
+
+export const DAILY_KEEP = 30;
+const COLLECTION_CAP = 300;
 
 export const SAVE_KEY = 'theabonk.save';
 /** Copy of the save as it was before the first upgrade to a newer format (written once). */
 export const SAVE_BACKUP_KEY = 'theabonk.save.bak';
 /**
- * 1: original release. 2: maps (unlockedMaps, lastMap, per-map wins / best times).
+ * 1: original release.
+ * 2: maps (unlockedMaps, lastMap, per-map wins / best times), difficulty + Hard tiers, daily
+ *    records, collection, skips / banishes / slide distance.
  * Older saves are migrated in sanitizeSave; nothing is ever dropped from a valid old save.
  */
 export const SAVE_VERSION = 2;
@@ -100,12 +144,35 @@ export function defaultSave(): SaveData {
       playtime: 0,
       winsByMap: {},
       bestTimeByMap: {},
+      winsByDifficulty: {},
+      bestHardTier: -1,
+      bossKillsNormalPlus: {},
+      slideDistance: 0,
+      banishes: 0,
+      dailyRuns: 0,
     },
     settings: defaultSettings(),
     lastCharacter: 'thea',
     unlockedMaps: MAPS.filter((m) => !m.unlock).map((m) => m.id),
     lastMap: 'meadow',
+    lastDifficulty: 'normal',
+    lastTier: 0,
+    unlockedTier: 0,
+    daily: [],
+    collection: { kills: {}, weapons: [], passives: [] },
   };
+}
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Keep the best record per date, newest DAILY_KEEP dates. */
+export function trimDaily(list: DailyRecord[]): DailyRecord[] {
+  const best = new Map<string, DailyRecord>();
+  for (const r of list) {
+    const cur = best.get(r.date);
+    if (!cur || (r.won && !cur.won) || (r.won === cur.won && r.time > cur.time)) best.set(r.date, r);
+  }
+  return [...best.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, DAILY_KEEP);
 }
 
 /** Add every map whose unlock rule is met; returns the newly unlocked ids. */
@@ -179,15 +246,49 @@ export function sanitizeSave(raw: unknown): SaveData {
     playtime: num(s.playtime, 0, 0),
     winsByMap: numMap(s.winsByMap, mapIds),
     bestTimeByMap: numMap(s.bestTimeByMap, mapIds, 1e6),
+    winsByDifficulty: numMap(s.winsByDifficulty, new Set(['relaxed', 'normal', 'hard'])),
+    bestHardTier: Math.floor(num(s.bestHardTier, -1, -1, MAX_TIER)),
+    bossKillsNormalPlus: numMap(s.bossKillsNormalPlus, null),
+    slideDistance: num(s.slideDistance, 0, 0, 1e9),
+    banishes: Math.floor(num(s.banishes, 0, 0)),
+    dailyRuns: Math.floor(num(s.dailyRuns, 0, 0)),
   };
   if (version < 2) {
-    // v1 had one map: every win and best time so far happened on Gloam Meadow
-    if (d.stats.wins > 0) d.stats.winsByMap.meadow = d.stats.wins;
+    // v1 had one map and one difficulty: every win, best time and boss kill so far
+    // happened on Gloam Meadow, on Normal
+    if (d.stats.wins > 0) {
+      d.stats.winsByMap.meadow = d.stats.wins;
+      d.stats.winsByDifficulty.normal = d.stats.wins;
+    }
     if (d.stats.bestTime > 0) d.stats.bestTimeByMap.meadow = d.stats.bestTime;
+    d.stats.bossKillsNormalPlus = { ...d.stats.bossKills };
   }
   d.unlockedMaps = Array.from(new Set([...d.unlockedMaps, ...strList(raw.unlockedMaps, mapIds)]));
   refreshMapUnlocks(d);
   d.lastMap = typeof raw.lastMap === 'string' && d.unlockedMaps.includes(raw.lastMap) ? raw.lastMap : 'meadow';
+  d.unlockedTier = Math.floor(num(raw.unlockedTier, 0, 0, MAX_TIER));
+  d.lastDifficulty = isDifficultyId(raw.lastDifficulty) ? raw.lastDifficulty : 'normal';
+  d.lastTier = Math.floor(num(raw.lastTier, 0, 0, d.unlockedTier));
+  d.daily = trimDaily(
+    (Array.isArray(raw.daily) ? raw.daily : []).filter(isObj).flatMap((r): DailyRecord[] =>
+      typeof r.date === 'string' && DATE_RE.test(r.date)
+        ? [{ date: r.date, map: typeof r.map === 'string' ? r.map.slice(0, 24) : 'meadow', hero: typeof r.hero === 'string' ? r.hero.slice(0, 24) : 'thea', time: num(r.time, 0, 0, 1e6), won: bool(r.won, false), kills: Math.floor(num(r.kills, 0, 0)), level: Math.floor(num(r.level, 0, 0, 1e4)) }]
+        : [],
+    ),
+  );
+  const col = isObj(raw.collection) ? raw.collection : {};
+  // collection keeps ids this build doesn't know (forward compatible), within caps
+  const anyIds = (v: unknown): string[] => (Array.isArray(v) ? Array.from(new Set(v.filter((x): x is string => typeof x === 'string' && x.length <= 32))).slice(0, COLLECTION_CAP) : []);
+  const kills = numMap(col.kills, null, 1e12);
+  d.collection = {
+    kills: Object.fromEntries(Object.entries(kills).filter(([k]) => k.length <= 32).slice(0, COLLECTION_CAP)),
+    weapons: anyIds(col.weapons),
+    passives: anyIds(col.passives),
+  };
+  if (version < 2) {
+    // bosses beaten before the bestiary existed are already discovered
+    for (const [id, n] of Object.entries(d.stats.bossKills)) d.collection.kills[id] = Math.max(d.collection.kills[id] ?? 0, n);
+  }
 
   const st = isObj(raw.settings) ? raw.settings : {};
   const def = defaultSettings();

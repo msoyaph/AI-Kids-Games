@@ -35,12 +35,15 @@ asset files, CDN links or web fonts.
 src/
   core/      rng (seeded), math helpers, event ring buffer, safe storage
   config/    ALL tuning data (typed): tuning.ts (every feel/balance knob, ranges, defaults
-             block), maps.ts (MapDef per map), weapons, passives, enemies, waves, characters,
-             evolutions, shop, achievements; balance.ts keeps structural constants only
+             block), maps.ts (MapDef per map), difficulty.ts (Relaxed/Normal/Hard + tiers →
+             RunMods), weapons, passives, enemies (+ bestiary.ts notes), waves, characters
+             (with signature passives), evolutions, shop, achievements; balance.ts keeps
+             structural constants only
   sim/       Pure game logic — NO three.js / DOM imports. Deterministic given seed + inputs.
              world.ts (state), pools.ts (SoA typed-array pools), spatialHash.ts, terrain.ts
              (+ walkability lattice `pass`, ice/snow `surface`), flowField.ts (enemy
-             pathing), weather.ts (icicles, gusts, blizzard wind), player.ts (momentum movement), enemyAI.ts, director.ts (waves/bosses), combat.ts,
+             pathing), weather.ts (icicles, gusts, blizzard wind), heroes.ts (signature
+             passives), player.ts (momentum movement), enemyAI.ts, director.ts (waves/bosses), combat.ts,
              weapons/*.ts (one behavior fn per weapon behavior), pickups.ts, leveling.ts,
              upgrades.ts, shrines.ts, sim.ts (fixed-step orchestration), bot.ts (AI player)
   render/    three.js only reads sim state: instanced meshes per enemy/projectile kind, gems,
@@ -51,7 +54,8 @@ src/
   input/     keyboard/mouse/pointer-lock/gamepad (+ drag-look fallback in iframes)
   ui/        DOM screens (title, select, shop, settings, pause, level-up, chest, game over),
              HUD, procedural canvas icons, menu focus navigation
-  meta/      save schema + migration, gold/achievements/unlocks
+  meta/      save schema + migration, gold/achievements/unlocks, daily.ts (UTC date →
+             seed/map/hero), playtest.ts
   game/      Game.ts — app state machine + fixed-timestep loop (60 Hz sim, interpolated render)
   audio/     Audio.ts (synth SFX), Music.ts (sequencer), bindAudio.ts (events → sounds)
 scripts/     simulate.ts (balance), bench.ts (perf)
@@ -77,11 +81,23 @@ Key rules:
   `variants` (base enemy → map variant; summons go through `variantOf`), `finalBoss`, music,
   banners, unlock rule. Sim reads `w.map`; Renderer.setTerrain(t, map) caches by map+seed.
   Map hazards use `w.hazardRng` only, so adding hazards never shifts the main stream.
+- Difficulty lives in `w.mods` (RunMods from config/difficulty.ts), applied where it matters
+  (spawnEnemy HP, damagePlayer, speedMul, director rate/maxAlive/elites, heal, hearts, boss
+  enrage, gold) — never folded into `w.tuning`, so tuning exports stay clean.
+- Hero passives: CharacterDef.passive.id → `p.passive` code (HeroPassive); checks are integer
+  compares (Thea landing bonk, Brindle shell guard in damagePlayer, Bramble thorns in
+  enemyContacts, Ottie bowling in updateHero, Nova's 4 cards in rollChoices).
+- Level-up charges: `p.rerolls / p.skips / p.banishes` (BASE_STATS.skip = 1 free per run;
+  shop ranks + Relaxed add). `w.banished` filters upgradeCandidates for the rest of the run.
+- Daily runs: Game.startDaily → Normal, no shop bonuses / unlocked weapons; the day's hero
+  and map are playable even if locked. Records: best per date, newest 30 (`save.daily`).
 - Enemy data fields replace id checks: `model` (variants reuse a base model + `frostTrim`),
   `flying`, `bob`, `chill`, `roll`, `shotVisual`; bosses by `bossPattern`.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
   Save v2 (`meta/save.ts`): older saves are migrated in sanitizeSave and copied once to
-  `theabonk.save.bak` just before the first write in the new format.
+  `theabonk.save.bak` just before the first write in the new format. v2 adds maps, difficulty
+  + tiers, per-map/difficulty stats, daily records, collection (keeps unknown ids, capped).
+  Game runs checkAchievements at startup so unlocks earned by past progress apply at once.
 
 ## Performance notes
 - `npx tsx scripts/bench.ts 1000 20` — headless sim benchmark (stress mode keeps N enemies +
@@ -146,6 +162,9 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
 - [x] 3. Flow-field pathing + camera occlusion fade / player silhouette
 - [x] 4. Map system (MapDef) + Rimewood (ice, drifts, icicles, gusts, variants, Old Rime),
   save v2 with backup, map picker
+- [x] 5. Difficulty + Hard tiers, Ottie / Bramble / Nova + signature passives for all six,
+  skip (1 free) / banish / reroll charges, daily run, collection (bestiary 3D preview),
+  15 achievements
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera
