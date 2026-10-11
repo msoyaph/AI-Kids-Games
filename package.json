@@ -1,0 +1,26 @@
+{
+  "name": "space-sky",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Space Sky - a space exploration adventure game for kids aged 6-10",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "pacing": "vite-node scripts/pacing-sim.ts",
+    "svgs": "vite-node scripts/export-site-svgs.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "pixi.js": "^8.22.0",
+    "typescript": "~5.9",
+    "vite": "^8.3.4",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^5.0.3"
+  }
+}
