@@ -1,31 +1,36 @@
-# Verification — October 11, 2026
+# Launch verification — October 11, 2026
 
-- Production build: registry validation, strict TypeScript, Vite, and static
-  route metadata all pass. Both games are self-contained local HTML files.
-- Vitest: 16 unit checks pass for registry validation, search, malformed or
-  blocked storage, unknown slugs, recent ordering, and list limits.
-- Playwright: 15 browser checks pass across desktop and phone. The duplicate
-  desktop touch-only case is skipped intentionally. Checks cover home, game
-  details, starting TheaBonk, Light Crossing, iframe sandbox, local-only network
-  requests, persistent favorites, search/category results, theme, parental data
-  clearing, mobile notice, reduced motion, outbound-link dialog, and phone
-  explorer movement. No page exceptions or console errors in game-load checks.
-- Interactive scaffolder: a third game was created in an isolated test copy,
-  its registry/assets validated, and a duplicate slug was refused without
-  overwriting. The published catalog retains only the two supplied games.
-- Layout: desktop, dark theme, game details, and phone screenshots reviewed.
-  No document overflow at 320, 390, 768, 1024, or 1440 pixels. Interactive
-  home controls meet the 48-pixel target checks.
-- Static HTML metadata: TheaBonk's direct route has its own title, description,
-  and Open Graph image before JavaScript executes.
-- Lighthouse, local production homepage, mobile simulation: Performance 99,
-  Accessibility 100, Best Practices 100. These are local lab results; hosting
-  latency and devices can change the scores.
-- Dependency audit of the catalog: zero reported vulnerabilities.
+- Build passes registry validation, strict TypeScript, Vite and route metadata.
+  All five source/public/dist game hashes match BUILD_IMPORTS.json. Each game
+  directory contains only index.html; compiled games are unchanged.
+- Vitest: 20 unit tests pass, including minimum-age filtering, registry/list
+  validation, namespaced storage migration, blocked storage and quota failures.
+- Playwright: 47 applicable cases pass across desktop (1440×1000), tablet
+  (iPad Pro 11 Chromium touch profile) and phone (iPhone 13 Chromium touch
+  profile). There are 16 intentional device-specific skips. Completed across
+  targeted runs after correcting test orientation and scene-transition timing.
+- All five games: Home → details → play; required iframe permissions; first
+  gesture starts audio; no site/game console errors or page exceptions for
+  20 seconds; no other-origin requests; save/settings survive an iframe reload.
+- Each viewport's sequential five-game check preserves all favorites, recent
+  history and preceding games' saves. Clearing catalog lists preserves saves.
+- TheaBonk obtains pointer lock; all five play views enter/exit fullscreen in
+  desktop Chromium. All four advertised gamepad implementations respond to a
+  simulated standard controller. Vanex does not advertise gamepad support.
+- Touch events build a Vanex tower, move Light Crossing and Space Sky, and
+  operate Calex steering/drift/brake/item controls. Space Sky and Calex rotate
+  to landscape while retaining touch input. Phone TheaBonk notice passes.
+- Browse minimum-age filter, new categories, existing favorites/search/theme,
+  parent controls, 404 behavior, reduced motion and layout checks pass.
+- Network throttling: 40 KiB/s throughput, 200 ms latency, cache disabled;
+  loading screen stays visible during the download and disappears after load.
+- Rendered game banners/thumbnails and catalog layout reviewed. All art,
+  fonts, scripts and game resources are local.
 
-Physical gamepad hardware and every mobile browser were not available. The
-launch games use WebGL and may be slower on older hardware. Light Crossing's
-life-sim systems are unfinished in the supplied project, so the catalog
-describes an island exploration preview. Game progress is intentionally
-visit-only. The Sites version starts owner-private and may require the host's
-ChatGPT sign-in.
+The storage audit is clean; see STORAGE_AUDIT.md. No original game source
+changes are required. Native iPad Safari, physical phones/controllers and
+device-specific audio/fullscreen behavior still need owner checks using the
+preview checklist in LAUNCH_REPORT.md. Chromium device profiles are not Safari.
+
+Vercel preview and deployed cache headers are recorded in LAUNCH_REPORT.md
+after deployment. Production requires explicit owner approval.

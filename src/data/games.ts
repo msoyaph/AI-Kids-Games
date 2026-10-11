@@ -182,7 +182,7 @@ export const games: Game[] = [
         "Gamepad"
       ],
       "howToPlay": [
-        "Steer with WASD or the arrow keys, a gamepad’s left stick or D-pad, or the left touch control.",
+        "Turn a phone or tablet sideways to play. Steer with WASD or the arrow keys, a gamepad’s left stick or D-pad, or the left touch control.",
         "Press Space, gamepad A or the orange touch button to boost, jump or thrust.",
         "Press E or Enter, gamepad X/Y or the blue touch button for actions.",
         "Pause with Escape or P, gamepad Start or the pause button. Menus support touch, keyboard, mouse and gamepad."
@@ -229,7 +229,7 @@ export const games: Game[] = [
       "howToPlay": [
         "Steer with A/D or the arrow keys. W/Up accelerates, S/Down brakes, Shift or Space drifts, E uses an item and R looks behind. Escape or P pauses.",
         "With a gamepad, steer with the left stick or D-pad. A/RT accelerates, B/LT brakes, RB/X drifts and LB/Y uses an item.",
-        "On touch screens, use the left steering pad or tilt, GO, Brake, Drift and ITEM. Swipe down on ITEM to throw behind.",
+        "On touch screens, turn your device sideways. Use the left steering pad or tilt, GO, Brake, Drift and ITEM. Swipe down on ITEM to throw behind.",
         "Split-screen requires a keyboard or gamepads. With two gamepads, use one each; with one gamepad, player 1 uses the keyboard and player 2 the gamepad. With a shared keyboard, player 1 uses WASD, left Shift/Space and E; player 2 uses arrows, right Shift and Enter. Touch is solo only."
       ]
     },

@@ -31,7 +31,14 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
    visible until iframe load; Playwright passed. Unhashed HTML/art revalidate;
    hashed Vite assets cache immutably for one year. CDN uses deployment-specific
    static caching; verify deployed ETag/headers in step 9.
-8. Pending: existing tests and desktop/tablet/phone integrated QA, persistence and network checks.
+8. COMPLETE: 20 unit tests and 47 applicable Playwright cases pass across desktop,
+   tablet and phone (16 intentional device-specific skips). All five games run
+   error-free for 20 seconds, persist saves/settings on iframe reload, unlock audio
+   on the first gesture and preserve other games' saves and catalog lists. Desktop
+   pointer lock/fullscreen and simulated gamepads pass. Actual touch events cover
+   Vanex towers, Light/Space movement and Calex driving/controls. Space/Calex need
+   landscape on touch devices; registry guidance now says so. Native Safari and
+   physical controller checks remain on the real-device checklist.
 9. Pending: Vercel preview deployment and real-device checklist. Production requires user approval.
 
 Do not edit minified game builds. Any storage ownership defect must halt integration
