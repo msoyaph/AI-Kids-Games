@@ -1,0 +1,640 @@
+{
+  "date": "2026-10-11T20:16:10.515Z",
+  "profile": "tablet 1024x768 @2x",
+  "results": [
+    {
+      "tier": "low",
+      "scene": "hub",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 63,
+      "tris": 184960,
+      "geometries": 85,
+      "textures": 24,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "hub",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 63,
+      "tris": 184960,
+      "geometries": 85,
+      "textures": 24,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "hub",
+      "cpu": 6,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 63,
+      "tris": 184960,
+      "geometries": 85,
+      "textures": 24,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "belt",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 29,
+      "tris": 30310,
+      "geometries": 68,
+      "textures": 18,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "belt",
+      "cpu": 4,
+      "fps": 59,
+      "p95": 16.8,
+      "calls": 32,
+      "tris": 35962,
+      "geometries": 69,
+      "textures": 18,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "belt",
+      "cpu": 6,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 31,
+      "tris": 35954,
+      "geometries": 69,
+      "textures": 18,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "rings",
+      "cpu": 1,
+      "fps": 59,
+      "p95": 16.7,
+      "calls": 34,
+      "tris": 32210,
+      "geometries": 80,
+      "textures": 20,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "rings",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 37,
+      "tris": 35078,
+      "geometries": 80,
+      "textures": 20,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "rings",
+      "cpu": 6,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 35,
+      "tris": 31658,
+      "geometries": 80,
+      "textures": 20,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "level",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 66,
+      "tris": 80820,
+      "geometries": 100,
+      "textures": 31,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "level",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 66,
+      "tris": 80820,
+      "geometries": 100,
+      "textures": 31,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "level",
+      "cpu": 6,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 66,
+      "tris": 80820,
+      "geometries": 100,
+      "textures": 31,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "finale",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 26,
+      "tris": 20632,
+      "geometries": 108,
+      "textures": 34,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "finale",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 26,
+      "tris": 20632,
+      "geometries": 108,
+      "textures": 34,
+      "heapMB": 58
+    },
+    {
+      "tier": "low",
+      "scene": "finale",
+      "cpu": 6,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 26,
+      "tris": 20632,
+      "geometries": 108,
+      "textures": 34,
+      "heapMB": 58
+    },
+    {
+      "tier": "medium",
+      "scene": "hub",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 103,
+      "tris": 186338,
+      "geometries": 116,
+      "textures": 35,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "hub",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 103,
+      "tris": 186338,
+      "geometries": 116,
+      "textures": 35,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "hub",
+      "cpu": 6,
+      "fps": 59,
+      "p95": 16.8,
+      "calls": 103,
+      "tris": 186338,
+      "geometries": 116,
+      "textures": 35,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "belt",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 40,
+      "tris": 37732,
+      "geometries": 69,
+      "textures": 31,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "belt",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 43,
+      "tris": 48996,
+      "geometries": 70,
+      "textures": 31,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "belt",
+      "cpu": 6,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 42,
+      "tris": 48276,
+      "geometries": 70,
+      "textures": 31,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "rings",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 44,
+      "tris": 35420,
+      "geometries": 81,
+      "textures": 34,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "rings",
+      "cpu": 4,
+      "fps": 59,
+      "p95": 16.8,
+      "calls": 49,
+      "tris": 44336,
+      "geometries": 81,
+      "textures": 34,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "rings",
+      "cpu": 6,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 46,
+      "tris": 39380,
+      "geometries": 81,
+      "textures": 34,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "level",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 88,
+      "tris": 83566,
+      "geometries": 112,
+      "textures": 45,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "level",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 88,
+      "tris": 83566,
+      "geometries": 112,
+      "textures": 45,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "level",
+      "cpu": 6,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 88,
+      "tris": 83566,
+      "geometries": 112,
+      "textures": 45,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "finale",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 41,
+      "tris": 20642,
+      "geometries": 125,
+      "textures": 48,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "finale",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 41,
+      "tris": 20642,
+      "geometries": 125,
+      "textures": 48,
+      "heapMB": 45
+    },
+    {
+      "tier": "medium",
+      "scene": "finale",
+      "cpu": 6,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 41,
+      "tris": 20642,
+      "geometries": 125,
+      "textures": 48,
+      "heapMB": 45
+    },
+    {
+      "tier": "high",
+      "scene": "hub",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 158,
+      "tris": 345516,
+      "geometries": 117,
+      "textures": 41,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "hub",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 158,
+      "tris": 345516,
+      "geometries": 117,
+      "textures": 41,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "hub",
+      "cpu": 6,
+      "fps": 54,
+      "p95": 33.3,
+      "calls": 158,
+      "tris": 345516,
+      "geometries": 117,
+      "textures": 41,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "belt",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 44,
+      "tris": 43032,
+      "geometries": 71,
+      "textures": 34,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "belt",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 47,
+      "tris": 62424,
+      "geometries": 72,
+      "textures": 34,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "belt",
+      "cpu": 6,
+      "fps": 59,
+      "p95": 16.7,
+      "calls": 49,
+      "tris": 67884,
+      "geometries": 72,
+      "textures": 34,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "rings",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 48,
+      "tris": 42736,
+      "geometries": 83,
+      "textures": 37,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "rings",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 52,
+      "tris": 52692,
+      "geometries": 83,
+      "textures": 37,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "rings",
+      "cpu": 6,
+      "fps": 56,
+      "p95": 33.3,
+      "calls": 51,
+      "tris": 50808,
+      "geometries": 83,
+      "textures": 37,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "level",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 137,
+      "tris": 135184,
+      "geometries": 116,
+      "textures": 50,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "level",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 137,
+      "tris": 135184,
+      "geometries": 116,
+      "textures": 50,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "level",
+      "cpu": 6,
+      "fps": 51,
+      "p95": 33.4,
+      "calls": 137,
+      "tris": 135184,
+      "geometries": 116,
+      "textures": 50,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "finale",
+      "cpu": 1,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 45,
+      "tris": 20646,
+      "geometries": 129,
+      "textures": 53,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "finale",
+      "cpu": 4,
+      "fps": 60,
+      "p95": 16.7,
+      "calls": 45,
+      "tris": 20646,
+      "geometries": 129,
+      "textures": 53,
+      "heapMB": 61
+    },
+    {
+      "tier": "high",
+      "scene": "finale",
+      "cpu": 6,
+      "fps": 60,
+      "p95": 16.8,
+      "calls": 45,
+      "tris": 20646,
+      "geometries": 129,
+      "textures": 53,
+      "heapMB": 61
+    }
+  ],
+  "memory": [
+    {
+      "scene": "hub (start)",
+      "geometries": 113,
+      "textures": 35,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 1: hub",
+      "geometries": 144,
+      "textures": 71,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 1: hub",
+      "geometries": 113,
+      "textures": 66,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: map",
+      "geometries": 124,
+      "textures": 66,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: flight",
+      "geometries": 126,
+      "textures": 66,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: landing",
+      "geometries": 116,
+      "textures": 66,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: explore",
+      "geometries": 143,
+      "textures": 73,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: hub",
+      "geometries": 175,
+      "textures": 80,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: codex",
+      "geometries": 177,
+      "textures": 80,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: hangar",
+      "geometries": 176,
+      "textures": 80,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: flight",
+      "geometries": 126,
+      "textures": 66,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: explore",
+      "geometries": 140,
+      "textures": 71,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: cutscene",
+      "geometries": 150,
+      "textures": 75,
+      "heapMB": 45
+    },
+    {
+      "scene": "lap 2: hub",
+      "geometries": 114,
+      "textures": 66,
+      "heapMB": 45
+    },
+    {
+      "scene": "hub (end, settled)",
+      "geometries": 114,
+      "textures": 66,
+      "heapMB": 45
+    }
+  ],
+  "bootMs": 553,
+  "buildBytes": 1508625
+}

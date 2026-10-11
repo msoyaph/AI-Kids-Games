@@ -49,6 +49,7 @@ import { initSpeech, setReadAloud } from './ui/speech';
 import { clearPlanetBakes } from './r3/space/planets';
 import { clearSkyBakes, skyCube, SKIES } from './r3/space/sky';
 import { academyWorld, releaseAcademyStage } from './scenes/academyStage';
+import { rigOptions } from './r3/models/characters';
 import type { Scene3D } from './app/Scene3D';
 
 /** Bake the skies every early screen uses behind the loading bar (planets bake with their scenes). */
@@ -142,6 +143,9 @@ async function boot(): Promise<void> {
   S.game = game;
   S.settings = loadSettings();
   game.init(S.settings.quality);
+  // Low tier: characters merge into fewer draws.
+  rigOptions.coarse = game.r3.tier === 'low';
+  game.r3.onProfile.push((p) => (rigOptions.coarse = p.tier === 'low'));
   // A lost GPU context wipes every baked texture: forget them so scenes re-bake.
   game.r3.onRestore.unshift(() => {
     clearPlanetBakes();

@@ -17,6 +17,7 @@ import {
   type QualitySetting,
   type QualityTier,
 } from '../systems/quality';
+import { FLAGS } from '../app/flags';
 import { detectDevice, type DeviceInfo } from './device';
 import { makeEnvironment } from './env';
 import { PostChain } from './post';
@@ -180,6 +181,8 @@ export class R3 {
 
   /** Feed the real frame time; adapts render scale / tier when needed. */
   sampleFrame(frameMs: number, dt: number): void {
+    // ?stress: measure a tier as it is (no adaptive scale or tier changes).
+    if (FLAGS.stress) return;
     const change = this.governor.sample(frameMs, dt);
     if (change === 'scale') this.resize(this.cssW, this.cssH);
     else if (change === 'tier') this.applyProfile();

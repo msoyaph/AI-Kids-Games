@@ -339,6 +339,12 @@ export interface CharacterOptions {
 const rigMats = new Map<string, Material>();
 
 /**
+ * Rig merge settings. On the Low tier every plain lit part shares ONE material (shine differences
+ * are dropped), so a character is ~4 draws instead of ~7. Set from the quality tier (main.ts).
+ */
+export const rigOptions = { coarse: false };
+
+/**
  * How a part's material is merged: plain lit and glowing colors become vertex colors on a shared
  * material (one draw for all of them); textured or see-through materials keep their own.
  */
@@ -347,10 +353,15 @@ function rigMaterial(m: Material, out: Color): { key: string; mat: Material; col
   const basic = m as MeshBasicMaterial;
   if (std.isMeshStandardMaterial && !std.map && !std.transparent && !(m as { isMeshPhysicalMaterial?: boolean }).isMeshPhysicalMaterial) {
     const e = std.emissive.getHexString();
-    const key = `std:${std.roughness}:${std.metalness}:${std.envMapIntensity}:${e}:${std.emissiveIntensity}:${std.flatShading}:${std.side}`;
+    const coarse = rigOptions.coarse && e === '000000' && std.side === 0;
+    const key = coarse ? 'std:coarse' : `std:${std.roughness}:${std.metalness}:${std.envMapIntensity}:${e}:${std.emissiveIntensity}:${std.flatShading}:${std.side}`;
     let mat = rigMats.get(key);
     if (!mat) {
-      mat = markShared(new MeshStandardMaterial({ vertexColors: true, roughness: std.roughness, metalness: std.metalness, envMapIntensity: std.envMapIntensity, emissive: std.emissive.clone(), emissiveIntensity: std.emissiveIntensity, flatShading: std.flatShading, side: std.side }));
+      mat = markShared(
+        coarse
+          ? new MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.1, envMapIntensity: 1.3 })
+          : new MeshStandardMaterial({ vertexColors: true, roughness: std.roughness, metalness: std.metalness, envMapIntensity: std.envMapIntensity, emissive: std.emissive.clone(), emissiveIntensity: std.emissiveIntensity, flatShading: std.flatShading, side: std.side }),
+      );
       rigMats.set(key, mat);
     }
     return { key, mat, color: out.copy(std.color) };

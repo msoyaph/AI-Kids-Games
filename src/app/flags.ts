@@ -1,6 +1,6 @@
 import type { QualityTier } from '../systems/quality';
 
-/** URL flags: ?fps (meter), ?debug (test hooks), ?stress (heaviest settings), ?q=low|medium|high (force tier). */
+/** URL flags: ?fps (meter), ?debug (test hooks), ?stress (perf runs: the governor never adapts), ?q=low|medium|high (force tier). */
 function params(): URLSearchParams {
   try {
     return new URLSearchParams(location.search);

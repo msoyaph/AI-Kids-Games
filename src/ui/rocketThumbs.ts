@@ -22,7 +22,7 @@ function keyOf(l: RocketLoadout): string {
 function render(l: RocketLoadout): HTMLCanvasElement | null {
   const r3 = S.game?.r3;
   if (!r3 || r3.lost) return null;
-  const rocket = new RocketModel(l, { glossy: false, detail: false });
+  const rocket = new RocketModel(l, { glossy: false, detail: false, merge: false });
   rocket.update(0.5, 0.35, 0);
   const e = rocket.extent;
   const mid = (e.top + e.bottom) / 2;

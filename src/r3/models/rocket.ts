@@ -1,4 +1,5 @@
 import {
+  BufferAttribute,
   CapsuleGeometry,
   CircleGeometry,
   Color,
@@ -12,12 +13,15 @@ import {
   Shape,
   SphereGeometry,
   TorusGeometry,
+  Matrix4,
   Vector2,
   Vector3,
   type BufferGeometry,
   type Material,
   type Object3D,
+  type ShaderMaterial,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { PART_BY_ID } from '../../data/parts';
 import type { PaintColors, PartSlot, RocketLoadout } from '../../data/types';
 import {
@@ -582,6 +586,61 @@ export interface RocketOptions {
   glossy?: boolean;
   /** Draw thin panel lines on the body. */
   detail?: boolean;
+  /** Merge each part's static pieces per material (fewer draw calls). On by default; one-shot snapshots skip it. */
+  merge?: boolean;
+}
+
+const _inv = new Matrix4();
+const _rel = new Matrix4();
+
+/**
+ * Merge the static meshes of one part (sharing a material) into a single mesh in the part's space.
+ * Animated pieces (blinkers, party lights, spinners, the halo, flames) are left alone, and the part
+ * group itself stays, so snap-on animations still work.
+ */
+function mergePart(part: Group, keep: Set<Object3D>): void {
+  part.updateMatrixWorld(true);
+  _inv.copy(part.matrixWorld).invert();
+  const byMat = new Map<Material, Mesh[]>();
+  const walk = (o: Object3D) => {
+    for (const c of o.children) {
+      if (keep.has(c)) continue;
+      const m = c as Mesh;
+      if (m.isMesh && !Array.isArray(m.material) && !(m.material as ShaderMaterial).isShaderMaterial && !c.children.length) {
+        let list = byMat.get(m.material);
+        if (!list) byMat.set(m.material, (list = []));
+        list.push(m);
+      } else if (!m.isMesh) walk(c);
+    }
+  };
+  walk(part);
+  for (const [mat, list] of byMat) {
+    if (list.length < 2) continue;
+    const geos: BufferGeometry[] = [];
+    let order = 0;
+    let cast = false;
+    for (const m of list) {
+      let g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+      for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal' && name !== 'uv') g.deleteAttribute(name);
+      if (!g.attributes.uv) g.setAttribute('uv', new BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+      if (!g.attributes.normal) g.computeVertexNormals();
+      g.morphAttributes = {};
+      g.clearGroups();
+      _rel.multiplyMatrices(_inv, m.matrixWorld);
+      g.applyMatrix4(_rel);
+      geos.push(g);
+      order = Math.max(order, m.renderOrder);
+      cast ||= m.castShadow;
+    }
+    const merged = mergeGeometries(geos, false);
+    for (const g of geos) g.dispose();
+    if (!merged) continue;
+    for (const m of list) m.removeFromParent();
+    const out = new Mesh(merged, mat);
+    out.renderOrder = order;
+    out.castShadow = cast;
+    part.add(out);
+  }
 }
 
 const SLOT_DIR: Record<string, Vector3> = {
@@ -682,6 +741,11 @@ export class RocketModel {
     this.parts.lights = buildLights(c, styleOf(l.lights, 'none'), styleOf(l.nose, 'cone'));
     for (const g of Object.values(this.parts)) if (g) this.pivot.add(g);
     this.pivot.position.y = -b.height / 2;
+    if (this.opts.merge !== false) {
+      const keep = new Set<Object3D>([...c.blink, ...c.party, ...c.spinners, ...c.flames.map((f) => f.flame.group)]);
+      if (c.halo) keep.add(c.halo);
+      for (const g of Object.values(this.parts)) if (g) mergePart(g, keep);
+    }
   }
 
   /** The body texture material is owned by this rocket (shared ones are not). */

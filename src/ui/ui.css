@@ -361,7 +361,8 @@ body.portrait #rotate-hint:not(.dismissed) { display: flex; }
 .title-corner { position: absolute; right: calc(20px + var(--safe-r,0px)); top: calc(16px + var(--safe-t,0px)); display: flex; gap: 12px; pointer-events: auto; }
 .slot-list { flex: 1; display: flex; gap: 22px; justify-content: center; align-items: center; }
 .slot-card { position: relative; width: 300px; min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 34px; border: 6px solid var(--ink); background: linear-gradient(180deg, #4a3aa8, #2b1d78); color: var(--white); box-shadow: 0 10px 0 rgba(10,6,40,.55); cursor: pointer; pointer-events: auto; }
-.slot-card.empty { background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.06)); border-style: dashed; }
+.slot-card.empty { background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(214,222,255,.82)); color: var(--ink); border-style: dashed; }
+.slot-card.empty .muted { color: var(--ink); opacity: .7; }
 .slot-card canvas { width: 120px; height: 120px; }
 .slot-card .btn.round { position: absolute; top: 12px; right: 12px; }
 .slot-plus { width: 110px; height: 110px; }

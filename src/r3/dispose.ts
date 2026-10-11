@@ -52,8 +52,13 @@ export function disposeObject(root: Object3D): void {
     const mat = any.material;
     if (Array.isArray(mat)) for (const m of mat) disposeMaterial(m, seen);
     else if (mat) disposeMaterial(mat, seen);
-    // InstancedMesh, Skeleton, etc.
+    // InstancedMesh buffers, and skinned characters' bone textures.
     if (typeof any.dispose === 'function' && (o as unknown as { isInstancedMesh?: boolean }).isInstancedMesh) any.dispose();
+    const skeleton = (o as unknown as { skeleton?: { dispose(): void } }).skeleton;
+    if (skeleton && (o as unknown as { isSkinnedMesh?: boolean }).isSkinnedMesh && !seen.has(skeleton)) {
+      seen.add(skeleton);
+      skeleton.dispose();
+    }
   });
   const bg = (root as unknown as { background?: Texture | null }).background;
   if (bg && (bg as Texture).isTexture) disposeTexture(bg, seen);

@@ -12,6 +12,11 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 - `npm run test:e2e` — Playwright smoke tests on desktop/tablet/phone viewports (build first; serves dist on :4392).
 - `npm run pacing` — pacing simulation (estimated minutes per chapter on Easy/Normal).
 - `npm run svgs` — export the site banner + thumbnail SVGs to `site-assets/`.
+- `npm run perf` — perf runs (tablet 1024×768 @2x, CPU ×1/×4/×6, each tier, hub/belt/rings/level/finale), a
+  two-lap 11-scene memory check and boot time → `perf-results/latest.{md,json}` (build first; serves dist on :4393).
+- `npm run shots -- --q low,medium,high [--only hub,map] [--size 1560x720]` — screenshot every scene into `shots/`
+  (gitignored); `node scripts/montage.mjs out.png 3 a.png b.png ...` tiles them for review.
+- The build fails above 3 MB (`scripts/check-size.mjs`).
 - URL flags: `?fps` (FPS + tier + draw calls/tris meter), `?debug` (`window.__spacesky` = S), `?q=low|medium|high`
   (force a tier), `?stress` (heaviest settings, for perf runs).
 - Debug hooks: `__spacesky.game.advance(frames)` steps logic + renders even when the tab is hidden (the desktop
@@ -105,8 +110,12 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   Subjects beside panels are framed with `r3/framing.ts` `focusPose` (view offset; unit-tested). Hub taps:
   `AcademyStage.pick` (crew boxes, then `roomAt`). `?academy[&room=board&cast&decor=all&spin&ui]` review page.
 - Characters are rigid-skinned after building (`bakeRig`): joints are Bones, static parts merge into one
-  SkinnedMesh per material kind with plain colors as vertex colors (~7 draws per character instead of ~18).
-  Hide a limb by scaling its bone (not `.visible`). Portraits pass `merge: false`.
+  SkinnedMesh per material kind with plain colors as vertex colors (~7 draws per character, ~4 on Low where
+  `rigOptions.coarse` shares one lit material). Hide a limb by scaling its bone (not `.visible`). Portraits pass
+  `merge: false`. `disposeObject` also disposes skeletons (their bone textures leaked one texture per character).
+- Rockets merge each part's static pieces per material (`mergePart`; animated blinkers/party lights/spinners/halo/
+  flames stay separate, part groups stay for snap-on). Thumbnails pass `merge: false`.
+- `?stress` freezes the quality governor so a forced tier (`?q=`) is measured as-is.
 - Cutscenes: `scenes/CutsceneScene.ts` runs a `Staging` from `scenes/cutscenes.ts` (Zibbo at the Academy stage,
   star path by Neptune, wormhole dive + tunnel, Star Beacon relight on Zephyra): an intro camera path, a shot +
   acting per dialogue line (`showDialogue(lines, {onLine})`), timed cues, fireworks, an outro. Camera paths are
@@ -163,13 +172,17 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   hangar turntable; 3D cutscene sets; character rigid skinning; Pixi removed (1.49 MB build).
 - [x] 3D Phase 8: timeline-staged cutscenes synced to dialogue lines, credits fly-past, 3D completion screen,
   screenshot tooling (scripts/shots.mjs, scripts/montage.mjs).
-- [ ] 9 perf (Low: hub ~95 calls, levels ~75 vs a 60 target — the rocket model is the next
-  merge candidate) · [ ] 10 tests/review/handoff
+- [x] 3D Phase 9: perf harness (`npm run perf`), Low-tier coarse character merge + rocket part merge (Low hub
+  95→63 calls, levels ~66), skeleton/bone-texture leak fixed (memory flat over two 11-scene laps), `?stress`,
+  3 MB size guard, readable empty save slots.
+- [ ] 10 tests/review/handoff
 
 ## Current numbers
 - Pacing model: Easy ≈ 6.7 h with all side missions (≈ 5.5 h story + free play); Normal ≈ 5.7 h.
-- Perf (tablet profile, DPR 2, M3 GPU): 60 fps, p95 16.7 ms in belt flight / big levels; still 60 fps with 4× CPU throttle.
-- Build: dist/index.html ≈ 1.1 MB on main; ≈ 1.49 MB on space-sky-3d.
+- Perf (tablet profile 1024×768 @2x, headless M3, `perf-results/latest.md`): Low and Medium 59–60 fps in every
+  heavy scene at CPU ×1/×4/×6; High 51–60 (dips only at ×6). Draw calls: Low ≤ 66, Medium ≤ 103, High ≤ 158.
+  Boot to title ≈ 0.6 s. Memory flat across scene changes (≈ 45 MB heap).
+- Build: dist/index.html ≈ 1.1 MB on main; ≈ 1.44 MB on space-sky-3d (budget 3 MB).
 
 ## Content conventions
 - Puzzles remember being solved via flags `solved:<puzzle>`, `reached:<marker>`, `door:<id>`; the mission engine treats
