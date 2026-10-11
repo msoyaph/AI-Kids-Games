@@ -585,12 +585,12 @@ export class WorldView {
       const lava = z.look === 'lava';
       const fade = Math.min(1, z.time / 0.5, (z.maxTime - z.time) / 0.25 + 0.2);
       v.sprite.visible = true;
-      v.sprite.texture = this.atlas.get(lava ? 'glow' : 'puff');
+      v.sprite.texture = this.atlas.get('puff');
       v.sprite.position.set(z.x * TILE, z.y * TILE);
-      const size = (z.r * 2 * TILE) / (lava ? 60 : 50);
-      v.sprite.scale.set(size * (1 + Math.sin(this.time * 4 + z.slot) * 0.04));
+      const size = (z.r * 2 * TILE) / 56;
+      v.sprite.scale.set(size * (1 + Math.sin(this.time * 4 + z.slot) * 0.04), size * 0.8);
       v.sprite.tint = lava ? 0xff6a2a : 0xeaf4ff;
-      v.sprite.alpha = (lava ? 0.85 : 0.55) * fade;
+      v.sprite.alpha = (lava ? 0.75 : 0.5) * fade;
       if (gameDt > 0 && this.fxRng.chance(gameDt * 10)) {
         const ang = this.fxRng.range(0, Math.PI * 2);
         const rr = this.fxRng.range(0, z.r) * TILE;
