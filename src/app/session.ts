@@ -4,6 +4,7 @@ import { codexListener } from '../systems/codex';
 import { dailyListener, ensureDailies } from '../systems/daily';
 import { MissionEngine } from '../systems/missions';
 import { stickerListener } from '../systems/stickers';
+import { triggerListener } from '../systems/triggers';
 import { writeSlot } from '../systems/save/saveManager';
 import type { SaveData } from '../systems/save/schema';
 import { saveSettings } from '../systems/save/settings';
@@ -21,6 +22,7 @@ export function startSession(data: SaveData): void {
   S.state.on(codexListener);
   S.state.on(stickerListener);
   S.state.on(dailyListener);
+  S.state.on(triggerListener);
   S.state.on((_e, st) => checkBadges(st));
   ensureDailies(S.state.data);
   for (const fn of sessionListeners) fn(S.state);

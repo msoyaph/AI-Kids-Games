@@ -90,7 +90,10 @@ export class ExploreScene extends Scene {
   private machineLabels: Text[] = [];
   private crystalTicks: Sprite[] = [];
   private buddy: Sprite | null = null;
-  private trail: Array<[number, number, number]> = [];
+  /** Ring buffer of recent player positions (x, y, facing) for Zibbo to follow. */
+  private trail = new Float32Array(24 * 3);
+  private trailHead = 0;
+  private trailFilled = 0;
   private condT = 0;
   private marker = new Sprite(tex('marker'));
   private hud: Hud;
@@ -466,8 +469,12 @@ export class ExploreScene extends Scene {
       this.condT = 0.4;
       this.refreshHidden();
     }
-    this.trail.push([p.x + this.world.cfg.pw / 2, p.y + this.world.cfg.ph, p.facing]);
-    if (this.trail.length > 24) this.trail.shift();
+    const ti = this.trailHead * 3;
+    this.trail[ti] = p.x + this.world.cfg.pw / 2;
+    this.trail[ti + 1] = p.y + this.world.cfg.ph;
+    this.trail[ti + 2] = p.facing;
+    this.trailHead = (this.trailHead + 1) % 24;
+    this.trailFilled = Math.min(24, this.trailFilled + 1);
     exploreHooks.update(this, dt);
   }
 
@@ -811,8 +818,12 @@ export class ExploreScene extends Scene {
       sp.scale.y = 1 + Math.sin(this.t * 2 + i) * 0.02;
     }
     // Zibbo follows a little behind you.
-    if (this.buddy && this.trail.length) {
-      const [bx, by, bf] = this.trail[0];
+    if (this.buddy && this.trailFilled) {
+      // Oldest sample = where the player was ~0.4 s ago.
+      const oi = (this.trailFilled < 24 ? 0 : this.trailHead) * 3;
+      const bx = this.trail[oi];
+      const by = this.trail[oi + 1];
+      const bf = this.trail[oi + 2];
       this.buddy.position.set(bx - bf * 40, by + 2 - Math.abs(Math.sin(this.t * 6)) * 10);
       this.buddy.scale.x = 0.7 * bf;
     }

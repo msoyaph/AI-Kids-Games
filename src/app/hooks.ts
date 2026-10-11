@@ -56,17 +56,24 @@ function factCard(subject: string): Promise<void> {
   return Promise.resolve();
 }
 
+/** Badges celebrate without stopping the game (no popup in the middle of a landing!). */
 function badgePopup(id: string): Promise<void> {
   const b = BADGE_BY_ID[id];
   if (!b) return Promise.resolve();
-  celebrate(50);
+  celebrate(30);
   sfx('badge');
-  speak(`New badge! ${b.name}`);
-  return new Promise((resolve) => {
-    const pic = drawToCanvas(150, 160, (c, w, hh) => drawBadge(c, b, w, hh, true));
-    const panel = h('div', { class: 'panel col center celebrate', 'data-testid': 'badge-popup' }, h('div', { class: 'h2' }, 'New Badge!'), pic, h('div', { class: 'h3' }, b.name), h('div', { class: 'muted' }, b.desc), button('Cool!', 'check', () => closeTopModal(), { color: 'green', size: 'big', id: 'btn-badge-ok' }));
-    openModal(panel, { onClose: () => resolve() });
-  });
+  if (readAloudOn()) speak(`New badge! ${b.name}`);
+  const pic = drawToCanvas(90, 98, (c, w, hh) => drawBadge(c, b, w, hh, true));
+  const card = h('div', { class: 'badge-toast hit', 'data-testid': 'badge-popup' }, pic, h('div', null, h('div', { class: 'fact-head' }, 'New badge!'), h('div', { class: 'h3' }, b.name), h('div', { class: 'badge-desc' }, b.desc)));
+  for (const old of S.game.topLayer.querySelectorAll('.badge-toast')) old.remove();
+  S.game.topLayer.append(card);
+  const close = () => {
+    card.classList.add('out');
+    setTimeout(() => card.remove(), 400);
+  };
+  card.addEventListener('click', close);
+  setTimeout(close, 4200);
+  return new Promise((r) => setTimeout(r, 900));
 }
 
 function raceResult(course: string, seconds: number): void {

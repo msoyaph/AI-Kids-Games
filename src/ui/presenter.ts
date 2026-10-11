@@ -13,6 +13,7 @@ import { celebrate } from './fx';
 import { closeTopModal, openModal } from './modal';
 import { speak } from './speech';
 import { toast } from './toast';
+import { radio } from './radio';
 import { button, iconEl } from './widgets';
 
 /**
@@ -115,6 +116,9 @@ export function handleMessage(m: UiMessage): void {
       if (lines.length) enqueue(() => showDialogue(lines));
       break;
     }
+    case 'radio':
+      radio(dialogue(m.id));
+      break;
     case 'objective':
       objectiveToast(m.mission);
       break;

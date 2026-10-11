@@ -43,7 +43,7 @@ export const CHAPTER4: MissionDef[] = [
     summary: 'Brave the winds of Neptune and help Ivy on Triton.',
     requires: ['c4_uranus'], briefing: 'c4_neptune_brief', done: 'c4_neptune_done',
     objectives: [
-      { kind: 'near', body: 'neptune', text: 'Fly to Neptune', icon: 'rocket', where: { system: 'neptune', body: 'neptune' }, hint: 'Neptune\'s wind pushes your rocket. Steer against it!' },
+      { kind: 'near', body: 'neptune', text: 'Fly to Neptune', icon: 'rocket', where: { system: 'neptune', body: 'neptune' }, hint: 'In our game, Neptune\'s wind pushes your rocket. Steer against it!' },
       { kind: 'scan', target: 'neptune', text: "Scan Neptune's storms", icon: 'scan', where: { system: 'neptune', body: 'neptune' } },
       { kind: 'land', body: 'triton', text: 'Land on Triton', icon: 'land', where: { system: 'neptune', body: 'triton' } },
       { kind: 'talk', npc: 'ivy', area: 'triton_geysers', text: 'Meet Ivy', icon: 'chat', where: { body: 'triton', area: 'triton_geysers' } },

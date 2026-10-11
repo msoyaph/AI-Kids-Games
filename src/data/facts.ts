@@ -36,7 +36,7 @@ export const FACTS: Fact[] = [
     'Venus is the hottest planet, even though Mercury is closer to the Sun.',
     'Venus spins so slowly that one spin takes longer than one trip around the Sun!',
     'Venus spins the opposite way from most planets.',
-    'Venus is covered in thick clouds that trap heat, like a blanket.',
+    'Venus has very thick air and clouds that trap heat, like a blanket.',
     'After the Moon, Venus is the brightest natural thing in our night sky.',
   ]),
   ...F('earth', [
@@ -47,7 +47,7 @@ export const FACTS: Fact[] = [
   ]),
   ...F('moon', [
     'The Moon goes around Earth about once a month.',
-    'Twelve astronauts have walked on the Moon.',
+    'Twelve astronauts walked on the Moon between 1969 and 1972.',
     'The Moon has no air and no wind, so footprints there can last a very long time.',
     "The Moon's gravity is about one sixth of Earth's. You could jump much higher there!",
     'The Moon does not make its own light. It shines because sunlight bounces off it.',
@@ -104,12 +104,12 @@ export const FACTS: Fact[] = [
     'More than 1,000 Earths could fit inside Jupiter.',
     'The Great Red Spot on Jupiter is a giant storm that is bigger than Earth.',
     'Jupiter spins faster than any other planet. A day there lasts about 10 hours.',
-    'Jupiter has lots of moons. Scientists have found more than 90!',
+    'Jupiter has lots of moons. Scientists have found more than 95!',
     'Jupiter is a gas giant, so there is no solid ground to stand on.',
   ]),
   ...F('io', [
     'Io has more active volcanoes than any other place in the solar system.',
-    'Some volcanoes on Io shoot material hundreds of kilometers up into space.',
+    'Some volcanoes on Io shoot gas and dust hundreds of kilometers up into space.',
   ]),
   ...F('europa', [
     'Europa is covered in a shell of ice.',
@@ -127,7 +127,7 @@ export const FACTS: Fact[] = [
   ]),
   ...F('saturn', [
     "Saturn's rings are made of billions of pieces of ice and rock.",
-    'Saturn is less dense than water. In a giant bathtub, it would float!',
+    'Saturn is so light for its size that it would float in a giant bathtub of water!',
     'Saturn has more known moons than any other planet.',
     'Saturn is a gas giant and the second-biggest planet.',
   ]),
@@ -159,7 +159,7 @@ export const FACTS: Fact[] = [
     'Neptune is the farthest planet from the Sun.',
     'Neptune has the fastest winds of any planet.',
     'One year on Neptune lasts about 165 Earth years.',
-    'Neptune was found by using math, before anyone saw it in a telescope.',
+    'Scientists used math to figure out where Neptune was. Then they found it with a telescope!',
   ]),
   ...F('triton', [
     "Triton is Neptune's biggest moon.",
@@ -169,7 +169,7 @@ export const FACTS: Fact[] = [
   ]),
   ...F('pluto', [
     'Pluto is a dwarf planet far beyond Neptune.',
-    'Pluto has a big icy plain shaped like a heart.',
+    'Pluto has a big icy area shaped like a heart.',
     'Pluto is smaller than our Moon.',
     'A year on Pluto lasts about 248 Earth years.',
   ]),
@@ -202,15 +202,15 @@ export const FACTS: Fact[] = [
     'Several rovers have explored Mars.',
   ]),
   ...F('astronaut', [
-    'Astronauts wear space suits so they can breathe and stay warm in space.',
+    'Astronauts wear space suits to breathe. Suits also keep them from getting too hot or too cold.',
     'Astronauts on a space station see about 16 sunrises every day.',
   ]),
   ...F('rocket', [
     'Rockets push hot gas out of the bottom so they can go up.',
-    'Rockets need lots of fuel to escape Earth\'s gravity.',
+    'Rockets need lots of fuel to get into space. Earth\'s gravity pulls hard!',
   ]),
   ...F('wormhole', [
-    'A wormhole is an idea from science: a shortcut through space.',
+    'A wormhole is an idea from science. It would be a shortcut through space.',
     'No one has ever found a real wormhole. In our story, we pretend!',
   ]),
 ];

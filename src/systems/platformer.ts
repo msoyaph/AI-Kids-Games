@@ -607,47 +607,51 @@ export interface Interaction {
   y: number;
 }
 
+// Scratch state for findInteraction (avoids creating a closure every frame).
+const near = { best: Infinity, found: false, cx: 0, feet: 0 };
+
+function consider(out: Interaction, kind: InteractKind, index: number, x: number, y: number, range: number): void {
+  const d = Math.abs(near.cx - x) + Math.abs(near.feet - y) * 0.5;
+  if (d < range && d < near.best) {
+    near.best = d;
+    out.kind = kind;
+    out.index = index;
+    out.x = x;
+    out.y = y;
+    near.found = true;
+  }
+}
+
 /** What the Action button would do right now (nearest thing in reach), or null. */
 export function findInteraction(w: PlatWorld, p: PPlayer, out: Interaction): Interaction | null {
   const cfg = w.cfg;
-  const cx = p.x + cfg.pw / 2;
-  const feet = p.y + cfg.ph;
-  let best = Infinity;
-  let found = false;
-  const consider = (kind: InteractKind, index: number, x: number, y: number, range: number) => {
-    const d = Math.abs(cx - x) + Math.abs(feet - y) * 0.5;
-    if (d < range && d < best) {
-      best = d;
-      out.kind = kind;
-      out.index = index;
-      out.x = x;
-      out.y = y;
-      found = true;
-    }
-  };
-  for (let i = 0; i < w.npcs.length; i++) if (!w.npcs[i].hidden) consider('talk', i, w.npcs[i].x, w.npcs[i].y, 90);
+  near.cx = p.x + cfg.pw / 2;
+  near.feet = p.y + cfg.ph;
+  near.best = Infinity;
+  near.found = false;
+  for (let i = 0; i < w.npcs.length; i++) if (!w.npcs[i].hidden) consider(out, 'talk', i, w.npcs[i].x, w.npcs[i].y, 90);
   if (p.carry >= 0) {
-    for (let i = 0; i < w.machines.length; i++) if (!w.machines[i].powered) consider('deliver', i, w.machines[i].x, w.machines[i].y, 110);
+    for (let i = 0; i < w.machines.length; i++) if (!w.machines[i].powered) consider(out, 'deliver', i, w.machines[i].x, w.machines[i].y, 110);
   } else {
     for (let i = 0; i < w.orbs.length; i++) {
       const o = w.orbs[i];
-      if (!o.used && !o.carried) consider('pickOrb', i, o.x, o.y + 16, 80);
+      if (!o.used && !o.carried) consider(out, 'pickOrb', i, o.x, o.y + 16, 80);
     }
   }
   for (let i = 0; i < w.crystals.length; i++) {
     const c = w.crystals[i];
-    if (!w.solvedGroups.has(c.group)) consider('crystal', i, c.x, c.y, 75);
+    if (!w.solvedGroups.has(c.group)) consider(out, 'crystal', i, c.x, c.y, 75);
   }
-  for (let i = 0; i < w.signs.length; i++) consider('sign', i, w.signs[i].x, w.signs[i].y, 70);
-  consider('exit', 0, w.exitX, w.exitY, 100);
-  if (!found && p.carry >= 0) {
+  for (let i = 0; i < w.signs.length; i++) consider(out, 'sign', i, w.signs[i].x, w.signs[i].y, 70);
+  consider(out, 'exit', 0, w.exitX, w.exitY, 100);
+  if (!near.found && p.carry >= 0) {
     out.kind = 'dropOrb';
     out.index = p.carry;
-    out.x = cx;
-    out.y = feet;
-    found = true;
+    out.x = near.cx;
+    out.y = near.feet;
+    near.found = true;
   }
-  return found ? out : null;
+  return near.found ? out : null;
 }
 
 /** Apply an interaction that the physics world handles itself. Returns true if handled. */

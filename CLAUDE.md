@@ -37,7 +37,12 @@ Vite + TypeScript (strict) + PixiJS 8, shipped as ONE self-contained `dist/index
 - [x] Phase 7: data/facts.ts (ALL facts), data/codex.ts, systems/codex.ts, data/badges.ts (40), systems/daily.ts, systems/race.ts, CodexScene, BadgesScene (badges + sticker book), app/hooks.ts wiring.
 - [x] Phase 8: SlotsScene (3 slots, erase with confirm), CreatorScene (name, suit, helmet, skin, hair, face, difficulty), ui/settings.ts (volume, difficulty, read aloud, tips, fullscreen, help, erase), save tests.
 - [x] Phase 9: audio/audio.ts (Web Audio synth, ~45 SFX), audio/music.ts (seeded composer + lookahead sequencer, 14 tracks, crossfades), onboarding tips (data/tips.ts, ui/tips.ts), hub shooting stars.
-- [ ] Phase 10: tests, pacing.
+- [x] Phase 10: Playwright e2e (smoke, new game, save/reload, flight touch+keys, every level, cutscenes/credits, sandboxed iframe, file://) on desktop/tablet/phone; pacing model (systems/pacing.ts, `npm run pacing`); fact-check pass; menu nav (ui/menuNav.ts); story triggers (data/triggers.ts, non-blocking radio cards); hint timer; README + site SVGs.
+
+## Current numbers
+- Pacing model: Easy ≈ 6.7 h with all side missions (≈ 5.5 h story + free play); Normal ≈ 5.7 h.
+- Perf (tablet profile, DPR 2, M3 GPU): 60 fps, p95 16.7 ms in belt flight / big levels; still 60 fps with 4× CPU throttle.
+- Build: dist/index.html ≈ 1.1 MB.
 
 ## Content conventions
 - Puzzles remember being solved via flags `solved:<puzzle>`, `reached:<marker>`, `door:<id>`; the mission engine treats
@@ -47,6 +52,8 @@ Vite + TypeScript (strict) + PixiJS 8, shipped as ONE self-contained `dist/index
 - Level files: `LEVEL=<id,...> npx vitest run tests/unit/levels.test.ts` checks one level (reachability, soft-locks).
 
 ## Gotchas
-- Headless Chromium renders WebGL in software; e2e timings are much slower than real devices.
+- Headless Chromium renders WebGL in software (~10 fps) unless launched with `--use-angle=metal --enable-gpu` (set in playwright.config.ts).
+- Bobbing/animated buttons never count as "stable" for Playwright: tests use `click({ force: true })` or `navTo()` in tests/e2e/helpers.ts.
+- Dialogue freezes gameplay; anything that can happen mid-flight/explore should use `radio` (non-blocking) or toasts, not `dialogue`.
 - `npm audit` flags `braces` via `vite-plugin-singlefile → micromatch` — build-time only, not shipped.
 - Port 5173 is used by another project on this machine; use 5391/4391/4392.

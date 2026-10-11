@@ -6,7 +6,7 @@ import { defineConfig } from '@playwright/test';
  */
 export default defineConfig({
   testDir: 'tests/e2e',
-  timeout: 90_000,
+  timeout: 120_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,
   retries: 0,
@@ -15,6 +15,8 @@ export default defineConfig({
     baseURL: 'http://localhost:4392',
     browserName: 'chromium',
     trace: 'retain-on-failure',
+    // Use the real GPU when available (otherwise headless Chromium renders WebGL in software at ~10 fps).
+    launchOptions: { args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] },
   },
   webServer: {
     command: 'npx vite preview --port 4392 --strictPort',

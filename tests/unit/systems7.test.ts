@@ -162,3 +162,20 @@ describe('races', () => {
     expect(easy.data.races.race_ripple.medal).toBe('gold');
   });
 });
+
+describe('story triggers', () => {
+  it('fire once, only when they match', async () => {
+    const { triggerListener } = await import('../../src/systems/triggers');
+    const { TRIGGERS } = await import('../../src/data/triggers');
+    const { DIALOGUE } = await import('../../src/data/dialogue');
+    for (const t of TRIGGERS) expect(DIALOGUE[t.dialogue], t.dialogue).toBeTruthy();
+    const st = new GameState(createSave(0));
+    st.on(triggerListener);
+    st.emit({ type: 'near', body: 'saturn' });
+    expect(st.outbox.some((m) => m.kind === 'radio' && m.id === 'tr_saturn')).toBe(false);
+    st.setFlag('zibboJoined');
+    st.emit({ type: 'near', body: 'saturn' });
+    st.emit({ type: 'near', body: 'saturn' });
+    expect(st.outbox.filter((m) => m.kind === 'radio' && m.id === 'tr_saturn').length).toBe(1);
+  });
+});

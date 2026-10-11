@@ -13,7 +13,7 @@ export const TIPS: Record<string, TipDef> = {
   flight_fuel: { id: 'flight_fuel', icon: 'fuel', touch: 'Fuel is getting low. Grab green fuel cells!', keys: 'Fuel is getting low. Grab green fuel cells!' },
   flight_land: { id: 'flight_land', icon: 'land', touch: 'You are close! Tap Land to land here.', keys: 'You are close! Press E to land here.' },
   flight_scan: { id: 'flight_scan', icon: 'scan', touch: 'Hold the Scan button to scan it!', keys: 'Hold E to scan it!' },
-  flight_bump: { id: 'flight_bump', icon: 'shield', touch: 'Bonk! Rocks take a little shield. Fly around them!', keys: 'Bonk! Rocks take a little shield. Fly around them!' },
+  flight_bump: { id: 'flight_bump', icon: 'shield', touch: 'Bonk! Rocks hurt your shield a little. Fly around them!', keys: 'Bonk! Rocks hurt your shield a little. Fly around them!' },
   flight_comet: { id: 'flight_comet', icon: 'sparkle', touch: 'Fly inside a comet tail for a speed boost!', keys: 'Fly inside a comet tail for a speed boost!' },
   landing: { id: 'landing', icon: 'land', touch: 'Hold Thrust to slow down. Land on the glowing pad!', keys: 'Hold Space or Up to slow down. Land on the glowing pad!' },
   explore_move: { id: 'explore_move', icon: 'jump', touch: 'Drag left or right to walk. Tap Jump to jump!', keys: 'Arrow keys to walk. Space to jump!' },

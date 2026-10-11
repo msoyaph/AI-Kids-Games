@@ -47,11 +47,11 @@ export interface FlightLayout {
   courseStart: { x: number; y: number } | null;
 }
 
-/** Trip length between two systems (not to scale!). */
-export function routeLength(from: SystemId, to: SystemId): number {
+/** Trip length between two systems (not to scale!). Easy trips are a bit shorter. */
+export function routeLength(from: SystemId, to: SystemId, scale = 1): number {
   if (from === to) return 0;
   const d = Math.abs(SYSTEM_BY_ID[from].order - SYSTEM_BY_ID[to].order);
-  return 5200 + 1500 * Math.min(d, 4);
+  return Math.round((5200 + 1500 * Math.min(d, 4)) * scale);
 }
 
 export function buildFlight(setup: FlightSetup): FlightLayout {
@@ -59,7 +59,7 @@ export function buildFlight(setup: FlightSetup): FlightLayout {
   const world = emptyWorld();
   const from = SYSTEM_BY_ID[setup.from];
   const to = SYSTEM_BY_ID[setup.to];
-  const L = routeLength(setup.from, setup.to);
+  const L = routeLength(setup.from, setup.to, setup.tuning.routeScale ?? 1);
   const destY = L > 0 ? rng.range(-500, 500) : 0;
   const systems: SystemPlacement[] = [{ id: from.id, cx: 0, cy: 0 }];
   if (L > 0) systems.push({ id: to.id, cx: L, cy: destY });

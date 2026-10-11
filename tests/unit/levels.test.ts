@@ -9,7 +9,6 @@ import { THEMES } from '../../src/data/themes';
 import { parseLevel } from '../../src/systems/level';
 import { analyzeLevel } from '../../src/systems/reachability';
 
-declare const process: { env: Record<string, string | undefined> };
 const only = process.env.LEVEL ? new Set(process.env.LEVEL.split(',')) : null;
 const chars = new Set(CHARACTERS.map((c) => c.id));
 

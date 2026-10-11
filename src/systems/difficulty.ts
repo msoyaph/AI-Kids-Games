@@ -30,6 +30,8 @@ export interface DiffTuning {
   coyote: number;
   /** Scan: seconds you need to hold the action button. */
   scanTime: number;
+  /** Trips between planets are this much shorter or longer. */
+  routeScale: number;
 }
 
 export const DIFFICULTY: Record<Difficulty, DiffTuning> = {
@@ -42,13 +44,14 @@ export const DIFFICULTY: Record<Difficulty, DiffTuning> = {
     asteroidDensity: 0.55,
     asteroidSpeed: 0.55,
     magnetBonus: 50,
-    hintEvery: 20,
+    hintEvery: 45,
     landingAssist: true,
     landingSafeSpeed: 150,
     raceTimeMult: 1.6,
     hover: 1.6,
     coyote: 0.16,
     scanTime: 1.0,
+    routeScale: 0.85,
   },
   normal: {
     fuelUse: 1,
@@ -59,13 +62,14 @@ export const DIFFICULTY: Record<Difficulty, DiffTuning> = {
     asteroidDensity: 1,
     asteroidSpeed: 1,
     magnetBonus: 0,
-    hintEvery: 45,
+    hintEvery: 100,
     landingAssist: false,
     landingSafeSpeed: 100,
     raceTimeMult: 1,
     hover: 0.9,
     coyote: 0.1,
     scanTime: 1.8,
+    routeScale: 1,
   },
 };
 

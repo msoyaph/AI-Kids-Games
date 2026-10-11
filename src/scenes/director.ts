@@ -3,18 +3,43 @@ import { sfx } from '../audio/sfx';
 import { BODY_BY_ID, bodyForArea, SYSTEM_BY_ID, type SystemDef, type SystemId } from '../data/bodies';
 import { levelById } from '../data/levels';
 import type { ObjectiveDef, Where } from '../data/missionTypes';
+import type { FBody } from '../systems/flight';
 import { STICKERS } from '../data/stickers';
 import { condOk } from '../systems/level';
 import type { FlightExtras } from '../systems/flightWorld';
 import { h } from '../ui/dom';
 import { closeTopModal, openModal } from '../ui/modal';
 import { toast } from '../ui/toast';
+import { readAloudOn, speak } from '../ui/speech';
 import { button } from '../ui/widgets';
 import { exploreHooks } from './exploreHooks';
 import { directorFactory, findBody, type FlightDirector, type FlightTarget } from './flightDirector';
 import type { FlightScene, FlightSceneParams } from './FlightScene';
 import { landingHooks } from './landingHooks';
 import { mapHooks } from './mapHooks';
+
+/** Seconds since the tracked objective last moved forward (drives gentle hints). */
+let stuckT = 0;
+let lastKey = '';
+
+/** Call every frame in play scenes: shows the objective's hint if the player seems stuck. */
+export function hintTick(dt: number): void {
+  const cur = S.missions?.currentObjective();
+  if (!cur) return;
+  const key = `${cur.mission.id}:${cur.prog.step}:${cur.prog.count}`;
+  if (key !== lastKey) {
+    lastKey = key;
+    stuckT = 0;
+    return;
+  }
+  stuckT += dt;
+  if (stuckT >= S.state.tuning.hintEvery) {
+    stuckT = 0;
+    const text = cur.obj.hint ?? `${cur.obj.text}. Follow the yellow arrow!`;
+    toast(text, 'question', 5000);
+    if (readAloudOn()) speak(text);
+  }
+}
 
 /** HUD label for the tracked objective, with a counter for "collect 3" style goals. */
 export function objectiveLabel(): { text: string; icon: string } | null {
@@ -73,19 +98,59 @@ function missionFlightDirector(p: FlightSceneParams): FlightDirector {
     if (body && routeSystems.has(body.system)) extras.sticker = { id: st.id, near: st.source.body };
   }
 
-  const nearest = <T extends { x: number; y: number }>(scene: FlightScene, list: T[], ok: (t: T) => boolean): T | null => {
+  // Everything below runs every frame, so it reuses objects and avoids closures.
+  const out: FlightTarget = { x: 0, y: 0, r: 0 };
+  const set = (x: number, y: number, r: number): FlightTarget => {
+    out.x = x;
+    out.y = y;
+    out.r = r;
+    return out;
+  };
+  /** Nearest alive item in a list (coins, fuel, hauls, glimmers). */
+  const nearestAlive = (scene: FlightScene, list: Array<{ x: number; y: number; alive: boolean }>, r: number): FlightTarget | null => {
     const ship = scene.getShip();
-    let best: T | null = null;
+    let bi = -1;
     let bd = Infinity;
-    for (const it of list) {
-      if (!ok(it)) continue;
-      const d = Math.hypot(it.x - ship.x, it.y - ship.y);
+    for (let i = 0; i < list.length; i++) {
+      const it = list[i];
+      if (!it.alive) continue;
+      const d = (it.x - ship.x) ** 2 + (it.y - ship.y) ** 2;
       if (d < bd) {
         bd = d;
-        best = it;
+        bi = i;
       }
     }
-    return best;
+    return bi >= 0 ? set(list[bi].x, list[bi].y, r) : null;
+  };
+  // Cached objective lookup: only recomputed when the tracked mission or step changes.
+  let cacheMission: string | null = '';
+  let cacheStep = -1;
+  let cacheObj: ObjectiveDef | null = null;
+  let cacheSeen: string[] = [];
+  let cacheBody: FBody | null = null;
+  let cacheFallback: FBody | null = null;
+  let cacheScene: FlightScene | null = null;
+  const refresh = (scene: FlightScene) => {
+    const id = S.state.data.activeMission;
+    const prog = id ? S.state.data.missions[id] : undefined;
+    const step = prog && prog.status === 'active' ? prog.step : -1;
+    if (id === cacheMission && step === cacheStep && scene === cacheScene) {
+      if (prog) cacheSeen = prog.seen;
+      return;
+    }
+    cacheMission = id;
+    cacheStep = step;
+    cacheScene = scene;
+    cacheObj = id && step >= 0 ? S.missions.byId[id]?.objectives[step] ?? null : null;
+    cacheSeen = prog?.seen ?? [];
+    cacheBody = null;
+    cacheFallback = findBody(scene, SYSTEM_BY_ID[p.to].main);
+    if (cacheObj) {
+      const w = whereOf(cacheObj);
+      if (w.body) cacheBody = findBody(scene, w.body);
+      if (!cacheBody && w.system && routeSystems.has(w.system)) cacheBody = findBody(scene, SYSTEM_BY_ID[w.system as SystemId].main);
+      if (!cacheBody && (w.place || cacheObj.kind === 'home' || cacheObj.kind === 'talk')) cacheBody = findBody(scene, 'earth');
+    }
   };
 
   return {
@@ -94,50 +159,39 @@ function missionFlightDirector(p: FlightSceneParams): FlightDirector {
       const world = scene.getLayout().world;
       if (scene.isRacing()) {
         const g = world.gates[world.nextGate];
-        return g ? { x: g.x, y: g.y, r: g.r * 0.5 } : null;
+        return g ? set(g.x, g.y, g.r * 0.5) : null;
       }
-      const cur = S.missions.currentObjective();
-      if (cur) {
-        const o = cur.obj;
+      refresh(scene);
+      const o = cacheObj;
+      if (o) {
         if (o.kind === 'gates' && world.gates.length) {
           const g = world.gates[world.nextGate];
-          if (g) return { x: g.x, y: g.y, r: g.r * 0.5 };
+          if (g) return set(g.x, g.y, g.r * 0.5);
         }
         if (o.kind === 'scan' && o.target) {
-          const t = nearest(scene, world.bodies, (b) => (o.target!.endsWith(':') ? b.id.startsWith(o.target!) : b.id === o.target) && !cur.prog.seen.includes(b.id));
-          if (t) return t;
+          const ship = scene.getShip();
+          const prefix = o.target.endsWith(':');
+          let best: FBody | null = null;
+          let bd = Infinity;
+          for (let i = 0; i < world.bodies.length; i++) {
+            const b = world.bodies[i];
+            const hit = prefix ? b.id.startsWith(o.target) : b.id === o.target;
+            if (!hit || cacheSeen.includes(b.id)) continue;
+            const d = (b.x - ship.x) ** 2 + (b.y - ship.y) ** 2;
+            if (d < bd) {
+              bd = d;
+              best = b;
+            }
+          }
+          if (best) return best;
         }
-        if (o.kind === 'haul') {
-          const t = nearest(scene, world.hauls, (q) => q.alive);
-          if (t) return { x: t.x, y: t.y, r: 20 };
-        }
-        if (o.kind === 'glimmer') {
-          const t = nearest(scene, world.glimmers, (q) => q.alive);
-          if (t) return { x: t.x, y: t.y, r: 20 };
-        }
-        if (o.kind === 'fuel') {
-          const t = nearest(scene, world.fuels, (q) => q.alive);
-          if (t) return { x: t.x, y: t.y, r: 20 };
-        }
-        if (o.kind === 'coins') {
-          const t = nearest(scene, world.coins, (q) => q.alive);
-          if (t) return { x: t.x, y: t.y, r: 14 };
-        }
-        const w = whereOf(o);
-        if (w.body) {
-          const b = findBody(scene, w.body);
-          if (b) return b;
-        }
-        if (w.system && routeSystems.has(w.system)) {
-          const b = findBody(scene, SYSTEM_BY_ID[w.system as SystemId].main);
-          if (b) return b;
-        }
-        if (w.place || cur.obj.kind === 'home' || cur.obj.kind === 'talk') {
-          const e = findBody(scene, 'earth');
-          if (e) return e;
-        }
+        if (o.kind === 'haul') return nearestAlive(scene, world.hauls, 20) ?? cacheBody ?? cacheFallback;
+        if (o.kind === 'glimmer') return nearestAlive(scene, world.glimmers, 20) ?? cacheBody ?? cacheFallback;
+        if (o.kind === 'fuel') return nearestAlive(scene, world.fuels, 20) ?? cacheFallback;
+        if (o.kind === 'coins') return nearestAlive(scene, world.coins, 14) ?? cacheFallback;
+        if (cacheBody) return cacheBody;
       }
-      return findBody(scene, SYSTEM_BY_ID[p.to].main);
+      return cacheFallback;
     },
     canScan: (id) => {
       for (const def of S.missions.active()) {
@@ -152,6 +206,7 @@ function missionFlightDirector(p: FlightSceneParams): FlightDirector {
       scene.setObjective(lbl?.text ?? `Explore ${SYSTEM_BY_ID[p.to].name}!`, lbl?.icon ?? 'rocket');
     },
     update: (scene, dt) => {
+      hintTick(dt);
       hudT -= dt;
       if (hudT > 0) return;
       hudT = 0.25;
@@ -197,6 +252,7 @@ export function installDirectors(): void {
   };
   let hintT = 0;
   exploreHooks.update = (scene, dt) => {
+    hintTick(dt);
     hintT += dt;
     if (hintT > 0.3) {
       hintT = 0;

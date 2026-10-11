@@ -12,14 +12,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:all": "npm run build && vitest run && playwright test",
     "pacing": "vite-node scripts/pacing-sim.ts",
     "svgs": "vite-node scripts/export-site-svgs.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.0",
+    "@types/node": "^24.19.2",
     "pixi.js": "^8.22.0",
     "typescript": "~5.9",
     "vite": "^8.3.4",
+    "vite-node": "^6.0.0",
     "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^5.0.3"
   }

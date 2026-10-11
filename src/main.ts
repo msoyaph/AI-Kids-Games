@@ -39,6 +39,7 @@ import { GameState } from './systems/state';
 import { h } from './ui/dom';
 import { anyModalOpen, closeTopModal } from './ui/modal';
 import { presenterHooks, pumpMessages } from './ui/presenter';
+import { menuNavStep } from './ui/menuNav';
 import { initSpeech, setReadAloud } from './ui/speech';
 
 function setLoad(pct: number, msg?: string): void {
@@ -137,6 +138,7 @@ async function boot(): Promise<void> {
       if (anyModalOpen()) closeTopModal();
       else game.current?.back();
     }
+    menuNavStep();
   });
   game.postStep.push((dt) => {
     pumpMessages();

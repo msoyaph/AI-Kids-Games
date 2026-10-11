@@ -102,6 +102,7 @@ export class GameState {
 export type UiMessage =
   | { kind: 'toast'; icon: string; text: string; color?: string }
   | { kind: 'dialogue'; id: string }
+  | { kind: 'radio'; id: string }
   | { kind: 'badge'; id: string }
   | { kind: 'sticker'; id: string }
   | { kind: 'codex'; id: string }

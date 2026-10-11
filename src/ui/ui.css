@@ -409,3 +409,12 @@ body.portrait #rotate-hint:not(.dismissed) { display: flex; }
 .tip-card.out { opacity: 0; }
 .tip-words { flex: 1; min-width: 0; line-height: 1.2; }
 .tip-off { border: none; background: none; color: var(--ink); opacity: .6; font: 700 18px var(--font); text-decoration: underline; padding: 4px; }
+body.kbd-nav #ui button:focus, body.kbd-nav #ui [role=button]:focus, body.kbd-nav #ui .slot-card:focus { outline: none; box-shadow: 0 0 0 7px #4dd4ff, 0 8px 0 var(--ink) !important; }
+.badge-toast { position: absolute; right: calc(20px + var(--safe-r,0px)); top: calc(110px + var(--safe-t,0px)); display: flex; align-items: center; gap: 12px; padding: 10px 18px 10px 10px; border-radius: 26px; background: linear-gradient(180deg, #fffbe0, #ffe8a0); color: var(--ink); border: 5px solid var(--ink); box-shadow: 0 8px 0 rgba(10,6,40,.5); animation: pop-in .35s ease-out; pointer-events: auto; z-index: 25; transition: opacity .35s; max-width: 460px; }
+.badge-toast canvas { width: 90px; height: 98px; }
+.badge-toast.out { opacity: 0; }
+.radio-card { position: absolute; left: calc(20px + var(--safe-l,0px)); top: calc(130px + var(--safe-t,0px)); display: flex; align-items: center; gap: 12px; width: min(560px, 60%); padding: 8px 16px 8px 8px; border-radius: 24px; background: linear-gradient(180deg, #ffffff, #e6ecff); color: var(--ink); border: 5px solid var(--ink); box-shadow: 0 8px 0 rgba(10,6,40,.5); animation: slide-down .3s ease-out; pointer-events: auto; z-index: 22; transition: opacity .3s; }
+.radio-card canvas { width: 84px; height: 84px; flex: none; }
+.radio-card.out { opacity: 0; }
+.radio-name { font-size: 20px; color: #6b3fd4; font-weight: 900; }
+.radio-text { font-size: 26px; line-height: 1.2; }

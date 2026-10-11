@@ -154,7 +154,8 @@ export class HubScene extends Scene {
       this.refresh();
     }
     const inp = S.input.state;
-    if (inp.actionPressed && !this.frozen) this.go();
+    const focused = document.activeElement && document.activeElement !== document.body;
+    if (inp.actionPressed && !this.frozen && !focused) this.go();
   }
 
   override render(): void {

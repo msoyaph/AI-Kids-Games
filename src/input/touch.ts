@@ -24,7 +24,8 @@ export class TouchControls {
   private oy = 0;
   private radius = 95;
   mode: ControlMode = 'none';
-  private actionKey = '';
+  private actionLabel: string | null = '';
+  private actionIcon = '';
 
   constructor(
     private readonly input: Input,
@@ -159,9 +160,9 @@ export class TouchControls {
 
   /** Show what the Action button will do right now (null = nothing to do). */
   setAction(label: string | null, icon = 'hand'): void {
-    const key = `${label}|${icon}`;
-    if (key === this.actionKey) return;
-    this.actionKey = key;
+    if (label === this.actionLabel && icon === this.actionIcon) return;
+    this.actionLabel = label;
+    this.actionIcon = icon;
     this.actionBtn.classList.toggle('ready', !!label);
     setText(this.actionLbl, label ?? 'Action');
     this.actionIco.replaceWith((this.actionIco = iconEl(label ? icon : 'hand')));

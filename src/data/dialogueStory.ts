@@ -131,8 +131,8 @@ export const STORY_DIALOGUE: Record<string, Line[]> = {
     { who: 'zibbo', text: 'Zib-zib! Thank you, {name}! You are my best friend!', mood: 'wow' },
   ],
   c3s_io_brief: [
-    { who: 'pip', text: 'Io has more volcanoes than anywhere else we know.' },
-    { who: 'pip', text: 'It is too hot to land. Scan it from space!' },
+    { who: 'pip', text: 'Io has more active volcanoes than anywhere else we know.' },
+    { who: 'pip', text: 'It is not safe to land there. Scan it from space!' },
   ],
   c3s_io_done: [{ who: 'pip', text: 'Look at those volcanoes! Here is a sticker.' }],
   c3s_ganymede_brief: [
@@ -168,7 +168,7 @@ export const STORY_DIALOGUE: Record<string, Line[]> = {
   ],
   c4_uranus_done: [{ who: 'zibbo', text: 'Two clue crystals! Only one more to go!' }],
   c4_neptune_brief: [
-    { who: 'pip', text: 'Neptune has the fastest winds of any planet. Hold on tight!' },
+    { who: 'pip', text: 'Neptune has the fastest winds of any planet. In our game, they push your rocket!' },
     { who: 'zibbo', text: 'The last clue is on Triton, Neptune\'s big moon.' },
   ],
   c4_neptune_done: [
@@ -200,7 +200,7 @@ export const STORY_DIALOGUE: Record<string, Line[]> = {
   c4s_enceladus_done: [{ who: 'pip', text: 'Ice fountains in space! How amazing!' }],
   c4s_pluto_brief: [
     { who: 'ivy', text: 'Pluto is a dwarf planet far past Neptune.' },
-    { who: 'ivy', text: 'It has a big icy plain shaped like a heart. Go and see!' },
+    { who: 'ivy', text: 'It has a big icy area shaped like a heart. Go and see!' },
   ],
   c4s_pluto_done: [{ who: 'ivy', text: 'You found Pluto\'s heart! That is so sweet.' }],
 
@@ -238,6 +238,20 @@ export const STORY_DIALOGUE: Record<string, Line[]> = {
   c5s_glimmers_done: [{ who: 'ollo', text: 'The glimmers are home. They twinkle to say thank you!' }],
   c5s_berries_brief: [{ who: 'wobb', text: 'Let\'s have a picnic! Pick five glow-berries for me.' }],
   c5s_berries_done: [{ who: 'wobb', text: 'Yum! Here is a Zephyra Sash, just for you!' }],
+
+  // ---------------------------------------------------------------- Story triggers
+  tr_first_bump: [{ who: 'rio', text: 'Bonk! That rock took a little shield. Try to fly around them!' }],
+  tr_first_tow: [{ who: 'tuggy', text: 'Beep boop! Tuggy to the rescue! You keep all your star-coins.' }],
+  tr_first_comet: [{ who: 'rio', text: 'Wheee! Comet tails give you a speed boost in our game!' }],
+  tr_first_slingshot: [{ who: 'pip', text: 'A slingshot! Real spacecraft swing past planets to speed up too.', mood: 'wow' }],
+  tr_belt: [{ who: 'rio', text: 'The asteroid belt! Fly slowly and steer around the rocks.' }],
+  tr_saturn: [{ who: 'zibbo', text: 'Ooh! Look at those rings! They sparkle like candy!', mood: 'wow' }],
+  tr_neptune: [{ who: 'pip', text: 'Neptune is the farthest planet. We are a long way from home!' }],
+  tr_sun: [{ who: 'pip', text: 'The Sun is very close here. Never look right at the real Sun!' }],
+  tr_jupiter: [{ who: 'pip', text: 'Jupiter is SO big! It is the biggest planet of all.', mood: 'wow' }],
+  tr_pluto: [{ who: 'ivy', text: 'Little Pluto! Can you see the big heart on it?' }],
+  tr_zephyra: [{ who: 'zibbo', text: 'Home! I can see my house from here! Zib-zib!', mood: 'wow' }],
+  tr_mars: [{ who: 'kit', text: 'Welcome to Mars! Watch out for the red dust. It gets everywhere!' }],
 
   // ---------------------------------------------------------------- Cutscenes
   cs_zibbo: [

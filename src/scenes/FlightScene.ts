@@ -37,11 +37,23 @@ type Mode = 'fly' | 'tow' | 'leaving';
 
 const SHIP_SCALE = 0.68;
 
+const LAND_LABELS = new Map<string, string>();
+/** "Land on Mars" (cached so the HUD doesn't build a new string every frame). */
+function landLabel(id: string): string {
+  let l = LAND_LABELS.get(id);
+  if (!l) {
+    l = id === 'earth' ? 'Land at Academy' : `Land on ${BODY_BY_ID[id]?.name ?? id}`;
+    LAND_LABELS.set(id, l);
+  }
+  return l;
+}
+
 export class FlightScene extends Scene {
   private layout: FlightLayout;
   private ship: Ship;
   private params: FlightParams;
   private ev: FlightEvents = makeEvents();
+  private diff = '';
   private director: FlightDirector;
   private stars: Starfield;
   private sunGlow = new Sprite(tex('dot'));
@@ -66,6 +78,7 @@ export class FlightScene extends Scene {
   private glimmerSprites: Sprite[] = [];
   private stickerSprite: Sprite | null = null;
   private wormhole: Sprite | null = null;
+  private wormBody: FBody | null = null;
   private rocket = new Container();
   private rocketBody: Sprite;
   private flames: Sprite[] = [];
@@ -124,6 +137,7 @@ export class FlightScene extends Scene {
       extras,
     });
     this.params = st.flight;
+    this.diff = st.difficulty;
     let sx = this.layout.startX;
     let sy = this.layout.startY;
     if (this.layout.courseStart) {
@@ -196,6 +210,7 @@ export class FlightScene extends Scene {
         s.anchor.set(0.5);
         s.scale.set((b.r * 2.2) / 140);
         this.wormhole = s;
+        this.wormBody = b;
       } else if (BODY_BY_ID[b.id]) {
         const t = planetTex(b.id);
         s = new Sprite(t);
@@ -316,6 +331,15 @@ export class FlightScene extends Scene {
     const world = this.layout.world;
     resetEvents(this.ev);
 
+    // Difficulty can change any time from Settings: refresh the rocket's numbers.
+    if (S.state.difficulty !== this.diff) {
+      const fuelFrac = ship.fuel / this.params.maxFuel;
+      const shieldFrac = ship.shield / this.params.maxShield;
+      this.params = S.state.flight;
+      this.diff = S.state.difficulty;
+      ship.fuel = fuelFrac * this.params.maxFuel;
+      ship.shield = shieldFrac * this.params.maxShield;
+    }
     const target = this.director.target(this);
     if (target) {
       world.targetX = target.x;
@@ -474,7 +498,7 @@ export class FlightScene extends Scene {
     } else {
       this.scanT = 0;
       if (this.nearLand) {
-        label = this.nearLand.id === 'earth' ? 'Land at Academy' : `Land on ${BODY_BY_ID[this.nearLand.id]?.name ?? this.nearLand.id}`;
+        label = landLabel(this.nearLand.id);
         if (actionPressed) this.doAction();
       }
     }
@@ -518,7 +542,7 @@ export class FlightScene extends Scene {
   private checkNear(): void {
     const ship = this.ship;
     // After the story trip, flying into the wormhole always takes you to Zephyra.
-    const worm = this.layout.world.bodies.find((q) => q.id === 'wormhole');
+    const worm = this.wormBody;
     if (worm && this.mode === 'fly' && S.state.flag('wormholeDone') && Math.hypot(ship.x - worm.x, ship.y - worm.y) < worm.r + 70) {
       this.mode = 'leaving';
       void S.game.go('cutscene', { id: 'wormhole' });
@@ -795,9 +819,9 @@ export class FlightScene extends Scene {
       const b = world.bodies[i];
       if (!BODY_BY_ID[b.id]) this.bodySprites[i].rotation = Math.sin(this.t + i) * 0.2;
     }
-    if (this.wormhole) {
+    if (this.wormhole && this.wormBody) {
       this.wormhole.rotation = this.t * 1.4;
-      const sc = (world.bodies.find((q) => q.id === 'wormhole')!.r * 2.2) / 140;
+      const sc = (this.wormBody.r * 2.2) / 140;
       this.wormhole.scale.set(sc * (1 + Math.sin(this.t * 3) * 0.05));
     }
     if (this.stickerSprite?.visible) {

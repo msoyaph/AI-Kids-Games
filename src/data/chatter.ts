@@ -38,7 +38,7 @@ export const CHATTER: Record<string, string[]> = {
     'Zib-zib! Thank you for being my friend!',
     'On Zephyra, the trees glow at night. So pretty!',
     'My home has two moons called Tibble and Tobble!',
-    'Your Sun is very bright. Our star is pink!',
+    'Your Sun is very bright. Our star is orange!',
     'I miss my family. But I know we will find the way!',
   ],
   sol: ['Moon Base is quiet and peaceful.'],
