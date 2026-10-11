@@ -13,7 +13,12 @@ game
   .then(() => {
     document.getElementById('boot')?.remove();
     game.showTitle();
-    if (import.meta.env.DEV) (window as unknown as { __cvdev: Game }).__cvdev = game;
+    if (import.meta.env.DEV) {
+      (window as unknown as { __cvdev: Game }).__cvdev = game;
+      void Promise.all([import('./sim/mine'), import('./sim/actions'), import('./sim/npcs'), import('./sim/animals'), import('./sim/story')]).then(([mine, actions, npcs, animals, story]) => {
+        (window as unknown as { __cvmods: unknown }).__cvmods = { mine, actions, npcs, animals, story };
+      });
+    }
   })
   .catch((err) => {
     console.error(err);

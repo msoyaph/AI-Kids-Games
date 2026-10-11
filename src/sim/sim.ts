@@ -38,6 +38,7 @@ export interface SimEvents extends Record<string, unknown> {
   mineFloor: { floor: number };
   faint: { where: string };
   hurt: { dmg: number };
+  achievement: { id: string };
   pickup: { id: string; n: number; q: number };
   anim: { kind: string; x: number; y: number };
   hearts: { id: string; hearts: number };

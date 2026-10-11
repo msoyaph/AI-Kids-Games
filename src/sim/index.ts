@@ -19,5 +19,6 @@ import './crafting';
 import './machines';
 import './story';
 import './festivals';
+import './collections';
 export { Sim } from './sim';
 export type { SavedLoc, SimEvents } from './sim';

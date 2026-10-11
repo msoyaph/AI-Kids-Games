@@ -12,6 +12,8 @@ import { bakeIcons } from '../render/art/icons';
 import { Fx } from '../render/fx';
 import { createRenderer, type RenderHost } from '../render/renderer';
 import { WorldView } from '../render/world-view';
+import { Lighting } from '../render/lighting';
+import { WeatherFx } from '../render/weather';
 import { Sim } from '../sim';
 import type { NewGameOptions } from '../sim/newgame';
 import { loadSlot, saveToSlot, slotBytes } from '../sim/save';
@@ -42,6 +44,7 @@ import { installCrafting } from './crafting';
 import { installCutscenes } from './cutscene';
 import { installStory } from './story';
 import { installFestivals } from './festival';
+import { installCollections } from './collections';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
 
 export interface GameOptions {
@@ -93,6 +96,8 @@ export class Game implements MenuHost {
   cam = { x: 0, y: 0 };
   fx = new Fx();
   ctl!: Controller;
+  lighting!: Lighting;
+  weather = new WeatherFx();
   fps = 60;
   // UI
   uiRoot!: HTMLElement;
@@ -135,6 +140,9 @@ export class Game implements MenuHost {
     this.playerShadow.label = 'nocull';
     this.playerShadow.texture = this.atlas.tex('shadow');
     this.ctl = new Controller(this);
+    this.lighting = new Lighting();
+    this.view.fx.addChild(this.lighting.glows);
+    this.host.app.stage.addChild(this.lighting.screen, this.weather.layer);
     this.view.fx.addChild(this.fx.layer);
     this.view.top.addChild(this.ctl.layer);
     this.input.attachCanvas(this.host.app.canvas as HTMLCanvasElement);
@@ -147,6 +155,7 @@ export class Game implements MenuHost {
     installCutscenes(this);
     installStory(this);
     installFestivals(this);
+    installCollections(this);
     this.input.onAction = (a) => this.onRawAction(a);
     window.addEventListener('pagehide', () => this.suspend());
     document.addEventListener('visibilitychange', () => {
@@ -462,6 +471,10 @@ export class Game implements MenuHost {
         return;
       case 'shop': {
         if (!arg) return;
+        if (!SHOPS[arg]) {
+          HOOKS.trigger[arg]?.(this, arg);
+          return;
+        }
         const r = shopOpen(this.sim, arg);
         if (!r.open) {
           this.toasts.show(r.reason ?? 'Closed!');
@@ -628,6 +641,14 @@ export class Game implements MenuHost {
     this.view.view.w = this.host.width / z;
     this.view.view.h = this.host.height / z;
     for (const f of HOOKS.onRender) f(this, dt);
+    const loc = this.sim.here;
+    const st = this.sim.state;
+    const season = seasonOf(st.day);
+    const dim = st.weather === 'storm' ? 0.28 : st.weather === 'rain' ? 0.16 : st.weather === 'snow' ? 0.08 : 0;
+    this.lighting.update(this.host, loc, this.mode === 'title' ? 12 * 60 : st.min, { x: this.player.x * z + this.view.root.x, y: (this.player.y - 10) * z + this.view.root.y }, dim, 0.78);
+    this.weather.reduced = this.settings.reducedMotion;
+    this.weather.update(dt, this.host.width, this.host.height, st.weather, season, loc.def.outdoor && this.mode !== 'title', z);
+    if (this.weather.flashed()) this.sfx('thunder');
     this.view.update();
     if (this.mode === 'play') this.ctl.drawHighlights();
     this.host.app.render();
