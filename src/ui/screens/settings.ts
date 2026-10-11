@@ -4,6 +4,7 @@ import { TouchControls } from '../../input/touch';
 import type { QualitySetting } from '../../render/quality';
 import { button, h, type Screen } from '../ui';
 import { choice } from './setup';
+import { renderPlaytest } from './playtest';
 
 /** A keyboard/gamepad-friendly slider (left/right nudges, tap/drag on touch). */
 export function slider(label: string, get: () => number, set: (v: number) => void, step = 0.1): HTMLElement {
@@ -35,7 +36,11 @@ export function slider(label: string, get: () => number, set: (v: number) => voi
   return h('div', { class: 'setting-row' }, h('div', null, label), b);
 }
 
-type Tab = 'audio' | 'graphics' | 'gameplay' | 'controls';
+export type SettingsTab = 'audio' | 'graphics' | 'gameplay' | 'controls' | 'playtest';
+type Tab = SettingsTab;
+
+/** The hidden Playtest tab appears after tapping the Settings title 5 times (or while playtest mode is on). */
+let playtestRevealed = false;
 
 export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): Screen {
   const s = app.saves.settings;
@@ -43,8 +48,14 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
   const tabs = h('div', { class: 'tabs' });
   const body = h('div', { class: 'panel menu-col scroll', style: 'flex:1;min-height:0' });
   const order: Tab[] = ['audio', 'graphics', 'gameplay', 'controls'];
-  const names: Record<Tab, string> = { audio: '🔊 Sound', graphics: '🎨 Graphics', gameplay: '🏎 Gameplay', controls: '🎮 Controls' };
+  const names: Record<Tab, string> = { audio: '🔊 Sound', graphics: '🎨 Graphics', gameplay: '🏎 Gameplay', controls: '🎮 Controls', playtest: '🧪 Playtest' };
+  const syncOrder = (): void => {
+    const want = playtestRevealed || s.playtest;
+    if (want && !order.includes('playtest')) order.push('playtest');
+  };
+  syncOrder();
   const render = (t: Tab): void => {
+    syncOrder();
     tab = t;
     tabs.innerHTML = '';
     for (const id of order) tabs.appendChild(button(names[id], () => render(id), `small ${id === t ? 'active' : ''}`));
@@ -85,12 +96,27 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
           }
         }),
       );
+    } else if (t === 'playtest') {
+      renderPlaytest(app, body, () => render('playtest'));
     } else {
       renderControls(app, body, () => render('controls'));
     }
   };
   render(tab);
-  const el = h('div', { class: 'dim', style: 'gap:10px' }, h('div', { class: 'topbar' }, h('div', { class: 'title-h' }, 'Settings'), h('div', { class: 'spacer' }), button('Done', back, 'small yellow')), tabs, body);
+  const title = h('div', { class: 'title-h' }, 'Settings');
+  let taps = 0;
+  let tapTimer: ReturnType<typeof setTimeout> | null = null;
+  title.addEventListener('pointerdown', () => {
+    taps++;
+    if (tapTimer) clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => (taps = 0), 1500);
+    if (taps >= 5 && !playtestRevealed) {
+      playtestRevealed = true;
+      taps = 0;
+      render('playtest');
+    }
+  });
+  const el = h('div', { class: 'dim', style: 'gap:10px' }, h('div', { class: 'topbar' }, title, h('div', { class: 'spacer' }), button('Done', back, 'small yellow')), tabs, body);
   return {
     el,
     onBack: back,

@@ -81,6 +81,9 @@ export class RaceTracker {
       if (g.ribbon > 0 && g.ribbonT > 0.35 && g.ribbonT < 0.65 && !(k.shortcutMask & (1 << g.ribbon))) {
         k.shortcutMask |= 1 << g.ribbon;
         k.raceStats.shortcuts++;
+        const ids = k.raceStats.shortcutsById;
+        while (ids.length < g.ribbon) ids.push(0);
+        ids[g.ribbon - 1]++;
         w.events.push({ type: 'shortcut', kart: k.index });
       }
 

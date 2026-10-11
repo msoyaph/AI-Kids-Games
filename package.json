@@ -1,8 +1,8 @@
 {
   "name": "calex-cart",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Calex Cart — an original 3D kart racer for ages 10–14. Single-file browser build.",
+  "description": "Calex Cart \u2014 an original 3D kart racer for ages 10\u201314. Single-file browser build.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "npm run build && playwright test",
-    "sim": "tsx scripts/simulate.ts"
+    "sim": "tsx scripts/simulate.ts",
+    "analyze-playtests": "tsx scripts/analyzePlaytests.ts"
   },
   "dependencies": {
     "three": "^0.186.1"

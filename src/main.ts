@@ -43,6 +43,11 @@ async function boot(): Promise<void> {
   uiRoot.appendChild(rot);
 
   const params = new URLSearchParams(location.search);
+  // ?playtest=1 turns on anonymous on-device playtest recording (?playtest=0 turns it off).
+  if (params.has('playtest')) {
+    app.saves.settings.playtest = params.get('playtest') !== '0';
+    app.saveSettings();
+  }
   (window as unknown as { __calex: unknown }).__calex = { app };
   bootUi?.set(0.9, 'Rolling out');
   await nextFrame();

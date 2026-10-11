@@ -114,6 +114,11 @@ export class RaceSession {
   onComplete?: (r: SessionResult) => void;
   time = 0;
 
+  /** True once the results have been produced (the race/battle is over). */
+  get completed(): boolean {
+    return this.done;
+  }
+
   constructor(
     readonly ctx: SessionContext,
     readonly cfg: SessionConfig,
@@ -137,7 +142,7 @@ export class RaceSession {
     this.locals = cfg.players.map((_, i) => i);
     for (const i of this.locals) {
       const k = this.world.karts[i];
-      k.assist = ctx.settings.steeringAssist;
+      k.assistLevel = ctx.settings.steeringAssist ? 'light' : 'off';
       k.autoAccel = ctx.settings.autoAccel || cfg.players[i].source.kind === 'touch';
     }
     // --- subsystems

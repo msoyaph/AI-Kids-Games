@@ -9,6 +9,8 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - `npm test` — Vitest unit + headless sim tests
 - `npm run test:e2e` — Playwright smoke tests (desktop / tablet / phone) against the built file
 - `npm run sim` — headless AI-vs-AI balance report (tsx scripts/simulate.ts)
+- `npm run analyze-playtests -- <folder>` — aggregates exported playtest JSON, compares with sim baselines,
+  prints SUGGESTED `BALANCE` edits (never applies them) → `sim-report/playtests.md`
 
 ## Hard rules
 - No external assets, fonts, CDNs or network requests. All models are procedural geometry, all audio is Web Audio synthesis.
@@ -98,7 +100,13 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   storage), `docs/upgrade/baseline-balance.md`, `docs/upgrade/before/*.png`, real save fixture
   `tests/fixtures/save-v2.json` (made by `scripts/makeFixture.mjs`). Tools: `scripts/capture.mjs` (screenshots),
   `scripts/perf.mjs --tablet` (1024×768 DPR 2 touch profile).
-- [ ] Phase 1 — tuning file + playtest mode
+- [x] Phase 1 — `src/tuning/balance.ts` (BALANCE: classes, catch-up, stat map, item weights, AI knobs, assist
+  levels, staff) read by tuning.ts/items.ts/rolls.ts/aiDriver/aiController/timeTrial — golden races identical.
+  Playtest: `src/save/playtest.ts` (PlaytestStore, `calexcart.playtest`, rolling ≤ 50 K chars ≈ 100 KB),
+  `src/game/playtest.ts` (record builder), `src/ui/screens/playtest.ts` (Settings tab: tap the Settings title 5×
+  or `?playtest=1`; Export = download standalone / copy box in iframes; Clear), badge `.playtest-badge`,
+  `src/tuning/analyze.ts` + `scripts/analyzePlaytests.ts`. Kart `assist` boolean → `assistLevel`.
+  New race stats: shortcutsById, startResult, wallHits, offroadTime. `__CALEX_VERSION__` define (package 0.2.0).
 - [ ] Phase 2 — tuning fixes (staff, catch-up, assist levels)
 - [ ] Phase 3 — performance (benchmark, LOD, context loss, WebKit)
 - [ ] Phase 4 — game feel
@@ -111,4 +119,7 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
 
 ### Upgrade notes / decisions log
 - Baseline finding: on 9/16 tracks the plain Pro AI (best of 5 seeds) beats the staff ghost → fixed in Phase 2.
+- `storage.ts`: `writeKeyStatus` → 'ok' | 'memory' (storage unavailable) | 'full' (quota); probe key is now
+  `calexcart.__probe` (never touch other games' keys). e2e helpers live in `tests/e2e/helpers.ts`; new feature
+  tests go in `tests/e2e/upgrade.spec.ts`.
 - Baseline storage: ghosts ≈ 180 chars/s (≈ 23 K chars per run); 16 tracks × 3 slots ≈ 2.4 MB UTF-16 → must compress.

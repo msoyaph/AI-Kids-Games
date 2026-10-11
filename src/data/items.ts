@@ -1,6 +1,7 @@
 import type { ItemData, ItemId } from './types';
+import { BALANCE } from '../tuning/balance';
 
-// Weights by position bucket: [1st, front pack, middle, back pack, last].
+// Roll weights by position bucket [1st, front pack, middle, back pack, last] live in BALANCE.items.weights.
 export const ITEMS: ItemData[] = [
   {
     id: 'bumperBall',
@@ -11,7 +12,7 @@ export const ITEMS: ItemData[] = [
     canTrail: true,
     color: 0xff4d6d,
     color2: 0xffd23f,
-    weights: [26, 24, 18, 10, 5],
+    weights: BALANCE.items.weights.bumperBall,
     basic: true,
   },
   {
@@ -23,7 +24,7 @@ export const ITEMS: ItemData[] = [
     canTrail: false,
     color: 0xffffff,
     color2: 0x3fa7ff,
-    weights: [0, 7, 12, 14, 12],
+    weights: BALANCE.items.weights.paperPlane,
     basic: false,
   },
   {
@@ -35,7 +36,7 @@ export const ITEMS: ItemData[] = [
     canTrail: true,
     color: 0xb34dff,
     color2: 0xe0a8ff,
-    weights: [28, 18, 10, 5, 2],
+    weights: BALANCE.items.weights.gooPuddle,
     basic: true,
   },
   {
@@ -47,7 +48,7 @@ export const ITEMS: ItemData[] = [
     canTrail: false,
     color: 0xff9f1c,
     color2: 0xffe45c,
-    weights: [8, 16, 18, 14, 9],
+    weights: BALANCE.items.weights.turbo,
     basic: true,
   },
   {
@@ -59,7 +60,7 @@ export const ITEMS: ItemData[] = [
     canTrail: false,
     color: 0xff9f1c,
     color2: 0xff5a3c,
-    weights: [0, 4, 10, 16, 15],
+    weights: BALANCE.items.weights.turbo3,
     basic: true,
   },
   {
@@ -71,7 +72,7 @@ export const ITEMS: ItemData[] = [
     canTrail: false,
     color: 0xff4d6d,
     color2: 0xc0c8d8,
-    weights: [0, 4, 10, 14, 13],
+    weights: BALANCE.items.weights.magnet,
     basic: false,
   },
   {
@@ -83,7 +84,7 @@ export const ITEMS: ItemData[] = [
     canTrail: false,
     color: 0x7fe7ff,
     color2: 0x3fa7ff,
-    weights: [14, 11, 8, 6, 4],
+    weights: BALANCE.items.weights.shield,
     basic: true,
   },
   {
@@ -95,7 +96,7 @@ export const ITEMS: ItemData[] = [
     canTrail: false,
     color: 0xc9c3e6,
     color2: 0x8f86b8,
-    weights: [0, 2, 6, 8, 8],
+    weights: BALANCE.items.weights.cloud,
     basic: false,
   },
   {
@@ -107,7 +108,7 @@ export const ITEMS: ItemData[] = [
     canTrail: false,
     color: 0x9fe3c9,
     color2: 0x4ce0d2,
-    weights: [2, 6, 8, 8, 6],
+    weights: BALANCE.items.weights.tornado,
     basic: false,
   },
   {
@@ -119,7 +120,7 @@ export const ITEMS: ItemData[] = [
     canTrail: false,
     color: 0x3fa7ff,
     color2: 0xff4d6d,
-    weights: [0, 0, 0, 3, 14],
+    weights: BALANCE.items.weights.rocketDash,
     basic: false,
   },
   {
@@ -131,7 +132,7 @@ export const ITEMS: ItemData[] = [
     canTrail: true,
     color: 0xffd23f,
     color2: 0x8a8fa8,
-    weights: [16, 12, 6, 2, 1],
+    weights: BALANCE.items.weights.springTrap,
     basic: true,
   },
   {
@@ -143,7 +144,7 @@ export const ITEMS: ItemData[] = [
     canTrail: false,
     color: 0x8cff6b,
     color2: 0xff6fae,
-    weights: [0, 8, 10, 8, 6],
+    weights: BALANCE.items.weights.popper,
     basic: false,
   },
 ];

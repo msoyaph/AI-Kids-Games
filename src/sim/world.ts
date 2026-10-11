@@ -129,12 +129,14 @@ export class World {
     if (t <= 1.05 && t >= 0.0) {
       k.startBoost(TUNING.startBoostTime);
       k.raceStats.perfectStart = t <= 0.75;
+      k.raceStats.startResult = t <= 0.75 ? 2 : 1;
       this.events.push({ type: 'startBoost', kart: k.index, good: true });
     } else if (t > 1.6) {
       // pressed way too early: a harmless sputter
       k.spinTime = 0.0;
       k.wobble = 0.6;
       k.speed = 0;
+      k.raceStats.startResult = -1;
       this.events.push({ type: 'startBoost', kart: k.index, good: false });
     }
   }

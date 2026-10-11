@@ -4,6 +4,7 @@ import type { Rng } from '../../core/rng';
 import { Kart, RespawnState } from '../kart';
 import type { TrackModel, Ribbon } from '../track/trackModel';
 import { TUNING } from '../tuning';
+import { BALANCE } from '../../tuning/balance';
 import type { World } from '../world';
 import { ItemBrain } from './itemBrain';
 
@@ -57,10 +58,11 @@ export class AiDriver {
     readonly skill: number,
     private readonly rng: Rng,
   ) {
-    this.pace = 0.9 + 0.1 * clamp(skill, 0, 1);
-    this.targetTier = skill > 0.85 ? 3 : skill > 0.5 ? 2 : 1;
+    const B = BALANCE.ai;
+    this.pace = B.paceBase + B.pacePerSkill * clamp(skill, 0, 1);
+    this.targetTier = skill > B.tier3Skill ? 3 : skill > B.tier2Skill ? 2 : 1;
     // Good drivers hit the rocket-start window more often.
-    this.startPressAt = rng.chance(0.25 + skill * 0.6) ? rng.range(0.25, 0.95) : rng.chance(0.5) ? rng.range(1.2, 1.5) : -1;
+    this.startPressAt = rng.chance(B.rocketStartBase + skill * B.rocketStartPerSkill) ? rng.range(0.25, 0.95) : rng.chance(0.5) ? rng.range(1.2, 1.5) : -1;
     this.wobblePhase = rng.range(0, 10);
     this.laneTarget = rng.range(-1, 1) * profile.lineNoise;
   }
@@ -135,9 +137,9 @@ export class AiDriver {
     }
     const want = Math.atan2(tx - k.x, tz - k.z);
     const err = wrapAngle(want - k.yaw);
-    let wobble = (1 - this.skill) * 0.12 * Math.sin(w.time * 1.7 + this.wobblePhase);
+    let wobble = (1 - this.skill) * BALANCE.ai.wobble * Math.sin(w.time * 1.7 + this.wobblePhase);
     if (k.cloudTime > 0) wobble += 0.35 * Math.sin(w.time * 3.1 + this.wobblePhase);
-    let steer = clamp(-err * (2.1 + this.skill * 0.8) + wobble, -1, 1);
+    let steer = clamp(-err * (BALANCE.ai.steerGainBase + this.skill * BALANCE.ai.steerGainPerSkill) + wobble, -1, 1);
 
     // --- speed control: slow for very tight bends we can't steer through
     let maxK = 0;
@@ -163,7 +165,7 @@ export class AiDriver {
     inp.drift = this.wantDrift;
 
     // --- tricks off ramps
-    if (k.launched && k.trickWindow > 0 && !k.trickQueued && !this.trickPressed && this.rng.chance(0.25 + this.skill * 0.5)) {
+    if (k.launched && k.trickWindow > 0 && !k.trickQueued && !this.trickPressed && this.rng.chance(BALANCE.ai.trickBase + this.skill * BALANCE.ai.trickPerSkill)) {
       inp.drift = true;
       this.trickPressed = true;
     } else if (!k.launched) {
@@ -215,10 +217,10 @@ export class AiDriver {
     const n1 = Math.round(12 / rb.ds);
     for (let s = 0; s < n1; s++) near += Math.abs(curv[rb.idx(i + s)]);
     near /= Math.max(1, n1);
-    const isCorner = avg > 1 / 55 && Math.abs(turn) > 0.5;
+    const isCorner = avg > 1 / BALANCE.ai.cornerRadius && Math.abs(turn) > BALANCE.ai.cornerTurn;
     if (isCorner && !this.cornerActive) {
       this.cornerActive = true;
-      const chance = (0.15 + this.skill * 0.85) * (this.profile.id === 'showoff' ? 1.15 : this.profile.id === 'careful' ? 0.8 : 1);
+      const chance = (BALANCE.ai.driftChanceBase + this.skill * BALANCE.ai.driftChancePerSkill) * (this.profile.id === 'showoff' ? 1.15 : this.profile.id === 'careful' ? 0.8 : 1);
       if (speed > TUNING.driftMinSpeed + 4 && k.grounded && this.shortcut < 0 && this.rng.chance(chance)) {
         this.wantDrift = true;
         this.driftHold = 0;
@@ -251,7 +253,7 @@ export class AiDriver {
         this.shortcutDecided.add(lapKey);
         const aiUse = this.track.data.shortcuts[r].aiUse ?? 0.5;
         const needsBoost = sc.offroadSurface;
-        const p = clamp(this.skill * this.profile.shortcutBias * aiUse * (needsBoost && k.item !== 'turbo' && k.item !== 'turbo3' ? 0.35 : 1), 0, 0.95);
+        const p = clamp(this.skill * this.profile.shortcutBias * aiUse * (needsBoost && k.item !== 'turbo' && k.item !== 'turbo3' ? BALANCE.ai.shortcutNoBoostMul : 1), 0, BALANCE.ai.shortcutMaxChance);
         if (this.rng.chance(p)) {
           this.shortcut = r;
           this.scIndex = 0;

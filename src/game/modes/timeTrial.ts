@@ -10,6 +10,7 @@ import { HazardSystem } from '../../sim/hazards';
 import { GhostData, GhostRecorder, GF_BOOST, GF_DRIFT, GF_DRIFT_LEFT, GF_GLIDE } from '../../sim/ghost';
 import { SIM_DT } from '../../core/loop';
 import { hashString } from '../../core/rng';
+import { BALANCE } from '../../tuning/balance';
 
 export interface StaffGhost {
   data: GhostData;
@@ -31,11 +32,11 @@ export function staffGhost(trackId: string): StaffGhost {
   const racer = RACERS[hashString(trackId) % RACERS.length];
   const kart: KartConfig = { ...racer.defaultKart, paint: 'cherry', decal: 'none' };
   const track = new TrackModel(data, false);
-  const world = new World({ ground: track, speedClass: 'pro', seed: 4242, racers: [{ racerId: racer.id, kart, player: -1 }], countdownTime: 3 });
+  const world = new World({ ground: track, speedClass: 'pro', seed: BALANCE.staff.seed, racers: [{ racerId: racer.id, kart, player: -1 }], countdownTime: 3 });
   world.events.enabled = false;
   const race = new RaceTracker(world, track, 3);
   race.placeGrid([0]);
-  const ai = new AiController(world, track, { noRubberBand: true, skillBonus: { 0: 0.1 }, personality: { 0: 'balanced' } });
+  const ai = new AiController(world, track, { noRubberBand: true, skillBonus: { 0: BALANCE.staff.skillBonus }, personality: { 0: 'balanced' } });
   const items = new ItemSystem(world, track, track, { set: 'all', boxes: [] });
   ai.attachItems(items);
   if (track.data.hazards?.length) new HazardSystem(world, track, items.hazards);

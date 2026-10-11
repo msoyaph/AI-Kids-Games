@@ -1,5 +1,6 @@
 import type { SpeedClass, SpeedClassData, Stats, WeightClass } from '../data/types';
 import { clamp } from '../core/math';
+import { BALANCE } from '../tuning/balance';
 
 /** Global physics tuning. Units: metres, seconds, radians. */
 export const TUNING = {
@@ -50,17 +51,14 @@ export const TUNING = {
   kartRestitution: 0.55,
 } as const;
 
+/** Speed classes (values live in `BALANCE.classes`). */
 export const SPEED_CLASSES: Record<SpeedClass, SpeedClassData> = {
-  rookie: { id: 'rookie', name: 'Rookie', speedScale: 0.82, aiSkill: 0.35, rubberBack: 0.08, rubberFront: 0.06 },
-  pro: { id: 'pro', name: 'Pro', speedScale: 1.0, aiSkill: 0.65, rubberBack: 0.07, rubberFront: 0.035 },
-  champion: { id: 'champion', name: 'Champion', speedScale: 1.16, aiSkill: 0.92, rubberBack: 0.06, rubberFront: 0.02 },
+  rookie: { id: 'rookie', ...BALANCE.classes.rookie },
+  pro: { id: 'pro', ...BALANCE.classes.pro },
+  champion: { id: 'champion', ...BALANCE.classes.champion },
 };
 
-export const WEIGHT_BASE: Record<WeightClass, Stats> = {
-  light: { speed: 3, accel: 7, handling: 7, weight: 2, traction: 6 },
-  medium: { speed: 5, accel: 5, handling: 5, weight: 5, traction: 5 },
-  heavy: { speed: 7, accel: 3, handling: 3, weight: 8, traction: 4 },
-};
+export const WEIGHT_BASE: Record<WeightClass, Stats> = BALANCE.weightBase;
 
 export interface KartParams {
   topSpeed: number;
@@ -90,16 +88,17 @@ export function combineStats(base: Stats, ...mods: Array<Partial<Stats>>): Stats
   return out;
 }
 
-/** Map 0..10 stat bars to physical parameters. Kept gentle so skill matters more than setup. */
+/** Map 0..10 stat bars to physical parameters (`BALANCE.statMap`). Kept gentle so skill matters more than setup. */
 export function deriveParams(stats: Stats, speedScale: number): KartParams {
+  const m = BALANCE.statMap;
   return {
-    topSpeed: TUNING.baseTopSpeed * speedScale * (0.975 + 0.005 * stats.speed),
-    accel: (11 + 1.25 * stats.accel) * Math.sqrt(speedScale),
-    turnRate: 1.78 + 0.085 * stats.handling,
-    mass: 1 + 0.08 * stats.weight,
-    grip: 7.5 + 0.5 * stats.traction,
-    driftGrip: 2.2 + 0.12 * stats.traction,
-    offroadMul: 0.5 + 0.028 * stats.traction,
-    miniTurboMul: 1 + 0.03 * (stats.accel + stats.handling - 10),
+    topSpeed: TUNING.baseTopSpeed * speedScale * (m.topSpeed.base + m.topSpeed.perStat * stats.speed),
+    accel: (m.accel.base + m.accel.perStat * stats.accel) * Math.sqrt(speedScale),
+    turnRate: m.turnRate.base + m.turnRate.perStat * stats.handling,
+    mass: m.mass.base + m.mass.perStat * stats.weight,
+    grip: m.grip.base + m.grip.perStat * stats.traction,
+    driftGrip: m.driftGrip.base + m.driftGrip.perStat * stats.traction,
+    offroadMul: m.offroadMul.base + m.offroadMul.perStat * stats.traction,
+    miniTurboMul: 1 + m.miniTurbo.perStat * (stats.accel + stats.handling - 10),
   };
 }

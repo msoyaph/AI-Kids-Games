@@ -11,6 +11,8 @@ import { RaceSession, type GameMode, type SessionConfig, type SessionResult } fr
 import { GrandPrix } from './modes/grandPrix';
 import { findRacer } from '../data/racers';
 import { cloneKeys, clonePad } from '../input/bindings';
+import { PlaytestStore } from '../save/playtest';
+import { buildPlaytestRecord } from './playtest';
 
 export interface Flow {
   mode: GameMode;
@@ -49,6 +51,11 @@ export class App {
   onPauseRequest?: () => void;
   /** Rolling timing stats (ms) for the FPS overlay and perf tests. */
   readonly perf = { step: 0, render: 0, frames: 0, frameTimes: new Float32Array(600), cursor: 0 };
+  /** Anonymous per-race playtest log (only written while Settings → playtest is on). */
+  readonly playtest = new PlaytestStore();
+  private playtestBadge: HTMLDivElement;
+  private sessionFrames = 0;
+  private sessionStart = 0;
 
   constructor(
     readonly canvas: HTMLCanvasElement,
@@ -76,6 +83,8 @@ export class App {
     };
     this.fpsEl = h('div', { class: 'fps-meter' });
     uiRoot.appendChild(this.fpsEl);
+    this.playtestBadge = h('div', { class: 'playtest-badge', role: 'status' }, h('i'), 'Playtest recording on');
+    uiRoot.appendChild(this.playtestBadge);
     this.applySettings();
     this.loop = new GameLoop({
       step: (dt) => this.step(dt),
@@ -110,6 +119,7 @@ export class App {
     if (s.padBindings) this.input.padBindings = clonePad(s.padBindings);
     this.input.touch.setMode(s.touchSteer);
     this.fpsEl.style.display = s.showFps ? '' : 'none';
+    this.playtestBadge.style.display = s.playtest ? '' : 'none';
   }
 
   saveSettings(): void {
@@ -221,16 +231,39 @@ export class App {
       return;
     }
     this.gr.quality.adaptive = true;
+    this.sessionFrames = this.perf.frames;
+    this.sessionStart = performance.now();
     this.session.onComplete = (r) => {
       // keep rendering the finished scene behind the results screen
       this.loop.simPaused = true;
+      this.recordPlaytest(false);
       onDone(r);
     };
     this.loop.resetClock();
   }
 
+  /** Playtest mode: log this session's anonymous numbers (`quit` = left before the end). */
+  private recordPlaytest(quit: boolean): void {
+    const s = this.session;
+    if (!s || !this.saves.settings.playtest || s.cfg.trackData) return;
+    if (quit && s.world.raceTime < 5) return; // backed out before really racing
+    const secs = Math.max(0.001, (performance.now() - this.sessionStart) / 1000);
+    try {
+      this.playtest.add(
+        buildPlaytestRecord(
+          s,
+          { input: this.input, settings: this.saves.settings, fps: (this.perf.frames - this.sessionFrames) / secs, tier: this.gr.quality.level, touchDevice: this.gr.isTouch },
+          quit,
+        ),
+      );
+    } catch (e) {
+      console.warn('playtest record failed', e);
+    }
+  }
+
   endSession(): void {
     if (!this.session) return;
+    if (!this.session.completed) this.recordPlaytest(true);
     this.session.dispose();
     this.session = null;
     this.paused = false;

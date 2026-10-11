@@ -226,6 +226,7 @@ export function stepKart(k: Kart, ground: GroundModel, env: StepEnv, dt: number)
       k.vx *= loss;
       k.vz *= loss;
       if (-vn > 3) {
+        k.raceStats.wallHits++;
         env.events.push({ type: 'wall', kart: k.index, strength: clamp(-vn / 15, 0, 1) });
         k.wobble = 0.3;
         if (-vn > 8 && k.drifting) releaseDrift(k, env, true);
@@ -241,6 +242,7 @@ function finishStep(k: Kart, ground: GroundModel, env: StepEnv, dt: number, _was
   // ---- surfaces
   if (k.grounded && hit.hit) {
     k.offroad = hit.surface === 'offroad';
+    if (k.offroad && env.canDrive) k.raceStats.offroadTime += dt;
     if (hit.surface === 'boost' && k.boostTime < TUNING.boostPadTime - 0.15) {
       k.startBoost(TUNING.boostPadTime);
       k.raceStats.boostPads++;

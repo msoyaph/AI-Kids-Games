@@ -31,7 +31,7 @@ export interface ScreenRegistry {
   battleSetup(): void;
   startBattle(): void;
   startTimeTrial(trackId: string): void;
-  settings(back: () => void): void;
+  settings(back: () => void, tab?: import('./settings').SettingsTab): void;
   pause(): void;
   restart(): void;
   confirm(text: string, yes: () => void, no?: () => void): void;
@@ -306,7 +306,7 @@ export function registerScreens(app: App): void {
     battleSetup: () => app.ui.show(battleSetupScreen(app)),
     startBattle,
     startTimeTrial,
-    settings: (back) => app.ui.show(settingsScreen(app, back)),
+    settings: (back, tab) => app.ui.show(settingsScreen(app, back, tab)),
     pause: () => app.ui.showOverlay(pauseOverlay(app)),
     restart: () => {
       app.ui.closeOverlay(false);

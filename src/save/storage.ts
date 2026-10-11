@@ -7,7 +7,7 @@ let available: boolean | null = null;
 export function storageAvailable(): boolean {
   if (available !== null) return available;
   try {
-    const k = '__calex_probe__';
+    const k = 'calexcart.__probe'; // only ever touch our own prefix
     window.localStorage.setItem(k, '1');
     window.localStorage.removeItem(k);
     available = true;
@@ -28,16 +28,26 @@ export function readKey(key: string): string | null {
   return memory.get(key) ?? null;
 }
 
-/** Returns false if the write failed (e.g. quota). */
-export function writeKey(key: string, value: string): boolean {
-  memory.set(key, value);
-  if (!storageAvailable()) return false;
-  try {
-    window.localStorage.setItem(key, value);
-    return true;
-  } catch {
-    return false;
+/** 'ok' = in localStorage, 'memory' = storage unavailable so kept for this visit only, 'full' = quota exceeded. */
+export type WriteStatus = 'ok' | 'memory' | 'full';
+
+export function writeKeyStatus(key: string, value: string): WriteStatus {
+  if (!storageAvailable()) {
+    memory.set(key, value);
+    return 'memory';
   }
+  try {
+    // setItem is atomic: on failure the previous value stays intact.
+    window.localStorage.setItem(key, value);
+    return 'ok';
+  } catch {
+    return 'full';
+  }
+}
+
+/** Returns false only if the write failed because storage is full. */
+export function writeKey(key: string, value: string): boolean {
+  return writeKeyStatus(key, value) !== 'full';
 }
 
 export function removeKey(key: string): void {

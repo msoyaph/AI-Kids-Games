@@ -82,6 +82,8 @@ export interface Settings {
   cameraDistance: number;
   splitMode: 'horizontal' | 'vertical';
   screenShake: boolean;
+  /** Playtest mode: record anonymous per-race numbers on this device (`calexcart.playtest`). */
+  playtest: boolean;
   keyBindings?: Record<KeyScheme, KeyBindings>;
   padBindings?: PadBindings;
 }
@@ -148,6 +150,7 @@ export function defaultSettings(touch = false): Settings {
     cameraDistance: 1,
     splitMode: 'horizontal',
     screenShake: true,
+    playtest: false,
   };
 }
 

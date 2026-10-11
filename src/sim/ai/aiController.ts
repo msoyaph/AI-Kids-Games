@@ -8,6 +8,7 @@ import type { TrackModel } from '../track/trackModel';
 import { EDGE_DROP } from '../track/trackModel';
 import { AiDriver, type HazardInfo } from './aiDriver';
 import { SPEED_CLASSES } from '../tuning';
+import { BALANCE } from '../../tuning/balance';
 import type { Kart } from '../kart';
 import { ItemBrain } from './itemBrain';
 import type { ItemSystem } from '../items/itemSystem';
@@ -41,7 +42,7 @@ export class AiController {
     this.byKart = world.karts.map((k) => {
       if (k.isPlayer) return null;
       const personality = opts.personality?.[k.index] ?? findRacer(k.racerId).personality;
-      const skill = clamp(cls.aiSkill + (opts.skillBonus?.[k.index] ?? 0) + rng.range(-0.06, 0.06), 0.05, 1);
+      const skill = clamp(cls.aiSkill + (opts.skillBonus?.[k.index] ?? 0) + rng.range(-BALANCE.ai.skillSpread, BALANCE.ai.skillSpread), 0.05, 1);
       const d = new AiDriver(k, world, track, AI_PROFILES[personality], skill, new Rng(rng.nextU32()));
       d.hazards = this.hazards;
       this.drivers.push(d);
@@ -62,7 +63,7 @@ export class AiController {
   /** Let the AI drive a player's kart (victory lap after finishing). */
   takeOver(k: Kart): void {
     if (this.byKart[k.index]) return;
-    const d = new AiDriver(k, this.world, this.track, AI_PROFILES.careful, 0.8, new Rng(1000 + k.index));
+    const d = new AiDriver(k, this.world, this.track, AI_PROFILES.careful, BALANCE.ai.takeOverSkill, new Rng(1000 + k.index));
     this.byKart[k.index] = d;
     this.drivers.push(d);
   }
@@ -74,7 +75,7 @@ export class AiController {
   private update(dt: number): void {
     for (const d of this.drivers) d.update(dt);
     this.rubberBand();
-    for (const k of this.world.karts) if (k.isPlayer && k.assist) this.assist(k);
+    for (const k of this.world.karts) if (k.isPlayer && k.assistLevel !== 'off') this.assist(k);
   }
 
   private rubberBand(): void {
@@ -87,14 +88,15 @@ export class AiController {
       return;
     }
     const cls = SPEED_CLASSES[w.speedClass];
+    const cu = BALANCE.catchUp;
     // ramp in after the start so the opening isn't affected
-    const ramp = clamp(w.raceTime / 10, 0, 1);
+    const ramp = clamp(w.raceTime / cu.rampSeconds, 0, 1);
     for (const k of w.karts) {
       if (k.isPlayer) continue;
       const gap = best - k.progress; // >0: AI is behind the best human
       let mul = 1;
-      if (gap > 0) mul = 1 + cls.rubberBack * clamp((gap - 15) / 140, 0, 1);
-      else mul = 1 - cls.rubberFront * clamp((-gap - 20) / 160, 0, 1);
+      if (gap > 0) mul = 1 + cls.rubberBack * clamp((gap - cu.behindStart) / cu.behindRange, 0, 1);
+      else mul = 1 - cls.rubberFront * clamp((-gap - cu.aheadStart) / cu.aheadRange, 0, 1);
       w.speedMul[k.index] = 1 + (mul - 1) * ramp;
     }
   }
@@ -108,8 +110,9 @@ export class AiController {
     const i = k.hint.sample;
     const look = 8 + Math.max(0, k.speed) * 0.4;
     const j = rb.idx(i + Math.round(look / rb.ds));
-    const tx = rb.px[j] + rb.rx[j] * this.track.line[j] * 0.6;
-    const tz = rb.pz[j] + rb.rz[j] * this.track.line[j] * 0.6;
+    const A = BALANCE.assist.levels[k.assistLevel];
+    const tx = rb.px[j] + rb.rx[j] * this.track.line[j] * A.lineFollow;
+    const tz = rb.pz[j] + rb.rz[j] * this.track.line[j] * A.lineFollow;
     const err = wrapAngle(Math.atan2(tx - k.x, tz - k.z) - k.yaw);
     const assistSteer = clamp(-err * 2.2, -1, 1);
     const hw = g.halfWidth;
@@ -117,9 +120,9 @@ export class AiController {
     const drop = (g.d < 0 ? rb.edgeL[i] : rb.edgeR[i]) === EDGE_DROP;
     const lateralVel = k.vx * rb.rx[i] + k.vz * rb.rz[i];
     const towardEdge = lateralVel * Math.sign(g.d) > 0.5;
-    let blend = 0.2;
-    if (ad > hw - (drop ? 2.5 : 1.2) && towardEdge) blend = drop ? 0.85 : 0.55;
-    if (k.drifting) blend *= 0.5;
+    let blend = A.lineBlend;
+    if (ad > hw - (drop ? A.dropMargin : A.wallMargin) && towardEdge) blend = drop ? A.dropBlend : A.wallBlend;
+    if (k.drifting) blend *= A.driftMul;
     k.input.steer = clamp(k.input.steer * (1 - blend) + assistSteer * blend, -1, 1);
   }
 }

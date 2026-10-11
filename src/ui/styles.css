@@ -911,6 +911,41 @@
   width: 100%;
   height: 100%;
 }
+.playtest-badge {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(4px + var(--safe-b));
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(20, 10, 50, 0.55);
+  font: 700 11px var(--font);
+  color: #fff;
+  opacity: 0.8;
+  pointer-events: none !important;
+  z-index: 400;
+  white-space: nowrap;
+}
+.playtest-badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+}
+.playtest-export textarea {
+  width: 100%;
+  height: min(38vh, 260px);
+  font: 11px monospace;
+  color: var(--ink);
+  background: #fff;
+  border-radius: 10px;
+  border: 0;
+  padding: 8px;
+  resize: none;
+}
 .fps-meter {
   position: absolute;
   right: calc(8px + var(--safe-r));

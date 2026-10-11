@@ -1,4 +1,5 @@
 import type { ItemId, KartConfig, Stats } from '../data/types';
+import type { AssistLevel } from '../tuning/balance';
 import { makeGroundHit, type GroundHint, type GroundHit } from './ground';
 import type { KartParams } from './tuning';
 
@@ -42,6 +43,14 @@ export interface KartRaceStats {
   worstPosition: number;
   ledWholeRace: boolean;
   balloonsPopped: number;
+  /** Times each shortcut (by index in TrackData.shortcuts) was taken. */
+  shortcutsById: number[];
+  /** Rocket start: 2 = perfect, 1 = boost, -1 = pressed too early (sputter), 0 = none. */
+  startResult: number;
+  /** Hard wall bumps. */
+  wallHits: number;
+  /** Seconds driven on off-road surfaces. */
+  offroadTime: number;
 }
 
 export function makeRaceStats(): KartRaceStats {
@@ -62,6 +71,10 @@ export function makeRaceStats(): KartRaceStats {
     worstPosition: 1,
     ledWholeRace: true,
     balloonsPopped: 0,
+    shortcutsById: [],
+    startResult: 0,
+    wallHits: 0,
+    offroadTime: 0,
   };
 }
 
@@ -194,8 +207,8 @@ export class Kart {
   readonly input: KartInput = makeInput();
   prevDrift = false;
   prevItem = false;
-  /** Steering assist (smart steering) for this kart. */
-  assist = false;
+  /** Steering assist (smart steering) level for this kart. */
+  assistLevel: AssistLevel = 'off';
   autoAccel = false;
 
   raceStats: KartRaceStats = makeRaceStats();

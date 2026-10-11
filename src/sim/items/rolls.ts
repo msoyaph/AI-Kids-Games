@@ -1,6 +1,7 @@
 import type { ItemId } from '../../data/types';
 import { ITEMS, ITEM_SETS, type ItemSet } from '../../data/items';
 import type { Rng } from '../../core/rng';
+import { BALANCE } from '../../tuning/balance';
 
 /**
  * Map a race position to a weight bucket: 0 = 1st, 1 = front pack, 2 = middle, 3 = back pack, 4 = last.
@@ -11,8 +12,9 @@ export function positionBucket(rank: number, total: number): number {
   if (rank <= 1) return 0;
   if (rank >= total) return 4;
   const p = (rank - 1) / (total - 1);
-  if (p < 0.35) return 1;
-  if (p < 0.67) return 2;
+  const [front, middle] = BALANCE.items.bucketCuts;
+  if (p < front) return 1;
+  if (p < middle) return 2;
   return 3;
 }
 
