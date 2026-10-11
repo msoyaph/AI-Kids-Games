@@ -197,8 +197,13 @@ export function buildFlight(setup: FlightSetup): FlightLayout {
   // --- Comets: ride their tails for a speed boost.
   const cometCount = Math.max(1, Math.round(((L > 0 ? (from.comets + to.comets) / 2 : from.comets) * (1 + L / 6000)) * 1.5));
   for (let i = 0; i < cometCount; i++) {
-    const x = rng.range(B.x0 + 600, B.x1 - 600);
-    const y = rng.range(B.y0 + 300, B.y1 - 300);
+    let x = rng.range(B.x0 + 600, B.x1 - 600);
+    let y = rng.range(B.y0 + 300, B.y1 - 300);
+    // Don't start a comet right on top of the launch spot.
+    for (let k = 0; k < 8 && Math.abs(y - startY) < 600 && Math.abs(x - startX) < 1600; k++) {
+      x = rng.range(B.x0 + 600, B.x1 - 600);
+      y = rng.range(B.y0 + 300, B.y1 - 300);
+    }
     const sp = rng.range(160, 240);
     const dir = world.sunDirX > 0 ? -1 : 1;
     const ang = rng.range(-0.35, 0.35);

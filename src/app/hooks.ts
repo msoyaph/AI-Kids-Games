@@ -147,9 +147,20 @@ function racesTab(list: HTMLElement, detail: HTMLElement): void {
 export function installHooks(): void {
   presenterHooks.fact = (id) => factCard(id);
   presenterHooks.badge = (id) => badgePopup(id);
+  // Several discoveries at once become one friendly toast.
+  let codexBatch: string[] = [];
+  let codexTimer: number | null = null;
   presenterHooks.codex = (id) => {
-    const e = CODEX_BY_ID[id];
-    if (e) toast(`New Codex page: ${e.name}!`, 'book', 2400);
+    if (!CODEX_BY_ID[id]) return;
+    codexBatch.push(id);
+    if (codexTimer !== null) return;
+    codexTimer = window.setTimeout(() => {
+      const ids = codexBatch;
+      codexBatch = [];
+      codexTimer = null;
+      if (ids.length === 1) toast(`New Codex page: ${CODEX_BY_ID[ids[0]].name}!`, 'book', 2400);
+      else toast(`${ids.length} new Codex pages!`, 'book', 2400);
+    }, 700);
   };
   presenterHooks.daily = () => {
     toast('Daily challenge done! Star-coins!', 'calendar', 2600);

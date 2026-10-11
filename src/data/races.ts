@@ -20,7 +20,7 @@ export interface CourseDef {
 export const COURSES: CourseDef[] = [
   {
     id: 'training', name: 'Training Rings', system: 'earth', start: [420, 0], gateRadius: 120, practice: true,
-    gates: [[650, -150], [900, -380], [1250, -300], [1450, 0], [1250, 300], [900, 380]],
+    gates: [[700, -100], [1050, -150], [1400, -80], [1500, 250], [1100, 420], [700, 280]],
     medals: { gold: 0, silver: 0, bronze: 0 }, coins: { gold: 0, silver: 0, bronze: 0 },
   },
   {

@@ -220,6 +220,11 @@ export class HubScene extends Scene {
 
   private go(): void {
     const place = (this.goBtn.dataset.place as HubPlace) || 'map';
+    if (place === 'board' && S.missions.currentObjective()?.obj.kind === 'race') {
+      sfx('whoosh');
+      void S.game.go('board', { tab: 'races' });
+      return;
+    }
     this.open(place);
   }
 

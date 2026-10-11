@@ -40,6 +40,7 @@ import { h } from './ui/dom';
 import { anyModalOpen, closeTopModal } from './ui/modal';
 import { presenterHooks, pumpMessages } from './ui/presenter';
 import { menuNavStep } from './ui/menuNav';
+import { clearTips } from './ui/tips';
 import { initSpeech, setReadAloud } from './ui/speech';
 
 function setLoad(pct: number, msg?: string): void {
@@ -148,6 +149,7 @@ async function boot(): Promise<void> {
     if (!visible) saveNow();
   });
   game.onSceneChange.push(() => saveNow());
+  game.onSceneChange.push(() => clearTips());
   window.addEventListener('pagehide', () => saveNow());
 
   setLoad(18, 'Painting planets...');

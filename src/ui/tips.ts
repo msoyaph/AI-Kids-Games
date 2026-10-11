@@ -8,6 +8,15 @@ import { button, iconEl } from './widgets';
 let current: HTMLElement | null = null;
 const queue: string[] = [];
 
+/** Tips belong to the screen they were shown on: clear them when the scene changes. */
+export function clearTips(): void {
+  queue.length = 0;
+  if (current) {
+    current.remove();
+    current = null;
+  }
+}
+
 function touchMode(): boolean {
   return S.game.uiRoot.classList.contains('touch-on');
 }
