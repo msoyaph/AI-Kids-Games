@@ -11,5 +11,5 @@ export default defineConfig({
   expect: { timeout: 10000 },
   use: { actionTimeout: 20000,navigationTimeout: 30000,baseURL: remote || 'http://127.0.0.1:4190',storageState: process.env.AIKG_QA_STORAGE_STATE,trace: remote ? 'off' : 'retain-on-failure', launchOptions: { ...(existsSync(chrome) ? { executablePath: chrome } : {}),args: ['--enable-webgl','--enable-unsafe-swiftshader'] } },
   projects: [{ name: 'desktop',use: { ...devices['Desktop Chrome'],viewport: { width: 1440,height: 1000 } } },{ name: 'tablet',use: { ...devices['iPad Pro 11'],browserName: 'chromium' } },{ name: 'phone',use: { ...devices['iPhone 13'],browserName: 'chromium' } }],
-  webServer: remote ? undefined : { command: 'npm run preview',url: 'http://127.0.0.1:4190',reuseExistingServer: true,timeout: 90000 }
+  webServer: remote ? undefined : { command: 'npx tsx scripts/serve-dist.ts 4190',url: 'http://127.0.0.1:4190',reuseExistingServer: true,timeout: 90000 }
 });

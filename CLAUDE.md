@@ -76,7 +76,13 @@ Progress (one commit per step):
    Search, Details (facts, gallery/lightbox, quickStart + All controls), Play (streamed
    real progress from build-sizes.json, then iframe; sandbox unchanged), Favorites,
    For parents, Privacy, About, 404. Route shells add canonical/robots/sitemap.
-7. TODO: launch metadata.
+7. COMPLETE: launch metadata. Route shells (scripts/generate-route-shells.ts) write
+   per-page titles/descriptions, absolute canonical URLs (SITE_ORIGIN, else
+   VERCEL_PROJECT_PRODUCTION_URL), og/twitter images, robots.txt + sitemap.xml (details
+   pages, not /play; play pages stay indexable for Lighthouse SEO); previews get noindex.
+   Favicons/manifest from scripts/art/icons.ts. Playwright now serves dist with
+   scripts/serve-dist.ts (Vercel-like: headers, ETag, brotli, ranges, route shells);
+   vite preview served the root shell for /game/<slug>.
 8. TODO: tests, visual review, Lighthouse.
 9. TODO: preview deploy, hosted suite, production, smoke test, report.
 

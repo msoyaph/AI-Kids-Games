@@ -13,7 +13,7 @@ const sitePolicy: Plugin = {
     handler(html,ctx) {
       const font = Object.keys(ctx.bundle ?? {}).find(file => /nunito-latin-wght.*\.woff2$/.test(file));
       const preload = font ? `\n    <link rel="preload" href="/${font}" as="font" type="font/woff2" crossorigin />` : '';
-      return html.replace('<head>',`<head>\n    <meta http-equiv="Content-Security-Policy" content="${csp}" />${preload}`);
+      return html.replace('<meta charset="UTF-8" />',`<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${csp}" />${preload}`);
     }
   }
 };

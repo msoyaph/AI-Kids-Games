@@ -23,7 +23,7 @@ const routes: Route[] = [
   { path: '/about',title: 'About',description: 'Ai Kids Games is a small collection of original games for kids.' },
   ...categories.map(category => ({ path: `/category/${category.toLowerCase()}`,title: `${category} games`,description: `${category} games for kids at Ai Kids Games. No ads, no tracking, no accounts.` })),
   ...games.flatMap(game => [
-    { path: `/game/${game.slug}`,title: game.title,description: `${game.tagline} ${game.ageGuidance}. Free to play in your browser, with no ads or accounts.`,image: `/og/${game.slug}.jpg` },
+    { path: `/game/${game.slug}`,title: game.title,description: `${game.tagline} ${game.ageGuidance}. Play in your browser, with no ads or accounts.`,image: `/og/${game.slug}.jpg` },
     { path: `/play/${game.slug}`,title: `Play ${game.title}`,description: `Play ${game.title} in your browser. ${game.tagline}`,image: `/og/${game.slug}.jpg` }
   ])
 ];
