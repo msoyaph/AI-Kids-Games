@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Space Sky cover: a rocket cruising past a ringed planet while Zibbo waves hello. Colors from the game (gfx/palette.ts, data/parts.ts, data/characters.ts). Safe area: top 22% and side 6% are background only. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#140d3a"/><stop offset=".6" stop-color="#2a1a6e"/><stop offset="1" stop-color="#3d2490"/></linearGradient>
+    <radialGradient id="neb1" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff7ad9" stop-opacity=".45"/><stop offset="1" stop-color="#ff7ad9" stop-opacity="0"/></radialGradient>
+    <radialGradient id="neb2" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#4c7dff" stop-opacity=".4"/><stop offset="1" stop-color="#4c7dff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="planet" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7c0"/><stop offset="1" stop-color="#d9b37e"/></linearGradient>
+    <clipPath id="pc"><circle cx="330" cy="760" r="250"/></clipPath>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <ellipse cx="1050" cy="330" rx="520" ry="260" fill="url(#neb1)"/>
+  <ellipse cx="420" cy="380" rx="460" ry="250" fill="url(#neb2)"/>
+  <!-- small far planet -->
+  <circle cx="1250" cy="760" r="64" fill="#4dd4ff"/><path d="M1200 730c30-10 60 6 80 30-30 14-70 4-80-30z" fill="#2de0c7"/><path d="M1250 696a64 64 0 0 1 0 128z" fill="#2a1a6e" opacity=".25"/>
+  <!-- ringed planet (back ring) -->
+  <path d="M-50 760a380 84 0 0 1 760 0" fill="none" stroke="#c9a46f" stroke-width="28" opacity=".75" transform="rotate(-12 330 760)"/>
+  <circle cx="330" cy="760" r="250" fill="url(#planet)"/>
+  <g clip-path="url(#pc)" opacity=".9"><path d="M60 640c200-30 380-30 560 0v44c-180-30-360-30-560 0z" fill="#e2c48d"/><path d="M60 760c200-30 380-30 560 0v36c-180-30-360-30-560 0z" fill="#c9a46f"/><path d="M60 860c200-30 380-30 560 0v40H60z" fill="#e2c48d"/><circle cx="420" cy="700" r="250" fill="#2a1a6e" opacity=".18"/></g>
+  <!-- ringed planet (front ring) -->
+  <path d="M-50 760a380 84 0 0 0 760 0" fill="none" stroke="#f3dcb0" stroke-width="28" transform="rotate(-12 330 760)"/>
+  <path d="M-38 772a370 78 0 0 0 736 0" fill="none" stroke="#e2c48d" stroke-width="8" transform="rotate(-12 330 760)" opacity=".8"/>
+  <!-- little moon with Zibbo -->
+  <g transform="translate(900 712)">
+    <ellipse cx="0" cy="40" rx="190" ry="70" fill="#d9d6e8"/><path d="M-190 40a190 70 0 0 1 190-70v70z" fill="#ece9f6"/><ellipse cx="-70" cy="44" rx="34" ry="12" fill="#b9b4cf"/><ellipse cx="80" cy="60" rx="24" ry="8" fill="#b9b4cf"/><ellipse cx="40" cy="20" rx="16" ry="6" fill="#b9b4cf"/>
+    <!-- Zibbo -->
+    <g transform="translate(-10 -60)">
+      <rect x="-30" y="0" width="22" height="40" rx="10" fill="#22c4ad"/><rect x="8" y="0" width="22" height="40" rx="10" fill="#22c4ad"/>
+      <path d="M-58-90c0-28 26-44 58-44s58 16 58 44v60c0 30-26 44-58 44s-58-14-58-44z" fill="#2de0c7"/>
+      <path d="M-58-90c0-28 26-44 58-44v148c-32 0-58-14-58-44z" fill="#4cebd5"/>
+      <ellipse cx="0" cy="-20" rx="34" ry="30" fill="#c9fff4"/>
+      <path d="M4-132c0-18 8-30 20-36" stroke="#2de0c7" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="28" cy="-172" r="12" fill="#ffe066"/>
+      <circle cx="-26" cy="-84" r="13" fill="#fff"/><circle cx="0" cy="-94" r="13" fill="#fff"/><circle cx="26" cy="-84" r="13" fill="#fff"/>
+      <circle cx="-24" cy="-82" r="6" fill="#20124d"/><circle cx="2" cy="-92" r="6" fill="#20124d"/><circle cx="28" cy="-82" r="6" fill="#20124d"/>
+      <path d="M-14-58q14 12 28 0" fill="none" stroke="#20124d" stroke-width="5" stroke-linecap="round"/>
+      <path d="M-50-50c-16 6-26 4-32-4" stroke="#ff5d73" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <path d="M-58-40-96-92" stroke="#2de0c7" stroke-width="16" stroke-linecap="round"/><circle cx="-100" cy="-98" r="12" fill="#4cebd5"/>
+      <path d="M58-40 80-4" stroke="#22c4ad" stroke-width="16" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Vanex Defense cover: elemental towers guard the crystal castle from King Gloop's Grumblewumps. Colors from the game (elements.ts, drawTowers.ts, index.html brand). Safe area: top 22% and side 6% are background only. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1446"/><stop offset=".7" stop-color="#3d2a85"/><stop offset="1" stop-color="#5a3fa6"/></linearGradient>
+    <linearGradient id="gem" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8ff3ff"/><stop offset=".55" stop-color="#7a5cff"/><stop offset="1" stop-color="#ff7ad9"/></linearGradient>
+    <radialGradient id="aura" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#8ff3ff" stop-opacity=".6"/><stop offset="1" stop-color="#7a5cff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="fire" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe08a"/><stop offset=".5" stop-color="#ff6a2b"/><stop offset="1" stop-color="#ff6a2b" stop-opacity="0"/></radialGradient>
+    <radialGradient id="water" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#c8ecff"/><stop offset=".5" stop-color="#2f9bff"/><stop offset="1" stop-color="#2f9bff" stop-opacity="0"/></radialGradient>
+    <g id="tower"><path d="M-62 30-44-6h88l18 36-18 22h-88z" fill="#5d6078"/><path d="M-62 30-44-6h44v58h-44z" fill="#6d7090"/><path d="M-48-6-34-30h68l14 24z" fill="#8d8aa6"/><path d="M-48-6-34-30h34v24z" fill="#a19fba"/><ellipse cy="-30" rx="34" ry="10" fill="#4b4d63"/></g>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <!-- meadow board -->
+  <path d="M0 470C300 430 600 420 800 420s520 14 800 48V900H0z" fill="#5fcf55"/>
+  <g fill="none" stroke="#53bf4a" stroke-width="3" opacity=".7"><path d="M0 560C400 520 1200 520 1600 556M0 680C400 640 1200 640 1600 676M0 810C400 776 1200 776 1600 806"/><path d="M200 900 330 440M520 900 560 426M800 900V420M1080 900l-40-474M1400 900l-130-458"/></g>
+  <!-- trees at the board edge -->
+  <g><circle cx="190" cy="470" r="40" fill="#2f9a4a"/><circle cx="176" cy="458" r="22" fill="#45b85c"/><circle cx="200" cy="472" r="5" fill="#e5484d"/><circle cx="182" cy="486" r="5" fill="#e5484d"/>
+     <circle cx="1470" cy="480" r="42" fill="#2f9a4a"/><circle cx="1456" cy="466" r="22" fill="#45b85c"/><circle cx="1480" cy="484" r="5" fill="#e5484d"/>
+     <circle cx="300" cy="446" r="30" fill="#2f9a4a"/><circle cx="290" cy="438" r="16" fill="#45b85c"/></g>
+  <!-- path to the castle -->
+  <path d="M0 720C260 690 420 640 640 610S1040 560 1180 520l40 46C1080 600 860 640 660 676S240 780 0 800z" fill="#e8d49a"/>
+  <path d="M0 720C260 690 420 640 640 610S1040 560 1180 520l10 12C1040 576 820 616 640 642S240 744 0 768z" fill="#f2e2b0"/>
+  <g fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".55"><path d="M300 726l22 14-22 14M520 680l22 13-22 13M760 640l20 12-20 12M960 600l18 11-18 11"/></g>
+  <!-- crystal castle -->
+  <g>
+    <circle cx="1290" cy="380" r="170" fill="url(#aura)"/>
+    <path d="M1150 560V420h280v140z" fill="#cfc7f5"/><path d="M1290 420h140v140h-140z" fill="#b5aaea"/>
+    <rect x="1130" y="380" width="70" height="190" rx="6" fill="#ddd6fb"/><rect x="1380" y="380" width="70" height="190" rx="6" fill="#bfb4f0"/>
+    <path d="M1120 386l45-92 45 92z" fill="#7a5cff"/><path d="M1165 294l45 92h-45z" fill="#6346e0"/><path d="M1370 386l45-92 45 92z" fill="#7a5cff"/><path d="M1415 294l45 92h-45z" fill="#6346e0"/>
+    <circle cx="1165" cy="440" r="11" fill="#fff6d8"/><circle cx="1415" cy="440" r="11" fill="#fff6d8"/>
+    <path d="M1252 560v-64a38 38 0 0 1 76 0v64z" fill="#6a4fd0"/>
+    <path d="M1222 430h136l-10 22h-116z" fill="#9b8fe0"/>
+    <path d="M1290 226l70 70-70 134-70-134z" fill="url(#gem)"/><path d="M1290 226l-70 70 70 20z" fill="#c9fbff" opacity=".8"/><path d="M1290 226l70 70-70 20z" fill="#b7a8ff" opacity=".5"/><path d="M1220 296l70 20 70-20-70 134z" fill="#7a5cff" opacity=".35"/>
+  </g>
+  <!-- towers -->
+  <g transform="translate(470 610)"><use href="#tower"/><circle cy="-58" r="44" fill="url(#fire)"/><path d="M0-90c18 20 20 34 6 48-6-10-14-12-18-4-10-16-4-30 12-44z" fill="#ff6a2b"/><path d="M0-72c8 10 8 20 2 26-4-6-8-6-10-2-4-8 0-16 8-24z" fill="#ffd27a"/></g>
+  <g transform="translate(900 520) scale(.85)"><use href="#tower"/><circle cy="-58" r="42" fill="url(#water)"/><path d="M0-94c18 26 24 42 0 56-24-14-18-30 0-56z" fill="#2f9bff"/><path d="M-6-66c-6 8-4 16 4 18" stroke="#c8ecff" stroke-width="6" fill="none" stroke-linecap="round"/></g>
+  <g transform="translate(1000 700) scale(1.1)"><use href="#tower"/><path d="M-30-46 30-46M0-74v40" stroke="#8a5a3b" stroke-width="10" stroke-linecap="round"/><path d="M-30-46q30-30 60 0" fill="none" stroke="#c98a55" stroke-width="7"/></g>
+  <!-- grass tufts -->
+  <g fill="#4cb042"><path d="M140 860l10-34 8 34zM156 860l12-24 4 24zM1460 850l9-30 9 30zM700 880l10-32 8 32z"/></g>
+</svg>

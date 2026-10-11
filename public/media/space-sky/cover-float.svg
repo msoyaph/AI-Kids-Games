@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (float): the rocket (Classic paint: #f4f7ff, #ff5d73, #4c7dff, window #4dd4ff; Puff Engine flame). -->
+  <g transform="translate(1230 400) rotate(42) scale(.92)">
+    <g opacity=".55" fill="#fff36b"><circle cy="250" r="9"/><circle cy="300" r="7"/><circle cy="344" r="5"/></g>
+    <path d="M-34 150c0 50 20 80 34 100 14-20 34-50 34-100z" fill="#ff9f43"/><path d="M-16 150c0 30 8 50 16 64 8-14 16-34 16-64z" fill="#fff36b"/>
+    <path d="M-60 110-96 170-40 150zM60 110 96 170 40 150z" fill="#ff5d73"/><path d="M60 110 96 170 40 150z" fill="#e0465c"/>
+    <path d="M-62 120c-8-110 14-190 62-250 48 60 70 140 62 250z" fill="#f4f7ff"/>
+    <path d="M0-130c48 60 70 140 62 250H0z" fill="#dfe5f7"/>
+    <path d="M-62 120h124l-4 26h-116z" fill="#4c7dff"/>
+    <path d="M0-130c-22 26-38 52-48 80h96c-10-28-26-54-48-80z" fill="#ff5d73"/><path d="M0-130c22 26 38 52 48 80H0z" fill="#e0465c"/>
+    <circle cy="0" r="34" fill="#4c7dff"/><circle cy="0" r="25" fill="#4dd4ff"/><path d="M-14-12a18 18 0 0 1 20-8" stroke="#c9f3ff" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <rect x="-6" y="40" width="12" height="70" rx="6" fill="#4c7dff" opacity=".35"/>
+  </g>
+</svg>

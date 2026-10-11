@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 const origin = window.location.origin;
-export function usePageMeta(title: string, description: string, image = '/art/light-crossing-banner.svg') {
+export function usePageMeta(title: string, description: string, image = '/og/site.jpg') {
   const { pathname } = useLocation();
   useEffect(() => {
     document.title = `${title} | Ai Kids Games`;

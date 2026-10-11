@@ -51,3 +51,27 @@ describe('gameplay previews',() => {
     it('has a capture route so previews can be redone',() => expect(existsSync(resolve('scripts/capture',`${game.slug}.ts`))).toBe(true));
   });
 });
+
+describe('cover art, logos and Open Graph images',() => {
+  for (const game of games) it(`${game.slug} has a text-free cover with its motion layers, a transparent logo and an OG image`,async () => {
+    const cover = readFileSync(pub(`media/${game.slug}/cover.svg`),'utf8');
+    expect(cover).toContain('viewBox="0 0 1600 900"');
+    expect(cover).not.toMatch(/<text\b/); // no baked-in titles: the title is HTML
+    for (const motion of game.coverLayers) {
+      const layer = readFileSync(pub(`media/${game.slug}/cover-${motion}.svg`),'utf8');
+      expect(layer).toContain('viewBox="0 0 1600 900"');
+      expect(layer).not.toMatch(/<text\b/);
+    }
+    const logo = readFileSync(pub(`media/${game.slug}/logo.svg`),'utf8');
+    expect(logo).toContain(`aria-label="${game.title}"`);
+    expect(logo).not.toMatch(/<rect\b/); // transparent: no background panel
+    const { default: sharp } = await import('sharp');
+    const og = await sharp(pub(`og/${game.slug}.jpg`)).metadata();
+    expect([og.width,og.height]).toEqual([1200,630]);
+  });
+  it('has a site-wide OG image',async () => {
+    const { default: sharp } = await import('sharp');
+    const og = await sharp(pub('og/site.jpg')).metadata();
+    expect([og.width,og.height]).toEqual([1200,630]);
+  });
+});

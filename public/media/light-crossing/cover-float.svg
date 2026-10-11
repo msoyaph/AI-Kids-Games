@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (float): festival lanterns drifting up over the sea. -->
+  <defs>
+    <radialGradient id="g" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe2a8" stop-opacity=".8"/><stop offset="1" stop-color="#ffc27a" stop-opacity="0"/></radialGradient>
+    <g id="l"><circle r="34" fill="url(#g)"/><path d="M-13-17h26l6 34h-38z" fill="#ffc27a"/><path d="M-13-17h13v34h-19z" fill="#ffd9a3"/><rect x="-14" y="-21" width="28" height="6" rx="3" fill="#e9a35a"/></g>
+  </defs>
+  <use href="#l" x="300" y="420"/><use href="#l" x="420" y="330" transform="translate(420 330) scale(.8) translate(-420 -330)"/>
+  <use href="#l" x="230" y="560" transform="translate(230 560) scale(1.1) translate(-230 -560)"/>
+  <use href="#l" x="520" y="470" transform="translate(520 470) scale(.7) translate(-520 -470)"/>
+  <use href="#l" x="840" y="300" transform="translate(840 300) scale(.6) translate(-840 -300)"/>
+  <use href="#l" x="960" y="360" transform="translate(960 360) scale(.75) translate(-960 -360)"/>
+  <use href="#l" x="1380" y="380" transform="translate(1380 380) scale(.9) translate(-1380 -380)"/>
+  <use href="#l" x="1300" y="560" transform="translate(1300 560) scale(1.05) translate(-1300 -560)"/>
+  <use href="#l" x="1460" y="300" transform="translate(1460 300) scale(.65) translate(-1460 -300)"/>
+  <use href="#l" x="1060" y="250" transform="translate(1060 250) scale(.55) translate(-1060 -250)"/>
+  <use href="#l" x="660" y="250" transform="translate(660 250) scale(.55) translate(-660 -250)"/>
+</svg>

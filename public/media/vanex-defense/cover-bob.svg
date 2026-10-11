@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (bob): King Gloop and the Grumblewumps marching along the path. -->
+  <defs><g id="eyes"><ellipse cx="-14" rx="11" ry="13" fill="#fff"/><ellipse cx="14" rx="11" ry="13" fill="#fff"/><circle cx="-11" cy="2" r="5.5" fill="#1b1446"/><circle cx="17" cy="2" r="5.5" fill="#1b1446"/></g></defs>
+  <!-- King Gloop -->
+  <g transform="translate(700 650)">
+    <ellipse cy="64" rx="120" ry="20" fill="#2d7a2c" opacity=".35"/>
+    <path d="M-118 54c-10-90 40-150 118-150s128 60 118 150c-4 16-40 22-118 22s-114-6-118-22z" fill="#5bd96a"/>
+    <path d="M-118 54c-10-90 40-150 118-150l-30 120z" fill="#7ce88a"/><path d="M118 54c6-52-12-92-40-118l-30 110z" fill="#45bd55"/>
+    <path d="M-50-86-40-130-16-104 0-140 16-104 40-130 50-86z" fill="#ffd23f"/><path d="M-50-86h100v14h-100z" fill="#f2b630"/><circle cy="-112" r="9" fill="#ff5d73"/>
+    <g transform="translate(0 -10) scale(1.7)"><use href="#eyes"/></g>
+    <ellipse cx="-56" cy="22" rx="16" ry="9" fill="#ff8fa8" opacity=".5"/><ellipse cx="56" cy="22" rx="16" ry="9" fill="#ff8fa8" opacity=".5"/>
+    <path d="M-16 26q16 14 32 0" fill="none" stroke="#1b1446" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <!-- Grumblewumps -->
+  <g transform="translate(300 720)"><ellipse cy="38" rx="52" ry="10" fill="#2d7a2c" opacity=".35"/><path d="M-54 30c-4-48 22-74 54-74s58 26 54 74c-2 8-20 12-54 12s-52-4-54-12z" fill="#4aa3ff"/><path d="M-54 30c-4-48 22-74 54-74l-16 60z" fill="#7cc0ff"/><g transform="translate(0 -6)"><use href="#eyes"/></g></g>
+  <g transform="translate(160 750) scale(.85)"><ellipse cy="38" rx="52" ry="10" fill="#2d7a2c" opacity=".35"/><path d="M-50 34-40-20-20-6 0-40 20-6 40-20 50 34z" fill="#ff9a5a"/><circle cy="10" r="40" fill="#ff9a5a"/><path d="M-40 10a40 40 0 0 1 40-40v40z" fill="#ffb27f"/><g transform="translate(0 4)"><use href="#eyes"/></g></g>
+  <g transform="translate(540 650) scale(.7)"><ellipse cy="38" rx="52" ry="10" fill="#2d7a2c" opacity=".35"/><path d="M-54 30c-4-48 22-74 54-74s58 26 54 74c-2 8-20 12-54 12s-52-4-54-12z" fill="#b48cff"/><path d="M-54 30c-4-48 22-74 54-74l-16 60z" fill="#cbaeff"/><g transform="translate(0 -6)"><use href="#eyes"/></g></g>
+</svg>

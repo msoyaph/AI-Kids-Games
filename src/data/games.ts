@@ -1,6 +1,8 @@
 export type Category = 'Action' | 'Adventure' | 'Cozy' | 'Strategy' | 'Racing' | 'Learning';
 export type Device = 'Computer' | 'Tablet' | 'Phone';
 export type Control = 'Keyboard' | 'Mouse' | 'Gamepad' | 'Touch';
+/** Idle animations for cover layers: public/media/<slug>/cover-<motion>.svg, drawn over cover.svg. */
+export type CoverMotion = 'float' | 'bob' | 'twinkle' | 'drift';
 export interface Game {
   slug: string;
   title: string;
@@ -12,10 +14,12 @@ export interface Game {
   minAge: number;
   contentNotes: string;
   estimatedPlayTime: string;
+  /** Three short first steps for the details page; the full guidance stays in controls.howToPlay. */
+  quickStart: string[];
   controls: { types: Control[]; howToPlay: string[] };
   supportedDevices: Device[];
-  thumbnail: string;
-  banner: string;
+  /** Cover art lives in public/media/<slug>/: cover.svg, these motion layers, logo.svg, and the captured previews. */
+  coverLayers: CoverMotion[];
   releaseDate: string;
   featured: boolean;
   accentColor: string;
@@ -43,6 +47,7 @@ export const games: Game[] = [
     "ageGuidance": "Ages 6+",
     "contentNotes": "Peaceful island life with no combat. Reading helps with conversations and missions. Three save slots and automatic saves stay in this browser.",
     "estimatedPlayTime": "About 6 hours, plus free play",
+    "quickStart": ["Walk with the arrow keys or WASD, or drag on the left side of the screen.", "Press E, Space or A to talk, dig, fish and catch bugs.", "Help your neighbors and light the lighthouse for the festival."],
     "controls": {
       "types": [
         "Keyboard",
@@ -63,8 +68,7 @@ export const games: Game[] = [
       "Phone"
     ],
     "accentColor": "#c7f1dd",
-    "thumbnail": "/art/light-crossing-thumbnail.svg",
-    "banner": "/art/light-crossing-banner.svg",
+    "coverLayers": ["float", "twinkle"],
     "releaseDate": "2026-10-11",
     "featured": true,
     "status": "Ready to play"
@@ -88,6 +92,7 @@ export const games: Game[] = [
     "ageGuidance": "Ages 8+",
     "contentNotes": "Fantasy combat against cartoon monsters, fast movement and colorful effects. No realistic blood or gore. Action may feel intense. Unlocks and settings save in this browser. A keyboard and mouse or gamepad is required.",
     "estimatedPlayTime": "10–20 minutes per run",
+    "quickStart": ["Move Thea with WASD, the arrow keys or a gamepad stick.", "Her Bonk Ring bonks monsters all by itself. Stay on the move!", "When you level up, pick a new power with 1–4."],
     "controls": {
       "types": [
         "Keyboard",
@@ -105,8 +110,7 @@ export const games: Game[] = [
       "Computer"
     ],
     "accentColor": "#e1dafa",
-    "thumbnail": "/art/theabonk-thumbnail.svg",
-    "banner": "/art/theabonk-banner.svg",
+    "coverLayers": ["bob", "twinkle"],
     "releaseDate": "2026-10-11",
     "featured": true,
     "status": "Ready to play"
@@ -130,6 +134,7 @@ export const games: Game[] = [
     "ageGuidance": "Ages 7+",
     "contentNotes": "Cartoon creatures poof into sparkles. No realistic violence. Campaign progress and settings save in this browser.",
     "estimatedPlayTime": "15–20 minutes per map; 2–4 hour campaign",
+    "quickStart": ["Tap a tower card, then an open square, to build.", "Make a maze so the Grumblewumps walk past your towers.", "Press GO! to send the next wave."],
     "controls": {
       "types": [
         "Touch",
@@ -149,8 +154,7 @@ export const games: Game[] = [
       "Phone"
     ],
     "accentColor": "#dbe7c8",
-    "thumbnail": "/art/vanex-defense-thumbnail.svg",
-    "banner": "/art/vanex-defense-banner.svg",
+    "coverLayers": ["bob", "twinkle"],
     "releaseDate": "2026-10-11",
     "featured": true,
     "status": "Ready to play"
@@ -175,6 +179,7 @@ export const games: Game[] = [
     "ageGuidance": "Ages 6–10",
     "contentNotes": "Friendly aliens, real space facts and no scary content. Three save slots and settings stay in this browser.",
     "estimatedPlayTime": "5–6 hours",
+    "quickStart": ["Build your rocket, then pick a planet to visit.", "Steer with the arrow keys, a stick or the left touch pad. Boost with Space.", "Land, explore and collect space badges."],
     "controls": {
       "types": [
         "Touch",
@@ -194,8 +199,7 @@ export const games: Game[] = [
       "Phone"
     ],
     "accentColor": "#d9d4f6",
-    "thumbnail": "/art/space-sky-thumbnail.svg",
-    "banner": "/art/space-sky-banner.svg",
+    "coverLayers": ["float", "twinkle"],
     "releaseDate": "2026-10-11",
     "featured": true,
     "status": "Ready to play"
@@ -220,6 +224,7 @@ export const games: Game[] = [
     "ageGuidance": "Ages 10–14",
     "contentNotes": "Cartoon kart battles and silly spin-outs. Three save slots, settings and Time Trial ghosts stay in this browser. Split-screen needs a keyboard or gamepads; touch controls are for solo play.",
     "estimatedPlayTime": "5–6 hours, plus replay",
+    "quickStart": ["Turn your phone or tablet sideways, or use the keyboard or a gamepad.", "Steer, hold Drift around corners and let go for a boost.", "Grab item boxes and race to the finish line."],
     "controls": {
       "types": [
         "Keyboard",
@@ -239,8 +244,7 @@ export const games: Game[] = [
       "Phone"
     ],
     "accentColor": "#f7e3ac",
-    "thumbnail": "/art/calex-cart-thumbnail.svg",
-    "banner": "/art/calex-cart-banner.svg",
+    "coverLayers": ["drift", "bob", "twinkle"],
     "releaseDate": "2026-10-11",
     "featured": true,
     "status": "Ready to play"

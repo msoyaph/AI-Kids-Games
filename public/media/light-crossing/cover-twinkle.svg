@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (twinkle): first stars and glints on the water. -->
+  <g fill="#fff" opacity=".9"><circle cx="180" cy="70" r="3"/><circle cx="430" cy="120" r="2.5"/><circle cx="620" cy="50" r="2"/><circle cx="900" cy="100" r="3"/><circle cx="1240" cy="60" r="2.5"/><circle cx="1420" cy="140" r="2"/><circle cx="1520" cy="60" r="3"/><circle cx="760" cy="180" r="2"/></g>
+  <g fill="#fff6d8" opacity=".85"><path d="M360 600h40l-20 4zM980 700h50l-25 5zM1180 780h44l-22 4zM820 820h56l-28 5zM460 860h40l-20 4zM1420 700h36l-18 4z"/></g>
+</svg>

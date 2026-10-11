@@ -10,9 +10,9 @@ const routes: { path: string; title: string; description: string; image?: string
   { path: '/parents',title: 'For Parents',description: 'Our play promise: no ads, chat, accounts, or tracking. Browser-local lists and game saves.' },
   { path: '/about',title: 'About',description: 'A small, cheerful collection of original browser games.' },
   ...categories.map(category => ({ path: `/category/${category.toLowerCase()}`,title: `${category} games`,description: `Find your next ${category.toLowerCase()} adventure at Ai Kids Games.` })),
-  ...games.flatMap(game => [{ path: `/game/${game.slug}`,title: game.title,description: game.tagline,image: game.banner },{ path: `/play/${game.slug}`,title: `Play ${game.title}`,description: game.tagline,image: game.banner }])
+  ...games.flatMap(game => [{ path: `/game/${game.slug}`,title: game.title,description: game.tagline,image: `/og/${game.slug}.jpg` },{ path: `/play/${game.slug}`,title: `Play ${game.title}`,description: game.tagline,image: `/og/${game.slug}.jpg` }])
 ];
-function metadata(title: string, description: string,path: string,image = '/art/light-crossing-banner.svg') {
+function metadata(title: string, description: string,path: string,image = '/og/site.jpg') {
   return shell.replace(/<title>.*?<\/title>/,() => `<title>${escape(title)} | Ai Kids Games</title>`)
     .replace(/(<meta name="description" content=")[^"]*/,(_match,prefix: string) => prefix+escape(description))
     .replace(/(<meta property="og:title" content=")[^"]*/,(_match,prefix: string) => prefix+escape(title))

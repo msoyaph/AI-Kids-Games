@@ -31,7 +31,7 @@ build, not just its registry description.
 3. Copy the self-contained final build into `public/games/<slug>/index.html`.
    `npx tsx scripts/import-game-build.ts <slug> <source-index.html>` copies it
    unchanged and verifies SHA-256. Keep BUILD_IMPORTS.json current.
-4. Remove placeholders. Copy a square thumbnail and a 16:9 banner to `public/art/`.
+4. Remove placeholders and add the art in `public/media/<slug>/` (see "Cover art" below).
 5. Add metadata using Game's actual fields: slug, title, tagline, description,
    categories, tags, minAge, ageGuidance, contentNotes, estimatedPlayTime,
    controls.types, controls.howToPlay, supportedDevices, thumbnail, banner,
@@ -48,6 +48,27 @@ build, not just its registry description.
 Saves remain in this browser. Handle unavailable storage without crashing, and
 use clear in-game saving guidance. The site owns only `aikg:favorites` and
 `aikg:recent`; legacy `aikidsgames.*` lists migrate automatically.
+
+## Cover art, logo and Open Graph image
+
+Each game owns its art files in `public/media/<slug>/`, so any one can be redone alone:
+
+- `cover.svg`: a 1600×900 illustration in the site's shared style (flat shapes with soft
+  facet shading, one subject in the lower middle, sky or background behind). Draw the
+  real characters and places from the captured screenshots and the game's own colors.
+  No title or text in the art. Keep the top 22% and the outer 6% on each side to
+  background only: the age badge sits top left and the heart top right.
+- `cover-<motion>.svg`: optional transparent layers, same viewBox, that the site
+  animates slowly (`float`, `bob`, `twinkle`, `drift`; list them in `coverLayers`).
+  They stop under reduced motion.
+- `logo.svg`: the transparent title logo, outlined from Nunito Black. Add the game's
+  style to `scripts/art/logos.ts` (colors from its title screen) and run
+  `npx tsx scripts/art/logos.ts <slug>`.
+- `public/og/<slug>.jpg`: 1200×630, made from the cover and logo by
+  `npx tsx scripts/art/og.ts` (which also refreshes `public/og/site.jpg`).
+
+`npx tsx scripts/art/render.ts <out-dir> [slug]` renders covers with the badge, heart and
+safe-area guides for review. `npm test` checks every file exists and covers carry no text.
 
 ## Gameplay previews (loop, poster, screenshots)
 

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (twinkle): evening stars and Bonk Ring sparkles. -->
+  <defs><path id="s" d="M0-14 4-4 14 0 4 4 0 14-4 4-14 0-4-4z"/></defs>
+  <g fill="#fff" opacity=".85"><circle cx="210" cy="90" r="3"/><circle cx="520" cy="60" r="2.5"/><circle cx="700" cy="140" r="2"/><circle cx="980" cy="70" r="3"/><circle cx="1160" cy="150" r="2"/><circle cx="1420" cy="80" r="3"/><circle cx="1500" cy="200" r="2"/><circle cx="120" cy="240" r="2"/><circle cx="860" cy="210" r="2.5"/></g>
+  <g fill="#fff6c2"><use href="#s" x="560" y="650"/><use href="#s" x="1040" y="640" transform="scale(1)"/><use href="#s" x="700" y="806"/><use href="#s" x="930" y="812"/><use href="#s" x="640" y="410" opacity=".8"/><use href="#s" x="980" y="420" opacity=".8"/></g>
+</svg>

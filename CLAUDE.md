@@ -57,7 +57,13 @@ Progress (one commit per step):
    Loops are 7.2–8 s, all under 760 KB. Vanex (restyle) and Space Sky (3D) routes
    are written to be rerun on their new builds; Vanex's source project already has
    renamed towers, so routes must target the imported dist, not the source.
-3. TODO: covers, logos, Open Graph images.
+3. COMPLETE: new art per game in public/media/<slug>/: hand-drawn 1600×900 cover.svg
+   (shared flat style, real characters/colors from captures and game sources, no text,
+   top 22% + side 6% background-only) plus cover-<motion>.svg idle layers listed in
+   Game.coverLayers; logo.svg outlined from Nunito Black by scripts/art/logos.ts
+   (opentype.js 1.3.4: 2.0 mis-parses Nunito's WOFF); public/og/<slug>.jpg and
+   site.jpg by scripts/art/og.ts. Old public/art removed; registry drops thumbnail/
+   banner, adds coverLayers and quickStart; src/lib/media.ts derives all media paths.
 4. TODO: design system and shell.
 5. TODO: preview player and cards.
 6. TODO: pages, including Privacy.
