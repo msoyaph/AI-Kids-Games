@@ -1,14 +1,12 @@
-import type { MapDef } from './types';
+import { withMapText, type MapDef } from './types';
 
 /** World 1 — Sunny Meadow. */
-export const WORLD1: MapDef[] = [
+export const WORLD1: MapDef[] = withMapText([
   {
     id: 'w1m1',
-    name: 'Breach Point',
     world: 1,
     theme: 'meadow',
     style: 'maze',
-    story: 'Commander, a rift just tore open in the Reach. Shardbound constructs are walking straight for the Citadel. This field is open ground: use your towers to force them into a long, winding route.',
     favoredElements: ['nature', 'water'],
     grid: [
       'TTTT~~~TTTTTTTTTTTTT',
@@ -27,11 +25,9 @@ export const WORLD1: MapDef[] = [
   },
   {
     id: 'w1m2',
-    name: 'Bumblebee Bend',
     world: 1,
     theme: 'meadow',
     style: 'path',
-    story: 'This road twists like a sleepy bee. Put towers right next to the bends!',
     favoredElements: ['nature', 'fire'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -50,11 +46,9 @@ export const WORLD1: MapDef[] = [
   },
   {
     id: 'w1m3',
-    name: 'Twin Ponds',
     world: 1,
     theme: 'meadow',
     style: 'maze',
-    story: 'Creatures are coming from TWO burrows! Watch both sides of the ponds.',
     favoredElements: ['water', 'nature'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -71,4 +65,4 @@ export const WORLD1: MapDef[] = [
       'TTTTTTTTTTTTTTTTTTTT',
     ],
   },
-];
+]);

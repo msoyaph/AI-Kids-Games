@@ -1,14 +1,12 @@
-import type { MapDef } from './types';
+import { withMapText, type MapDef } from './types';
 
 /** World 4 — Crystal Caves. */
-export const WORLD4: MapDef[] = [
+export const WORLD4: MapDef[] = withMapText([
   {
     id: 'w4m1',
-    name: 'Glowing Grotto',
     world: 4,
     theme: 'caves',
     style: 'path',
-    story: 'Deep in the caves the crystals glow. Shadow creatures sneak about. Light beats Shadow!',
     favoredElements: ['shadow', 'earth'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -27,11 +25,9 @@ export const WORLD4: MapDef[] = [
   },
   {
     id: 'w4m2',
-    name: 'Gem Maze',
     world: 4,
     theme: 'caves',
     style: 'maze',
-    story: 'Crystal pillars everywhere! Use them to build the best maze ever.',
     favoredElements: ['light', 'shadow'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -50,11 +46,9 @@ export const WORLD4: MapDef[] = [
   },
   {
     id: 'w4m3',
-    name: 'Heart of Vanex',
     world: 4,
     theme: 'caves',
     style: 'maze',
-    story: "The Grumble King wants the Heart Crystal! Use everything you've learned!",
     favoredElements: ['shadow', 'light', 'earth'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -70,4 +64,4 @@ export const WORLD4: MapDef[] = [
       'S........~~........T',
     ],
   },
-];
+]);

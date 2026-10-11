@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { defaultSave, migrate, SAVE_KEY, SAVE_VERSION, SaveStore, type KV } from '../../src/app/save';
+import { readFileSync } from 'node:fs';
+import {
+  BACKUP_KEY,
+  DAILY_KEEP,
+  defaultSave,
+  migrate,
+  SAVE_KEY,
+  SAVE_VERSION,
+  SaveStore,
+  STORAGE_BUDGET_BYTES,
+  trimSave,
+  WORKSHOP_SLOTS,
+  type KV,
+  type SaveData,
+} from '../../src/app/save';
+import { CAMPAIGN_MAPS } from '../../src/data/maps';
+import { ACHIEVEMENTS } from '../../src/data/achievements';
 
 class MemKV implements KV {
   m = new Map<string, string>();
@@ -49,6 +65,68 @@ describe('save migrations', () => {
     expect(out.endlessBest.w1m1).toBe(17);
     expect(out.achievements.first_win).toBe(5);
     expect(out.lastDifficulty).toBe('normal');
+  });
+
+  it('migrates a real v3 save (made by the v1 game) with nothing lost', () => {
+    const v3 = JSON.parse(readFileSync('tests/fixtures/save-v3.json', 'utf8'));
+    const out = migrate(structuredClone(v3));
+    expect(out.version).toBe(4);
+    // progress carries over exactly
+    expect(out.maps).toEqual(v3.maps);
+    expect(out.endlessBest).toEqual(v3.endlessBest);
+    expect(out.achievements).toEqual(v3.achievements);
+    expect(out.lifetime).toEqual(v3.lifetime);
+    expect(out.tutorialDone).toBe(true);
+    expect(out.lastDifficulty).toBe('hard');
+    for (const [k, v] of Object.entries(v3.settings)) expect(out.settings[k as keyof SaveData['settings']]).toEqual(v);
+    // new v4 fields get defaults
+    expect(out.settings.language).toBe('auto');
+    expect(out.settings.reducedMotion).toBe('auto');
+    expect(out.settings.hotkeys).toEqual({});
+    expect(out.research).toEqual({});
+    expect(out.workshop).toEqual([]);
+    expect(out.daily).toEqual({});
+    expect(out.hero).toBe('');
+    // the old achievement ids still exist
+    const ids = new Set(ACHIEVEMENTS.map((a) => a.id));
+    for (const id of Object.keys(v3.achievements)) expect(ids.has(id)).toBe(true);
+  });
+
+  it('keeps a one-time backup of the pre-upgrade save', () => {
+    const kv = new MemKV();
+    const raw = readFileSync('tests/fixtures/save-v3.json', 'utf8');
+    kv.setItem(SAVE_KEY, raw);
+    const s = new SaveStore(kv);
+    expect(s.totalStars()).toBeGreaterThan(0);
+    s.flush();
+    expect(kv.getItem(BACKUP_KEY)).toBe(raw);
+    expect(JSON.parse(kv.getItem(SAVE_KEY)!).version).toBe(SAVE_VERSION);
+    // a second load (already v4) leaves the backup alone
+    new SaveStore(kv).flush();
+    expect(kv.getItem(BACKUP_KEY)).toBe(raw);
+    for (const k of kv.m.keys()) expect(k.startsWith('vanex-defense-')).toBe(true);
+  });
+
+  it('stays far under the storage budget even when everything is maxed', () => {
+    const d = defaultSave();
+    const diffs = ['easy', 'normal', 'hard', 'expert'] as const;
+    // 18 maps worth of ids (campaign + 6 future), every star and medal
+    const ids = [...CAMPAIGN_MAPS.map((m) => m.id), 'w5m1', 'w5m2', 'w5m3', 'w6m1', 'w6m2', 'w6m3'];
+    for (const id of ids) {
+      d.maps[id] = { stars: Object.fromEntries(diffs.map((x) => [x, 3])), medals: ['iron', 'pure', 'budget', 'nocombo', 'speed'] };
+      d.endlessBest[id] = 999;
+    }
+    for (let i = 0; i < 80; i++) d.achievements[`badge_with_a_long_id_${i}`] = Date.now();
+    for (let i = 0; i < 40; i++) d.research[`research_node_${i}`] = 5;
+    for (let i = 0; i < 400; i++) d.daily[`2026-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}x${i}`] = 123456;
+    for (let i = 0; i < 14; i++) d.workshop.push({ code: 'V1.' + 'A'.repeat(900), updated: Date.now(), validated: true });
+    d.codexSeen = Array.from({ length: 120 }, (_, i) => `codex_entry_${i}`);
+    d.lifetime.combos = Array.from({ length: 15 }, (_, i) => `combo${i}`);
+    trimSave(d);
+    expect(Object.keys(d.daily).length).toBe(DAILY_KEEP);
+    expect(d.workshop.length).toBe(WORKSHOP_SLOTS);
+    const bytes = JSON.stringify(d).length * 2; // UTF-16 worst case
+    expect(bytes).toBeLessThan(STORAGE_BUDGET_BYTES / 4);
   });
 
   it('treats garbage and future versions as a fresh save', () => {

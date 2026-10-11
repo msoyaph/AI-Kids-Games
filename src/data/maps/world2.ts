@@ -1,14 +1,12 @@
-import type { MapDef } from './types';
+import { withMapText, type MapDef } from './types';
 
 /** World 2 — Dune Desert. */
-export const WORLD2: MapDef[] = [
+export const WORLD2: MapDef[] = withMapText([
   {
     id: 'w2m1',
-    name: 'Cactus Corner',
     world: 2,
     theme: 'desert',
     style: 'path',
-    story: "It's hot in the desert! Fire creatures love it here. Remember: Water beats Fire.",
     favoredElements: ['fire', 'earth'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -27,11 +25,9 @@ export const WORLD2: MapDef[] = [
   },
   {
     id: 'w2m2',
-    name: 'Oasis Ring',
     world: 2,
     theme: 'desert',
     style: 'maze',
-    story: 'The oasis splits the sand in two. Build a maze around the cool water!',
     favoredElements: ['fire', 'light'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -50,11 +46,9 @@ export const WORLD2: MapDef[] = [
   },
   {
     id: 'w2m3',
-    name: 'Sandy Switchbacks',
     world: 2,
     theme: 'desert',
     style: 'path',
-    story: 'Two roads join into one zig-zag. A great spot for splash towers!',
     favoredElements: ['earth', 'fire'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -71,4 +65,4 @@ export const WORLD2: MapDef[] = [
       'TTTTTTTTTTTTTTTTTTTT',
     ],
   },
-];
+]);

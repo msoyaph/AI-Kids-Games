@@ -1,10 +1,14 @@
+import { localized } from '../i18n';
+import { TUNING } from './tuning';
+
 export type ElementId = 'fire' | 'water' | 'nature' | 'light' | 'shadow' | 'earth';
 
 export type ElementIcon = 'flame' | 'drop' | 'leaf' | 'star' | 'moon' | 'hex';
 
 export interface ElementDef {
   id: ElementId;
-  name: string;
+  /** Translated. */
+  readonly name: string;
   /** Main colour, light tint and dark outline colour. */
   color: number;
   light: number;
@@ -13,84 +17,69 @@ export interface ElementDef {
   icon: ElementIcon;
   /** This element deals bonus damage to creatures of `beats`. */
   beats: ElementId;
-  /** Kid-friendly reason, e.g. "Fire burns leaves". */
-  why: string;
-  blurb: string;
+  /** Short reason, e.g. "Water quenches Fire" (translated). */
+  readonly why: string;
+  readonly blurb: string;
 }
 
 export const ELEMENT_ORDER: readonly ElementId[] = ['fire', 'water', 'nature', 'light', 'shadow', 'earth'];
 
-export const ELEMENTS: Record<ElementId, ElementDef> = {
+const ELEMENT_BASE: Record<ElementId, Omit<ElementDef, 'name' | 'why' | 'blurb'>> = {
   fire: {
     id: 'fire',
-    name: 'Fire',
     color: 0xff6a2b,
     light: 0xffb36b,
     dark: 0x8a2208,
     icon: 'flame',
     beats: 'nature',
-    why: 'Fire scorches Nature',
-    blurb: 'Splash damage that leaves targets burning. Best against tight groups.',
   },
   water: {
     id: 'water',
-    name: 'Water',
     color: 0x2fa8ff,
     light: 0x9be7ff,
     dark: 0x0f4a8a,
     icon: 'drop',
     beats: 'fire',
-    why: 'Water quenches Fire',
-    blurb: 'Slows enemies down so every other tower gets more shots in.',
   },
   nature: {
     id: 'nature',
-    name: 'Nature',
     color: 0x39e07a,
     light: 0xa8ffc6,
     dark: 0x11663a,
     icon: 'leaf',
     beats: 'water',
-    why: 'Nature drains Water',
-    blurb: 'Stacking poison that ignores armor. Wears down tough targets.',
   },
   light: {
     id: 'light',
-    name: 'Light',
     color: 0xffd84a,
     light: 0xfff3b8,
     dark: 0x9a7300,
     icon: 'star',
     beats: 'shadow',
-    why: 'Light pierces Shadow',
-    blurb: 'Arcs of energy that jump between enemies. Built for swarms.',
   },
   shadow: {
     id: 'shadow',
-    name: 'Shadow',
     color: 0xa06bff,
     light: 0xd9c2ff,
     dark: 0x45208f,
     icon: 'moon',
     beats: 'earth',
-    why: 'Shadow erodes Earth',
-    blurb: 'Cracks armor and lands critical hits, softening targets for the rest of the grid.',
   },
   earth: {
     id: 'earth',
-    name: 'Earth',
     color: 0xd9a066,
     light: 0xf5d6a8,
     dark: 0x6a4320,
     icon: 'hex',
     beats: 'light',
-    why: 'Earth blots out Light',
-    blurb: 'Ground slams that hit everything nearby and can stun.',
   },
 };
 
-export const STRONG_MULT = 1.6;
-export const WEAK_MULT = 0.6;
+export const ELEMENTS = {} as Record<ElementId, ElementDef>;
+for (const id of ELEMENT_ORDER) ELEMENTS[id] = localized({ ...ELEMENT_BASE[id] } as ElementDef, `element.${id}`, ['name', 'why', 'blurb'] as const);
+
+export const STRONG_MULT = TUNING.combat.strongMult;
+export const WEAK_MULT = TUNING.combat.weakMult;
 
 /** Damage multiplier for one attacking element against a creature's element. */
 export function elementVs(attack: ElementId, defender: ElementId | null): number {

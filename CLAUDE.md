@@ -24,6 +24,12 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
 
 ## Architecture
 - `src/core` — `Rng` (sfc32, `hashString`), math, `Pool` + `swapRemove`.
+- `src/data/tuning.ts` — **every balance number** (economy, combat constants, projectile speeds, wave curves,
+  difficulties, stars, tower levels via `makeLevels`, enemy stats). Data modules keep identity/looks only.
+- `src/i18n` — `t(key, vars)` (plural objects via Intl.PluralRules, numbers via Intl.NumberFormat, English
+  fallback), `en.ts` = source of truth for player text (flat keys `tower.arrow.name`), `localized()` defines
+  translated getters on data objects (`TOWERS.x.name` reads the current language), `pseudo.ts`, `detectLocale`.
+  `?lang=en|fil|pseudo` test hook. Never hard-code player-facing text; add a key to `en.ts`.
 - `src/data` — content as typed data: `elements.ts` (wheel Fire→Nature→Water→Fire, Light→Shadow→Earth→Light;
   1.6×/0.6×), `towers.ts` (2 basic + 6 element + 15 combo, `makeLevels` → 4 levels; behaviours bullet/chain/beam/
   pulse/mortar + ability fields), `enemies.ts` (hp is wave-1 strength, bosses too), `waves.ts` (seeded generator,
@@ -52,14 +58,18 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
 - Never allocate in sim/render hot loops (pools, swap-remove, cached strings/textures, scratch objects).
 - No external assets / fonts / network. Only widely supported emoji in UI text (no Unicode 14+ glyphs).
 - localStorage only via `SaveStore`. Bump `SAVE_VERSION` + add a migration when the save shape changes.
+  Save v4 (keys: `vanex-defense-save`, one-time `vanex-defense-save-backup` of the pre-upgrade save) holds
+  settings (language, textScale, highContrast, reducedMotion, hotkeys), research, hero, daily, workshop (≤10),
+  codexSeen, per-map medals. `trimSave` keeps it in budget (test: worst case < 50 KB of the 200 KB budget).
 - Kid-friendly copy: short sentences, "poof" not "kill".
 - After balance changes run `npm run sim` (and `-- --casual`): good bot must win all 36 runs; casual bot must get
   3★ on every Easy map (enforced by tests).
 
 ## Upgrade (branch `vanex-upgrade`, plan in the approved plan; `main` = v1 for ages 7+)
 - Step 1 (style slice on `w1m1` Breach Point) done → `docs/style-guide.md`, `docs/screenshots/{before,slice}/`.
-  WAITING FOR USER APPROVAL before Phase 2. Battle map, towers, constructs, FX, HUD, tower panel and title are
-  restyled; other screens/text (briefing, codex, tutorial, world maps 2–4, badges screen) are still v1 copy.
+  Approved 2026-10-11. Battle map, towers, constructs, FX, HUD, tower panel and title are restyled; other
+  screens/text (briefing, codex, tutorial, element picker, world maps 2–4, badges screen) are still v1 → Phase 3.
+- Phase 2 done: `tuning.ts`, i18n core (data text moved to `en.ts`), save v4 + v3-fixture migration test.
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

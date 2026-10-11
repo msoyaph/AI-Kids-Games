@@ -1,4 +1,7 @@
 import type { TowerDef, TowerStats } from './towers';
+import { TUNING } from './tuning';
+
+const D = TUNING.combat.defaults;
 
 /**
  * Sustained single-target damage per second, as shown in the UI. Includes
@@ -6,12 +9,12 @@ import type { TowerDef, TowerStats } from './towers';
  * targets are shown separately.
  */
 export function towerDps(def: TowerDef, st: TowerStats): number {
-  const crit = 1 + (st.critChance ?? 0) * ((st.critMult ?? 2) - 1);
+  const crit = 1 + (st.critChance ?? 0) * ((st.critMult ?? D.critMult) - 1);
   let direct: number;
   switch (def.behavior) {
     case 'beam':
       // average over the ramp-up window
-      direct = st.damage * (1 + ((st.beamRamp ?? 2) - 1) * 0.6);
+      direct = st.damage * (1 + ((st.beamRamp ?? D.beamRamp) - 1) * 0.6);
       break;
     default:
       direct = st.damage * st.rate * crit;
@@ -50,12 +53,12 @@ export function statLines(def: TowerDef, st: TowerStats): StatLine[] {
   if (st.shots && st.shots > 1) add('shots', 'Targets', st.shots, `×${st.shots}`);
   if (st.chain) add('chain', 'Chain jumps', st.chain, `${st.chain}`);
   if (st.splash) add('splash', 'Splash radius', st.splash, f1(st.splash));
-  if (st.slow) add('slow', 'Slow', st.slow, `${pct(st.slow)} · ${f1(st.slowTime ?? 1.5)}s`);
+  if (st.slow) add('slow', 'Slow', st.slow, `${pct(st.slow)} · ${f1(st.slowTime ?? D.slowTime)}s`);
   if (st.burnDps) add('burn', 'Burn', st.burnDps, `${fm(st.burnDps)}/s`);
   if (st.poisonDps) add('poison', 'Poison', st.poisonDps, `${fm(st.poisonDps)}/s ×${st.poisonStacks ?? 1}`);
   if (st.armorBreak) add('armor', 'Armor break', st.armorBreak, `−${pct(st.armorBreak)}`);
-  if (st.stunChance) add('stun', 'Stun', st.stunChance, `${pct(st.stunChance)} · ${f1(st.stunTime ?? 0.6)}s`);
-  if (st.critChance) add('crit', 'Critical hit', st.critChance, `${pct(st.critChance)} ×${f1(st.critMult ?? 2)}`);
+  if (st.stunChance) add('stun', 'Stun', st.stunChance, `${pct(st.stunChance)} · ${f1(st.stunTime ?? D.stunTime)}s`);
+  if (st.critChance) add('crit', 'Critical hit', st.critChance, `${pct(st.critChance)} ×${f1(st.critMult ?? D.critMult)}`);
   if (st.pushback) add('push', 'Push back', st.pushback, `${f1(st.pushback)} tiles`);
   if (st.zoneDps) add('zone', 'Field damage', st.zoneDps, `${fm(st.zoneDps)}/s`);
   if (st.zoneSlow) add('zoneSlow', 'Field slow', st.zoneSlow, pct(st.zoneSlow));

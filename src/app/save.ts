@@ -1,8 +1,18 @@
 import type { Difficulty } from '../data/difficulty';
+import type { LocaleSetting } from '../i18n';
 import type { QualitySetting } from '../render/quality';
 
+/** The one main storage key (shared site: every key must start with `vanex-defense-`). */
 export const SAVE_KEY = 'vanex-defense-save';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
+/** One-time copy of the last pre-upgrade save (written when an older save is migrated). */
+export const BACKUP_KEY = 'vanex-defense-save-backup';
+/** Hard budget for everything this game stores (the site shares ~5 MB between five games). */
+export const STORAGE_BUDGET_BYTES = 200_000;
+/** Daily-challenge results kept (oldest are dropped). */
+export const DAILY_KEEP = 60;
+/** Workshop map slots. */
+export const WORKSHOP_SLOTS = 10;
 
 export interface Settings {
   music: number;
@@ -12,11 +22,32 @@ export interface Settings {
   speed: 1 | 2 | 3;
   damageNumbers: boolean;
   rotateHintSeen: boolean;
+  // v4
+  /** 'auto' follows the browser language. */
+  language: LocaleSetting;
+  /** UI text size multiplier (1 = default). */
+  textScale: number;
+  highContrast: boolean;
+  /** 'auto' follows the system's prefers-reduced-motion. */
+  reducedMotion: 'auto' | 'on' | 'off';
+  /** Remapped keys: action id → KeyboardEvent.code (only changed ones are stored). */
+  hotkeys: Record<string, string>;
 }
 
 export interface MapProgress {
-  /** Best stars per difficulty. */
+  /** Best stars per difficulty (each difficulty counts separately). */
   stars: Partial<Record<Difficulty, number>>;
+  /** Challenge-modifier medals earned on this map (modifier ids). */
+  medals?: string[];
+}
+
+/** A saved Workshop map: its share code holds the whole map (grid + generated name). */
+export interface WorkshopSave {
+  code: string;
+  /** Created / last edited (ms). */
+  updated: number;
+  /** Passed the validator (incl. the bot test) since its last edit. */
+  validated: boolean;
 }
 
 export interface Lifetime {
@@ -39,6 +70,16 @@ export interface SaveData {
   lifetime: Lifetime;
   /** Remembered menu choices. */
   lastDifficulty: Difficulty;
+  // v4
+  /** Research node id → rank bought with stars (refundable). */
+  research: Record<string, number>;
+  /** Selected commander hero id ('' = the starting hero). */
+  hero: string;
+  /** Daily challenge: date (YYYY-MM-DD) → best score. */
+  daily: Record<string, number>;
+  workshop: WorkshopSave[];
+  /** Codex entries already opened (to mark new ones). */
+  codexSeen: string[];
 }
 
 export function defaultSave(): SaveData {
@@ -52,6 +93,11 @@ export function defaultSave(): SaveData {
       speed: 1,
       damageNumbers: true,
       rotateHintSeen: false,
+      language: 'auto',
+      textScale: 1,
+      highContrast: false,
+      reducedMotion: 'auto',
+      hotkeys: {},
     },
     maps: {},
     endlessBest: {},
@@ -59,6 +105,11 @@ export function defaultSave(): SaveData {
     achievements: {},
     lifetime: { kills: 0, bossKills: 0, towersBuilt: 0, wins: 0, combos: [] },
     lastDifficulty: 'normal',
+    research: {},
+    hero: '',
+    daily: {},
+    workshop: [],
+    codexSeen: [],
   };
 }
 
@@ -89,6 +140,21 @@ export const MIGRATIONS: Record<number, (d: AnySave) => AnySave> = {
       lastDifficulty: (d.lastDifficulty as Difficulty | undefined) ?? 'normal',
     };
   },
+  // v3 → v4 (the 10–14 upgrade): new settings + research, hero, daily, workshop, codex.
+  // Progress (stars, unlocks, badges, records, lifetime stats) carries over untouched.
+  3: (d) => {
+    const s = (d.settings as Record<string, unknown> | undefined) ?? {};
+    return {
+      ...d,
+      version: 4,
+      settings: { ...s, language: 'auto', textScale: 1, highContrast: false, reducedMotion: 'auto', hotkeys: {} },
+      research: {},
+      hero: '',
+      daily: {},
+      workshop: [],
+      codexSeen: [],
+    };
+  },
 };
 
 /** Bring any older save up to date. Unknown/broken data falls back to defaults. */
@@ -109,12 +175,28 @@ export function migrate(raw: unknown): SaveData {
   return {
     ...def,
     ...out,
-    settings: { ...def.settings, ...(out.settings ?? {}) },
     lifetime: { ...def.lifetime, ...(out.lifetime ?? {}) },
     maps: out.maps ?? {},
     endlessBest: out.endlessBest ?? {},
     achievements: out.achievements ?? {},
+    settings: { ...def.settings, ...(out.settings ?? {}), hotkeys: { ...(out.settings?.hotkeys ?? {}) } },
+    research: obj(out.research),
+    daily: obj(out.daily),
+    workshop: Array.isArray(out.workshop) ? out.workshop.slice(0, WORKSHOP_SLOTS) : [],
+    codexSeen: Array.isArray(out.codexSeen) ? out.codexSeen : [],
+    hero: typeof out.hero === 'string' ? out.hero : '',
   };
+}
+
+function obj<T>(v: Record<string, T> | undefined): Record<string, T> {
+  return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+}
+
+/** Keep the save inside its budget: trims old daily results first. */
+export function trimSave(d: SaveData): void {
+  const days = Object.keys(d.daily).sort();
+  for (let i = 0; i < days.length - DAILY_KEEP; i++) delete d.daily[days[i]!];
+  d.workshop.length = Math.min(d.workshop.length, WORKSHOP_SLOTS);
 }
 
 /** Minimal storage interface so tests can inject a fake. */
@@ -159,7 +241,15 @@ export class SaveStore {
     try {
       const raw = this.storage.getItem(SAVE_KEY);
       if (!raw) return defaultSave();
-      return migrate(JSON.parse(raw));
+      const parsed = JSON.parse(raw) as { version?: unknown };
+      if (typeof parsed?.version === 'number' && parsed.version < SAVE_VERSION && !this.storage.getItem(BACKUP_KEY)) {
+        try {
+          this.storage.setItem(BACKUP_KEY, raw);
+        } catch {
+          /* no room for a backup — the migration still runs */
+        }
+      }
+      return migrate(parsed);
     } catch {
       return defaultSave();
     }
@@ -171,6 +261,7 @@ export class SaveStore {
     this.timer = 0;
     if (!this.storage) return;
     try {
+      trimSave(this.data);
       this.storage.setItem(SAVE_KEY, JSON.stringify(this.data));
     } catch {
       /* quota or blocked — keep playing from memory */

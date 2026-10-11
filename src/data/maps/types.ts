@@ -1,3 +1,4 @@
+import { localized } from '../../i18n';
 import type { ElementId } from '../elements';
 
 export type ThemeId = 'meadow' | 'desert' | 'snow' | 'caves';
@@ -12,15 +13,16 @@ export type ThemeId = 'meadow' | 'desert' | 'snow' | 'caves';
  */
 export interface MapDef {
   id: string;
-  name: string;
+  /** Translated for campaign maps; plain text for Workshop maps. */
+  readonly name: string;
   /** 0 = tutorial, 1..4 = campaign worlds. */
   world: number;
   theme: ThemeId;
   /** 'maze' = open field you shape with towers, 'path' = fixed road. */
   style: 'maze' | 'path';
   grid: string[];
-  /** Pip's short intro shown on the briefing screen. */
-  story: string;
+  /** PIP's briefing shown before the match (translated for campaign maps). */
+  readonly story: string;
   /** Elements that creatures in this map like to use (more variants of these). */
   favoredElements?: ElementId[];
   startCoins?: number;
@@ -39,3 +41,10 @@ export const LEGEND = {
   SPAWN: 'S',
   CASTLE: 'C',
 } as const;
+
+/** Map data without text; campaign maps get their name and briefing from i18n (`map.<id>.name/story`). */
+export type MapData = Omit<MapDef, 'name' | 'story'>;
+
+export function withMapText(maps: MapData[]): MapDef[] {
+  return maps.map((m) => localized({ ...m } as MapDef, `map.${m.id}`, ['name', 'story'] as const));
+}

@@ -1,6 +1,6 @@
 import { ELEMENT_ORDER, ELEMENTS, type ElementId } from '../data/elements';
 import { ENEMIES } from '../data/enemies';
-import { BASIC_TOWERS, comboFor, ELEMENT_TOWERS, MAX_LEVEL, sellValue, TARGET_MODE_LABEL, TOWERS, type TowerId } from '../data/towers';
+import { BASIC_TOWERS, comboFor, ELEMENT_TOWERS, MAX_LEVEL, sellValue, targetModeLabel, TOWERS, type TowerId } from '../data/towers';
 import { wavePreview } from '../data/waves';
 import { atlasIconUrl, elementIconUrl, enemyTexName, towerIconUrl, type Atlas } from '../render/atlas/bake';
 import type { Tower } from '../sim/entities';
@@ -394,7 +394,7 @@ export class Hud {
     const target =
       def.behavior === 'pulse'
         ? undefined
-        : h('button.btn.ghost', { onClick: () => this.host.cycleTargeting(), 'aria-label': 'Change target' }, `Target: ${TARGET_MODE_LABEL[t.mode]}`);
+        : h('button.btn.ghost', { onClick: () => this.host.cycleTargeting(), 'aria-label': 'Change target' }, `Target: ${targetModeLabel(t.mode)}`);
     const upgrade = h('button.btn.green', { onClick: () => this.host.upgradeSelected(), 'aria-label': 'Upgrade' });
     const sell = h('button.btn.red', { onClick: () => this.host.sellSelected(), 'aria-label': 'Sell' }, `Sell +${sellValue(t.invested)}`);
     const close = h('button.btn.round.ghost.close', { onClick: () => this.host.deselect(), 'aria-label': 'Close' }, '✕');
@@ -452,7 +452,7 @@ export class Hud {
       r.upgrade.disabled = g.coins < cost;
     }
     if (r.sell) setText(r.sell, `Sell +${sellValue(t.invested)}`);
-    if (r.target) setText(r.target, `Target: ${TARGET_MODE_LABEL[t.mode]}`);
+    if (r.target) setText(r.target, `Target: ${targetModeLabel(t.mode)}`);
     if (r.kills) setText(r.kills, `${t.kills} destroyed · ${Math.round(t.damageDone).toLocaleString()} dmg`);
   }
 

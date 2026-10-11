@@ -1,14 +1,12 @@
-import type { MapDef } from './types';
+import { withMapText, type MapDef } from './types';
 
 /** World 3 — Frosty Peaks. */
-export const WORLD3: MapDef[] = [
+export const WORLD3: MapDef[] = withMapText([
   {
     id: 'w3m1',
-    name: 'Snowball Slope',
     world: 3,
     theme: 'snow',
     style: 'maze',
-    story: 'Brrr! Slippery snow and frozen ponds. Build a long, twisty maze!',
     favoredElements: ['water', 'light'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -27,11 +25,9 @@ export const WORLD3: MapDef[] = [
   },
   {
     id: 'w3m2',
-    name: 'Icicle Loop',
     world: 3,
     theme: 'snow',
     style: 'path',
-    story: 'The road spirals around the castle. Towers in the middle can reach lots of road!',
     favoredElements: ['light', 'water'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -50,11 +46,9 @@ export const WORLD3: MapDef[] = [
   },
   {
     id: 'w3m3',
-    name: 'Penguin Pass',
     world: 3,
     theme: 'snow',
     style: 'maze',
-    story: 'Icy walls make narrow passes. Block them cleverly, but never all the way!',
     favoredElements: ['water', 'earth'],
     grid: [
       'TTTTTTTTTTTTTTTTTTTT',
@@ -71,4 +65,4 @@ export const WORLD3: MapDef[] = [
       'TTTTTTTTTTTTTTTTTTTT',
     ],
   },
-];
+]);

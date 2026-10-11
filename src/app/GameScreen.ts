@@ -2,7 +2,7 @@ import { DIFFICULTIES, starsFor, type Difficulty } from '../data/difficulty';
 import { ELEMENT_ORDER, ELEMENTS, counterOf, type ElementId } from '../data/elements';
 import type { MapDef } from '../data/maps/types';
 import type { WaveDef } from '../data/waves';
-import { BUILD_FAIL_MSG, LOSE_LINES, TIPS, WIN_LINES } from '../data/strings';
+import { buildFailMsg, randomLine } from '../data/strings';
 import { TARGET_MODES, TOWERS, type TowerId } from '../data/towers';
 import { elementIconUrl, towerIconUrl, type Atlas } from '../render/atlas/bake';
 import { TILE } from '../render/MapPainter';
@@ -315,7 +315,7 @@ export class GameScreen implements Screen, HudHost {
       this.view.setPreviewPath(this.game.previewPaths(check.reason === 'path' ? -1 : this.game.grid.idx(cx, cy), this.previewPaths));
     } else this.view.setPreviewPath(null);
     if (withConfirm && this.touch) this.placeConfirm(check.ok);
-    if (!check.ok && withConfirm && check.reason) this.hud.toast(BUILD_FAIL_MSG[check.reason], true);
+    if (!check.ok && withConfirm && check.reason) this.hud.toast(buildFailMsg(check.reason), true);
   }
 
   private placeConfirm(ok: boolean): void {
@@ -353,7 +353,7 @@ export class GameScreen implements Screen, HudHost {
     if (!this.buildType) return;
     const check = this.game.canBuild(this.buildType, cx, cy);
     if (!check.ok) {
-      this.hud.toast(BUILD_FAIL_MSG[check.reason!], true);
+      this.hud.toast(buildFailMsg(check.reason!), true);
       this.app.audio.ui('deny');
       return;
     }
@@ -403,7 +403,7 @@ export class GameScreen implements Screen, HudHost {
       this.view.select(t);
       this.hud.refreshPanelButtons();
     } else if (t.level < 4) {
-      this.hud.toast(BUILD_FAIL_MSG.coins, true);
+      this.hud.toast(buildFailMsg('coins'), true);
       this.app.audio.ui('deny');
     }
   }
@@ -457,7 +457,7 @@ export class GameScreen implements Screen, HudHost {
 
   openPause(): void {
     this.paused = true;
-    const tip = TIPS[Math.floor(Math.random() * TIPS.length)]!;
+    const tip = randomLine('tip');
     this.modal = showModal(
       this.el,
       [
@@ -559,7 +559,7 @@ export class GameScreen implements Screen, HudHost {
     const stars = won ? starsFor(g.lives, g.maxLives) : 0;
     setTimeout(() => {
       if (won) {
-        const line = WIN_LINES[Math.floor(Math.random() * WIN_LINES.length)]!;
+        const line = randomLine('line.win');
         this.modal = showModal(this.el, [
           h('h2', null, 'Sector secured'),
           starsHtml(stars, 3, true),
@@ -577,13 +577,13 @@ export class GameScreen implements Screen, HudHost {
         this.app.audio.ui('star');
       } else {
         const endless = this.opts.mode === 'endless';
-        const line = endless ? `You held until wave ${g.waveNum}.` : LOSE_LINES[Math.floor(Math.random() * LOSE_LINES.length)]!;
+        const line = endless ? `You held until wave ${g.waveNum}.` : randomLine('line.lose');
         this.modal = showModal(this.el, [
           h('h2', null, endless ? 'Run complete' : 'Defense breached'),
           pipSays(line),
           endless && result.newBest ? h('p', null, '🏆 New best wave!') : null,
           result.badges?.length ? h('p', null, `New badge${result.badges.length > 1 ? 's' : ''}: ${result.badges.join(', ')}`) : null,
-          h('p', null, TIPS[Math.floor(Math.random() * TIPS.length)]!),
+          h('p', null, randomLine('tip')),
           h('div.row', null, h('button.btn.green.big', { onClick: () => this.nav.restart() }, 'Retry'), h('button.btn.ghost', { onClick: () => this.nav.quit() }, 'Sector map')),
         ].filter(Boolean) as HTMLElement[]);
       }

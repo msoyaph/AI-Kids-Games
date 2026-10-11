@@ -22,6 +22,7 @@ import {
   type SpawnGroup,
   type WaveDef,
 } from '../data/waves';
+import { TUNING } from '../data/tuning';
 import { Enemy } from './enemy';
 import { Projectile, Tower, Zone } from './entities';
 import { Ev, EventQueue } from './events';
@@ -83,24 +84,10 @@ interface SpawnCursor {
   spawnPoint: number;
 }
 
-const SPEED: Record<string, number> = {
-  arrow: 13,
-  cannonball: 8.5,
-  fireball: 8,
-  bubble: 7.5,
-  thorn: 11,
-  shadowOrb: 8,
-  steamPuff: 6.5,
-  seed: 8,
-  wisp: 7.5,
-  lava: 0,
-  drop: 10,
-  sunSeed: 10,
-  shard: 13,
-  poisonOrb: 8,
-  bark: 10,
-  flare: 6,
-};
+const SPEED: Readonly<Record<string, number>> = TUNING.projectileSpeed;
+const C = TUNING.combat;
+const D = TUNING.combat.defaults;
+const ECO = TUNING.economy;
 
 const MAX_ENEMIES = 1600;
 const MAX_PROJECTILES = 1600;
@@ -186,8 +173,8 @@ export class Game {
     this.autoWaves = opts.autoWaves ?? true;
     this.maxLives = this.diff.lives;
     this.lives = this.maxLives;
-    this.coins = Math.round((opts.startCoins ?? opts.map.startCoins ?? 160) * this.diff.startCoins);
-    this.crystals = opts.startCrystals ?? 1;
+    this.coins = Math.round((opts.startCoins ?? opts.map.startCoins ?? ECO.startCoins) * this.diff.startCoins);
+    this.crystals = opts.startCrystals ?? ECO.startCrystals;
     this.crystalWaves = opts.crystalWaves ?? CRYSTAL_WAVES;
     const shortest = this.pathLength();
     this.stats = {
@@ -231,7 +218,7 @@ export class Game {
   /** Coins you'd get for calling the next wave right now. */
   get earlyBonus(): number {
     if (this.waveNum === 0 || this.nextWaveTimer <= 0) return 0;
-    return Math.ceil(this.nextWaveTimer * 0.6 * (1 + this.waveNum * 0.04));
+    return Math.ceil(this.nextWaveTimer * ECO.earlyBonus.perSecond * (1 + this.waveNum * ECO.earlyBonus.perWave));
   }
 
   /** Start the next wave now (the Go / Send-early button). Returns bonus coins. */
@@ -262,7 +249,7 @@ export class Game {
     this.waveAlive[idx] = total;
     this.waveCleared[idx] = false;
     if (!this.allWavesStarted && this.autoWaves) {
-      this.nextWaveTimer = waveSpawnDuration(w) + 11 * this.diff.breather + (w.boss ? 6 : 0);
+      this.nextWaveTimer = waveSpawnDuration(w) + ECO.breather.base * this.diff.breather + (w.boss ? ECO.breather.boss : 0);
     } else {
       this.nextWaveTimer = -1;
     }
@@ -487,7 +474,7 @@ export class Game {
       o.hp = Math.min(o.maxHp, o.hp + o.maxHp * pct);
       healed++;
     }
-    if (src.def.shiftElement) src.hp = Math.min(src.maxHp, src.hp + src.maxHp * pct * 0.25);
+    if (src.def.shiftElement) src.hp = Math.min(src.maxHp, src.hp + src.maxHp * pct * C.shiftSelfHeal);
     if (healed > 0) {
       const ev = this.events.push(Ev.Heal, src.x, src.y);
       ev.value = radius;
@@ -526,7 +513,7 @@ export class Game {
       this.waveCleared[i] = true;
       const n = i + 1;
       const bonus = waveClearBonus(n);
-      const cap = 10 + n * 2;
+      const cap = ECO.interestCap.base + n * ECO.interestCap.perWave;
       const interest = Math.min(cap, Math.floor(this.coins * this.diff.interest));
       this.addCoins(bonus + interest);
       this.stats.interestEarned += interest;
@@ -573,7 +560,7 @@ export class Game {
       let pierce = false;
       for (let i = 0; i < elements.length; i++) if (ELEMENTS[elements[i]!].beats === e.shield) pierce = true;
       if (!pierce) {
-        m *= 0.25;
+        m *= C.wardMult;
         if (!dot && (this.tick & 3) === 0) {
           const ev = this.events.push(Ev.ShieldBlock, e.x, e.y);
           ev.tag = e.shield;
@@ -636,21 +623,21 @@ export class Game {
           c.wx = e.wx;
           c.wy = e.wy;
         }
-        c.stunTime = 0.35; // little "pop out" pause
+        c.stunTime = C.splitPause; // little "pop out" pause
         this.updateRemaining(c);
       }
       const sev = this.events.push(Ev.Split, e.x, e.y);
       sev.kind = split.into;
     }
     if (e.poisonSpread > 0 && e.poisonStacks > 0) {
-      const n = this.spatial.query(e.x, e.y, 1.6, 1, this.q2);
+      const n = this.spatial.query(e.x, e.y, C.poisonSpread.radius, 1, this.q2);
       let spread = 0;
       for (let i = 0; i < n && spread < e.poisonSpread; i++) {
         const o = this.q2[i]!;
         if (!o.alive || o === e) continue;
         o.poisonPerStack = Math.max(o.poisonPerStack, e.poisonPerStack);
         o.poisonStacks = Math.max(o.poisonStacks, 1);
-        o.poisonTime = Math.max(o.poisonTime, 3);
+        o.poisonTime = Math.max(o.poisonTime, C.poisonSpread.time);
         o.poisonSpread = e.poisonSpread;
         o.lastHitBy = e.lastHitBy;
         const cev = this.events.push(Ev.Chain, e.x, e.y);
@@ -668,27 +655,27 @@ export class Game {
     if (!e.alive) return;
     const resist = e.def.ccResist ?? 1;
     if (st.slow) {
-      const amt = st.slow * (e.boss ? 0.6 : 1);
+      const amt = st.slow * (e.boss ? C.bossSlowMult : 1);
       if (amt >= e.slowAmt || e.slowTime <= 0) e.slowAmt = amt;
-      e.slowTime = Math.max(e.slowTime, st.slowTime ?? 1.5);
+      e.slowTime = Math.max(e.slowTime, st.slowTime ?? D.slowTime);
     }
     if (st.burnDps) {
       e.burnDps = Math.max(e.burnTime > 0 ? e.burnDps : 0, st.burnDps);
-      e.burnTime = Math.max(e.burnTime, st.burnTime ?? 2);
+      e.burnTime = Math.max(e.burnTime, st.burnTime ?? D.burnTime);
     }
     if (st.poisonDps) {
       e.poisonPerStack = Math.max(e.poisonTime > 0 ? e.poisonPerStack : 0, st.poisonDps);
       e.poisonStacks = Math.min(st.poisonStacks ?? 1, (e.poisonTime > 0 ? e.poisonStacks : 0) + 1);
-      e.poisonTime = st.poisonTime ?? 3;
+      e.poisonTime = st.poisonTime ?? D.poisonTime;
       if (st.poisonSpread) e.poisonSpread = Math.max(e.poisonSpread, st.poisonSpread);
     }
     if (st.armorBreak) {
       e.armorBreak = Math.max(e.armorBreakTime > 0 ? e.armorBreak : 0, st.armorBreak);
-      e.armorBreakTime = Math.max(e.armorBreakTime, st.armorBreakTime ?? 3);
+      e.armorBreakTime = Math.max(e.armorBreakTime, st.armorBreakTime ?? D.armorBreakTime);
     }
     if (st.stunChance && e.ccImmune <= 0 && this.rng.chance(st.stunChance)) {
-      e.stunTime = (st.stunTime ?? 0.6) * resist;
-      e.ccImmune = e.stunTime + (e.boss ? 2.5 : 1.0);
+      e.stunTime = (st.stunTime ?? D.stunTime) * resist;
+      e.ccImmune = e.stunTime + (e.boss ? C.stunImmunity.boss : C.stunImmunity.normal);
       const ev = this.events.push(Ev.Stun, e.x, e.y);
       ev.value = e.stunTime;
     }
@@ -859,7 +846,7 @@ export class Game {
     t.x = cx + 0.5;
     t.y = cy + 0.5;
     t.invested = cost;
-    t.cooldown = 0.2;
+    t.cooldown = C.buildCooldown;
     t.builtAtTick = this.tick;
     t.sinceBuild = 0;
     t.mode = def.behavior === 'pulse' ? 'close' : 'first';
@@ -1072,7 +1059,7 @@ export class Game {
     p.towerId = t.id;
     p.hitsAir = t.def.targets === 'both';
     p.crit = !!st.critChance && this.rng.chance(st.critChance);
-    p.damage = st.damage * t.dmgMult * (p.crit ? (st.critMult ?? 2) : 1);
+    p.damage = st.damage * t.dmgMult * (p.crit ? (st.critMult ?? D.critMult) : 1);
     p.angle = Math.atan2(e.y - p.y, e.x - p.x);
     p.z = 0;
     if (t.def.behavior === 'mortar') {
@@ -1080,14 +1067,14 @@ export class Game {
       p.sx = p.x;
       p.sy = p.y;
       // lead the target a little
-      const lead = 0.5 * e.currentSpeed;
+      const lead = C.mortar.lead * e.currentSpeed;
       const dx = e.wx - e.x;
       const dy = e.wy - e.y;
       const d = Math.hypot(dx, dy) || 1;
       p.tx = e.x + (dx / d) * Math.min(lead, d);
       p.ty = e.y + (dy / d) * Math.min(lead, d);
       p.t = 0;
-      p.tTotal = 0.9;
+      p.tTotal = C.mortar.flight;
       p.target = null;
     } else {
       p.lob = false;
@@ -1123,7 +1110,7 @@ export class Game {
       this.applyEffects(cur, st, t.id);
       if (hitCount >= hit.length) break;
       // find nearest un-hit creature
-      const m = this.spatial.query(cx, cy, 2.4, t.def.targets === 'both' ? 1 : 0, this.q2);
+      const m = this.spatial.query(cx, cy, C.chainRadius, t.def.targets === 'both' ? 1 : 0, this.q2);
       let best: Enemy | null = null;
       let bestD = Infinity;
       for (let i = 0; i < m; i++) {
@@ -1142,7 +1129,7 @@ export class Game {
       fromX = cx;
       fromY = cy;
       cur = best;
-      dmg *= st.chainFalloff ?? 0.8;
+      dmg *= st.chainFalloff ?? D.chainFalloff;
     }
     return true;
   }
@@ -1181,7 +1168,7 @@ export class Game {
     if (!e) return;
     t.beamTime += DT;
     t.sinceFire = 0;
-    const ramp = 1 + ((st.beamRamp ?? 2) - 1) * Math.min(1, t.beamTime / (st.beamRampTime ?? 3));
+    const ramp = 1 + ((st.beamRamp ?? D.beamRamp) - 1) * Math.min(1, t.beamTime / (st.beamRampTime ?? D.beamRampTime));
     t.angle = Math.atan2(e.y - t.y, e.x - t.x);
     this.damage(e, st.damage * ramp * t.dmgMult * t.rateMult * DT, t.def.elements, t.id);
   }
@@ -1240,7 +1227,7 @@ export class Game {
       for (let i = 0; i < n; i++) {
         const e = this.q2[i]!;
         // the primary target takes full damage; others take 70%
-        const k = e === p.target ? 1 : 0.7;
+        const k = e === p.target ? 1 : C.splashFalloff;
         this.damage(e, p.damage * k, p.elements, p.towerId);
         this.applyEffects(e, st, p.towerId);
       }
@@ -1274,10 +1261,10 @@ export class Game {
     z.active = true;
     z.x = p.tx;
     z.y = p.ty;
-    z.r = st.zoneRadius ?? 1;
+    z.r = st.zoneRadius ?? D.zoneRadius;
     z.dps = st.zoneDps!;
     z.slow = st.zoneSlow ?? 0;
-    z.time = z.maxTime = st.zoneTime ?? 3;
+    z.time = z.maxTime = st.zoneTime ?? D.zoneTime;
     z.tick = 0;
     z.hitsAir = p.hitsAir;
     z.elements = p.elements;
@@ -1296,13 +1283,13 @@ export class Game {
       z.time -= DT;
       z.tick -= DT;
       if (z.tick <= 0) {
-        z.tick += 0.25;
+        z.tick += C.zoneTick;
         const n = this.spatial.query(z.x, z.y, z.r, z.hitsAir ? 1 : 0, this.q2);
         for (let k = 0; k < n; k++) {
           const e = this.q2[k]!;
-          this.damage(e, z.dps * 0.25, z.elements, z.towerId, true);
+          this.damage(e, z.dps * C.zoneTick, z.elements, z.towerId, true);
           if (z.slow > 0 && e.alive) {
-            if (z.slow >= e.slowAmt || e.slowTime <= 0) e.slowAmt = z.slow * (e.boss ? 0.6 : 1);
+            if (z.slow >= e.slowAmt || e.slowTime <= 0) e.slowAmt = z.slow * (e.boss ? C.bossSlowMult : 1);
             e.slowTime = Math.max(e.slowTime, 0.4);
           }
         }

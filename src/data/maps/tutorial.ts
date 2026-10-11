@@ -1,12 +1,11 @@
-import type { MapDef } from './types';
+import { withMapText, type MapDef } from './types';
 
-export const TUTORIAL_MAP: MapDef = {
+export const TUTORIAL_MAP: MapDef = withMapText([
+  {
   id: 'tutorial',
-  name: "Pip's Garden",
   world: 0,
   theme: 'meadow',
   style: 'maze',
-  story: "Hi, I'm Pip! Let's learn how to keep the crystals safe.",
   startCoins: 120,
   waves: 8,
   grid: [
@@ -19,4 +18,5 @@ export const TUTORIAL_MAP: MapDef = {
     'T.......B....T',
     'TTTTTTTTTTTTTT',
   ],
-};
+},
+])[0]!;

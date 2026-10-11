@@ -2,6 +2,7 @@ import { hashString, Rng } from '../core/rng';
 import { ELEMENT_ORDER, type ElementId } from './elements';
 import type { EnemyId } from './enemies';
 import type { MapDef } from './maps/types';
+import { TUNING } from './tuning';
 
 export interface SpawnGroup {
   enemy: EnemyId;
@@ -27,26 +28,26 @@ export interface WaveDef {
   boss: EnemyId | null;
 }
 
-/** Creature health curve. Tuned with the headless autoplay sim (npm run sim). */
+/** Creature health curve (TUNING.waves.hp). Tuned with the headless autoplay sim (npm run sim). */
 export function hpScale(w: number): number {
   const k = w - 1;
-  // gentle early (kids are still learning to maze), steeper later
-  const base = 1 + 0.12 * k + 0.0125 * k * k;
+  const H = TUNING.waves.hp;
+  const base = 1 + H.linear * k + H.quad * k * k;
   // Endless: keep growing a little faster after the campaign length.
-  return w > 40 ? base * Math.pow(1.035, w - 40) : base;
+  return w > H.endlessAfter ? base * Math.pow(H.endlessGrowth, w - H.endlessAfter) : base;
 }
 
 export function coinScale(w: number): number {
-  return 1 + 0.09 * (w - 1);
+  return 1 + TUNING.waves.coinsPerWave * (w - 1);
 }
 
-/** Coins for clearing a wave. */
+/** Gold for clearing a wave. */
 export function waveClearBonus(w: number): number {
-  return 8 + w * 2;
+  return TUNING.economy.waveClear.base + w * TUNING.economy.waveClear.perWave;
 }
 
-/** Element crystal milestones (after clearing these waves). A first crystal is given at the start. */
-export const CRYSTAL_WAVES: readonly number[] = [5, 10, 15, 20, 25];
+/** Element core milestones (after clearing these waves). A first core is given at the start. */
+export const CRYSTAL_WAVES: readonly number[] = TUNING.economy.crystalWaves;
 
 export const BOSS_BY_DECADE: readonly EnemyId[] = ['kinggloop', 'bigclank', 'mamapuff', 'grumbleking'];
 
@@ -60,7 +61,7 @@ export function waveSpawnDuration(w: WaveDef): number {
 function elementPicker(rng: Rng, favored: readonly ElementId[], chance: number): () => ElementId | null {
   return () => {
     if (!rng.chance(chance)) return null;
-    if (favored.length && rng.chance(0.6)) return rng.pick(favored);
+    if (favored.length && rng.chance(TUNING.waves.favoredChance)) return rng.pick(favored);
     return rng.pick(ELEMENT_ORDER);
   };
 }
@@ -74,10 +75,11 @@ export function generateWave(w: number, map: Pick<MapDef, 'id' | 'favoredElement
   const slot = ((w - 1) % 10) + 1;
   const cycle = Math.floor((w - 1) / 10);
   const favored = map.favoredElements ?? [];
-  const elemChance = Math.min(0.9, 0.3 + cycle * 0.2);
+  const W = TUNING.waves;
+  const elemChance = Math.min(W.elementChance.max, W.elementChance.base + cycle * W.elementChance.perCycle);
   const pickEl = elementPicker(rng, favored, elemChance);
-  const c = 8 + Math.floor(w * 0.45);
-  const gap = Math.max(0.38, 0.95 - w * 0.012);
+  const c = W.count.base + Math.floor(w * W.count.perWave);
+  const gap = Math.max(W.gap.min, W.gap.base - w * W.gap.perWave);
   const groups: SpawnGroup[] = [];
   const els = (n: number, f: () => ElementId | null = pickEl): (ElementId | null)[] =>
     Array.from({ length: n }, () => f());
@@ -149,7 +151,7 @@ export function generateWave(w: number, map: Pick<MapDef, 'id' | 'favoredElement
 }
 
 export function buildWaves(map: MapDef): WaveDef[] {
-  const count = map.waves ?? 40;
+  const count = map.waves ?? TUNING.waves.length;
   const out: WaveDef[] = [];
   for (let w = 1; w <= count; w++) out.push(generateWave(w, map));
   return out;

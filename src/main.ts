@@ -7,6 +7,7 @@ import { EncyclopediaScreen } from './app/screens/EncyclopediaScreen';
 import { SettingsScreen } from './app/screens/SettingsScreen';
 import { SaveStore } from './app/save';
 import { mapById } from './data/maps';
+import { resolveLocale, setLocale } from './i18n';
 import type { Difficulty } from './data/difficulty';
 import { bakeAtlas } from './render/atlas/bake';
 import { installFonts } from './render/FloatingText';
@@ -24,6 +25,9 @@ function progress(p: number, text?: string): void {
 async function boot(): Promise<void> {
   const params = new URLSearchParams(location.search);
   const save = new SaveStore();
+  // Language: saved choice, or the browser's language. Test hook: ?lang=en|fil|pseudo
+  const lang = params.get('lang');
+  setLocale(lang === 'en' || lang === 'fil' || lang === 'pseudo' ? lang : resolveLocale(save.data.settings.language));
   // Test hook: ?quality=low|medium|high|auto (used by the perf benchmark).
   const q = params.get('quality');
   if (q === 'low' || q === 'medium' || q === 'high' || q === 'auto') save.data.settings.quality = q;
