@@ -11,6 +11,7 @@ import { Starfield } from '../gfx/starfield';
 import { ensureTex, planetDiscFraction, planetTex, rocketTex, tex } from '../gfx/textures';
 import { h, setText } from '../ui/dom';
 import { button } from '../ui/widgets';
+import { tip } from '../ui/tips';
 import { mapHooks } from './mapHooks';
 
 const MAP_W = 2480;
@@ -163,6 +164,7 @@ export class StarMapScene extends Scene {
     const pick = this.nodes.find((n) => n.sys.id === this.targetSys && n.unlocked) ?? this.nodes.find((n) => n.sys.id === this.current);
     if (pick) this.select(pick, false);
     mapHooks.onEnter(this);
+    tip('map');
   }
 
   override back(): boolean {

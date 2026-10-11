@@ -2,6 +2,7 @@ import { Container, Sprite, Text, TilingSprite, type Texture } from 'pixi.js';
 import { Scene } from '../app/Scene';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
+import { exploreTrack } from '../audio/music';
 import { clamp, lerp } from '../core/mathx';
 import { BODY_BY_ID } from '../data/bodies';
 import { CHAR_BY_ID } from '../data/characters';
@@ -33,6 +34,7 @@ import { Hud } from '../ui/hud';
 import { closeTopModal, openModal } from '../ui/modal';
 import { openPause, pauseHooks } from '../ui/pause';
 import { toast } from '../ui/toast';
+import { tip } from '../ui/tips';
 import { button, iconEl } from '../ui/widgets';
 import { exploreHooks } from './exploreHooks';
 
@@ -113,7 +115,7 @@ export class ExploreScene extends Scene {
     this.pausable = true;
     const def = levelById(p.area);
     if (!def) throw new Error(`Unknown area ${p.area}`);
-    this.music = def.music ?? 'explore';
+    this.music = def.music ?? exploreTrack(def.theme);
     this.model = parseLevel(def);
     this.th = theme(def.theme);
     this.bodyId = def.body;
@@ -183,6 +185,8 @@ export class ExploreScene extends Scene {
       setTimeout(() => void showDialogue(dialogue(def.intro!)), 400);
     }
     exploreHooks.onEnter(this);
+    tip(this.rover ? 'explore_rover' : 'explore_move');
+    if (this.buddy) tip('zibbo');
   }
 
   override exit(): void {
@@ -421,6 +425,8 @@ export class ExploreScene extends Scene {
     // What can the Action button do?
     this.current = this.busy ? null : findInteraction(this.world, this.player, this.interact);
     if (this.current) {
+      if (this.current.kind === 'pickOrb') tip('explore_orb');
+      if (this.current.kind === 'crystal') tip('explore_crystal');
       const [label, icon] = LABELS[this.current.kind];
       S.touch.setAction(label, icon);
       setText(this.promptText, label);
@@ -472,6 +478,7 @@ export class ExploreScene extends Scene {
     const p = this.player;
     const cx = p.x + this.world.cfg.pw / 2;
     if (ev.jumped) {
+      if (!this.rover && st.data.stats.jumps > 3) tip('explore_hover');
       st.bump('jumps');
       sfx('jump');
     }
@@ -485,7 +492,10 @@ export class ExploreScene extends Scene {
       this.shake.kick(8);
       sfx('bump');
     }
-    if (ev.pushing && Math.random() < 0.1) sfx('push');
+    if (ev.pushing) {
+      tip('explore_crate');
+      if (Math.random() < 0.1) sfx('push');
+    }
     for (const pk of ev.picked) {
       const idx = this.world.pickups.indexOf(pk);
       if (idx >= 0) this.pickupSprites[idx].visible = false;

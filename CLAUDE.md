@@ -36,7 +36,7 @@ Vite + TypeScript (strict) + PixiJS 8, shipped as ONE self-contained `dist/index
 - [x] Phase 6: 27 main + 16 side missions (data/missions/*), 19 levels (data/levels/*, auto-registered), story dialogue (data/dialogueStory.ts), CutsceneScene (zibbo/starpath/wormhole/finale), CreditsScene, CompleteScene.
 - [x] Phase 7: data/facts.ts (ALL facts), data/codex.ts, systems/codex.ts, data/badges.ts (40), systems/daily.ts, systems/race.ts, CodexScene, BadgesScene (badges + sticker book), app/hooks.ts wiring.
 - [x] Phase 8: SlotsScene (3 slots, erase with confirm), CreatorScene (name, suit, helmet, skin, hair, face, difficulty), ui/settings.ts (volume, difficulty, read aloud, tips, fullscreen, help, erase), save tests.
-- [ ] Phase 9: audio, effects, onboarding.
+- [x] Phase 9: audio/audio.ts (Web Audio synth, ~45 SFX), audio/music.ts (seeded composer + lookahead sequencer, 14 tracks, crossfades), onboarding tips (data/tips.ts, ui/tips.ts), hub shooting stars.
 - [ ] Phase 10: tests, pacing.
 
 ## Content conventions

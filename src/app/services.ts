@@ -1,3 +1,4 @@
+import type { AudioEngine } from '../audio/audio';
 import type { Input } from '../input/input';
 import type { TouchControls } from '../input/touch';
 import type { MissionEngine } from '../systems/missions';
@@ -13,6 +14,7 @@ export interface Services {
   state: GameState;
   missions: MissionEngine;
   settings: Settings;
+  audio: AudioEngine;
 }
 
 export const S = {} as Services;

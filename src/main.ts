@@ -1,6 +1,10 @@
 import 'pixi.js/unsafe-eval';
 import './ui/ui.css';
 import { Game } from './app/Game';
+import { AudioEngine } from './audio/audio';
+import { sfx } from './audio/sfx';
+import { settingsHooks } from './ui/settings';
+import { uiHooks } from './ui/widgets';
 import { S } from './app/services';
 import { saveNow, tickSession } from './app/session';
 import { bakeCore } from './gfx/textures';
@@ -108,6 +112,13 @@ async function boot(): Promise<void> {
   S.settings = loadSettings();
   initSpeech();
   setReadAloud(S.settings.readAloud);
+  const audio = new AudioEngine();
+  S.audio = audio;
+  audio.setVolumes(S.settings.music, S.settings.sfx);
+  settingsHooks.volume = (m, v) => audio.setVolumes(m, v);
+  uiHooks.sfx = (name) => sfx(name);
+  game.onVisibility.push((visible) => audio.setHidden(!visible));
+  game.onSceneChange.push(() => audio.playMusic(game.current?.music ?? null));
   S.input = new Input();
   S.touch = new TouchControls(S.input, () => S.game.metrics.scale);
   game.hudLayer.append(S.touch.el);

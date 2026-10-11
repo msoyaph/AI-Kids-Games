@@ -19,6 +19,7 @@ import { h } from '../ui/dom';
 import { Hud } from '../ui/hud';
 import { openPause } from '../ui/pause';
 import { toast } from '../ui/toast';
+import { tip } from '../ui/tips';
 import { landingHooks } from './landingHooks';
 
 export interface LandingParams {
@@ -112,6 +113,7 @@ export class LandingScene extends Scene {
     this.ready = true;
     if (this.state.assist) toast('Auto-Lander is on. Steer to the pad!', 'land', 2600);
     landingHooks.onStart(this);
+    tip('landing');
   }
 
   override exit(): void {

@@ -7,7 +7,7 @@ import { CHAPTER_NAMES } from '../data/missions';
 import { drawToCanvas } from '../gfx/atlas';
 import { drawAcademy } from '../gfx/art/rooms';
 import { drawNpcSide, drawPortrait } from '../gfx/art/characters';
-import { ensureTex, rocketTex } from '../gfx/textures';
+import { ensureTex, rocketTex, tex } from '../gfx/textures';
 import type { HubPlace } from '../systems/events';
 import { h, setText } from '../ui/dom';
 import { showDialogue } from '../ui/dialogue';
@@ -45,6 +45,11 @@ export class HubScene extends Scene {
   private coinText: HTMLElement;
   private t = 0;
   private refreshT = 0;
+  private shooting = new Sprite(tex('spark'));
+  private shootT = 3;
+  private shootX = 0;
+  private shootY = 0;
+  private viewW = 1280;
 
   constructor() {
     super('hub');
@@ -52,7 +57,10 @@ export class HubScene extends Scene {
     this.bg = new Sprite(ensureTex('room_academy', 1600, 720, (c, w, hh) => drawAcademy(c, w, hh), 0.5, 0.5, 1));
     this.rocket = new Sprite(rocketTex(S.state.data.loadout));
     this.rocket.anchor.set(0.5, 1);
-    this.root.addChild(this.bg, this.rocket, this.crew);
+    this.shooting.anchor.set(0.5);
+    this.shooting.blendMode = 'add';
+    this.shooting.visible = false;
+    this.root.addChild(this.bg, this.shooting, this.rocket, this.crew);
     const cast = ['boltzy', 'stella', 'pip'];
     if (S.state.flag('zibboJoined')) cast.push('zibbo');
     for (const id of cast) {
@@ -123,6 +131,7 @@ export class HubScene extends Scene {
   }
 
   override resize(w: number, h: number): void {
+    this.viewW = w;
     this.bg.position.set(w / 2, h / 2);
     const s = Math.max(w / 1600, h / 720);
     this.bg.scale.set(s);
@@ -149,6 +158,23 @@ export class HubScene extends Scene {
   }
 
   override render(): void {
+    // A shooting star now and then.
+    this.shootT -= 1 / 60;
+    if (this.shootT <= 0) {
+      this.shootT = 5 + Math.random() * 6;
+      this.shootX = this.viewW * (0.1 + Math.random() * 0.5);
+      this.shootY = 40 + Math.random() * 120;
+      this.shooting.visible = true;
+    }
+    if (this.shooting.visible) {
+      this.shootX += 14;
+      this.shootY += 5;
+      this.shooting.position.set(this.shootX, this.shootY);
+      this.shooting.scale.set(1.2, 0.5);
+      this.shooting.rotation = 0.35;
+      this.shooting.alpha = Math.max(0, 1 - (this.shootY - 40) / 260);
+      if (this.shooting.alpha <= 0 || this.shootX > this.viewW) this.shooting.visible = false;
+    }
     for (const n of this.npcs) {
       n.sprite.y = n.baseY - Math.abs(Math.sin(this.t * 2 + n.phase)) * (n.id === 'zibbo' ? 14 : 3);
     }

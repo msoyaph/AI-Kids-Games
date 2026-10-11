@@ -21,6 +21,7 @@ import { h, setText } from '../ui/dom';
 import { Hud } from '../ui/hud';
 import { openPause } from '../ui/pause';
 import { toast } from '../ui/toast';
+import { tip } from '../ui/tips';
 import { iconEl } from '../ui/widgets';
 import { flightDirector, type FlightDirector } from './flightDirector';
 
@@ -282,6 +283,8 @@ export class FlightScene extends Scene {
     S.state.emit({ type: 'launch', from: this.p.startBody ?? this.p.from });
     this.director.onStart(this);
     this.checkArrival();
+    tip('flight_steer');
+    if (this.isRacing()) tip('race');
   }
 
   override exit(): void {
@@ -357,6 +360,8 @@ export class FlightScene extends Scene {
       this.rocketBody.texture = rocketTex(S.state.data.loadout, this.blinkOn);
     }
     this.hud.setFuel(ship.fuel / this.params.maxFuel);
+    if (this.t > 8) tip('flight_boost');
+    if (ship.fuel < this.params.maxFuel * 0.35) tip('flight_fuel');
     this.hud.setShield(ship.shield / this.params.maxShield);
     this.hud.setCoins(S.state.data.coins);
   }
@@ -382,6 +387,7 @@ export class FlightScene extends Scene {
       sfx('fuel');
     }
     if (ev.bumped) {
+      tip('flight_bump');
       st.bump('bumps');
       st.emit({ type: 'bump' });
       this.shake.kick(16);
@@ -390,6 +396,7 @@ export class FlightScene extends Scene {
       sfx('bump');
     }
     if (ev.cometRide) {
+      tip('flight_comet');
       st.bump('cometRides');
       st.emit({ type: 'comet' });
       this.floats.show('Comet ride!', ship.x, ship.y - 70, '#bff6ff');
@@ -472,6 +479,8 @@ export class FlightScene extends Scene {
       }
     }
     S.touch.setAction(label ? (label.startsWith('Land') ? 'Land' : label) : null, icon);
+    if (this.nearScan) tip('flight_scan');
+    else if (this.nearLand) tip('flight_land');
     if (label) {
       setText(this.promptText, label);
       setText(this.promptKey, this.nearScan ? 'Hold E' : 'E');
