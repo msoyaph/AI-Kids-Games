@@ -9,7 +9,8 @@ import Preview from './Preview';
 export function FavoriteButton({ game,large = false }: { game: Game; large?: boolean }) {
   const { favorites,toggleFavorite } = usePreferences(); const saved = favorites.includes(game.slug);
   const label = `${saved ? 'Remove' : 'Add'} ${game.title} ${saved ? 'from' : 'to'} favorites`;
-  if (large) return <button className="button secondary save-button" onClick={() => toggleFavorite(game.slug)} aria-pressed={saved} aria-label={label}><Icon name="heart" filled={saved} />{saved ? 'Saved' : 'Save'}</button>;
+  // The accessible name starts with the visible text (WCAG 2.5.3 label in name).
+  if (large) return <button className="button secondary save-button" onClick={() => toggleFavorite(game.slug)} aria-pressed={saved} aria-label={saved ? `Saved: remove ${game.title} from favorites` : `Save ${game.title} to favorites`}><Icon name="heart" filled={saved} />{saved ? 'Saved' : 'Save'}</button>;
   return <button className="heart" onClick={() => toggleFavorite(game.slug)} aria-pressed={saved} aria-label={label}><span><Icon name="heart" filled={saved} size={20} /></span></button>;
 }
 

@@ -10,7 +10,11 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "add-game": "tsx scripts/add-game.ts",
-    "capture-previews": "tsx scripts/capture-previews.ts"
+    "capture-previews": "tsx scripts/capture-previews.ts",
+    "serve": "tsx scripts/serve-dist.ts",
+    "lighthouse": "tsx scripts/lighthouse.ts",
+    "page-weight": "tsx scripts/page-weight.ts",
+    "review-screens": "tsx scripts/review-screens.ts"
   },
   "dependencies": {
     "react": "^19.2.0",

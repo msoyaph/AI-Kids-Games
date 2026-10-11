@@ -51,7 +51,7 @@ export default function Play() {
     <header className="play-bar"><Link to={`/game/${game.slug}`}><Icon name="back" />Back</Link><h1><strong>{game.title}</strong></h1><button onClick={toggleFullscreen} aria-label={full ? 'Exit fullscreen' : 'Enter fullscreen'}><Icon name={full ? 'shrink' : 'expand'} /><span className="label">{full ? 'Exit fullscreen' : 'Fullscreen'}</span></button></header>
     {fullscreenError && <p className="play-message" role="status">{fullscreenError}</p>}
     {notice && !game.controls.types.includes('Touch') && <div className="device-notice" role="note"><Icon name="computer" /><div><strong>This game works best on a computer.</strong><p>It needs a keyboard and mouse, or a gamepad. You can still try it here.</p></div><button className="button" onClick={() => { setNotice(false); frame.current?.focus(); }}>Play anyway</button></div>}
-    <div className="play-stage">
+    <main className="play-stage" id="main-content">
       {!loaded && <div className="game-loading">
         <Cover game={game} eager />
         <img className="logo" src={media.logo} alt="" width={360} height={96} />
@@ -60,6 +60,6 @@ export default function Play() {
         {slow && <button className="button primary" onClick={() => setAttempt(old => old+1)}>Try again</button>}
       </div>}
       {src && <iframe key={`${slug}-${attempt}`} ref={frame} title={`Play ${game.title}`} src={src} sandbox="allow-scripts allow-same-origin allow-pointer-lock" allow="fullscreen; gamepad" allowFullScreen referrerPolicy="no-referrer" onLoad={() => { setLoaded(true); rememberGame(game.slug); }} />}
-    </div>
+    </main>
   </div>;
 }

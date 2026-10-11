@@ -36,6 +36,9 @@ button,a { -webkit-tap-highlight-color: transparent; }
 .muted { color: var(--slate); }
 .prose { max-width: 680px; }
 .prose p + p { margin-top: 14px; }
+.prose h2 { margin-top: 36px; }
+.prose h2:first-child { margin-top: 0; }
+.prose h2 + p { margin-top: 8px; }
 .prose a:not(.button) { text-decoration: underline; text-underline-offset: 3px; }
 
 .container { width: min(var(--max),calc(100% - 2 * var(--gutter))); margin-inline: auto; }
@@ -175,7 +178,9 @@ main { min-height: 70vh; }
 .games-table th, .games-table td { padding: 14px 12px 14px 0; text-align: left; vertical-align: top; border-top: 1px solid var(--mist); }
 .games-table th { font-weight: 700; white-space: nowrap; }
 .games-table td { color: var(--slate); }
-.games-table a { font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.games-table a { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.games-table a img { width: 96px; height: 54px; border-radius: 8px; object-fit: cover; flex: none; }
+.games-table td.age { white-space: nowrap; }
 .panel { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; padding: 24px; border-radius: var(--radius); background: var(--surface); }
 .panel p { color: var(--slate); }
 .status { display: flex; align-items: center; gap: 8px; flex-basis: 100%; font-weight: 700; }

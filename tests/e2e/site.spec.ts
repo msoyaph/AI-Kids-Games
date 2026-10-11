@@ -11,7 +11,7 @@ test('home, details, favorites and reload',async ({ page }) => {
   await page.reload(); await expect(page.getByRole('heading',{ name: 'TheaBonk' })).toBeVisible();
   await page.locator('.game-card-link').click(); await expect(page.getByRole('heading',{ level: 1,name: 'TheaBonk' })).toBeVisible();
   await expect(page.getByRole('link',{ name: 'Play',exact: true })).toBeVisible();
-  await expect(page.getByRole('button',{ name: 'Remove TheaBonk from favorites' })).toHaveText('Saved');
+  await expect(page.getByRole('button',{ name: 'Saved: remove TheaBonk from favorites' })).toHaveAttribute('aria-pressed','true');
   expect(errors).toEqual([]);
 });
 test('cards show the same information for every game and no leftover labels',async ({ page }) => {

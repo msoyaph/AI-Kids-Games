@@ -83,7 +83,14 @@ Progress (one commit per step):
    Favicons/manifest from scripts/art/icons.ts. Playwright now serves dist with
    scripts/serve-dist.ts (Vercel-like: headers, ETag, brotli, ranges, route shells);
    vite preview served the root shell for /game/<slug>.
-8. TODO: tests, visual review, Lighthouse.
+8. COMPLETE: visual review of every page × desktop/tablet/phone × light/dark
+   (scripts/review-screens.ts) with fixes: TheaBonk loop now opens on the horde,
+   For parents table gains covers/no-wrap ages, prose heading spacing, game strip on
+   About/404, save button label-in-name, play page <main>, filter updates use the
+   functional setSearchParams (fixed a tablet race). Local (Vercel-like) Lighthouse
+   mobile: home 95/100/100/100, details 97/100/100/100, play 64 (exempt)/98→fixed/100/100.
+   Home initial load ≈180 KB (scripts/page-weight.ts). Full Playwright: 80 passed + fixes
+   re-run green; unit tests green. After screenshots: docs/screenshots/after.
 9. TODO: preview deploy, hosted suite, production, smoke test, report.
 
 ## Earlier launch checkpoints (2026-10-11, all complete)

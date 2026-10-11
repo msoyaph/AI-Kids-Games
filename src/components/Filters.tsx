@@ -8,7 +8,8 @@ export function useCatalogFilters(fixedCategory?: string) {
   const category = fixedCategory ?? (categories.find(item => item.toLowerCase() === params.get('category')?.toLowerCase()) || '');
   const age = params.get('age'); const playerAge = age && /^\d+$/.test(age) ? Number(age) : undefined;
   const query = params.get('q') || '';
-  const set = (key: string,value: string) => { const next = new URLSearchParams(params); next.delete('focus'); if (value) next.set(key,value); else next.delete(key); setParams(next,{ replace: true,preventScrollReset: true }); };
+  // Functional update: quick successive changes (e.g. a chip then the age select) build on each other.
+  const set = (key: string,value: string) => setParams(previous => { const next = new URLSearchParams(previous); next.delete('focus'); if (value) next.set(key,value); else next.delete(key); return next; },{ replace: true,preventScrollReset: true });
   const results: Game[] = filterGames(games,query,category,playerAge);
   return { category,playerAge,query,results,set,reset: () => setParams({},{ replace: true }),sort: params.get('sort') };
 }

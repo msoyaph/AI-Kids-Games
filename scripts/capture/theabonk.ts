@@ -29,6 +29,8 @@ async function strafe(ctx: TakeContext,ms: number) {
 export const scenario: Scenario = {
   slug: 'theabonk',
   canvas: '#game',
+  // Start (and poster) on the horde: Thea faces the camera with monsters all around.
+  loopOrder: ['horde','ring-wave','level-up','boss'],
   takes: [
     {
       id: 'ring-wave',
@@ -48,8 +50,8 @@ export const scenario: Scenario = {
       storage,
       async setup(ctx) { await startRun(ctx); await ctx.hold(['s'],2200); await ctx.wait(5000); },
       async act(ctx) {
-        await ctx.cut(); await strafe(ctx,2000);
-        await ctx.still('A huge crowd of cartoon monsters rushes at Thea');
+        await strafe(ctx,1500); await ctx.cut(-0.4);
+        await strafe(ctx,500); await ctx.still('A huge crowd of cartoon monsters rushes at Thea');
         await strafe(ctx,2200);
       }
     },

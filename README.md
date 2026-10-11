@@ -8,17 +8,21 @@ Vercel preview; production needs approval. The older Sites deployment is unchang
 
 ```sh
 npm ci
-npm run dev
+npm run dev                 # http://127.0.0.1:5190
 npm run build
-npm run preview
-npm test
-npm run test:e2e
+npm run serve -- 4300       # serve dist like Vercel (headers, ETag, brotli, ranges)
+npm test                    # unit tests: registry, search, storage, grid, media budgets, build hashes, deploy guard
+npm run test:e2e            # Playwright, desktop/tablet/phone (serves dist on :4190 itself)
+npm run capture-previews -- <slug>     # re-record a game's gameplay loop, poster and screenshots
+npm run review-screens -- <out-dir> http://127.0.0.1:4300   # every page × 3 sizes × light/dark
+npm run lighthouse -- http://127.0.0.1:4300 <out-dir>       # mobile profile: home, details, play
+npm run page-weight -- http://127.0.0.1:4300/               # home initial load, excluding videos
 ```
 
-Development: http://127.0.0.1:5190. Production-build preview: http://127.0.0.1:4190.
 Playwright uses installed Chrome on macOS, or its managed Chromium elsewhere.
 Run build before browser tests. Tests cover desktop, tablet and phone sizes;
-real hardware still needs the launch checklist.
+real hardware still needs the launch checklist. Build with
+`SITE_ORIGIN=http://127.0.0.1:4300` before local Lighthouse so canonical URLs match.
 
 ## Catalog and games
 
