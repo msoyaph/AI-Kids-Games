@@ -17,6 +17,8 @@ export class ItemBrain {
   private lastItem: string | null = null;
   /** Expert mode: one turbo per lap, on an off-road shortcut when the track has one. */
   turboPlan = false;
+  /** Burn every turbo can on an off-road shortcut (Driving School). */
+  turboBurst = false;
   private turboLap = -1;
 
   constructor(
@@ -59,7 +61,9 @@ export class ItemBrain {
     switch (k.item) {
       case 'turbo':
       case 'turbo3':
-        if (this.turboPlan && this.track?.shortcuts.some((sc) => sc.offroadSurface)) {
+        if (this.turboBurst) {
+          if (k.ground.ribbon > 0 && k.offroad && k.boostTime < 0.1 && k.speed > 5) this.press();
+        } else if (this.turboPlan && this.track?.shortcuts.some((sc) => sc.offroadSurface)) {
           // expert: one can per lap, saved for the off-road shortcut
           if (this.turboLap !== k.lapsDone && k.ground.ribbon > 0 && k.offroad && k.speed > 6) {
             this.turboLap = k.lapsDone;

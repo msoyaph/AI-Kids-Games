@@ -10,6 +10,7 @@ import { ItemBrain } from './itemBrain';
 import { AI_PROFILES } from '../../data/aiProfiles';
 import { findRacer } from '../../data/racers';
 import { SPEED_CLASSES } from '../tuning';
+import type { Coin } from '../coinRush';
 
 /**
  * Arena AI: hunts item pods when empty-handed, otherwise chases a rival; steers around walls/obstacles
@@ -18,6 +19,9 @@ import { SPEED_CLASSES } from '../tuning';
 class BattleDriver {
   private target = -1;
   private boxTarget = -1;
+  /** Coin Rush: index of the coin we're heading for. */
+  private coinTarget = -1;
+  coins: Coin[] | null = null;
   private retarget = 0;
   private reverse = 0;
   private stuck = 0;
@@ -64,7 +68,12 @@ class BattleDriver {
     }
     let tx = k.x + Math.sin(k.yaw) * 10;
     let tz = k.z + Math.cos(k.yaw) * 10;
-    if (this.boxTarget >= 0) {
+    if (this.coinTarget >= 0 && this.coins) {
+      const c = this.coins[this.coinTarget];
+      if (!c.active) this.retarget = 0;
+      tx = c.x;
+      tz = c.z;
+    } else if (this.boxTarget >= 0) {
       const b = this.items.boxes[this.boxTarget];
       if (b.respawn > 0) this.retarget = 0;
       tx = b.x;
@@ -118,6 +127,33 @@ class BattleDriver {
     const k = this.kart;
     this.boxTarget = -1;
     this.target = -1;
+    this.coinTarget = -1;
+    if (this.coins) {
+      // Coin Rush: go for the best nearby coin; with an item in hand, aggressive racers chase a coin-rich rival
+      if (k.item && this.profile.aggression > 0.4) {
+        let rich: Kart | null = null;
+        for (const o of this.world.karts) {
+          if (o === k || o.respawnState !== RespawnState.None || o.score < 2) continue;
+          const d = Math.hypot(o.x - k.x, o.z - k.z);
+          if (d < 32 && (!rich || o.score > rich.score)) rich = o;
+        }
+        if (rich && this.rng.chance(this.profile.aggression)) {
+          this.target = rich.index;
+          return;
+        }
+      }
+      let best = Infinity;
+      this.coins.forEach((c, i) => {
+        if (!c.active || (c.owner === k.index && c.ownerTime > 0)) return;
+        const d = Math.hypot(c.x - k.x, c.z - k.z) + this.rng.range(0, 6) * (1 - this.skill);
+        if (d < best) {
+          best = d;
+          this.coinTarget = i;
+        }
+      });
+      if (this.coinTarget >= 0 && (k.item || best < 18)) return;
+      this.coinTarget = -1;
+    }
     if (!k.item && k.rouletteTime <= 0) {
       let bd = Infinity;
       this.items.boxes.forEach((b, i) => {
@@ -133,7 +169,7 @@ class BattleDriver {
     let best = -1;
     let bestScore = -Infinity;
     for (const o of this.world.karts) {
-      if (o === k || o.balloons <= 0 || o.respawnState !== RespawnState.None) continue;
+      if (o === k || (o.balloons <= 0 && !this.coins) || o.respawnState !== RespawnState.None) continue;
       const d = Math.hypot(o.x - k.x, o.z - k.z);
       // prefer close rivals, and (a little) the leader
       const score = -d + o.score * 4 * this.profile.aggression + this.rng.range(0, 10);
@@ -149,13 +185,15 @@ class BattleDriver {
 export class BattleAi {
   readonly drivers: BattleDriver[] = [];
 
-  constructor(world: World, arena: ArenaModel, items: ItemSystem) {
+  constructor(world: World, arena: ArenaModel, items: ItemSystem, coins: Coin[] | null = null) {
     const rng = new Rng(world.rng.nextU32());
     const skill = SPEED_CLASSES[world.speedClass].aiSkill;
     for (const k of world.karts) {
       if (k.isPlayer) continue;
       const profile = AI_PROFILES[findRacer(k.racerId).personality];
-      this.drivers.push(new BattleDriver(k, world, arena, items, profile, clamp(skill + rng.range(-0.08, 0.08), 0.1, 1), new Rng(rng.nextU32())));
+      const d = new BattleDriver(k, world, arena, items, profile, clamp(skill + rng.range(-0.08, 0.08), 0.1, 1), new Rng(rng.nextU32()));
+      d.coins = coins;
+      this.drivers.push(d);
     }
     world.preStep.push((dt) => {
       for (const d of this.drivers) d.update(dt);

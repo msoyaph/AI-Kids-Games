@@ -11,6 +11,7 @@ import { BattleAi } from '../sim/ai/battleDriver';
 import { ItemSystem } from '../sim/items/itemSystem';
 import { HazardSystem } from '../sim/hazards';
 import { BattleRules } from '../sim/battle';
+import { CoinRushRules, COIN_RUSH_TIME, type ArenaRules } from '../sim/coinRush';
 import { RespawnState, type KartRaceStats } from '../sim/kart';
 import type { SimEvent } from '../sim/events';
 import { GhostRecorder, GF_BOOST, GF_DRIFT, GF_DRIFT_LEFT, GF_GLIDE, GF_AIR, type GhostData } from '../sim/ghost';
@@ -23,8 +24,11 @@ import type { GameAudio } from '../audio/types';
 import type { Settings } from '../save/save';
 import { formatTime } from '../core/math';
 import { resolveAssist } from '../tuning/balance';
+import { ReplayPlayer, ReplayRecorder } from './replay';
+import { LessonSim } from '../sim/school';
+import { findLesson } from '../data/school';
 
-export type GameMode = 'grandPrix' | 'timeTrial' | 'versus' | 'battle';
+export type GameMode = 'grandPrix' | 'timeTrial' | 'versus' | 'battle' | 'school';
 
 export interface PlayerSlot {
   racerId: string;
@@ -57,6 +61,10 @@ export interface SessionConfig {
   ghost?: { data: GhostData; racerId: string; kart: KartConfig } | null;
   staffGhost?: { data: GhostData; racerId: string; kart: KartConfig } | null;
   battleTime?: number;
+  /** Arena rules: balloon battle (default) or Coin Rush. */
+  battleRule?: 'balloons' | 'coins';
+  /** Driving School lesson (mode 'school'). */
+  lesson?: import('../data/school').LessonId;
   /** Performance test run: nothing is recorded (no progress, playtest log or ghosts). */
   benchmark?: boolean;
   intro?: boolean;
@@ -81,6 +89,8 @@ export interface SessionResult {
   results: RacerResult[];
   /** Time Trial: encoded ghost of player 1's run. */
   ghost?: string;
+  /** Driving School result. */
+  lesson?: { id: import('../data/school').LessonId; score: number; medal: import('../data/school').LessonMedal | null };
 }
 
 export interface SessionContext {
@@ -100,7 +110,9 @@ export class RaceSession {
   readonly track: TrackModel | null;
   readonly arena: ArenaModel | null;
   readonly race: RaceTracker | null;
-  readonly battle: BattleRules | null;
+  readonly battle: ArenaRules | null;
+  /** Set in Coin Rush (same object as `battle`). */
+  readonly coinRush: CoinRushRules | null = null;
   readonly ai: AiController | null;
   readonly items: ItemSystem | null;
   readonly view: RaceView;
@@ -118,6 +130,13 @@ export class RaceSession {
   time = 0;
   /** Hit-stop: the world holds still for a few frames when a local player hits or gets hit. */
   private freeze = 0;
+  /** Instant replay: recorded during the race (memory only), played back from the results screen. */
+  replayRec: ReplayRecorder | null = null;
+  /** Driving School rules (mode 'school'). */
+  lessonSim: LessonSim | null = null;
+  private lessonEl: HTMLDivElement | null = null;
+  replay: ReplayPlayer | null = null;
+  private readonly replayEvents: SimEvent[] = [];
   private blurLevel = 0;
 
   /** Hide the HUD and touch controls while a full screen (e.g. benchmark results) sits on top of the race. */
@@ -169,7 +188,7 @@ export class RaceSession {
       cfg.ai.forEach((a, i) => {
         if (a.skillBonus) bonus[cfg.players.length + i] = a.skillBonus;
       });
-      this.ai = new AiController(this.world, this.track, { skillBonus: bonus, noRubberBand: cfg.mode === 'timeTrial' });
+      this.ai = new AiController(this.world, this.track, { skillBonus: bonus, noRubberBand: cfg.mode === 'timeTrial' || cfg.mode === 'school' });
       this.battle = null;
     } else {
       this.race = null;
@@ -180,7 +199,7 @@ export class RaceSession {
     if (wantItems) {
       const boxes = this.arena
         ? this.arena.data.itemBoxes.map((b) => ({ x: b.x, y: (b.y ?? 0) + 1.1, z: b.z }))
-        : cfg.mode === 'timeTrial'
+        : cfg.mode === 'timeTrial' || cfg.mode === 'school'
           ? []
           : undefined;
       this.items = new ItemSystem(this.world, ground, this.track, { set: cfg.itemSet, battle: isBattle, boxes });
@@ -189,12 +208,16 @@ export class RaceSession {
     if (cfg.mode === 'timeTrial' && this.items) for (const i of this.locals) this.items.give(this.world.karts[i], 'turbo3');
     this.hazards = this.track && (this.track.data.hazards?.length ?? 0) > 0 ? new HazardSystem(this.world, this.track, this.items?.hazards ?? this.ai?.hazards) : null;
     if (isBattle && this.arena && this.items) {
-      const rules = new BattleRules(this.world, this.arena, this.items, cfg.battleTime ?? 150);
+      const coins = cfg.battleRule === 'coins';
+      const rules = coins ? new CoinRushRules(this.world, this.arena, this.items, cfg.battleTime ?? COIN_RUSH_TIME) : new BattleRules(this.world, this.arena, this.items, cfg.battleTime ?? 150);
       rules.placeStart();
-      (this as { battle: BattleRules | null }).battle = rules;
-      new BattleAi(this.world, this.arena, this.items);
+      (this as { battle: ArenaRules | null }).battle = rules;
+      if (coins) (this as { coinRush: CoinRushRules | null }).coinRush = rules as CoinRushRules;
+      new BattleAi(this.world, this.arena, this.items, coins ? (rules as CoinRushRules).coins : null);
     }
     this.recorder = cfg.mode === 'timeTrial' ? new GhostRecorder() : null;
+    if (cfg.lesson && this.track && this.race) this.lessonSim = new LessonSim(findLesson(cfg.lesson), this.world, this.track, this.race, this.items);
+    if (!cfg.benchmark && !cfg.trackData) this.replayRec = new ReplayRecorder(this.world, this.items);
 
     // --- presentation
     ctx.gr.quality.setSplitScreen(this.locals.length > 1);
@@ -205,7 +228,8 @@ export class RaceSession {
     for (const c of this.view.cams) c.distanceSetting = ctx.settings.cameraDistance;
     if (this.items) this.view.attachItems(this.items);
     if (this.hazards) this.view.attachHazards(this.hazards);
-    if (isBattle) this.view.enableBalloons();
+    if (isBattle && !this.coinRush) this.view.enableBalloons();
+    if (this.coinRush) this.view.attachCoins(this.coinRush);
     const tints = [0x9fe3ff, 0xffd23f];
     [cfg.ghost, cfg.staffGhost].forEach((g, i) => {
       if (!g) return;
@@ -216,12 +240,20 @@ export class RaceSession {
     this.hudLayer = document.createElement('div');
     this.hudLayer.className = 'hud-layer';
     ctx.uiRoot.appendChild(this.hudLayer);
-    const hudMode = isBattle ? 'battle' : cfg.mode === 'timeTrial' ? 'timeTrial' : 'race';
+    const hudMode = isBattle ? 'battle' : cfg.mode === 'timeTrial' || cfg.mode === 'school' ? 'timeTrial' : 'race';
     const touchHud = ctx.gr.isTouch && this.locals.length === 1;
     for (let i = 0; i < this.locals.length; i++) {
       const h = new Hud(this.hudLayer, hudMode, i, { track: this.track ?? undefined, arena: this.arena ?? undefined }, cfg.mirror, this.locals.length > 1, touchHud);
       h.setRect(this.view.rectFor(i, this.locals.length));
+      if (this.coinRush) h.setCoinMode();
+      if (cfg.lesson) h.hideLaps();
       this.huds.push(h);
+    }
+    if (this.lessonSim) {
+      this.lessonEl = document.createElement('div');
+      this.lessonEl.className = 'lesson-status';
+      this.hudLayer.appendChild(this.lessonEl);
+      this.view.attachLesson(this.lessonSim);
     }
     // input routing
     ctx.input.players = cfg.players.map((p) => p.source);
@@ -260,6 +292,7 @@ export class RaceSession {
       this.ctx.input.fillKartInput(i, k.input, k.autoAccel, w.phase === 'race');
     }
     w.step(dt);
+    this.replayRec?.step();
     // ghost recording (player 1)
     if (this.recorder && w.phase === 'race') {
       const k = w.karts[0];
@@ -298,6 +331,7 @@ export class RaceSession {
   }
 
   private onEvent = (e: SimEvent): void => {
+    this.replayRec?.event(e);
     this.view.onEvent(e);
     this.ctx.audio.onSimEvent(e, this.world, this.locals);
     const hudFor = (kart: number): Hud | null => {
@@ -408,6 +442,16 @@ export class RaceSession {
         if (h) h.banner('SHORTCUT!', 'info', 0.9);
         break;
       }
+      case 'coinDrop': {
+        const h = hudFor(e.kart);
+        if (h) h.banner(`Dropped ${e.count} coin${e.count > 1 ? 's' : ''}!`, 'warn', 1);
+        break;
+      }
+      case 'coinPickup': {
+        const h = hudFor(e.kart);
+        if (h) h.coinPop();
+        break;
+      }
       default:
         break;
     }
@@ -416,6 +460,17 @@ export class RaceSession {
   private checkDone(): void {
     if (this.done) return;
     const w = this.world;
+    if (this.lessonSim) {
+      if (this.lessonSim.done) {
+        if (this.finishedAt < 0) {
+          this.finishedAt = this.time;
+          const m = this.lessonSim.medal;
+          this.huds[0]?.banner(m ? `${m.toUpperCase()}!` : 'Lesson over', m === 'gold' ? 'gold' : 'big', 3);
+        }
+        if (this.time - this.finishedAt > 1.6) this.complete();
+      }
+      return;
+    }
     const allLocalsFinished = this.locals.every((i) => w.karts[i].finished);
     if (w.phase === 'done' || allLocalsFinished) {
       if (this.finishedAt < 0) this.finishedAt = this.time;
@@ -452,6 +507,7 @@ export class RaceSession {
       }))
       .sort((a, b) => a.rank - b.rank);
     const out: SessionResult = { config: this.cfg, results };
+    if (this.lessonSim) out.lesson = { id: this.lessonSim.lesson.id, score: this.lessonSim.score, medal: this.lessonSim.medal };
     if (this.recorder && w.karts[0].finished && !w.karts[0].projected) out.ghost = this.recorder.encode();
     this.ctx.audio.setFinalLap(false);
     this.hudLayer.style.display = 'none';
@@ -460,8 +516,41 @@ export class RaceSession {
     this.onComplete?.(out);
   }
 
+  /** Watch the race again (after the results). `follow` = kart index to follow first. */
+  startReplay(follow = this.locals[0]): ReplayPlayer | null {
+    if (!this.replayRec || this.replayRec.frames < 2) return null;
+    this.replay = new ReplayPlayer(this.replayRec, this.track, follow);
+    this.replay.seek(0);
+    this.view.soloView = true;
+    this.hideHud();
+    for (const g of this.ghostVisuals) g.visual.root.visible = false;
+    return this.replay;
+  }
+
+  stopReplay(): void {
+    this.replay = null;
+    this.view.soloView = false;
+    this.view.targets[0] = this.locals[0];
+  }
+
   render(alpha: number, dt: number): void {
     const w = this.world;
+    const rp = this.replay;
+    if (rp) {
+      rp.advance(dt, this.replayEvents);
+      this.replayRec!.apply(rp.t, w, this.items);
+      this.view.targets[0] = rp.follow;
+      for (const e of this.replayEvents) {
+        this.view.onEvent(e);
+        this.ctx.audio.onSimEvent(e, w, [rp.follow]);
+      }
+      this.view.update(1, dt, [false]);
+      if (rp.placeCamera(this.view.cams[0].camera, w, dt)) this.view.cams[0].snap();
+      this.ctx.audio.update(w, [rp.follow], dt);
+      this.ctx.gr.motionBlur = 0;
+      this.view.render();
+      return;
+    }
     const lookBack = this.locals.map((i) => w.karts[i].input.lookBack && w.phase !== 'intro');
     this.view.update(alpha, dt, lookBack);
     if (w.phase === 'intro') {
@@ -497,6 +586,10 @@ export class RaceSession {
     }
     this.blurLevel += (blur - this.blurLevel) * Math.min(1, dt * 6);
     this.ctx.gr.motionBlur = this.blurLevel;
+    if (this.lessonSim && this.lessonEl) {
+      const t = this.lessonSim.status;
+      if (this.lessonEl.textContent !== t) this.lessonEl.textContent = t;
+    }
     this.view.render();
   }
 

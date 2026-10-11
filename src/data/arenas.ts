@@ -192,6 +192,50 @@ export const ARENAS: ArenaData[] = [
     unlocked: false,
     props: [],
   },
+  // v0.2 — built for Coin Rush (works for balloon battles too)
+  {
+    id: 'coin-carnival',
+    name: 'Coin Carnival',
+    theme: 'themepark',
+    shape: 'circle',
+    size: 54,
+    obstacles: [
+      { kind: 'cyl', x: 0, z: 0, hx: 6, hz: 6, h: 3.5, color: 0xff6fae },
+      { kind: 'box', x: 30, z: 18, hx: 4, hz: 2.5, h: 2.4, rot: 30, color: 0xffd23f },
+      { kind: 'box', x: -30, z: -18, hx: 4, hz: 2.5, h: 2.4, rot: 30, color: 0x4ce0d2 },
+      { kind: 'box', x: -30, z: 18, hx: 4, hz: 2.5, h: 2.4, rot: -30, color: 0x8cff6b },
+      { kind: 'box', x: 30, z: -18, hx: 4, hz: 2.5, h: 2.4, rot: -30, color: 0xb47bff },
+      { kind: 'cyl', x: 0, z: 38, hx: 2.5, hz: 2.5, h: 2, color: 0xff9f1c },
+      { kind: 'cyl', x: 0, z: -38, hx: 2.5, hz: 2.5, h: 2, color: 0xff9f1c },
+    ],
+    ramps: [
+      { x: 0, z: 18, dir: 0, width: 7, length: 8, height: 2.2 },
+      { x: 0, z: -18, dir: 180, width: 7, length: 8, height: 2.2 },
+      { x: 18, z: 0, dir: 90, width: 7, length: 8, height: 2.2 },
+      { x: -18, z: 0, dir: 270, width: 7, length: 8, height: 2.2 },
+    ],
+    platforms: [],
+    itemBoxes: [
+      { x: 14, z: 14 },
+      { x: -14, z: -14 },
+      { x: 14, z: -14 },
+      { x: -14, z: 14 },
+      { x: 40, z: 0 },
+      { x: -40, z: 0 },
+    ],
+    palette: CANDY,
+    sky: { top: 0x58b6ff, bottom: 0xffe1f0, fog: 0xffe8f4, sun: 0xfff6e0, ambient: 0xffffff, ground: 0x8fd96b, backdrop: 'clouds', light: { sunDir: [0.4, 1, 0.5], grade: 0xfff6f0 } },
+    music: 'battle5',
+    unlocked: true,
+    props: [
+      { type: 'th_ferriswheel', x: 0, z: 72, scale: 1.4 },
+      { type: 'th_carousel', x: -66, z: 30, scale: 1.2 },
+      { type: 'th_booth', x: 64, z: 28, rot: -1.2 },
+      { type: 'th_booth', x: 60, z: -36, rot: -2.2 },
+      { type: 'th_balloonbunch', x: -60, z: -40 },
+      { type: 'th_balloonbunch', x: 40, z: -62 },
+    ],
+  },
 ];
 
 export function findArena(id: string): ArenaData {

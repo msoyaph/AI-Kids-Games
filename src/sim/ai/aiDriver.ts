@@ -28,6 +28,8 @@ export interface DriverStyle {
   paceMul?: number;
   /** Ration turbo items: one per lap, used on an off-road shortcut when the track has one. */
   turboPlan?: boolean;
+  /** Use every turbo can back to back while on an off-road shortcut (Driving School). */
+  turboBurst?: boolean;
   /** Test-only: extra wandering steering noise (a simulated beginner). */
   steerNoise?: number;
 }

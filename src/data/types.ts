@@ -114,7 +114,7 @@ export interface PaintData {
   unlocked: boolean;
 }
 
-export type DecalPattern = 'none' | 'stripes' | 'stars' | 'dots' | 'bolt' | 'hearts' | 'checker' | 'flame' | 'waves' | 'number' | 'zigzag' | 'swirl';
+export type DecalPattern = 'none' | 'stripes' | 'stars' | 'dots' | 'bolt' | 'hearts' | 'checker' | 'flame' | 'waves' | 'number' | 'zigzag' | 'swirl' | 'snowflakes';
 
 export interface DecalData {
   id: string;
@@ -400,6 +400,8 @@ export interface TrackData {
   music: string;
   /** Tyre sound on the main road surface (default 'road'). Off-road, water and ice are detected automatically. */
   roadSound?: 'road' | 'metal';
+  /** Named u positions from `layout()` (Driving School places its gates, rings and targets with them). */
+  marks?: Record<string, number>;
   /** Draw sloped terrain verges from the road down to the ground plane (default true). */
   verge?: boolean;
   /** Structures drawn under elevated road (bridges, buildings, floating rock). */
@@ -534,12 +536,14 @@ export type ChallengeGoal =
   /** Item hits on rivals (cumulative), optionally a specific item. */
   | { type: 'hitWithItem'; count: number; item?: ItemId }
   | { type: 'dodge'; count: number }
-  | { type: 'shortcut'; count: number }
+  /** Shortcuts taken (optionally only on one cup's tracks). */
+  | { type: 'shortcut'; count: number; cup?: CupId }
   | { type: 'perfectStart'; count: number }
   | { type: 'boostPads'; count: number }
   | { type: 'trophies'; count: number }
   | { type: 'trophy'; cup: CupId; medal: 'gold' | 'silver' | 'bronze' }
-  | { type: 'staffGhosts'; count: number }
+  /** Staff ghosts beaten (optionally only on one cup's tracks). */
+  | { type: 'staffGhosts'; count: number; cup?: CupId }
   | { type: 'timeTrials'; count: number }
   | { type: 'battleWins'; count: number; arena?: string }
   | { type: 'battlePops'; count: number }
@@ -548,7 +552,9 @@ export type ChallengeGoal =
   /** Finish a race with items on without being hit. */
   | { type: 'noHitRace' }
   | { type: 'totalRaces'; count: number }
-  | { type: 'leadWholeRace' };
+  | { type: 'leadWholeRace' }
+  /** Seconds spent drifting on ice (cumulative). */
+  | { type: 'iceDriftSeconds'; seconds: number };
 
 export interface ChallengeData {
   id: string;

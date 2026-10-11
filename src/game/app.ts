@@ -25,7 +25,7 @@ export interface Flow {
   trackId: string;
   arenaId: string;
   vs: { items: boolean; itemSet: ItemSet; aiCount: number; laps: number; cup: boolean };
-  battle: { time: number; aiCount: number };
+  battle: { time: number; aiCount: number; rule: 'balloons' | 'coins' };
   tt: { ghost: 'best' | 'staff' | 'both' | 'none' };
 }
 
@@ -91,7 +91,7 @@ export class App {
       trackId: 'seashell-boardwalk',
       arenaId: 'gumdrop-garden',
       vs: { items: true, itemSet: 'all', aiCount: 7, laps: 3, cup: false },
-      battle: { time: 150, aiCount: 5 },
+      battle: { time: 150, aiCount: 5, rule: 'balloons' },
       tt: { ghost: 'both' },
     };
     this.fpsEl = h('div', { class: 'fps-meter' });

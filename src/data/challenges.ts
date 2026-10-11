@@ -1,7 +1,7 @@
 import type { ChallengeData } from './types';
 
 /**
- * 34 mission challenges. Every locked racer, kart part, paint, decal and arena is earned here
+ * 40 mission challenges (34 + 6 for the Frost Cup). Every locked racer, kart part, paint, decal and arena is earned here
  * (cups and speed classes unlock through Grand Prix trophies).
  */
 export const CHALLENGES: ChallengeData[] = [
@@ -39,4 +39,11 @@ export const CHALLENGES: ChallengeData[] = [
   { id: 'beach-win', name: 'Beach Day', description: 'Win a race on Seashell Boardwalk.', goal: { type: 'winRace', track: 'seashell-boardwalk' }, cumulative: false, reward: { kind: 'body', id: 'bathtub' } },
   { id: 'time-traveller', name: 'Clock Watcher', description: 'Complete 10 Time Trials.', goal: { type: 'timeTrials', count: 10 }, cumulative: false, reward: { kind: 'paint', id: 'prism' } },
   { id: 'trick-star', name: 'Trick Star', description: 'Do 100 tricks off ramps.', goal: { type: 'tricks', count: 100 }, cumulative: true, reward: { kind: 'paint', id: 'tangerine' } },
+  // Frost Cup (v0.2)
+  { id: 'frost-gold', name: 'Frost Champion', description: 'Win gold in the Frost Cup (any speed).', goal: { type: 'trophy', cup: 'frost', medal: 'gold' }, cumulative: false, reward: { kind: 'racer', id: 'yuki' } },
+  { id: 'ice-dancer', name: 'Ice Dancer', description: 'Drift on ice for 30 seconds in total.', goal: { type: 'iceDriftSeconds', seconds: 30 }, cumulative: true, reward: { kind: 'body', id: 'snowcat' } },
+  { id: 'frost-ghosts', name: 'Frosty Ghosts', description: 'Beat 2 staff ghosts on Frost Cup tracks.', goal: { type: 'staffGhosts', count: 2, cup: 'frost' }, cumulative: false, reward: { kind: 'wheels', id: 'spikes' } },
+  { id: 'frost-shortcuts', name: 'Thin Ice', description: 'Take 8 shortcuts on Frost Cup tracks.', goal: { type: 'shortcut', count: 8, cup: 'frost' }, cumulative: true, reward: { kind: 'glider', id: 'snowflake' } },
+  { id: 'peak-winner', name: 'King of the Mountain', description: 'Win a race on Avalanche Peak.', goal: { type: 'winRace', track: 'avalanche-peak' }, cumulative: false, reward: { kind: 'paint', id: 'aurora' } },
+  { id: 'lantern-winner', name: 'Festival Star', description: 'Win a race in Lantern Village.', goal: { type: 'winRace', track: 'lantern-village' }, cumulative: false, reward: { kind: 'decal', id: 'snowflakes' } },
 ];

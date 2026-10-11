@@ -5,6 +5,7 @@ import { findTrack } from '../../data/tracks/index';
 import { findArena } from '../../data/arenas';
 import { formatTime, ordinal } from '../../core/math';
 import { KART_COLORS } from '../minimap';
+import { replayScreen } from './replay';
 import { button, h, type Screen } from '../ui';
 import { TROPHY_SVG } from '../icons';
 import type { UnlockRef } from '../../data/types';
@@ -30,13 +31,13 @@ function nameOf(r: SessionResult, idx: number): string {
   return res.player >= 0 && r.config.players.length > 1 ? `${base} (P${res.player + 1})` : base;
 }
 
-export function resultsScreen(_app: App, r: SessionResult, extra: ResultsExtra): Screen {
+export function resultsScreen(app: App, r: SessionResult, extra: ResultsExtra): Screen {
   const battle = r.config.mode === 'battle';
   const course = battle ? findArena(r.config.arenaId ?? '').name : findTrack(r.config.trackId ?? '').name;
   const table = h('table', { class: 'table' });
   for (const res of r.results) {
     const isMe = res.player >= 0;
-    const time = battle ? `★ ${res.score}` : res.projected ? '—' : formatTime(res.finishTime);
+    const time = battle ? `${r.config.battleRule === 'coins' ? '🪙' : '★'} ${res.score}` : res.projected ? '—' : formatTime(res.finishTime);
     const pts = extra.points ? h('span', { class: 'pts-add' }, `+${extra.points[res.index]}`) : null;
     table.appendChild(
       h('tr', { class: isMe ? 'me' : '' }, h('td', null, ordinal(res.rank)), h('td', null, h('span', { class: 'dot', style: `background:${KART_COLORS[res.index % KART_COLORS.length]}` }), nameOf(r, res.index)), h('td', null, time, pts)),
@@ -53,6 +54,16 @@ export function resultsScreen(_app: App, r: SessionResult, extra: ResultsExtra):
   }
   const notes = (extra.notes ?? []).map((n) => h('div', { class: 'hint', style: 'color:#ffe45c;font-size:clamp(14px,2.4vh,18px)' }, n));
   const btns = h('div', { class: 'menu-row', style: 'justify-content:flex-end' }, ...extra.buttons.map((b) => button(b.label, b.action, b.cls ?? '')));
+  // Instant replay of the race that just finished (kept in memory only)
+  if ((app.session?.replayRec?.frames ?? 0) > 30) {
+    btns.insertBefore(
+      button('Replay 🎬', () => {
+        const rs = replayScreen(app, () => app.ui.show(self));
+        if (rs) app.ui.show(rs);
+      }, 'small'),
+      btns.firstChild,
+    );
+  }
   const me = r.results.find((x) => x.player === 0)!;
   const headline = extra.title ?? (battle ? (me.rank === 1 ? 'You win the battle!' : `${ordinal(me.rank)} place!`) : me.rank === 1 ? 'Victory!' : me.rank <= 3 ? `${ordinal(me.rank)} place — great race!` : `${ordinal(me.rank)} place`);
   const el = h(
@@ -63,8 +74,9 @@ export function resultsScreen(_app: App, r: SessionResult, extra: ResultsExtra):
     h('div', { style: 'flex:1;display:flex;gap:12px;min-height:0;flex-wrap:wrap' }, ...cols),
     btns,
   );
-  const first = btns.querySelector('[data-nav]') as HTMLElement | null;
-  return { el, focus: first, onBack: () => extra.buttons[extra.buttons.length - 1]?.action() };
+  const first = (btns.querySelector('.yellow[data-nav]') ?? btns.querySelector('[data-nav]')) as HTMLElement | null;
+  const self: Screen = { el, focus: first, onBack: () => extra.buttons[extra.buttons.length - 1]?.action() };
+  return self;
 }
 
 const MEDAL_TEXT: Record<Medal, string> = { gold: 'GOLD TROPHY!', silver: 'SILVER TROPHY!', bronze: 'BRONZE TROPHY!' };

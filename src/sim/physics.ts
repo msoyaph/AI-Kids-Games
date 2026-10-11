@@ -113,6 +113,7 @@ export function stepKart(k: Kart, ground: GroundModel, env: StepEnv, dt: number)
         k.driftCharge += dt * (0.72 + 0.55 * inward) * (k.offroad ? 0.35 : 1) * (k.ice ? TUNING.iceDriftCharge : 1);
         k.driftTime += dt;
         k.raceStats.driftTotal += dt;
+        if (k.ice) k.raceStats.iceDrift += dt;
         if (k.driftTime > k.raceStats.longestDrift) k.raceStats.longestDrift = k.driftTime;
         const tiers = TUNING.driftTiers;
         const tier = k.driftCharge >= tiers[2] ? 3 : k.driftCharge >= tiers[1] ? 2 : k.driftCharge >= tiers[0] ? 1 : 0;

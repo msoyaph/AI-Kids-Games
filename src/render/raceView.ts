@@ -17,6 +17,10 @@ import { ItemVisuals } from './itemVisuals';
 import type { ItemSystem } from '../sim/items/itemSystem';
 import { buildBackdrop } from './backdrop';
 import { HazardVisuals } from './hazardVisuals';
+import { CoinVisuals } from './coinVisuals';
+import { SchoolVisuals } from './schoolVisuals';
+import type { LessonSim } from '../sim/school';
+import type { CoinRushRules } from '../sim/coinRush';
 import { buildWaterSurfaces, fxTime, iceMaterial, sheenTrackMaterial, shimmerMaterial, waterMaterial } from './surfaces';
 import type { HazardSystem } from '../sim/hazards';
 
@@ -49,8 +53,10 @@ export class RaceView {
   /** Player comfort settings (screen shake / reduce effects). */
   feel: { shake: boolean; reduce: boolean };
   time = 0;
-  /** Local player kart indices (camera targets). */
+  /** Local player kart indices (camera targets). The replay changes targets[0] to follow any kart. */
   readonly targets: number[];
+  /** Replay: draw only the first camera, full screen. */
+  soloView = false;
   private readonly disposers: Array<() => void> = [];
   readonly effects: Effects;
   itemVisuals: ItemVisuals | null = null;
@@ -215,6 +221,20 @@ export class RaceView {
     }
   }
 
+  coinVisuals: CoinVisuals | null = null;
+  schoolVisuals: SchoolVisuals | null = null;
+
+  attachLesson(sim: LessonSim): void {
+    this.schoolVisuals = new SchoolVisuals(sim);
+    this.scene.add(this.schoolVisuals.group);
+    this.disposers.push(() => this.schoolVisuals?.dispose());
+  }
+
+  attachCoins(rules: CoinRushRules): void {
+    this.coinVisuals = new CoinVisuals(rules);
+    this.scene.add(this.coinVisuals.mesh);
+  }
+
   attachHazards(h: HazardSystem): void {
     this.hazardVisuals = new HazardVisuals(h);
     this.scene.add(this.hazardVisuals.group);
@@ -340,6 +360,8 @@ export class RaceView {
       }
     }
     this.hazardVisuals?.update();
+    this.coinVisuals?.update(dt);
+    this.schoolVisuals?.update(dt);
     this.effects.update(dt);
     // Underwater tint for player 1's view
     if (this.targets.length > 0 && this.scene.fog) {
@@ -358,7 +380,7 @@ export class RaceView {
   /** Viewports for 1 or 2 local players. */
   views(): RenderView[] {
     const out: RenderView[] = [];
-    const n = this.cams.length;
+    const n = this.soloView ? 1 : this.cams.length;
     for (let i = 0; i < n; i++) {
       out.push({ scene: this.scene, camera: this.cams[i].camera, rect: this.rectFor(i, n) });
     }
@@ -387,6 +409,7 @@ export class RaceView {
 
   render(): void {
     const views = this.views();
+    if (this.soloView) views[0].rect = { x: 0, y: 0, w: 1, h: 1 };
     if (views.length === 1) {
       this.beforeRender(0);
       this.gr.render(views);

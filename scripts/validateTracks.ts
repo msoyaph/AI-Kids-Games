@@ -7,7 +7,7 @@
  * Writes sim-report/tracks/<id>.svg and prints a summary. Exit code 1 on errors.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { TRACKS } from '../src/data/tracks/index';
+import { SCHOOL_TRACKS, TRACKS } from '../src/data/tracks/index';
 import type { SpeedClass, TrackData } from '../src/data/types';
 import { TrackModel, EDGE_DROP, EDGE_WALL, F_GAP, type Ribbon, F_ICE } from '../src/sim/track/trackModel';
 import { World } from '../src/sim/world';
@@ -37,10 +37,11 @@ function geometryChecks(t: TrackModel, r: Report): void {
   const rb = t.main;
   const L = t.length;
   r.info.push(`length ${L.toFixed(0)} m, ${t.data.points.length} pts, ${t.itemBoxes.length} item boxes, ${t.shortcuts.length} shortcuts, width ${t.data.width}`);
-  if (L < 700) r.warnings.push(`short lap (${L.toFixed(0)} m)`);
+  const school = t.data.id.startsWith('school-'); // Driving School courses are short practice loops
+  if (L < 700 && !school) r.warnings.push(`short lap (${L.toFixed(0)} m)`);
   if (L > 1700) r.warnings.push(`long lap (${L.toFixed(0)} m)`);
-  if (t.shortcuts.length < 1) r.errors.push('needs at least one shortcut');
-  if ((t.data.itemRows ?? []).length < 2) r.warnings.push('fewer than 2 item rows');
+  if (t.shortcuts.length < 1 && !school) r.errors.push('needs at least one shortcut');
+  if ((t.data.itemRows ?? []).length < 2 && !school) r.warnings.push('fewer than 2 item rows');
   // overlaps between non-adjacent parts of the main road
   const cell = 20;
   const grid = new Map<string, number[]>();
@@ -148,7 +149,7 @@ function simCheck(data: TrackData, mirror: boolean, r: Report, speedClass: Speed
   r.info.push(`[${tag}] AI: ${real.length}/8 finished, winner ${winner.toFixed(1)} s, best lap ${best.toFixed(1)} s, falls ${falls}, shortcuts ${sc}, mini-turbos ${mt}`);
   if (real.length < 7) r.errors.push(`[${tag}] only ${real.length}/8 AI finished`);
   if (falls > 8) r.warnings.push(`[${tag}] AI fell ${falls} times`);
-  if (speedClass === 'pro' && (best < 25 || best > 70)) r.warnings.push(`[${tag}] best lap ${best.toFixed(1)} s outside 25-70 s`);
+  if (speedClass === 'pro' && !data.id.startsWith('school-') && (best < 25 || best > 70)) r.warnings.push(`[${tag}] best lap ${best.toFixed(1)} s outside 25-70 s`);
 }
 
 function svg(t: TrackModel): string {
@@ -234,7 +235,7 @@ function svg(t: TrackModel): string {
 }
 
 let errors = 0;
-for (const data of TRACKS) {
+for (const data of [...TRACKS, ...SCHOOL_TRACKS]) {
   if (!match(data.id)) continue;
   const r: Report = { id: data.id, errors: [], warnings: [], info: [] };
   try {

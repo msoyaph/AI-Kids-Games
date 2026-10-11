@@ -7,7 +7,7 @@ import type { RaceTracker } from '../sim/race';
 import type { TrackModel } from '../sim/track/trackModel';
 import type { ArenaModel } from '../sim/arena';
 import type { ViewRect } from '../render/renderer';
-import { BALLOON_SVG, ITEM_ICONS } from './icons';
+import { BALLOON_SVG, COIN_SVG, ITEM_ICONS } from './icons';
 import { Minimap, KART_COLORS } from './minimap';
 
 const TIER_CSS = ['#d8e6ff', '#3fa7ff', '#ff9f1c', '#ff4dd2'];
@@ -180,11 +180,15 @@ export class Hud {
       }
     } else if (this.mode === 'battle') {
       this.set('time', this.el.time, formatTime(Math.max(0, c.timeLeft ?? 0)).slice(0, -3));
-      if (this.last.balloonCount !== k.balloons) {
-        this.last.balloonCount = k.balloons;
-        this.el.balloons.innerHTML = BALLOON_SVG(KART_COLORS[k.index % KART_COLORS.length]).repeat(Math.max(0, k.balloons));
+      if (this.coinMode) {
+        this.set('score', this.el.score, String(k.score));
+      } else {
+        if (this.last.balloonCount !== k.balloons) {
+          this.last.balloonCount = k.balloons;
+          this.el.balloons.innerHTML = BALLOON_SVG(KART_COLORS[k.index % KART_COLORS.length]).repeat(Math.max(0, k.balloons));
+        }
+        this.set('score', this.el.score, `★ ${k.score}`);
       }
-      this.set('score', this.el.score, `★ ${k.score}`);
     }
 
     // item slot
@@ -286,6 +290,29 @@ export class Hud {
     this.el.posBox.classList.remove('bump', 'gain', 'loss');
     void this.el.posBox.offsetWidth;
     this.el.posBox.classList.add('bump', up ? 'gain' : 'loss');
+  }
+
+  /** Driving School: no position or lap counter (one learner; lessons are timed or one lap). */
+  hideLaps(): void {
+    this.el.lapBox.style.display = 'none';
+    this.el.laps.style.display = 'none';
+    this.el.posBox.style.display = 'none';
+  }
+
+  /** Coin Rush: show a coin counter instead of balloons. */
+  private coinMode = false;
+
+  setCoinMode(): void {
+    this.coinMode = true;
+    this.el.balloons.innerHTML = COIN_SVG;
+    this.el.battle.classList.add('coins');
+  }
+
+  /** A coin was picked up: bounce the counter. */
+  coinPop(): void {
+    this.el.score.classList.remove('bump');
+    void this.el.score.offsetWidth;
+    this.el.score.classList.add('bump');
   }
 
   lapPop(): void {

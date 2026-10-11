@@ -185,6 +185,19 @@ export class Effects {
         if (e.impact > 9) this.onShake?.(e.kart, 0.4);
         break;
       }
+      case 'lesson': {
+        const col = e.kind === 'miss' ? 0xff4d6d : e.kind === 'ring' ? 0x4ce0d2 : e.kind === 'target' ? 0xff6fae : 0x8cff6b;
+        this.burst(e.x, e.y, e.z, e.kind === 'target' ? 26 : 16, col, 6, 0.5, 0.5, true, e.kind === 'ring' ? 0 : 4);
+        break;
+      }
+      case 'coinPickup':
+        this.burst(e.x, e.y, e.z, 10, 0xffd23f, 4, 0.4, 0.4, true, 2);
+        break;
+      case 'coinDrop': {
+        const k = ks[e.kart];
+        this.burst(k.x, k.y + 1.2, k.z, 14, 0xffe98a, 5, 0.45, 0.5, true, 6);
+        break;
+      }
       case 'launch': {
         if (!e.glider) break;
         const k = ks[e.kart];

@@ -390,6 +390,24 @@ export class AudioEngine implements GameAudio {
       case 'shortcut':
         if (isLocal(e.kart)) this.fanfare([0, 4, 7], 0.04, 'bell', 0.05, 88);
         break;
+      case 'lesson':
+        if (e.kind === 'gate') this.fanfare([0, 7], 0.05, 'bell', 0.07, 84);
+        else if (e.kind === 'ring') this.fanfare([0, 4, 7, 12], 0.04, 'bell', 0.07, 88);
+        else if (e.kind === 'target') {
+          this.noise(0.08, 0.2, 'bandpass', 1800);
+          this.tone(900, 0.18, 'sine', 0.06, 0.02, 0.5);
+        } else this.tone(200, 0.2, 'square', 0.05);
+        break;
+      case 'coinPickup':
+        if (isLocal(e.kart)) this.ui('coin');
+        else {
+          const v = this.nearPos(world, e.x, e.z, locals);
+          if (v > 0.2) this.tone(1568, 0.06, 'square', 0.02 * v);
+        }
+        break;
+      case 'coinDrop':
+        if (isLocal(e.kart)) [0, 1, 2].forEach((i) => this.tone(1400 - i * 260, 0.08, 'square', 0.04, i * 0.06));
+        break;
       case 'hazard': {
         const v = this.near(world, ks[e.kart], locals);
         if (v <= 0) break;

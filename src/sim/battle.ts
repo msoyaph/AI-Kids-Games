@@ -3,6 +3,7 @@ import type { ItemSystem, HitEffect } from './items/itemSystem';
 import type { ArenaModel } from './arena';
 import { Kart, RespawnState } from './kart';
 import { battleOrder } from './rules';
+import type { ArenaRules } from './coinRush';
 
 export const BATTLE_BALLOONS = 3;
 
@@ -11,7 +12,7 @@ export const BATTLE_BALLOONS = 3;
  * Kid-friendly: nobody is eliminated — a kart that loses its last balloon gets a fresh set after a short pause.
  * The match is timed; most points wins.
  */
-export class BattleRules {
+export class BattleRules implements ArenaRules {
   timeLeft: number;
   readonly popped: Int32Array;
   private readonly refill: Float32Array;

@@ -62,6 +62,7 @@ export class AiController {
     for (const d of this.drivers) {
       d.brain = new ItemBrain(d.kart, this.world, this.track, d.profile, d.skill, new Rng(rng.nextU32()));
       d.brain.turboPlan = !!d.style.turboPlan;
+      d.brain.turboBurst = !!d.style.turboBurst;
       d.hazards = items.hazards;
     }
   }

@@ -109,6 +109,21 @@ function patternPolys(p: DecalPattern): Poly[] {
       return [circle(0, 0, 0.42, 16)];
     case 'zigzag':
       return [band((v) => (Math.abs(((v * 4 + 10) % 1) - 0.5) - 0.25) * 0.8, 0.07, 32)];
+    case 'snowflakes': {
+      const flake = (cu: number, cv: number, r: number): Poly[] => {
+        const out: Poly[] = [];
+        for (let k = 0; k < 3; k++) {
+          const a = (k * Math.PI) / 3;
+          const ca = Math.cos(a);
+          const sa = Math.sin(a);
+          const w = r * 0.16;
+          const corners: Array<[number, number]> = [[-r, -w], [r, -w], [r, w], [-r, w]];
+          out.push(corners.map(([x, y]) => [cu + x * ca - y * sa, cv + x * sa + y * ca] as [number, number]));
+        }
+        return out;
+      };
+      return [...flake(-0.24, 0.12, 0.2), ...flake(0.26, -0.14, 0.16), ...flake(0.04, 0.36, 0.09)];
+    }
     case 'swirl': {
       const out: Poly = [];
       const inner: Poly = [];

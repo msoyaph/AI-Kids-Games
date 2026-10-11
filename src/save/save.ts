@@ -69,6 +69,8 @@ export interface SaveData {
   stats: SaveStats;
   /** Unlocks earned but not yet celebrated in the UI. */
   newUnlocks: UnlockRef[];
+  /** Driving School: best medal and score per lesson. */
+  school: Record<string, { medal: Medal | null; best: number }>;
 }
 
 export interface Settings {
@@ -140,6 +142,7 @@ export function newSave(name: string, now = Date.now()): SaveData {
     challenges: {},
     stats: emptyStats(),
     newUnlocks: [],
+    school: {},
   };
 }
 
@@ -227,6 +230,7 @@ export function migrate(raw: Raw): SaveData {
     records: (d.records as Record<string, TrackRecord>) ?? {},
     challenges: (d.challenges as SaveData['challenges']) ?? {},
     newUnlocks: (d.newUnlocks as UnlockRef[]) ?? [],
+    school: (d.school as SaveData['school']) ?? {},
   };
   // Newly added default-unlocked content always appears in old saves too.
   for (const key of Object.keys(base.unlocks) as Array<keyof SaveData['unlocks']>) {

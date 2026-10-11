@@ -3,6 +3,7 @@ import { CHALLENGES } from '../data/challenges';
 import type { SaveData } from '../save/save';
 import type { SessionResult } from './session';
 import { unlock } from './progression';
+import { findCup } from '../data/cups';
 
 const MEDAL_RANK = { bronze: 1, silver: 2, gold: 3 } as const;
 
@@ -24,6 +25,7 @@ function target(g: ChallengeGoal): number | null {
     case 'totalRaces':
       return g.count;
     case 'driftSeconds':
+    case 'iceDriftSeconds':
       return g.seconds;
     default:
       return null;
@@ -35,8 +37,10 @@ function saveValue(g: ChallengeGoal, save: SaveData): number | null {
   switch (g.type) {
     case 'trophies':
       return Object.keys(save.trophies).length;
-    case 'staffGhosts':
-      return Object.values(save.records).filter((r) => r.beatStaff).length;
+    case 'staffGhosts': {
+      const tracks = g.cup ? findCup(g.cup).tracks : null;
+      return Object.entries(save.records).filter(([id, r]) => r.beatStaff && (!tracks || tracks.includes(id))).length;
+    }
     case 'timeTrials':
       return save.stats.timeTrials;
     case 'totalRaces':
@@ -92,7 +96,10 @@ function raceAmount(g: ChallengeGoal, r: SessionResult): number {
     case 'dodge':
       return s.dodges;
     case 'shortcut':
+      if (g.cup && !findCup(g.cup).tracks.includes(cfg.trackId ?? '')) return 0;
       return s.shortcuts;
+    case 'iceDriftSeconds':
+      return s.iceDrift;
     case 'perfectStart':
       return s.perfectStart ? 1 : 0;
     case 'boostPads':

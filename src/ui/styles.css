@@ -1170,3 +1170,136 @@
     animation: none;
   }
 }
+
+/* Coin Rush HUD */
+.hud-battle.coins {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hud-battle.coins .balloons svg {
+  width: clamp(30px, 6vh, 48px);
+  height: clamp(30px, 6vh, 48px);
+}
+.hud-battle.coins .score {
+  font-size: clamp(30px, 6vh, 52px);
+  color: var(--yellow);
+}
+.hud-battle .score.bump {
+  animation: posBump 0.3s ease;
+}
+
+/* ---------------- Instant replay ---------------- */
+.replay-ui {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(10px + var(--safe-t)) calc(14px + var(--safe-r)) calc(10px + var(--safe-b)) calc(14px + var(--safe-l));
+  pointer-events: none;
+}
+.replay-ui .rp-top,
+.replay-ui .rp-bottom {
+  pointer-events: auto;
+}
+.rp-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  text-shadow: 0 2px 0 rgba(29, 18, 80, 0.8);
+}
+.rp-tag {
+  padding: 2px 10px;
+  border-radius: 8px;
+  background: var(--red);
+  letter-spacing: 2px;
+  animation: pressPulse 1.4s ease-in-out infinite;
+}
+.rp-name,
+.rp-clock {
+  font-size: clamp(16px, 2.8vh, 22px);
+}
+.rp-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(20, 10, 50, 0.55);
+}
+.rp-progress {
+  height: 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  cursor: pointer;
+}
+.rp-progress i {
+  display: block;
+  height: 100%;
+  background: var(--yellow);
+}
+.rp-buttons {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ---------------- Driving School ---------------- */
+.lesson-status {
+  position: absolute;
+  left: 50%;
+  top: calc(10px + var(--safe-t));
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(29, 18, 80, 0.8);
+  border: 3px solid var(--yellow);
+  font-size: clamp(14px, 2.6vh, 22px);
+  font-weight: 900;
+  white-space: nowrap;
+}
+.lesson-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.lesson-card .icon {
+  font-size: clamp(26px, 5vh, 40px);
+}
+.lesson-card .medal {
+  margin-left: auto;
+  font-size: clamp(22px, 4vh, 32px);
+}
+.lesson-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: clamp(15px, 2.6vh, 20px);
+}
+.lesson-steps li {
+  margin-left: 1.2em;
+}
+.school-prompt {
+  border: 3px dashed var(--yellow);
+}
+
+/* Short landscape phones: keep five big menu buttons on screen */
+@media (max-height: 460px) {
+  .btn.big {
+    font-size: clamp(15px, 4.6vh, 22px);
+    padding: 0.32em 1.1em;
+    border-radius: 18px;
+  }
+  .menu-col {
+    gap: 6px !important;
+  }
+}
+@media (max-height: 420px) {
+  /* drop the one-line descriptions under the big menu buttons so all of them fit */
+  .btn.big > div > div:nth-child(2) {
+    display: none;
+  }
+}

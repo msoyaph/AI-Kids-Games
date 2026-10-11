@@ -143,9 +143,12 @@ export function mainMenuScreen(app: App): Screen {
     b.style.textAlign = 'left';
     return b;
   };
+  // New racers get a gentle nudge toward the Driving School
+  const newbie = Object.keys(s.school ?? {}).length === 0 && s.stats.races < 3;
   const col = h(
     'div',
-    { class: 'menu-col', style: 'width:min(420px,46vw);min-width:250px' },
+    { class: 'menu-col', style: 'width:min(420px,46vw);min-width:250px;overflow-y:auto;max-height:100%' },
+    newbie ? big('🎓 New here? Driving School', 'Six quick lessons: steer, drift, rocket starts…', 'teal school-prompt', () => app.screens.school()) : null,
     big('Grand Prix', 'Race a 4-track cup for trophies', 'yellow', () => {
       app.flow.mode = 'grandPrix';
       app.screens.players();
@@ -154,7 +157,7 @@ export function mainMenuScreen(app: App): Screen {
       app.flow.mode = 'versus';
       app.screens.players();
     }),
-    big('Battle', 'Pop balloons in the arenas!', 'pink', () => {
+    big('Battle', 'Pop balloons or grab coins in the arenas!', 'pink', () => {
       app.flow.mode = 'battle';
       app.screens.players();
     }),
@@ -175,6 +178,7 @@ export function mainMenuScreen(app: App): Screen {
   const row = h(
     'div',
     { class: 'menu-row' },
+    button('🎓 School', () => app.screens.school(), 'small'),
     button('🎯 Challenges', () => app.screens.challenges(), 'small'),
     button('🔧 Garage', () => app.screens.garage(() => app.screens.mainMenu()), 'small'),
     button('📖 Collection', () => app.screens.collection(), 'small'),

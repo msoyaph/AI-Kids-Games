@@ -313,6 +313,31 @@ export const RACERS: RacerData[] = [
       { shape: 'sphere', p: [0.3, 0.62, 0.52], s: [0.2, 0.18, 0.2], c: 0xc68b59, seg: 6, mirror: true },
     ],
   },
+  {
+    id: 'yuki',
+    name: 'Yuki',
+    bio: 'A young yeti from the top of Avalanche Peak who learned to drive on a runaway toboggan. Loves snowball fights and hot cocoa.',
+    kind: 'fantasy',
+    weight: 'medium',
+    color: 0xeaf6ff,
+    color2: 0x7fd8ff,
+    personality: 'itemFocused',
+    defaultKart: { body: 'snowcat', wheels: 'spikes', glider: 'snowflake' },
+    voice: 0.95,
+    unlocked: false,
+    model: [
+      { shape: 'capsule', p: [0, 0.42, 0], s: [1.25, 0.7, 1.05], c: 0xf4f9ff },
+      { shape: 'sphere', p: [0, 0.44, 0.36], s: [0.72, 0.52, 0.28], c: 0xd6ecff, seg: 10 },
+      { shape: 'sphere', p: [0, 1.04, 0.04], s: [0.76, 0.7, 0.68], c: 0xf4f9ff, seg: 12 },
+      { shape: 'sphere', p: [0, 1.0, 0.3], s: [0.5, 0.44, 0.2], c: 0xa8d8ff, seg: 10 },
+      { shape: 'sphere', p: [0.11, 1.06, 0.39], s: [0.08, 0.11, 0.05], c: INK, seg: 6, mirror: true },
+      { shape: 'box', p: [0, 0.92, 0.4], s: [0.18, 0.035, 0.03], c: 0x3a4a6a },
+      { shape: 'cone', p: [0.25, 1.36, 0], s: [0.12, 0.24, 0.12], r: [0, 0, -22], c: 0xfff1c8, seg: 6, mirror: true },
+      { shape: 'torus', p: [0, 0.76, 0.02], s: [0.82, 0.82, 0.55], r: [90, 0, 0], c: 0xff4d6d },
+      { shape: 'capsule', p: [0.32, 0.48, 0.2], s: [0.42, 0.52, 0.42], r: [-65, 0, 12], c: 0xf4f9ff, mirror: true },
+      { shape: 'sphere', p: [0.2, 0.56, 0.46], s: [0.17, 0.17, 0.17], c: 0xa8d8ff, seg: 6, mirror: true },
+    ],
+  },
 ];
 
 export function findRacer(id: string): RacerData {

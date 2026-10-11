@@ -53,6 +53,10 @@ export interface KartRaceStats {
   hitsTakenBy: Partial<Record<ItemId, number>>;
   /** Seconds driven on off-road surfaces. */
   offroadTime: number;
+  /** Seconds spent drifting on ice. */
+  iceDrift: number;
+  /** Coin Rush: coins picked up. */
+  coins: number;
 }
 
 export function makeRaceStats(): KartRaceStats {
@@ -78,6 +82,8 @@ export function makeRaceStats(): KartRaceStats {
     wallHits: 0,
     hitsTakenBy: {},
     offroadTime: 0,
+    iceDrift: 0,
+    coins: 0,
   };
 }
 

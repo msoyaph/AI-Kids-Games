@@ -141,3 +141,102 @@ test('High-tier shaders (water, road sheen, pod shimmer, rim light, skinned driv
   }
   expect(w.errors).toEqual([]);
 });
+
+test('instant replay: watch the race again with every camera, then back to the results', async ({ page }, info) => {
+  test.skip(!info.project.name.endsWith('desktop') && !info.project.name.endsWith('phone'), 'one desktop + one phone per engine');
+  const touch = info.project.name.endsWith('phone');
+  const w = watch(page);
+  await boot(page);
+  // a real Versus race through the menus, driven by the autopilot at 8× speed
+  await page.evaluate(() => {
+    const a = window.__calex.app;
+    a.saves.create(1, 'Replay');
+    a.flow.mode = 'versus';
+    a.flow.players = 1;
+    a.flow.racers = ['calex'];
+    a.flow.vs.aiCount = 3;
+    a.flow.vs.laps = 1;
+    a.screens.trackSelect();
+  });
+  const track = page.locator('.ui-root [data-nav]').filter({ hasText: 'Seashell Boardwalk' }).first();
+  if (touch) await track.tap();
+  else await track.click();
+  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: 30_000 });
+  await page.evaluate(() => {
+    const a = window.__calex.app;
+    const k = a.session.world.karts[0];
+    k.player = -1;
+    a.session.ai.takeOver(k);
+    k.player = 0;
+    a.loop.timeScale = 8;
+  });
+  const replayBtn = page.locator('.ui-root [data-nav]').filter({ hasText: 'Replay' }).first();
+  await expect(replayBtn).toBeVisible({ timeout: 90_000 });
+  await page.evaluate(() => (window.__calex.app.loop.timeScale = 1));
+  if (touch) await replayBtn.tap();
+  else await replayBtn.click();
+  await expect(page.locator('.replay-ui')).toBeVisible();
+  const x0 = await page.evaluate(() => window.__calex.app.session.world.karts[0].x);
+  await page.waitForTimeout(1200);
+  const x1 = await page.evaluate(() => window.__calex.app.session.world.karts[0].x);
+  expect(Math.abs(x1 - x0)).toBeGreaterThan(1); // karts move during playback
+  for (let i = 0; i < 4; i++) {
+    const cam = page.locator('.replay-ui [data-nav]').filter({ hasText: /Auto|Chase|Trackside|Overhead/ }).first();
+    if (touch) await cam.tap();
+    else await cam.click();
+    await page.waitForTimeout(400);
+  }
+  const fwd = page.locator('.replay-ui [data-nav]').filter({ hasText: '10s ⏩' }).first();
+  if (touch) await fwd.tap();
+  else await fwd.click();
+  const t = await page.evaluate(() => window.__calex.app.session.replay.t);
+  expect(t).toBeGreaterThan(9);
+  await page.screenshot({ path: `test-results/replay-${info.project.name}.png` });
+  const done = page.locator('.replay-ui [data-nav]').filter({ hasText: 'Done' }).first();
+  if (touch) await done.tap();
+  else await done.click();
+  await expect(page.locator('.replay-ui')).toHaveCount(0);
+  await expect(replayBtn).toBeVisible();
+  expect(w.errors).toEqual([]);
+});
+
+test('Driving School: new-player prompt, lesson intro, a lesson to the medal screen', async ({ page }, info) => {
+  test.skip(!info.project.name.endsWith('desktop') && !info.project.name.endsWith('phone'), 'one desktop + one phone per engine');
+  const touch = info.project.name.endsWith('phone');
+  const tap = async (text: string | RegExp): Promise<void> => {
+    const b = page.locator('.ui-root [data-nav]').filter({ hasText: text }).first();
+    await expect(b).toBeVisible();
+    if (touch) await b.tap();
+    else await b.click();
+  };
+  const w = watch(page);
+  await boot(page);
+  await page.evaluate(() => {
+    const a = window.__calex.app;
+    a.saves.create(1, 'Newbie');
+    a.screens.mainMenu();
+  });
+  await tap(/New here\? Driving School/);
+  await expect(page.getByText('6 gold', { exact: false }).or(page.getByText('0/6 gold'))).toBeVisible();
+  await tap(/Glider Rings/);
+  await expect(page.locator('.lesson-steps')).toBeVisible();
+  await tap(/Let's go!/);
+  await page.waitForFunction(() => window.__calex.app.session?.lessonSim, null, { timeout: 20_000 });
+  await expect(page.locator('.lesson-status')).toContainText('Rings');
+  await page.evaluate(() => {
+    const a = window.__calex.app;
+    const k = a.session.world.karts[0];
+    k.player = -1;
+    a.session.ai.takeOver(k, 0.8, 'balanced');
+    k.player = 0;
+    a.loop.timeScale = 6;
+  });
+  await expect(page.locator('.ui-root [data-nav]').filter({ hasText: 'Retry' }).first()).toBeVisible({ timeout: 60_000 });
+  await page.evaluate(() => (window.__calex.app.loop.timeScale = 1));
+  const school = await page.evaluate(() => window.__calex.app.save.school);
+  expect(school.gliders).toBeTruthy();
+  expect(school.gliders.best).toBeGreaterThanOrEqual(1);
+  await tap('Lessons');
+  await expect(page.locator('.lesson-card').first()).toBeVisible();
+  expect(w.errors).toEqual([]);
+});

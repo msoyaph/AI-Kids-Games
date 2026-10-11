@@ -191,6 +191,53 @@ export const BODIES: BodyData[] = [
       { shape: 'torus', p: [0, 0.5, 1.22], s: [0.5, 0.5, 0.5], c: 0xffd23f },
     ],
   },
+  {
+    id: 'snowcat',
+    name: 'Snow Cat',
+    mod: { traction: 2, speed: -1 },
+    unlocked: false,
+    wheelFront: [0.78, 0.36, 0.98],
+    wheelBack: [0.8, 0.38, -0.9],
+    seatY: 0.7,
+    decals: [{ p: [0, 0.56, 0.5], w: 1.0, l: 0.6, face: 'top' }],
+    model: [
+      { shape: 'box', p: [0, 0.42, 0], s: [1.34, 0.26, 2.3], c: 'paint' },
+      { shape: 'wedge', p: [0, 0.62, 1.15], s: [1.2, 0.36, 0.8], c: 'paint' },
+      { shape: 'box', p: [0, 0.3, 1.78], s: [1.0, 0.08, 0.5], r: [-18, 0, 0], c: 'metal' },
+      { shape: 'box', p: [0.66, 0.5, 0], s: [0.22, 0.36, 1.9], c: 'paint2', mirror: true },
+      { shape: 'box', p: [0, 0.98, 0.62], s: [0.9, 0.42, 0.05], r: [-25, 0, 0], c: 'glass' },
+      { shape: 'box', p: [0, 0.62, -0.34], s: [0.66, 0.16, 0.56], c: 'trim' },
+      { shape: 'box', p: [0, 0.92, -0.62], s: [0.66, 0.52, 0.12], c: 'trim' },
+      { shape: 'cyl', p: [0, 0.8, 0.42], s: [0.06, 0.42, 0.06], r: [-50, 0, 0], c: 'metal', seg: 6 },
+      { shape: 'torus', p: [0, 0.96, 0.3], s: [0.42, 0.42, 0.42], r: [-40, 0, 0], c: 'trim' },
+      { shape: 'box', p: [0, 0.7, -1.08], s: [0.9, 0.36, 0.42], c: 'metal' },
+      { shape: 'sphere', p: [0.4, 0.62, 1.5], s: [0.2, 0.16, 0.08], c: 0xfff6b0, seg: 8, mirror: true },
+    ],
+  },
+  {
+    id: 'learner',
+    name: 'Learner',
+    mod: { handling: 1, accel: 1, speed: -1 },
+    unlocked: false,
+    wheelFront: [0.72, 0.36, 0.9],
+    wheelBack: [0.74, 0.38, -0.82],
+    seatY: 0.66,
+    decals: [{ p: [0, 0.55, 0.55], w: 0.9, l: 0.5, face: 'top' }],
+    model: [
+      { shape: 'box', p: [0, 0.42, 0], s: [1.26, 0.24, 2.1], c: 'paint' },
+      { shape: 'wedge', p: [0, 0.6, 1.2], s: [1.1, 0.3, 0.6], c: 'paint' },
+      { shape: 'box', p: [0, 0.37, 1.55], s: [1.44, 0.14, 0.18], c: 'trim' },
+      { shape: 'box', p: [0.6, 0.52, 0.05], s: [0.28, 0.3, 1.24], c: 'paint2', mirror: true },
+      { shape: 'box', p: [0, 0.62, -0.3], s: [0.6, 0.14, 0.52], c: 'trim' },
+      { shape: 'box', p: [0, 0.88, -0.58], s: [0.6, 0.52, 0.12], c: 'trim' },
+      { shape: 'cyl', p: [0, 0.78, 0.4], s: [0.06, 0.42, 0.06], r: [-50, 0, 0], c: 'metal', seg: 6 },
+      { shape: 'torus', p: [0, 0.94, 0.28], s: [0.42, 0.42, 0.42], r: [-40, 0, 0], c: 'trim' },
+      { shape: 'box', p: [0, 1.18, -0.6], s: [0.5, 0.5, 0.04], c: 0xffffff },
+      { shape: 'box', p: [-0.06, 1.18, -0.63], s: [0.08, 0.36, 0.03], c: 0xff4d6d },
+      { shape: 'box', p: [0.05, 1.04, -0.63], s: [0.22, 0.08, 0.03], c: 0xff4d6d },
+      { shape: 'box', p: [0, 0.64, -0.98], s: [0.76, 0.36, 0.4], c: 'metal' },
+    ],
+  },
 ];
 
 const TIRE: WheelData['model'] = [
@@ -266,6 +313,22 @@ export const WHEELS: WheelData[] = [
       { shape: 'cyl', s: [0.22, 0.38, 0.22], r: [0, 0, 90], c: 'paint', seg: 6 },
     ],
   },
+  {
+    id: 'spikes',
+    name: 'Ice Spikes',
+    mod: { traction: 2, accel: -1 },
+    unlocked: false,
+    radius: 0.37,
+    width: 0.34,
+    model: [
+      { shape: 'cyl', s: [0.74, 0.34, 0.74], r: [0, 0, 90], c: 'tire', seg: 12 },
+      { shape: 'cyl', s: [0.4, 0.36, 0.4], r: [0, 0, 90], c: 0xbfe3ff, seg: 8 },
+      { shape: 'cone', p: [0, 0.36, 0], s: [0.07, 0.1, 0.07], c: 0xeaf6ff, seg: 4 },
+      { shape: 'cone', p: [0, -0.36, 0], s: [0.07, 0.1, 0.07], r: [180, 0, 0], c: 0xeaf6ff, seg: 4 },
+      { shape: 'cone', p: [0, 0, 0.36], s: [0.07, 0.1, 0.07], r: [90, 0, 0], c: 0xeaf6ff, seg: 4 },
+      { shape: 'cone', p: [0, 0, -0.36], s: [0.07, 0.1, 0.07], r: [-90, 0, 0], c: 0xeaf6ff, seg: 4 },
+    ],
+  },
 ];
 
 export const GLIDERS: GliderData[] = [
@@ -325,6 +388,19 @@ export const GLIDERS: GliderData[] = [
       { shape: 'cyl', p: [0.4, 1.45, -0.5], s: [0.04, 1.3, 0.04], r: [0, 0, 14], c: 'trim', seg: 4, mirror: true },
     ],
   },
+  {
+    id: 'snowflake',
+    name: 'Snowflake',
+    mod: {},
+    unlocked: false,
+    model: [
+      { shape: 'box', p: [0, 2.1, -0.5], s: [3.4, 0.07, 0.3], c: 'paint2' },
+      { shape: 'box', p: [0, 2.1, -0.5], s: [3.0, 0.07, 0.3], r: [0, 60, 0], c: 0xeaf6ff },
+      { shape: 'box', p: [0, 2.1, -0.5], s: [3.0, 0.07, 0.3], r: [0, -60, 0], c: 0xeaf6ff },
+      { shape: 'ico', p: [0, 2.12, -0.5], s: [0.5, 0.14, 0.5], c: 'paint', seg: 0 },
+      { shape: 'cyl', p: [0.55, 1.45, -0.55], s: [0.04, 1.3, 0.04], r: [0, 0, 20], c: 'trim', seg: 4, mirror: true },
+    ],
+  },
 ];
 
 export const PAINTS: PaintData[] = [
@@ -340,6 +416,7 @@ export const PAINTS: PaintData[] = [
   { id: 'gold', name: 'Golden Glory', color: 0xffd23f, color2: 0xffffff, unlocked: false },
   { id: 'lava', name: 'Lava Lamp', color: 0xff5a1f, color2: 0x8a1fff, unlocked: false },
   { id: 'prism', name: 'Prism', color: 0x4ce0d2, color2: 0xff4dd2, unlocked: false },
+  { id: 'aurora', name: 'Aurora', color: 0x3fe0c0, color2: 0xb47bff, unlocked: false },
 ];
 
 export const DECALS: DecalData[] = [
@@ -355,6 +432,7 @@ export const DECALS: DecalData[] = [
   { id: 'number', name: 'Number One', pattern: 'number', unlocked: false },
   { id: 'zigzag', name: 'Zigzag', pattern: 'zigzag', unlocked: false },
   { id: 'swirl', name: 'Swirl', pattern: 'swirl', unlocked: false },
+  { id: 'snowflakes', name: 'Snowflakes', pattern: 'snowflakes', unlocked: false },
 ];
 
 export function findBody(id: string): BodyData {

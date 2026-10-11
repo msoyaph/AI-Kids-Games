@@ -1,9 +1,12 @@
+import { LESSONS, SCHOOL_REWARD, findLesson, type LessonId, type LessonMedal } from '../../data/school';
+import { lessonLaps } from '../../sim/schoolRun';
+import { lessonIntroScreen, lessonResultsScreen, schoolScreen } from './school';
 import type { App } from '../../game/app';
 import type { SessionConfig, SessionResult, PlayerSlot } from '../../game/session';
 import { GrandPrix } from '../../game/modes/grandPrix';
 import { pickOpponents } from '../../game/modes/roster';
 import { staffGhost } from '../../game/modes/timeTrial';
-import { addStats, awardTrophy, checkProgressUnlocks, updateRecord } from '../../game/progression';
+import { addStats, awardTrophy, checkProgressUnlocks, updateRecord, unlock } from '../../game/progression';
 import { evaluateChallenges } from '../../game/challenges';
 import { GhostData, GHOST_MAX_SECONDS } from '../../sim/ghost';
 import { medalFor } from '../../sim/rules';
@@ -38,6 +41,8 @@ export interface ScreenRegistry {
   collection(): void;
   challenges(): void;
   records(): void;
+  school(): void;
+  startLesson(id: import('../../data/school').LessonId, skipIntro?: boolean): void;
 }
 
 export function registerScreens(app: App): void {
@@ -187,6 +192,7 @@ export function registerScreens(app: App): void {
         ai: pickOpponents(ps.map((p) => p.racerId), f.battle.aiCount, Date.now() & 0xffff, 0),
         seed: (Date.now() & 0xffffff) >>> 0,
         battleTime: f.battle.time,
+        battleRule: f.battle.rule,
         intro: true,
       },
       (r) => {
@@ -252,6 +258,45 @@ export function registerScreens(app: App): void {
         );
       },
     );
+  };
+
+  // ---------------------------------------------------------------- Driving School
+  const seenIntro = new Set<string>();
+  const startLesson = (id: LessonId, skipIntro = false): void => {
+    const go = (): void => {
+      seenIntro.add(id);
+      app.flow.players = 1;
+      app.flow.racers[0] = app.save.racer;
+      const lesson = findLesson(id);
+      run(
+        { mode: 'school', trackId: lesson.track, speedClass: 'rookie', mirror: false, items: true, itemSet: 'all', laps: lessonLaps(id), players: players().slice(0, 1), ai: [], seed: 1, intro: false, lesson: id },
+        (r) => {
+          const res = r.lesson!;
+          const prev = app.save.school[id];
+          const better = lesson.scoring === 'time' ? res.score < (prev?.best ?? Infinity) : res.score > (prev?.best ?? -Infinity);
+          const rank = (m: LessonMedal | null | undefined): number => (m === 'gold' ? 3 : m === 'silver' ? 2 : m === 'bronze' ? 1 : 0);
+          app.save.school[id] = { medal: rank(res.medal) > rank(prev?.medal) ? res.medal : (prev?.medal ?? null), best: better ? res.score : prev!.best };
+          if (LESSONS.every((l) => app.save.school[l.id]?.medal === 'gold')) unlock(app.save, SCHOOL_REWARD);
+          app.saves.markDirty();
+          const idx = LESSONS.findIndex((l) => l.id === id);
+          const next = LESSONS[idx + 1];
+          app.ui.show(
+            lessonResultsScreen(
+              app,
+              id,
+              res.score,
+              res.medal,
+              better && !!prev,
+              () => startLesson(id, true),
+              next ? () => (app.endSession(), afterUnlocks(() => startLesson(next.id))) : null,
+              () => (app.endSession(), afterUnlocks(() => (app.audio.playMusic('menu'), app.screens.school()))),
+            ),
+          );
+        },
+      );
+    };
+    if (skipIntro || seenIntro.has(id)) go();
+    else app.ui.show(lessonIntroScreen(app, id, go, () => app.screens.school()));
   };
 
   const reg: ScreenRegistry = {
@@ -324,6 +369,8 @@ export function registerScreens(app: App): void {
     collection: () => app.ui.show(collectionScreen(app)),
     challenges: () => app.ui.show(challengesScreen(app)),
     records: () => app.ui.show(recordsScreen(app)),
+    school: () => app.ui.show(schoolScreen(app, (id) => startLesson(id))),
+    startLesson,
   };
   app.screens = reg;
 }

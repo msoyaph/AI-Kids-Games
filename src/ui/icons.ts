@@ -49,3 +49,6 @@ export const TROPHY_SVG = (color: string): string =>
 
 export const BALLOON_SVG = (color: string): string =>
   S(`<path d="M32 6c11 0 18 9 18 19 0 12-10 21-18 23-8-2-18-11-18-23C14 15 21 6 32 6z" fill="${color}" stroke="#00000055" stroke-width="2"/><path d="M32 48l-3 5h6zM32 53q-4 5 0 10" stroke="#fff" stroke-width="2" fill="#fff"/><ellipse cx="25" cy="18" rx="4" ry="6" fill="#fff" opacity=".5"/>`);
+
+/** Coin Rush coin icon. */
+export const COIN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffd23f" stroke="#c98a00" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="none" stroke="#fff3a6" stroke-width="1.6"/><path d="M12 7.5l1.3 2.7 3 .4-2.2 2 .6 3-2.7-1.5-2.7 1.5.6-3-2.2-2 3-.4z" fill="#fff3a6"/></svg>';

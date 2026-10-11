@@ -367,17 +367,32 @@ export function battleSetupScreen(app: App): Screen {
   };
   render();
   const start = (): void => app.screens.startBattle();
+  const title = h('div', { class: 'title-h' }, f.battle.rule === 'coins' ? 'Coin Rush' : 'Balloon Battle');
+  const hint = h('div', { class: 'hint' });
+  const setHint = (): void => {
+    title.textContent = f.battle.rule === 'coins' ? 'Coin Rush' : 'Balloon Battle';
+    hint.textContent =
+      f.battle.rule === 'coins'
+        ? 'Grab the coins scattered around the arena! Hit a rival with an item and they drop 3 coins — grab them! Most coins when time runs out wins.'
+        : 'Hit rivals with items to pop their balloons. Each pop = 1 point. Run out of balloons? You get a fresh set!';
+  };
+  setHint();
   const el = h(
     'div',
     { class: 'dim', style: 'gap:10px' },
-    h('div', { class: 'topbar' }, h('div', { class: 'title-h' }, 'Balloon Battle'), h('div', { class: 'spacer' }), button('Start! ▶', start, 'yellow')),
+    h('div', { class: 'topbar' }, title, h('div', { class: 'spacer' }), button('Start! ▶', start, 'yellow')),
     grid,
     h(
       'div',
       { class: 'panel menu-col' },
+      choice('Game', [['balloons', '🎈 Balloons'], ['coins', '🪙 Coin Rush']], () => f.battle.rule, (v) => {
+        f.battle.rule = v;
+        if (v === 'coins' && f.battle.time > 180) f.battle.time = 120;
+        setHint();
+      }),
       choice('Time', [[120, '2 min'], [150, '2½ min'], [180, '3 min'], [240, '4 min']], () => f.battle.time, (v) => (f.battle.time = v)),
       choice('AI racers', Array.from({ length: maxAi }, (_, i) => [i + 1, String(i + 1)] as [number, string]), () => f.battle.aiCount, (v) => (f.battle.aiCount = v)),
-      h('div', { class: 'hint' }, 'Hit rivals with items to pop their balloons. Each pop = 1 point. Run out of balloons? You get a fresh set!'),
+      hint,
     ),
   );
   return { el, onBack: () => app.screens.players() };

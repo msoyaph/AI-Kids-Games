@@ -443,6 +443,18 @@ export class ItemSystem {
     if (destroy && k.item) this.consume(k);
   }
 
+  /** Driving School: drop a static hazard (e.g. a goo puddle) on the track, owned by nobody. */
+  placeHazard(type: ItemId, x: number, y: number, z: number): ItemEntity | null {
+    const e = this.spawn(type, this.world.karts[0], x, y, z);
+    if (!e) return null;
+    e.owner = -1;
+    e.state = ItemState.Static;
+    e.life = 1e9;
+    e.ground.hit = true;
+    e.ground.height = y;
+    return e;
+  }
+
   private spawn(type: ItemId, owner: Kart, x: number, y: number, z: number): ItemEntity | null {
     for (const e of this.entities) {
       if (e.active) continue;

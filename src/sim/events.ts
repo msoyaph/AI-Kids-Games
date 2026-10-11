@@ -34,6 +34,10 @@ export type SimEvent =
   | { type: 'boxBreak'; x: number; y: number; z: number }
   | { type: 'explode'; x: number; y: number; z: number; item: ItemId }
   | { type: 'balloonPop'; kart: number; by: number; left: number }
+  | { type: 'coinPickup'; kart: number; x: number; y: number; z: number }
+  | { type: 'coinDrop'; kart: number; count: number }
+  /** Driving School: a gate passed or missed, a ring flown through, a target popped. */
+  | { type: 'lesson'; kind: 'gate' | 'miss' | 'ring' | 'target'; x: number; y: number; z: number }
   | { type: 'shortcut'; kart: number }
   | { type: 'hazard'; kart: number; kind: string };
 

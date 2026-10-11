@@ -1,3 +1,4 @@
+import { SCHOOL_REWARD } from '../../src/data/school';
 import { describe, expect, it } from 'vitest';
 import { CHALLENGES } from '../../src/data/challenges';
 import { RACERS } from '../../src/data/racers';
@@ -56,8 +57,9 @@ describe('unlocks', () => {
     ...ARENAS.filter((r) => !r.unlocked).map((r) => ({ kind: 'arena', id: r.id }) as UnlockRef),
   ];
 
-  it('has 12 racers with 6 unlocked at the start, across all weight classes', () => {
-    expect(RACERS.length).toBe(12);
+  it('has 13 racers (12 + Yuki) with 6 unlocked at the start, across all weight classes', () => {
+    expect(RACERS.length).toBe(13);
+    expect(RACERS.find((r) => r.id === 'yuki')?.unlocked).toBe(false);
     const start = RACERS.filter((r) => r.unlocked);
     expect(start.length).toBe(6);
     expect(new Set(start.map((r) => r.weight)).size).toBe(3);
@@ -68,11 +70,41 @@ describe('unlocks', () => {
     expect(new Set(CHALLENGES.map((c) => c.id)).size).toBe(CHALLENGES.length);
   });
 
-  it('every locked item is a challenge reward (so every unlock is achievable)', () => {
+  it('every locked item is a challenge reward or the Driving School reward (so every unlock is achievable)', () => {
     for (const ref of lockedRefs()) {
       const c = CHALLENGES.find((ch) => ch.reward.kind === ref.kind && ch.reward.id === ref.id);
-      expect(c, `${ref.kind}:${ref.id}`).toBeDefined();
+      const school = SCHOOL_REWARD.kind === ref.kind && SCHOOL_REWARD.id === ref.id;
+      expect(c || school, `${ref.kind}:${ref.id}`).toBeTruthy();
     }
+  });
+
+  it('the Frost Cup unlocks with any Legend trophy and never blocks Champion / Mirror', () => {
+    const save = newSave('t');
+    expect(save.unlocks.cups).not.toContain('frost');
+    awardTrophy(save, 'legend', 'rookie', false, 'bronze');
+    checkProgressUnlocks(save);
+    expect(save.unlocks.cups).toContain('frost');
+    // gold in the four original cups is enough — no Frost Cup trophy needed
+    const s2 = newSave('t');
+    for (const c of ['sunrise', 'thunder', 'galaxy', 'legend'] as const) awardTrophy(s2, c, 'pro', false, 'gold');
+    checkProgressUnlocks(s2);
+    expect(s2.unlocks.classes).toContain('champion');
+    for (const c of ['sunrise', 'thunder', 'galaxy', 'legend'] as const) awardTrophy(s2, c, 'champion', false, 'gold');
+    checkProgressUnlocks(s2);
+    expect(s2.unlocks.classes).toContain('mirror');
+  });
+
+  it('a v2 save with a Legend trophy gets the Frost Cup (and a celebration) when it loads', () => {
+    const old = { ...newSave('old'), v: 2, trophies: { 'legend:pro': 'silver' }, newUnlocks: [] } as unknown as Record<string, unknown>;
+    delete (old.unlocks as Record<string, unknown>).cups;
+    (old.unlocks as Record<string, unknown>).cups = ['sunrise', 'thunder', 'galaxy', 'legend'];
+    const m = migrate(old);
+    expect(m.v).toBe(SAVE_VERSION);
+    expect(m.unlocks.cups).toContain('frost');
+    expect(m.newUnlocks).toContainEqual({ kind: 'cup', id: 'frost' });
+    expect(m.trophies['legend:pro']).toBe('silver');
+    const plain = migrate({ ...newSave('x'), v: 2 } as unknown as Record<string, unknown>);
+    expect(plain.unlocks.cups).not.toContain('frost');
   });
 
   it('challenge rewards point at real, initially locked content', () => {
