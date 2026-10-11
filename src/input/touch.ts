@@ -249,7 +249,7 @@ export class TouchControls {
   }
 
   /** Race feedback inside the glass: drift tier on the stick ring (colour + chevrons + word), held item icon. */
-  setRaceState(driftTier: number, item: ItemId | null, rolling: boolean): void {
+  setRaceState(driftTier: number, item: ItemId | null, rolling: boolean, uses = 1): void {
     if (this.last.tier !== driftTier) {
       this.last.tier = driftTier;
       this.stick.classList.remove('tier1', 'tier2', 'tier3');
@@ -260,9 +260,10 @@ export class TouchControls {
       }
       this.badge.textContent = TIER_WORDS[driftTier] ?? '';
     }
-    const key = rolling ? '?' : item ?? '';
+    const key = rolling ? '?' : `${item ?? ''}×${uses}`;
     if (this.last.item !== key) {
       this.last.item = key;
+      this.btn.item.dataset.uses = item && !rolling && uses > 1 ? `×${uses}` : '';
       this.btn.item.classList.toggle('has', !!item && !rolling);
       this.btn.item.classList.toggle('rolling', rolling);
       this.itemIcon.innerHTML = rolling ? '…' : item ? ITEM_ICONS[item] : '🎁';

@@ -606,7 +606,7 @@ export class RaceSession {
     if (this.ctx.input.touch.shown) {
       // drift tier on the stick ring + the held item inside the ITEM glass (dirty-checked inside)
       const k = w.karts[this.locals[0]];
-      this.ctx.input.touch.setRaceState(k.drifting ? k.driftTier : 0, k.item, k.rouletteTime > 0);
+      this.ctx.input.touch.setRaceState(k.drifting ? k.driftTier : 0, k.item, k.rouletteTime > 0, k.itemUses);
     }
     // speed blur (High tier only, one player, not with Reduce effects)
     let blur = 0;

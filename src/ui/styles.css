@@ -190,6 +190,21 @@
 .touch-controls .tc-item.has .face {
   border-color: #ffd23f;
 }
+/* uses left (×2, ×3) on the item glass, like the HUD's item box */
+.touch-controls .tc-item[data-uses]:not([data-uses=''])::after {
+  content: attr(data-uses);
+  position: absolute;
+  right: calc(50% - var(--d) * 0.5 - 4px);
+  bottom: calc(50% - var(--d) * 0.5 - 4px);
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #1d1250;
+  border: 2px solid #ffd23f;
+  color: #ffd23f;
+  font-size: max(11px, calc(var(--d) * 0.15));
+  font-weight: 900;
+  pointer-events: none;
+}
 /* pressed: sinks, brightens, inner glow + soft ripple */
 .touch-controls .tc-btn.down .face {
   transform: translate(-50%, calc(-50% + 2px)) scale(0.95);

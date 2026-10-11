@@ -203,6 +203,9 @@ export class App {
   private blurSlow = 0;
   private blurFrames = 0;
   private blurJank = 0;
+  /** Seconds of grace after the controls appear (race start compiles shaders: a few slow frames are normal). */
+  private blurWarmup = 3;
+  private blurStrikes = 0;
   private readonly blurSupported = typeof CSS !== 'undefined' && (CSS.supports('backdrop-filter', 'blur(2px)') || CSS.supports('-webkit-backdrop-filter', 'blur(2px)'));
 
   syncGlass(): void {
@@ -214,7 +217,12 @@ export class App {
   private watchGlass(frameDt: number): void {
     const touch = this.input.touch;
     if (!touch.shown || touch.glass !== 'blur' || touch.forceGlass) {
-      this.blurSlow = this.blurFrames = this.blurJank = 0;
+      this.blurSlow = this.blurFrames = this.blurJank = this.blurStrikes = 0;
+      this.blurWarmup = 3;
+      return;
+    }
+    if (this.blurWarmup > 0) {
+      this.blurWarmup -= frameDt;
       return;
     }
     // the governor degrades at > 19.2 ms for 1.2 s; blur steps aside earlier — on a slow average, or on jank
@@ -225,7 +233,9 @@ export class App {
     if (frameDt > 0.025) this.blurJank++;
     let drop = this.blurSlow > 0.6;
     if (this.blurFrames >= 180) {
-      if (this.blurJank / this.blurFrames > 0.02) drop = true;
+      // two janky ~3 s windows in a row (one hitch from a big crash or a spawn isn't enough)
+      this.blurStrikes = this.blurJank / this.blurFrames > 0.02 ? this.blurStrikes + 1 : 0;
+      if (this.blurStrikes >= 2) drop = true;
       this.blurFrames = this.blurJank = 0;
     }
     if (drop) {

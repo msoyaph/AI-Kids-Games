@@ -30,7 +30,7 @@ more helpful items.
 
 | Action | Keyboard | Gamepad (standard) | Touch |
 |---|---|---|---|
-| Steer | ← → or A D | Left stick / D-pad | Left steering pad (or tilt) |
+| Steer | ← → or A D | Left stick / D-pad | Glass joystick: put your left thumb down anywhere on the left and slide (or ◀ ▶ buttons, or tilt) |
 | Accelerate | ↑ or W | A or RT | Automatic (GO button in countdown) |
 | Brake / reverse | ↓ or S | B or LT | BRAKE |
 | Drift / hop / trick | Shift or Space | RB or X | DRIFT |
@@ -75,12 +75,24 @@ buttons.
   asks for reduced motion), split-screen orientation, and **Test performance** (see below).
 - **Gameplay:** steering assist (**Auto** = Light on touch screens and Off on keyboard/gamepad; **Light** keeps you
   on the road; **Full** follows the racing line with you and stops most falls), auto-accelerate, camera distance,
-  rumble (gamepad / phone vibration), touch steering (buttons/tilt).
+  rumble & vibration (gamepad rumble; short buzzes on Android phones).
+- **📱 Touch:** steering (**Joystick**, the default, or **Buttons** or **Tilt**), joystick **Floating** (it appears
+  under your thumb) or **Fixed**, size (Small/Medium/Large), opacity, **left-handed** (swaps the sides), **high
+  contrast**, rumble & vibration, and **Edit layout**: drag any control to move it and its yellow corner to resize it.
+  Controls stay inside the screen's safe areas, off the HUD and apart from each other. Layouts are saved separately
+  for landscape and tablet portrait. A live preview shows the controls over a bright and a dark track.
 - **Controls:** the controls card, and keyboard/gamepad remapping.
 
-Accessibility: drift-spark tiers show as 1–3 chevrons plus a word (MINI / SUPER / ULTRA), and incoming items show
-an icon plus a word (PLANE!, BALL!…), so neither depends on colour. Every menu works with a keyboard alone, a
-gamepad alone, or touch alone.
+Accessibility: drift-spark tiers show as 1–3 chevrons plus a word (MINI / SUPER / ULTRA), on the HUD and on the
+touch joystick's ring, and incoming items show an icon plus a word (PLANE!, BALL!…), so neither depends on colour.
+Every menu works with a keyboard alone, a gamepad alone, or touch alone. Every touch control keeps a touch target of
+at least 48 px, even at Small size. With Reduce effects on, the controls' ripple, trail and pulse animations stop.
+
+**Touch controller** (design: [docs/touch/design.md](docs/touch/design.md)): every control follows its own finger, so
+steering, drifting and using an item at once always works. The joystick keeps its finger even when the thumb slides
+off its side of the screen. Glass is "fake" (layered gradients, no blur, free) at every quality; real frosted blur is
+used only on High, and only while it costs no frames. If frame times rise, it crossfades back to fake glass.
+Tablets can race upright; phones race sideways.
 
 Saves: 3 save slots stored in this browser only (`localStorage`). They autosave and use a versioned format with
 migrations. There are no accounts, online play, chat, ads, purchases, tracking or external links.
@@ -90,7 +102,7 @@ migrations. There are no accounts, online play, chat, ads, purchases, tracking o
 | Key | What | Notes |
 |---|---|---|
 | `calexcart.slot.1` … `.3` | save slots | format v3 (adds Driving School medals; Frost Cup migration) |
-| `calexcart.settings` | settings | v2 (assist level, reduce effects, rumble, HUD size, controls card seen, playtest flag) |
+| `calexcart.settings` | settings | v3 (assist level, reduce effects, rumble, HUD size, controls card seen, playtest flag, touch controller: steering mode, joystick, size, opacity, hands, contrast, edited layouts) |
 | `calexcart.lastSlot` | last used slot | unchanged |
 | `calexcart.ghost.<slot>.<track>` | best-run ghost per track | now a compact `G2` format (~15.6 KB for a 4-minute run); older ghosts are converted at startup |
 | `calexcart.playtest` | **new**: playtest log | only when playtest mode is on; rolling buffer of about 100 KB |
@@ -117,6 +129,7 @@ npm run validate     # track validator: geometry + AI races on every track (add 
 npm run sim          # headless AI-vs-AI balance report → sim-report/balance.md
 npm run calibrate-staff   # re-time the staff ghosts (after any physics / AI / track change)
 npm run bench        # performance test on the built game (needs `npx vite preview --port 4173`)
+npm run bench-controls    # what the touch controls cost: none / fake glass / real blur × tiers × phone & tablet
 ```
 
 WebKit for the browser tests: `npx playwright install webkit` (once). All balance numbers live in one file,
@@ -262,7 +275,7 @@ Paints are two colours. Decals use one of the procedural patterns in `src/render
 
 ## Putting it on Ai Kids Games
 
-1. `npm run build`. Output: one file, `dist/index.html`, **about 1.21 MB** (the build fails at 2 MB).
+1. `npm run build`. Output: one file, `dist/index.html`, **about 1.25 MB** (the build fails at 2 MB).
 2. Copy `dist/index.html` to `public/games/calex-cart/index.html`. Copy `site/banner.svg` and
    `site/thumbnail.svg` next to it.
 3. **Recapture the site previews and cover art after this update.** The game now has a winter Frost Cup, a new

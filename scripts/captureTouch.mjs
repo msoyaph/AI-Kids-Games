@@ -40,6 +40,9 @@ for (const q of qualities) {
         a.saves.settings.touch = { ...a.saves.settings.touch, highContrast: hc };
         a.applySettings();
         a.gr.quality.setSetting(q);
+        // fast-forwarding to the shot janks frames, which would (rightly) switch blur off: pin the tier's look
+        a.input.touch.forceGlass = q === 'high' && !hc ? 'blur' : 'fake';
+        a.input.touch.setGlass(a.input.touch.forceGlass);
         a.startSession({ mode: 'versus', trackId: t, speedClass: 'pro', mirror: false, items: true, itemSet: 'all', laps: 3,
           players: [{ racerId: 'calex', kart: { body: 'zoomster', wheels: 'standard', glider: 'kite', paint: 'cherry', decal: 'stripes' }, source: { kind: 'any' } }],
           ai: ['pip', 'juno', 'mochi', 'grumbo', 'bo', 'fennel', 'luma'].map((id) => ({ racerId: id, kart: { body: 'bubble', wheels: 'standard', glider: 'kite', paint: 'ocean', decal: 'none' } })), seed: 1234, intro: false }, () => {});
@@ -62,7 +65,12 @@ for (const q of qualities) {
         knob.style.transform = `translate(${(tr * 0.7).toFixed(1)}px, ${(-tr * 0.12).toFixed(1)}px)`;
         knob.style.setProperty('--kx', '0.7');
         knob.style.setProperty('--ky', '-0.12');
-        tc.setRaceState(2, 'turbo3', false);
+        // (the race loop feeds the controls from the kart every frame, so set the kart — the sim is paused)
+        k.item = 'turbo3';
+        k.itemUses = 3;
+        k.rouletteTime = 0;
+        k.drifting = true;
+        k.driftTier = 2;
         document.querySelector('.tc-drift').classList.add('down');
         await sleep(420);
         return { glass: tc.glass, tier: a.gr.quality.level };

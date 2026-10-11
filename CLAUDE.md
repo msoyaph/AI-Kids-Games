@@ -127,7 +127,13 @@ Decisions: tablets may race in portrait, phones keep the rotate screen; vibratio
 - [x] Step 6 — accessibility: `.touch-controls.calm` (Reduce effects) = no ripple/trail/pulse/rolling animation and
   no knob glide; high contrast (`gc-hc`, solid fill, no blur); every touch target ≥ 48 px (button element = target,
   `.face` = visual; resize handles 48 px hit areas); drift tier = colour + chevrons + word badge; labels + aria.
-- [ ] Step 7 — tests, visual review, playtest fields, report
+- [x] Step 7 — tests: tests/unit/touch.test.ts (stick, solver on 5 viewports × sizes × hands, saved layouts),
+  tests/sim/touchAssist.test.ts, tests/e2e/touch.spec.ts (Chromium = real CDP multi-touch; WebKit = in-page
+  multi-pointer events; CDP gotcha: touchEnd ends ALL fingers → lifting one of several = touchMove without it),
+  Playwright projects `tablet-portrait` + `webkit-tablet-portrait`. Visual review: `scripts/captureTouch.mjs`
+  (20 tracks × 3 tiers, contact sheets) → fixes: frost painted over labels, item uses badge (`data-uses`).
+  Playtest: `PlaytestPlayer.touch` + `touchSummary` in the analyzer. Report: `docs/touch/REPORT.md` (+ final/
+  screenshots, FPS table from `npm run bench-controls -- --runs 3`).
 
 ## Upgrade in progress (branch `calex-upgrade` — do NOT merge into main without user approval)
 Plan: `/Users/cliffsumalpong/.claude/plans/modular-herding-pancake.md` (approved). Work Phase 0→10, commit per phase.
