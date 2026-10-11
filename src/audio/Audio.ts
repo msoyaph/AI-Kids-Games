@@ -1,74 +1,43 @@
 import { ENEMIES } from '../data/enemies';
 import { TOWERS, type TowerId } from '../data/towers';
 import { Ev, type GameEvent } from '../sim/events';
-import { mtof, MusicPlayer } from './music';
+import { musicIntensity, type IntensityInput } from './intensity';
+import { MIX } from './mix';
+import { MusicPlayer, THEME_TRACK, TRACKS } from './music';
+import { MIN_GAP, SFX, STINGER_DUCK, STINGERS, type SfxName, type StingerName } from './sfx';
+import { makeNoise, masterChain, Synth } from './synth';
 
 type UiSound = 'click' | 'back' | 'deny' | 'pick' | 'star';
 
-type Sfx =
-  | 'arrow'
-  | 'cannon'
-  | 'fire'
-  | 'water'
-  | 'nature'
-  | 'light'
-  | 'shadow'
-  | 'earth'
-  | 'poof'
-  | 'bigpoof'
-  | 'coin'
-  | 'leak'
-  | 'build'
-  | 'upgrade'
-  | 'sell'
-  | 'wave'
-  | 'clear'
-  | 'crystal'
-  | 'win'
-  | 'lose'
-  | 'boss'
-  | 'stun'
-  | 'heal'
-  | 'splash'
-  | UiSound;
-
-/** Minimum seconds between two plays of the same sound (keeps big fights pleasant). */
-const MIN_GAP: Partial<Record<Sfx, number>> = {
-  arrow: 0.06,
-  cannon: 0.09,
-  fire: 0.08,
-  water: 0.07,
-  nature: 0.07,
-  light: 0.07,
-  shadow: 0.09,
-  earth: 0.12,
-  poof: 0.045,
-  coin: 0.07,
-  splash: 0.08,
-  stun: 0.15,
-  heal: 0.3,
-};
-
-const MAX_VOICES = 22;
+const MAX_VOICES = 24;
+/** Music ducks to this level under long stingers. */
+const DUCK = 0.35;
 
 /**
  * Everything audible is synthesised here with the Web Audio API — no sound
  * files. Safe to call before unlock (calls are ignored until a gesture).
+ *
+ * Graph: sfx bus ─┐
+ *        music bus → duck ─┼→ master → glue compressor → limiter → speakers
+ *        stinger bus ──────┘ (stingers follow the music volume)
  */
 export class AudioEngine {
   musicVolume = 0.5;
   sfxVolume = 0.8;
   private ctx: AudioContext | null = null;
-  private master: GainNode | null = null;
   private musicGain: GainNode | null = null;
+  private duck: GainNode | null = null;
+  private stingerGain: GainNode | null = null;
   private sfxGain: GainNode | null = null;
-  private noise: AudioBuffer | null = null;
+  private sfxSyn: Synth | null = null;
+  private musicSyn: Synth | null = null;
   private music: MusicPlayer | null = null;
   private wantedTrack: string | null = null;
   private baseTrack: string | null = null;
-  private last = new Map<Sfx, number>();
-  private voices = 0;
+  private last = new Map<SfxName, number>();
   private bossAlive = 0;
+  private totalWaves = Infinity;
+  private wantedIntensity = 0.45;
 
   /** Must be called from a user gesture (iOS/Safari autoplay rules). */
   unlock(): void {
@@ -78,21 +47,21 @@ export class AudioEngine {
         if (!Ctor) return;
         const ctx = new Ctor({ latencyHint: 'interactive' });
         this.ctx = ctx;
-        this.master = ctx.createGain();
-        this.master.gain.value = 0.9;
-        const comp = ctx.createDynamicsCompressor();
-        comp.threshold.value = -14;
-        comp.ratio.value = 4;
-        this.master.connect(comp).connect(ctx.destination);
+        const master = masterChain(ctx);
         this.musicGain = ctx.createGain();
+        this.duck = ctx.createGain();
+        this.stingerGain = ctx.createGain();
         this.sfxGain = ctx.createGain();
-        this.musicGain.connect(this.master);
-        this.sfxGain.connect(this.master);
-        const len = ctx.sampleRate;
-        this.noise = ctx.createBuffer(1, len, ctx.sampleRate);
-        const d = this.noise.getChannelData(0);
-        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-        this.music = new MusicPlayer(ctx, this.musicGain, this.noise);
+        this.duck.connect(this.musicGain);
+        this.stingerGain.connect(this.musicGain);
+        this.musicGain.connect(master);
+        this.sfxGain.connect(master);
+        const noise = makeNoise(ctx);
+        // separate voice counts: busy music never starves sound effects
+        this.sfxSyn = new Synth(ctx, noise);
+        this.musicSyn = new Synth(ctx, noise);
+        this.music = new MusicPlayer(this.musicSyn, this.duck);
+        this.music.setIntensity(this.wantedIntensity);
         this.applyVolumes();
         // iOS: play one silent buffer inside the gesture
         const s = ctx.createBufferSource();
@@ -117,14 +86,35 @@ export class AudioEngine {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     // perceptual curve
-    this.musicGain?.gain.setTargetAtTime(Math.pow(this.musicVolume, 1.6) * 0.55, t, 0.05);
+    this.musicGain?.gain.setTargetAtTime(Math.pow(this.musicVolume, 1.6) * 0.6, t, 0.05);
     this.sfxGain?.gain.setTargetAtTime(Math.pow(this.sfxVolume, 1.4) * 0.8, t, 0.05);
   }
 
+  /** Menu music (title theme at a gentle intensity). */
   playMusic(track: string): void {
     this.baseTrack = track;
     this.bossAlive = 0;
+    this.setIntensity(0.45);
     this.switchTrack(track);
+  }
+
+  /** Match music: the map's world track, adaptive from here on. */
+  beginRun(theme: string, totalWaves: number): void {
+    this.totalWaves = totalWaves;
+    this.baseTrack = THEME_TRACK[theme] ?? 'reach';
+    this.bossAlive = 0;
+    this.setIntensity(0.12);
+    this.switchTrack(this.baseTrack);
+  }
+
+  /** Called a few times a second by the game screen. */
+  updateMatch(s: Omit<IntensityInput, 'bossAlive' | 'totalWaves'>): void {
+    this.setIntensity(musicIntensity({ ...s, totalWaves: this.totalWaves, bossAlive: this.bossAlive > 0 }));
+  }
+
+  private setIntensity(x: number): void {
+    this.wantedIntensity = x;
+    this.music?.setIntensity(x);
   }
 
   private switchTrack(track: string): void {
@@ -160,7 +150,7 @@ export class AudioEngine {
         if (!def) return;
         if (def.id === 'arrow') this.play('arrow');
         else if (def.id === 'cannon') this.play('cannon');
-        else this.play(def.elements[0] as Sfx);
+        else this.play(def.elements[0] as SfxName);
         break;
       }
       case Ev.Chain:
@@ -172,18 +162,25 @@ export class AudioEngine {
       case Ev.Splash:
         if (e.kind === 'flare' || e.kind === 'lava') this.play('splash');
         break;
+      case Ev.Crit:
+        this.play('crit');
+        break;
+      case Ev.ShieldBlock:
+        this.play('shield');
+        break;
+      case Ev.BarrierBreak:
+        this.play('barrier');
+        break;
       case Ev.Kill: {
         const boss = ENEMIES[e.kind as keyof typeof ENEMIES]?.boss;
         this.play(boss ? 'bigpoof' : 'poof');
         if (e.value >= 3 || boss) this.play('coin');
-        if (boss && --this.bossAlive <= 0 && this.baseTrack) {
-          this.bossAlive = 0;
-          this.switchTrack(this.baseTrack);
-        }
+        if (boss) this.bossGone();
         break;
       }
       case Ev.Leak:
         this.play('leak');
+        if (ENEMIES[e.kind as keyof typeof ENEMIES]?.boss) this.bossGone();
         break;
       case Ev.Build:
         this.play('build');
@@ -195,27 +192,73 @@ export class AudioEngine {
         this.play('sell');
         break;
       case Ev.WaveStart:
-        this.play('wave');
+        // boss waves get the boss stinger when the boss itself appears
+        if (e.kind) break;
+        this.sting(e.value >= this.totalWaves ? 'final' : 'wave');
         break;
       case Ev.WaveClear:
         this.play('clear');
         break;
       case Ev.Crystal:
       case Ev.ElementPicked:
-        this.play('crystal');
+        this.sting('core');
         break;
-      case Ev.BossSpawn:
-        this.play('boss');
+      case Ev.BossSpawn: {
+        this.sting('boss');
         this.bossAlive++;
-        this.switchTrack('boss');
+        const theme = `boss.${e.kind}`;
+        this.switchTrack(TRACKS[theme] ? theme : 'boss.grumbleking');
+        break;
+      }
+      case Ev.BossPhase:
+        this.sting('phase');
+        break;
+      case Ev.Warn:
+        this.play('warn');
+        break;
+      case Ev.Disable:
+        this.play('disable');
+        break;
+      case Ev.Burrow:
+        if (e.value === 1) this.play('burrow');
+        break;
+      case Ev.Teleport:
+        this.play('teleport');
+        break;
+      case Ev.HeroFire:
+        this.play('herofire');
+        break;
+      case Ev.HeroSpecial:
+        this.play('herospecial');
+        break;
+      case Ev.HeroDown:
+        this.play('herodown');
+        break;
+      case Ev.HeroRespawn:
+        this.play('herorespawn');
+        break;
+      case Ev.HeroLevel:
+        this.sting('level');
+        break;
+      case Ev.Ability:
+        this.play('ability');
+        break;
+      case Ev.Meteor:
+        this.play('meteor');
+        break;
+      case Ev.Mutator:
+      case Ev.Terrain:
+        this.sting('alert');
         break;
       case Ev.Victory:
-        this.music?.stop();
-        this.play('win');
+        this.music?.stop(0.4);
+        this.wantedTrack = null;
+        this.sting('victory');
         break;
       case Ev.Defeat:
-        this.music?.stop();
-        this.play('lose');
+        this.music?.stop(0.4);
+        this.wantedTrack = null;
+        this.sting('defeat');
         break;
       case Ev.Stun:
         this.play('stun');
@@ -226,173 +269,40 @@ export class AudioEngine {
     }
   }
 
-  // ---------------------------------------------------------------- synthesis
+  /** A boss was destroyed or got through: back to the world track once none are left. */
+  private bossGone(): void {
+    if (--this.bossAlive > 0) return;
+    this.bossAlive = 0;
+    if (this.baseTrack && this.wantedTrack) this.switchTrack(this.baseTrack);
+  }
 
-  private play(name: Sfx): void {
+  // ---------------------------------------------------------------- playback
+
+  private play(name: SfxName): void {
     const c = this.ctx;
-    if (!c || c.state !== 'running' || this.sfxVolume <= 0.001) return;
+    const syn = this.sfxSyn;
+    if (!c || !syn || c.state !== 'running' || this.sfxVolume <= 0.001) return;
     const now = c.currentTime;
     const gap = MIN_GAP[name] ?? 0.03;
     if (now - (this.last.get(name) ?? -1) < gap) return;
-    if (this.voices >= MAX_VOICES) return;
+    if (syn.voices >= MAX_VOICES) return;
     this.last.set(name, now);
-    const t = now + 0.005;
-    switch (name) {
-      case 'arrow':
-        this.osc('triangle', 1100, 520, t, 0.07, 0.12);
-        this.burst(t, 0.03, 3000, 0.06, 'highpass');
-        break;
-      case 'cannon':
-        this.osc('sine', 180, 55, t, 0.18, 0.35);
-        this.burst(t, 0.1, 900, 0.18, 'lowpass');
-        break;
-      case 'fire':
-        this.burst(t, 0.18, 1200, 0.16, 'bandpass', 400);
-        this.osc('sawtooth', 220, 110, t, 0.12, 0.05);
-        break;
-      case 'water':
-        this.osc('sine', 380, 900, t, 0.1, 0.2);
-        break;
-      case 'nature':
-        this.osc('triangle', 660, 640, t, 0.09, 0.14);
-        this.osc('triangle', 990, 980, t + 0.03, 0.07, 0.07);
-        break;
-      case 'light':
-        this.osc('square', 1600, 2400, t, 0.06, 0.06);
-        this.osc('sine', 2400, 1200, t, 0.08, 0.08);
-        break;
-      case 'shadow':
-        this.osc('sine', 300, 140, t, 0.2, 0.2, 7);
-        break;
-      case 'earth':
-        this.osc('sine', 110, 40, t, 0.22, 0.4);
-        this.burst(t, 0.12, 400, 0.18, 'lowpass');
-        break;
-      case 'poof':
-        this.osc('sine', 520, 1250, t, 0.08, 0.16);
-        this.osc('triangle', 1760, 1760, t + 0.04, 0.06, 0.05);
-        break;
-      case 'bigpoof':
-        this.burst(t, 0.4, 2500, 0.3, 'lowpass');
-        this.notes([60, 64, 67, 72, 76], t, 0.08, 'triangle', 0.18);
-        break;
-      case 'coin':
-        this.osc('square', mtof(83), mtof(83), t, 0.05, 0.06);
-        this.osc('square', mtof(88), mtof(88), t + 0.05, 0.14, 0.06);
-        break;
-      case 'leak':
-        this.osc('triangle', 520, 180, t, 0.4, 0.22);
-        break;
-      case 'build':
-        this.osc('sine', 300, 600, t, 0.08, 0.25);
-        this.osc('triangle', mtof(79), mtof(79), t + 0.07, 0.12, 0.1);
-        break;
-      case 'upgrade':
-        this.notes([67, 71, 74, 79], t, 0.06, 'triangle', 0.16);
-        break;
-      case 'sell':
-        this.notes([84, 79, 76], t, 0.05, 'square', 0.06);
-        break;
-      case 'wave':
-        this.notes([60, 67], t, 0.12, 'square', 0.09);
-        break;
-      case 'clear':
-        this.notes([72, 76, 79, 84], t, 0.07, 'triangle', 0.14);
-        break;
-      case 'crystal':
-        this.notes([79, 83, 86, 91, 95], t, 0.06, 'sine', 0.18);
-        break;
-      case 'win':
-        this.notes([60, 64, 67, 72, 67, 72, 76, 79, 84], t, 0.11, 'square', 0.11);
-        this.notes([48, 55, 60], t, 0.33, 'triangle', 0.15);
-        break;
-      case 'lose':
-        this.notes([67, 64, 60, 55], t, 0.22, 'triangle', 0.16);
-        break;
-      case 'boss':
-        this.osc('sawtooth', 90, 45, t, 0.6, 0.25);
-        this.burst(t, 0.5, 300, 0.25, 'lowpass');
-        break;
-      case 'stun':
-        this.osc('sine', 1500, 1200, t, 0.1, 0.08, 18);
-        break;
-      case 'heal':
-        this.notes([76, 81], t, 0.08, 'sine', 0.08);
-        break;
-      case 'splash':
-        this.burst(t, 0.3, 1500, 0.22, 'lowpass');
-        this.osc('sine', 200, 60, t, 0.25, 0.25);
-        break;
-      case 'click':
-        this.osc('triangle', 900, 700, t, 0.04, 0.1);
-        break;
-      case 'back':
-        this.osc('triangle', 600, 450, t, 0.05, 0.1);
-        break;
-      case 'deny':
-        this.osc('square', 200, 160, t, 0.12, 0.07);
-        break;
-      case 'pick':
-        this.notes([72, 79, 84], t, 0.07, 'triangle', 0.16);
-        break;
-      case 'star':
-        this.notes([84, 88, 91, 96], t, 0.08, 'sine', 0.16);
-        break;
+    SFX[name](syn, this.sfxGain!, now + 0.005, MIX.sfx[name] ?? 1);
+  }
+
+  /** A musical phrase in the current key; long ones duck the music under them. */
+  private sting(name: StingerName): void {
+    const c = this.ctx;
+    const syn = this.musicSyn;
+    if (!c || !syn || c.state !== 'running' || this.musicVolume <= 0.001) return;
+    const t = c.currentTime + 0.01;
+    STINGERS[name](syn, this.stingerGain!, t, this.music?.root ?? 62, MIX.stingers[name] ?? 1);
+    const hold = STINGER_DUCK[name];
+    if (hold && this.duck) {
+      const g = this.duck.gain;
+      g.cancelScheduledValues(t);
+      g.setTargetAtTime(DUCK, t, 0.05);
+      g.setTargetAtTime(1, t + hold, 0.4);
     }
-  }
-
-  private track(node: AudioScheduledSourceNode): void {
-    this.voices++;
-    node.onended = () => {
-      this.voices--;
-    };
-  }
-
-  /** Oscillator with pitch sweep and a quick envelope. `wobble` adds vibrato (Hz). */
-  private osc(type: OscillatorType, f0: number, f1: number, t: number, dur: number, vol: number, wobble = 0): void {
-    const c = this.ctx!;
-    const o = c.createOscillator();
-    const g = c.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(f0, t);
-    o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
-    if (wobble) {
-      const lfo = c.createOscillator();
-      const lg = c.createGain();
-      lfo.frequency.value = wobble;
-      lg.gain.value = f0 * 0.08;
-      lfo.connect(lg).connect(o.frequency);
-      lfo.start(t);
-      lfo.stop(t + dur + 0.05);
-    }
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(this.sfxGain!);
-    o.start(t);
-    o.stop(t + dur + 0.02);
-    this.track(o);
-  }
-
-  /** Filtered noise burst. */
-  private burst(t: number, dur: number, freq: number, vol: number, type: BiquadFilterType, sweepTo?: number): void {
-    const c = this.ctx!;
-    const s = c.createBufferSource();
-    s.buffer = this.noise;
-    const f = c.createBiquadFilter();
-    f.type = type;
-    f.frequency.setValueAtTime(freq, t);
-    if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t + dur);
-    const g = c.createGain();
-    g.gain.setValueAtTime(vol, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    s.connect(f).connect(g).connect(this.sfxGain!);
-    s.start(t, Math.random() * 0.6);
-    s.stop(t + dur + 0.02);
-    this.track(s);
-  }
-
-  private notes(midis: number[], t: number, step: number, type: OscillatorType, vol: number): void {
-    midis.forEach((m, i) => this.osc(type, mtof(m), mtof(m), t + i * step, step * 1.6, vol));
   }
 }

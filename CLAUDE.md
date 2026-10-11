@@ -14,6 +14,8 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
 - `npm run perf` — `scripts/perf.mjs`: boot + `?stress=300` frame times on throttled profiles → `perf-results/`.
   Uses `channel: 'chromium'` for the REAL GPU; Playwright's default headless shell is SwiftShader (software GL).
 - `npm run check:dist` — file:// smoke check (no console errors / external requests).
+- `npm run audio:levels [-- --write]` — mixing pass (~2 min): Vite dev server + Chromium render every track /
+  stinger / SFX offline, print peak + LUFS, `--write` regenerates `src/audio/mix.ts`. Re-run after audio changes.
 - Dev tools: `scripts/shot.mjs <url> <out.png> [w h setup.js waitMs --touch]` (screenshots; the in-app browser pane
   throttles rAF to ~3 fps, so use this for visual checks), `scripts/cpuprofile.mjs [throttle secs]` (top self-time
   functions on the built game), `scripts/simdebug.ts` (per-wave bot trace), `scripts/simmap.ts` (ASCII of bot maze),
@@ -52,7 +54,10 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
 - `src/app` — `App.ts` (screens, ticker, quality), `GameScreen.ts` (loop, input, modals, touch ✓/✕ confirm),
   `flow.ts` (navigation, unlock rules, briefing, endless, run bookkeeping), `tutorial.ts`, `achievements.ts`,
   `save.ts` (versioned + migrations, try/catch, in-memory fallback), `stress.ts`, `screens/`.
-- `src/audio` — `Audio.ts` (SFX, rate limits, unlock on gesture incl. iOS touchend), `music.ts` (lookahead sequencer).
+- `src/audio` — `Audio.ts` (engine: buses, rate limits, unlock on gesture incl. iOS touchend, event → sound),
+  `synth.ts` (`Synth` voices usable on live or Offline contexts, deterministic noise, `masterChain`),
+  `music.ts` (tracks + boss themes, 3-layer lookahead sequencer), `sfx.ts` (`SFX`, `STINGERS` as data),
+  `intensity.ts`, `mix.ts` (generated gains), `offline.ts` (level metering; script-only, never imported by the game).
 
 ## Rules
 - Never allocate in sim/render hot loops (pools, swap-remove, cached strings/textures, scratch objects).
@@ -118,6 +123,18 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   theme errors). `checkWorkshop` rules (castle 2×2 ≤2, spawns ≤4, gate pair, path, ≥24 build, route ≥8);
   `WorkshopBotRun` = time-sliced good-bot run on Normal (required before sharing). ≤10 slots in
   `save.workshop` (code + validated). Game mode `workshop` (no records).
+- Phase 10 done: audio. Hybrid-epic tracks per world (`THEME_TRACK`: reach/wastes/frost/deep/skyforge/rift +
+  title) and a theme per boss (`boss.<enemyId>`), each with calm / action / intense layers that fade with
+  `musicIntensity()` (progress, enemy count, low lives, boss alive; final wave ≥ 0.85; GameScreen feeds it every
+  10 frames via `audio.updateMatch`). Track switches crossfade. Stingers in the current key on the music bus
+  (wave/final/boss/phase/victory/defeat/core/level/alert); long ones duck the music. SFX for every new event
+  (crit, shields, barriers, telegraphs, disables, burrow, gates, hero, abilities, meteor). Master: glue
+  compressor → limiter → soft-clip waveshaper (Web Audio compressors add makeup gain; the shaper guarantees
+  < −0.2 dBFS; `oversample` must stay 'none' — its filters overshoot). Separate `Synth` per bus (voice caps).
+  Mix targets: tracks −18 LUFS at full intensity (calm ≈ −22.5), stingers −16 (400 ms), SFX levelled around
+  their median by 100 ms "punch" loudness with group offsets (shots −2, light −3, hits +2, big events +6).
+  Worst-case busy fight (boss theme + every combat SFX): −21.8 LUFS / −0.2 dBFS peak at default volumes.
+  Boss themes end when the last boss is destroyed OR leaks (`bossGone`).
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

@@ -76,6 +76,7 @@ export class GameScreen implements Screen, HudHost {
   paused = false;
   private gestures: Gestures | null = null;
   private acc = 0;
+  private musicTick = 0;
   private ghost: { cx: number; cy: number } | null = null;
   private confirmEl: HTMLElement | null = null;
   private modal: ModalHandle | null = null;
@@ -177,7 +178,7 @@ export class GameScreen implements Screen, HudHost {
       for (const el of this.hud.el.querySelectorAll('.hud-top, .drawer')) ro.observe(el);
       this.cleanup.push(() => ro.disconnect());
     }
-    this.app.audio.playMusic(this.opts.map.theme);
+    this.app.audio.beginRun(this.opts.map.theme, this.game.totalWaves);
     // Read-only hook for automated tests (state + where a map cell is on screen).
     const g = this.game;
     (window as unknown as Record<string, unknown>).__vanexTest = {
@@ -246,6 +247,12 @@ export class GameScreen implements Screen, HudHost {
     this.profile.viewMs += (t2 - t1 - this.profile.viewMs) * 0.1;
     this.updateConfirm();
     this.hud.update();
+    if (running && ++this.musicTick >= 10) {
+      // adaptive music: progress, crowd and danger set the layers
+      this.musicTick = 0;
+      const g = this.game;
+      this.app.audio.updateMatch({ wave: g.waveNum, enemies: g.enemies.length, lives: g.lives, maxLives: g.maxLives });
+    }
     for (const fn of this.frameListeners) fn(dt);
     if (running) this.app.achievements.tick(dt, this.game, this.opts.mode);
     if (this.game.state !== 'playing' && !this.ended) this.finish();
