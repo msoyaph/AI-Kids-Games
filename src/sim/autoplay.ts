@@ -1,7 +1,7 @@
 import { counterOf, ELEMENT_ORDER, type ElementId } from '../data/elements';
 import type { Difficulty } from '../data/difficulty';
 import type { MapDef } from '../data/maps/types';
-import { comboFor, ELEMENT_TOWERS, MAX_LEVEL, TOWERS, type TowerId, type TowerStats } from '../data/towers';
+import { comboFor, ELEMENT_TOWERS, MAX_LEVEL, statsFor, TOWERS, type TowerId, type TowerStats } from '../data/towers';
 import type { Tower } from './entities';
 import { DT, Game, type GameMode } from './Game';
 import { F_WALK } from './grid';
@@ -18,7 +18,21 @@ export interface BotOptions {
 function power(st: TowerStats): number {
   const hits = (st.shots ?? 1) * (1 + (st.chain ?? 0) * 0.7) * (st.splash ? 1.6 : 1);
   const control = (st.slow ? 1 + st.slow : 1) * (st.stunChance ? 1.2 : 1) * (st.auraRate ? 1.4 : 1);
-  return (st.damage * st.rate * hits + (st.burnDps ?? 0) + (st.poisonDps ?? 0) * 1.5 + (st.zoneDps ?? 0)) * control;
+  const crit = 1 + (st.critChance ?? 0) * ((st.critMult ?? 2) - 1);
+  const extra = (st.bossMult ? 1 + (st.bossMult - 1) * 0.3 : 1) * (st.airMult ? 1 + (st.airMult - 1) * 0.3 : 1) * (st.wardBreak ? 1.1 : 1);
+  return (st.damage * st.rate * hits * crit + (st.burnDps ?? 0) + (st.poisonDps ?? 0) * 1.5 + (st.zoneDps ?? 0)) * control * extra;
+}
+
+/** The specialization path the bot takes at level 3 (best L3 + L4 power). */
+function bestSpec(t: Tower): 0 | 1 {
+  const specs = t.def.specs!;
+  const score = (i: 0 | 1): number => power(specs[i].levels[0]) + 0.5 * power(specs[i].levels[1]);
+  return score(1) > score(0) ? 1 : 0;
+}
+
+/** Stats a tower would have after its next upgrade (taking the bot's spec choice). */
+function nextStats(g: Game, t: Tower): TowerStats {
+  return g.needsSpec(t) ? t.def.specs![bestSpec(t)].levels[0] : statsFor(t.def, t.level + 1, t.spec);
 }
 
 /** Combo preference (strong all-rounders first). */
@@ -143,12 +157,12 @@ export class AutoPlayer {
       if (want && g.towers.length < 6) buildValue *= 3;
       const up = this.bestUpgrade();
       const upCost = up ? g.upgradeCost(up) : Infinity;
-      const upValue = up ? (power(up.def.levels[up.level]!) - power(up.stats)) / upCost : 0;
+      const upValue = up ? (power(nextStats(g, up)) - power(up.stats)) / upCost : 0;
       if (want && buildValue >= upValue) {
         if (g.coins < buildCost || !this.place(want)) break;
       } else if (up) {
         if (g.coins < upCost) break;
-        g.upgrade(up);
+        g.upgrade(up, g.needsSpec(up) ? bestSpec(up) : undefined);
       } else break;
     }
   }
@@ -192,7 +206,7 @@ export class AutoPlayer {
     let bestScore = -1;
     for (const t of this.g.towers) {
       if (t.level >= MAX_LEVEL) continue;
-      const gain = power(t.def.levels[t.level]!) - power(t.stats);
+      const gain = power(nextStats(this.g, t)) - power(t.stats);
       // towers that actually see action are worth more
       const score = (gain / this.g.upgradeCost(t)) * (1 + Math.min(2, t.kills / 20));
       if (score > bestScore) {

@@ -1,6 +1,6 @@
 import { css, darken, lighten, mixColor } from '../../core/math';
 import { ELEMENTS } from '../../data/elements';
-import type { TowerDef } from '../../data/towers';
+import type { SpecLook, TowerDef } from '../../data/towers';
 import { circle, elementIcon, type Ctx } from './paint';
 import {
   chamferPoly,
@@ -111,7 +111,7 @@ function hub(ctx: Ctx, r: number, color: number, sides = 6): void {
  * Tower "head". Rotating heads face +x (angle 0); the renderer rotates them
  * toward targets. Bigger and more ornate at higher levels.
  */
-export function drawTowerHead(ctx: Ctx, def: TowerDef, level: number): void {
+export function drawTowerHead(ctx: Ctx, def: TowerDef, level: number, spec = -1): void {
   const S = TOWER_HEAD_SIZE;
   const k = 0.82 + level * 0.06;
   ctx.save();
@@ -124,6 +124,10 @@ export function drawTowerHead(ctx: Ctx, def: TowerDef, level: number): void {
   const e1 = els[1] ?? els[0];
   const c0 = e0?.color ?? acc;
   const c1 = e1?.color ?? acc;
+  const sp = spec >= 0 && level >= 3 ? def.specs?.[spec] : undefined;
+  // path A glows in the element colour, path B in the tower's accent
+  const spCol = spec === 1 ? mixColor(acc, 0xf4fbff, 0.45) : lighten(c0, 0.1);
+  if (sp) drawSpecUnder(ctx, sp.look, spCol, level);
 
   switch (def.look.shape) {
     case 'post': {
@@ -474,6 +478,7 @@ export function drawTowerHead(ctx: Ctx, def: TowerDef, level: number): void {
     }
   }
 
+  if (sp) drawSpecOver(ctx, sp.look, spCol, level, def.rotates);
   if (level >= 4) {
     glint(ctx, -12, -14, 5, 0.95);
     glint(ctx, 13, -10, 3.5, 0.8);
@@ -481,8 +486,99 @@ export function drawTowerHead(ctx: Ctx, def: TowerDef, level: number): void {
   ctx.restore();
 }
 
+/** Spec silhouette parts drawn behind the head (collars, rings). */
+function drawSpecUnder(ctx: Ctx, look: SpecLook, col: number, level: number): void {
+  switch (look) {
+    case 'bastion': {
+      // heavy armoured collar with studs
+      chamferPoly(ctx, 0, 0, 6, 24, 5, Math.PI / 6);
+      ctx.fillStyle = metalGradient(ctx, -24, -24, 24, 24, TECH.steel);
+      ctx.fill();
+      strokePath(ctx, TECH.ink, 2);
+      chamferPoly(ctx, 0, 0, 6, 21, 4, Math.PI / 6);
+      strokePath(ctx, col, 1.6, 0.9);
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        rivet(ctx, Math.cos(a) * 21, Math.sin(a) * 21, 2.2);
+      }
+      break;
+    }
+    case 'halo': {
+      // segmented energy ring
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 3; i++) {
+        const a0 = (i / 3) * Math.PI * 2 + 0.25;
+        ctx.beginPath();
+        ctx.arc(0, 0, 23, a0, a0 + 1.5);
+        ctx.strokeStyle = css(col, 0.35);
+        ctx.lineWidth = 7;
+        ctx.stroke();
+        ctx.strokeStyle = css(lighten(col, 0.4));
+        ctx.lineWidth = 2.4;
+        ctx.stroke();
+      }
+      break;
+    }
+    default:
+      if (level >= 4) runeRing(ctx, 0, 0, 22, col, 10, 1.2, 0.6);
+  }
+}
+
+/** Spec silhouette parts drawn on top of the head (lances, arrays, crowns). */
+function drawSpecOver(ctx: Ctx, look: SpecLook, col: number, level: number, rotates: boolean): void {
+  const big = level >= 4 ? 1.15 : 1;
+  switch (look) {
+    case 'lance': {
+      if (rotates) {
+        crystal(ctx, 25, 0, 28 * big, 7, 0, col, 1.5);
+        energyCore(ctx, 38 * big, 0, 3, lighten(col, 0.5), 2.4);
+      } else {
+        crystal(ctx, 0, -17, 26 * big, 8, -Math.PI / 2, col, 1.5);
+        for (const s of [-1, 1]) crystal(ctx, s * 9, -8, 10, 3.5, -Math.PI / 2 + s * 0.45, darken(col, 0.1), 1.1);
+        energyCore(ctx, 0, -26 * big, 2.6, lighten(col, 0.5), 2.2);
+      }
+      break;
+    }
+    case 'array': {
+      const base = rotates ? 0 : -Math.PI / 2;
+      for (const d of [-0.7, 0, 0.7]) {
+        const a = base + d;
+        crystal(ctx, Math.cos(a) * 19, Math.sin(a) * 19, 15 * big, 5, a, col, 1.3);
+        energyCore(ctx, Math.cos(a) * (26 + 3 * big), Math.sin(a) * (26 + 3 * big), 1.8, lighten(col, 0.5), 2);
+      }
+      break;
+    }
+    case 'halo': {
+      for (let i = 0; i < 3; i++) {
+        const a = (i / 3) * Math.PI * 2 - Math.PI / 2;
+        crystal(ctx, Math.cos(a) * 23, Math.sin(a) * 23, 9 * big, 4, a, lighten(col, 0.2), 1.1);
+      }
+      break;
+    }
+    case 'flare': {
+      // crown of flame-crystals over the top half
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI * 0.85 + (i / 4) * Math.PI * 0.7;
+        crystal(ctx, Math.cos(a) * 15, Math.sin(a) * 15, (i === 2 ? 13 : 9) * big, 4, a, i % 2 ? lighten(col, 0.25) : col, 1.1);
+      }
+      energyCore(ctx, 0, 0, 3.5, lighten(col, 0.3), 2.6);
+      break;
+    }
+    case 'bastion': {
+      // short armoured prongs
+      for (const s of [-1, 1]) {
+        chamferRect(ctx, s * 13 - 3, -15, 6, 9, 1.5);
+        ctx.fillStyle = metalGradient(ctx, -3, -15, 3, -6, TECH.steelLight);
+        ctx.fill();
+        strokePath(ctx, TECH.ink, 1.2);
+      }
+      break;
+    }
+  }
+}
+
 /** A full composite tower icon (base + head) for the DOM UI. */
-export function drawTowerIcon(ctx: Ctx, def: TowerDef, level: number, size: number): void {
+export function drawTowerIcon(ctx: Ctx, def: TowerDef, level: number, size: number, spec = -1): void {
   const k = size / TOWER_BASE_SIZE;
   ctx.save();
   ctx.scale(k, k);
@@ -493,6 +589,6 @@ export function drawTowerIcon(ctx: Ctx, def: TowerDef, level: number, size: numb
     ctx.rotate(-Math.PI / 4);
     ctx.translate(-TOWER_HEAD_SIZE / 2, -TOWER_HEAD_SIZE / 2);
   }
-  drawTowerHead(ctx, def, level);
+  drawTowerHead(ctx, def, level, spec);
   ctx.restore();
 }

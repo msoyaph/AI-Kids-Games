@@ -1,7 +1,7 @@
 import { CanvasSource, Rectangle, Texture } from 'pixi.js';
 import { ELEMENT_ORDER, ELEMENTS, type ElementId } from '../../data/elements';
 import { ENEMIES, ENEMY_IDS, type EnemyDef } from '../../data/enemies';
-import { TOWER_IDS, TOWERS, type ProjectileStyle } from '../../data/towers';
+import { SPEC_LEVEL, TOWER_IDS, TOWERS, type ProjectileStyle, type TowerId } from '../../data/towers';
 import { AtlasBuilder, frameToCanvas, type BakedAtlas } from './packer';
 import { drawEnemy, drawShield, enemyBox } from './drawEnemies';
 import {
@@ -44,7 +44,9 @@ export interface Atlas {
 export const enemyTexName = (id: string, el: ElementId | null, frame = 0): string =>
   `e_${id}${el ? '_' + el : ''}${frame ? '_f' + frame : ''}`;
 export const towerBaseName = (id: string, lv: number): string => `tb_${id}_${lv}`;
-export const towerHeadName = (id: string, lv: number): string => `th_${id}_${lv}`;
+/** Head texture; levels 3–4 of element/combo towers depend on the chosen spec (no spec yet = path A look). */
+export const towerHeadName = (id: TowerId, lv: number, spec = -1): string =>
+  lv >= SPEC_LEVEL && TOWERS[id].specs ? `th_${id}_${lv}_s${spec === 1 ? 1 : 0}` : `th_${id}_${lv}`;
 export const projectileName = (s: ProjectileStyle): string => `p_${s}`;
 
 function addEnemy(b: AtlasBuilder, def: EnemyDef, el: ElementId | null): void {
@@ -68,7 +70,9 @@ export function registerSprites(b: AtlasBuilder): void {
     const def = TOWERS[id];
     for (let lv = 1; lv <= 4; lv++) {
       b.add({ name: towerBaseName(id, lv), w: TOWER_BASE_SIZE, h: TOWER_BASE_SIZE, draw: (ctx) => drawTowerBase(ctx, def, lv) });
-      b.add({ name: towerHeadName(id, lv), w: TOWER_HEAD_SIZE, h: TOWER_HEAD_SIZE, draw: (ctx) => drawTowerHead(ctx, def, lv) });
+      if (lv >= SPEC_LEVEL && def.specs) {
+        for (const sp of [0, 1]) b.add({ name: towerHeadName(id, lv, sp), w: TOWER_HEAD_SIZE, h: TOWER_HEAD_SIZE, draw: (ctx) => drawTowerHead(ctx, def, lv, sp) });
+      } else b.add({ name: towerHeadName(id, lv), w: TOWER_HEAD_SIZE, h: TOWER_HEAD_SIZE, draw: (ctx) => drawTowerHead(ctx, def, lv) });
     }
   }
   // Enemies (+ element variants)
@@ -176,14 +180,14 @@ export function atlasIconUrl(atlas: Atlas, name: string, sizePx = 96): string {
 }
 
 /** Composite tower portrait (base + head) as a data URL. */
-export function towerIconUrl(id: keyof typeof TOWERS, level = 1, sizePx = 96): string {
-  const key = `tower_${id}_${level}@${sizePx}`;
+export function towerIconUrl(id: keyof typeof TOWERS, level = 1, sizePx = 96, spec = -1): string {
+  const key = `tower_${id}_${level}_${spec}@${sizePx}`;
   let url = iconCache.get(key);
   if (!url) {
     const c = document.createElement('canvas');
     c.width = c.height = sizePx;
     const ctx = c.getContext('2d')!;
-    drawTowerIcon(ctx, TOWERS[id], level, sizePx);
+    drawTowerIcon(ctx, TOWERS[id], level, sizePx, level >= SPEC_LEVEL ? Math.max(0, spec) : -1);
     url = c.toDataURL('image/png');
     iconCache.set(key, url);
   }

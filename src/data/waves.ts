@@ -168,3 +168,25 @@ export function wavePreview(w: WaveDef): { enemy: EnemyId; count: number; elemen
   }
   return out;
 }
+
+export interface WaveIntelRow {
+  enemy: EnemyId;
+  count: number;
+  /** Distinct element affinities in this group (empty = plain). */
+  elements: ElementId[];
+  /** Ward elements (warded sentinels). */
+  shields: ElementId[];
+}
+
+/** Per-type breakdown of a wave for the wave-intel panel (bosses' children not included). */
+export function waveIntel(w: WaveDef): WaveIntelRow[] {
+  const out: WaveIntelRow[] = [];
+  for (const g of w.groups) {
+    let row = out.find((r) => r.enemy === g.enemy);
+    if (!row) out.push((row = { enemy: g.enemy, count: 0, elements: [], shields: [] }));
+    row.count += g.count;
+    for (const e of g.elements ?? []) if (e && !row.elements.includes(e)) row.elements.push(e);
+    for (const e of g.shields ?? []) if (!row.shields.includes(e)) row.shields.push(e);
+  }
+  return out;
+}

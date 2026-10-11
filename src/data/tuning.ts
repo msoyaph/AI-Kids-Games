@@ -8,7 +8,7 @@
  */
 import type { Difficulty } from './difficulty';
 import type { EnemyId } from './enemies';
-import type { ProjectileStyle, TowerId, TowerStats } from './towers';
+import type { ProjectileStyle, SpecLook, TowerId, TowerStats } from './towers';
 
 // ------------------------------------------------------------------ helpers
 
@@ -213,6 +213,123 @@ const TOWER_LEVELS: Record<TowerId, TowerStats[]> = {
   ),
 };
 
+// ------------------------------------------------------------------ specializations
+
+type NumKey = { [K in keyof TowerStats]-?: TowerStats[K] extends number | undefined ? K : never }[keyof TowerStats];
+
+/** A level-3 path: multiplies, adds to or sets stats on top of the tower's base L3/L4 numbers. */
+export interface SpecMod {
+  key: string;
+  look: SpecLook;
+  mul?: Partial<Record<NumKey, number>>;
+  add?: Partial<Record<NumKey, number>>;
+  set?: Partial<TowerStats>;
+}
+
+export type SpecTowerId = Exclude<TowerId, 'arrow' | 'cannon'>;
+
+const CAPS: Partial<Record<NumKey, number>> = { slow: 0.75, zoneSlow: 0.75, critChance: 0.8, stunChance: 1, armorBreak: 0.8 };
+
+/** Apply a spec to one level's stats (cost unchanged). */
+export function applySpec(base: TowerStats, m: SpecMod): TowerStats {
+  const out: TowerStats = { ...base };
+  const o = out as unknown as Record<string, number>;
+  for (const [k, v] of Object.entries(m.mul ?? {})) if (o[k] !== undefined) o[k] = Math.round(o[k]! * v! * 100) / 100;
+  for (const [k, v] of Object.entries(m.add ?? {})) o[k] = Math.round(((o[k] ?? 0) + v!) * 100) / 100;
+  Object.assign(out, m.set ?? {});
+  for (const [k, cap] of Object.entries(CAPS)) if (o[k] !== undefined) o[k] = Math.min(cap!, Math.max(0, o[k]!));
+  if (out.chain !== undefined) out.chain = Math.max(0, Math.round(out.chain));
+  if (out.shots !== undefined) out.shots = Math.max(1, Math.round(out.shots));
+  return out;
+}
+
+const SPEC_MODS: Record<SpecTowerId, [SpecMod, SpecMod]> = {
+  flame: [
+    { key: 'inferno', look: 'flare', mul: { burnDps: 2.2, splash: 0.8 }, add: { burnTime: 1 } },
+    { key: 'flashfire', look: 'array', mul: { splash: 1.35, damage: 1.1 } },
+  ],
+  bubble: [
+    { key: 'riptide', look: 'halo', add: { slow: 0.1, slowTime: 1 }, mul: { splash: 1.6 } },
+    { key: 'lance', look: 'lance', mul: { damage: 1.8 }, add: { range: 0.6, slow: -0.1 }, set: { airMult: 1.3 } },
+  ],
+  thorn: [
+    { key: 'bloom', look: 'flare', add: { poisonStacks: 3, poisonSpread: 1 }, mul: { poisonDps: 1.15 } },
+    { key: 'barbed', look: 'array', set: { shots: 3 }, mul: { damage: 1.3, poisonDps: 0.6 } },
+  ],
+  prism: [
+    { key: 'storm', look: 'array', add: { chain: 3 }, set: { chainFalloff: 0.9 } },
+    { key: 'focus', look: 'lance', mul: { damage: 2.4 }, add: { critChance: 0.15 }, set: { chain: 0, detect: true } },
+  ],
+  shade: [
+    { key: 'voidbreaker', look: 'bastion', add: { armorBreak: 0.2, armorBreakTime: 2 }, set: { wardBreak: 2 } },
+    { key: 'nightfall', look: 'lance', add: { critChance: 0.2, critMult: 1, range: 1 }, mul: { rate: 0.8 } },
+  ],
+  rumble: [
+    { key: 'aftershock', look: 'halo', add: { stunChance: 0.2, stunTime: 0.2 } },
+    { key: 'tectonic', look: 'bastion', mul: { damage: 1.7, stunChance: 0.5 }, add: { range: 0.4 } },
+  ],
+  steam: [
+    { key: 'scald', look: 'flare', mul: { zoneDps: 1.8 }, add: { zoneTime: 2 } },
+    { key: 'fogbank', look: 'halo', add: { zoneSlow: 0.15, zoneRadius: 0.3 }, set: { detect: true } },
+  ],
+  wildfire: [
+    { key: 'spread', look: 'array', add: { poisonSpread: 2 }, mul: { splash: 1.2 } },
+    { key: 'emberseed', look: 'flare', mul: { burnDps: 1.8, poisonDps: 1.3, splash: 0.8 } },
+  ],
+  solar: [
+    { key: 'supernova', look: 'halo', mul: { splash: 1.3, damage: 1.25, rate: 0.85 } },
+    { key: 'lance', look: 'lance', mul: { splash: 0.5, rate: 2, damage: 0.75 }, set: { detect: true } },
+  ],
+  wisp: [
+    { key: 'swarm', look: 'array', add: { shots: 2 }, mul: { damage: 0.75 } },
+    { key: 'hunter', look: 'lance', add: { shots: -1 }, mul: { damage: 1.6 }, set: { bossMult: 1.4 } },
+  ],
+  magma: [
+    { key: 'caldera', look: 'flare', mul: { zoneDps: 1.7 }, add: { zoneRadius: 0.3 } },
+    { key: 'siege', look: 'bastion', mul: { damage: 1.6, splash: 1.2, rate: 0.85 }, set: { armorBreak: 0.2, armorBreakTime: 3 } },
+  ],
+  raingarden: [
+    { key: 'downpour', look: 'halo', add: { auraRate: 0.15, auraRadius: 0.4 } },
+    { key: 'tidal', look: 'lance', mul: { damage: 2, auraRate: 0.5 }, add: { slow: 0.15 } },
+  ],
+  rainbow: [
+    { key: 'spectrum', look: 'array', add: { chain: 3 } },
+    { key: 'wardbreaker', look: 'lance', add: { chain: -2 }, mul: { damage: 1.3 }, set: { wardBreak: 3 } },
+  ],
+  whirlpool: [
+    { key: 'undertow', look: 'halo', add: { pushback: 0.3 } },
+    { key: 'abyss', look: 'bastion', mul: { damage: 1.8, pushback: 0.5 }, add: { slow: 0.15 } },
+  ],
+  quicksand: [
+    { key: 'sinkhole', look: 'halo', add: { slow: 0.1, stunChance: 0.1 } },
+    { key: 'tarpit', look: 'bastion', mul: { damage: 1.5 }, set: { armorBreak: 0.25, armorBreakTime: 3 } },
+  ],
+  sunflower: [
+    { key: 'harvest', look: 'halo', add: { auraCoins: 0.25, auraRadius: 0.4 } },
+    { key: 'sunbeam', look: 'lance', mul: { damage: 2, rate: 1.2, auraCoins: 0.5 } },
+  ],
+  nightshade: [
+    { key: 'plague', look: 'array', add: { poisonSpread: 2, poisonStacks: 1 } },
+    { key: 'venom', look: 'lance', mul: { poisonDps: 1.6 }, add: { range: 0.6 } },
+  ],
+  ironbark: [
+    { key: 'juggernaut', look: 'bastion', mul: { damage: 1.5 }, add: { armorBreak: 0.15 } },
+    { key: 'rootlock', look: 'halo', add: { stunChance: 0.2, stunTime: 0.3 }, set: { slow: 0.3, slowTime: 1.5 } },
+  ],
+  eclipse: [
+    { key: 'total', look: 'flare', add: { beamRamp: 1.5, beamRampTime: 1 } },
+    { key: 'corona', look: 'lance', add: { range: 1 }, set: { detect: true, bossMult: 1.3 } },
+  ],
+  crystal: [
+    { key: 'barrage', look: 'array', add: { shots: 2 } },
+    { key: 'diamond', look: 'lance', add: { critChance: 0.2, critMult: 1, shots: -1 } },
+  ],
+  gravity: [
+    { key: 'horizon', look: 'halo', add: { stunTime: 0.4, range: 0.3 } },
+    { key: 'crusher', look: 'bastion', mul: { damage: 2.2 }, set: { armorBreak: 0.25, armorBreakTime: 3, stunChance: 0.5 } },
+  ],
+};
+
 // ------------------------------------------------------------------ enemy stats
 
 const ENEMY_STATS: Record<EnemyId, EnemyTuning> = {
@@ -341,5 +458,7 @@ export const TUNING = {
   stars: { three: 0.8, two: 0.4 },
 
   towers: TOWER_LEVELS,
+  /** Two level-3 paths for every element and combo tower. */
+  specs: SPEC_MODS,
   enemies: ENEMY_STATS,
 } as const;

@@ -73,6 +73,12 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
 - Phase 3 done: every screen restyled (codex with real per-level stats via `src/ui/statTables.ts`, hex badge
   insignia, sectioned settings, dark element picker), ALL UI text in `en.ts` (PIP tutorial, briefings, HUD,
   battle labels), connected story for worlds 1–4 (Reach → Wastes → Frostspire → Hollow Deep / Archon Null).
+- Phase 4 done: 42 specializations (`TUNING.specs` = mul/add/set mods on base L3/L4 via `applySpec`;
+  `TowerDef.specs`, `Tower.spec`, `statsFor`, `Game.needsSpec/upgrade(t, spec)`; new stats detect/bossMult/
+  airMult/wardBreak), spec head silhouettes (`SpecLook` lance/array/bastion/halo/flare, textures
+  `th_<id>_<lv>_s<0|1>`), spec chooser in the tower panel (keys 1/2), after-match report (`src/ui/results.ts`;
+  RunStats coinsSpent/leaksByWave/specsChosen/soldTowers), wave intel modal (`waveIntel`, key I), construct
+  traits with icons (`src/data/traits.ts`, `src/ui/traitIcons.ts`). Bot picks the stronger path (`bestSpec`).
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

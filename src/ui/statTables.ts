@@ -44,3 +44,24 @@ export function enemyStatGrid(d: EnemyDef, live?: { hp: number; maxHp: number; a
     d.split ? stat('codex.splitInto', t('codex.splitCount', { count: d.split.count, name: ENEMIES[d.split.into].name })) : null,
   );
 }
+
+/** Codex block: both level-3 paths with what they change at level 4. */
+export function specSummary(d: TowerDef): HTMLElement {
+  const base = statLines(d, d.levels[3]!);
+  return h(
+    'div.spec-summary',
+    null,
+    h('h5', null, t('codex.specs')),
+    ...d.specs!.map((sp) => {
+      const lines = statLines(d, sp.levels[1]);
+      const changed = lines.filter((l) => l.key === 'dps' || base.find((b) => b.key === l.key)?.text !== l.text).slice(0, 4);
+      return h(
+        'div.spec-row',
+        null,
+        h('b', null, t('spec.path', { n: sp.index + 1 }), ' · ', sp.name),
+        h('p', null, sp.desc),
+        h('p.dim', null, t('codex.lv', { n: 4 }), ': ', changed.map((l) => `${l.label} ${l.text}`).join(' · ')),
+      );
+    }),
+  );
+}

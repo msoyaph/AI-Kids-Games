@@ -1,10 +1,12 @@
 import { ELEMENT_ORDER, ELEMENTS, STRONG_MULT, WEAK_MULT, type ElementId } from '../../data/elements';
-import { ENEMIES, ENEMY_IDS, type EnemyDef } from '../../data/enemies';
+import { ENEMIES, ENEMY_IDS } from '../../data/enemies';
+import { TRAIT_ORDER, traitsOf } from '../../data/traits';
 import { TOWER_IDS, TOWERS, type TowerId } from '../../data/towers';
 import { t, type MessageKey } from '../../i18n';
 import { atlasIconUrl, elementIconUrl, enemyTexName, towerIconUrl } from '../../render/atlas/bake';
 import { h, img } from '../../ui/dom';
-import { enemyStatGrid, towerLevelTable } from '../../ui/statTables';
+import { enemyStatGrid, specSummary, towerLevelTable } from '../../ui/statTables';
+import { traitChip, traitIconUrl } from '../../ui/traitIcons';
 import type { App, Screen } from '../App';
 import type { Nav } from '../flow';
 
@@ -71,25 +73,13 @@ export class EncyclopediaScreen implements Screen {
               ),
             ),
             towerLevelTable(d),
+            d.specs ? specSummary(d) : null,
           ),
         );
       }
       wrap.append(h('h3.section', null, t(title)), grid);
     }
     return wrap;
-  }
-
-  private tags(d: EnemyDef): MessageKey[] {
-    const tags: MessageKey[] = [];
-    if (d.boss) tags.push('codex.tag.boss');
-    if (d.flying) tags.push('codex.tag.flying');
-    if (d.heal) tags.push('codex.tag.repairs');
-    if (d.split) tags.push('codex.tag.splits');
-    if (d.shielded) tags.push('codex.tag.ward');
-    if (d.armor >= 0.3) tags.push('codex.tag.armored');
-    if (d.elemental) tags.push('codex.tag.elemental');
-    if (d.shiftElement) tags.push('codex.tag.shifting');
-    return tags;
   }
 
   private constructs(): HTMLElement {
@@ -109,7 +99,7 @@ export class EncyclopediaScreen implements Screen {
               'div',
               null,
               h('h4', null, d.name),
-              h('div.chips', null, ...this.tags(d).map((k) => h('span.chip', null, t(k)))),
+              h('div.chips', null, ...traitsOf(d).map((tr) => traitChip(tr))),
               h('p', null, d.blurb),
             ),
           ),
@@ -118,7 +108,14 @@ export class EncyclopediaScreen implements Screen {
         ),
       );
     }
-    return h('div', null, h('p.note', null, t('codex.hpNote')), grid);
+    const abilities = h(
+      'div.cards-grid.wide',
+      null,
+      ...TRAIT_ORDER.map((tr) =>
+        h('article.info-card.panel.trait-card', null, img(traitIconUrl(tr, 64), '', 'trait-icon'), h('div', null, h('h4', null, t(`trait.${tr}`)), h('p', null, t(`trait.${tr}.desc`)))),
+      ),
+    );
+    return h('div', null, h('p.note', null, t('codex.hpNote')), grid, h('h3.section', null, t('codex.abilities')), abilities);
   }
 
   private elements(): HTMLElement {

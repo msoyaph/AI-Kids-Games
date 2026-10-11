@@ -1,6 +1,6 @@
 import { localized, t } from '../i18n';
 import type { ElementId } from './elements';
-import { TUNING } from './tuning';
+import { applySpec, TUNING, type SpecTowerId } from './tuning';
 
 export type TowerId =
   // basic
@@ -104,6 +104,30 @@ export interface TowerStats {
   /** Beam ramps up to this multiplier over beamRampTime seconds on one target. */
   beamRamp?: number;
   beamRampTime?: number;
+  /** Reveals cloaked constructs in range (specializations). */
+  detect?: boolean;
+  /** Damage multiplier against bosses / flyers. */
+  bossMult?: number;
+  airMult?: number;
+  /** Multiplies damage that gets through an elemental ward (and damage to breakable shields). */
+  wardBreak?: number;
+}
+
+/** How a specialization changes the look of the tower head (L3/L4). */
+export type SpecLook = 'lance' | 'array' | 'bastion' | 'halo' | 'flare';
+
+/** One of the two level-3 paths of an element or combo tower. */
+export interface SpecDef {
+  /** Stable id: `<tower>.<key>`, e.g. `flame.inferno`. */
+  id: string;
+  key: string;
+  index: 0 | 1;
+  /** Stats for level 3 and level 4 on this path. */
+  levels: [TowerStats, TowerStats];
+  look: SpecLook;
+  /** Translated (`spec.<tower>.<key>.name` / `.desc`). */
+  readonly name: string;
+  readonly desc: string;
 }
 
 export interface TowerLook {
@@ -140,8 +164,10 @@ export interface TowerDef {
   projectile?: ProjectileStyle;
   /** Head turns to face its target. */
   rotates: boolean;
-  /** Stats per level, from TUNING.towers. */
+  /** Stats per level, from TUNING.towers (levels 3–4 are replaced by the chosen spec). */
   levels: TowerStats[];
+  /** Two level-3 specializations (element and combo towers). */
+  specs?: [SpecDef, SpecDef];
   /** One short line (translated). */
   readonly blurb: string;
   /** Name of the special ability, shown as a chip (translated). */
@@ -183,7 +209,27 @@ const IDENTITY: Record<TowerId, TowerIdentity> = {
 
 export const TOWERS = {} as Record<TowerId, TowerDef>;
 for (const id of Object.keys(IDENTITY) as TowerId[]) {
-  TOWERS[id] = localized({ id, ...IDENTITY[id], levels: TUNING.towers[id] } as TowerDef, `tower.${id}`, ['name', 'blurb', 'ability'] as const);
+  const def = localized({ id, ...IDENTITY[id], levels: TUNING.towers[id] } as TowerDef, `tower.${id}`, ['name', 'blurb', 'ability'] as const);
+  const mods = TUNING.specs[id as SpecTowerId];
+  if (mods) {
+    def.specs = mods.map((m, index) =>
+      localized(
+        { id: `${id}.${m.key}`, key: m.key, index, look: m.look, levels: [applySpec(def.levels[2]!, m), applySpec(def.levels[3]!, m)] } as SpecDef,
+        `spec.${id}.${m.key}`,
+        ['name', 'desc'] as const,
+      ),
+    ) as [SpecDef, SpecDef];
+  }
+  TOWERS[id] = def;
+}
+
+/** Level at which a tower picks its specialization. */
+export const SPEC_LEVEL = 3;
+
+/** Stats for a tower at `level` on spec path `spec` (-1 = none). */
+export function statsFor(def: TowerDef, level: number, spec: number): TowerStats {
+  if (spec >= 0 && level >= SPEC_LEVEL && def.specs) return def.specs[spec]!.levels[level - SPEC_LEVEL]!;
+  return def.levels[level - 1]!;
 }
 
 export const BASIC_TOWERS: TowerId[] = ['arrow', 'cannon'];

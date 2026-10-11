@@ -1,11 +1,14 @@
-import { DIFFICULTIES, starsFor, type Difficulty } from '../data/difficulty';
+import { DIFFICULTIES, difficultyHp, starsFor, type Difficulty } from '../data/difficulty';
 import { ELEMENT_ORDER, ELEMENTS, counterOf } from '../data/elements';
 import type { MapDef } from '../data/maps/types';
-import type { WaveDef } from '../data/waves';
+import { waveIntel, type WaveDef } from '../data/waves';
 import { buildFailMsg, randomLine } from '../data/strings';
-import { elementPrefix } from '../data/enemies';
+import { ENEMIES, elementPrefix } from '../data/enemies';
+import { traitsOf } from '../data/traits';
 import { t } from '../i18n';
 import { enemyStatGrid, towerLevelTable } from '../ui/statTables';
+import { resultsReport } from '../ui/results';
+import { traitChip } from '../ui/traitIcons';
 import { TARGET_MODES, TOWERS, type TowerId } from '../data/towers';
 import { atlasIconUrl, elementIconUrl, enemyTexName, towerIconUrl, type Atlas } from '../render/atlas/bake';
 import { TILE } from '../render/MapPainter';
@@ -400,10 +403,15 @@ export class GameScreen implements Screen, HudHost {
     return this.view.camera.worldToScreen(t.x * TILE, t.y * TILE).x;
   }
 
-  upgradeSelected(): void {
+  upgradeSelected(spec?: 0 | 1): void {
     const t = this.selected;
     if (!t) return;
-    if (this.game.upgrade(t)) {
+    if (spec === undefined && this.game.needsSpec(t)) {
+      this.hud.openSpecChooser();
+      this.app.audio.ui('click');
+      return;
+    }
+    if (this.game.upgrade(t, spec)) {
       this.view.select(t);
       this.hud.refreshPanelButtons();
     } else if (t.level < 4) {
@@ -555,6 +563,46 @@ export class GameScreen implements Screen, HudHost {
     );
   }
 
+  openWaveIntel(): void {
+    const w = this.game.nextWave;
+    if (this.modal || !w) return;
+    const rows = waveIntel(w).map((r) => {
+      const def = ENEMIES[r.enemy];
+      const hp = Math.max(1, Math.round(def.hp * w.hp * difficultyHp(this.game.diff, w.n)));
+      const el = def.elemental && r.elements.length === 1 ? r.elements[0]! : null;
+      return h(
+        'div.intel-row',
+        null,
+        img(atlasIconUrl(this.atlas, enemyTexName(def.id, el), 96), def.name, 'portrait'),
+        h(
+          'div.intel-main',
+          null,
+          h('div.intel-name', null, h('b', null, def.name), h('span.intel-count', null, t('intel.count', { n: r.count }))),
+          h('div.chips', null, ...traitsOf(def).map((tr) => traitChip(tr))),
+          h(
+            'div.intel-meta',
+            null,
+            h('span', null, t('intel.hpEach', { n: hp })),
+            r.elements.length ? h('span.intel-els', null, t('intel.elements'), ' ', ...r.elements.map((e) => img(elementIconUrl(this.atlas, e, 40), ELEMENTS[e].name, 'inline-icon'))) : null,
+            r.shields.length ? h('span.intel-els', null, t('intel.wards'), ' ', ...r.shields.map((e) => img(elementIconUrl(this.atlas, e, 40), ELEMENTS[e].name, 'inline-icon'))) : null,
+          ),
+        ),
+      );
+    });
+    this.paused = true;
+    this.modal = showModal(
+      this.el,
+      [
+        h('h2', null, t('intel.title', { n: w.n })),
+        w.boss ? h('p.intel-boss', null, t('intel.boss')) : null,
+        h('div.intel-list', null, ...rows),
+        h('p.note', null, t('intel.help')),
+        h('div.row', null, h('button.btn.green', { onClick: () => this.closeModal() }, t('common.ok'))),
+      ].filter(Boolean) as HTMLElement[],
+      { onBackdrop: () => this.closeModal(), label: t('intel.title', { n: w.n }), cls: 'wide' },
+    );
+  }
+
   showEnemyInfo(e: Enemy): void {
     if (this.modal) return;
     const def = e.def;
@@ -593,7 +641,7 @@ export class GameScreen implements Screen, HudHost {
           h('h2', null, t('end.won')),
           starsHtml(stars, 3, true),
           pipSays(line, 'cheeky'),
-          h('p', null, t('end.livesKills', { lives: g.lives, max: g.maxLives, kills: g.stats.kills })),
+          resultsReport(g),
           result.badges?.length ? h('p', null, t('end.newBadges', { count: result.badges.length, names: result.badges.join(', ') })) : null,
           h(
             'div.row',
@@ -602,7 +650,7 @@ export class GameScreen implements Screen, HudHost {
             h('button.btn', { onClick: () => this.nav.restart() }, t('end.replay')),
             h('button.btn.ghost', { onClick: () => this.nav.quit() }, t('nav.sectorMap')),
           ),
-        ].filter(Boolean) as HTMLElement[]);
+        ].filter(Boolean) as HTMLElement[], { cls: 'wide results-modal' });
         this.app.audio.ui('star');
       } else {
         const endless = this.opts.mode === 'endless';
@@ -611,10 +659,11 @@ export class GameScreen implements Screen, HudHost {
           h('h2', null, endless ? t('end.endlessTitle') : t('end.lost')),
           pipSays(line),
           endless && result.newBest ? h('p', null, t('end.newBest')) : null,
+          resultsReport(g),
           result.badges?.length ? h('p', null, t('end.newBadges', { count: result.badges.length, names: result.badges.join(', ') })) : null,
           h('p', null, randomLine('tip')),
           h('div.row', null, h('button.btn.green.big', { onClick: () => this.nav.restart() }, t('end.retry')), h('button.btn.ghost', { onClick: () => this.nav.quit() }, t('nav.sectorMap'))),
-        ].filter(Boolean) as HTMLElement[]);
+        ].filter(Boolean) as HTMLElement[], { cls: 'wide results-modal' });
       }
     }, 900);
   }
@@ -640,6 +689,10 @@ export class GameScreen implements Screen, HudHost {
         e.preventDefault();
         this.closeModal();
       }
+      return;
+    }
+    if (this.hud.specOpen && this.selected && (k === '1' || k === '2')) {
+      this.upgradeSelected(k === '1' ? 0 : 1);
       return;
     }
     if (k >= '0' && k <= '9') {
@@ -677,6 +730,9 @@ export class GameScreen implements Screen, HudHost {
         break;
       case 'e':
         this.openElementPick();
+        break;
+      case 'i':
+        this.openWaveIntel();
         break;
     }
   }

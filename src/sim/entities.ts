@@ -1,11 +1,13 @@
 import type { ElementId } from '../data/elements';
-import { TOWERS, type ProjectileStyle, type TargetMode, type TowerDef, type TowerStats } from '../data/towers';
+import { statsFor, TOWERS, type ProjectileStyle, type TargetMode, type TowerDef, type TowerStats } from '../data/towers';
 import type { Enemy } from './enemy';
 
 export class Tower {
   id = 0;
   def: TowerDef = TOWERS.arrow;
   level = 1;
+  /** Chosen level-3 specialization: -1 = none yet, 0 or 1. */
+  spec = -1;
   cell = 0;
   cx = 0;
   cy = 0;
@@ -33,7 +35,7 @@ export class Tower {
   sinceBuild = 0;
 
   get stats(): TowerStats {
-    return this.def.levels[this.level - 1]!;
+    return statsFor(this.def, this.level, this.spec);
   }
 }
 

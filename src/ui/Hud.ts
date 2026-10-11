@@ -22,13 +22,16 @@ export interface HudHost {
   cycleSpeed(): void;
   togglePause(): void;
   openElementPick(): void;
-  upgradeSelected(): void;
+  /** Upgrade the selected tower; at level 2 → 3 pass the chosen spec (undefined opens the chooser). */
+  upgradeSelected(spec?: 0 | 1): void;
   sellSelected(): void;
   cycleTargeting(): void;
   deselect(): void;
   /** Screen x (CSS px) of a tower's centre, used to keep the panel off it on short screens. */
   towerScreenX(t: Tower): number;
   showTowerInfo(id: TowerId): void;
+  /** Breakdown of the next wave (types, counts, health, abilities). */
+  openWaveIntel(): void;
   layoutChanged(): void;
 }
 
@@ -48,7 +51,7 @@ export class Hud {
   private coinsNum = h('span.val');
   private waveNum = h('span.val');
   private nextWrap: HTMLElement;
-  private nextIcons = h('span.icons');
+  private nextIcons = h('button.icons', { type: 'button' });
   private nextTimer = h('span.timer');
   private goBtn: HTMLButtonElement;
   private speedBtn: HTMLButtonElement;
@@ -78,6 +81,7 @@ export class Hud {
     this.coinsStat = h('div.stat.coins', { title: t('hud.gold') }, img(atlasIconUrl(a, 'coin', 64), ''), h('div.sv', null, h('span.lbl', null, t('hud.gold')), this.coinsNum));
     const waveStat = h('div.stat.wave', { title: t('hud.wave') }, h('div.sv', null, h('span.lbl', null, t('hud.wave')), this.waveNum));
     this.goBtn = h('button.btn.green', { onClick: () => host.sendWave(), 'aria-label': t('hud.sendWave') }, t('hud.deploy'));
+    this.nextIcons.addEventListener('click', () => host.openWaveIntel());
     this.nextWrap = h('div.next-wave', { title: t('hud.nextWave') }, this.nextIcons, this.nextTimer, this.goBtn);
     this.speedBtn = h('button.btn.round', { onClick: () => host.cycleSpeed(), 'aria-label': t('hud.speed') }, t('hud.speedX', { n: 1 }));
     this.pauseBtn = h('button.btn.round', { onClick: () => host.togglePause(), 'aria-label': t('hud.pause') }, '❚❚');
@@ -164,6 +168,7 @@ export class Hud {
       L.next = nextKey;
       this.nextIcons.replaceChildren();
       if (next) {
+        this.nextIcons.setAttribute('aria-label', t('intel.open', { n: next.n }));
         for (const p of wavePreview(next).slice(0, 6)) {
           const def = ENEMIES[p.enemy];
           const el = def.elemental ? p.element : null;
@@ -228,6 +233,7 @@ export class Hud {
     const sel = this.host.selected;
     const selId = sel ? sel.id : -1;
     if (selId !== L.sel || (sel && sel.level !== L.selLevel)) {
+      if (selId !== L.sel || (sel && sel.level !== L.selLevel)) this.specOpen = false;
       L.sel = selId;
       L.selLevel = sel?.level ?? 0;
       this.renderPanel(sel);
@@ -390,8 +396,16 @@ export class Hud {
     const pips = h('span.pips', { 'aria-label': t('hud.levelOf', { n: tw.level, max: MAX_LEVEL }) });
     for (let i = 1; i <= MAX_LEVEL; i++) pips.append(h('span.pip-dot', { class: i <= tw.level ? 'on' : '' }));
     const kills = h('span', null);
-    const info = h('div.tinfo', null, h('span.chip', null, def.ability), def.targets === 'ground' ? h('span', null, t('hud.groundOnly')) : h('span', null, t('hud.groundAir')), kills);
-    const table = this.statsTable(tw);
+    const spec = tw.spec >= 0 ? def.specs?.[tw.spec] : undefined;
+    const info = h(
+      'div.tinfo',
+      null,
+      h('span.chip', null, def.ability),
+      spec ? h('span.chip.spec', null, spec.name) : null,
+      def.targets === 'ground' ? h('span', null, t('hud.groundOnly')) : h('span', null, t('hud.groundAir')),
+      kills,
+    );
+    const table = this.specOpen && this.host.game.needsSpec(tw) ? this.specChooser(tw) : this.statsTable(tw);
     const target =
       def.behavior === 'pulse'
         ? undefined
@@ -402,7 +416,7 @@ export class Hud {
     const panel = h(
       'div.tpanel.panel',
       null,
-      img(towerIconUrl(def.id, tw.level, 128), def.name, 'icon'),
+      img(towerIconUrl(def.id, tw.level, 128, tw.spec), def.name, 'icon'),
       h('div', null, h('div.tname', null, def.name, pips, ...def.elements.map((e) => img(elementIconUrl(this.host.atlas, e, 40), ELEMENTS[e].name))), info),
       close,
       table,
@@ -418,6 +432,38 @@ export class Hud {
     this.tpanelRefs = { upgrade, sell, target, kills };
     this.el.append(panel);
     this.refreshPanelButtons();
+  }
+
+  /** Whether the spec chooser is showing in the tower panel. */
+  specOpen = false;
+
+  openSpecChooser(): void {
+    this.specOpen = true;
+    this.renderPanel(this.host.selected);
+  }
+
+  /** Two cards: each path's level-3 numbers next to what it changes. */
+  private specChooser(tw: Tower): HTMLElement {
+    const def = tw.def;
+    const base = statLines(def, def.levels[2]!);
+    const cost = this.host.game.upgradeCost(tw);
+    const cards = def.specs!.map((sp) => {
+      const lines = statLines(def, sp.levels[0]);
+      const changed = lines.filter((l) => l.key === 'dps' || base.find((b) => b.key === l.key)?.text !== l.text).slice(0, 5);
+      return h(
+        'button.spec-card',
+        { onClick: () => this.host.upgradeSelected(sp.index), 'aria-label': `${sp.name}: ${sp.desc}` },
+        h('span.spec-head', null, img(towerIconUrl(def.id, 3, 96, sp.index), sp.name, 'icon'), h('span', null, h('small', null, t('spec.path', { n: sp.index + 1 })), h('b', null, sp.name))),
+        h('span.spec-desc', null, sp.desc),
+        h(
+          'span.spec-stats',
+          null,
+          ...changed.map((l) => h('span.kv', null, h('span', null, l.label), h('b', null, l.text))),
+        ),
+        h('span.spec-cost', null, img(atlasIconUrl(this.host.atlas, 'coin', 32)), formatNumber(cost)),
+      );
+    });
+    return h('div.spec-chooser', { role: 'group', 'aria-label': t('spec.choose') }, h('p.spec-help', null, t('spec.chooseHelp')), h('div.spec-cards', null, ...cards));
   }
 
   /** Current vs next-level numbers, with the change highlighted. */
@@ -449,8 +495,13 @@ export class Hud {
       r.upgrade.disabled = true;
     } else {
       const cost = g.upgradeCost(tw);
-      setText(r.upgrade, t('hud.upgradeCost', { cost }));
+      setText(r.upgrade, g.needsSpec(tw) ? t('spec.pick', { cost }) : t('hud.upgradeCost', { cost }));
       r.upgrade.disabled = g.coins < cost;
+      r.upgrade.style.display = this.specOpen && g.needsSpec(tw) ? 'none' : '';
+    }
+    if (this.specOpen && g.needsSpec(tw)) {
+      const afford = g.coins >= g.upgradeCost(tw);
+      this.tpanel?.querySelectorAll<HTMLButtonElement>('.spec-card').forEach((b) => (b.disabled = !afford));
     }
     if (r.sell) setText(r.sell, t('hud.sellValue', { n: sellValue(tw.invested) }));
     if (r.target) setText(r.target, t('hud.target', { mode: targetModeLabel(tw.mode) }));

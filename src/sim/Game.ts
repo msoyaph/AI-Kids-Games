@@ -6,6 +6,7 @@ import { ENEMIES, type EnemyDef, type EnemyId } from '../data/enemies';
 import type { MapDef } from '../data/maps/types';
 import {
   MAX_LEVEL,
+  SPEC_LEVEL,
   sellValue,
   TOWERS,
   towerUnlocked,
@@ -73,6 +74,22 @@ export interface RunStats {
   towerTypes: Set<TowerId>;
   shortestPath: number;
   longestPath: number;
+  /** Gold paid for builds and upgrades. */
+  coinsSpent: number;
+  /** Lives lost per wave (index = wave − 1). */
+  leaksByWave: number[];
+  /** Spec ids picked this run. */
+  specsChosen: string[];
+  /** Towers sold during the run (for the after-match damage table). */
+  soldTowers: TowerRecord[];
+}
+
+export interface TowerRecord {
+  type: TowerId;
+  level: number;
+  spec: number;
+  damage: number;
+  kills: number;
 }
 
 interface SpawnCursor {
@@ -194,6 +211,10 @@ export class Game {
       towerTypes: new Set(),
       shortestPath: shortest,
       longestPath: shortest,
+      coinsSpent: 0,
+      leaksByWave: [],
+      specsChosen: [],
+      soldTowers: [],
     };
   }
 
@@ -486,6 +507,7 @@ export class Game {
     e.alive = false;
     this.lives = Math.max(0, this.lives - e.lives);
     this.stats.leaks += e.lives;
+    this.stats.leaksByWave[e.waveIndex] = (this.stats.leaksByWave[e.waveIndex] ?? 0) + e.lives;
     this.waveAlive[e.waveIndex]!--;
     const ev = this.events.push(Ev.Leak, e.x, e.y);
     ev.value = e.lives;
@@ -556,11 +578,17 @@ export class Game {
   damage(e: Enemy, amount: number, elements: readonly ElementId[], towerId: number, dot = false): number {
     if (!e.alive) return 0;
     let m = elementMultiplier(elements, e.element);
+    const src = towerId >= 0 ? this.towerById(towerId) : undefined;
+    const sst = src ? src.stats : null;
+    if (sst && !dot) {
+      if (sst.bossMult && e.boss) m *= sst.bossMult;
+      if (sst.airMult && e.flying) m *= sst.airMult;
+    }
     if (e.shield) {
       let pierce = false;
       for (let i = 0; i < elements.length; i++) if (ELEMENTS[elements[i]!].beats === e.shield) pierce = true;
       if (!pierce) {
-        m *= C.wardMult;
+        m *= Math.min(1, C.wardMult * (sst?.wardBreak ?? 1));
         if (!dot && (this.tick & 3) === 0) {
           const ev = this.events.push(Ev.ShieldBlock, e.x, e.y);
           ev.tag = e.shield;
@@ -571,11 +599,10 @@ export class Game {
     const dmg = amount * m * (1 - armor);
     e.hp -= dmg;
     if (!dot) e.hitFlash = 0.1;
-    if (towerId >= 0) {
+    if (src) {
       e.lastHitBy = towerId;
-      const t = this.towerById(towerId);
-      if (t) t.damageDone += dmg;
-    }
+      src.damageDone += dmg;
+    } else if (towerId >= 0) e.lastHitBy = towerId;
     if (e.hp <= 0) this.kill(e);
     return dmg;
   }
@@ -851,6 +878,7 @@ export class Game {
     t.sinceBuild = 0;
     t.mode = def.behavior === 'pulse' ? 'close' : 'first';
     this.coins -= cost;
+    this.stats.coinsSpent += cost;
     this.towers.push(t);
     this.towerIndex[t.id] = t;
     this.grid.tower[t.cell] = t.id;
@@ -870,12 +898,26 @@ export class Game {
     return t.level >= MAX_LEVEL ? 0 : t.def.levels[t.level]!.cost;
   }
 
-  upgrade(t: Tower): boolean {
+  /** True when the next upgrade picks a specialization (level 2 → 3 on element/combo towers). */
+  needsSpec(t: Tower): boolean {
+    return !!t.def.specs && t.level === SPEC_LEVEL - 1;
+  }
+
+  /**
+   * Upgrade a tower. Going to level 3 locks in specialization `spec` (0 or 1;
+   * defaults to the first path when omitted).
+   */
+  upgrade(t: Tower, spec?: 0 | 1): boolean {
     if (this.state !== 'playing' || t.level >= MAX_LEVEL) return false;
     const cost = this.upgradeCost(t);
     if (this.coins < cost) return false;
     this.coins -= cost;
+    this.stats.coinsSpent += cost;
     t.invested += cost;
+    if (this.needsSpec(t)) {
+      t.spec = spec ?? 0;
+      this.stats.specsChosen.push(t.def.specs![t.spec]!.id);
+    }
     t.level++;
     t.sinceBuild = 0;
     this.stats.upgrades++;
@@ -885,6 +927,7 @@ export class Game {
     ev.kind = t.def.id;
     ev.id = t.id;
     ev.value = t.level;
+    ev.value2 = t.spec;
     return true;
   }
 
@@ -893,6 +936,7 @@ export class Game {
     if (idx < 0 || this.state !== 'playing') return 0;
     const refund = sellValue(t.invested);
     this.coins += refund;
+    this.stats.soldTowers.push({ type: t.def.id, level: t.level, spec: t.spec, damage: t.damageDone, kills: t.kills });
     this.towers.splice(idx, 1);
     this.towerIndex[t.id] = undefined;
     this.grid.tower[t.cell] = -1;

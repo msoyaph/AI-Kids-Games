@@ -1659,3 +1659,324 @@ p.note,
   text-transform: uppercase;
   font-size: 12px;
 }
+
+/* ------------------------------------------------------------------ specializations */
+.chip.spec {
+  background: rgba(255, 200, 69, 0.14);
+  color: var(--gold);
+  border-color: rgba(255, 200, 69, 0.4);
+}
+.spec-chooser {
+  grid-column: 1 / -1;
+}
+.spec-help {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.spec-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.spec-card {
+  appearance: none;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(30, 42, 70, 0.95), rgba(12, 18, 32, 0.95));
+}
+.spec-card:hover:not(:disabled),
+.spec-card:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 14px rgba(255, 200, 69, 0.3);
+}
+.spec-card:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.spec-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.spec-head img.icon {
+  width: 44px;
+  height: 44px;
+}
+.spec-head small {
+  display: block;
+  font-family: var(--font-head);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.spec-head b {
+  font-family: var(--font-head);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.spec-desc {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.3;
+}
+.spec-stats {
+  display: flex;
+  flex-direction: column;
+  font-size: 12.5px;
+}
+.spec-stats .kv {
+  padding: 2px 0;
+}
+.spec-cost {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  font-family: var(--font-head);
+  font-weight: 800;
+  color: var(--gold);
+}
+.spec-cost img {
+  width: 16px;
+  height: 16px;
+}
+@media (max-height: 520px) {
+  .spec-desc {
+    display: none;
+  }
+  .spec-head img.icon {
+    width: 32px;
+    height: 32px;
+  }
+}
+.spec-summary h5 {
+  margin: 8px 0 4px;
+  font-family: var(--font-head);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.spec-row {
+  border-left: 2px solid var(--gold);
+  padding: 2px 0 2px 8px;
+  margin-bottom: 6px;
+}
+.spec-row b {
+  font-family: var(--font-head);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-size: 14px;
+}
+.spec-row p {
+  margin: 2px 0;
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------------ after-match report */
+.results-modal {
+  width: min(920px, 100%);
+}
+.results {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 6px 18px;
+  text-align: left;
+  margin: 4px 0 10px;
+}
+.results h3.section {
+  margin-top: 6px;
+}
+.results-summary {
+  grid-template-columns: 1fr;
+  font-size: 14px;
+}
+.dmg-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dmg-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.dmg-row img.icon {
+  width: 36px;
+  height: 36px;
+}
+.dmg-name {
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.dmg-name .chip {
+  font-size: 9px;
+  padding: 1px 5px;
+}
+.dmg-bar {
+  height: 6px;
+  margin-top: 3px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.dmg-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), #7a6bff);
+}
+.dmg-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.dmg-num small {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.leak-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 64px;
+  padding-top: 4px;
+}
+.leak {
+  flex: 1;
+  max-width: 28px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 2px;
+}
+.leak i {
+  display: block;
+  width: 100%;
+  min-height: 3px;
+  background: var(--danger);
+}
+.leak span {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 640px), (max-height: 520px) {
+  .results {
+    grid-template-columns: 1fr;
+  }
+  .results-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ------------------------------------------------------------------ wave intel, traits */
+.next-wave button.icons {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+.next-wave button.icons:hover,
+.next-wave button.icons:focus-visible {
+  background: rgba(62, 230, 255, 0.1);
+}
+.chip.trait {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  border-color: var(--line);
+}
+.chip.trait img {
+  width: 14px;
+  height: 14px;
+}
+.trait-card img.trait-icon {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+}
+.intel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+.intel-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(10, 15, 28, 0.6);
+}
+.intel-row img.portrait {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+}
+.intel-main {
+  flex: 1;
+  min-width: 0;
+}
+.intel-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-head);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.intel-count {
+  color: var(--gold);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.intel-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  align-items: center;
+}
+.intel-els img.inline-icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
+}
+p.intel-boss {
+  color: var(--danger);
+  font-family: var(--font-head);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}

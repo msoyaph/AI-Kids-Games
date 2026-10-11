@@ -67,5 +67,9 @@ export function statLines(def: TowerDef, st: TowerStats): StatLine[] {
   if (st.auraRate) add('aura', 'stat.aura', st.auraRate, t('fmt.plusPct', { n: Math.round(st.auraRate * 100) }));
   if (st.auraCoins) add('gold', 'stat.gold', st.auraCoins, t('fmt.plusPct', { n: Math.round(st.auraCoins * 100) }));
   if (st.beamRamp) add('ramp', 'stat.ramp', st.beamRamp, t('fmt.times', { n: f1(st.beamRamp) }));
+  if (st.bossMult) add('boss', 'stat.boss', st.bossMult, t('fmt.plusPct', { n: Math.round((st.bossMult - 1) * 100) }));
+  if (st.airMult) add('air', 'stat.air', st.airMult, t('fmt.plusPct', { n: Math.round((st.airMult - 1) * 100) }));
+  if (st.wardBreak) add('ward', 'stat.ward', st.wardBreak, t('fmt.times', { n: f1(st.wardBreak) }));
+  if (st.detect) add('detect', 'stat.detect', 1, t('stat.detectYes'));
   return out;
 }

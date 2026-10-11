@@ -482,7 +482,7 @@ export class WorldView {
       let v = this.towerViews.get(t.id);
       if (!v) {
         const base = new Sprite(this.atlas.get(towerBaseName(t.def.id, t.level)));
-        const head = new Sprite(this.atlas.get(towerHeadName(t.def.id, t.level)));
+        const head = new Sprite(this.atlas.get(towerHeadName(t.def.id, t.level, t.spec)));
         base.position.set(t.x * TILE, t.y * TILE);
         head.position.set(t.x * TILE, t.y * TILE - 4);
         this.L.base.addChild(base);
@@ -501,7 +501,7 @@ export class WorldView {
       if (v.level !== t.level) {
         v.level = t.level;
         v.base.texture = this.atlas.get(towerBaseName(t.def.id, t.level));
-        v.head.texture = this.atlas.get(towerHeadName(t.def.id, t.level));
+        v.head.texture = this.atlas.get(towerHeadName(t.def.id, t.level, t.spec));
       }
       // build / upgrade pop
       const k = t.sinceBuild < 0.4 ? easeOutBack(t.sinceBuild / 0.4) : 1;
