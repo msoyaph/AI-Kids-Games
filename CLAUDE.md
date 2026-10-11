@@ -5,13 +5,20 @@ single-file build. All art is procedural geometry, all audio is Web Audio synthe
 asset files, CDN links or web fonts.
 
 ## Commands
-- `npm run dev` — dev server (http://localhost:5173). URL params: `?seed=123`, `?debug=1`
-  (debug hotkeys), `?stress=1000` (stress test: keeps N enemies alive, player invulnerable).
+- `npm run dev` — dev server (http://localhost:5173). URL params: `?seed=123` (fixed run
+  seed), `?stress=1000` (stress test: keeps N enemies + 0.4·N projectiles alive, player
+  invulnerable). F3 toggles the debug overlay. `window.__theabonk` is the Game instance
+  (`advance(seconds)` steps frames synchronously — handy when rAF is throttled).
 - `npm run build` — typecheck + single-file build → `dist/index.html` (works from file:// and in a
   sandboxed iframe).
 - `npm test` — Vitest unit tests (`tests/unit`).
 - `npm run test:e2e` — Playwright smoke tests (`tests/e2e`), builds first via webServer config.
-- `npm run simulate` — headless balance simulation (bot plays full runs per character).
+- `npm run simulate -- [seeds] [skill]` — headless balance simulation (bot plays full runs
+  per character). `VERBOSE=1` prints every run.
+- `npm run bench -- [enemies] [seconds]` — headless sim performance benchmark.
+- E2E needs `npx playwright install chromium` once. On macOS it uses the real GPU via
+  ANGLE/Metal; elsewhere SwiftShader (see tests/e2e/smoke.spec.ts for the one tolerated
+  browser-internal compositor message).
 
 ## Architecture
 ```
@@ -27,12 +34,19 @@ src/
   render/    three.js only reads sim state: instanced meshes per enemy/projectile kind, gems,
              particles, terrain/props, camera rig, damage numbers (2D canvas overlay)
   audio/     Web Audio synth SFX + procedural music
-  input/     keyboard/mouse/pointer-lock/gamepad → InputState
+  input/     keyboard/mouse/pointer-lock/gamepad (+ drag-look fallback in iframes)
   ui/        DOM screens (title, select, shop, settings, pause, level-up, chest, game over),
              HUD, procedural canvas icons, menu focus navigation
   meta/      save schema + migration, gold/achievements/unlocks
   game/      Game.ts — app state machine + fixed-timestep loop (60 Hz sim, interpolated render)
+  audio/     Audio.ts (synth SFX), Music.ts (sequencer), bindAudio.ts (events → sounds)
+scripts/     simulate.ts (balance), bench.ts (perf)
+tests/       unit/ (Vitest), e2e/ (Playwright)
 ```
+Flow: main.ts → Game (owns SaveManager, GameRenderer, InputManager, UI/Menus) → per frame:
+input.poll → N × sim.step(world, input) → audio/fx consume world.events → renderer.renderGame
+→ HUD update → react to world.state (levelup/chest/dead/won). World state `levelup`/`chest`
+freezes the sim until the UI resolves it (`resolveLevelUp`, `closeChest`).
 Key rules:
 - Sim runs at fixed 60 Hz (`DT`), render interpolates `prev → cur` with alpha.
 - No allocation in hot loops: pools are SoA typed arrays; enemies are compacted at end of tick;
@@ -63,6 +77,13 @@ cluster at the boss gates (5:00 Grumblecap, 10:00 Clockjaw, 15:00+ Regent). Skil
 `PLAYER_IFRAMES`, `LEVEL_HEAL` (leveling.ts), heart drop chance.
 The bot (sim/bot.ts) kites, dodges shots predictively, sidesteps telegraphed charges,
 hops shockwave rings and un-sticks itself; it never slides, so humans can do better.
+
+## Gotchas
+- `Terrain.height()` is exact (player physics); `heightAt()` is the cached approximation.
+- Enemy pool is compacted at end of tick → never keep raw indices across ticks (use uid).
+- Bosses live in the enemy pool (`behavior: 'boss'`); `director.bossUid` tracks the latest.
+- AudioContext is created only inside a user-gesture handler (no autoplay warnings).
+- Icon canvases use `willReadFrequently` so `toDataURL` doesn't trigger GPU readbacks.
 
 ## Phase plan / status
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera
