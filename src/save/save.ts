@@ -8,9 +8,10 @@ import type { KeyBindings, KeyScheme, PadBindings } from '../input/bindings';
 import { readKey, removeKey, writeKeyStatus, ourKeys, type WriteStatus } from './storage';
 import { GhostData } from '../sim/ghost';
 import type { AssistSetting } from '../tuning/balance';
+import { DEFAULT_TOUCH_CONFIG, sanitizeTouchConfig, type TouchConfig, type TouchSteerMode } from '../input/touch/config';
 
 export const SAVE_VERSION = 3;
-export const SETTINGS_VERSION = 2;
+export const SETTINGS_VERSION = 3;
 export const SLOT_COUNT = 3;
 const PREFIX = 'calexcart';
 
@@ -83,7 +84,10 @@ export interface Settings {
   /** Steering assist: Auto = Light for touch, Off for keyboard/gamepad (BALANCE.assist.defaults). */
   assist: AssistSetting;
   autoAccel: boolean;
-  touchSteer: 'buttons' | 'tilt';
+  /** Joystick (glass, default), Buttons (◀ ▶ pads) or Tilt. */
+  touchSteer: TouchSteerMode;
+  /** Settings → Touch controls: stick floating/fixed, size, opacity, left-handed, high contrast. */
+  touch: TouchConfig;
   cameraDistance: number;
   splitMode: 'horizontal' | 'vertical';
   screenShake: boolean;
@@ -168,7 +172,8 @@ export function defaultSettings(touch = false): Settings {
     showFps: false,
     assist: 'auto',
     autoAccel: touch,
-    touchSteer: 'buttons',
+    touchSteer: 'joystick',
+    touch: { ...DEFAULT_TOUCH_CONFIG },
     cameraDistance: 1,
     splitMode: 'horizontal',
     screenShake: true,
@@ -255,6 +260,9 @@ export const SETTINGS_MIGRATIONS: Record<number, (d: Raw) => Raw> = {
     const { steeringAssist, ...rest } = d as Raw & { steeringAssist?: unknown };
     return { ...rest, v: 2, assist: steeringAssist === true ? 'light' : 'auto' };
   },
+  // v2 → v3: the glass joystick arrives as the touch default. "Buttons" was the old default (nobody can tell who
+  // chose it), so it becomes "Joystick" — Buttons is still one tap away in Settings. Tilt was a deliberate choice: kept.
+  2: (d) => ({ ...d, v: 3, touchSteer: d.touchSteer === 'tilt' ? 'tilt' : 'joystick', touch: { ...DEFAULT_TOUCH_CONFIG } }),
 };
 
 export function migrateSettings(raw: Raw, touch = false): Settings {
@@ -270,6 +278,8 @@ export function migrateSettings(raw: Raw, touch = false): Settings {
   if (!['auto', 'off', 'light', 'full'].includes(out.assist)) out.assist = 'auto';
   if (![1, 1.25, 1.5].includes(out.hudSize)) out.hudSize = 1;
   if (!out.controlsSeen || typeof out.controlsSeen !== 'object') out.controlsSeen = {};
+  if (!['joystick', 'buttons', 'tilt'].includes(out.touchSteer)) out.touchSteer = 'joystick';
+  out.touch = sanitizeTouchConfig(out.touch);
   return out;
 }
 

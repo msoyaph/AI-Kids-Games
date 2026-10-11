@@ -91,7 +91,15 @@ Steps 1–7, commit per step. Must not change keyboard / gamepad / tilt behaviou
 Decisions: tablets may race in portrait, phones keep the rotate screen; vibration on/off = existing
 `settings.rumble`; old `touchSteer: 'buttons'` (the old default) migrates to `'joystick'`, `'tilt'` stays.
 - [x] Step 1 — design + mockups (`docs/touch/mockups/`, prototype CSS in `mockups/prototype.mjs`)
-- [ ] Step 2 — joystick (PointerRouter, stickResponse, floating/fixed)
+- [x] Step 2 — joystick: `src/input/touch.ts` (TouchControls, same public API; glass DOM, floating/fixed stick,
+  glass ◀ ▶ pads for Buttons, tilt), `src/input/touch/pointers.ts` (PointerRouter: window-level, per-pointerId
+  ownership — works without pointer capture, so synthetic/CDP touches work), `touch/stick.ts` (stickResponse:
+  dead zone 8 %, exponent 1.5, full lock 90 %; floatingOrigin), `touch/layout.ts` (defaultLayout, stickZone,
+  hudRects, solveLayout/layoutProblems, bestDefaultLayout steps Large→Medium→Small if a phone has no room,
+  touchHudScale caps the touch HUD at 125 % below 500 px tall), `touch/config.ts` (TouchConfig + sanitize).
+  Settings v3 (`touchSteer` joystick|buttons|tilt, `touch` config; old 'buttons' → 'joystick'). Left-handed moves
+  the touch minimap right (`.hud.touch.lefty`). In a race the controls measure the real HUD boxes. Sim:
+  `DriverStyle.steerMap` (test-only device model), tests/sim/touchAssist.test.ts; unit: tests/unit/touch.test.ts.
 - [ ] Step 3 — glass buttons, feel, haptics
 - [ ] Step 4 — Touch settings tab, layout editor, tablet portrait
 - [ ] Step 5 — performance (blur measurement, fake/real policy, crossfade)

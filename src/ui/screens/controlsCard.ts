@@ -41,7 +41,11 @@ function column(app: App, src: InputSource, device: Device, title: string): HTML
     const s = app.saves.settings;
     const touchRows: Array<[string, string, string]> = [
       ['⬆️', 'GO', s.autoAccel || app.gr.isTouch ? 'You speed up by yourself — hold BRAKE to slow down' : 'Hold to drive'],
-      ['↔️', s.touchSteer === 'tilt' ? 'Tilt' : '◀  ▶', 'Steer'],
+      s.touchSteer === 'tilt'
+        ? ['↔️', 'Tilt', 'Tilt the screen like a steering wheel']
+        : s.touchSteer === 'buttons'
+          ? ['↔️', '◀  ▶', 'Steer (slide your thumb across for gentle turns)']
+          : ['🕹', 'Joystick', s.touch.stick === 'fixed' ? 'Push the stick left or right to steer' : `Put your ${s.touch.leftHanded ? 'right' : 'left'} thumb down anywhere on that side and slide to steer`],
       ['✨', 'DRIFT', 'Hold while turning to drift · tap to hop · tap off ramps for a trick'],
       ['🎁', 'ITEM', 'Use item · swipe down on it to throw backwards'],
       ['👀', '👀', 'Look behind'],

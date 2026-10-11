@@ -50,9 +50,12 @@ describe('real v2 save fixture', () => {
     const s = sm.settings;
     expect(s.v).toBe(mod.SETTINGS_VERSION);
     expect(s.assist).toBe(before.steeringAssist ? 'light' : 'auto');
-    for (const k of ['master', 'music', 'sfx', 'quality', 'showFps', 'autoAccel', 'touchSteer', 'cameraDistance', 'splitMode', 'screenShake']) {
+    for (const k of ['master', 'music', 'sfx', 'quality', 'showFps', 'autoAccel', 'cameraDistance', 'splitMode', 'screenShake']) {
       expect((s as unknown as Record<string, unknown>)[k]).toEqual(before[k]);
     }
+    // the old touch default "buttons" becomes the new glass joystick (v3); tilt would be kept
+    expect(before.touchSteer).toBe('buttons');
+    expect(s.touchSteer).toBe('joystick');
   });
 
   it('old ghosts are re-encoded to the compact format and still play back identically', () => {

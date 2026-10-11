@@ -1,5 +1,12 @@
-// On-screen touch controls: steering pad (or tilt), big DRIFT and ITEM buttons, brake and look-back.
-// Uses Pointer Events with capture so several fingers work at once.
+// Glass touch controller: an analog joystick (floating by default, or fixed) or glass ◀ ▶ pads, or tilt, plus glass
+// DRIFT / ITEM / BRAKE / GO / look-back / pause buttons. Every control owns its own finger (PointerRouter), so
+// steering, drifting and using an item at the same time always works. Design: docs/touch/design.md.
+import type { ItemId } from '../data/types';
+import { ITEM_ICONS } from '../ui/icons';
+import { PointerRouter, type PointerOwner } from './touch/pointers';
+import { clampKnob, floatingOrigin, stickResponse } from './touch/stick';
+import { bestDefaultLayout, hudRects, stickZone, targetSize, touchHudScale, type ControlId, type Insets, type Layout, type Rect, type Viewport } from './touch/layout';
+import { DEFAULT_TOUCH_CONFIG, type TouchConfig, type TouchSteerMode } from './touch/config';
 
 export interface TouchState {
   steer: number;
@@ -12,52 +19,96 @@ export interface TouchState {
   pause: boolean;
 }
 
-export type TouchSteerMode = 'buttons' | 'tilt';
+export type { TouchConfig, TouchSteerMode } from './touch/config';
+export { DEFAULT_TOUCH_CONFIG } from './touch/config';
+
+const TIER_WORDS = ['', 'MINI ›', 'SUPER ››', 'ULTRA ›››'];
+/** Knob travel as a fraction of the base diameter. */
+const TRAVEL = 0.3;
+
+const BUTTONS: Array<{ id: Exclude<ControlId, 'stick'>; tc: string; label: string; icon: string; aria: string }> = [
+  { id: 'drift', tc: 'drift', label: 'DRIFT', icon: '✨', aria: 'Drift' },
+  { id: 'item', tc: 'item', label: 'ITEM', icon: '🎁', aria: 'Use item (swipe down to throw back)' },
+  { id: 'brake', tc: 'brake', label: 'BRAKE', icon: '⏹', aria: 'Brake' },
+  { id: 'accel', tc: 'accel', label: 'GO', icon: '', aria: 'Accelerate' },
+  { id: 'look', tc: 'look', label: '', icon: '👀', aria: 'Look behind' },
+  { id: 'pause', tc: 'pause', label: '', icon: 'II', aria: 'Pause' },
+];
 
 export class TouchControls {
   readonly state: TouchState = { steer: 0, accel: false, brake: false, drift: false, item: false, aimBack: false, lookBack: false, pause: false };
   readonly root: HTMLDivElement;
-  private steerPad: HTMLDivElement;
-  private leftBtn: HTMLDivElement;
-  private rightBtn: HTMLDivElement;
-  private accelBtn: HTMLDivElement;
-  private steerPointer = -1;
-  private itemStartY = 0;
-  private tiltBase: number | null = null;
-  private tiltSteer = 0;
-  private visible = false;
-  mode: TouchSteerMode = 'buttons';
+  mode: TouchSteerMode = 'joystick';
   autoAccel = true;
+  config: TouchConfig = { ...DEFAULT_TOUCH_CONFIG };
+  /** Settings → HUD size (the item box the look button sits beside grows with it). */
+  hudScale = 1;
+  /** The layout in use (px), recomputed on show / resize / settings change. */
+  layout: Layout | null = null;
+
+  private readonly router = new PointerRouter();
+  private readonly zone: HTMLDivElement;
+  private readonly stick: HTMLDivElement;
+  private readonly knob: HTMLDivElement;
+  private readonly trails: HTMLDivElement[];
+  private readonly badge: HTMLDivElement;
+  private readonly pads: HTMLDivElement;
+  private readonly leftPad: HTMLDivElement;
+  private readonly rightPad: HTMLDivElement;
+  private readonly btn = {} as Record<Exclude<ControlId, 'stick'>, HTMLDivElement>;
+  private readonly itemIcon: HTMLSpanElement;
+  private readonly itemLabel: HTMLSpanElement;
+  private readonly probe: HTMLDivElement;
+  private visible = false;
+  private countdown = false;
+  private tiltBase: number | null = null;
+  private itemStartY = 0;
+  // stick state
+  private stickOwner: PointerOwner | null = null;
+  private origin = { x: 0, y: 0 };
+  private rest = { x: 0, y: 0 };
+  private knobOffset = { x: 0, y: 0 };
+  private last = { tier: -1, item: '' as string, rolling: false };
+  private relayoutQueued = false;
 
   constructor(parent: HTMLElement) {
     this.root = document.createElement('div');
-    this.root.className = 'touch-controls hidden';
+    this.root.className = 'touch-controls gc-fake hidden';
     this.root.innerHTML = `
-      <div class="tc-steer" data-tc="steer">
-        <div class="tc-btn tc-left" aria-label="Steer left">◀</div>
-        <div class="tc-btn tc-right" aria-label="Steer right">▶</div>
+      <div class="tc-zone" aria-hidden="true"></div>
+      <div class="tc-stick glass" role="slider" aria-label="Steering joystick" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0">
+        <span class="tc-ticks" aria-hidden="true"><i>‹</i><i>›</i></span>
+        <div class="tc-trail"></div><div class="tc-trail t2"></div>
+        <div class="tc-knob"></div>
+        <div class="tc-badge"></div>
       </div>
-      <div class="tc-cluster">
-        <div class="tc-btn tc-item" data-tc="item" aria-label="Use item (swipe down to throw back)">ITEM</div>
-        <div class="tc-btn tc-drift" data-tc="drift" aria-label="Drift">DRIFT</div>
-        <div class="tc-btn tc-brake" data-tc="brake" aria-label="Brake">BRAKE</div>
-        <div class="tc-btn tc-accel" data-tc="accel" aria-label="Accelerate">GO</div>
+      <div class="tc-pads">
+        <div class="tc-btn tc-left" aria-label="Steer left"><div class="glass face"><span class="ico">◀</span></div></div>
+        <div class="tc-btn tc-right" aria-label="Steer right"><div class="glass face"><span class="ico">▶</span></div></div>
       </div>
-      <div class="tc-btn tc-look" data-tc="look" aria-label="Look behind">👀</div>
-      <div class="tc-btn tc-pause" data-tc="pause" aria-label="Pause">II</div>
+      ${BUTTONS.map((b) => `<div class="tc-btn tc-${b.tc}" data-tc="${b.tc}" role="button" aria-label="${b.aria}"><div class="glass face"><i class="tint"></i><span class="ico">${b.icon}</span>${b.label ? `<span class="lbl">${b.label}</span>` : ''}<i class="ripple"></i></div></div>`).join('')}
+      <div class="tc-probe" aria-hidden="true"></div>
     `;
     parent.appendChild(this.root);
-    this.steerPad = this.root.querySelector('.tc-steer') as HTMLDivElement;
-    this.leftBtn = this.root.querySelector('.tc-left') as HTMLDivElement;
-    this.rightBtn = this.root.querySelector('.tc-right') as HTMLDivElement;
-    this.accelBtn = this.root.querySelector('.tc-accel') as HTMLDivElement;
+    const q = <T extends HTMLElement>(sel: string): T => this.root.querySelector(sel) as T;
+    this.zone = q('.tc-zone');
+    this.stick = q('.tc-stick');
+    this.knob = q('.tc-knob');
+    this.trails = [...this.root.querySelectorAll<HTMLDivElement>('.tc-trail')];
+    this.badge = q('.tc-badge');
+    this.pads = q('.tc-pads');
+    this.leftPad = q('.tc-left');
+    this.rightPad = q('.tc-right');
+    this.probe = q('.tc-probe');
+    for (const b of BUTTONS) this.btn[b.id] = q(`.tc-${b.tc}`);
+    this.itemIcon = this.btn.item.querySelector('.ico') as HTMLSpanElement;
+    this.itemLabel = this.btn.item.querySelector('.lbl') as HTMLSpanElement;
 
-    this.steerPad.addEventListener('pointerdown', this.onSteerDown);
-    this.steerPad.addEventListener('pointermove', this.onSteerMove);
-    this.steerPad.addEventListener('pointerup', this.onSteerUp);
-    this.steerPad.addEventListener('pointercancel', this.onSteerUp);
-    this.steerPad.addEventListener('lostpointercapture', this.onSteerUp);
-
+    // steering: floating zone, fixed stick, or the ◀ ▶ pads
+    this.zone.addEventListener('pointerdown', (e) => this.stickDown(e, true));
+    this.stick.addEventListener('pointerdown', (e) => this.stickDown(e, false));
+    this.pads.addEventListener('pointerdown', this.padDown);
+    // buttons
     this.bindHold('drift', (v) => (this.state.drift = v));
     this.bindHold('brake', (v) => (this.state.brake = v));
     this.bindHold('accel', (v) => (this.state.accel = v));
@@ -65,83 +116,315 @@ export class TouchControls {
     this.bindHold('pause', (v) => {
       if (v) this.state.pause = true;
     });
-    const item = this.root.querySelector('[data-tc="item"]') as HTMLDivElement;
-    item.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      item.setPointerCapture(e.pointerId);
-      this.itemStartY = e.clientY;
-      this.state.item = true;
-      this.state.aimBack = false;
-      item.classList.add('down');
-    });
-    item.addEventListener('pointermove', (e) => {
-      if (!this.state.item) return;
-      // Swipe down on the item button to throw it backwards.
-      this.state.aimBack = e.clientY - this.itemStartY > 28;
-    });
-    const itemUp = (): void => {
-      this.state.item = false;
-      item.classList.remove('down');
-      setTimeout(() => (this.state.aimBack = false), 50);
-    };
-    item.addEventListener('pointerup', itemUp);
-    item.addEventListener('pointercancel', itemUp);
-    // Block page gestures (scroll/zoom/long-press menus) over the controls.
+    this.bindHold(
+      'item',
+      (v) => {
+        this.state.item = v;
+        if (!v) setTimeout(() => (this.state.aimBack = false), 50);
+        else this.state.aimBack = false;
+      },
+      (e) => {
+        // swipe down on the item button to throw it backwards
+        if (this.state.item) this.state.aimBack = e.clientY - this.itemStartY > 28;
+      },
+      (e) => (this.itemStartY = e.clientY),
+    );
+    // Block page gestures (scroll / zoom / long-press menus) over the controls.
     this.root.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
     this.root.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('deviceorientation', this.onOrientation);
+    window.addEventListener('resize', this.queueRelayout);
+    window.addEventListener('orientationchange', this.queueRelayout);
   }
 
-  private bindHold(name: string, set: (v: boolean) => void): void {
-    const el = this.root.querySelector(`[data-tc="${name}"]`) as HTMLDivElement;
-    const down = (e: PointerEvent): void => {
-      e.preventDefault();
-      el.setPointerCapture(e.pointerId);
-      set(true);
-      el.classList.add('down');
-    };
-    const up = (): void => {
-      set(false);
-      el.classList.remove('down');
-    };
-    el.addEventListener('pointerdown', down);
-    el.addEventListener('pointerup', up);
-    el.addEventListener('pointercancel', up);
-    el.addEventListener('lostpointercapture', up);
+  // ------------------------------------------------------------------------------------------------ settings
+  /** Apply Settings → Touch controls (+ HUD size). Re-lays out immediately if the controls are showing. */
+  configure(config: TouchConfig, hudScale = this.hudScale): void {
+    this.config = { ...config };
+    this.hudScale = hudScale;
+    const r = this.root.classList;
+    r.toggle('gc-hc', config.highContrast);
+    r.toggle('lefty', config.leftHanded);
+    r.toggle('fixed', config.stick === 'fixed');
+    this.root.style.setProperty('--tc-opacity', String(Math.min(1, Math.max(0.4, config.opacity))));
+    if (this.visible) this.relayout();
   }
 
-  private steerFromX(clientX: number): void {
-    const r = this.steerPad.getBoundingClientRect();
+  /** Reduce effects: no shimmer, ripple, pulse or trail animation. */
+  setCalm(on: boolean): void {
+    this.root.classList.toggle('calm', on);
+  }
+
+  setMode(mode: TouchSteerMode): void {
+    this.mode = mode;
+    this.releaseSteer();
+    this.state.steer = 0;
+    this.tiltBase = null;
+    this.root.classList.toggle('tilt', mode === 'tilt');
+    this.root.classList.toggle('buttons', mode === 'buttons');
+    this.root.classList.toggle('joystick', mode === 'joystick');
+  }
+
+  setAutoAccel(on: boolean): void {
+    this.autoAccel = on;
+    this.syncAccel();
+  }
+
+  /** During the countdown the GO button is shown (with a glass pulse) so touch players can try a rocket start. */
+  setCountdown(on: boolean): void {
+    if (this.countdown === on) return;
+    this.countdown = on;
+    this.syncAccel();
+  }
+
+  private syncAccel(): void {
+    const show = !this.autoAccel || this.countdown;
+    this.btn.accel.classList.toggle('off', !show);
+    this.btn.accel.classList.toggle('pulse', this.autoAccel && this.countdown);
+  }
+
+  /** Race feedback inside the glass: drift tier on the stick ring (colour + chevrons + word), held item icon. */
+  setRaceState(driftTier: number, item: ItemId | null, rolling: boolean): void {
+    if (this.last.tier !== driftTier) {
+      this.last.tier = driftTier;
+      this.stick.classList.remove('tier1', 'tier2', 'tier3');
+      this.pads.classList.remove('tier1', 'tier2', 'tier3');
+      if (driftTier > 0) {
+        this.stick.classList.add(`tier${driftTier}`);
+        this.pads.classList.add(`tier${driftTier}`);
+      }
+      this.badge.textContent = TIER_WORDS[driftTier] ?? '';
+    }
+    const key = rolling ? '?' : item ?? '';
+    if (this.last.item !== key) {
+      this.last.item = key;
+      this.btn.item.classList.toggle('has', !!item && !rolling);
+      this.btn.item.classList.toggle('rolling', rolling);
+      this.itemIcon.innerHTML = rolling ? '…' : item ? ITEM_ICONS[item] : '🎁';
+      if (this.itemLabel) this.itemLabel.style.display = item && !rolling ? 'none' : '';
+    }
+  }
+
+  show(on: boolean): void {
+    if (this.visible === on) return;
+    this.visible = on;
+    this.root.classList.toggle('hidden', !on);
+    if (on) this.relayout();
+    else this.reset();
+  }
+
+  get shown(): boolean {
+    return this.visible;
+  }
+
+  reset(): void {
+    this.router.releaseAll();
+    const s = this.state;
+    s.steer = 0;
+    s.accel = s.brake = s.drift = s.item = s.aimBack = s.lookBack = s.pause = false;
+    this.root.querySelectorAll('.down').forEach((el) => el.classList.remove('down'));
+    this.setKnob(0, 0, false);
+    this.stick.classList.remove('active');
+    this.placeStick(this.rest.x, this.rest.y);
+  }
+
+  consumePause(): boolean {
+    const p = this.state.pause;
+    this.state.pause = false;
+    return p;
+  }
+
+  // ------------------------------------------------------------------------------------------------ layout
+  private readonly queueRelayout = (): void => {
+    if (!this.visible || this.relayoutQueued) return;
+    this.relayoutQueued = true;
+    requestAnimationFrame(() => {
+      this.relayoutQueued = false;
+      if (this.visible) this.relayout();
+    });
+  };
+
+  /** Viewport + safe-area insets (read once per layout, never per frame). */
+  viewport(): Viewport {
+    const r = this.root.getBoundingClientRect();
+    const cs = getComputedStyle(this.probe);
+    const px = (v: string): number => parseFloat(v) || 0;
+    const safe: Insets = { l: px(cs.paddingLeft), t: px(cs.paddingTop), r: px(cs.paddingRight), b: px(cs.paddingBottom) };
+    const h = r.height || window.innerHeight;
+    return { w: r.width || window.innerWidth, h, safe, hudScale: touchHudScale(this.hudScale, h) };
+  }
+
+  /** The layout these settings would produce right now (also used by the settings preview / editor). */
+  computeLayout(vp = this.viewport()): Layout {
+    return bestDefaultLayout(vp, this.config.size, this.config.leftHanded, this.hudRects(vp));
+  }
+
+  /** The race HUD's real boxes when it's on screen (exact), otherwise the layout model's estimate. */
+  hudRects(vp: Viewport): Rect[] {
+    const hud = document.querySelector('.hud.touch');
+    if (!hud) return hudRects(vp, this.config.leftHanded);
+    const me = this.root.getBoundingClientRect();
+    const out: Rect[] = [];
+    for (const sel of ['.hud-tl', '.hud-tr .hud-item', '.hud-minimap', '.hud-br']) {
+      const el = hud.querySelector(sel);
+      const b = el?.getBoundingClientRect();
+      if (b && b.width > 0 && b.height > 0) out.push({ x: b.left - me.left, y: b.top - me.top, w: b.width, h: b.height });
+    }
+    return out.length ? out : hudRects(vp, this.config.leftHanded);
+  }
+
+  relayout(): void {
+    const vp = this.viewport();
+    const L = this.computeLayout(vp);
+    this.layout = L;
+    // buttons: the element is the touch target (≥ 48 px); the glass face inside is the visual size
+    for (const b of BUTTONS) place(this.btn[b.id], L[b.id].x, L[b.id].y, L[b.id].d);
+    // stick (also the fixed stick's spot and the floating stick's resting "ghost" spot)
+    const s = L.stick;
+    this.stick.style.width = this.stick.style.height = `${s.d}px`;
+    this.stick.style.setProperty('--d', `${s.d}px`);
+    this.rest = { x: s.x, y: s.y };
+    this.placeStick(s.x, s.y);
+    // ◀ ▶ pads share the stick's spot
+    const pd = Math.round(s.d * 0.8);
+    const gap = Math.round(pd * 0.22);
+    this.pads.style.left = `${s.x - pd - gap / 2}px`;
+    this.pads.style.top = `${s.y - pd / 2}px`;
+    this.pads.style.width = `${pd * 2 + gap}px`;
+    this.pads.style.height = `${pd}px`;
+    for (const p of [this.leftPad, this.rightPad]) {
+      p.style.width = p.style.height = `${pd}px`;
+      p.style.setProperty('--d', `${pd}px`);
+    }
+    this.rightPad.style.left = `${pd + gap}px`;
+    // floating zone
+    const z = stickZone(vp, this.config.leftHanded);
+    Object.assign(this.zone.style, { left: `${z.x}px`, top: `${z.y}px`, width: `${z.w}px`, height: `${z.h}px` });
+  }
+
+  private placeStick(x: number, y: number): void {
+    const d = this.layout?.stick.d ?? 132;
+    this.stick.style.left = `${x - d / 2}px`;
+    this.stick.style.top = `${y - d / 2}px`;
+  }
+
+  // ------------------------------------------------------------------------------------------------ joystick
+  private stickDown(e: PointerEvent, fromZone: boolean): void {
+    if (this.mode !== 'joystick' || !this.layout) return;
+    const floating = this.config.stick === 'floating';
+    if (fromZone !== floating) return;
+    e.preventDefault();
+    // one finger per stick: a second finger in the zone is ignored
+    if (this.stickOwner) return;
+    const owner: PointerOwner = {
+      move: (ev) => this.stickMove(ev),
+      up: () => this.releaseSteer(),
+    };
+    if (!this.router.claim(e, owner, fromZone ? this.zone : this.stick)) return;
+    this.stickOwner = owner;
+    const d = this.layout.stick.d;
+    if (floating) {
+      const vp = this.viewport();
+      const o = floatingOrigin(e.clientX, e.clientY, d / 2, { left: vp.safe.l + 4, top: vp.safe.t + 4, right: vp.w - vp.safe.r - 4, bottom: vp.h - vp.safe.b - 4 });
+      this.origin = o;
+      this.placeStick(o.x, o.y);
+    } else this.origin = { x: this.layout.stick.x, y: this.layout.stick.y };
+    this.stick.classList.add('active');
+    this.stickMove(e);
+  }
+
+  private stickMove(e: PointerEvent): void {
+    const d = this.layout?.stick.d ?? 132;
+    const travel = d * TRAVEL;
+    const k = clampKnob(e.clientX - this.origin.x, e.clientY - this.origin.y, travel);
+    this.state.steer = stickResponse(k.x, travel);
+    this.setKnob(k.x, k.y, true);
+  }
+
+  private setKnob(x: number, y: number, held: boolean): void {
+    const travel = (this.layout?.stick.d ?? 132) * TRAVEL;
+    this.knobOffset = { x, y };
+    this.knob.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    this.knob.style.setProperty('--kx', (x / travel).toFixed(2));
+    this.knob.style.setProperty('--ky', (y / travel).toFixed(2));
+    this.knob.classList.toggle('held', held);
+    this.stick.setAttribute('aria-valuenow', this.state.steer.toFixed(2));
+  }
+
+  /** Thumb lifted (or controls hidden): the knob glides home leaving a short fading trail. */
+  private releaseSteer(): void {
+    if (this.stickOwner) {
+      this.stickOwner = null;
+      const { x, y } = this.knobOffset;
+      if (Math.hypot(x, y) > 6 && !this.root.classList.contains('calm')) {
+        this.trails.forEach((t, i) => {
+          const f = i === 0 ? 1 : 0.5;
+          t.style.transform = `translate(${(x * f).toFixed(1)}px, ${(y * f).toFixed(1)}px)`;
+          t.classList.remove('fade');
+          void t.offsetWidth;
+          t.classList.add('fade');
+        });
+      }
+    }
+    this.state.steer = 0;
+    this.setKnob(0, 0, false);
+    this.stick.classList.remove('active');
+    if (this.config.stick === 'floating') this.placeStick(this.rest.x, this.rest.y);
+    this.padOwner = null;
+    this.leftPad.classList.remove('down');
+    this.rightPad.classList.remove('down');
+  }
+
+  // ------------------------------------------------------------------------------------------------ ◀ ▶ pads
+  private padOwner: PointerOwner | null = null;
+
+  private readonly padDown = (e: PointerEvent): void => {
+    if (this.mode !== 'buttons' || this.padOwner) return;
+    e.preventDefault();
+    const owner: PointerOwner = { move: (ev) => this.padSteer(ev.clientX), up: () => this.releaseSteer() };
+    if (!this.router.claim(e, owner, this.pads)) return;
+    this.padOwner = owner;
+    this.padSteer(e.clientX);
+  };
+
+  /** Pads steer by how far the thumb is from the middle of the pair (rolling the thumb = analog steering). */
+  private padSteer(clientX: number): void {
+    const r = this.pads.getBoundingClientRect();
     const cx = r.left + r.width / 2;
     const v = (clientX - cx) / (r.width * 0.3);
     const dz = 0.12;
     const s = Math.abs(v) < dz ? 0 : Math.max(-1, Math.min(1, (v - Math.sign(v) * dz) / (1 - dz)));
     this.state.steer = s;
-    this.leftBtn.classList.toggle('down', s < -0.05);
-    this.rightBtn.classList.toggle('down', s > 0.05);
+    this.leftPad.classList.toggle('down', s < -0.05);
+    this.rightPad.classList.toggle('down', s > 0.05);
   }
 
-  private onSteerDown = (e: PointerEvent): void => {
-    if (this.mode !== 'buttons') return;
-    e.preventDefault();
-    this.steerPointer = e.pointerId;
-    this.steerPad.setPointerCapture(e.pointerId);
-    this.steerFromX(e.clientX);
-  };
+  // ------------------------------------------------------------------------------------------------ buttons
+  private bindHold(name: Exclude<ControlId, 'stick'>, set: (v: boolean) => void, onMove?: (e: PointerEvent) => void, onDown?: (e: PointerEvent) => void): void {
+    const el = this.btn[name];
+    let owner: PointerOwner | null = null;
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (owner) return;
+      const o: PointerOwner = {
+        move: (ev) => onMove?.(ev),
+        up: () => {
+          owner = null;
+          set(false);
+          el.classList.remove('down');
+        },
+      };
+      if (!this.router.claim(e, o, el)) return;
+      owner = o;
+      onDown?.(e);
+      set(true);
+      el.classList.remove('down');
+      void el.offsetWidth; // restart the ripple
+      el.classList.add('down');
+    });
+  }
 
-  private onSteerMove = (e: PointerEvent): void => {
-    if (e.pointerId !== this.steerPointer) return;
-    this.steerFromX(e.clientX);
-  };
-
-  private onSteerUp = (e: PointerEvent): void => {
-    if (e.pointerId !== this.steerPointer) return;
-    this.steerPointer = -1;
-    this.state.steer = 0;
-    this.leftBtn.classList.remove('down');
-    this.rightBtn.classList.remove('down');
-  };
-
+  // ------------------------------------------------------------------------------------------------ tilt
   private onOrientation = (e: DeviceOrientationEvent): void => {
     if (this.mode !== 'tilt' || e.beta == null || e.gamma == null) return;
     const angle = (screen.orientation?.angle ?? (window as unknown as { orientation?: number }).orientation ?? 90) as number;
@@ -151,8 +434,7 @@ export class TouchControls {
     tilt -= this.tiltBase;
     const dz = 3;
     const v = Math.abs(tilt) < dz ? 0 : (tilt - Math.sign(tilt) * dz) / 22;
-    this.tiltSteer = Math.max(-1, Math.min(1, v));
-    this.state.steer = this.tiltSteer;
+    this.state.steer = Math.max(-1, Math.min(1, v));
   };
 
   /** iOS needs explicit permission from a user gesture. Returns whether tilt is available. */
@@ -168,45 +450,13 @@ export class TouchControls {
     }
     return true;
   }
+}
 
-  setMode(mode: TouchSteerMode): void {
-    this.mode = mode;
-    this.state.steer = 0;
-    this.tiltBase = null;
-    this.root.classList.toggle('tilt', mode === 'tilt');
-  }
-
-  setAutoAccel(on: boolean): void {
-    this.autoAccel = on;
-    this.accelBtn.style.display = on ? 'none' : '';
-  }
-
-  /** During the countdown the GO button is shown (pulsing) so touch players can try a rocket start. */
-  setCountdown(on: boolean): void {
-    if (!this.autoAccel) return;
-    const want = on ? '' : 'none';
-    if (this.accelBtn.style.display !== want) this.accelBtn.style.display = want;
-    this.accelBtn.classList.toggle('pulse', on);
-  }
-
-  show(on: boolean): void {
-    if (this.visible === on) return;
-    this.visible = on;
-    this.root.classList.toggle('hidden', !on);
-    if (!on) this.reset();
-  }
-
-  /** Split-screen: anchor controls to one half (not used for touch split, but keeps API simple). */
-  reset(): void {
-    const s = this.state;
-    s.steer = 0;
-    s.accel = s.brake = s.drift = s.item = s.aimBack = s.lookBack = s.pause = false;
-    this.root.querySelectorAll('.down').forEach((el) => el.classList.remove('down'));
-  }
-
-  consumePause(): boolean {
-    const p = this.state.pause;
-    this.state.pause = false;
-    return p;
-  }
+/** Position a control: the element is the touch target (≥ 48 px) centred on (x, y); the face is the visual size. */
+function place(el: HTMLElement, x: number, y: number, d: number): void {
+  const t = targetSize(d);
+  el.style.left = `${x - t / 2}px`;
+  el.style.top = `${y - t / 2}px`;
+  el.style.width = el.style.height = `${t}px`;
+  el.style.setProperty('--d', `${d}px`);
 }

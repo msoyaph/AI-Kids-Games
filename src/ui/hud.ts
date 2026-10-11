@@ -9,6 +9,7 @@ import type { ArenaModel } from '../sim/arena';
 import type { ViewRect } from '../render/renderer';
 import { BALLOON_SVG, COIN_SVG, ITEM_ICONS } from './icons';
 import { Minimap, KART_COLORS } from './minimap';
+import { touchHudScale } from '../input/touch/layout';
 
 const TIER_CSS = ['#d8e6ff', '#3fa7ff', '#ff9f1c', '#ff4dd2'];
 /** Spark tiers also read as words + chevron counts, not only colours. */
@@ -63,10 +64,12 @@ export class Hud {
     touch = false,
     /** Settings → HUD size (1, 1.25, 1.5); split-screen caps it so two HUDs still fit. */
     scale = 1,
+    /** Left-handed touch layout: the buttons are on the left, so the minimap moves to the right. */
+    lefty = false,
   ) {
     this.root = document.createElement('div');
-    this.root.className = `hud ${split ? 'split' : ''} ${touch ? 'touch' : ''} mode-${mode}`;
-    const sc = split ? Math.min(scale, 1.25) : scale;
+    this.root.className = `hud ${split ? 'split' : ''} ${touch ? 'touch' : ''} ${touch && lefty ? 'lefty' : ''} mode-${mode}`;
+    const sc = split ? Math.min(scale, 1.25) : touch ? touchHudScale(scale, parent.getBoundingClientRect().height || window.innerHeight) : scale;
     this.root.style.setProperty('--hud-scale', String(sc));
     if (sc > 1) this.root.classList.add('big');
     this.root.innerHTML = `

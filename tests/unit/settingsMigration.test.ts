@@ -36,4 +36,17 @@ describe('settings migration', () => {
     expect(kept.hudSize).toBe(1.5);
     expect(kept.controlsSeen).toEqual({ touch: true });
   });
+  it('v2 → v3: Buttons (the old default) becomes the glass Joystick, Tilt stays, touch options get defaults', () => {
+    const fromButtons = migrateSettings({ v: 2, touchSteer: 'buttons', master: 0.4 });
+    expect(fromButtons.touchSteer).toBe('joystick');
+    expect(fromButtons.touch).toEqual({ stick: 'floating', size: 'medium', opacity: 1, leftHanded: false, highContrast: false });
+    expect(fromButtons.master).toBe(0.4);
+    expect(migrateSettings({ v: 2, touchSteer: 'tilt' }).touchSteer).toBe('tilt');
+    // v3 choices are kept as they are
+    const kept = migrateSettings({ ...defaultSettings(), touchSteer: 'buttons', touch: { stick: 'fixed', size: 'large', opacity: 0.7, leftHanded: true, highContrast: true } });
+    expect(kept.touchSteer).toBe('buttons');
+    expect(kept.touch.leftHanded).toBe(true);
+    expect(kept.touch.size).toBe('large');
+    expect(migrateSettings({ ...defaultSettings(), touchSteer: 'banana' }).touchSteer).toBe('joystick');
+  });
 });

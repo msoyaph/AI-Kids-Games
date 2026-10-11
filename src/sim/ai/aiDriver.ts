@@ -32,6 +32,9 @@ export interface DriverStyle {
   turboBurst?: boolean;
   /** Test-only: extra wandering steering noise (a simulated beginner). */
   steerNoise?: number;
+  /** Test-only: model an input device between what the driver wants and what reaches the kart (e.g. the touch
+   * joystick's response curve). Pure function of the wanted steer and the race time. */
+  steerMap?: (steer: number, time: number) => number;
 }
 
 /**
@@ -238,7 +241,7 @@ export class AiDriver {
       this.wantDrift = false;
     }
 
-    inp.steer = steer;
+    inp.steer = this.style.steerMap ? clamp(this.style.steerMap(steer, w.time), -1, 1) : steer;
     inp.throttle = throttle;
   }
 

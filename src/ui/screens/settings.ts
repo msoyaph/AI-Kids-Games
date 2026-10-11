@@ -102,7 +102,7 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
         choice('Auto-accelerate', [[false, 'Off'], [true, 'On']], () => s.autoAccel, (v) => ((s.autoAccel = v), save())),
         choice('Camera distance', [[0.85, 'Close'], [1, 'Normal'], [1.18, 'Far']], () => s.cameraDistance, (v) => ((s.cameraDistance = v), save())),
         choice('Rumble', [[true, 'On'], [false, 'Off']], () => s.rumble, (v) => ((s.rumble = v), save())),
-        choice('Touch steering', [['buttons', 'Buttons'], ['tilt', 'Tilt']], () => s.touchSteer, (v) => {
+        choice('Touch steering', [['joystick', 'Joystick'], ['buttons', 'Buttons'], ['tilt', 'Tilt']], () => s.touchSteer, (v) => {
           if (v === 'tilt') {
             void TouchControls.requestTiltPermission().then((ok) => {
               if (!ok) {

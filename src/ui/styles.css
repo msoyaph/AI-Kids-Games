@@ -33,129 +33,295 @@
   display: none !important;
 }
 
-/* ---------------- Touch controls ---------------- */
+/* ---------------- Touch controls: glass (docs/touch/design.md) ---------------- */
 .touch-controls {
   position: absolute;
   inset: 0;
   pointer-events: none !important;
   z-index: 20;
   touch-action: none;
+  --tc-opacity: 1;
 }
-.touch-controls > *,
-.touch-controls .tc-btn {
-  pointer-events: auto;
-}
-.tc-btn {
+.touch-controls .tc-probe {
   position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(29, 18, 80, 0.45);
-  border: 3px solid rgba(255, 255, 255, 0.55);
-  color: #fff;
-  font-weight: 900;
-  font-size: 16px;
-  letter-spacing: 0.04em;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+  visibility: hidden;
+  pointer-events: none;
+  padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
+}
+.touch-controls .tc-zone,
+.touch-controls .tc-btn,
+.touch-controls .tc-stick,
+.touch-controls .tc-pads {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none;
-  box-sizing: border-box;
-  transition: transform 0.06s ease, background 0.06s ease;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.tc-btn.down {
-  transform: scale(0.92);
-  background: rgba(255, 210, 63, 0.55);
-  border-color: #fff;
-}
-.tc-steer {
-  position: absolute;
-  left: calc(10px + var(--safe-l));
-  bottom: calc(10px + var(--safe-b));
-  width: min(42vw, 330px);
-  height: min(34vh, 170px);
-  touch-action: none;
-}
-.tc-steer .tc-btn {
-  width: min(17vw, 130px);
-  height: min(17vw, 130px);
-  max-width: 30vh;
-  max-height: 30vh;
-  bottom: 0;
-  font-size: 34px;
-  pointer-events: none;
-}
-.tc-left {
-  left: 0;
-}
-.tc-right {
-  right: 0;
-}
-.touch-controls.tilt .tc-steer {
+/* modes: joystick (floating zone or fixed stick) · buttons (◀ ▶ pads) · tilt (no steering control) */
+.touch-controls:not(.joystick) .tc-zone,
+.touch-controls:not(.joystick) .tc-stick,
+.touch-controls:not(.buttons) .tc-pads,
+.touch-controls.fixed .tc-zone,
+.touch-controls .tc-btn.off {
   display: none;
 }
-.tc-cluster {
+.touch-controls:not(.fixed) .tc-stick {
+  pointer-events: none;
+}
+/* ---- the glass skin, shared by every control ---- */
+.touch-controls .glass {
   position: absolute;
-  right: calc(10px + var(--safe-r));
-  bottom: calc(10px + var(--safe-b));
-  width: min(40vw, 300px);
-  height: min(62vh, 300px);
-  pointer-events: none !important;
+  box-sizing: border-box;
+  border-radius: 50%;
+  /* double rim: light inner rim + dark outer hairline = readable on white sand and on night streets */
+  border: 2px solid rgba(255, 255, 255, 0.62);
+  box-shadow:
+    0 0 0 1px rgba(12, 8, 40, 0.38),
+    0 6px 16px rgba(8, 4, 30, 0.32),
+    inset 0 5px 10px rgba(255, 255, 255, 0.32),
+    inset 0 -8px 14px rgba(14, 8, 48, 0.3);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 0 rgba(10, 6, 40, 0.55), 0 0 6px rgba(10, 6, 40, 0.35);
+  opacity: var(--tc-opacity);
+  transition: transform 0.07s ease, filter 0.07s ease, opacity 0.14s ease, border-color 0.12s ease, box-shadow 0.12s ease;
 }
-.tc-drift {
-  width: min(19vw, 140px);
-  height: min(19vw, 140px);
-  max-width: 34vh;
-  max-height: 34vh;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 111, 174, 0.45);
-  font-size: 18px;
+/* fake glass (every tier): frost = sheen band + bottom glow + navy tint, no blur */
+.gc-fake .glass {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.1) 38%, rgba(255, 255, 255, 0) 52%),
+    radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 60%),
+    rgba(30, 22, 86, 0.3);
 }
-.tc-item {
-  width: min(14vw, 104px);
-  height: min(14vw, 104px);
-  max-width: 25vh;
-  max-height: 25vh;
-  right: min(18vw, 130px);
-  bottom: min(17vw, 120px);
-  background: rgba(76, 224, 210, 0.45);
+/* real blur (High only): lighter tint + frosted backdrop */
+.gc-blur .glass {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.08) 38%, rgba(255, 255, 255, 0) 52%),
+    rgba(30, 22, 86, 0.18);
+  -webkit-backdrop-filter: blur(9px) saturate(1.5);
+  backdrop-filter: blur(9px) saturate(1.5);
 }
-.tc-brake {
-  width: min(11vw, 80px);
-  height: min(11vw, 80px);
-  max-width: 19vh;
-  max-height: 19vh;
-  right: min(21vw, 160px);
-  bottom: 0;
-  font-size: 12px;
+/* high contrast: solid deep fill, thick white rim, black outline */
+.touch-controls.gc-hc .glass {
+  background: rgba(16, 10, 52, 0.88);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px #000, 0 4px 10px rgba(0, 0, 0, 0.45);
+  opacity: max(0.85, var(--tc-opacity));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
-.tc-accel {
-  width: min(11vw, 80px);
-  height: min(11vw, 80px);
-  max-width: 19vh;
-  max-height: 19vh;
-  right: 0;
-  bottom: min(21vw, 160px);
-  font-size: 14px;
-  background: rgba(140, 255, 107, 0.4);
+.touch-controls .glass .tint {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
 }
-.tc-look {
-  width: 54px;
-  height: 54px;
-  right: calc(12px + var(--safe-r));
-  top: calc(12px + var(--safe-t));
-  font-size: 22px;
+.touch-controls.gc-hc .glass .tint {
+  display: none;
 }
-.tc-pause {
-  width: 48px;
-  height: 48px;
+.touch-controls .ico {
+  font-size: calc(var(--d) * 0.24);
+  line-height: 1;
+  font-style: normal;
+}
+.touch-controls .ico svg {
+  display: block;
+  width: calc(var(--d) * 0.52);
+  height: calc(var(--d) * 0.52);
+}
+.touch-controls .lbl {
+  margin-top: 2px;
+  font-size: max(10px, calc(var(--d) * 0.105));
+}
+/* ---- buttons: the element is the touch target (≥ 48 px), the face is the visual ---- */
+.touch-controls .tc-btn .face {
   left: 50%;
-  margin-left: -24px;
-  top: calc(8px + var(--safe-t));
-  font-size: 16px;
-  border-radius: 14px;
+  top: 50%;
+  width: var(--d);
+  height: var(--d);
+  transform: translate(-50%, -50%);
+}
+.touch-controls .tc-pause .face {
+  border-radius: 30%;
+}
+.touch-controls .tc-drift .tint {
+  background: radial-gradient(circle at 50% 35%, rgba(255, 111, 174, 0.38), rgba(255, 111, 174, 0.12) 70%);
+}
+.touch-controls .tc-item .tint {
+  background: radial-gradient(circle at 50% 35%, rgba(76, 224, 210, 0.34), rgba(76, 224, 210, 0.1) 70%);
+}
+.touch-controls .tc-accel .tint {
+  background: radial-gradient(circle at 50% 35%, rgba(140, 255, 107, 0.38), rgba(140, 255, 107, 0.1) 70%);
+}
+.touch-controls .tc-accel .lbl {
+  font-size: max(12px, calc(var(--d) * 0.24));
+  margin: 0;
+}
+.touch-controls .tc-item.has .face {
+  border-color: #ffd23f;
+}
+/* pressed: sinks, brightens, inner glow + soft ripple */
+.touch-controls .tc-btn.down .face {
+  transform: translate(-50%, calc(-50% + 2px)) scale(0.95);
+  filter: brightness(1.25);
+  opacity: 1;
+  box-shadow: 0 0 0 1px rgba(12, 8, 40, 0.38), 0 2px 6px rgba(8, 4, 30, 0.3), inset 0 0 22px rgba(255, 255, 255, 0.45);
+}
+.touch-controls .ripple {
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  border: 3px solid rgba(255, 255, 255, 0.6);
+  opacity: 0;
+  pointer-events: none;
+}
+.touch-controls .tc-btn.down .ripple {
+  animation: tcRipple 0.34s ease-out;
+}
+@keyframes tcRipple {
+  from { transform: scale(0.86); opacity: 0.85; }
+  to { transform: scale(1.14); opacity: 0; }
+}
+/* countdown GO: glass pulse */
+.touch-controls .tc-accel.pulse .face {
+  animation: tcGoPulse 0.7s ease-in-out infinite alternate;
+  border-color: #c8ffb0;
+}
+@keyframes tcGoPulse {
+  from { box-shadow: 0 0 0 1px rgba(12, 8, 40, 0.38), 0 0 0 0 rgba(140, 255, 107, 0.4), inset 0 5px 10px rgba(255, 255, 255, 0.32); }
+  to { box-shadow: 0 0 0 1px rgba(12, 8, 40, 0.38), 0 0 0 9px rgba(140, 255, 107, 0.35), 0 0 24px 6px rgba(140, 255, 107, 0.55), inset 0 5px 10px rgba(255, 255, 255, 0.32); }
+}
+.touch-controls .tc-item.rolling .ico {
+  animation: tcRoll 0.5s linear infinite;
+}
+@keyframes tcRoll {
+  50% { opacity: 0.4; }
+}
+/* ---- joystick ---- */
+.touch-controls:not(.fixed) .tc-stick:not(.active) {
+  opacity: calc(var(--tc-opacity) * 0.42); /* resting "ghost": shows where to put your thumb */
+}
+.touch-controls .tc-stick.active {
+  opacity: 1;
+}
+.touch-controls .tc-ticks {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 calc(var(--d) * 0.09);
+  font-size: calc(var(--d) * 0.15);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.touch-controls .tc-ticks i {
+  font-style: normal;
+}
+.touch-controls .tc-knob,
+.touch-controls .tc-trail {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--d) * 0.44);
+  height: calc(var(--d) * 0.44);
+  margin: calc(var(--d) * -0.22) 0 0 calc(var(--d) * -0.22);
+  border-radius: 50%;
+  pointer-events: none;
+}
+/* glossy bead: the highlight sits opposite the push, so it "rolls" */
+.touch-controls .tc-knob {
+  background:
+    radial-gradient(circle at calc(38% - var(--kx, 0) * 12%) calc(30% - var(--ky, 0) * 12%), rgba(255, 255, 255, 0.95) 0 9%, rgba(255, 255, 255, 0.35) 22%, rgba(255, 255, 255, 0) 46%),
+    radial-gradient(circle at 50% 78%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%),
+    radial-gradient(circle at 50% 50%, rgba(120, 110, 255, 0.6), rgba(40, 26, 120, 0.8) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 0 1px rgba(12, 8, 40, 0.45), 0 6px 12px rgba(8, 4, 30, 0.45), inset 0 -6px 10px rgba(8, 4, 40, 0.45);
+  will-change: transform;
+}
+.touch-controls .tc-knob:not(.held) {
+  transition: transform 0.14s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.touch-controls.gc-hc .tc-knob {
+  background: radial-gradient(circle at 38% 30%, #fff 0 10%, rgba(255, 255, 255, 0.2) 30%, rgba(0, 0, 0, 0) 50%), #3b2bd0;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px #000;
+}
+.touch-controls .tc-trail {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 70%);
+  opacity: 0;
+}
+.touch-controls .tc-trail.fade {
+  animation: tcTrail 0.26s ease-out;
+}
+@keyframes tcTrail {
+  from { opacity: 0.8; }
+  to { opacity: 0; }
+}
+/* drift tier: ring glow in the tier colour AND chevrons + word in a badge (not colour alone) */
+.touch-controls .tier1 { --tc: #3fa7ff; }
+.touch-controls .tier2 { --tc: #ff9f1c; }
+.touch-controls .tier3 { --tc: #ff4dd2; }
+.touch-controls .tc-stick.tier1,
+.touch-controls .tc-stick.tier2,
+.touch-controls .tc-stick.tier3,
+.touch-controls .tc-pads.tier1 .face,
+.touch-controls .tc-pads.tier2 .face,
+.touch-controls .tc-pads.tier3 .face {
+  border-color: var(--tc);
+  box-shadow: 0 0 0 1px rgba(12, 8, 40, 0.38), 0 0 18px 3px var(--tc), inset 0 0 16px var(--tc);
+}
+.touch-controls .tc-badge {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  display: none;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(16, 10, 52, 0.85);
+  border: 2px solid var(--tc, #fff);
+  color: var(--tc, #fff);
+  font-size: max(11px, calc(var(--d) * 0.09));
+  white-space: nowrap;
+  text-shadow: none;
+}
+.touch-controls .tc-stick.tier1 .tc-badge,
+.touch-controls .tc-stick.tier2 .tc-badge,
+.touch-controls .tc-stick.tier3 .tc-badge {
+  display: block;
+}
+/* ◀ ▶ pads (Buttons mode) */
+.touch-controls .tc-pads .tc-btn {
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+.touch-controls .tc-pads .ico {
+  font-size: calc(var(--d) * 0.3);
+}
+/* Reduce effects: no shimmer, ripple, pulse or trail; everything still works */
+.touch-controls.calm .ripple,
+.touch-controls.calm .tc-trail {
+  display: none;
+}
+.touch-controls.calm .tc-accel.pulse .face,
+.touch-controls.calm .tc-item.rolling .ico {
+  animation: none;
+}
+.touch-controls.calm .tc-accel.pulse .face {
+  box-shadow: 0 0 0 1px rgba(12, 8, 40, 0.38), 0 0 0 6px rgba(140, 255, 107, 0.45);
+}
+.touch-controls.calm .tc-knob {
+  transition: none;
 }
 
 /* ---------------- Rotate hint ---------------- */
@@ -1085,6 +1251,10 @@ input.focus {
   bottom: auto;
   top: calc(var(--pad-t) + clamp(96px, 30vh, 150px) * var(--hud-scale, 1));
 }
+.hud.touch.lefty .hud-bl {
+  left: auto;
+  right: var(--pad-r);
+}
 .hud.touch .hud-br {
   right: auto;
   left: 50%;
@@ -1107,9 +1277,6 @@ input.focus {
   top: calc(var(--pad-t) + clamp(70px, 20vh, 110px) * var(--hud-scale, 1));
   left: calc(var(--pad-l) + 70px);
 }
-.touch-controls .tc-look {
-  right: calc(12px + var(--safe-r) + clamp(64px, 17vh, 96px) * var(--hud-scale, 1));
-}
 /* touch: the warning sits below the pause button; the spark word sits above the chevrons (between the pads) */
 .hud.touch .hud-warn {
   top: calc(var(--pad-t) + 52px);
@@ -1126,13 +1293,6 @@ input.focus {
   text-align: center;
 }
 
-.tc-accel.pulse {
-  animation: goPulse 0.6s ease-in-out infinite alternate;
-  background: rgba(140, 255, 107, 0.65);
-}
-@keyframes goPulse {
-  to { transform: scale(1.12); }
-}
 
 /* ---------------- Performance test ---------------- */
 .bench-label {

@@ -243,7 +243,7 @@ export class RaceSession {
     const hudMode = isBattle ? 'battle' : cfg.mode === 'timeTrial' || cfg.mode === 'school' ? 'timeTrial' : 'race';
     const touchHud = ctx.gr.isTouch && this.locals.length === 1;
     for (let i = 0; i < this.locals.length; i++) {
-      const h = new Hud(this.hudLayer, hudMode, i, { track: this.track ?? undefined, arena: this.arena ?? undefined }, cfg.mirror, this.locals.length > 1, touchHud, ctx.settings.hudSize ?? 1);
+      const h = new Hud(this.hudLayer, hudMode, i, { track: this.track ?? undefined, arena: this.arena ?? undefined }, cfg.mirror, this.locals.length > 1, touchHud, ctx.settings.hudSize ?? 1, ctx.settings.touch?.leftHanded ?? false);
       h.setRect(this.view.rectFor(i, this.locals.length));
       if (this.coinRush) h.setCoinMode();
       if (cfg.lesson) h.hideLaps();
@@ -586,6 +586,11 @@ export class RaceSession {
     }
     this.ctx.audio.update(w, this.locals, dt);
     this.ctx.input.touch.setCountdown(w.phase === 'countdown' || w.phase === 'intro');
+    if (this.ctx.input.touch.shown) {
+      // drift tier on the stick ring + the held item inside the ITEM glass (dirty-checked inside)
+      const k = w.karts[this.locals[0]];
+      this.ctx.input.touch.setRaceState(k.drifting ? k.driftTier : 0, k.item, k.rouletteTime > 0);
+    }
     // speed blur (High tier only, one player, not with Reduce effects)
     let blur = 0;
     if (this.locals.length === 1 && !this.ctx.settings.reduceEffects && w.phase === 'race') {
