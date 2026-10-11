@@ -66,7 +66,7 @@ export function landingBonk(w: World, impact: number): void {
     hitEnemy(w, i, dmg, p.stats.crit, HERO_SLOT, dx, dz, 7);
   }
   w.events.push(Ev.Ring, p.x, p.y + 0.1, p.z, radius, 0, 0, 0xffb347);
-  w.events.push(Ev.Sfx, p.x, p.y, p.z, 0.6, 0, 0, sfxId('slam'));
+  w.events.push(Ev.Sfx, p.x, p.y, p.z, 0.8, 0, 0, sfxId('bonk'));
 }
 
 /** Per-tick hero effects (Ottie's bowling). Sets p.bowling while it is active. */

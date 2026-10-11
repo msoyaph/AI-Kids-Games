@@ -19,6 +19,10 @@ asset files, CDN links or web fonts.
 - `npm run bench -- [enemies] [seconds] [--map rimewood]` — headless sim performance benchmark
   (also prints CPU ms/tick, steadier than wall time on a busy machine).
 - `npm run check-size` — after build: single file, ≤1.5 MB, no external references.
+- `npm run audio-report` — builds, renders every sound + song offline (OfflineAudioContext in
+  headless Chromium, through the real mix chain) and prints loudness / peaks vs the targets
+  in src/audio/mix.ts; exits 1 if anything is out of range or clips. `--json` for raw rows.
+  tests/e2e/audio.spec.ts runs the same check.
 - `?playtest=1` — records each run on the device (`theabonk.playtest`, ≤20 runs/60 KB):
   damage by source, cause of death, picks, build, slide/jump time, boss attack hit rates.
   Export from the title / game-over screen. `npm run analyze-playtests -- <folder>` compares
@@ -66,7 +70,10 @@ src/
   meta/      save schema + migration, gold/achievements/unlocks, daily.ts (UTC date →
              seed/map/hero), playtest.ts
   game/      Game.ts — app state machine + fixed-timestep loop (60 Hz sim, interpolated render)
-  audio/     Audio.ts (synth SFX), Music.ts (sequencer), bindAudio.ts (events → sounds)
+  audio/     Audio.ts (synth SFX; build(ctx) works on live or offline contexts; master chain
+             glue compressor → limiter → soft clip at −1 dBFS), Music.ts (named songs, layered
+             by intensity), mix.ts (per-sound gain trims, categories, loudness targets),
+             report.ts (offline measurements), bindAudio.ts (events → sounds, song choice)
 scripts/     simulate.ts (balance), bench.ts (perf)
 tests/       unit/ (Vitest), e2e/ (Playwright)
 ```
@@ -133,6 +140,11 @@ Key rules:
   camera (`rig.orbit`, sim held while it plays; skipped with reduced motion), bosses get an
   intro card + phase ticks / enrage cue on the bar (EnemyDef `epithet`, `phases`, `enrageAt`),
   enemies squash on hit and burst per `deathFx`, damage numbers merge per target.
+- Audio: every sound plays at its MIX gain trim (set from the audio report: re-run it after
+  adding or changing a sound and adjust the trim until it's inside its category window).
+  New SFX names are appended to SFX_NAMES (ids are indices). Songs: runA/B/C (Meadow, dusk →
+  deep night → before dawn), rimeA/B/C (Rimewood, bells), boss / rimeBoss (mid-bosses),
+  final / oldRime (final bosses), menu, collection — chosen per frame in bindAudio.
 - Interface scale: root font = `--ui-base` (16 / 13 / 11 px by screen height) × `--ui-scale`
   (Larger text). Use rem everywhere.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
@@ -217,6 +229,9 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
 - [x] 9. Feel + visuals: hit squash, per-enemy defeat bursts, sparks / puffs, merged damage
   numbers, level-up hit-stop + light pillar, evolution card (A + B → C) + camera swing,
   stronger-looking weapons, gem trails, boss intro cards + phase ticks + enrage, bloom
+- [x] 10. Audio: song sets (3 run songs per map, boss / final themes incl. Old Rime, menu,
+  collection), new SFX (icicle, gust, shatter, bonk), pentatonic gem chimes, gain table +
+  −1 dBFS limiter, offline audio report + test
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

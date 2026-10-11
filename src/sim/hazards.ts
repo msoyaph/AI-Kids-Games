@@ -5,6 +5,9 @@ import { damageArea, damagePlayer } from './combat';
 import { HazardKind } from './pools';
 import type { World } from './world';
 
+/** Impact sound per slam look: boss slam, icicle, ice spike. */
+const SLAM_SFX = [sfxId('slam'), sfxId('icicle'), sfxId('shatter')];
+
 export function spawnEnemyHazard(w: World, kind: number, x: number, z: number, radius: number, damage: number, life: number, a0 = 0, a1 = 0, color = 0xff4f6a, source = 0, inst = 0): number {
   const hz = w.hazards;
   const i = hz.alloc();
@@ -68,7 +71,7 @@ export function updateHazards(w: World): void {
           const d = Math.hypot(p.x - x, p.z - z);
           if (d < hz.radius[i] + PLAYER_RADIUS) damagePlayer(w, hz.damage[i], hz.src[i], hz.inst[i]);
           w.events.push(Ev.Explosion, x, hz.y[i] + 0.3, z, hz.radius[i], 1, 0, hz.color[i]);
-          w.events.push(Ev.Sfx, x, hz.y[i], z, 1, 0, 0, sfxId('slam'));
+          w.events.push(Ev.Sfx, x, hz.y[i], z, 1, 0, 0, SLAM_SFX[hz.a1[i]] ?? SLAM_SFX[0]);
           hz.alive[i] = 0;
           continue;
         }

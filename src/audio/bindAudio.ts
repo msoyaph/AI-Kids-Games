@@ -1,7 +1,11 @@
+import { RUN_LENGTH } from '../config/balance';
 import { ENEMIES } from '../config/enemies';
+import { sfxId } from '../config/sfx';
 import { Ev } from '../core/events';
 import type { Game } from '../game/Game';
+import type { World } from '../sim/world';
 import type { AudioEngine } from './Audio';
+import { bossSong, runSong, type SongName } from './Music';
 
 const IS_BOSS = ENEMIES.map((e) => e.behavior === 'boss');
 
@@ -19,17 +23,26 @@ export function bindAudio(game: Game, audio: AudioEngine): void {
     else audio.ui(name);
   };
 
+  /** The song for the moment: menus, the run's time of night, or the boss fight. */
+  const songFor = (w: World | null): SongName => {
+    if (!w || w.state === 'dead' || w.state === 'won') return game.ui.screenName === 'collection' ? 'collection' : 'menu';
+    if (w.director.bossUid) {
+      const bi = w.enemies.findUid(w.director.bossUid);
+      const final = bi >= 0 && ENEMIES[w.enemies.type[bi]].id === w.map.finalBoss;
+      return bossSong(w.map.id, final);
+    }
+    return runSong(w.map.id, Math.min(1, w.time / RUN_LENGTH));
+  };
+
   game.onMode = (mode, w) => {
     switch (mode) {
       case 'menu':
         audio.setDuck(1);
         audio.music.setMuffled(false);
-        audio.music.setMood('menu');
         break;
       case 'run':
         audio.setDuck(1);
         audio.music.setMuffled(false);
-        audio.music.setMood(w && w.director.bossUid ? 'boss' : 'run');
         break;
       case 'paused':
         audio.setDuck(0.25);
@@ -38,13 +51,15 @@ export function bindAudio(game: Game, audio: AudioEngine): void {
       case 'end':
         audio.music.setMuffled(false);
         audio.setDuck(1);
-        audio.music.setMood('menu');
         audio.stinger(w?.state === 'won');
         break;
     }
   };
 
-  game.onFrame = () => audio.music.update();
+  game.onFrame = () => {
+    audio.music.play(songFor(game.world));
+    audio.music.update();
+  };
 
   game.onEvents = (w) => {
     const ev = w.events;
@@ -63,12 +78,12 @@ export function bindAudio(game: Game, audio: AudioEngine): void {
         case Ev.Damage:
           audio.hit(ev.get(n, 4) === 1);
           break;
-        case Ev.EnemyDie: {
-          const boss = IS_BOSS[ev.get(n, 3)] ?? false;
-          audio.kill(boss);
-          if (boss) audio.music.setMood('run');
+        case Ev.EnemyDie:
+          audio.kill(IS_BOSS[ev.get(n, 3)] ?? false);
           break;
-        }
+        case Ev.Gust:
+          audio.sfx(sfxId('gust'), 0.9);
+          break;
         case Ev.Gem:
           audio.gem();
           break;
@@ -105,9 +120,7 @@ export function bindAudio(game: Game, audio: AudioEngine): void {
           audio.banner(id >= 1 && id <= 3);
           break;
         }
-        case Ev.BossSpawn:
-          audio.music.setMood('boss');
-          break;
+
         case Ev.ShrineBreak:
         case Ev.Buff:
           audio.chest();
