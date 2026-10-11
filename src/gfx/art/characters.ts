@@ -433,7 +433,6 @@ export function drawAstronautBust(ctx: Ctx, look: AstronautLook, cx: number, cy:
   ctx.fill(circle(cx - r * 0.25, cy + r * 1.5, r * 0.09));
   ctx.fillStyle = C.red;
   ctx.fill(circle(cx + r * 0.05, cy + r * 1.5, r * 0.09));
-  if (look.outfit === 'scarf') ink(ctx, roundRect(cx - r * 0.9, cy + r * 0.8, r * 1.8, r * 0.3, r * 0.14), C.red, 2.5);
   if (look.outfit === 'cape') {
     ink(ctx, poly([cx - r * 1.3, cy + r * 1.0, cx - r * 0.6, cy + r * 0.85, cx - r * 1.4, cy + r * 2.2]), C.red, 2.5);
     ink(ctx, poly([cx + r * 1.3, cy + r * 1.0, cx + r * 0.6, cy + r * 0.85, cx + r * 1.4, cy + r * 2.2]), C.red, 2.5);
@@ -457,6 +456,19 @@ export function drawAstronautBust(ctx: Ctx, look: AstronautLook, cx: number, cy:
   ctx.fill(ellipse(cx - r * 0.42, cy - r * 0.35, r * 0.24, r * 0.1, -0.6));
   ctx.restore();
   if (look.helmet === 'visor') ink(ctx, roundRect(cx - r * 0.9, cy - r * 0.78, r * 1.8, r * 0.22, r * 0.1), look.accent, 2.5);
+  if (look.outfit === 'scarf') {
+    ink(ctx, roundRect(cx - r * 0.95, cy + r * 0.88, r * 1.9, r * 0.34, r * 0.16), C.red, 2.5);
+    ink(ctx, roundRect(cx + r * 0.3, cy + r * 1.05, r * 0.3, r * 0.6, r * 0.12), C.red, 2.5);
+  }
+  if (look.outfit === 'crown') ink(ctx, poly([cx - r * 0.5, cy - r * 0.9, cx - r * 0.6, cy - r * 1.45, cx - r * 0.25, cy - r * 1.15, cx, cy - r * 1.55, cx + r * 0.25, cy - r * 1.15, cx + r * 0.6, cy - r * 1.45, cx + r * 0.5, cy - r * 0.9]), C.gold, 3);
+  if (look.outfit === 'stars') {
+    ctx.fillStyle = C.yellow;
+    for (const [sx, sy] of [[-0.9, 1.4], [0.9, 1.5], [-0.6, 1.9], [0.7, 1.95]]) ctx.fill(softStar(cx + sx * r, cy + sy * r, 5, r * 0.12, r * 0.06));
+  }
+  if (look.outfit === 'sash') ink(ctx, poly([cx - r * 1.2, cy + r * 1.05, cx - r * 0.9, cy + r * 0.95, cx + r * 1.0, cy + r * 2.2, cx + r * 0.6, cy + r * 2.2]), C.pink, 2.5);
+  if (look.outfit === 'jetpack') {
+    for (const sx of [-1, 1]) ink(ctx, roundRect(cx + sx * r * 1.25 - r * 0.15, cy + r * 1.1, r * 0.3, r * 0.7, r * 0.12), C.orange, 2.5);
+  }
 }
 
 export type AstroPose = 'idle' | 'walk0' | 'walk1' | 'walk2' | 'walk3' | 'jump' | 'fall' | 'push';
@@ -509,6 +521,11 @@ export function drawAstronautSide(ctx: Ctx, look: AstronautLook, pose: AstroPose
   ctx.fillRect(cx - 12, hipY - 14, 24, 5);
   ink(ctx, roundRect(cx + 1, hipY - 30, 10, 9, 3), look.accent, 2);
   if (look.outfit === 'scarf') ink(ctx, roundRect(cx - 14, hipY - 38, 28, 8, 4), C.red, 2.5);
+  if (look.outfit === 'stars') {
+    ctx.fillStyle = C.yellow;
+    for (const [sx, sy] of [[-6, -28], [6, -20], [-4, -8]]) ctx.fill(softStar(cx + sx, hipY + sy, 5, 4, 2));
+  }
+  if (look.outfit === 'sash') ink(ctx, poly([cx - 14, hipY - 34, cx - 8, hipY - 36, cx + 14, hipY - 6, cx + 8, hipY - 4]), C.pink, 2);
   leg(legA, suit);
   // Front arm.
   ctx.save();
@@ -543,6 +560,7 @@ export function drawAstronautSide(ctx: Ctx, look: AstronautLook, pose: AstroPose
   ctx.fill(ellipse(cx + 3, hy - 6, 4, 2, -0.6));
   ctx.restore();
   if (look.helmet === 'visor') ink(ctx, roundRect(cx - 4, hy - 15, 24, 5, 2), look.accent, 2);
+  if (look.outfit === 'crown') ink(ctx, poly([cx - 10, hy - 16, cx - 12, hy - 30, cx - 5, hy - 22, cx + 2, hy - 32, cx + 9, hy - 22, cx + 16, hy - 30, cx + 14, hy - 16]), C.gold, 2.5);
 }
 
 /** Side-view rover (Venus/Mercury). Box 96 x 72, wheels at bottom. frame rotates wheel spokes. */

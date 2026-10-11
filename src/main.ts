@@ -8,6 +8,8 @@ import { TouchControls } from './input/touch';
 import { ExploreScene, type ExploreParams } from './scenes/ExploreScene';
 import { FlightScene, type FlightSceneParams } from './scenes/FlightScene';
 import { LandingScene, type LandingParams } from './scenes/LandingScene';
+import { HangarScene } from './scenes/HangarScene';
+import { ShopScene } from './scenes/ShopScene';
 import { StarMapScene } from './scenes/StarMapScene';
 import { TitleScene } from './scenes/TitleScene';
 import { Scene } from './app/Scene';
@@ -82,6 +84,8 @@ async function boot(): Promise<void> {
   game.register('title', () => new TitleScene());
   game.register('flight', (p) => new FlightScene(p as unknown as FlightSceneParams));
   game.register('map', () => new StarMapScene());
+  game.register('hangar', () => new HangarScene());
+  game.register('shop', () => new ShopScene());
   game.register('landing', (p) => new LandingScene(p as unknown as LandingParams));
   game.register('explore', (p) => new ExploreScene(p as unknown as ExploreParams));
   game.register('slots', () => new StarMapScene());

@@ -30,8 +30,9 @@ function run(world: FlightWorld, ship: ReturnType<typeof makeShip>, input: Steer
 
 describe('rocket stats', () => {
   it('turns stat totals into 1-5 stars', () => {
-    expect(toStars(0)).toBe(1);
-    expect(toStars(2)).toBe(2);
+    expect(toStars(0)).toBe(0.5);
+    expect(toStars(2)).toBe(1);
+    expect(toStars(3)).toBe(1.5);
     expect(toStars(99)).toBe(5);
     const s = statStars(STARTER_LOADOUT);
     expect(s.speed).toBeGreaterThanOrEqual(1);

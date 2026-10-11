@@ -17,6 +17,7 @@ const ICONS: Record<string, string> = {
   rocket: wrap('<path d="M18 30 l-6 8 9-2z M30 30 l6 8-9-2z" fill="#ff5d73"/><path d="M24 4 C33 12 33 26 30 34 L18 34 C15 26 15 12 24 4z" fill="#fff"/><circle cx="24" cy="18" r="4" fill="#4dd4ff"/><path d="M20 38 Q24 46 28 38" fill="#ffb43b"/>'),
   map: wrap('<path d="M6 12 L17 8 L31 12 L42 8 L42 36 L31 40 L17 36 L6 40 Z" fill="#fff6e0"/><path d="M17 8 L17 36 M31 12 L31 40" stroke-width="2.5"/><circle cx="24" cy="24" r="4" fill="#ff5d73"/>'),
   star: wrap('<path d="M24 5 L29.5 17.5 L43 18.5 L32.5 27.5 L36 41 L24 34 L12 41 L15.5 27.5 L5 18.5 L18.5 17.5 Z" fill="#ffe066"/>'),
+  starHalf: wrap('<defs><clipPath id="hs"><rect x="0" y="0" width="24" height="48"/></clipPath></defs><path d="M24 5 L29.5 17.5 L43 18.5 L32.5 27.5 L36 41 L24 34 L12 41 L15.5 27.5 L5 18.5 L18.5 17.5 Z" fill="#3a2a7a" stroke="#6b5aa8"/><path clip-path="url(#hs)" d="M24 5 L29.5 17.5 L43 18.5 L32.5 27.5 L36 41 L24 34 L12 41 L15.5 27.5 L5 18.5 L18.5 17.5 Z" fill="#ffe066"/>'),
   starEmpty: wrap('<path d="M24 5 L29.5 17.5 L43 18.5 L32.5 27.5 L36 41 L24 34 L12 41 L15.5 27.5 L5 18.5 L18.5 17.5 Z" fill="#3a2a7a" stroke="#6b5aa8"/>'),
   book: wrap('<path d="M6 10 Q15 6 24 11 Q33 6 42 10 L42 38 Q33 34 24 39 Q15 34 6 38 Z" fill="#4c7dff"/><path d="M24 11 L24 39" /><path d="M11 16 L19 15 M11 22 L19 21 M29 15 L37 16 M29 21 L37 22" stroke="#fff" stroke-width="2.5"/>'),
   badge: wrap('<path d="M15 4 L22 18 M33 4 L26 18" stroke-width="5" stroke="#ff5d73"/><circle cx="24" cy="29" r="13" fill="#ffc83d"/><path d="M24 21 l2.5 5.5 6 .5-4.5 4 1.5 6-5.5-3.2-5.5 3.2 1.5-6-4.5-4 6-.5z" fill="#fff6e0" stroke-width="2"/>'),
@@ -55,6 +56,12 @@ const ICONS: Record<string, string> = {
   tow: wrap('<rect x="10" y="10" width="28" height="22" rx="9" fill="#ffe066"/><circle cx="19" cy="20" r="3" fill="#20124d"/><circle cx="29" cy="20" r="3" fill="#20124d"/><path d="M24 32 V38 M20 42 Q24 46 28 42" />'),
   alien: wrap('<path d="M8 28 Q8 10 24 10 Q40 10 40 28 Q40 42 24 42 Q8 42 8 28z" fill="#2de0c7"/><circle cx="17" cy="25" r="4" fill="#fff"/><circle cx="31" cy="25" r="4" fill="#fff"/><circle cx="24" cy="18" r="3.5" fill="#fff"/><path d="M17 10 L12 3 M31 10 L36 3"/>'),
   planet: wrap('<circle cx="24" cy="24" r="12" fill="#ff9f43"/><ellipse cx="24" cy="24" rx="21" ry="7" transform="rotate(-20 24 24)"/>'),
+  cone: wrap('<path d="M24 4 C34 14 37 30 38 42 L10 42 C11 30 14 14 24 4z" fill="#ff5d73"/><path d="M18 20 Q24 16 30 20" stroke="#fff" stroke-width="3"/>'),
+  capsule: wrap('<rect x="12" y="4" width="24" height="40" rx="12" fill="#f4f7ff"/><circle cx="24" cy="17" r="5" fill="#4dd4ff"/><path d="M12 32 H36" stroke="#4c7dff" stroke-width="4"/>'),
+  nozzle: wrap('<path d="M16 6 H32 L38 26 H10 Z" fill="#c9d2ee"/><path d="M14 26 Q24 50 34 26 Z" fill="#ff9f43"/><path d="M19 26 Q24 40 29 26 Z" fill="#ffe066" stroke-width="2"/>'),
+  fin: wrap('<path d="M18 6 L18 40 L40 44 Z" fill="#ff5d73"/><path d="M8 10 L8 40" stroke-width="5"/>'),
+  box: wrap('<rect x="7" y="12" width="34" height="28" rx="4" fill="#ffc58a"/><path d="M7 20 H41 M24 12 V40"/>'),
+  bulb: wrap('<path d="M24 5 A13 13 0 0 1 32 29 L31 34 H17 L16 29 A13 13 0 0 1 24 5z" fill="#ffe066"/><path d="M18 38 H30 M20 43 H28"/>'),
   info: wrap('<circle cx="24" cy="24" r="19" fill="#4c7dff"/><path d="M24 22 V35" stroke="#fff" stroke-width="5"/><circle cx="24" cy="14" r="3" fill="#fff" stroke="none"/>'),
 };
 

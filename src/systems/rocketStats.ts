@@ -16,9 +16,9 @@ export function statTotals(loadout: RocketLoadout): Stats {
   return out;
 }
 
-/** Turn a stat total into 1-5 stars. */
+/** Turn a stat total into 0.5-5 stars (half-star steps, so every part point shows). */
 export function toStars(total: number): number {
-  return Math.max(1, Math.min(5, 1 + Math.floor(total / 2)));
+  return Math.max(0.5, Math.min(5, total / 2));
 }
 
 export function statStars(loadout: RocketLoadout): Stats {
@@ -58,8 +58,8 @@ export function flightParams(loadout: RocketLoadout, difficulty: Difficulty): Fl
   const s = statStars(loadout);
   const d = tuning(difficulty);
   return {
-    accel: 620 + 60 * s.speed,
-    maxSpeed: 330 + 40 * s.speed,
+    accel: 640 + 60 * s.speed,
+    maxSpeed: 350 + 40 * s.speed,
     damping: d.damping,
     boostAccel: 1.9,
     boostSpeed: 1.65,
@@ -67,12 +67,12 @@ export function flightParams(loadout: RocketLoadout, difficulty: Difficulty): Fl
     boostCooldown: 0.6,
     boostFuel: 7 * d.fuelUse,
     fuelPerSec: 1.6 * d.fuelUse,
-    maxFuel: 80 + 30 * s.fuel,
-    maxShield: 2 + s.shield,
+    maxFuel: 90 + 30 * s.fuel,
+    maxShield: 2 + Math.ceil(s.shield),
     bumpShield: d.bumpShield,
     bumpFuel: d.bumpFuel,
-    magnetRadius: 50 + 25 * s.cargo + d.magnetBonus,
-    cargoCapacity: 2 + s.cargo,
+    magnetRadius: 60 + 25 * s.cargo + d.magnetBonus,
+    cargoCapacity: 2 + Math.floor(s.cargo),
     assist: d.assist,
     turnRate: 9,
     shipRadius: 34,

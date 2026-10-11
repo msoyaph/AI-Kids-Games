@@ -41,11 +41,18 @@ export function setLabel(b: HTMLButtonElement, label: string): void {
   if (l && l.textContent !== label) l.textContent = label;
 }
 
-/** Row of 1-5 stars. */
+/** Row of stars (supports half stars). */
 export function starRow(n: number, max = 5): HTMLElement {
   const row = h('span', { class: 'stars', 'aria-label': `${n} of ${max} stars` });
-  for (let i = 0; i < max; i++) row.append(svg(icon(i < n ? 'star' : 'starEmpty')));
+  for (let i = 1; i <= max; i++) row.append(svg(icon(starIcon(n, i))));
   return row;
+}
+
+/** Which star icon to show in position i (1-based) for a value n. */
+export function starIcon(n: number, i: number): string {
+  if (n >= i) return 'star';
+  if (n >= i - 0.5) return 'starHalf';
+  return 'starEmpty';
 }
 
 export function iconEl(name: string, cls = 'ico'): HTMLElement {
