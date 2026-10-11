@@ -25,6 +25,7 @@ import {
   drawSoftDot,
   drawSparkle,
   drawStunStar,
+  drawTuft,
   PROJECTILE_SIZE,
 } from './drawFx';
 import { drawTowerBase, drawTowerHead, drawTowerIcon, TOWER_BASE_SIZE, TOWER_HEAD_SIZE } from './drawTowers';
@@ -34,6 +35,8 @@ export interface Atlas {
   tex: Record<string, Texture>;
   /** Get a texture by name (falls back to a white pixel so bad names are visible but never crash). */
   get(name: string): Texture;
+  /** The single texture source holding every particle texture. */
+  fxSource: CanvasSource;
 }
 
 export const enemyTexName = (id: string, el: ElementId | null, frame = 0): string =>
@@ -81,18 +84,7 @@ export function registerSprites(b: AtlasBuilder): void {
     const s = PROJECTILE_SIZE[style];
     b.add({ name: projectileName(style), w: s, h: s, draw: (ctx, w) => drawProjectile(ctx, style, w) });
   }
-  // FX
-  b.add({ name: 'glow', w: 96, h: 96, draw: (ctx, w) => drawGlow(ctx, w) });
-  b.add({ name: 'dot', w: 16, h: 16, draw: (ctx, w) => drawSoftDot(ctx, w) });
-  b.add({ name: 'sparkle', w: 28, h: 28, draw: (ctx, w) => drawSparkle(ctx, w) });
-  b.add({ name: 'puff', w: 56, h: 56, draw: (ctx, w) => drawPuff(ctx, w) });
-  b.add({ name: 'ring', w: 128, h: 128, draw: (ctx, w) => drawRing(ctx, w, 3) });
-  b.add({ name: 'coin', w: 22, h: 22, draw: (ctx, w) => drawCoin(ctx, w) });
-  b.add({ name: 'heart', w: 24, h: 24, draw: (ctx, w) => drawHeart(ctx, w) });
-  b.add({ name: 'gem', w: 30, h: 30, draw: (ctx, w) => drawGem(ctx, w) });
-  b.add({ name: 'stun', w: 14, h: 14, draw: (ctx, w) => drawStunStar(ctx, w) });
   b.add({ name: 'hpbar', w: 32, h: 7, ax: 0, ay: 0.5, draw: (ctx, w, h) => drawRect(ctx, w, h, 3.5) });
-  b.add({ name: 'white', w: 8, h: 8, draw: (ctx, w, h) => drawRect(ctx, w, h, 0) });
   b.add({ name: 'shadow', w: 48, h: 20, draw: (ctx, w, h) => drawShadow(ctx, w, h) });
   b.add({ name: 'chevron', w: 18, h: 18, draw: (ctx, w) => drawChevron(ctx, w) });
   b.add({ name: 'beam', w: 32, h: 20, ax: 0, ay: 0.5, draw: (ctx, w, h) => drawBeam(ctx, w, h) });
@@ -102,13 +94,39 @@ export function registerSprites(b: AtlasBuilder): void {
   b.add({ name: 'select', w: 96, h: 96, draw: (ctx, w) => drawSelectRing(ctx, w) });
   b.add({ name: 'cell_ok', w: 64, h: 64, draw: (ctx, w) => drawCellMark(ctx, w, true) });
   b.add({ name: 'cell_bad', w: 64, h: 64, draw: (ctx, w) => drawCellMark(ctx, w, false) });
+  b.add({ name: 'tuft', w: 24, h: 20, ax: 0.5, ay: 1, draw: (ctx, w, h) => drawTuft(ctx, w, h) });
+}
+
+/**
+ * Particle textures live on their own page: a ParticleContainer can only draw
+ * from a single texture source.
+ */
+export function registerParticleSprites(b: AtlasBuilder): void {
+  b.add({ name: 'glow', w: 96, h: 96, draw: (ctx, w) => drawGlow(ctx, w) });
+  b.add({ name: 'dot', w: 16, h: 16, draw: (ctx, w) => drawSoftDot(ctx, w) });
+  b.add({ name: 'sparkle', w: 28, h: 28, draw: (ctx, w) => drawSparkle(ctx, w) });
+  b.add({ name: 'puff', w: 56, h: 56, draw: (ctx, w) => drawPuff(ctx, w) });
+  b.add({ name: 'ring', w: 128, h: 128, draw: (ctx, w) => drawRing(ctx, w, 3) });
+  b.add({ name: 'coin', w: 22, h: 22, draw: (ctx, w) => drawCoin(ctx, w) });
+  b.add({ name: 'heart', w: 24, h: 24, draw: (ctx, w) => drawHeart(ctx, w) });
+  b.add({ name: 'gem', w: 30, h: 30, draw: (ctx, w) => drawGem(ctx, w) });
+  b.add({ name: 'stun', w: 14, h: 14, draw: (ctx, w) => drawStunStar(ctx, w) });
+  b.add({ name: 'white', w: 8, h: 8, draw: (ctx, w, h) => drawRect(ctx, w, h, 0) });
+  for (const el of ELEMENT_ORDER) b.add({ name: `pel_${el}`, w: 20, h: 20, draw: (ctx, w) => drawElementToken(ctx, w, el) });
 }
 
 export async function bakeAtlas(scale: number, maxTexture: number, onProgress?: (p: number) => void): Promise<Atlas> {
   const pageSize = Math.min(2048, maxTexture);
   const builder = new AtlasBuilder(scale, pageSize);
   registerSprites(builder);
-  const baked = await builder.bake(onProgress);
+  const fxBuilder = new AtlasBuilder(scale, Math.min(1024, pageSize));
+  registerParticleSprites(fxBuilder);
+  const baked = await builder.bake((p) => onProgress?.(p * 0.9));
+  const fx = await fxBuilder.bake((p) => onProgress?.(0.9 + p * 0.1));
+  // merge the fx page in as the last page
+  const fxPage = baked.pages.length;
+  baked.pages.push(...fx.pages);
+  for (const [name, f] of fx.frames) baked.frames.set(name, { ...f, page: f.page + fxPage });
 
   const sources = baked.pages.map(
     (canvas) =>
@@ -134,6 +152,7 @@ export async function bakeAtlas(scale: number, maxTexture: number, onProgress?: 
     baked,
     tex,
     get: (name: string) => tex[name] ?? fallback,
+    fxSource: sources[fxPage]!,
   };
 }
 

@@ -425,3 +425,25 @@ export function drawHexTile(ctx: Ctx, w: number): void {
   ctx.fillStyle = '#ffffff';
   ctx.fill();
 }
+
+/** Little grass tuft (tinted per theme, sways via skew). Anchor bottom-centre. */
+export function drawTuft(ctx: Ctx, w: number, h: number): void {
+  ctx.lineCap = 'round';
+  const blades = [
+    [-6, -0.8, 0.85],
+    [-2, -0.25, 1],
+    [3, 0.35, 0.9],
+    [7, 0.9, 0.7],
+  ];
+  for (const [dx, lean, len] of blades) {
+    ctx.strokeStyle = 'rgba(40,90,30,0.55)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(w / 2 + dx!, h);
+    ctx.quadraticCurveTo(w / 2 + dx! + lean! * 3, h - h * 0.5 * len!, w / 2 + dx! + lean! * 7, h - h * 0.92 * len!);
+    ctx.stroke();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2.4;
+    ctx.stroke();
+  }
+}

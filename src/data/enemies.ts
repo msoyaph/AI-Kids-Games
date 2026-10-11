@@ -20,7 +20,7 @@ export interface EnemyDef {
   id: EnemyId;
   name: string;
   blurb: string;
-  /** Hit points at wave 1 strength (scaled by the wave curve). */
+  /** Hit points at wave-1 strength (every creature, bosses too, is scaled by the wave health curve). */
   hp: number;
   /** Tiles per second. */
   speed: number;
@@ -173,7 +173,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     id: 'kinggloop',
     name: 'King Gloop',
     blurb: 'The biggest, bounciest slime. He wears a tiny crown.',
-    hp: 1400,
+    hp: 620,
     speed: 0.85,
     armor: 0.1,
     coins: 60,
@@ -190,7 +190,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     id: 'bigclank',
     name: 'Big Clank',
     blurb: 'A giant wind-up robot with a huge key on its back.',
-    hp: 3300,
+    hp: 520,
     speed: 0.75,
     armor: 0.5,
     coins: 110,
@@ -206,7 +206,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     id: 'mamapuff',
     name: 'Mama Puff',
     blurb: 'A huge fluffy bat. Her babies ride along!',
-    hp: 3800,
+    hp: 430,
     speed: 0.95,
     armor: 0.15,
     coins: 130,
@@ -224,7 +224,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     id: 'grumbleking',
     name: 'Grumble King',
     blurb: 'The grumpy leader with a color-changing crown.',
-    hp: 9500,
+    hp: 600,
     speed: 0.7,
     armor: 0.3,
     coins: 300,
