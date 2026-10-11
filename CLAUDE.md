@@ -35,4 +35,5 @@ session; condensed plan in `docs/PLAN.md`. Ships as ONE self-contained `dist/ind
 ## Status
 - Phase 1 ✅ scaffold, single-file build, pixel-art pipeline, farm map, movement, camera.
 - Phase 2 ✅ clock (12 min days, 10-min ticks, sleepy at midnight, pass out at 2am → wake at home, no loss), sleep → DayReport → save, 3 save slots (`cliffvalley.slot.N`, settings in `cliffvalley.settings`), migrations (sim/save.ts MIGRATIONS + fillDefaults), compact location tokens, DOM HUD/title/new-farm form/day summary.
-- Next: Phase 3 (tools & farming, shipping bin, economy).
+- Phase 3 ✅ tools (areas by tier, energy), clearing, tilling, planting (season rules), watering (can capacity, refill at water/well), overnight growth, quality stars, regrow, trellis, giant crops, sprinklers, scarecrows/crows, fruit trees, tappers, shipping bin + overnight payout. Systems register via `registerSystem` (sim/systems.ts); import Sim from `src/sim` (index registers content+systems).
+- Next: Phase 4 (town map, shops with hours, inventory & chests).

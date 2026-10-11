@@ -2,7 +2,7 @@
 import { formatClock } from '../core/math';
 import type { Sim } from '../sim/sim';
 import { SEASON_NAMES, WEEKDAY_NAMES, dayOfSeason, seasonOf } from '../sim/state';
-import { TUNING } from '../tuning';
+import { TOOL_TIERS, TUNING } from '../tuning';
 import { fmt, h } from './dom';
 import { icon, setIcon } from './icons';
 import { iconName, itemName } from './itemview';
@@ -101,7 +101,7 @@ export class Hud {
     }
     for (let i = 0; i < this.slots.length; i++) {
       const s = p.inv[i];
-      const key = s ? `${s.id}|${s.n}|${s.q}|${s.id.startsWith('tool.') ? p.tools[s.id.slice(5)] : ''}|${p.sel === i}` : `-|${p.sel === i}`;
+      const key = s ? `${s.id}|${s.n}|${s.q}|${s.id.startsWith('tool.') ? p.tools[s.id.slice(5)] : ''}|${p.sel === i}|${s.id === 'tool.can' ? p.water : ''}` : `-|${p.sel === i}`;
       if (!this.set('slot' + i, key)) continue;
       const el = this.slots[i];
       el.innerHTML = '';
@@ -115,6 +115,10 @@ export class Hud {
           q.classList.add('q');
           q.style.position = 'absolute';
           el.appendChild(q);
+        }
+        if (s.id === 'tool.can') {
+          const cap = TOOL_TIERS.canCapacity[Math.max(0, p.tools.can ?? 0)];
+          el.appendChild(h('span', { class: 'water', style: `width:${Math.round((p.water / cap) * 36)}px` }));
         }
         el.title = itemName(s.id, p.tools);
         el.setAttribute('aria-label', `Slot ${(i + 1) % 10}: ${itemName(s.id, p.tools)}${s.n > 1 ? ' ×' + s.n : ''}`);

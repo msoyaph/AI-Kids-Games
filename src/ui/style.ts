@@ -61,6 +61,7 @@ export const CSS = `
 .slot .k { position: absolute; left: 3px; top: 0; font-size: 10px; color: var(--ink2); }
 .slot .q { position: absolute; left: 0; bottom: 0; }
 .slot.drag-over { border-color: var(--sky); }
+.slot .water { position: absolute; left: 4px; bottom: 3px; height: 4px; border-radius: 2px; background: #4f9fe8; box-shadow: 0 0 0 1px #1b3363; }
 .toolname { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(max(8px, env(safe-area-inset-bottom)) + 66px * var(--ui));
   padding: 3px 12px; font-weight: 700; opacity: 0; transition: opacity .3s; white-space: nowrap; }
 .toolname.show { opacity: 1; }
