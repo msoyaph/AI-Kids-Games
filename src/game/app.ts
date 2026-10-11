@@ -235,7 +235,9 @@ export class App {
     this.session = null;
     this.paused = false;
     this.loop.simPaused = false;
-    this.audio.stopMusic(0.4);
+    this.audio.suspend(false);
+    // back in the menus: cross-fade to the menu theme (a new race replaces it immediately)
+    this.audio.playMusic('menu');
   }
 
   pause(): void {
