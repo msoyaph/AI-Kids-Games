@@ -36,6 +36,7 @@ import { TitleScene } from './scenes/TitleScene';
 import { GalleryScene } from './scenes/GalleryScene';
 import { RocketGalleryScene } from './scenes/RocketGalleryScene';
 import { CharGalleryScene } from './scenes/CharGalleryScene';
+import { PropGalleryScene } from './scenes/PropGalleryScene';
 import { FLAGS } from './app/flags';
 import { createSave } from './systems/save/schema';
 import { loadSettings } from './systems/save/settings';
@@ -112,6 +113,7 @@ function registerScenes(game: Game): void {
   game.register('gallery', () => new GalleryScene());
   game.register('rockets', () => new RocketGalleryScene());
   game.register('chars', () => new CharGalleryScene());
+  game.register('props', () => new PropGalleryScene());
 }
 
 async function boot(): Promise<void> {
@@ -186,7 +188,7 @@ async function boot(): Promise<void> {
   setupRotateHint();
   if (new URLSearchParams(location.search).has('debug')) (window as unknown as { __spacesky: unknown }).__spacesky = S;
   game.start();
-  await game.go(FLAGS.gallery ? 'gallery' : FLAGS.rockets ? 'rockets' : FLAGS.chars ? 'chars' : 'title', {}, false);
+  await game.go(FLAGS.gallery ? 'gallery' : FLAGS.rockets ? 'rockets' : FLAGS.chars ? 'chars' : FLAGS.props ? 'props' : 'title', {}, false);
   // Let the first frames (post-processing shaders) compile behind the loading screen.
   await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
   setLoad(100);

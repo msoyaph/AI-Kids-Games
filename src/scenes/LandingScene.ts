@@ -1,22 +1,38 @@
-import { Container, Sprite, TilingSprite } from 'pixi.js';
-import { Scene } from '../app/Scene';
+import {
+  AdditiveBlending,
+  BufferAttribute,
+  Color,
+  CylinderGeometry,
+  DirectionalLight,
+  Fog,
+  HemisphereLight,
+  Mesh,
+  MeshBasicMaterial,
+  PlaneGeometry,
+  TorusGeometry,
+  Vector3,
+  type Object3D,
+} from 'three';
+import { comfortOn } from '../app/comfort';
+import { Scene3D } from '../app/Scene3D';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
-import { lerp } from '../core/mathx';
+import { clamp, lerp } from '../core/mathx';
+import { Rng } from '../core/rng';
 import { BODY_BY_ID } from '../data/bodies';
 import { levelById } from '../data/levels';
 import { PART_BY_ID } from '../data/parts';
 import { theme, type Theme } from '../data/themes';
-import { drawSilhouette, drawSkyGradient } from '../gfx/art/backgrounds';
-import { nozzlePositions, ROCKET_H, ROCKET_W } from '../gfx/art/rocket';
-import { themeSprites } from '../gfx/art/tiles';
-import { FloatTexts, Particles } from '../gfx/particles';
-import { hexNum } from '../gfx/palette';
-import { ensureAtlas, ensureTex, planetDiscFraction, planetTex, rocketTex, tex } from '../gfx/textures';
+import { FloatLabels } from '../r3/flight/flightFx';
+import { Particles3 } from '../r3/fx/particles';
+import { RocketModel } from '../r3/models/rocket';
+import { surfaceLight, terrainMaterial, trimColor, type SurfaceLight } from '../r3/surface/look';
+import { LandingPadProp, makeBoulder, makeDeco, makePlant, type Prop } from '../r3/surface/props';
+import { SurfaceSky } from '../r3/surface/sky';
 import { landingGravity, makeLanding, stepLanding, type LandingConfig, type LandingState } from '../systems/landing';
-import { TILE } from '../systems/level';
 import { h } from '../ui/dom';
 import { Hud } from '../ui/hud';
+import { button, iconEl } from '../ui/widgets';
 import { openPause } from '../ui/pause';
 import { toast } from '../ui/toast';
 import { tip } from '../ui/tips';
@@ -26,33 +42,59 @@ export interface LandingParams {
   body: string;
 }
 
-/** Forgiving landing minigame: slow down with Thrust and touch down on the glowing pad. */
-export class LandingScene extends Scene {
+/** The landing sim keeps its own fixed 2D space (pixels); 48 px = 1 world unit like the levels. */
+const SIM_W = 1280;
+const GROUND_Y = 570;
+/** Sim pixels per world unit (a bit tighter than the levels so the rocket fills the view). */
+const UNIT = 64;
+const ROCKET_H = 2.5;
+/** Seconds of the swoop down from orbit (shorter in Comfort mode). */
+const SWOOP = 2.6;
+
+/** Forgiving landing minigame in 3D: slow down with Thrust and touch down on the glowing pad. */
+export class LandingScene extends Scene3D {
   private th: Theme;
-  private state!: LandingState;
-  private cfg!: LandingConfig;
-  private sky = new Sprite(tex('square'));
-  private stars: TilingSprite | null = null;
-  private skyPlanet: Sprite | null = null;
-  private far!: TilingSprite;
-  private mid!: TilingSprite;
-  private ground = new Container();
-  private pad = new Sprite(tex('pad'));
-  private padGlow = new Sprite(tex('dot'));
-  private rocket = new Container();
-  private flames: Sprite[] = [];
-  private fx = new Particles(160, true);
-  private dust = new Particles(80, false);
-  private floats = new FloatTexts(4);
+  private look: SurfaceLight;
+  private state: LandingState;
+  private cfg: LandingConfig;
+  private sky!: SurfaceSky;
+  private rocket!: RocketModel;
+  private rocketH = 1;
+  private pad!: LandingPadProp;
+  private beam!: Mesh;
+  private reticle!: Mesh;
+  private dropLine!: Mesh;
+  private props: Prop[] = [];
+  private nozzles: Vector3[] = [];
+  private sparks: Particles3;
+  private puffs: Particles3;
+  private floats: FloatLabels;
   private hud: Hud;
   private gauge: HTMLElement;
   private gaugeFill: HTMLElement;
+  private alt: HTMLElement;
+  private altMark: HTMLElement;
+  private skipBtn: HTMLElement;
+  private readonly comfort = comfortOn();
   private w = 1280;
-  private h = 720;
+  private hh = 720;
   private t = 0;
   private doneT = -1;
   private ready = false;
   private lastMsg = '';
+  private swoopT = 0;
+  private swoopLen: number;
+  private swoopDone = false;
+  private shakeT = 0;
+  private lastTime = 0;
+  private flameColor: string;
+  // Camera state.
+  private readonly camPos = new Vector3();
+  private readonly camLook = new Vector3();
+  private readonly goalPos = new Vector3();
+  private readonly goalLook = new Vector3();
+  private readonly tmp = new Vector3();
+  private readonly rocketPos = new Vector3();
 
   constructor(private readonly p: LandingParams) {
     super('landing');
@@ -61,56 +103,168 @@ export class LandingScene extends Scene {
     const body = BODY_BY_ID[p.body];
     const area = body?.areas?.[0];
     this.th = theme(p.body === 'earth' ? 'earth' : (area && levelById(area)?.theme) || 'moon');
+    this.look = surfaceLight(this.th);
+    const tn = S.state.tuning;
+    this.cfg = {
+      gravity: landingGravity(body?.gravityG ?? 1),
+      thrust: 560,
+      side: 520,
+      groundY: GROUND_Y,
+      padX: SIM_W * (0.45 + Math.random() * 0.2),
+      padW: 170,
+      safeSpeed: tn.landingSafeSpeed,
+      worldW: SIM_W,
+      assistAfter: 3,
+    };
+    this.state = makeLanding(this.cfg, tn.landingAssist, Math.random() < 0.5 ? SIM_W * 0.22 : SIM_W * 0.78);
+    this.swoopLen = this.comfort ? 1.2 : SWOOP;
+    this.flameColor = PART_BY_ID[S.state.data.loadout.engine]?.flame?.[0] ?? '#ff9f43';
     this.hud = new Hud({ onPause: () => openPause('landing') });
     this.gaugeFill = h('div', { class: 'gauge-fill' });
     this.gauge = h('div', { class: 'gauge', 'data-testid': 'landing-gauge' }, h('div', { class: 'gauge-safe' }), this.gaugeFill, h('div', { class: 'gauge-lbl' }, 'Speed'));
-    this.ui.append(this.hud.el, this.gauge);
+    this.altMark = h('div', { class: 'alt-mark' }, iconEl('rocket'));
+    this.alt = h('div', { class: 'alt-meter', 'data-testid': 'altitude' }, h('div', { class: 'alt-ground' }), this.altMark, h('div', { class: 'gauge-lbl' }, 'Height'));
+    // Tap anywhere (or press a button) to skip the swoop.
+    this.skipBtn = h('div', { class: 'hit skip-layer', onpointerdown: () => this.endSwoop() },
+      h('div', { class: 'cutscene-skip' }, button('Skip', 'next', () => this.endSwoop(), { size: 'small', color: 'white', id: 'btn-skip-swoop' })));
+    this.floats = new FloatLabels(this.ui);
+    this.ui.append(this.hud.el, this.gauge, this.alt, this.skipBtn);
+    this.gauge.style.visibility = 'hidden';
+    this.alt.style.visibility = 'hidden';
+    const prof = S.game.r3.profile;
+    this.sparks = new Particles3(Math.min(400, prof.particles), 'spark');
+    this.sparks.drag = 1.5;
+    this.puffs = new Particles3(Math.min(240, Math.round(prof.particles / 2)), 'puff', false);
+    this.puffs.drag = 1.4;
+    this.build();
+  }
+
+  // ------------------------------------------------------------------ building
+
+  /** Sim (pixels, y down) → world: x centered on the play area, y = height above the ground. */
+  private wx(x: number): number {
+    return (x - SIM_W / 2) / UNIT;
+  }
+
+  private wy(y: number): number {
+    return (GROUND_Y - y) / UNIT;
+  }
+
+  private build(): void {
+    const r3 = S.game.r3;
+    const prof = r3.profile;
+    const th = this.th;
+    const L = this.look;
+    const seed = this.p.body.length * 131 + 7;
+    this.world.environmentIntensity = L.envIntensity;
+    const sun = new DirectionalLight(L.sunColor, L.sunIntensity);
+    sun.position.copy(L.sunDir).multiplyScalar(60);
+    this.world.add(sun, new HemisphereLight(L.hemiSky, L.hemiGround, L.hemiIntensity));
+    if (L.sun2) {
+      const s2 = new DirectionalLight(L.sun2.color, L.sun2.intensity);
+      s2.position.copy(L.sun2.dir).multiplyScalar(60);
+      this.world.add(s2);
+    }
+    this.world.fog = new Fog(L.fog[0], 70, L.fog[2] * 1.6);
+    this.sky = new SurfaceSky(this.world, th, L, { renderer: r3.renderer, profile: prof, pixelRatio: r3.pixelRatio, x0: -60, x1: 60, seed, layerZ: [-95, -190] });
+    this.world.add(this.groundMesh(seed));
+    // Scenery props around the landing zone (never between you and the pad).
+    const rng = new Rng(seed);
+    for (let i = 0; i < 16; i++) {
+      const x = rng.range(-34, 34);
+      const z = rng.range(-30, -5);
+      const k = rng.next();
+      // Real worlds get rocks and the odd crater or science gadget; Earth gets trees; Zephyra its magic plants.
+      const zeph = th.bumbler === 'fuzzle';
+      const plants = zeph || th.id === 'earth' ? 0.55 : 0.2;
+      const deco = zeph ? (['crystals', 'mushroom'] as const) : th.id === 'earth' ? (['flagpole', 'bench'] as const) : (['crater', 'crater', 'antenna', 'dish'] as const);
+      const p = k < plants ? makePlant(th, rng.int(0, 9999)) : k < 0.85 ? makeBoulder(th, rng.int(0, 9999)) : makeDeco(rng.pick(deco), th, rng.int(0, 9999));
+      p.group.position.set(x, this.groundHeight(x, z), z);
+      p.group.scale.setScalar(rng.range(1, 1.6));
+      p.group.rotation.y = rng.range(-0.5, 0.5);
+      this.world.add(p.group);
+      if (p.update) this.props.push(p);
+    }
+    // The pad, a soft light beam above it, and a ring that shows where you will land.
+    this.pad = new LandingPadProp(this.cfg.padW / 2 / UNIT);
+    this.pad.setGlow('#8cff66');
+    this.pad.group.position.set(this.wx(this.cfg.padX), 0, 0);
+    this.world.add(this.pad.group);
+    this.beam = new Mesh(
+      new CylinderGeometry(1.2, 1.7, 14, 24, 1, true),
+      new MeshBasicMaterial({ color: new Color('#8cff66').multiplyScalar(0.7), transparent: true, opacity: 0.16, blending: AdditiveBlending, depthWrite: false }),
+    );
+    this.beam.position.set(this.wx(this.cfg.padX), 7, 0);
+    this.reticle = new Mesh(new TorusGeometry(0.7, 0.06, 8, 32), new MeshBasicMaterial({ color: new Color('#ffffff').multiplyScalar(1.6), transparent: true, opacity: 0.8, depthWrite: false }));
+    this.reticle.rotation.x = Math.PI / 2;
+    this.dropLine = new Mesh(new CylinderGeometry(0.02, 0.02, 1, 6), new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.3, depthWrite: false }));
+    this.world.add(this.beam, this.reticle, this.dropLine);
+    // Your rocket.
+    this.rocket = new RocketModel(S.state.data.loadout, { glossy: prof.tier === 'high' });
+    const ext = this.rocket.extent;
+    this.rocketH = ext.top - ext.bottom;
+    this.rocket.group.scale.setScalar(ROCKET_H / this.rocketH);
+    this.nozzles = this.rocket.nozzles();
+    this.world.add(this.rocket.group, this.sparks.points, this.puffs.points);
+    this.camera.fov = 40;
+    this.camera.near = 0.3;
+    this.camera.far = 3000;
+    this.camera.updateProjectionMatrix();
+    this.placeRocket(this.state.x, this.state.y);
+    this.placeRocket(this.state.x - 500, this.state.y - 1400);
+    this.frameCamera(1);
+    this.camPos.copy(this.goalPos);
+    this.camLook.copy(this.goalLook);
+  }
+
+  /** Rolling ground with a flat landing zone in the middle. */
+  private groundHeight(x: number, z: number): number {
+    const flat = Math.max(Math.abs(x) - 15, 0) + Math.max(-z - 6, 0) * 0.8 + Math.max(z - 6, 0) * 0.8;
+    const k = clamp(flat / 14, 0, 1);
+    const hills = Math.sin(x * 0.09 + 1.3) * 1.6 + Math.sin(z * 0.11 + x * 0.04) * 1.4 + Math.sin(x * 0.27 - z * 0.19) * 0.45;
+    return k * k * (hills + 1.2) - 0.02;
+  }
+
+  private groundMesh(_seed: number): Object3D {
+    const g = new PlaneGeometry(240, 130, 120, 65);
+    g.rotateX(-Math.PI / 2);
+    g.translate(0, 0, -25);
+    const pos = g.attributes.position as BufferAttribute;
+    const col = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const z = pos.getZ(i);
+      const y = this.groundHeight(x, z);
+      pos.setY(i, y);
+      const s = 0.92 + 0.08 * Math.sin(x * 0.7 + z * 0.5);
+      col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = s;
+    }
+    g.setAttribute('color', new BufferAttribute(col, 3));
+    // World-space uvs so the detail texture matches the levels' scale.
+    const uv = g.attributes.uv as BufferAttribute;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i), pos.getZ(i));
+    g.computeVertexNormals();
+    return new Mesh(g, terrainMaterial(this.th, 'lip'));
   }
 
   override async enter(): Promise<void> {
-    await ensureAtlas(`theme_${this.th.id}`, themeSprites(this.th));
-    const th = this.th;
-    this.sky.texture = ensureTex(`sky_${th.id}`, 8, 256, (c, w, hh) => drawSkyGradient(c, w, hh, th.sky[0], th.sky[1], th.haze), 0, 0, 1);
-    this.sky.anchor.set(0);
-    this.root.addChild(this.sky);
-    if (th.stars) {
-      this.stars = new TilingSprite({ texture: tex('stars1'), width: 100, height: 100 });
-      this.root.addChild(this.stars);
-    }
-    if (th.skyPlanet) {
-      const pt = planetTex(th.skyPlanet.body);
-      this.skyPlanet = new Sprite(pt);
-      this.skyPlanet.anchor.set(0.5);
-      this.skyPlanet.scale.set(th.skyPlanet.size / (pt.width * planetDiscFraction(th.skyPlanet.body) * 2));
-      this.root.addChild(this.skyPlanet);
-    }
-    this.far = new TilingSprite({ texture: ensureTex(`far_${th.id}`, 1024, 360, (c, w, hh) => drawSilhouette(c, th.farStyle, th.far, w, hh, 11), 0, 0, 1), width: 100, height: 360 });
-    this.mid = new TilingSprite({ texture: ensureTex(`mid_${th.id}`, 1024, 300, (c, w, hh) => drawSilhouette(c, th.midStyle, th.mid, w, hh, 23), 0, 0, 1), width: 100, height: 300 });
-    this.root.addChild(this.far, this.mid, this.ground, this.dust, this.padGlow, this.pad, this.rocket, this.fx, this.floats);
-    const lo = S.state.data.loadout;
-    const flameTex = tex(`flame_${PART_BY_ID[lo.engine]?.style ?? 'single'}`);
-    for (const [nx, ny] of nozzlePositions(lo)) {
-      const f = new Sprite(flameTex);
-      f.anchor.set(0.5, 0);
-      f.position.set(nx - ROCKET_W / 2, ny - ROCKET_H - 4);
-      this.flames.push(f);
-      this.rocket.addChild(f);
-    }
-    const body = new Sprite(rocketTex(lo));
-    body.anchor.set(0.5, 1);
-    this.rocket.addChild(body);
-    this.rocket.scale.set(0.8);
-    this.padGlow.anchor.set(0.5);
-    this.padGlow.tint = 0x8cff66;
-    this.padGlow.blendMode = 'add';
-    this.pad.scale.set(1.1, 1);
-    this.layout();
-    this.resize(this.w, this.h);
     S.touch.setMode('landing');
     const isEarth = this.p.body === 'earth';
     this.hud.setObjective(isEarth ? 'Land on the Academy pad!' : 'Land softly on the glowing pad!', 'land');
     this.hud.setCoins(S.state.data.coins);
+    this.pad.setGlow(isEarth ? '#ffe066' : trimColor(this.th) === '#ff9ad9' ? '#ff9ad9' : '#8cff66');
     this.ready = true;
+    sfx('whoosh');
+  }
+
+  /** The swoop is over (or skipped): hand control to the player. */
+  private endSwoop(): void {
+    if (this.swoopDone) return;
+    this.swoopDone = true;
+    this.swoopT = this.swoopLen;
+    this.skipBtn.remove();
+    this.gauge.style.visibility = '';
+    this.alt.style.visibility = '';
     if (this.state.assist) toast('Auto-Lander is on. Steer to the pad!', 'land', 2600);
     landingHooks.onStart(this);
     tip('landing');
@@ -118,6 +272,7 @@ export class LandingScene extends Scene {
 
   override exit(): void {
     S.touch.setMode('none');
+    this.floats.clear();
   }
 
   override back(): boolean {
@@ -125,84 +280,48 @@ export class LandingScene extends Scene {
     return true;
   }
 
-  private layout(): void {
-    const w = this.w;
-    const h = this.h;
-    const groundY = h - 150;
-    const padX = w * (0.45 + Math.random() * 0.2);
-    const tn = S.state.tuning;
-    this.cfg = {
-      gravity: landingGravity(BODY_BY_ID[this.p.body]?.gravityG ?? 1),
-      thrust: 560,
-      side: 520,
-      groundY,
-      padX,
-      padW: 170,
-      safeSpeed: tn.landingSafeSpeed,
-      worldW: w,
-      assistAfter: 3,
-    };
-    const startX = Math.random() < 0.5 ? w * 0.22 : w * 0.78;
-    if (!this.state) this.state = makeLanding(this.cfg, tn.landingAssist, startX);
-    this.ground.removeChildren();
-    const th = this.th;
-    const cols = Math.ceil(w / TILE) + 1;
-    for (let x = 0; x < cols; x++) {
-      for (let y = 0; y < 4; y++) {
-        const s = new Sprite(tex(`${th.id}_${y === 0 ? 'top0' : 'fill'}`));
-        s.position.set(x * TILE, groundY + y * TILE - 8);
-        this.ground.addChild(s);
-      }
-    }
-    this.pad.anchor.set(0.5, 0.35);
-    this.pad.position.set(padX, groundY);
-    this.padGlow.position.set(padX, groundY - 4);
-    this.padGlow.scale.set(9, 3);
+  override resize(w: number, hh: number): void {
+    super.resize(w, hh);
+    this.w = w;
+    this.hh = hh;
+    const px = window.innerHeight * S.game.r3.pixelRatio;
+    this.sparks.setScreen(px);
+    this.puffs.setScreen(px);
+    this.sky?.setPixelRatio(S.game.r3.pixelRatio);
   }
 
-  override resize(w: number, h: number): void {
-    this.w = w;
-    this.h = h;
-    this.sky.width = w;
-    this.sky.height = h;
-    if (this.stars) {
-      this.stars.width = w;
-      this.stars.height = h;
-    }
-    if (this.skyPlanet && this.th.skyPlanet) this.skyPlanet.position.set(w * this.th.skyPlanet.x, h * this.th.skyPlanet.y);
-    if (this.far) {
-      this.far.width = w;
-      this.mid.width = w;
-      this.far.y = h - 360 - 110;
-      this.mid.y = h - 300 - 100;
-    }
-    if (this.ready) {
-      const fracX = this.state.x / this.cfg.worldW;
-      this.layout();
-      this.state.x = fracX * w;
-    }
-  }
+  // ------------------------------------------------------------------ logic
 
   override update(dt: number): void {
     if (!this.ready) return;
     this.t += dt;
     const s = this.state;
     const input = S.input.state;
+    if (!this.swoopDone) {
+      this.swoopT += dt;
+      if (input.actionPressed || input.boostPressed || input.confirmPressed || this.swoopT >= this.swoopLen) this.endSwoop();
+      this.sparks.update(dt);
+      this.puffs.update(dt);
+      return;
+    }
     const thrust = input.boost || input.y < -0.4;
     const landed = stepLanding(s, this.cfg, { x: input.x, thrust }, dt);
+    const rx = this.wx(s.x);
+    const ry = this.wy(s.y);
     if (s.last !== 'none' && s.last !== this.lastMsg && !s.done) {
       this.lastMsg = s.last;
       if (s.last === 'fast') {
         toast('Too fast! Hold Thrust to slow down.', 'boost', 2400);
-        this.floats.show('Bonk!', s.x, s.y - 80, '#ff9aa8');
+        this.floats.show('Bonk!', this.tmp.set(rx, ry + ROCKET_H + 0.6, 0), '#ff9aa8');
         sfx('bump');
       } else if (s.last === 'miss') {
         toast('Try to land on the glowing pad!', 'target', 2400);
-        this.floats.show('Oops!', s.x, s.y - 80, '#ffe066');
+        this.floats.show('Oops!', this.tmp.set(rx, ry + ROCKET_H + 0.6, 0), '#ffe066');
         sfx('bump');
       }
       if (s.assist && s.attempts === this.cfg.assistAfter) toast('Boltzy turned on the Auto-Lander!', 'wrench', 2600);
-      this.dust.burst(tex('puff'), s.x, this.cfg.groundY, 10, 200, 0.7, 0.9, this.th.surface);
+      this.dustRing(rx, 12, 3.5, 0.9);
+      if (!this.comfort) this.shakeT = 0.3;
     }
     if (s.last === 'none' || s.y < this.cfg.groundY - 30) this.lastMsg = s.y < this.cfg.groundY - 30 ? '' : this.lastMsg;
     if (landed) this.onLanded();
@@ -213,23 +332,35 @@ export class LandingScene extends Scene {
         landingHooks.onDone(this.p.body, s.perfect);
       }
     }
-    // Effects.
+    // Engine sparks and dust blown off the ground.
     if (s.thrusting && !s.done) {
-      for (const [nx] of nozzlePositions(S.state.data.loadout)) {
-        const x = s.x + (nx - ROCKET_W / 2) * 0.8;
-        this.fx.spawn(tex('dot'), x, s.y + 6, (Math.random() - 0.5) * 60, 260, 0.35, 0.7, 0.1, 0.9, hexNum(PART_BY_ID[S.state.data.loadout.engine]?.flame?.[0] ?? '#ff9f43'));
+      for (let i = 0; i < Math.min(3, this.nozzles.length); i++) {
+        this.tmp.copy(this.nozzles[i]).applyMatrix4(this.rocket.group.matrixWorld);
+        this.sparks.spawn(this.tmp.x, this.tmp.y - 0.1, this.tmp.z, (Math.random() - 0.5) * 1.2, -5.5 - Math.random() * 2, (Math.random() - 0.5) * 1.2, 0.3, 0.26, this.flameColor);
       }
-      if (this.cfg.groundY - s.y < 160 && Math.random() < 0.5) {
-        this.dust.spawn(tex('puff'), s.x + (Math.random() - 0.5) * 120, this.cfg.groundY, (Math.random() - 0.5) * 300, -40, 0.8, 0.5, 1.4, 0.7, hexNum(this.th.surface));
+      if (ry < 3.4 && Math.random() < 0.6) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = 2.5 + Math.random() * 3;
+        this.puffs.spawn(rx + Math.cos(a) * 0.6, 0.15, Math.sin(a) * 0.6, Math.cos(a) * sp, 0.4 + Math.random() * 0.5, Math.sin(a) * sp, 0.9, 0.6, this.th.surface, 0.7, 2.5);
       }
     }
-    this.fx.update(dt);
-    this.dust.update(dt);
-    this.floats.update(dt);
-    // Speed gauge: how fast you are falling compared to the safe speed.
+    this.sparks.update(dt);
+    this.puffs.update(dt);
+    // Speed gauge: how fast you are falling compared to the safe speed; height meter.
     const frac = Math.max(0, Math.min(1, s.vy / (this.cfg.safeSpeed * 2)));
     this.gaugeFill.style.height = `${Math.round(frac * 100)}%`;
     this.gauge.classList.toggle('safe', s.vy <= this.cfg.safeSpeed);
+    const alt = clamp((this.cfg.groundY - s.y) / (this.cfg.groundY - 40), 0, 1);
+    this.altMark.style.top = `${Math.round((1 - alt) * 100)}%`;
+  }
+
+  /** A ring of dust rolling out over the ground. */
+  private dustRing(x: number, n: number, speed: number, size: number): void {
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + Math.random() * 0.3;
+      const sp = speed * (0.7 + Math.random() * 0.5);
+      this.puffs.spawn(x + Math.cos(a) * 0.5, 0.2, Math.sin(a) * 0.5, Math.cos(a) * sp, 0.5 + Math.random() * 0.6, Math.sin(a) * sp, 1.1, size, this.th.surface, 0.75, 2.2);
+    }
   }
 
   private onLanded(): void {
@@ -238,29 +369,97 @@ export class LandingScene extends Scene {
     st.bump('landings');
     if (s.perfect) st.bump('perfectLandings');
     st.emit({ type: 'land', body: this.p.body, perfect: s.perfect });
-    this.floats.show(s.perfect ? 'Perfect landing!' : 'Touchdown!', s.x, s.y - 150, s.perfect ? '#ffe066' : '#8cff66', s.perfect ? 64 : 56);
-    this.fx.burst(tex('spark'), s.x, s.y - 40, s.perfect ? 50 : 30, 450, 1, 0.9, '#ffe066');
-    this.fx.burst(tex('confetti'), s.x, s.y - 60, s.perfect ? 50 : 20, 420, 1.6, 1, '#ff7ad9', { gravity: 500, spin: true });
-    this.dust.burst(tex('puff'), s.x, this.cfg.groundY, 16, 260, 0.8, 1, this.th.surface);
+    const rx = this.wx(s.x);
+    this.floats.show(s.perfect ? 'Perfect landing!' : 'Touchdown!', this.tmp.set(rx, ROCKET_H + 1.2, 0), s.perfect ? '#ffe066' : '#8cff66', true);
+    this.sparks.burst(rx, ROCKET_H * 0.6, 0, s.perfect ? 50 : 30, 7, 1, 0.3, '#ffe066');
+    this.sparks.burst(rx, ROCKET_H * 0.6, 0, s.perfect ? 40 : 18, 6, 1.2, 0.26, '#ff7ad9');
+    this.dustRing(rx, 22, 4.5, 1.1);
     sfx(s.perfect ? 'perfect' : 'landed');
     this.doneT = 0;
   }
 
+  // ------------------------------------------------------------------ render
+
+  private placeRocket(x: number, y: number): void {
+    const s = ROCKET_H / this.rocketH;
+    const ext = this.rocket.extent;
+    this.rocketPos.set(this.wx(x), this.wy(y) + 0.18 - ext.bottom * s, 0);
+    this.rocket.group.position.copy(this.rocketPos);
+  }
+
+  /**
+   * Where the camera wants to be: a low 3/4 view framing the rocket and the pad together, coming
+   * down and closer as you descend. During the swoop (`swoop` 1 → 0) it chases the rocket instead.
+   */
+  private frameCamera(swoop: number): void {
+    const s = this.state;
+    const rx = this.wx(s.x);
+    const alt = Math.max(0, this.wy(s.y));
+    const padX = this.wx(this.cfg.padX);
+    const k = clamp(alt / 8, 0, 1);
+    const sep = Math.abs(rx - padX);
+    const lookX = lerp(rx, padX, 0.45);
+    // Keep the whole rocket and the pad in view (with room under the HUD).
+    const span = alt + ROCKET_H + 3;
+    this.goalLook.set(lookX, span / 2 + 0.25, 0);
+    const dist = Math.max(span * 1.78, (sep + 5) / 1.15, 9.5);
+    const elev = (6 + k * 12) * (Math.PI / 180);
+    const az = 0.3;
+    this.goalPos.set(lookX + Math.sin(az) * Math.cos(elev) * dist, this.goalLook.y + Math.sin(elev) * dist, Math.cos(az) * Math.cos(elev) * dist);
+    if (swoop > 0) {
+      // Chase the rocket down out of the sky, looking past it at the ground below.
+      const w = 1 - (1 - swoop) * (1 - swoop);
+      const r = this.rocketPos;
+      this.tmp.set(r.x - 3.5, r.y + 1.6, r.z + 8.5);
+      this.goalPos.lerp(this.tmp, w);
+      this.tmp.set(r.x + 1.2, r.y - 1.2, 0);
+      this.goalLook.lerp(this.tmp, w);
+    }
+  }
+
   override render(alpha: number): void {
     if (!this.ready) return;
+    const time = this.time;
+    const dt = clamp(time - this.lastTime, 0, 0.1) || 1 / 60;
+    this.lastTime = time;
     const s = this.state;
+    const swooping = !this.swoopDone;
+    const u = swooping ? 1 - Math.min(1, this.swoopT / this.swoopLen) : 0;
     const x = lerp(s.px, s.x, alpha);
     const y = lerp(s.py, s.y, alpha);
-    this.rocket.position.set(x, y + 4);
-    this.rocket.rotation = s.tilt;
-    for (let i = 0; i < this.flames.length; i++) {
-      const f = this.flames[i];
-      f.visible = s.thrusting && !s.done;
-      f.scale.set(1, 0.8 + Math.sin(this.t * 45 + i) * 0.2);
+    // During the swoop the rocket glides down from high above into its starting spot.
+    const e = u * u * (3 - 2 * u);
+    this.placeRocket(x - e * 500, y - e * 1400);
+    this.rocket.group.rotation.set(0, -0.3, swooping ? -0.35 * e : -s.tilt);
+    this.rocket.update(dt, swooping ? 0.4 : s.thrusting && !s.done ? 1 : 0.02, swooping ? 0.6 : 0);
+    this.rocket.group.updateMatrixWorld();
+    this.frameCamera(e);
+    const k = swooping ? 1 - Math.exp(-9 * dt) : 1 - Math.exp(-5 * dt);
+    this.camPos.lerp(this.goalPos, k);
+    this.camLook.lerp(this.goalLook, k);
+    this.camera.position.copy(this.camPos);
+    if (this.shakeT > 0) {
+      this.shakeT = Math.max(0, this.shakeT - dt);
+      const a = this.shakeT * this.shakeT * 1.2;
+      this.camera.position.x += Math.sin(time * 61) * a;
+      this.camera.position.y += Math.sin(time * 53 + 1) * a;
     }
-    this.padGlow.alpha = 0.35 + Math.sin(this.t * 4) * 0.2;
-    if (this.stars) this.stars.tilePosition.y = this.t * 3;
-    this.fx.render(alpha);
-    this.dust.render(alpha);
+    this.camera.lookAt(this.camLook);
+    this.camera.updateMatrixWorld();
+    // Landing aids.
+    const rx = this.rocketPos.x;
+    const over = Math.abs(s.x - this.cfg.padX) <= this.cfg.padW / 2;
+    const alt = Math.max(0, this.wy(y));
+    this.reticle.visible = this.dropLine.visible = !swooping && !s.done;
+    this.reticle.position.set(rx, 0.24, 0);
+    (this.reticle.material as MeshBasicMaterial).color.set(over ? '#8cff66' : '#ffffff').multiplyScalar(1.8);
+    this.reticle.scale.setScalar(1 + Math.min(1.5, alt * 0.08));
+    this.dropLine.position.set(rx, alt / 2 + 0.2, 0);
+    this.dropLine.scale.y = Math.max(0.01, alt);
+    (this.beam.material as MeshBasicMaterial).opacity = s.done ? 0.06 : 0.12 + Math.sin(time * 3) * 0.05;
+    this.pad.update(dt, time);
+    for (const p of this.props) p.update!(dt, time);
+    this.sky.update(time, this.camera);
+    this.floats.update(dt, this.camera, this.w, this.hh);
   }
 }

@@ -328,6 +328,8 @@ export class Character {
   mood: Mood = 'happy';
   /** Walk/run speed factor (1 = normal). */
   speed = 1;
+  /** Hold something over the head (arms only), whatever the legs are doing. */
+  carrying = false;
   private face: Texture | null = null;
   private t = Math.random() * 10;
   private blinkT = 2 + Math.random() * 3;
@@ -857,6 +859,12 @@ export class Character {
       p.lKnee = Math.max(0, -Math.cos(ph)) * 0.6;
       p.rKnee = Math.max(0, Math.cos(ph)) * 0.6;
     } else if (a === 'carry') {
+      p.lShZ = 2.75;
+      p.rShZ = -2.75;
+      p.lEl = p.rEl = -0.5;
+      p.lShX = p.rShX = -0.2;
+    }
+    if (this.carrying && a !== 'carry') {
       p.lShZ = 2.75;
       p.rShZ = -2.75;
       p.lEl = p.rEl = -0.5;

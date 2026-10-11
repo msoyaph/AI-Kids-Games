@@ -78,6 +78,24 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   against the dev server (the desktop browser pane is portrait/hidden, so use this for visual review).
 - Tone mapping: ACES filmic (AgX looked too pastel for the vivid kid look). Space scenes use
   `world.environmentIntensity = 0.45`.
+- 2.5D exploration (`scenes/ExploreScene.ts`, same platformer/level/reachability logic): 1 tile = 1 world unit,
+  y up with the level's bottom row on y = 0 (`wx/wy` convert level pixels), gameplay on z = 0. Camera: FOV 30,
+  15.6 rows visible, lifted 2.4 units looking slightly down, follows like the 2D one (45% / 55%). Test hooks:
+  `current.player` (PPlayer) and `current.world2` (PlatWorld); `snapCamera()`.
+  `systems/tileMesh.ts` = pure mesher (layers ground/lip/rock/ice/platform/goo/trim, bevelled blocks, surface
+  caps, `buildBackTerrain`, `surfaceSpots`, `groundBelow`), unit-tested. `r3/surface/`: `terrain.ts`
+  (LevelTerrain: one mesh per layer + back terrain + instanced tufts/pebbles/shards), `look.ts` (canvas detail
+  textures, per-theme materials, `surfaceLight`: sun dir/colors, Zephyra's 2 suns, fog), `sky.ts` (SurfaceSky:
+  gradient dome or the real starry sky on airless worlds, the theme's sky planet pinned to its screen spot,
+  two scenery layers by style; `layerZ` pushes them back for landings), `props.ts` (+ propKit/propsBasic/
+  propsActive/propsMachines/propsDeco: every level thing as `Prop {group, update?}`, origin bottom-center,
+  +z faces the camera). `r3/models/rover.ts`. Blob shadows on Low/Medium, real sun shadows on High. The action
+  prompt floats above the target (`.prompt-anchor`). `?props[&theme=moon&set=deco|machines|plants&on&game]`.
+- 3D landing (`scenes/LandingScene.ts`, same `systems/landing.ts` sim in a fixed 1280-px sim space, 64 px = 1
+  unit): orbit swoop chase-cam (2.6 s, 1.2 s in Comfort; tap/`btn-skip-swoop`/action skips), then a low 3/4
+  camera that frames rocket + pad and comes down with you; pad beam, landing ring (green over the pad), drop
+  line, height meter (`altitude`) next to the speed gauge, dust ring on touchdown.
+- Measure tiers with `?q=low|medium|high`: Auto picks High on this Mac (shadows add ~80 draw calls in levels).
 
 ## Architecture (2D, still used by unported screens)
 - **Hybrid rendering**: Pixi draws the world (flight, map, landing, platformer, hub backdrop). A DOM layer (`#ui`)
@@ -117,13 +135,16 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   Saturn ring races with hoops, bots for every trip and race, pacing +3 warp/swoop cinematics (Easy 6.7 h, Normal 5.7 h).
 - [x] 3D Phase 5: 3D cast (cadet + all options/outfits, crew, robots, Tuggy, Zephyrans, glimmer) with faces,
   expressions and procedural animations; 3D portraits everywhere in the DOM; live 3D Creator; 3D Tuggy in flight.
-- [ ] 6 landing/explore · [ ] 4 flight · [ ] 5 characters · [ ] 6 landing/explore · [ ] 7 hub/menus
-  (remove Pixi) · [ ] 8 cutscenes · [ ] 9 perf · [ ] 10 tests/review/handoff
+- [x] 3D Phase 6: 3D landing (swoop, framing camera, landing aids, height meter) and 2.5D exploration of all 20
+  areas (tile mesher, theme terrain/sky/scenery with the real sky planets, ~60 3D props, 3D cadet/rover/NPCs/
+  Zibbo, floating prompts). Medium: 80–136 draw calls in levels, ~50–70 in landings.
+- [ ] 7 hub/menus (remove Pixi) · [ ] 8 cutscenes · [ ] 9 perf (merge character meshes: Low is ~100 calls in
+  levels vs a 60 target) · [ ] 10 tests/review/handoff
 
 ## Current numbers
 - Pacing model: Easy ≈ 6.7 h with all side missions (≈ 5.5 h story + free play); Normal ≈ 5.7 h.
 - Perf (tablet profile, DPR 2, M3 GPU): 60 fps, p95 16.7 ms in belt flight / big levels; still 60 fps with 4× CPU throttle.
-- Build: dist/index.html ≈ 1.1 MB.
+- Build: dist/index.html ≈ 1.1 MB on main; 2.36 MB on space-sky-3d while Pixi and Three are both bundled.
 
 ## Content conventions
 - Puzzles remember being solved via flags `solved:<puzzle>`, `reached:<marker>`, `door:<id>`; the mission engine treats

@@ -140,6 +140,24 @@ test('every exploration area loads and the astronaut can walk', async ({ page })
   expect(errors).toEqual([]);
 });
 
+test('3D landing: skip the swoop, use the height and speed meters, land and explore', async ({ page }) => {
+  const errors = watchErrors(page);
+  await boot(page);
+  await newGame(page);
+  await go(page, 'landing', { body: 'moon' });
+  await expect(page.getByTestId('btn-skip-swoop')).toBeVisible();
+  await page.getByTestId('btn-skip-swoop').click({ force: true });
+  await expect(page.getByTestId('btn-skip-swoop')).toHaveCount(0);
+  await expect(page.getByTestId('altitude')).toBeVisible();
+  await expect(page.getByTestId('landing-gauge')).toBeVisible();
+  // Hold thrust for a moment: the rocket slows its fall.
+  await page.keyboard.down('Space');
+  await page.waitForTimeout(400);
+  await page.keyboard.up('Space');
+  await expect.poll(() => scene(page), { timeout: 40_000 }).toBe('explore');
+  expect(errors).toEqual([]);
+});
+
 test('3D star map: tap a planet, read its card, launch and warp into flight', async ({ page }) => {
   const errors = watchErrors(page);
   await boot(page);

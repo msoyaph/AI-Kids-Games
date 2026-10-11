@@ -456,3 +456,14 @@ body.kbd-nav #ui button:focus, body.kbd-nav #ui [role=button]:focus, body.kbd-na
 .float-text.big { font-size: 42px; }
 .prompt { background-image: linear-gradient(90deg, rgba(77, 212, 255, .55) calc(var(--p, 0) * 100%), transparent 0); }
 @media (prefers-reduced-motion: reduce) { .edge-arrow > svg { animation: none; } }
+/* 3D landing: height meter beside the speed gauge. */
+.alt-meter { position: absolute; right: calc(118px + var(--safe-r,0px)); top: 150px; width: 22px; height: 300px; border-radius: 11px; background: rgba(10,6,40,.55); border: 4px solid var(--ink); }
+.alt-ground { position: absolute; left: -4px; right: -4px; bottom: -4px; height: 12px; border-radius: 0 0 11px 11px; background: #2ed47a; }
+.alt-mark { position: absolute; left: 50%; top: 0; width: 40px; height: 40px; margin: -20px 0 0 -20px; color: #fff; filter: drop-shadow(0 2px 0 var(--ink)); transition: top .08s; }
+.alt-mark svg { width: 100%; height: 100%; transform: rotate(180deg); }
+#ui.touch-on .alt-meter { right: auto; left: calc(112px + var(--safe-l,0px)); top: 140px; }
+.world-label { font-size: 26px; }
+.skip-layer { position: absolute; inset: 0; }
+/* Explore: the action prompt floats above the thing you can use. */
+.prompt-anchor { position: absolute; left: 0; top: 0; pointer-events: none; }
+.prompt.anchored { position: relative; left: auto; bottom: auto; transform: none; white-space: nowrap; font-size: 28px; padding: 8px 14px 8px 20px; }
