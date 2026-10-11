@@ -20,3 +20,6 @@ export { expect };
 export function slow(ms: number): number {
   return process.env.CI ? ms * 3 : ms;
 }
+
+/** Frame-rate floor for "it renders smoothly enough": real GPUs locally; CI's software GL only has to draw at all. */
+export const MIN_FPS = process.env.CI ? 1 : 10;

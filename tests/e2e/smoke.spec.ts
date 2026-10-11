@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { test, expect, slow } from './fixtures';
+import { test, expect, slow, MIN_FPS } from './fixtures';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
@@ -71,21 +71,19 @@ test('menus → versus race → pause → quit', async ({ page }, info) => {
   await expect(page.locator('.hud')).toBeVisible();
   await expect(page.locator('.hud-minimap')).toBeVisible();
   if (touch) await expect(page.locator('.touch-controls')).toBeVisible();
-  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(20_000) });
+  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(45_000) });
   // drive: hold accelerate
   if (touch) {
     const accel = page.locator('.tc-drift');
     await expect(accel).toBeVisible();
-  } else {
-    await page.keyboard.down('ArrowUp');
-    await page.waitForTimeout(2500);
-    await page.keyboard.up('ArrowUp');
-  }
-  await page.waitForTimeout(touch ? 3000 : 200);
-  const speed = await page.evaluate(() => window.__calex.app.session.world.karts[0].progress);
-  expect(speed).toBeGreaterThan(5); // touch uses auto-accelerate
+  } else await page.keyboard.down('ArrowUp');
+  // wait on race time, not wall time: software-rendered CI browsers run the sim slower than real time
+  await page.waitForFunction(() => window.__calex.app.session.world.raceTime > 3, null, { timeout: slow(30_000) });
+  if (!touch) await page.keyboard.up('ArrowUp');
+  const progress = await page.evaluate(() => window.__calex.app.session.world.karts[0].progress);
+  expect(progress).toBeGreaterThan(5); // touch uses auto-accelerate
   const fps = await page.evaluate(() => window.__calex.app.gr.quality.fps);
-  expect(fps).toBeGreaterThan(10);
+  expect(fps).toBeGreaterThan(MIN_FPS);
   await page.screenshot({ path: `test-results/race-${info.project.name}.png` });
   // pause
   if (touch) await page.locator('.tc-pause').tap();
@@ -143,15 +141,14 @@ test('gamepad navigates menus and drives', async ({ page }, info) => {
   await expect(page.locator('.controls-card .cc-title')).toContainText('Gamepad');
   await expect(page.locator('.controls-card')).toContainText('RB');
   await tapButton(0);
-  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(20_000) });
+  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(45_000) });
   await page.evaluate(() => {
     const p = (window as unknown as { __pad: { buttons: Array<{ pressed: boolean; value: number }> } }).__pad;
     p.buttons[0].pressed = true;
     p.buttons[0].value = 1;
   });
-  await page.waitForTimeout(2500);
-  const prog = await page.evaluate(() => window.__calex.app.session.world.karts[0].progress);
-  expect(prog).toBeGreaterThan(10);
+  // the kart drives off (waits on the sim, which runs slower than real time on software-rendered CI browsers)
+  await page.waitForFunction(() => window.__calex.app.session.world.karts[0].progress > 10, null, { timeout: slow(20_000) });
 });
 
 test('runs from file:// (double-click) and inside a sandboxed iframe', async ({ page, browser }, info) => {

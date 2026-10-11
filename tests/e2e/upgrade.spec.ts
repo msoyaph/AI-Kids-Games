@@ -1,4 +1,4 @@
-import { test, expect, slow } from './fixtures';
+import { test, expect, slow, MIN_FPS } from './fixtures';
 import { boot, quickRace, skipControlsCard, watch } from './helpers';
 
 test('playtest mode: badge, records a race, export and clear', async ({ page }, info) => {
@@ -71,7 +71,7 @@ test('recovers from a lost WebGL context with "Tap to continue"', async ({ page 
   const w = watch(page);
   await boot(page);
   await quickRace(page);
-  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(20_000) });
+  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(45_000) });
   const lost = await page.evaluate(() => {
     const c = document.getElementById('gl') as HTMLCanvasElement;
     const gl = (c.getContext('webgl2') ?? c.getContext('webgl')) as WebGLRenderingContext | null;
@@ -105,7 +105,7 @@ test('performance test runs from the URL and reports numbers', async ({ page }) 
   await expect(page.locator('.bench-card')).toBeVisible({ timeout: slow(60_000) });
   await expect(page.locator('.bench-card')).toContainText('average FPS');
   const r = await page.evaluate(() => (window.__calex as unknown as { lastBench: { avgFps: number; maxDraws: number; timeline: unknown[] } }).lastBench);
-  expect(r.avgFps).toBeGreaterThan(5);
+  expect(r.avgFps).toBeGreaterThan(MIN_FPS / 2);
   expect(r.maxDraws).toBeGreaterThan(5);
   expect(r.timeline.length).toBeGreaterThanOrEqual(3);
   // nothing saved: no slot was created by the test
@@ -133,7 +133,7 @@ test('High-tier shaders (water, road sheen, pod shimmer, rim light, skinned driv
       a.gr.quality.adaptive = false;
       a.gr.quality.setSetting('high');
     });
-    await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(20_000) });
+    await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(45_000) });
     await page.evaluate(() => window.__calex.app.session.world.karts[0].startBoost(2)); // speed blur on
     await page.waitForTimeout(800);
     expect(await page.evaluate(() => window.__calex.app.gr.stats().calls)).toBeGreaterThan(5);
@@ -178,9 +178,8 @@ test('instant replay: watch the race again with every camera, then back to the r
   else await replayBtn.click();
   await expect(page.locator('.replay-ui')).toBeVisible();
   const x0 = await page.evaluate(() => window.__calex.app.session.world.karts[0].x);
-  await page.waitForTimeout(1200);
-  const x1 = await page.evaluate(() => window.__calex.app.session.world.karts[0].x);
-  expect(Math.abs(x1 - x0)).toBeGreaterThan(1); // karts move during playback
+  // karts move during playback
+  await page.waitForFunction((x) => Math.abs(window.__calex.app.session.world.karts[0].x - x) > 1, x0, { timeout: slow(10_000) });
   for (let i = 0; i < 4; i++) {
     const cam = page.locator('.replay-ui [data-nav]').filter({ hasText: /Auto|Chase|Trackside|Overhead/ }).first();
     if (touch) await cam.tap();
@@ -271,8 +270,12 @@ test('Coin Rush in Coin Carnival: pick the rule, coins on the HUD, coin results'
   await tap(/Start!/);
   await page.waitForFunction(() => window.__calex.app.session?.coinRush && window.__calex.app.session.world.phase === 'race', null, { timeout: slow(30_000) });
   await expect(page.locator('.hud-battle.coins')).toBeVisible();
-  // the player's kart just sits there; the AI racers play the match at 8× speed
-  await page.evaluate(() => (window.__calex.app.loop.timeScale = 8));
+  // the player's kart just sits there; the AI racers play the last 40 s of the match at 8× speed
+  await page.evaluate(() => {
+    const a = window.__calex.app;
+    a.session.coinRush.timeLeft = Math.min(a.session.coinRush.timeLeft, 40);
+    a.loop.timeScale = 8;
+  });
   await expect(page.locator('.ui-root [data-nav]').filter({ hasText: 'Rematch' }).first()).toBeVisible({ timeout: slow(90_000) });
   await page.evaluate(() => (window.__calex.app.loop.timeScale = 1));
   await expect(page.locator('.screen .table').first()).toContainText('🪙');

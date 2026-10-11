@@ -1,8 +1,9 @@
 # Calex Cart
 
 A bright, original 3D kart racer for ages 10–14 that runs in the browser on computers, tablets and phones.
-Drift for sparks, glide over canyons, dodge paper planes and goo puddles, and collect trophies across
-**16 tracks in 4 cups**, with Time Trial ghosts, Versus, balloon Battle and 2-player split-screen.
+Drift for sparks, glide over canyons, skid across ice, dodge paper planes and goo puddles, and collect trophies
+across **20 tracks in 5 cups** with **13 racers**. There's Time Trial with your ghost and staff ghosts, Versus,
+balloon Battle and Coin Rush, a 6-lesson Driving School, instant replays and 2-player split-screen.
 
 Everything is made in code: the karts, racers, tracks and scenery are procedural low-poly geometry, and all
 music and sound effects are synthesized live with the Web Audio API. The game ships as **one self-contained
@@ -20,6 +21,7 @@ more helpful items.
 - **Tricks:** press Drift just as you leave a ramp, and you get a boost when you land.
 - **Gliders** open automatically off blue glider ramps. Steer while you glide.
 - **Shortcuts:** every track has a risky one. Try finding them in Time Trial.
+- **Ice** (Frost Cup, Frostpeak Pass shortcuts) is slippery: brake early, drift sooner, and enjoy faster sparks.
 - **Falling off** is fine: a friendly drone carries you back.
 - **Blocking:** hold an item behind your kart to block things thrown at you. A Bubble Shield blocks one hit.
   You can make a Paper Plane miss by hopping, doing a trick or boosting just as it swoops.
@@ -37,8 +39,10 @@ more helpful items.
 | Look behind | R | Left-stick click | 👀 |
 | Pause | Esc or P | Start | II |
 
-Menus work with arrows/WASD + Enter/Esc, the D-pad + A/B, mouse, or touch. Q and E (or LB and RB) switch tabs.
-You can remap keyboard and gamepad buttons in **Settings → Controls**.
+Menus work with arrows/WASD + Enter/Esc, Tab / Shift+Tab, the D-pad + A/B, mouse, or touch. Q and E (or LB and
+RB) switch tabs. Before your first race on a keyboard, gamepad or touch screen, a **controls card** shows what
+every button does; open it again from **Settings → Controls**, where you can also remap keyboard and gamepad
+buttons.
 
 **2-player split-screen:**
 - 2 gamepads: one each.
@@ -48,20 +52,54 @@ You can remap keyboard and gamepad buttons in **Settings → Controls**.
 
 ### Modes
 - **Grand Prix:** 4-race cups (points 15-12-10-8-6-4-2-1), with gold, silver and bronze trophies and a podium.
-  Rookie and Pro are open from the start. Gold in every cup on Pro unlocks **Champion**, and gold in every cup
-  on Champion unlocks **Mirror**. Galaxy Cup unlocks with a trophy in both Sunrise and Thunder; Legend Cup
-  unlocks with a trophy in Galaxy.
+  Rookie and Pro are open from the start. Gold in every one of the first four cups on Pro unlocks **Champion**,
+  and gold in all four on Champion unlocks **Mirror**. Galaxy Cup unlocks with a trophy in both Sunrise and
+  Thunder, Legend Cup with a trophy in Galaxy, and the winter **Frost Cup** (Shiver Lake, Crystal Cavern, Lantern
+  Village, Avalanche Peak) with any Legend Cup trophy. Frost trophies are a bonus and never needed for other unlocks.
 - **Time Trial:** solo with 3 Turbo Cans. Race your best-run ghost and the staff ghost. Beat staff times for ⭐.
+  Staff times sit between the Pro AI and a near-perfect run.
 - **Versus:** a single race or a custom 4-race cup, with your own speed, items on/off, item set, AI count and laps.
-- **Battle:** 4 arenas, each racer starts with 3 balloons, and every pop scores a point. Nobody is eliminated.
-- **Challenges:** 34 missions. They unlock the other 6 racers and every kart part, paint, decal and arena.
+- **Battle:** 5 arenas and two games. In **Balloons**, each racer starts with 3 balloons and every pop scores a
+  point; nobody is eliminated. In **Coin Rush** (2 minutes), grab the most coins; when an item hits you, you drop 3.
+- **Driving School:** six short lessons (steering gates, drift sparks, rocket starts, items and dodging,
+  shortcuts, glider rings) on two practice courses, with bronze, silver and gold medals. Gold in all six unlocks
+  the Learner kart. New players are invited from the main menu.
+- **Instant replay:** after any race, press **Replay 🎬** to watch it again with auto, chase, trackside and
+  overhead cameras. You can play/pause, jump ±10 s, change speed and follow any racer.
+- **Challenges:** 40 missions. They unlock the other racers and every kart part, paint, decal and arena.
 
 ### Settings
-Master, music and SFX volume. Graphics (Auto/Low/Medium/High), FPS counter, screen shake, split-screen
-orientation. Steering assist, auto-accelerate, touch steering (buttons/tilt), camera distance. Control remapping.
+- **Sound:** master, music and SFX volume.
+- **Graphics:** quality (Auto/Low/Medium/High), FPS counter, screen shake, **HUD size** (100/125/150 %),
+  **Reduce effects** (no camera shake, speed blur or lines, hit pauses or flashing; on by default when the device
+  asks for reduced motion), split-screen orientation, and **Test performance** (see below).
+- **Gameplay:** steering assist (**Auto** = Light on touch screens and Off on keyboard/gamepad; **Light** keeps you
+  on the road; **Full** follows the racing line with you and stops most falls), auto-accelerate, camera distance,
+  rumble (gamepad / phone vibration), touch steering (buttons/tilt).
+- **Controls:** the controls card, and keyboard/gamepad remapping.
+
+Accessibility: drift-spark tiers show as 1–3 chevrons plus a word (MINI / SUPER / ULTRA), and incoming items show
+an icon plus a word (PLANE!, BALL!…), so neither depends on colour. Every menu works with a keyboard alone, a
+gamepad alone, or touch alone.
 
 Saves: 3 save slots stored in this browser only (`localStorage`). They autosave and use a versioned format with
 migrations. There are no accounts, online play, chat, ads, purchases, tracking or external links.
+
+### Storage keys (all under the `calexcart.` prefix)
+
+| Key | What | Notes |
+|---|---|---|
+| `calexcart.slot.1` … `.3` | save slots | format v3 (adds Driving School medals; Frost Cup migration) |
+| `calexcart.settings` | settings | v2 (assist level, reduce effects, rumble, HUD size, controls card seen, playtest flag) |
+| `calexcart.lastSlot` | last used slot | unchanged |
+| `calexcart.ghost.<slot>.<track>` | best-run ghost per track | now a compact `G2` format (~15.6 KB for a 4-minute run); older ghosts are converted at startup |
+| `calexcart.playtest` | **new**: playtest log | only when playtest mode is on; rolling buffer of about 100 KB |
+| `calexcart.__probe` | storage check | written and removed straight away |
+
+Calex Cart never reads, writes or deletes keys outside its prefix. **Worst case** (a ghost on all 20 tracks in all
+3 slots, a full playtest log and settings) is **about 1.08 MB**, under the 1.5 MB budget. If the browser's storage is
+full, the game frees space from its own playtest log first, then shows a friendly message and keeps playing. A save
+is never half-written.
 
 ---
 
@@ -72,11 +110,17 @@ Requirements: Node 20+ (tested on Node 24).
 ```bash
 npm install
 npm run dev          # http://localhost:5173 (dev server)
-npm run build        # typecheck + single-file build → dist/index.html
-npm test             # Vitest unit + headless simulation tests
-npm run test:e2e     # build, then Playwright smoke tests (desktop / tablet / phone)
+npm run build        # typecheck + single-file build → dist/index.html, fails if it reaches 2 MB
+npm test             # Vitest unit + headless simulation tests (~3 min)
+npm run test:e2e     # build, then Playwright: Chromium + WebKit × desktop / tablet / phone
+npm run validate     # track validator: geometry + AI races on every track (add --all-classes for 6 runs each)
 npm run sim          # headless AI-vs-AI balance report → sim-report/balance.md
+npm run calibrate-staff   # re-time the staff ghosts (after any physics / AI / track change)
+npm run bench        # performance test on the built game (needs `npx vite preview --port 4173`)
 ```
+
+WebKit for the browser tests: `npx playwright install webkit` (once). All balance numbers live in one file,
+**`src/tuning/balance.ts`**: catch-up, item odds, AI skill and pace, assist strengths, staff paces and stat mapping.
 
 `dist/index.html` runs when double-clicked (file://) and inside a sandboxed iframe.
 
@@ -87,6 +131,96 @@ Developer tools (dev server only, stripped from production builds):
   `/?arena=<id>` does the same for battle.
 - `npx tsx scripts/validateTracks.ts [ids…]` checks geometry and runs AI races; it writes top-down SVG maps to `sim-report/tracks/`.
 - `node scripts/perf.mjs <track> [--cpu 4] [--mobile] [--split]` measures frame stats on the built game (needs `npx vite preview --port 4173`).
+
+---
+
+## Testing on real devices
+
+### Serve the build to a phone or tablet
+1. `npm run build`
+2. `npx vite preview --host --port 4173`. Vite prints a **Network** address such as `http://192.168.1.20:4173/`.
+3. Open that address in Safari or Chrome on the iPad, iPhone or Android device (same Wi-Fi). Add `?playtest=1`
+   and/or `?bench=1` as below. To check memory on an iPhone or iPad, connect it to the Mac, enable
+   **Settings → Safari → Advanced → Web Inspector**, then open **Safari (Mac) → Develop → <device>**. The Timelines
+   tab shows memory, and the performance test also prints its numbers to the console.
+
+### Playtest mode (anonymous numbers from real players)
+- Turn it on with **`?playtest=1`** in the address, or tap the **Settings** title 5 times. That reveals the
+  🧪 **Playtest** tab, where you switch *Playtest recording* on or off. While it's on, a small
+  **"Playtest recording on"** badge shows in the corner.
+- For every race it records track, class, mode, racer/kart, input type, assists, finish, lap times, falls, drift
+  time, mini-turbos by tier, items, hits, shortcuts and rocket starts. **No names, nothing personal, never sent
+  anywhere.** It's stored in `calexcart.playtest`, a rolling buffer of about 100 KB that drops the oldest races first.
+- **Export playtest data** downloads a `.json` file. Inside a sandboxed iframe, where downloads are blocked, it
+  shows a box with a **Copy** button instead; paste that into a `.json` file. **Clear playtest data** deletes the log.
+- Put the exported files in one folder and run `npm run analyze-playtests -- <folder>`. It compares them with
+  simulator baselines and **prints suggested** `src/tuning/balance.ts` edits (also in `sim-report/playtests.md`).
+  It never changes the game.
+
+### Performance test
+- **Settings → Graphics → Test performance (60 s)**, or open the game with **`?bench=1`**
+  (`&seconds=30`, `&quality=low|medium|high|auto`). A scripted 8-kart race on the heaviest track (Neon Nightway)
+  runs by itself, then a card shows average FPS, 1 % low, frame times, draw calls, triangles, quality tier and
+  render scale per second, GPU, and memory.
+- Rough targets: **average ≥ 55 FPS and 1 % low ≥ 40** at the tier Auto picks. Memory: JS heap < 120 MB and 3D data < 60 MB.
+- From the Mac: `npm run bench -- --quality medium --profile tablet` (a 1024×768, DPR 2 tablet with a 4× CPU slowdown)
+  or `--profile phone`. It needs `npx vite preview --port 4173` running.
+
+---
+
+## Continuous integration (GitHub Actions)
+
+`.github/workflows/ci.yml` runs on every push to `main` / `calex-upgrade`, on pull requests and on demand:
+typecheck → single-file build (**fails if `dist/index.html` reaches 2 MB**) → unit + simulation tests → track
+validator → Playwright in **Chromium and WebKit** on desktop, tablet and phone. GitHub's runners have no GPU, so the
+browser tests run in the game's **test mode** (`?testmode=1`, set for every page by `CALEX_TESTMODE=1`: Low quality,
+reduced effects) with longer timeouts and one retry. On failure the HTML report, traces and screenshots are uploaded
+as the `playwright-report-…` artifact; on success the built `index.html` is uploaded.
+
+### Put the project on GitHub (first time)
+
+With the [GitHub CLI](https://cli.github.com) (`gh auth login` once):
+
+```bash
+cd "Calex Kart"
+gh repo create calex-cart --private --source . --remote origin
+git push -u origin main
+git push -u origin calex-upgrade
+```
+
+Or in the browser: go to github.com/new, name it `calex-cart`, choose **Private**, and click **Create repository**
+(leave README/.gitignore/licence unticked). Then:
+
+```bash
+git remote add origin https://github.com/<your-user>/calex-cart.git
+git push -u origin main
+git push -u origin calex-upgrade
+```
+
+Open the repository's **Actions** tab to watch the first run (about 25–40 minutes; most of it is the simulation
+tests and software-rendered browser tests). To stop broken code reaching `main`: **Settings → Branches → Add rule**
+for `main` → tick *Require status checks to pass* → choose **CI / test**.
+
+### Optional: full-quality tests on your Mac (self-hosted runner)
+
+`.github/workflows/mac-gpu.yml` runs the same tests on your own Mac with its real GPU (Metal) at full quality, plus
+the Low/Medium/High benchmark (`sim-report/bench-*.json` in the run's artifact).
+
+> ⚠️ **Use this only with a private repository, and make sure untrusted pull requests can't run code on your
+> machine.** A self-hosted runner executes the workflow's code directly on your Mac with your user's access.
+> The workflow never runs for pull requests (only *Run workflow* clicks and pushes by people with write access) and
+> refuses to start unless the repository is private and the run was started by its owner. Also set
+> **Settings → Actions → General → Fork pull request workflows → Require approval for all outside collaborators**,
+> and don't give outside collaborators write access. If the repository ever becomes public, remove the runner
+> first (**Settings → Actions → Runners → … → Remove**) and delete `mac-gpu.yml`.
+
+1. **Settings → Actions → Runners → New self-hosted runner → macOS** (pick ARM64 on Apple silicon). Run the
+   download and `./config.sh …` commands it shows in a new folder (e.g. `~/actions-runner-calex`), and when asked
+   for extra labels type **`calex-mac`**.
+2. Start it with `./run.sh` (only while that Terminal window is open) or install it as a background service with
+   `./svc.sh install && ./svc.sh start`.
+3. **Actions → Mac GPU (self-hosted) → Run workflow.** Node 24 is installed by the workflow; Playwright downloads
+   its own Chromium and WebKit the first time.
 
 ---
 
@@ -128,10 +262,14 @@ Paints are two colours. Decals use one of the procedural patterns in `src/render
 
 ## Putting it on Ai Kids Games
 
-1. `npm run build`
+1. `npm run build`. Output: one file, `dist/index.html`, **about 1.21 MB** (the build fails at 2 MB).
 2. Copy `dist/index.html` to `public/games/calex-cart/index.html`. Copy `site/banner.svg` and
    `site/thumbnail.svg` next to it.
-3. Embed it in a sandboxed iframe. The `allow` list makes fullscreen, gamepads and tilt steering work inside the frame:
+3. **Recapture the site previews and cover art after this update.** The game now has a winter Frost Cup, a new
+   racer (Yuki), new lighting and materials and a new HUD, so older screenshots, previews and the banner/thumbnail
+   art no longer match. `node scripts/capture.mjs --out shots --tracks avalanche-peak,lantern-village,neon-nightway`
+   (with `npx vite preview --port 4173` running) makes clean 1280×720 race shots to start from.
+4. Embed it in a sandboxed iframe. The `allow` list makes fullscreen, gamepads and tilt steering work inside the frame:
 
 ```html
 <iframe src="/games/calex-cart/index.html"
@@ -150,13 +288,13 @@ fall back to memory and are kept only for that visit.
 {
   slug: 'calex-cart',
   title: 'Calex Cart',
-  description: 'Drift, boost and glide through 16 bright tracks in an original 3D kart racer. Win Grand Prix trophies, chase Time Trial ghosts, pop balloons in Battle, or race a friend in split-screen.',
+  description: 'Drift, boost and glide through 20 bright tracks, from sunny beaches to a snowy village at night, in an original 3D kart racer. Win Grand Prix trophies in five cups, chase Time Trial ghosts, earn medals in Driving School, pop balloons or grab coins in Battle, or race a friend in split-screen.',
   categories: ['Racing', 'Action'],
   ageGuidance: 'Ages 10–14',
   contentNotes: 'Cartoon kart battles with silly spin-outs',
   controls: ['keyboard', 'gamepad', 'touch'],
   devices: ['computer', 'tablet', 'phone'],
-  playTime: 'About 5–6 hours, plus replay',
+  playTime: 'About 7–8 hours, plus replay',
   path: '/games/calex-cart/index.html',
   banner: '/games/calex-cart/banner.svg',
   thumbnail: '/games/calex-cart/thumbnail.svg',

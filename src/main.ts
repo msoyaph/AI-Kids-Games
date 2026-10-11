@@ -48,6 +48,8 @@ async function boot(): Promise<void> {
     app.saves.settings.playtest = params.get('playtest') !== '0';
     app.saveSettings();
   }
+  // ?testmode=1 (CI browsers, or the CALEX_TESTMODE Playwright fixture): Low quality + reduced effects.
+  if (params.has('testmode') || (window as unknown as { __CALEX_TESTMODE?: boolean }).__CALEX_TESTMODE) app.enterTestMode();
   (window as unknown as { __calex: unknown }).__calex = { app };
   bootUi?.set(0.9, 'Rolling out');
   await nextFrame();

@@ -66,13 +66,15 @@ export class GameLoop {
     if (!this.simPaused) {
       this.acc += frameDt * this.timeScale;
       let steps = 0;
-      while (this.acc >= SIM_DT && steps < MAX_STEPS_PER_FRAME) {
+      // fast-forward (tests set timeScale > 1) may take proportionally more steps per frame; normal play keeps 5
+      const cap = MAX_STEPS_PER_FRAME * Math.max(1, Math.ceil(this.timeScale));
+      while (this.acc >= SIM_DT && steps < cap) {
         this.cb.step(SIM_DT);
         this.acc -= SIM_DT;
         steps++;
       }
       // Spiral-of-death guard: if we're too far behind, drop the remainder.
-      if (steps === MAX_STEPS_PER_FRAME) this.acc = 0;
+      if (steps === cap) this.acc = 0;
     }
     this.cb.render(this.simPaused ? 1 : this.acc / SIM_DT, frameDt);
   };

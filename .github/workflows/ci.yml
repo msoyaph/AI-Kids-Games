@@ -1,0 +1,73 @@
+# Calex Cart — continuous integration (GitHub-hosted Ubuntu runner).
+# typecheck → single-file build + 2 MB size check → unit/sim tests → track validator →
+# Playwright (Chromium + WebKit; desktop, tablet and phone) in the game's low-quality test mode.
+# Benchmarks stay local (`npm run bench`) or on the optional Mac runner (mac-gpu.yml).
+name: CI
+
+on:
+  push:
+    branches: [main, calex-upgrade]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CI: 'true'
+      # every Playwright page starts with Low quality + reduced effects (tests/e2e/fixtures.ts)
+      CALEX_TESTMODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build single file (fails over 2 MB)
+        run: npm run build
+
+      - name: Unit + simulation tests
+        run: npm test
+
+      - name: Track validator (all 20 tracks + practice courses)
+        run: npm run validate
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Browser tests (Chromium + WebKit, desktop / tablet / phone)
+        run: npx playwright test
+
+      - name: Upload test report and screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+      - name: Upload the built game
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: calex-cart-index-html
+          path: dist/index.html
+          retention-days: 14

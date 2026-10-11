@@ -193,6 +193,17 @@ export class App {
   // ---------------------------------------------------------------------------
   // settings
   // ---------------------------------------------------------------------------
+  /** CI test mode (`?testmode=1`): lightest look so software-rendered test browsers stay quick. */
+  testMode = false;
+
+  enterTestMode(): void {
+    this.testMode = true;
+    const s = this.saves.settings;
+    s.quality = 'low';
+    s.reduceEffects = true;
+    this.applySettings();
+  }
+
   applySettings(): void {
     const s = this.saves.settings;
     this.audio.setVolumes(s.master, s.music, s.sfx);
