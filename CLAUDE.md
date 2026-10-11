@@ -243,6 +243,11 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
   −1 dBFS limiter, offline audio report + test
 - [x] 11. Benchmark (`?bench=1`, Settings → Test…, result card, bench-browser matrix), Low
   tier (no decor, 0.72× fog + 150 far plane with the sky scaled to fit), GPU-based auto quality
+- [x] 12. CI: .github/workflows/ci.yml (Ubuntu: typecheck, build, size, unit, short
+  simulate, e2e matrix per project; CI=true → longer timeouts, 1 retry, HTML report +
+  failure screenshots / traces uploaded), gpu.yml (self-hosted Mac, manual or pushes to
+  main / theabonk-upgrade only, never pull requests), docs/CI.md (repo + runner setup,
+  security). Nothing is pushed: the user creates the private repo.
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

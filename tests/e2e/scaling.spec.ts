@@ -14,7 +14,8 @@ for (const scale of [1.25, 1.5]) {
       page.on('console', (m) => {
         if (m.type() === 'error') problems.push(m.text());
       });
-      await page.goto('/');
+      // High pinned: 'auto' picks Low on CI's software renderer
+      await page.goto('/?quality=high');
       const play = page.getByRole('button', { name: 'Play', exact: true });
       await expect(play).toBeVisible();
       const box = await play.boundingBox();

@@ -9,15 +9,22 @@ import { defineConfig, devices } from '@playwright/test';
 // A dedicated port (overridable) — never reuse a server we didn't start, or the suite could
 // silently test some other app that happens to be on a common port.
 const PORT = Number(process.env.E2E_PORT || 47413);
+// CI runs (GitHub Actions sets CI=true): more time, one retry and failure artifacts. GitHub's
+// Ubuntu runners render with SwiftShader, where the game's Auto quality picks Low by itself.
+const slow = !!process.env.CI;
 const gpuArgs = process.platform === 'darwin' ? ['--use-angle=metal', '--ignore-gpu-blocklist'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 export default defineConfig({
   testDir: 'tests/e2e',
-  timeout: 120_000,
-  retries: 0,
+  timeout: slow ? 300_000 : 120_000,
+  expect: { timeout: slow ? 20_000 : 5_000 },
+  retries: slow ? 1 : 0,
   workers: 1,
-  reporter: [['list']],
+  // CI keeps an HTML report plus screenshots / traces of failures (uploaded as artifacts)
+  reporter: slow ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL: `http://localhost:${PORT}`,
+    screenshot: 'only-on-failure',
+    trace: slow ? 'retain-on-failure' : 'off',
     viewport: { width: 1280, height: 720 },
   },
   projects: [
