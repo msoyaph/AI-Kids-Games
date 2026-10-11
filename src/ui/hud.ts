@@ -48,9 +48,10 @@ export class Hud {
     course: { track?: TrackModel; arena?: ArenaModel },
     mirror: boolean,
     readonly split: boolean,
+    touch = false,
   ) {
     this.root = document.createElement('div');
-    this.root.className = `hud ${split ? 'split' : ''} mode-${mode}`;
+    this.root.className = `hud ${split ? 'split' : ''} ${touch ? 'touch' : ''} mode-${mode}`;
     this.root.innerHTML = `
       <div class="hud-speedlines"></div>
       <div class="hud-threat"></div>
@@ -105,7 +106,7 @@ export class Hud {
     this.el.tag = q('.hud-player-tag');
     this.minimap = new Minimap(course, mirror);
     q('.hud-bl').appendChild(this.minimap.canvas);
-    this.minimap.resize(split ? 92 : 132);
+    this.minimap.resize(split || touch ? 92 : 132);
     if (mode !== 'battle') this.el.battle.style.display = 'none';
     if (mode === 'battle') {
       this.el.posBox.style.display = 'none';

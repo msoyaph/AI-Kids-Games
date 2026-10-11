@@ -941,3 +941,33 @@
   box-sizing: border-box;
   background: radial-gradient(circle at 50% 30%, rgba(106, 76, 255, 0.95), rgba(29, 18, 80, 0.97));
 }
+
+/* Touch layout: keep HUD clear of the on-screen buttons */
+.hud.touch .hud-bl {
+  bottom: auto;
+  top: calc(var(--pad-t) + clamp(96px, 30vh, 150px));
+}
+.hud.touch .hud-br {
+  right: auto;
+  left: 50%;
+  bottom: calc(4px + var(--safe-b));
+  transform: translateX(-50%);
+  text-align: center;
+}
+.hud.touch .hud-speed b {
+  font-size: 24px;
+}
+.hud.touch .hud-item {
+  width: clamp(56px, 15vh, 84px);
+  height: clamp(56px, 15vh, 84px);
+}
+.hud.touch .hud-pos .n {
+  font-size: clamp(38px, 12vh, 64px);
+}
+.hud.touch .hud-pop {
+  top: calc(var(--pad-t) + clamp(70px, 20vh, 110px));
+  left: calc(var(--pad-l) + 70px);
+}
+.touch-controls .tc-look {
+  right: calc(12px + var(--safe-r) + clamp(64px, 17vh, 96px));
+}

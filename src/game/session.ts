@@ -196,8 +196,9 @@ export class RaceSession {
     this.hudLayer.className = 'hud-layer';
     ctx.uiRoot.appendChild(this.hudLayer);
     const hudMode = isBattle ? 'battle' : cfg.mode === 'timeTrial' ? 'timeTrial' : 'race';
+    const touchHud = ctx.gr.isTouch && this.locals.length === 1;
     for (let i = 0; i < this.locals.length; i++) {
-      const h = new Hud(this.hudLayer, hudMode, i, { track: this.track ?? undefined, arena: this.arena ?? undefined }, cfg.mirror, this.locals.length > 1);
+      const h = new Hud(this.hudLayer, hudMode, i, { track: this.track ?? undefined, arena: this.arena ?? undefined }, cfg.mirror, this.locals.length > 1, touchHud);
       h.setRect(this.view.rectFor(i, this.locals.length));
       this.huds.push(h);
     }
