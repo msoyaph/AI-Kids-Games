@@ -2,7 +2,8 @@ import './ui/styles.css';
 import { Game } from './game/Game';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
-const game = new Game(canvas);
+const overlay = document.getElementById('overlay') as HTMLCanvasElement;
+const game = new Game(canvas, overlay);
 game.start();
 (window as unknown as { __theabonk: Game }).__theabonk = game;
 

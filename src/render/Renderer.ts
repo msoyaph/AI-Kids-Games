@@ -4,6 +4,10 @@ import { lerp } from '../core/math';
 import type { Terrain } from '../sim/terrain';
 import type { World } from '../sim/world';
 import { CameraRig } from './CameraRig';
+import { EnemyRenderer } from './EnemyRenderer';
+import { Fx } from './Fx';
+import { Particles } from './Particles';
+import { PickupRenderer } from './PickupRenderer';
 import { PlayerView } from './PlayerView';
 import { buildWorldMesh } from './worldMesh';
 
@@ -20,6 +24,10 @@ export class GameRenderer {
   readonly camera: THREE.PerspectiveCamera;
   readonly rig = new CameraRig();
   readonly playerView = new PlayerView();
+  readonly enemies = new EnemyRenderer();
+  readonly pickups = new PickupRenderer();
+  readonly particles = new Particles();
+  readonly fx: Fx;
   private sun: THREE.DirectionalLight;
   private worldGroup: THREE.Group | null = null;
   private worldSeed = -1;
@@ -27,7 +35,7 @@ export class GameRenderer {
   quality: Quality = 'high';
   private menuT = 0;
 
-  constructor(canvas: HTMLCanvasElement, quality: Quality) {
+  constructor(canvas: HTMLCanvasElement, overlay: HTMLCanvasElement, quality: Quality) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', stencil: false });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -56,6 +64,8 @@ export class GameRenderer {
     this.scene.add(this.sun);
     this.scene.add(this.sun.target);
     this.scene.add(this.playerView.root);
+    this.fx = new Fx(this.particles, overlay, this.rig);
+    this.scene.add(this.enemies.group, this.pickups.group, this.fx.group);
     this.setQuality(quality);
   }
 
@@ -90,6 +100,9 @@ export class GameRenderer {
     this.renderer.shadowMap.enabled = shadows;
     this.sun.castShadow = shadows;
     this.playerView.setShadows(shadows);
+    this.enemies.setCastShadows(shadows);
+    this.enemies.shadowsEnabled = q !== 'low';
+    this.particles.density = q === 'low' ? 0.4 : q === 'medium' ? 0.7 : 1;
     if (this.terrain) {
       // rebuild static meshes with the right shadow flags
       this.worldSeed = -1;
@@ -124,6 +137,7 @@ export class GameRenderer {
 
   resize(w: number, h: number): void {
     this.renderer.setSize(w, h, false);
+    this.fx.numbers.resize(w, h, typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.updateProjectionMatrix();
   }
@@ -144,7 +158,16 @@ export class GameRenderer {
     this.playerView.update(x, y, z, gy, p.yaw, speed, p.onGround, p.sliding, p.vy, dt, w.time, p.iframes > 0 || p.buffs.ward > 0);
     this.rig.update(this.camera, x, y, z, speed, dt, w.terrain);
     this.followSun(x, z);
+    const time = w.time + alpha / 60;
+    this.enemies.update(w, alpha, time);
+    this.pickups.update(w, alpha, time);
+    this.fx.update(dt, this.camera);
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /** Clear all transient visuals (new run / back to menu). */
+  resetTransient(): void {
+    this.fx.clear();
   }
 
   /** Menu backdrop: slow orbit around the showcased character. */

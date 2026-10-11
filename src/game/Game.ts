@@ -20,8 +20,8 @@ export class Game {
   private fwd = { x: 0, z: 0 };
   paused = false;
 
-  constructor(private canvas: HTMLCanvasElement) {
-    this.renderer = new GameRenderer(canvas, 'high');
+  constructor(private canvas: HTMLCanvasElement, overlay: HTMLCanvasElement) {
+    this.renderer = new GameRenderer(canvas, overlay, 'high');
     this.input = new InputManager(canvas);
     this.renderer.setTerrain(new Terrain(1337));
     this.resize();
@@ -46,6 +46,7 @@ export class Game {
     this.renderer.rig.yaw = 0;
     this.renderer.rig.snap(this.world.player.x, this.world.player.y, this.world.player.z);
     this.acc = 0;
+    this.renderer.resetTransient();
     this.input.gameplay = true;
     this.input.clearTransient();
   }
@@ -93,6 +94,7 @@ export class Game {
         steps++;
       }
       if (steps >= MAX_STEPS_PER_FRAME) this.acc = 0;
+      this.renderer.fx.consume(w.events, w.player.x, w.player.y, w.player.z);
       w.events.clear();
       this.renderer.renderGame(w, this.acc / DT, dt);
     } else if (w) {

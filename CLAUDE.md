@@ -45,7 +45,7 @@ Key rules:
 
 ## Phase plan / status
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera
-2. [ ] Enemies, spawning, collision, HP, death
+2. [x] Enemies, spawning, collision, HP, death
 3. [ ] Weapons, XP, leveling, upgrade picker
 4. [ ] Full weapon/item roster, evolutions, chests, shrines
 5. [ ] Bosses, 20-minute waves, win/lose flow
