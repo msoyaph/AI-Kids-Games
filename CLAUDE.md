@@ -18,6 +18,10 @@ asset files, CDN links or web fonts.
   per character). `VERBOSE=1` prints every run.
 - `npm run bench -- [enemies] [seconds]` — headless sim performance benchmark.
 - `npm run check-size` — after build: single file, ≤1.5 MB, no external references.
+- `?playtest=1` — records each run on the device (`theabonk.playtest`, ≤20 runs/60 KB):
+  damage by source, cause of death, picks, build, slide/jump time, boss attack hit rates.
+  Export from the title / game-over screen. `npm run analyze-playtests -- <folder>` compares
+  exports with the simulator and prints suggestions (never edits files).
 - `?tune=1` — live tuning panel (F2 hides). Export → `npm run apply-tuning -- file.json`
   (validates + rewrites the generated block in src/config/tuning.ts);
   `npm run simulate -- 8 0.7 --tuning file.json` tests an export headlessly.
@@ -87,7 +91,11 @@ cluster at the boss gates (5:00 Grumblecap, 10:00 Clockjaw, 15:00+ Regent). Skil
 `rate/minAlive/maxAlive` (waves.ts), boss hp/projectileDamage (enemies.ts + bosses.ts),
 `tuning.combat.*` (i-frames, level heal, drops, HP/damage scaling) and `tuning.spawns.*`.
 The bot (sim/bot.ts) kites, dodges shots predictively, sidesteps telegraphed charges,
-hops shockwave rings and un-sticks itself; it never slides, so humans can do better.
+hops shockwave rings, un-sticks itself, and (since the upgrade) slides for travel/downhill,
+chains slide boosts, bunny-hops on open ground, escapes encirclements through the widest
+gap and climbs ramps to plateau shrines. `new Bot(seed, skill, false)` = the v1 bot (used by
+the golden "sim" fingerprints). Damage sources: sim/sources.ts codes passed to
+`damagePlayer(w, raw, source, inst)`; boss attacks call `beginAttack()` for used/hit counts.
 
 ## Gotchas
 - `Terrain.height()` is exact (player physics); `heightAt()` is the cached approximation.
@@ -105,6 +113,7 @@ intentional sim changes), storage budget test (<100 KB across all `theabonk.*` k
 Benchmarks are load-sensitive: compare A/B against a `main` worktree.
 - [x] 0. Safety nets
 - [x] 1. Tuning file + live panel + apply-tuning
+- [x] 2. Playtest recording, damage sources, analyze-playtests, sliding bot
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

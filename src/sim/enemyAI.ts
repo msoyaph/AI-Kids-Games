@@ -4,6 +4,9 @@ import { Ev } from '../core/events';
 import { updateBoss } from './bosses';
 import { damageArea, damagePlayer, killEnemy } from './combat';
 import { placeOffscreen } from './director';
+import { bossSrc, CONTACT_SRC, src, SrcKind } from './sources';
+
+const CLOCKJAW_CHARGE = bossSrc('clockjaw.charge');
 import type { World } from './world';
 
 /** Charger states */
@@ -26,10 +29,12 @@ const BEHAVIOR_ID: Record<string, number> = { chaser: 0, swarmer: 1, tank: 2, ra
 const TYPE_BEHAVIOR = new Uint8Array(ENEMIES.map((d) => BEHAVIOR_ID[d.behavior]));
 const TYPE_FLYING = new Uint8Array(ENEMIES.map((d) => (d.id === 'gnatlet' || d.id === 'gloamRegent' ? 1 : 0)));
 
-export function fireEnemyShot(w: World, x: number, y: number, z: number, dirX: number, dirZ: number, speed: number, damage: number, visual = 0): void {
+export function fireEnemyShot(w: World, x: number, y: number, z: number, dirX: number, dirZ: number, speed: number, damage: number, visual = 0, source = 0, inst = 0): void {
   const s = w.enemyShots;
   const i = s.alloc();
   if (i < 0) return;
+  s.src[i] = source;
+  s.inst[i] = inst;
   const l = Math.hypot(dirX, dirZ) || 1;
   s.x[i] = s.px[i] = x;
   s.y[i] = s.py[i] = y;
@@ -120,7 +125,7 @@ export function updateEnemies(w: World): void {
           const tt = dist / ps;
           const ax = px + p.vx * tt * 0.5 - x;
           const az = pz + p.vz * tt * 0.5 - z;
-          fireEnemyShot(w, x, e.y[i] + 1.0 * e.scale[i], z, ax, az, ps, (def.projectileDamage ?? 6) * (e.damage[i] / Math.max(1, def.damage)), 0);
+          fireEnemyShot(w, x, e.y[i] + 1.0 * e.scale[i], z, ax, az, ps, (def.projectileDamage ?? 6) * (e.damage[i] / Math.max(1, def.damage)), 0, src(SrcKind.Shot, type));
           w.events.push(Ev.EnemyShoot, x, e.y[i] + 1, z);
         }
         break;
@@ -268,7 +273,7 @@ function explode(w: World, i: number): void {
   const radius = (def.explodeRadius ?? 3) * e.scale[i];
   const p = w.player;
   const dist = Math.hypot(p.x - x, p.z - z);
-  if (dist < radius + PLAYER_RADIUS && p.y - e.y[i] < 2.5) damagePlayer(w, (def.explodeDamage ?? 15) * (e.damage[i] > 0 ? 1 : 1));
+  if (dist < radius + PLAYER_RADIUS && p.y - e.y[i] < 2.5) damagePlayer(w, def.explodeDamage ?? 15, src(SrcKind.Explosion, e.type[i]));
   w.events.push(Ev.Explosion, x, e.y[i] + 0.6, z, radius, 0, 0xff8a3d);
   e.alive[i] = 0; // blows itself up: no XP
   // the blast hurts other Gloom too
@@ -283,6 +288,8 @@ export function enemyContacts(w: World): void {
   const buf = w.scratch2;
   const n = w.grid.query(p.x, p.z, 5, buf);
   let best = 0;
+  let bestSrc = 0;
+  let bestInst = 0;
   for (let k = 0; k < n; k++) {
     const i = buf[k];
     if (!e.alive[i] || e.damage[i] <= 0) continue;
@@ -294,10 +301,17 @@ export function enemyContacts(w: World): void {
     // jumping clean over a creature avoids it
     if (p.y > e.y[i] + def.height * e.scale[i] * 0.85) continue;
     // charging rams hit harder
-    const mult = TYPE_BEHAVIOR[e.type[i]] === 4 && e.state[i] === CH_DASH ? 1.3 : 1;
-    if (e.damage[i] * mult > best) best = e.damage[i] * mult;
+    const type = e.type[i];
+    const mult = TYPE_BEHAVIOR[type] === 4 && e.state[i] === CH_DASH ? 1.3 : 1;
+    if (e.damage[i] * mult > best) {
+      best = e.damage[i] * mult;
+      // a dashing Clockjaw counts as its charge attack
+      const charging = TYPE_BEHAVIOR[type] === 7 && ENEMIES[type].bossPattern === 'clockjaw' && e.state[i] === 2;
+      bestSrc = charging ? CLOCKJAW_CHARGE : CONTACT_SRC[type];
+      bestInst = e.atk[i];
+    }
   }
-  if (best > 0) damagePlayer(w, best);
+  if (best > 0) damagePlayer(w, best, bestSrc, bestInst);
 }
 
 export function updateEnemyShots(w: World): void {
@@ -324,7 +338,7 @@ export function updateEnemyShots(w: World): void {
     const dz = z - p.z;
     const rr = s.radius[i] + PLAYER_RADIUS;
     if (dx * dx + dz * dz < rr * rr && Math.abs(s.y[i] - (p.y + 0.9)) < 1.1) {
-      if (damagePlayer(w, s.damage[i]) || w.options.god) s.alive[i] = 0;
+      if (damagePlayer(w, s.damage[i], s.src[i], s.inst[i]) || w.options.god) s.alive[i] = 0;
     }
   }
 }

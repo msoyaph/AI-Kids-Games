@@ -5,10 +5,12 @@ import { damageArea, damagePlayer } from './combat';
 import { HazardKind } from './pools';
 import type { World } from './world';
 
-export function spawnEnemyHazard(w: World, kind: number, x: number, z: number, radius: number, damage: number, life: number, a0 = 0, a1 = 0, color = 0xff4f6a): number {
+export function spawnEnemyHazard(w: World, kind: number, x: number, z: number, radius: number, damage: number, life: number, a0 = 0, a1 = 0, color = 0xff4f6a, source = 0, inst = 0): number {
   const hz = w.hazards;
   const i = hz.alloc();
   if (i < 0) return -1;
+  hz.src[i] = source;
+  hz.inst[i] = inst;
   hz.kind[i] = kind;
   hz.x[i] = x;
   hz.z[i] = z;
@@ -56,7 +58,7 @@ export function updateHazards(w: World): void {
         hz.a0[i] += hz.a1[i] * DT;
         const d = Math.hypot(p.x - x, p.z - z);
         const grounded = p.y - w.terrain.height(p.x, p.z) < 0.7;
-        if (grounded && Math.abs(d - hz.a0[i]) < 0.9 + PLAYER_RADIUS) damagePlayer(w, hz.damage[i]);
+        if (grounded && Math.abs(d - hz.a0[i]) < 0.9 + PLAYER_RADIUS) damagePlayer(w, hz.damage[i], hz.src[i], hz.inst[i]);
         if (hz.a0[i] >= hz.radius[i]) hz.alive[i] = 0;
         break;
       }
@@ -64,7 +66,7 @@ export function updateHazards(w: World): void {
         hz.a0[i] -= DT;
         if (hz.a0[i] <= 0) {
           const d = Math.hypot(p.x - x, p.z - z);
-          if (d < hz.radius[i] + PLAYER_RADIUS) damagePlayer(w, hz.damage[i]);
+          if (d < hz.radius[i] + PLAYER_RADIUS) damagePlayer(w, hz.damage[i], hz.src[i], hz.inst[i]);
           w.events.push(Ev.Explosion, x, hz.y[i] + 0.3, z, hz.radius[i], 0, 0, hz.color[i]);
           w.events.push(Ev.Sfx, x, hz.y[i], z, 1, 0, 0, sfxId('slam'));
           hz.alive[i] = 0;
@@ -76,7 +78,7 @@ export function updateHazards(w: World): void {
         if (hz.tickT[i] <= 0) {
           hz.tickT[i] += hz.tick[i];
           const d = Math.hypot(p.x - x, p.z - z);
-          if (d < hz.radius[i] && p.y - hz.y[i] < 1) damagePlayer(w, hz.damage[i]);
+          if (d < hz.radius[i] && p.y - hz.y[i] < 1) damagePlayer(w, hz.damage[i], hz.src[i], hz.inst[i]);
         }
         break;
       }

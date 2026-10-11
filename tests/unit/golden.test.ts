@@ -4,20 +4,27 @@ import { simulateRun } from '../../src/sim/headless';
 import type { World } from '../../src/sim/world';
 
 /**
- * Golden determinism fingerprints: two seeded 120 s bot runs. A pure refactor must not
- * change these. When a change *intends* to alter the simulation (new pathing, new random
- * streams, rebalancing), update the expected values in the same commit and say why.
+ * Golden determinism fingerprints for seeded 120 s bot runs.
+ *
+ * - `sim` cases drive the game with the original (v1) bot, so they only change when the
+ *   *simulation* changes. A pure refactor must leave them alone.
+ * - `bot` cases use the current bot (slides, hops, ramps), so they also change when the
+ *   bot's play changes.
+ *
+ * When a change *intends* to alter either, update the hashes in the same commit and say why.
  */
-const GOLDEN: Array<{ hero: string; seed: number; hash: string }> = [
-  { hero: 'thea', seed: 4242, hash: '2055916a' },
-  { hero: 'brindle', seed: 9001, hash: 'f4beddb6' },
+const GOLDEN: Array<{ kind: 'sim' | 'bot'; hero: string; seed: number; hash: string }> = [
+  { kind: 'sim', hero: 'thea', seed: 4242, hash: '2055916a' },
+  { kind: 'sim', hero: 'brindle', seed: 9001, hash: 'f4beddb6' },
+  { kind: 'bot', hero: 'thea', seed: 4242, hash: 'c74a80ff' },
+  { kind: 'bot', hero: 'brindle', seed: 9001, hash: 'b9b2a244' },
 ];
 
 describe('golden determinism', () => {
   for (const g of GOLDEN) {
-    it(`${g.hero} seed ${g.seed} reproduces its fingerprint`, () => {
+    it(`${g.kind}: ${g.hero} seed ${g.seed} reproduces its fingerprint`, () => {
       let world: World | null = null;
-      simulateRun({ characterId: g.hero, seed: g.seed, maxSeconds: 120, onWorld: (w) => (world = w) });
+      simulateRun({ characterId: g.hero, seed: g.seed, maxSeconds: 120, botMovement: g.kind === 'bot', onWorld: (w) => (world = w) });
       expect(fingerprintWorld(world!)).toBe(g.hash);
     });
   }

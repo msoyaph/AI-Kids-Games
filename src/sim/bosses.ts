@@ -7,6 +7,7 @@ import { setBossKilledHandler, spawnEnemy, spawnGem, spawnPickup } from './comba
 import { fireEnemyShot } from './enemyAI';
 import { spawnEnemyHazard } from './hazards';
 import { HazardKind, PickupKind } from './pools';
+import { bossAttackIndex, bossSrc, type BossAttack } from './sources';
 import { goldMult } from './stats';
 import type { World } from './world';
 
@@ -15,6 +16,8 @@ import type { World } from './world';
  *   state = current action, stT = action timer, stA/stB = locked direction,
  *   stC = cycle counter.
  */
+
+const REGENT_BARRAGE = bossSrc('regent.barrage');
 
 const IDLE = 0;
 const WINDUP = 1;
@@ -37,6 +40,16 @@ export function spawnBoss(w: World, type: number): void {
   w.director.bossMaxHp = e.maxHp[i];
   w.events.push(Ev.BossSpawn, e.x[i], e.y[i], e.z[i], 0, 0, 0, type);
   w.events.push(Ev.Sfx, e.x[i], e.y[i], e.z[i], 1, 0, 0, sfxId('roar'));
+  w.stats.bossFights.push({ id: ENEMIES[type].id, spawnedAt: w.time, killedAt: -1, damageTaken: 0 });
+}
+
+/** Count an attack activation; returns the instance id its projectiles/hazards carry. */
+function beginAttack(w: World, i: number, name: BossAttack): number {
+  const st = w.stats;
+  st.bossAttackUsed[bossAttackIndex(name)]++;
+  const inst = ++st.bossAttackSeq;
+  w.enemies.atk[i] = inst;
+  return inst;
 }
 
 function summon(w: World, i: number, id: string, count: number, radius: number): void {
@@ -48,23 +61,24 @@ function summon(w: World, i: number, id: string, count: number, radius: number):
   }
 }
 
-function ring(w: World, i: number, n: number, speed: number, damage: number, offset: number, visual: number): void {
+function ring(w: World, i: number, n: number, speed: number, damage: number, offset: number, visual: number, attack: BossAttack, inst: number): void {
   const e = w.enemies;
   const y = e.y[i] + 2;
+  const source = bossSrc(attack);
   for (let k = 0; k < n; k++) {
     const a = offset + (k / n) * Math.PI * 2;
-    fireEnemyShot(w, e.x[i], y, e.z[i], Math.sin(a), Math.cos(a), speed, damage, visual);
+    fireEnemyShot(w, e.x[i], y, e.z[i], Math.sin(a), Math.cos(a), speed, damage, visual, source, inst);
   }
   w.events.push(Ev.Sfx, e.x[i], y, e.z[i], 1, 0, 0, sfxId('spores'));
 }
 
-function shockwave(w: World, x: number, z: number, maxR: number, speed: number, damage: number): void {
-  spawnEnemyHazard(w, HazardKind.EnemyRing, x, z, maxR, damage, maxR / speed + 0.1, 0.5, speed, 0xff4f6a);
+function shockwave(w: World, x: number, z: number, maxR: number, speed: number, damage: number, inst: number): void {
+  spawnEnemyHazard(w, HazardKind.EnemyRing, x, z, maxR, damage, maxR / speed + 0.1, 0.5, speed, 0xff4f6a, bossSrc('clockjaw.shockwave'), inst);
   w.events.push(Ev.Sfx, x, w.terrain.height(x, z), z, 1, 0, 0, sfxId('slam'));
 }
 
-function slam(w: World, x: number, z: number, r: number, damage: number, fuse: number): void {
-  spawnEnemyHazard(w, HazardKind.EnemySlam, x, z, r, damage, fuse + 0.05, fuse, 0, 0xff3b4f);
+function slam(w: World, x: number, z: number, r: number, damage: number, fuse: number, attack: BossAttack, inst: number): void {
+  spawnEnemyHazard(w, HazardKind.EnemySlam, x, z, r, damage, fuse + 0.05, fuse, 0, 0xff3b4f, bossSrc(attack), inst);
 }
 
 /** Writes the boss's desired velocity into out. */
@@ -106,15 +120,16 @@ function grumblecap(w: World, i: number, dist: number, hpFrac: number, out: Floa
   const c = e.stC[i]++;
   if (dist < 9) {
     // stomp: telegraphed slam around itself
-    slam(w, e.x[i], e.z[i], 6, def.damage, w.tuning.telegraphs.grumblecapStompFuse);
+    slam(w, e.x[i], e.z[i], 6, def.damage, w.tuning.telegraphs.grumblecapStompFuse, 'grumblecap.stomp', beginAttack(w, i, 'grumblecap.stomp'));
     e.state[i] = SLAM;
     e.stT[i] = 1.2;
   } else if (c % 3 === 2) {
     summon(w, i, enraged ? 'blobbin' : 'gnatlet', enraged ? 5 : 8, 4);
     e.stT[i] = 2.5;
   } else {
-    ring(w, i, enraged ? 16 : 12, def.projectileSpeed ?? 9, dmg, c * 0.3, 1);
-    if (enraged) ring(w, i, 16, (def.projectileSpeed ?? 9) * 0.7, dmg, c * 0.3 + 0.2, 1);
+    const inst = beginAttack(w, i, 'grumblecap.spores');
+    ring(w, i, enraged ? 16 : 12, def.projectileSpeed ?? 9, dmg, c * 0.3, 1, 'grumblecap.spores', inst);
+    if (enraged) ring(w, i, 16, (def.projectileSpeed ?? 9) * 0.7, dmg, c * 0.3 + 0.2, 1, 'grumblecap.spores', inst);
     e.stT[i] = enraged ? 3 : 4;
   }
 }
@@ -141,6 +156,7 @@ function clockjaw(w: World, i: number, dist: number, dx: number, dz: number, hpF
       if (e.stT[i] <= 0) {
         e.state[i] = DASH;
         e.stT[i] = def.chargeTime ?? 1;
+        beginAttack(w, i, 'clockjaw.charge');
       }
       break;
     case DASH: {
@@ -148,7 +164,7 @@ function clockjaw(w: World, i: number, dist: number, dx: number, dz: number, hpF
       out[0] = e.stA[i] * cs;
       out[1] = e.stB[i] * cs;
       if (e.stT[i] <= 0) {
-        shockwave(w, e.x[i], e.z[i], enraged ? 24 : 20, (enraged ? 12 : 10) * w.tuning.telegraphs.shockwaveSpeedMult, def.projectileDamage ?? 12);
+        shockwave(w, e.x[i], e.z[i], enraged ? 24 : 20, (enraged ? 12 : 10) * w.tuning.telegraphs.shockwaveSpeedMult, def.projectileDamage ?? 12, beginAttack(w, i, 'clockjaw.shockwave'));
         const c = e.stC[i]++;
         if (c % 2 === 1) summon(w, i, 'ramhorn', 3, 5);
         // enraged: chain a second charge immediately
@@ -198,7 +214,7 @@ function regent(w: World, i: number, dist: number, dx: number, dz: number, hpFra
         const arms = phase === 0 ? 2 : 3;
         for (let k = 0; k < arms; k++) {
           const aa = a + (k / arms) * Math.PI * 2;
-          fireEnemyShot(w, e.x[i], e.y[i] + 3, e.z[i], Math.sin(aa), Math.cos(aa), sp * 0.8, dmg, 0);
+          fireEnemyShot(w, e.x[i], e.y[i] + 3, e.z[i], Math.sin(aa), Math.cos(aa), sp * 0.8, dmg, 0, REGENT_BARRAGE, e.atk[i]);
         }
       }
       if (e.stT[i] <= 0) {
@@ -218,6 +234,7 @@ function regent(w: World, i: number, dist: number, dx: number, dz: number, hpFra
   const c = e.stC[i]++ % 4;
   if (c === 0) {
     e.state[i] = BARRAGE;
+    beginAttack(w, i, 'regent.barrage');
     e.stT[i] = 3 + phase * 0.5;
     e.stA[i] = 0;
     e.stB[i] = w.rng.next() * Math.PI * 2;
@@ -228,25 +245,27 @@ function regent(w: World, i: number, dist: number, dx: number, dz: number, hpFra
     e.z[i] = e.pz[i] = w.terrain.clampToMap(p.z + Math.cos(a) * 10);
     w.events.push(Ev.Explosion, e.x[i], e.y[i] + 3, e.z[i], 4, 0, 0, 0xb48cff);
     const n = 3 + phase;
+    const inst = beginAttack(w, i, 'regent.slam');
     for (let k = 0; k < n; k++) {
       const aa = (k / n) * Math.PI * 2 + w.rng.next();
-      slam(w, p.x + Math.sin(aa) * 4, p.z + Math.cos(aa) * 4, 3.4, dmg * 1.3, w.tuning.telegraphs.regentSlamFuse);
+      slam(w, p.x + Math.sin(aa) * 4, p.z + Math.cos(aa) * 4, 3.4, dmg * 1.3, w.tuning.telegraphs.regentSlamFuse, 'regent.slam', inst);
     }
-    slam(w, p.x, p.z, 3, dmg * 1.3, w.tuning.telegraphs.regentSlamFuse + 0.2);
+    slam(w, p.x, p.z, 3, dmg * 1.3, w.tuning.telegraphs.regentSlamFuse + 0.2, 'regent.slam', inst);
     e.state[i] = SLAM;
     e.stT[i] = 1.4;
   } else if (c === 2) {
     const n = 1 + phase;
+    const inst = beginAttack(w, i, 'regent.rings');
     for (let k = 0; k < n; k++) {
       // staggered rings: jump each one
       const rs = 12 * w.tuning.telegraphs.shockwaveSpeedMult;
-      spawnEnemyHazard(w, HazardKind.EnemyRing, e.x[i], e.z[i], 24, dmg, (24 + k * 6) / rs + 0.2, -k * 6, rs, 0xb48cff);
+      spawnEnemyHazard(w, HazardKind.EnemyRing, e.x[i], e.z[i], 24, dmg, (24 + k * 6) / rs + 0.2, -k * 6, rs, 0xb48cff, bossSrc('regent.rings'), inst);
     }
     w.events.push(Ev.Sfx, e.x[i], e.y[i], e.z[i], 1, 0, 0, sfxId('slam'));
     e.stT[i] = 2.6;
   } else {
     summon(w, i, phase === 2 ? 'fusewick' : 'gloomling', 6 + phase * 2, 5);
-    ring(w, i, 16 + phase * 4, sp, dmg, 0, 0);
+    ring(w, i, 16 + phase * 4, sp, dmg, 0, 0, 'regent.volley', beginAttack(w, i, 'regent.volley'));
     e.stT[i] = 2.2;
   }
 }
@@ -260,6 +279,10 @@ setBossKilledHandler((w, i) => {
   const z = e.z[i];
   if (w.director.bossUid === e.uid[i]) w.director.bossUid = 0;
   w.stats.bossKills[def.id] = (w.stats.bossKills[def.id] ?? 0) + 1;
+  for (const f of w.stats.bossFights) if (f.id === def.id && f.killedAt < 0) {
+    f.killedAt = w.time;
+    break;
+  }
   w.events.push(Ev.BossDie, x, y, z, 0, 0, 0, type);
   w.events.push(Ev.Sfx, x, y, z, 1, 0, 0, sfxId('explode'));
   // treasure fountain

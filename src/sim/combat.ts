@@ -4,6 +4,7 @@ import { ELITE, ENEMIES, enemyIndex } from '../config/enemies';
 import { Ev } from '../core/events';
 import { damageAfterArmor, hitDamage, isCrit, knockbackImpulse } from './damage';
 import { PickupKind, type PickupKindT } from './pools';
+import { SrcKind } from './sources';
 import { goldMult } from './stats';
 import type { World } from './world';
 
@@ -191,14 +192,30 @@ export function setBossKilledHandler(fn: (w: World, i: number) => void): void {
 
 // ───────────────────────────── hurting the player ─────────────────────────────
 
-export function damagePlayer(w: World, raw: number): boolean {
+/**
+ * Hurt the player. `source` is a code from sim/sources.ts (who did it); `inst` identifies a
+ * boss attack activation so hit rates can be measured. Returns false if the hit was ignored.
+ */
+export function damagePlayer(w: World, raw: number, source = 0, inst = 0): boolean {
   const p = w.player;
   if (!p.alive || p.iframes > 0 || p.buffs.ward > 0 || w.options.god) return false;
   const dmg = damageAfterArmor(raw, p.stats.armor);
   p.hp -= dmg;
   p.iframes = w.tuning.combat.playerIframes;
   p.hurtFlash = 1;
-  w.stats.damageTaken += dmg;
+  const st = w.stats;
+  st.damageTaken += dmg;
+  st.damageBy[source] += dmg;
+  st.hitsBy[source]++;
+  st.lastSource = source;
+  if (source >> 8 === SrcKind.Boss) {
+    const a = source & 255;
+    if (inst !== st.bossAttackLastHit[a]) {
+      st.bossAttackLastHit[a] = inst;
+      st.bossAttackHits[a]++;
+    }
+  }
+  for (let k = 0; k < st.bossFights.length; k++) if (st.bossFights[k].killedAt < 0) st.bossFights[k].damageTaken += dmg;
   w.events.push(Ev.PlayerHurt, dmg);
   if (p.hp <= 0) {
     if (p.revivals > 0) revivePlayer(w);

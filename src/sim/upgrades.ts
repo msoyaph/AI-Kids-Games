@@ -133,7 +133,10 @@ export function beginLevelUp(w: World): void {
 }
 
 /** Player picked (or skipped with null). Returns true if more level-ups are queued. */
+export const choiceKey = (c: UpgradeChoice): string => `${c.kind}:${c.id}`;
+
 export function resolveLevelUp(w: World, choice: UpgradeChoice | null): boolean {
+  w.stats.picks.push({ t: w.time, level: w.player.level - w.pendingLevels + 1, offered: w.choices.map(choiceKey), picked: choice ? choiceKey(choice) : null });
   if (choice) applyChoice(w, choice);
   w.pendingLevels = Math.max(0, w.pendingLevels - 1);
   if (w.pendingLevels > 0) {
@@ -182,6 +185,7 @@ export function openChest(w: World): UpgradeChoice[] {
     applyChoice(w, c);
     rewards.push(c);
   }
+  w.stats.chests.push({ t: w.time, rewards: rewards.map(choiceKey) });
   return rewards;
 }
 

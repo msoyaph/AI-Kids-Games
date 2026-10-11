@@ -6,6 +6,8 @@ import { urlParam } from '../core/env';
 import { SafeLocalStore, type KeyValueStore } from '../core/storage';
 import { mergeTuning, TUNING_DEFAULTS, xpToNextWith, type TuningGroup } from '../config/tuning';
 import { TuningPanel } from '../ui/TuningPanel';
+import { PlaytestStore, recordRun } from '../meta/playtest';
+import { exportJson } from '../ui/exporter';
 import { InputManager, type UiAction } from '../input/InputManager';
 import { applyRunResult, checkAchievements, metaBonuses, summarize, type RunOutcome } from '../meta/progression';
 import { SaveManager } from '../meta/save';
@@ -73,6 +75,10 @@ export class Game implements GameApi {
 
   /** Live tuning panel (only with ?tune=1). */
   tuningPanel: TuningPanel | null = null;
+  /** On-device playtest recorder (only with ?playtest=1). */
+  playtest: PlaytestStore | null = null;
+  private padFrames = 0;
+  private kbFrames = 0;
   private store: KeyValueStore;
   private tuneSaveT = 0;
 
@@ -112,6 +118,36 @@ export class Game implements GameApi {
     });
     this.ui.escapeAllowed = () => performance.now() - this.lockLostAt > 300;
     if (urlParam('tune') === '1') this.initTuning(uiRoot);
+    if (urlParam('playtest') === '1') {
+      this.playtest = new PlaytestStore(this.store);
+      uiRoot.append(h('div', { class: 'playtest-badge' }, '● PLAYTEST — recording on this device only'));
+    }
+  }
+
+  // ───────────────────────────── playtest (?playtest=1) ─────────────────────────────
+
+  playtestCount(): number | null {
+    return this.playtest ? this.playtest.load().length : null;
+  }
+
+  exportPlaytests(): void {
+    if (this.playtest) exportJson(`theabonk-playtests-${new Date().toISOString().slice(0, 10)}.json`, this.playtest.file(), this.ui.root);
+  }
+
+  clearPlaytests(): void {
+    this.playtest?.clear();
+  }
+
+  private recordPlaytest(w: World, result: 'dead' | 'won' | 'quit'): void {
+    if (!this.playtest) return;
+    this.playtest.add(
+      recordRun(w, {
+        player: 'human',
+        result,
+        input: this.padFrames > this.kbFrames ? 'gamepad' : 'kbm',
+        quality: this.save.data.settings.quality,
+      }),
+    );
   }
 
   /** ?tune=1: developer tuning panel. Overrides persist under `theabonk.tuning` (tune mode only). */
@@ -205,6 +241,7 @@ export class Game implements GameApi {
     this.renderer.resetTransient();
     this.acc = 0;
     this.achT = 1;
+    this.padFrames = this.kbFrames = 0;
     this.paused = false;
     this.lastWorldState = 'playing';
     this.ui.close();
@@ -228,6 +265,7 @@ export class Game implements GameApi {
       // abandoning still banks what was earned (and quitting during the dawn
       // countdown still counts as the victory it is)
       w.state = w.director.victoryT > 0 ? 'won' : 'dead';
+      this.recordPlaytest(w, w.state === 'won' ? 'won' : 'quit');
       if (!w.options.tuned) {
         applyRunResult(this.save.data, summarize(w));
         this.save.save();
@@ -318,6 +356,7 @@ export class Game implements GameApi {
     this.setGameplayInput(false);
     this.ui.hud.show(false);
     const summary = summarize(w);
+    this.recordPlaytest(w, w.state === 'won' ? 'won' : 'dead');
     // tuned runs (?tune=1 with changed values) never touch the save
     const outcome = w.options.tuned ? unrecordedOutcome() : applyRunResult(this.save.data, summary);
     if (!w.options.tuned) this.save.save();
@@ -419,6 +458,8 @@ export class Game implements GameApi {
           rig.zoom = Math.max(6 - rig.tuning.distance, Math.min(20 - rig.tuning.distance, rig.zoom + this.input.wheel * 0.8));
           this.input.wheel = 0;
         }
+        if (this.input.usingGamepad) this.padFrames++;
+        else this.kbFrames++;
         this.acc += dt;
         let steps = 0;
         const s0 = performance.now();

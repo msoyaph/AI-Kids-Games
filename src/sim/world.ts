@@ -6,6 +6,7 @@ import type { CharacterDef, PassiveDef, PlayerStats, ShrineKind, WeaponStats } f
 import { EventBuffer } from '../core/events';
 import { Rng } from '../core/rng';
 import { EnemyPool, EnemyProjectilePool, GemPool, HazardPool, PickupPool, ProjectilePool } from './pools';
+import { BOSS_ATTACKS, SOURCE_SLOTS } from './sources';
 import { SpatialHash } from './spatialHash';
 import { Terrain } from './terrain';
 
@@ -115,6 +116,21 @@ export interface Shrine {
   shake: number;
 }
 
+export interface PickRecord {
+  t: number;
+  level: number;
+  offered: string[];
+  picked: string | null;
+}
+
+export interface BossFight {
+  id: string;
+  spawnedAt: number;
+  /** -1 while still alive. */
+  killedAt: number;
+  damageTaken: number;
+}
+
 export interface RunStats {
   kills: number;
   damageTaken: number;
@@ -125,6 +141,23 @@ export interface RunStats {
   chestsOpened: number;
   topSpeed: number;
   elitesKilled: number;
+  /** Damage taken / hits taken per source code (see sim/sources.ts). */
+  damageBy: Float64Array;
+  hitsBy: Uint32Array;
+  /** Source of the most recent hit (cause of death when the run ends). */
+  lastSource: number;
+  /** Boss attack activations and activations that hit at least once (by BOSS_ATTACKS index). */
+  bossAttackUsed: Uint32Array;
+  bossAttackHits: Uint32Array;
+  bossAttackLastHit: Int32Array;
+  bossAttackSeq: number;
+  bossFights: BossFight[];
+  /** Seconds spent sliding on the ground / airborne, and jumps made. */
+  slideTime: number;
+  airTime: number;
+  jumps: number;
+  picks: PickRecord[];
+  chests: Array<{ t: number; rewards: string[] }>;
 }
 
 export interface DirectorState {
@@ -266,7 +299,30 @@ export function createWorld(opts: WorldOptions): World {
     choices: [],
     chestRewards: [],
     director: { spawnAcc: 0, eventIndex: 0, bossUid: 0, bossType: -1, bossMaxHp: 0, finalBossDefeated: false, lastSegment: -1, victoryT: 0, dawn: false },
-    stats: { kills: 0, damageTaken: 0, coins: 0, bossKills: {}, evolutions: 0, shrinesBroken: 0, chestsOpened: 0, topSpeed: 0, elitesKilled: 0 },
+    stats: {
+      kills: 0,
+      damageTaken: 0,
+      coins: 0,
+      bossKills: {},
+      evolutions: 0,
+      shrinesBroken: 0,
+      chestsOpened: 0,
+      topSpeed: 0,
+      elitesKilled: 0,
+      damageBy: new Float64Array(SOURCE_SLOTS),
+      hitsBy: new Uint32Array(SOURCE_SLOTS),
+      lastSource: 0,
+      bossAttackUsed: new Uint32Array(BOSS_ATTACKS.length),
+      bossAttackHits: new Uint32Array(BOSS_ATTACKS.length),
+      bossAttackLastHit: new Int32Array(BOSS_ATTACKS.length).fill(-1),
+      bossAttackSeq: 0,
+      bossFights: [],
+      slideTime: 0,
+      airTime: 0,
+      jumps: 0,
+      picks: [],
+      chests: [],
+    },
     unlockedWeapons: new Set(opts.unlockedWeapons ?? []),
     options: { stress, god: !!opts.god || stress > 0, tuned: !!opts.tuned },
     tuning,

@@ -95,6 +95,23 @@ test('the tuning panel only exists with ?tune=1', async ({ page }) => {
   expect(problems, problems.join('\n')).toEqual([]);
 });
 
+test('?playtest=1 records a run on the device and offers export', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/?playtest=1');
+  await expect(page.locator('.playtest-badge')).toBeVisible();
+  await expect(page.locator('.playtest-row')).toContainText('Playtest runs on this device: 0');
+  await startRun(page);
+  await babysit(page, 4);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Quit run' }).click();
+  await page.getByRole('button', { name: 'Yes' }).click();
+  await expect(page.locator('.playtest-row')).toContainText('Playtest runs on this device: 1');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('theabonk.playtest') ?? '{}'));
+  expect(stored.runs[0].player).toBe('human');
+  expect(stored.runs[0].result).toBe('quit');
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
 test('menus open and close without errors', async ({ page }) => {
   const problems = watchConsole(page);
   await page.goto('/');

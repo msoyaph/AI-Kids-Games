@@ -23,6 +23,10 @@ export interface GameApi {
   /** Drop the finished run so menus get the idle backdrop again. */
   clearRun(): void;
   resume(): void;
+  /** Playtest mode: number of stored runs (null when not in playtest mode). */
+  playtestCount(): number | null;
+  exportPlaytests(): void;
+  clearPlaytests(): void;
   sound(name: 'click' | 'buy' | 'error' | 'back' | 'open' | 'achievement'): void;
 }
 
@@ -96,6 +100,7 @@ export class Menus {
       h('div', { class: 'corner-tr' }, goldChip(d.gold)),
       d.stats.runsPlayed > 0 ? h('div', { class: 'corner-bl' }, `Best ${formatTime(d.stats.bestTime)} · ${d.stats.totalKills.toLocaleString()} bonks · ${d.stats.runsPlayed} runs`) : null,
       !save.persistent ? h('div', { class: 'corner-br warn' }, 'Storage unavailable — progress lasts this session only') : null,
+      this.playtestRow(() => this.title()),
     );
     this.g.ui.show('title', el);
   }
@@ -167,6 +172,22 @@ export class Menus {
       h('div', { class: 'corner-tr' }, goldChip(d.gold)),
     );
     this.g.ui.show('select', el, back);
+  }
+
+  /** Export / clear controls, only in ?playtest=1 mode. */
+  private playtestRow(refresh: () => void): HTMLElement | null {
+    const n = this.g.playtestCount();
+    if (n === null) return null;
+    return h(
+      'div',
+      { class: 'playtest-row' },
+      h('span', null, `Playtest runs on this device: ${n}`),
+      h('button', { class: 'btn small', onclick: () => this.g.exportPlaytests(), disabled: n === 0 }, 'Export'),
+      h('button', { class: 'btn small ghost', onclick: () => this.confirm('Delete all recorded playtest runs on this device?', () => {
+        this.g.clearPlaytests();
+        refresh();
+      }, refresh), disabled: n === 0 }, 'Clear'),
+    );
   }
 
   private begin(): void {
@@ -502,6 +523,7 @@ export class Menus {
         h('button', { class: 'btn', onclick: () => leave(() => this.shop()) }, 'Workshop'),
         h('button', { class: 'btn ghost', onclick: () => leave(() => this.title()) }, 'Title'),
       ),
+      this.playtestRow(() => undefined),
     );
     this.g.ui.show('gameover', el, () => leave(() => this.title()), {}, true);
   }

@@ -151,6 +151,7 @@ export function updatePlayer(w: World, input: SimInput): void {
     p.onGround = false;
     p.coyote = 0;
     p.jumpBuffer = 0;
+    w.stats.jumps++;
     w.events.push(Ev.Jump, p.x, p.y, p.z, hs);
   }
 
@@ -239,6 +240,10 @@ export function updatePlayer(w: World, input: SimInput): void {
       if (impact > 4) w.events.push(Ev.Land, p.x, p.y, p.z, impact);
     }
   }
+
+  if (p.onGround) {
+    if (p.sliding) w.stats.slideTime += DT;
+  } else w.stats.airTime += DT;
 
   if (hs > 0.5) p.yaw = Math.atan2(p.vx, p.vz);
   else if (inLen > 0.1) p.yaw = Math.atan2(ix, iz);

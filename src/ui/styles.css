@@ -1558,3 +1558,30 @@ body {
   font-weight: 800;
   color: #a8ecff;
 }
+
+.playtest-badge {
+  position: absolute;
+  left: 50%;
+  top: 0.15rem;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #ff9a9a;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.playtest-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.title-screen .playtest-row {
+  position: absolute;
+  left: 8vw;
+  bottom: 3.2rem;
+}

@@ -1,6 +1,7 @@
 import { ENEMIES } from '../config/enemies';
 import { EVOLUTIONS } from '../config/passives';
 import { Rng } from '../core/rng';
+import { walkSpeed } from './player';
 import { HazardKind, PickupKind } from './pools';
 import type { SimInput, UpgradeChoice, World } from './world';
 
@@ -10,6 +11,8 @@ import type { SimInput, UpgradeChoice, World } from './world';
  * threats and makes noisier upgrade decisions.
  */
 export class Bot {
+  /** Experiment switch for A/B balance runs. */
+  static gapEscapes = true;
   private rng: Rng;
   private jitterA = 0;
   private decideT = 0;
@@ -21,10 +24,19 @@ export class Bot {
   private lastX = 0;
   private lastZ = 0;
   private unstickA = 0;
+  // movement skills
+  private wantSlide = false;
+  private escapeT = 0;
+  private escapeA = 0;
+  private threat = 0;
+  private grad = new Float32Array(2);
+  private angles = new Float32Array(64);
 
   constructor(
     seed: number,
     readonly skill = 0.7,
+    /** Slides, slide-jumps and gap escapes like a good player (off = v1 bot). */
+    readonly movementSkills = true,
   ) {
     this.rng = new Rng(seed ^ 0xb07);
   }
@@ -54,11 +66,128 @@ export class Bot {
     }
     this.lastX = p.x;
     this.lastZ = p.z;
+    if (this.escapeT > 0) {
+      this.escapeT -= 1 / 60;
+      this.mx = Math.sin(this.escapeA);
+      this.mz = Math.cos(this.escapeA);
+    }
+    // bunny-hop out of slides on clear ground to keep momentum (a good player's habit)
+    const speed = Math.hypot(p.vx, p.vz);
+    if (this.wantSlide && this.escapeT <= 0 && this.nearestEnemy(w) < 3.5) this.wantSlide = false;
+    // a spent slide is slower than walking: let go, walk a beat, slide again for a fresh boost
+    if (this.wantSlide && p.sliding && p.onGround && speed < walkSpeed(w) * 1.05 && this.downhill < 0.15) {
+      this.wantSlide = false;
+      this.reslideT = 0.35;
+    }
+    if (this.reslideT > 0) {
+      this.reslideT -= 1 / 60;
+      if (this.escapeT <= 0) this.wantSlide = false;
+    }
+    if (this.wantSlide && p.onGround && p.sliding && p.landT > 0.25 && speed > walkSpeed(w) * 1.2 && this.threat < 0.1 && this.coneBlocked === 0 && this.rng.next() < this.skill * 0.04) {
+      this.wantJump = true;
+    }
     out.moveX = this.mx;
     out.moveZ = this.mz;
     out.jump = this.wantJump;
     this.wantJump = false;
-    out.slide = false;
+    out.slide = this.wantSlide;
+  }
+
+  /**
+   * Movement skills, decided at plan time:
+   *  - burst through the widest gap when surrounded (slide + hop)
+   *  - slide on clear stretches and downhill, never uphill
+   */
+  private planMovement(w: World, enemiesNear: number): void {
+    const p = w.player;
+    if (!this.movementSkills) {
+      this.wantSlide = false;
+      return;
+    }
+    this.grad[0] = this.grad[1] = 0;
+    w.terrain.gradient(p.x, p.z, this.grad);
+    const downhill = -(this.grad[0] * this.mx + this.grad[1] * this.mz);
+    // surrounded: find the widest angular gap between nearby enemies and escape through it
+    if (Bot.gapEscapes && enemiesNear >= 6 && this.skill > 0.35 && this.escapeT <= 0) {
+      const n = Math.min(enemiesNear, this.angles.length);
+      const a = this.angles.subarray(0, n).sort();
+      let bestGap = 0;
+      let bestMid = 0;
+      for (let k = 0; k < n; k++) {
+        const next = k + 1 < n ? a[k + 1] : a[0] + Math.PI * 2;
+        const gap = next - a[k];
+        if (gap > bestGap) {
+          bestGap = gap;
+          bestMid = a[k] + gap / 2;
+        }
+      }
+      if (bestGap > 1.2 && bestGap < 4 && this.threat > 0.5 && this.rng.next() < this.skill) {
+        this.escapeT = 0.5 + this.skill * 0.3;
+        this.escapeA = bestMid;
+        this.wantSlide = true;
+        if (p.onGround && this.rng.next() < 0.5) this.wantJump = true;
+        return;
+      }
+    }
+    this.downhill = downhill;
+    if (this.escapeT > 0) return;
+    // slide to travel (far goals) or down slopes, only with an open path ahead and nothing
+    // close — sliding limits steering, so it's no good for close-quarters kiting
+    const pathClear = this.coneBlocked === 0 && this.closest > 4.5;
+    const travelling = this.goalDist > 12 || downhill > 0.2;
+    this.wantSlide = this.skill > 0.45 && pathClear && travelling && downhill > -0.1 && this.threat < 0.12;
+  }
+
+  /** Enemies within the forward cone (±50°) and 9 units of the planned move direction. */
+  private coneBlocked = 0;
+  private downhill = 0;
+  private reslideT = 0;
+  /** Distance to the current travel goal (sliding is for travel, not close-quarters kiting). */
+  private goalDist = 0;
+  private closest = Infinity;
+
+  private wp = new Float32Array(2);
+
+  /**
+   * Waypoint toward a raised target via the ramp that leads up to its plateau:
+   * the ramp's foot until we're on it, then its top. False if no ramp reaches that height.
+   */
+  private rampWaypoint(w: World, tx: number, tz: number, out: Float32Array): boolean {
+    const p = w.player;
+    const top = w.terrain.height(tx, tz);
+    let bestD = Infinity;
+    for (const s of w.terrain.structures) {
+      if (s.kind !== 'ramp' || Math.abs(s.y1 - top) > 0.6) continue;
+      const hiX = s.x + s.cos * s.hu;
+      const hiZ = s.z + s.sin * s.hu;
+      if (Math.hypot(hiX - tx, hiZ - tz) > 25) continue;
+      const loX = s.x - s.cos * (s.hu + 1.5);
+      const loZ = s.z - s.sin * (s.hu + 1.5);
+      const dLo = Math.hypot(loX - p.x, loZ - p.z);
+      if (dLo >= bestD) continue;
+      bestD = dLo;
+      // on the ramp (or right at its foot): head for the top edge and beyond
+      const onRamp = dLo < 2.5 || p.y > s.y0 + 0.4;
+      out[0] = onRamp ? hiX + s.cos * 2 : loX;
+      out[1] = onRamp ? hiZ + s.sin * 2 : loZ;
+    }
+    return bestD < Infinity;
+  }
+
+  private nearestEnemy(w: World): number {
+    const p = w.player;
+    const e = w.enemies;
+    let best = Infinity;
+    // only a cheap check: the grid around the player
+    const buf = w.scratch2;
+    const n = w.grid.query(p.x, p.z, 4, buf);
+    for (let k = 0; k < n; k++) {
+      const i = buf[k];
+      if (i >= e.count || !e.alive[i]) continue;
+      const d = Math.hypot(e.x[i] - p.x, e.z[i] - p.z) - e.radius[i];
+      if (d < best) best = d;
+    }
+    return best;
   }
 
   private ringNear(w: World): boolean {
@@ -79,6 +208,7 @@ export class Bot {
     let rz = 0;
     let threat = 0;
     let closest = Infinity;
+    let near = 0;
     const awareness = 8 + this.skill * 8;
     for (let i = 0; i < e.count; i++) {
       if (!e.alive[i]) continue;
@@ -89,6 +219,7 @@ export class Bot {
       const d = Math.sqrt(d2) || 0.01;
       const edgeD = Math.max(0.3, d - e.radius[i]);
       if (edgeD < closest) closest = edgeD;
+      if (d < 7 && near < this.angles.length) this.angles[near++] = Math.atan2(-dx, -dz);
       const def = ENEMIES[e.type[i]];
       const charging = (def.behavior === 'charger' || def.bossPattern === 'clockjaw') && (e.state[i] === 1 || e.state[i] === 2);
       if (charging && edgeD < 18 && this.rng.next() < this.skill) {
@@ -181,10 +312,19 @@ export class Bot {
         const dx = sh.x - p.x;
         const dz = sh.z - p.z;
         const d2 = dx * dx + dz * dz;
-        if (d2 < best && Math.abs(w.terrain.height(sh.x, sh.z) - p.y) < 1.5) {
+        if (d2 >= best) continue;
+        const rise = w.terrain.height(sh.x, sh.z) - p.y;
+        // (v1 bot: only shrines at roughly the same height)
+        if (Math.abs(rise) < 1.5 || (this.movementSkills && rise < 0)) {
           best = d2;
           gx = dx;
           gz = dz;
+          goal = true;
+        } else if (this.movementSkills && this.skill > 0.55 && this.rampWaypoint(w, sh.x, sh.z, this.wp)) {
+          // shrine on a plateau: walk to the foot of its ramp, then up the ramp
+          best = d2;
+          gx = this.wp[0] - p.x;
+          gz = this.wp[1] - p.z;
           goal = true;
         }
       }
@@ -225,6 +365,7 @@ export class Bot {
       mx += (nx * c - nz * sn) * Math.min(3, threat * 2);
       mz += (nx * sn + nz * c) * Math.min(3, threat * 2);
     }
+    this.goalDist = goal ? Math.hypot(gx, gz) : 0;
     if (goal) {
       const gl = Math.hypot(gx, gz) || 1;
       const urge = threat < 0.15 ? 1.4 : threat < 0.5 ? 0.5 : 0.15;
@@ -247,6 +388,18 @@ export class Bot {
     this.mx = mx / l;
     this.mz = mz / l;
     if (closest < 0.6 && this.rng.next() < this.skill * 0.5) this.wantJump = true;
+    this.threat = threat;
+    this.closest = closest;
+    let blocked = 0;
+    for (let i = 0; i < e.count; i++) {
+      const dx = e.x[i] - p.x;
+      const dz = e.z[i] - p.z;
+      const d2 = dx * dx + dz * dz;
+      if (d2 > 81 || d2 < 1e-4) continue;
+      if ((dx * this.mx + dz * this.mz) / Math.sqrt(d2) > 0.64) blocked++;
+    }
+    this.coneBlocked = blocked;
+    this.planMovement(w, near);
   }
 
   chooseUpgrade(w: World): UpgradeChoice | null {
