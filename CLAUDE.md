@@ -20,7 +20,8 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   throttles rAF to ~3 fps, so use this for visual checks), `scripts/cpuprofile.mjs [throttle secs]` (top self-time
   functions on the built game), `scripts/simdebug.ts` (per-wave bot trace), `scripts/simmap.ts` (ASCII of bot maze),
   `scripts/render-svg.mjs <dir>` (marketing SVG → PNG).
-- URL flags: `?map=<id>&diff=<d>[&endless]`, `?seed=N`, `?stress=N`, `?quality=low|medium|high|auto`;
+- URL flags: `?map=<id>&diff=<d>[&endless]`, `?seed=N`, `?stress=N`, `?quality=low|medium|high|auto`,
+  `?lang=en|fil|pseudo`, test hooks `?screen=worlds|encyclopedia|badges|settings|research|daily|workshop`, `?brief=<mapId>`;
   DEV only: `?editor=1`, `?gallery=1`. Dev exposes `window.__vanex` ({stage, atlas, app}) and `window.__game`.
   All builds expose read-only `window.__vanexTest` (state + cellCenter) while a game screen is active.
 
@@ -135,6 +136,17 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   their median by 100 ms "punch" loudness with group offsets (shots −2, light −3, hits +2, big events +6).
   Worst-case busy fight (boss theme + every combat SFX): −21.8 LUFS / −0.2 dBFS peak at default volumes.
   Boss themes end when the last boss is destroyed OR leaks (`bossGone`).
+- Phase 11 done: i18n. `src/i18n/fil.ts` = complete Filipino draft (`Record<MessageKey, Message>`, so a missing
+  key fails typecheck), `FIL_REVIEW_STATUS = 'needs-native-review'` (shows a note in Settings; README lists review
+  notes + glossary). Proper nouns (tower/enemy/hero/ability/spec/world/map/research `.name`, element prefixes,
+  workshop word lists) stay English — unit test enforces, plus placeholders, plural `one`+`other` (CLDR fil "one"
+  covers 2,3,5… so it MUST contain `{count}`), and bitmap-font glyphs for canvas labels (`src/i18n/glyphs.ts`,
+  `isBitmapKey`: `fx.*`, `hero.levelUp`). Settings → Language (Auto/device, English, Filipino, + Pseudo in dev;
+  language names carry `lang` attrs). `tests/e2e/i18n.spec.ts`: every menu/codex tab/workshop editor/briefing/
+  element pick/HUD/tower panel/pause in en/fil/pseudo on desktop + phones — fails on clipped, ellipsised, covered
+  (by small controls) or untranslated (pseudo) text. Fixes it drove: bottom-right `.br-dock` (Build FAB + command
+  bar flex together), wrapping toasts and build-card names, hero tip waits for the rotate hint, saves flush on
+  `pagehide`/hidden (debounced saves were lost on quick close). New English keys need a `fil.ts` entry too.
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

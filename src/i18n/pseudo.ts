@@ -1,3 +1,4 @@
+import { isBitmapKey } from './glyphs';
 import type { Message } from './index';
 
 const ACCENT: Record<string, string> = {
@@ -28,11 +29,26 @@ export function pseudoString(s: string): string {
   return `⟦${out} ${filler.slice(0, pad)}⟧`;
 }
 
+/** Canvas labels: only letters the bitmap font has (accented vowels, Ñ, ·). */
+export function pseudoBitmap(s: string): string {
+  const map: Record<string, string> = { A: 'Á', E: 'É', I: 'Í', O: 'Ó', U: 'Ú', N: 'Ñ', a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú', n: 'ñ' };
+  let out = '';
+  let depth = 0;
+  for (const ch of s) {
+    if (ch === '{') depth++;
+    out += depth > 0 ? ch : (map[ch] ?? ch);
+    if (ch === '}') depth = Math.max(0, depth - 1);
+  }
+  const pad = Math.max(1, Math.round(s.replace(/\{\w+\}/g, '').length * 0.4));
+  return `${out} ·${'X'.repeat(pad)}`;
+}
+
 export function pseudoMessages<K extends string>(src: Record<K, Message>): Record<K, Message> {
   const out = {} as Record<K, Message>;
   for (const k of Object.keys(src) as K[]) {
     const m = src[k];
-    if (typeof m === 'string') out[k] = pseudoString(m);
+    if (typeof m === 'string' && isBitmapKey(k)) out[k] = pseudoBitmap(m);
+    else if (typeof m === 'string') out[k] = pseudoString(m);
     else {
       const p: Record<string, string> = {};
       for (const [form, s] of Object.entries(m)) if (s) p[form] = pseudoString(s);

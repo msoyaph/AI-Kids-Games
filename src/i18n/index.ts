@@ -1,4 +1,5 @@
 import { en, type MessageKey } from './en';
+import { fil } from './fil';
 import { pseudoMessages } from './pseudo';
 
 /**
@@ -32,7 +33,7 @@ interface LocaleDef {
 
 const LOCALES: Record<LocaleId, LocaleDef> = {
   en: { id: 'en', name: 'English', tag: 'en', messages: en },
-  fil: { id: 'fil', name: 'Filipino', tag: 'fil', messages: {} },
+  fil: { id: 'fil', name: 'Filipino', tag: 'fil', messages: fil },
   pseudo: { id: 'pseudo', name: 'Pseudo (ẋẋ)', tag: 'en', messages: {}, devOnly: true },
 };
 

@@ -692,10 +692,10 @@
   padding: 10px 16px;
   border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  white-space: nowrap;
-  max-width: calc(100vw - 24px);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* longer languages wrap onto a second line instead of being cut off */
+  width: max-content;
+  max-width: min(560px, calc(100vw - 24px));
+  text-align: center;
   animation: toastin 0.2s ease-out;
   pointer-events: none;
   z-index: 40;
@@ -892,17 +892,28 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
+  line-height: 1.1;
   text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 80px;
+  text-align: center;
+  /* long names (other languages) wrap to a second line instead of being cut */
+  overflow-wrap: anywhere;
+  max-width: 88px;
 }
-.build-fab {
+.br-dock {
   position: absolute;
   right: calc(var(--safe-right) + 10px);
   bottom: calc(var(--safe-bottom) + 10px);
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
   z-index: 11;
+  pointer-events: none;
+}
+.br-dock > * {
+  pointer-events: auto;
+}
+.pinned .br-dock {
+  bottom: calc(var(--safe-bottom) + var(--drawer-real, 108px) + 14px);
 }
 .build-fab .btn {
   min-height: 58px;
@@ -2015,17 +2026,9 @@ p.intel-boss {
 
 /* ------------------------------------------------------------------ command bar (hero + abilities) */
 .command-bar {
-  position: absolute;
-  right: calc(var(--safe-right) + 80px);
-  bottom: calc(var(--safe-bottom) + 10px);
   display: flex;
   align-items: flex-end;
   gap: 6px;
-  z-index: 11;
-}
-.pinned .command-bar {
-  right: calc(var(--safe-right) + 10px);
-  bottom: calc(var(--safe-bottom) + var(--drawer-real, 108px) + 14px);
 }
 .panel-open .command-bar {
   display: none;

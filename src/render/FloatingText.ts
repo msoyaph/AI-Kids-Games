@@ -1,5 +1,6 @@
 import { BitmapFont, BitmapText, Container } from 'pixi.js';
 import { swapRemove } from '../core/pool';
+import { BITMAP_CHARS } from '../i18n/glyphs';
 
 export const NUM_FONT = 'VanexNum';
 const FONT_STACK = "'Avenir Next Condensed', 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif";
@@ -21,7 +22,7 @@ export function installFonts(resolution: number): void {
       letterSpacing: 1,
     },
     // ASCII plus the accented letters Filipino (and Spanish loanwords) use
-    chars: [['0', '9'], ['A', 'Z'], ['a', 'z'], '+-!?.,%x :×·ÁÉÍÓÚÑÜáéíóúñü'],
+    chars: [['0', '9'], ['A', 'Z'], ['a', 'z'], BITMAP_CHARS],
     resolution: Math.min(2, Math.max(1, resolution)),
     padding: 4,
   });

@@ -56,10 +56,13 @@ export class App {
     addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.current?.back?.()) e.preventDefault();
     });
+    // pending (debounced) saves must not be lost when the page closes or navigates
+    addEventListener('pagehide', () => this.save.flush());
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         this.stage.app.ticker.stop();
         this.audio.suspend();
+        this.save.flush(); // the tab may never come back
       } else {
         if (this.current?.usesCanvas) this.startTicker();
         this.audio.resume();

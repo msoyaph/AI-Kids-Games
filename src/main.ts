@@ -22,6 +22,8 @@ function progress(p: number, text?: string): void {
   if (text && tip) tip.textContent = text;
 }
 
+const TEST_SCREENS = ['worlds', 'encyclopedia', 'badges', 'settings', 'research', 'daily', 'workshop'] as const;
+
 async function boot(): Promise<void> {
   const params = new URLSearchParams(location.search);
   const save = new SaveStore();
@@ -60,7 +62,7 @@ async function boot(): Promise<void> {
     onRunEnd: (game, won, mode) => app.achievements.checkEnd(game, won, mode),
     encyclopedia: (a, n) => new EncyclopediaScreen(a, n),
     badges: (a, n) => new BadgesScreen(a, n),
-    settings: (a, _n, back) => new SettingsScreen(a, back),
+    settings: (a, n, back) => new SettingsScreen(a, back, () => n.settings()),
   });
   if (import.meta.env.DEV) Object.assign((window as unknown as Record<string, Record<string, unknown>>).__vanex!, { nav, mapById });
   if (import.meta.env.DEV && params.has('editor')) {
@@ -75,8 +77,15 @@ async function boot(): Promise<void> {
   }
   const play = params.get('map');
   const map = play ? mapById(play) : undefined;
+  // Test hooks (layout/overflow checks): ?screen=<menu screen>, ?brief=<map id>
+  const screen = params.get('screen') as (typeof TEST_SCREENS)[number] | null;
+  const brief = mapById(params.get('brief') ?? '');
   if (map) nav.play(map, (params.get('diff') as Difficulty | null) ?? 'normal', map.id === 'tutorial' ? 'tutorial' : params.has('endless') ? 'endless' : 'campaign');
-  else nav.title();
+  else if (screen && TEST_SCREENS.includes(screen)) nav[screen]();
+  else if (brief) {
+    nav.worlds();
+    nav.briefing(brief, 'campaign');
+  } else nav.title();
 }
 
 boot().catch((err: unknown) => {

@@ -1,16 +1,18 @@
-import { t } from '../../i18n';
+import { FIL_REVIEW_STATUS } from '../../i18n/fil';
+import { availableLocales, detectLocale, getLocale, resolveLocale, setLocale, t, type LocaleSetting } from '../../i18n';
 import type { QualitySetting } from '../../render/quality';
 import { h } from '../../ui/dom';
 import { pipSays, showModal } from '../../ui/modals';
 import type { App, Screen } from '../App';
 import { fullscreenAvailable, toggleFullscreen } from './TitleScreen';
 
-function seg<T extends string | number>(options: [T, string][], value: T, onPick: (v: T) => void): HTMLElement {
+/** `langOf` marks options written in another language (language names are shown in their own language). */
+function seg<T extends string | number>(options: [T, string][], value: T, onPick: (v: T) => void, langOf?: (v: T) => string | undefined): HTMLElement {
   const wrap = h('div.seg', { role: 'radiogroup' });
   const render = (cur: T): void => {
     wrap.replaceChildren(
       ...options.map(([v, label]) =>
-        h('button.btn', { class: v === cur ? 'on' : '', role: 'radio', 'aria-checked': String(v === cur), onClick: () => (onPick(v), render(v)) }, label),
+        h('button.btn', { class: v === cur ? 'on' : '', role: 'radio', 'aria-checked': String(v === cur), lang: langOf?.(v), onClick: () => (onPick(v), render(v)) }, label),
       ),
     );
   };
@@ -31,12 +33,36 @@ export class SettingsScreen implements Screen {
   constructor(
     private readonly app: App,
     private readonly onBack: () => void,
+    /** Rebuilds this screen (after the language changes). */
+    private readonly reopen: () => void = onBack,
   ) {
     const s = app.save.data.settings;
     const save = (): void => app.save.save();
+    const locales = availableLocales(import.meta.env.DEV);
+    const deviceName = locales.find((l) => l.id === detectLocale())?.name ?? 'English';
     const rows = h(
       'div.settings',
       null,
+      h('h3.section', null, t('settings.section.language')),
+      h(
+        'div.setting.panel',
+        null,
+        h('label', null, t('settings.language')),
+        seg<LocaleSetting>(
+          [['auto', t('settings.lang.auto', { name: deviceName })], ...locales.map((l): [LocaleSetting, string] => [l.id, l.name])],
+          s.language,
+          (v) => {
+            s.language = v;
+            save();
+            if (resolveLocale(v) !== getLocale()) {
+              setLocale(resolveLocale(v));
+              this.reopen();
+            }
+          },
+          (v) => (v === 'en' ? 'en' : v === 'fil' ? 'fil' : undefined),
+        ),
+      ),
+      getLocale() === 'fil' && FIL_REVIEW_STATUS === 'needs-native-review' ? h('p.note', null, t('settings.lang.review')) : null,
       h('h3.section', null, t('settings.section.audio')),
       slider(t('settings.music'), s.music, (v) => {
         s.music = v;

@@ -77,6 +77,7 @@ export class Hud {
   private cardsEl = h('div.cards');
   private cards: CardRef[] = [];
   private fab: HTMLElement;
+  private dock: HTMLElement;
   private chip: HTMLElement;
   private tpanel: HTMLElement | null = null;
   private tpanelRefs: { upgrade?: HTMLButtonElement; sell?: HTMLButtonElement; target?: HTMLButtonElement; kills?: HTMLElement } = {};
@@ -105,7 +106,9 @@ export class Hud {
     this.chip.style.display = 'none';
     this.bossBar.append(h('div.bhead', null, this.bossName, this.bossPips), h('span.bbar', null, this.bossFill, this.bossBarrier));
     this.bossBar.style.display = 'none';
-    this.el.append(top, this.crystalWrap, this.bossBar, this.drawer, this.fab, this.chip);
+    // bottom-right dock: hero/abilities sit beside the Build button and make room for longer labels
+    this.dock = h('div.br-dock', null, this.fab);
+    this.el.append(top, this.crystalWrap, this.bossBar, this.drawer, this.dock, this.chip);
     this.buildCommandBar();
     // Horizontal wheel scrolling on desktop for the tower row.
     this.cardsEl.addEventListener(
@@ -217,7 +220,8 @@ export class Hud {
     }
     cmd.targetChip.style.display = 'none';
     this.cmd = cmd;
-    this.el.append(bar, cmd.targetChip);
+    this.dock.prepend(bar);
+    this.el.append(cmd.targetChip);
   }
 
   private updateCommandBar(): void {

@@ -158,7 +158,12 @@ export class GameScreen implements Screen, HudHost {
     if (this.game.hero && !hints.includes('hero')) {
       hints.push('hero');
       this.app.save.save();
-      window.setTimeout(() => this.hud.tip(t('hero.firstHint')), 1500);
+      // wait for the rotate-your-phone hint to go first (they share the top of the screen)
+      const showTip = (): void => {
+        if (this.el.querySelector('.rotate-hint')) window.setTimeout(showTip, 500);
+        else this.hud.tip(t('hero.firstHint'));
+      };
+      window.setTimeout(showTip, 1500);
     }
     this.app.achievements.onUnlock = (def) => {
       this.hud.banner(t('game.banner.badge'), def.name);

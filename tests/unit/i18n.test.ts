@@ -8,11 +8,13 @@ import { TARGET_MODES, TOWER_IDS, TOWERS } from '../../src/data/towers';
 import { WORLDS } from '../../src/data/worlds';
 import { detectLocale, formatNumber, hasKey, registerMessages, setLocale, t } from '../../src/i18n';
 import { en } from '../../src/i18n/en';
-import { pseudoString } from '../../src/i18n/pseudo';
+import { fil, FIL_REVIEW_STATUS } from '../../src/i18n/fil';
+import { fitsBitmapFont, isBitmapKey } from '../../src/i18n/glyphs';
+import { pseudoMessages, pseudoString } from '../../src/i18n/pseudo';
 
 afterEach(() => {
   setLocale('en');
-  registerMessages('fil', {});
+  registerMessages('fil', fil);
 });
 
 describe('i18n core', () => {
@@ -30,6 +32,7 @@ describe('i18n core', () => {
 
   it('uses Filipino plural rules and falls back to English for missing keys', () => {
     registerMessages('fil', { 'unit.constructs': { one: '{count} A', other: '{count} B' } });
+    setLocale('en');
     setLocale('fil');
     // CLDR fil: integers ending in 4, 6 or 9 take "other"; the rest take "one"
     expect(t('unit.constructs', { count: 1 })).toBe('1 A');
@@ -90,5 +93,47 @@ describe('English messages', () => {
         expect(s.replace(/\{\w+\}/g, ''), k).not.toMatch(/[{}]/);
       }
     }
+  });
+});
+
+const placeholders = (s: string): string[] => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!).sort();
+const forms = (m: unknown): string[] => (typeof m === 'string' ? [m] : Object.values(m as Record<string, string>));
+/** Proper nouns that stay in English in every language. */
+const KEEP_ENGLISH = /^((tower|enemy|hero|ability|spec|world|map|research|boss)\..*\.name|element\.\w+\.prefix|workshop\.words\.\w+)$/;
+
+describe('Filipino messages', () => {
+  const keys = Object.keys(en) as (keyof typeof en)[];
+
+  it('are a complete draft, flagged for native review', () => {
+    expect(Object.keys(fil).sort()).toEqual([...keys].sort());
+    for (const k of keys) for (const f of forms(fil[k])) expect(f.trim(), k).not.toBe('');
+    expect(['needs-native-review', 'reviewed']).toContain(FIL_REVIEW_STATUS);
+  });
+
+  it('keep every placeholder and both plural forms', () => {
+    for (const k of keys) {
+      const want = placeholders(forms(en[k]).at(-1)!);
+      for (const f of forms(fil[k])) expect(placeholders(f), k).toEqual(want);
+      if (typeof en[k] !== 'string') expect(Object.keys(fil[k] as object).sort(), k).toEqual(['one', 'other']);
+    }
+  });
+
+  it('keep proper nouns in English', () => {
+    for (const k of keys.filter((k) => KEEP_ENGLISH.test(k))) expect(fil[k], k).toEqual(en[k]);
+  });
+
+  it('canvas labels only use letters the bitmap font has', () => {
+    const pseudo = pseudoMessages(en);
+    for (const k of keys.filter(isBitmapKey)) {
+      for (const msgs of [en, fil, pseudo] as Record<string, unknown>[]) for (const f of forms(msgs[k])) expect(fitsBitmapFont(f), `${k}: ${f}`).toBe(true);
+    }
+  });
+
+  it('switch the whole game over, data text included', () => {
+    setLocale('fil');
+    expect(t('hud.lives')).toBe(fil['hud.lives']);
+    expect(ELEMENTS.fire.name).toBe('Apoy');
+    expect(TOWERS.arrow.name).toBe(en['tower.arrow.name']); // proper noun
+    expect(t('unit.constructs', { count: 4 })).toContain('4');
   });
 });

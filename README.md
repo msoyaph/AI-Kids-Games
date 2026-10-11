@@ -231,6 +231,34 @@ No ads, purchases, accounts, links, tracking or network requests. Gentle, short 
 sparkles and coins. Colour + shape for every element, 48 px+ touch targets, safe-area aware layout, reduced-motion
 support, separate music and sound volumes, optional screen shake and damage numbers.
 
+## Languages
+
+English (source, `src/i18n/en.ts`) and Filipino (`src/i18n/fil.ts`). Settings → Language defaults to the device
+language (`fil`/`tl` → Filipino, anything else → English) and can be changed at any time; the choice is saved.
+Dev builds also offer a pseudo-locale (accented, ~40 % longer) for layout testing; `?lang=en|fil|pseudo` forces
+a language. `npx playwright test tests/e2e/i18n.spec.ts` checks every menu, modal and the battle HUD in all three
+on desktop and phones for clipped, cut-off, covered or untranslated text.
+
+### Translations needing review
+
+| Language | Strings | Status |
+|---|---|---|
+| Filipino (`fil`) | all 949 | **Needs native review** — machine-assisted first draft (`FIL_REVIEW_STATUS = 'needs-native-review'`). Players see a short note under Settings → Language while this is set. |
+
+Notes for the reviewer (open `src/i18n/fil.ts`; keys and `{placeholders}` must stay as in `en.ts`, `npm test` checks):
+- Proper nouns stay in English on purpose: tower, construct, hero, ability, specialization, world, map and
+  research names, PIP, Vanex, Archon Null, the Shardbound, and the Map Workshop name word lists.
+- Glossary used: tore (tower), konstruk (construct), alon (wave), ginto (gold), buhay (lives), Kuta (Citadel),
+  core ng elemento, panangga (elemental ward), kalasag (shield), harang (barrier), bayani (hero), kakayahan
+  (ability), pananaliksik (research), tsapa (badge), landas (specialization path), Kuwento / Normal / Mahirap /
+  Eksperto (difficulties). "Rift", "boss", "upgrade", "combo", "DPS", "Intel" are kept as gamer Taglish.
+- Register: UI and tips use informal *mo*; some PIP briefings to the Komandante use polite *ninyo/inyo* — please
+  pick one voice for PIP.
+- Worth a second look: `badge.king.name` (pun on "null and void"), `boss.*` phase names, `hero.*.role`,
+  `trait.disabler` ("Pampatigil"), `map.w6m3.story` ("alingawngaw"), the longer button labels
+  (`pause.restart`, `daily.play`, `ability.cancel`, `settings.q.medium`, `title.research`).
+- When done, set `FIL_REVIEW_STATUS` to `'reviewed'` (removes the in-game note).
+
 ## Credits
 
 Game design, code, art and music: all original, generated in code for this project.

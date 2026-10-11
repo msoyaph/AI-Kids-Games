@@ -994,6 +994,11 @@ export const en = {
   'workshop.theme.caves': 'Deep',
   'workshop.theme.sky': 'Skyforge',
   'workshop.theme.rift': 'Rift',
+  // ---- language
+  'settings.section.language': 'Language',
+  'settings.language': 'Language',
+  'settings.lang.auto': 'Device ({name})',
+  'settings.lang.review': 'The Filipino translation is new and is still being checked by native speakers.',
 } as const;
 
 export type MessageKey = keyof typeof en;
