@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { categories, games, type Category, type Game } from '../data/games';
 import { filterGames } from '../lib/search';
@@ -8,10 +9,18 @@ export function useCatalogFilters(fixedCategory?: string) {
   const category = fixedCategory ?? (categories.find(item => item.toLowerCase() === params.get('category')?.toLowerCase()) || '');
   const age = params.get('age'); const playerAge = age && /^\d+$/.test(age) ? Number(age) : undefined;
   const query = params.get('q') || '';
-  // Functional update: quick successive changes (e.g. a chip then the age select) build on each other.
-  const set = (key: string,value: string) => setParams(previous => { const next = new URLSearchParams(previous); next.delete('focus'); if (value) next.set(key,value); else next.delete(key); return next; },{ replace: true,preventScrollReset: true });
+  // React Router hands setSearchParams' updater the params from the last render, so two quick
+  // changes (a chip, then the age) would overwrite each other. Build on the latest pending params.
+  const latest = useRef(params.toString());
+  useEffect(() => { latest.current = params.toString(); },[params]);
+  const set = (key: string,value: string) => {
+    const next = new URLSearchParams(latest.current); next.delete('focus');
+    if (value) next.set(key,value); else next.delete(key);
+    latest.current = next.toString();
+    setParams(next,{ replace: true,preventScrollReset: true });
+  };
   const results: Game[] = filterGames(games,query,category,playerAge);
-  return { category,playerAge,query,results,set,reset: () => setParams({},{ replace: true }),sort: params.get('sort') };
+  return { category,playerAge,query,results,set,reset: () => { latest.current = ''; setParams({},{ replace: true }); },sort: params.get('sort') };
 }
 
 export function CategoryChips({ selected,onSelect }: { selected: string; onSelect: (category: Category | '') => void }) {
