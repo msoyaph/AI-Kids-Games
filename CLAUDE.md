@@ -26,9 +26,11 @@ asset files, CDN links or web fonts.
 - `?tune=1` — live tuning panel (F2 hides). Export → `npm run apply-tuning -- file.json`
   (validates + rewrites the generated block in src/config/tuning.ts);
   `npm run simulate -- 8 0.7 --tuning file.json` tests an export headlessly.
-- E2E needs `npx playwright install chromium` once. On macOS it uses the real GPU via
-  ANGLE/Metal; elsewhere SwiftShader (see tests/e2e/smoke.spec.ts for the one tolerated
-  browser-internal compositor message).
+- E2E needs `npx playwright install chromium firefox` once (projects: chromium, firefox). On
+  macOS Chromium uses the real GPU via ANGLE/Metal; elsewhere SwiftShader. Tolerated
+  browser-internal notices (never game errors) are listed in tests/e2e/smoke.spec.ts:
+  SwiftShader's ReadPixels stall, Firefox's "implementation-defined" shadow filtering note
+  and headless Firefox refusing pointer lock. `npx playwright test --project=firefox`.
 
 ## Architecture
 ```
@@ -53,7 +55,8 @@ src/
   audio/     Web Audio synth SFX + procedural music
   input/     InputManager (the ONE keyboard listener: routes keys to the open menu via
              ui.handleKey, else to gameplay through remappable bindings), actions.ts
-             (GameAction bindings, labels, conflicts), mouse/pointer-lock/gamepad
+             (GameAction bindings, labels, conflicts), gamepad.ts (raw → standard layout,
+             learned calibration, last-used pad, rumble), mouse/pointer-lock
   ui/        DOM screens (title, select, shop, settings, pause, level-up, chest, game over),
              HUD, procedural canvas icons, menu focus navigation
   meta/      save schema + migration, gold/achievements/unlocks, daily.ts (UTC date →
@@ -105,6 +108,12 @@ Key rules:
 - Remapping: settings.controls.bindings (Escape / F3 fixed; menus also always take arrows,
   Enter, Escape, gamepad A/B/d-pad). Slide toggle and hold-to-hop (`SimInput.autoHop` → no
   bunny-hop bonus) are options.
+- Gamepads are always read through `normalizePad` (standard layout): recorded raw layouts
+  (Firefox PlayStation pads, xpad Xbox) are replayed by tests/unit/gamepad.test.ts from
+  tests/fixtures/gamepads.json — add a recording there when supporting a new controller.
+  Check Xbox ids before PlayStation ("Xbox Wireless Controller" vs DS4 "Wireless Controller").
+- Pointer lock asks for raw input (unadjustedMovement) and falls back to a plain lock; if
+  lock never works in a session (pointerlockerror before any success) look switches to drag.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
   Save v2 (`meta/save.ts`): older saves are migrated in sanitizeSave and copied once to
   `theabonk.save.bak` just before the first write in the new format. v2 adds maps, difficulty
@@ -180,6 +189,8 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
 - [x] 6. One input system + remapping, slide toggle / hold-to-hop, flash safety (3 Hz),
   reduced motion, colour-blind palette + patterned telegraphs + "!" markers, larger text,
   high contrast
+- [x] 7. Gamepad layer (standard + raw layouts, calibration, last-used), controller test +
+  quick setup, rumble, raw-input pointer lock + fallback, 125%/150% scaling e2e, Firefox e2e
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

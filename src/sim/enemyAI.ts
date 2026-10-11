@@ -412,7 +412,7 @@ function explode(w: World, i: number): void {
   const p = w.player;
   const dist = Math.hypot(p.x - x, p.z - z);
   if (dist < radius + PLAYER_RADIUS && p.y - e.y[i] < 2.5) damagePlayer(w, def.explodeDamage ?? 15, src(SrcKind.Explosion, e.type[i]));
-  w.events.push(Ev.Explosion, x, e.y[i] + 0.6, z, radius, 0, 0xff8a3d);
+  w.events.push(Ev.Explosion, x, e.y[i] + 0.6, z, radius, 1, 0, 0xff8a3d);
   e.alive[i] = 0; // blows itself up: no XP
   // the blast hurts other Gloom too
   damageArea(w, x, z, radius, (def.explodeDamage ?? 15) * 2.5, 0, -1, 10);

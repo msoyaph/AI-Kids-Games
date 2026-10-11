@@ -1588,6 +1588,95 @@ body {
   padding-bottom: 0.2rem;
 }
 
+.pad-info {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  max-width: 44rem;
+}
+
+.pad-buttons {
+  display: grid;
+  grid-template-columns: repeat(9, auto);
+  gap: 0.35rem;
+  justify-content: start;
+}
+
+.pad-btn {
+  min-width: 2.6rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.3rem 0.3rem;
+  border-radius: 0.6rem;
+  background: rgba(255, 248, 236, 0.1);
+  box-shadow: inset 0 0 0 0.12rem var(--edge);
+}
+
+.pad-btn.on {
+  background: var(--accent);
+  color: var(--ink);
+}
+
+.pad-axes {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin: 0.4rem 0;
+}
+
+.pad-stick {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 50%;
+  background: rgba(255, 248, 236, 0.08);
+  box-shadow: inset 0 0 0 0.14rem var(--edge);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pad-dot {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--accent-2);
+}
+
+.pad-stick-label {
+  position: absolute;
+  bottom: -1.3rem;
+  font-size: 0.7rem;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.pad-trigs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 10rem;
+}
+
+.pad-trig {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pad-trig .bar {
+  flex: 1;
+}
+
+.pad-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
 .remap {
   display: flex;
   flex-direction: column;

@@ -67,7 +67,7 @@ export function updateHazards(w: World): void {
         if (hz.a0[i] <= 0) {
           const d = Math.hypot(p.x - x, p.z - z);
           if (d < hz.radius[i] + PLAYER_RADIUS) damagePlayer(w, hz.damage[i], hz.src[i], hz.inst[i]);
-          w.events.push(Ev.Explosion, x, hz.y[i] + 0.3, z, hz.radius[i], 0, 0, hz.color[i]);
+          w.events.push(Ev.Explosion, x, hz.y[i] + 0.3, z, hz.radius[i], 1, 0, hz.color[i]);
           w.events.push(Ev.Sfx, x, hz.y[i], z, 1, 0, 0, sfxId('slam'));
           hz.alive[i] = 0;
           continue;

@@ -14,6 +14,7 @@ import { formatTime } from '../core/math';
 import { achievementContext, buy, COLLECTABLE, collectedCount, nextCost, refundAll, shopRank, totalSpent, type RunOutcome, type RunSummary } from '../meta/progression';
 import { defaultBindings, ACTION_LABELS, bind, conflicts, GAME_ACTIONS, keyLabel, padLabel, type GameAction, type PadFamily } from '../input/actions';
 import type { Captured } from '../input/InputManager';
+import type { StdPad } from '../input/gamepad';
 import type { SaveManager, Settings } from '../meta/save';
 import type { World } from '../sim/world';
 import { h, img, setText } from './dom';
@@ -35,6 +36,10 @@ export interface GameApi {
   captureInput(cb: (c: Captured) => void): void;
   /** Button names for the connected controller. */
   padFamily(): PadFamily;
+  /** Called every frame while in menus (live screens); null to stop. */
+  setMenuTicker(fn: (() => void) | null): void;
+  /** Connected controllers, normalised. */
+  controllers(): { pads: StdPad[]; seen: boolean; active: number };
   quitToTitle(): void;
   /** Drop the finished run so menus get the idle backdrop again. */
   clearRun(): void;
@@ -123,6 +128,8 @@ export class Menus {
       h('div', { class: 'corner-tr' }, goldChip(d.gold)),
       d.stats.runsPlayed > 0 ? h('div', { class: 'corner-bl' }, `Best ${formatTime(d.stats.bestTime)} · ${d.stats.totalKills.toLocaleString()} bonks · ${d.stats.runsPlayed} runs`) : null,
       !save.persistent ? h('div', { class: 'corner-br warn' }, 'Storage unavailable — progress lasts this session only') : null,
+      // Firefox only reveals controllers after a button press
+      /firefox/i.test(navigator.userAgent) && !this.g.controllers().seen ? h('div', { class: 'pad-hint' }, 'Using a controller? Press any button on it.') : null,
       this.playtestRow(() => this.title()),
     );
     this.g.ui.show('title', el);
@@ -663,6 +670,8 @@ export class Menus {
         sub('Slide: tap to toggle', () => st.controls.slideToggle, (v) => (st.controls.slideToggle = v)),
         sub('Hold jump to keep hopping', () => st.controls.autoHop, (v) => (st.controls.autoHop = v)),
         h('div', { class: 'setting' }, h('span', null, 'Keys & buttons'), h('button', { class: 'btn small', onclick: () => this.controls(() => this.settings(onBack)) }, 'Remap…')),
+        sub('Controller rumble', () => st.controls.rumble, (v) => (st.controls.rumble = v)),
+        h('div', { class: 'setting' }, h('span', null, 'Controller'), h('button', { class: 'btn small', onclick: () => this.controllerTest(() => this.settings(onBack)) }, 'Test…')),
         h('div', { class: 'settings-head' }, 'Accessibility'),
         cycleSub('Reduced motion', () => st.access.reducedMotion, (v) => (st.access.reducedMotion = v), ['auto', 'on', 'off'] as const, { auto: 'Auto (system)', on: 'On', off: 'Off' }),
         sub('Colour-blind friendly colours', () => st.access.colorblind, (v) => (st.access.colorblind = v)),
@@ -752,6 +761,83 @@ export class Menus {
       ),
     );
     this.g.ui.show('controls', el, back);
+  }
+
+  /**
+   * Live controller check: buttons, sticks and triggers as the game reads them (after layout
+   * mapping and calibration), the detected controller type, and a quick button setup.
+   */
+  controllerTest(onBack: () => void): void {
+    const names = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'View', 'Menu', 'L3', 'R3', '↑', '↓', '←', '→', 'Home'];
+    const info = h('div', { class: 'pad-info' });
+    const buttons = names.map((_, i) => h('div', { class: 'pad-btn' }, padLabel(i, this.g.padFamily())));
+    const stickDot = [h('div', { class: 'pad-dot' }), h('div', { class: 'pad-dot' })];
+    const sticks = stickDot.map((d, k) => h('div', { class: 'pad-stick' }, d, h('div', { class: 'pad-stick-label' }, k ? 'Right stick' : 'Left stick')));
+    const trig = [h('div', { class: 'bar-fill xp' }), h('div', { class: 'bar-fill xp' })];
+    const trigs = trig.map((f, k) => h('div', { class: 'pad-trig' }, h('span', null, k ? 'RT' : 'LT'), h('div', { class: 'bar' }, f)));
+    const wizard = h('div', { class: 'map-note' });
+    let family = '';
+    const tick = (): void => {
+      const c = this.g.controllers();
+      const p = c.pads.find((x) => x.index === c.active) ?? c.pads[0];
+      if (!p) {
+        setText(info, c.seen ? 'Controller disconnected.' : 'No controller found. Connect one and press any button on it (some browsers only show controllers after a button press).');
+        buttons.forEach((b) => b.classList.remove('on'));
+        return;
+      }
+      if (p.family !== family) {
+        family = p.family;
+        buttons.forEach((b, i) => setText(b, padLabel(i, p.family)));
+      }
+      setText(info, `${p.id.slice(0, 60)} · ${p.family === 'xbox' ? 'Xbox-style' : p.family === 'playstation' ? 'PlayStation-style' : 'Generic'} · ${p.layoutName}${c.pads.length > 1 ? ` · ${c.pads.length} controllers (last used wins)` : ''}`);
+      buttons.forEach((b, i) => b.classList.toggle('on', p.pressed[i]));
+      for (let k = 0; k < 2; k++) {
+        stickDot[k].style.transform = `translate(${(p.axes[k * 2] * 2.2).toFixed(2)}rem, ${(p.axes[k * 2 + 1] * 2.2).toFixed(2)}rem)`;
+        trig[k].style.width = `${Math.round(p.values[6 + k] * 100)}%`;
+      }
+    };
+    const leave = (): void => {
+      this.g.setMenuTicker(null);
+      this.g.sound('back');
+      onBack();
+    };
+    /** Quick setup: press the controller button for jump, slide and pause in turn. */
+    const quick = (): void => {
+      const steps: GameAction[] = ['jump', 'slide', 'pause'];
+      const b = this.g.save.data.settings.controls.bindings;
+      const next = (k: number): void => {
+        if (k >= steps.length) {
+          setText(wizard, 'Done! Your buttons are saved.');
+          this.g.save.save();
+          this.g.applySettings();
+          return;
+        }
+        setText(wizard, `Press the controller button for ${ACTION_LABELS[steps[k]]} (Escape to stop)…`);
+        this.g.captureInput((c) => {
+          if (!c) {
+            setText(wizard, 'Setup stopped.');
+            return;
+          }
+          if ('pad' in c) bind(b, steps[k], { pad: c.pad }, 0);
+          this.g.sound('click');
+          next(k + 1);
+        });
+      };
+      next(0);
+    };
+    const el = h(
+      'div',
+      { class: 'modal panel settings pad-test' },
+      h('div', { class: 'title small' }, 'Controller test'),
+      info,
+      h('div', { class: 'pad-buttons' }, ...buttons),
+      h('div', { class: 'pad-axes' }, ...sticks, h('div', { class: 'pad-trigs' }, ...trigs)),
+      wizard,
+      h('div', { class: 'row' }, h('button', { class: 'btn', onclick: leave, 'data-autofocus': true }, 'Done'), h('button', { class: 'btn ghost small', onclick: quick }, 'Quick button setup')),
+    );
+    this.g.ui.show('padtest', el, leave);
+    this.g.setMenuTicker(tick);
+    tick();
   }
 
   confirm(text: string, yes: () => void, no: () => void): void {

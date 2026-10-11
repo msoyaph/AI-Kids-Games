@@ -12,13 +12,21 @@ type Ctx = Page | Frame;
  */
 const SWIFTSHADER_COMPOSITOR_NOISE = /GL Driver Message \(OpenGL, Performance, GL_CLOSE_PATH_NV, High\): GPU stall due to ReadPixels/;
 const usingSwiftShader = process.platform !== 'darwin';
+/**
+ * Firefox-only browser notices, not game errors: a one-time note that hardware shadow-map
+ * filtering is "implementation-defined" (three.js PCF shadows), and headless Firefox refusing
+ * pointer lock (the game falls back to drag-to-look).
+ */
+const FIREFOX_NOTICES = [/Depth texture comparison requests .* Filtering, but behavior is implementation-defined/, /Request for pointer lock was denied/];
 
 /** Collect every console error/warning and uncaught page error. */
 function watchConsole(page: Page): string[] {
   const problems: string[] = [];
+  const firefox = page.context().browser()?.browserType().name() === 'firefox';
   page.on('console', (msg) => {
     if (msg.type() !== 'error' && msg.type() !== 'warning') return;
     if (usingSwiftShader && SWIFTSHADER_COMPOSITOR_NOISE.test(msg.text())) return;
+    if (firefox && FIREFOX_NOTICES.some((r) => r.test(msg.text()))) return;
     problems.push(`[${msg.type()}] ${msg.text()}`);
   });
   page.on('pageerror', (err) => problems.push(`[pageerror] ${err.message}`));

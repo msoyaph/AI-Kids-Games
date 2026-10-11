@@ -13,6 +13,7 @@ import { PlaytestStore, recordRun } from '../meta/playtest';
 import { exportJson } from '../ui/exporter';
 import { InputManager, type Captured, type UiAction } from '../input/InputManager';
 import type { PadFamily } from '../input/actions';
+import type { StdPad } from '../input/gamepad';
 import { applyRunResult, checkAchievements, metaBonuses, summarize, type RunOutcome } from '../meta/progression';
 import { SaveManager } from '../meta/save';
 import { GameRenderer } from '../render/Renderer';
@@ -106,6 +107,7 @@ export class Game implements GameApi {
     this.showMenuMap(this.save.data.lastMap);
     this.input.onAction = (a) => this.onAction(a);
     this.input.uiKey = (e) => this.ui.handleKey(e);
+    this.input.onLockFailed = () => this.ui.hud.toast('Mouse look', 'Pointer lock isn’t available here — hold a mouse button and drag to look.');
     watchReducedMotion(() => this.applySettings());
     this.applySettings();
     this.resize();
@@ -219,7 +221,18 @@ export class Game implements GameApi {
   }
 
   padFamily(): PadFamily {
-    return 'generic';
+    return this.input.padFamily;
+  }
+
+  /** Menus that animate every frame (the controller test) register here. */
+  private menuTicker: (() => void) | null = null;
+  setMenuTicker(fn: (() => void) | null): void {
+    this.menuTicker = fn;
+  }
+
+  /** Live controller readout for the controller test screen. */
+  controllers(): { pads: StdPad[]; seen: boolean; active: number } {
+    return { pads: this.input.pads, seen: this.input.padSeen, active: this.input.pad?.index ?? -1 };
   }
 
   showcaseEnemy(id: string | null): void {
@@ -245,6 +258,7 @@ export class Game implements GameApi {
     this.input.setBindings(s.controls.bindings);
     this.input.slideToggle = s.controls.slideToggle;
     this.input.autoHop = s.controls.autoHop;
+    this.input.rumbleEnabled = s.controls.rumble;
     const reduced = reducedMotionOn(s.access);
     applyAccessClasses(s.access, reduced);
     this.renderer.setAccess(reduced, s.access.colorblind);
@@ -508,10 +522,18 @@ export class Game implements GameApi {
       } else if (t === Ev.PlayerHurt) {
         this.ui.hud.hurt();
         this.renderer.playerView.hurt();
+        this.input.rumble(0.7, 0.45, 160);
+      } else if (t === Ev.Explosion) {
+        // boss slams / blasts close by thump through the controller
+        const d = Math.hypot(ev.get(n, 0) - w.player.x, ev.get(n, 2) - w.player.z);
+        if (ev.get(n, 4) === 1 && d < 9) this.input.rumble(0.55 * (1 - d / 9), 0.3 * (1 - d / 9), 140);
+      } else if (t === Ev.LevelUp) {
+        this.input.rumble(0.1, 0.35, 90);
       } else if (t === Ev.Land) {
         this.renderer.playerView.land(ev.get(n, 3));
       } else if (t === Ev.Evolve) {
         this.ui.hud.showBanner('Evolution!');
+        this.input.rumble(0.8, 0.8, 450);
       }
     }
   }
@@ -579,6 +601,7 @@ export class Game implements GameApi {
       this.renderer.renderMenu(dt);
     }
     this.onFrame?.();
+    if (!w) this.menuTicker?.();
     this.frameMs = this.frameMs * 0.9 + (performance.now() - t0) * 0.1;
     this.updateDebug(dt);
   };

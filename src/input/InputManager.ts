@@ -1,5 +1,6 @@
 import { inIframe, isTypingTarget } from '../core/env';
-import { defaultBindings, FIXED_KEYS, lookup, type Bindings, type GameAction } from './actions';
+import { defaultBindings, FIXED_KEYS, lookup, type Bindings, type GameAction, type PadFamily } from './actions';
+import { chooseActivePad, normalizePad, PadCalibration, padActive, rumblePad, type StdPad } from './gamepad';
 
 export type UiAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'debug';
 
@@ -25,6 +26,8 @@ export class InputManager {
   onAction: ((a: UiAction) => void) | null = null;
   /** A menu is open: it gets first look at keys (return true = handled). */
   uiKey: ((e: KeyboardEvent) => boolean) | null = null;
+  /** Pointer lock was refused (we switched to drag-to-look). */
+  onLockFailed: (() => void) | null = null;
   /** Slide key toggles (latched until the slide ends) instead of hold. */
   slideToggle = false;
   /** Holding jump keeps hopping. */
@@ -47,6 +50,16 @@ export class InputManager {
   private gamepadOk = true;
   private slideLatched = false;
   private capture: ((c: Captured) => void) | null = null;
+  private cal = new PadCalibration();
+  /** Index of the controller used most recently (several can be plugged in). */
+  private activeIndex = -1;
+  /** The active controller, normalised to the standard layout (null = none). */
+  pad: StdPad | null = null;
+  /** Every connected controller, normalised (controller test screen). */
+  pads: StdPad[] = [];
+  /** A controller has ever been seen (Firefox only reveals them after a button press). */
+  padSeen = false;
+  rumbleEnabled = true;
   usingGamepad = false;
   wheel = 0;
 
@@ -67,6 +80,36 @@ export class InputManager {
       this.wheel += Math.sign(e.deltaY);
       e.preventDefault();
     }, { passive: false });
+    window.addEventListener('gamepadconnected', () => (this.padSeen = true));
+    // Some browser / OS setups refuse pointer lock outright: look by dragging for this session
+    // instead. A refusal after lock has worked before is just Chrome's re-lock cooldown
+    // (clicking right after Escape) — ignore it, the next click retries.
+    let lockedOnce = false;
+    document.addEventListener('pointerlockchange', () => {
+      if (this.pointerLocked) lockedOnce = true;
+    });
+    document.addEventListener('pointerlockerror', () => {
+      if (this.mouseMode !== 'lock' || lockedOnce) return;
+      this.mouseMode = 'drag';
+      this.onLockFailed?.();
+    });
+    window.addEventListener('gamepaddisconnected', () => this.cal.forget());
+  }
+
+  /** Button names for the active controller. */
+  get padFamily(): PadFamily {
+    return this.pad?.family ?? 'generic';
+  }
+
+  /** Rumble the active controller (only while playing with it, if enabled). */
+  rumble(strong: number, weak: number, ms: number): void {
+    if (!this.rumbleEnabled || !this.usingGamepad || this.activeIndex < 0) return;
+    try {
+      const raw = navigator.getGamepads?.()[this.activeIndex] ?? null;
+      rumblePad(raw, strong, weak, ms);
+    } catch {
+      /* no gamepad access */
+    }
   }
 
   setBindings(b: Bindings): void {
@@ -105,17 +148,34 @@ export class InputManager {
     return document.pointerLockElement === this.canvas;
   }
 
+  /**
+   * Pointer lock. Chromium supports raw (unaccelerated) mouse input, which also avoids the
+   * huge movement spikes Windows Chrome can report; Firefox and Safari use the default.
+   */
   requestLock(): void {
     if (this.mouseMode !== 'lock' || this.pointerLocked) return;
+    const plain = (): void => {
+      try {
+        const r = this.canvas.requestPointerLock() as unknown;
+        if (r && typeof (r as Promise<void>).catch === 'function') {
+          (r as Promise<void>).catch(() => {
+            /* user gesture / cooldown — stay unlocked; drag still works */
+          });
+        }
+      } catch {
+        /* not allowed here */
+      }
+    };
     try {
-      const r = this.canvas.requestPointerLock() as unknown;
+      const r = (this.canvas.requestPointerLock as (o?: { unadjustedMovement?: boolean }) => unknown)({ unadjustedMovement: true });
       if (r && typeof (r as Promise<void>).catch === 'function') {
-        (r as Promise<void>).catch(() => {
-          /* user gesture / cooldown — fall back to drag silently */
+        (r as Promise<void>).catch((err: unknown) => {
+          // raw input unsupported (e.g. some OS / browser combos): plain lock instead
+          if ((err as { name?: string })?.name === 'NotSupportedError') plain();
         });
       }
     } catch {
-      /* not allowed here */
+      plain();
     }
   }
 
@@ -212,50 +272,58 @@ export class InputManager {
     this.padMove.x = this.padMove.y = 0;
     this.padLook.x = this.padLook.y = 0;
     this.padHeld.clear();
+    this.pad = null;
+    this.pads = [];
     if (!this.gamepadOk) return;
-    let pads: (Gamepad | null)[] = [];
+    let raw: (Gamepad | null)[] = [];
     try {
-      pads = typeof navigator.getGamepads === 'function' ? Array.from(navigator.getGamepads()) : [];
+      raw = typeof navigator.getGamepads === 'function' ? Array.from(navigator.getGamepads()) : [];
     } catch {
       this.gamepadOk = false; // blocked by permissions policy (e.g. sandboxed iframe)
       return;
     }
-    const pad = pads.find((p) => p && p.connected) ?? null;
+    for (const g of raw) {
+      if (!g || !g.connected) continue;
+      this.padSeen = true;
+      this.pads.push(normalizePad(g, this.cal));
+    }
+    // the last controller someone touched is the one we listen to
+    const active = chooseActivePad(this.pads, this.activeIndex);
+    if (active !== this.activeIndex) this.padPrev = [];
+    this.activeIndex = active;
+    const pad = this.pads.find((p) => p.index === active) ?? null;
     if (!pad) return;
-    const ax = (i: number): number => {
-      const v = pad.axes[i] ?? 0;
-      return Math.abs(v) < GAMEPAD_DEADZONE ? 0 : (v - Math.sign(v) * GAMEPAD_DEADZONE) / (1 - GAMEPAD_DEADZONE);
-    };
-    const btn = (i: number): boolean => !!pad.buttons[i]?.pressed;
+    this.pad = pad;
+    const dz = (v: number): number => (Math.abs(v) < GAMEPAD_DEADZONE ? 0 : (v - Math.sign(v) * GAMEPAD_DEADZONE) / (1 - GAMEPAD_DEADZONE));
+    const btn = (i: number): boolean => pad.pressed[i] === true;
     const pressed = (i: number): boolean => btn(i) && !this.padPrev[i];
     if (this.capture) {
-      for (let i = 0; i < pad.buttons.length; i++) {
+      for (let i = 0; i < pad.pressed.length; i++) {
         if (!pressed(i)) continue;
         const cb = this.capture;
         this.capture = null;
         cb({ pad: i });
         break;
       }
-      this.padPrev = pad.buttons.map((b) => b.pressed);
+      this.padPrev = pad.pressed.slice();
       return;
     }
-    for (let i = 0; i < pad.buttons.length; i++) {
+    for (let i = 0; i < pad.pressed.length; i++) {
       if (!btn(i)) continue;
       const acts = this.padActions.get(i);
       if (acts) for (const a of acts) this.padHeld.add(a);
     }
-    this.padMove.x = ax(0);
-    this.padMove.y = -ax(1);
-    this.padLook.x = ax(2);
-    this.padLook.y = ax(3);
+    this.padMove.x = dz(pad.axes[0]);
+    this.padMove.y = -dz(pad.axes[1]);
+    this.padLook.x = dz(pad.axes[2]);
+    this.padLook.y = dz(pad.axes[3]);
     if (this.padHeld.has('moveUp')) this.padMove.y = 1;
     if (this.padHeld.has('moveDown')) this.padMove.y = -1;
     if (this.padHeld.has('moveLeft')) this.padMove.x = -1;
     if (this.padHeld.has('moveRight')) this.padMove.x = 1;
-    const anyInput = pad.buttons.some((b) => b.pressed) || pad.axes.some((a) => Math.abs(a) > 0.4);
-    if (anyInput) this.usingGamepad = true;
+    if (padActive(pad)) this.usingGamepad = true;
 
-    const padPressed = (a: GameAction): boolean => (this.bindings[a].pad.some((i) => pressed(i)));
+    const padPressed = (a: GameAction): boolean => this.bindings[a].pad.some((i) => pressed(i));
     if (padPressed('pause')) this.onAction?.('pause');
     if (this.gameplay) {
       if (padPressed('jump')) this.jumpQueued = true;
@@ -282,7 +350,7 @@ export class InputManager {
       }
       this.padNavDir = dir;
     }
-    this.padPrev = pad.buttons.map((b) => b.pressed);
+    this.padPrev = pad.pressed.slice();
   }
 
   private keyHeld(a: GameAction): boolean {
