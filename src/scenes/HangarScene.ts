@@ -1,6 +1,5 @@
 import { Vector3 } from 'three';
 import { comfortOn } from '../app/comfort';
-import { Scene3D } from '../app/Scene3D';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { PARTS, PART_BY_ID } from '../data/parts';
@@ -8,10 +7,7 @@ import { STICKER_BY_ID } from '../data/stickers';
 import { STAT_KEYS, type PartSlot, type RocketLoadout, type StatKey } from '../data/types';
 import { drawToCanvas } from '../gfx/canvas';
 import { drawSticker } from '../gfx/art/stickers';
-import { updateRocketTex } from '../gfx/textures';
 import { Particles3 } from '../r3/fx/particles';
-import { RocketModel } from '../r3/models/rocket';
-import { buildHangarBay, type HangarBay } from '../r3/rooms/hangarBay';
 import { buy, canBuy, equipPart, equipSticker, isUnlocked, unlockHint } from '../systems/economy';
 import { statStars } from '../systems/rocketStats';
 import { clear, h, setText } from '../ui/dom';
@@ -21,6 +17,8 @@ import { toast } from '../ui/toast';
 import { button, iconEl, starIcon } from '../ui/widgets';
 import { clearThumbQueue, rocketThumb } from '../ui/rocketThumbs';
 import { portraitEl } from '../ui/portraits';
+import { AcademyScene } from './AcademyScene';
+import { focusPose, HANGAR_ROCKET_H, screenSpot } from './academyStage';
 
 type Tab = PartSlot | 'stickers';
 
@@ -56,9 +54,8 @@ const FOCUS: Record<Tab, { y: number; front: boolean; zoom: number }> = {
   stickers: { y: 0, front: true, zoom: 0.94 },
 };
 
-export class HangarScene extends Scene3D {
-  private bay: HangarBay;
-  private rocket: RocketModel;
+/** The hangar room of the Academy: your rocket on the turntable, parts to try on and buy. */
+export class HangarScene extends AcademyScene {
   private sparkles = new Particles3(160, 'star');
   private spin = 0.6;
   private spinVel = 0;
@@ -66,9 +63,8 @@ export class HangarScene extends Scene3D {
   private dragging = false;
   private lastX = 0;
   private idleT = 0;
-  private camY = 0.2;
-  private camZoom = 1;
   private hover = 0;
+  private framed = false;
   private readonly tmp = new Vector3();
   private tab: Tab = 'nose';
   private tryLoadout: RocketLoadout;
@@ -87,18 +83,11 @@ export class HangarScene extends Scene3D {
     this.music = 'hub';
     const st = S.state.data;
     this.tryLoadout = { ...st.loadout, stickers: [...st.loadout.stickers] };
-    const prof = S.game.r3.profile;
-    this.world.environmentIntensity = 0.9;
-    this.bay = buildHangarBay(prof);
-    this.world.add(this.bay.group);
-    this.rocket = new RocketModel(this.tryLoadout, { glossy: prof.tier === 'high' });
-    this.castShadows();
-    this.rocket.onSnap = (_slot, local) => this.snapFx(local);
-    this.world.add(this.rocket.group);
+    this.stage.syncRocket(this.tryLoadout);
+    this.stage.rocket.onSnap = (_slot, local) => this.snapFx(local);
     this.sparkles.gravity = 1.5;
     this.sparkles.drag = 2;
-    this.world.add(this.sparkles.points);
-    this.camera.fov = 30;
+    this.local.add(this.sparkles.points);
 
     this.coinText = h('span', null, String(st.coins));
     const header = h(
@@ -144,6 +133,18 @@ export class HangarScene extends Scene3D {
     }
     this.setTab('nose');
     this.redrawPreview();
+    this.frame(false);
+  }
+
+  /** Frame the rocket in the left column, focused on the current tab's part. */
+  private frame(instant: boolean): void {
+    const spot = screenSpot(this.preview);
+    const f = FOCUS[this.tab];
+    const t = this.stage.academy.spots.turntable;
+    const target = new Vector3(t.x, t.y + HANGAR_ROCKET_H * (0.5 + f.y * 0.25), t.z);
+    const fit = focusPose(target, HANGAR_ROCKET_H * 1.75 * f.zoom, spot ? Math.min(0.8, spot.h) : 0.55, spot?.x ?? 0.205, spot?.y ?? 0.4, 30, 0.1);
+    this.glide.to(fit.pose, fit.offX, fit.offY, instant);
+    this.framed = true;
   }
 
   override back(): boolean {
@@ -153,24 +154,18 @@ export class HangarScene extends Scene3D {
 
   override exit(): void {
     clearThumbQueue();
+    // Back to what is really equipped, standing still.
+    const r = this.stage.rocket;
+    r.onSnap = null;
+    r.group.rotation.set(0, 0, 0);
+    this.stage.academy.turntable.rotation.y = 0;
+    this.stage.syncRocket(S.state.data.loadout);
   }
 
   override resize(w: number, hh: number): void {
     super.resize(w, hh);
     this.sparkles.setScreen(window.innerHeight * S.game.r3.pixelRatio);
-    // Show the rocket in the left column: shift the picture so the turntable sits at ~20% across.
-    const cx = w * 0.205;
-    const cy = hh * 0.44;
-    this.camera.setViewOffset(w, hh, w / 2 - cx, hh / 2 - cy, w, hh);
-  }
-
-  /** Only solid, lit parts cast shadows (flames and glows use custom shaders). */
-  private castShadows(): void {
-    const on = S.game.r3.profile.shadows;
-    this.rocket.group.traverse((o) => {
-      const m = (o as { material?: { isMeshStandardMaterial?: boolean } }).material;
-      o.castShadow = on && !!m?.isMeshStandardMaterial;
-    });
+    if (this.framed) requestAnimationFrame(() => this.frame(true));
   }
 
   private bindSpin(el: HTMLElement): void {
@@ -200,7 +195,7 @@ export class HangarScene extends Scene3D {
   }
 
   private snapFx(local: Vector3): void {
-    const p = this.rocket.group.localToWorld(this.tmp.copy(local));
+    const p = this.stage.rocket.group.localToWorld(this.tmp.copy(local));
     const colors = ['#ffe066', '#4dd4ff', '#ff7ad9', '#ffffff'];
     for (let i = 0; i < 4; i++) this.sparkles.burst(p.x, p.y, p.z, comfortOn() ? 6 : 10, 3.2, 0.7, 0.16, colors[i]);
     sfx('equip');
@@ -223,24 +218,12 @@ export class HangarScene extends Scene3D {
     this.sparkles.update(dt);
   }
 
-  override render(): void {
-    const dt = 1 / 60;
+  protected override renderStage(): void {
     const t = this.time;
-    this.bay.update(t);
-    const f = FOCUS[this.tab];
-    this.camY += (f.y - this.camY) * 0.06;
-    this.camZoom += (f.zoom - this.camZoom) * 0.06;
-    const e = this.rocket.extent;
-    const hoverY = this.bay.topY + 0.35 - e.bottom;
-    this.hover = comfortOn() ? 0 : Math.sin(t * 1.6) * 0.06;
-    this.rocket.group.position.set(0, hoverY + this.hover, 0);
-    this.rocket.group.rotation.set(0, this.spin, 0);
-    this.bay.turntable.rotation.y = this.spin * 0.35;
-    this.rocket.update(dt, 0.18, 0);
-    const lookY = hoverY + this.camY;
-    const dist = 21 * this.camZoom;
-    this.camera.position.set(0, lookY + 1.6, dist);
-    this.camera.lookAt(0, lookY, 0);
+    this.hover = comfortOn() ? 0 : 0.12 + Math.sin(t * 1.6) * 0.05;
+    this.stage.placeRocket(this.hover);
+    this.stage.rocket.group.rotation.set(0, this.spin, 0);
+    this.stage.academy.turntable.rotation.y = this.spin * 0.35;
   }
 
   private setTab(tab: Tab): void {
@@ -250,6 +233,7 @@ export class HangarScene extends Scene3D {
     if (FOCUS[tab].front) this.spinGoal = 0;
     this.renderCards();
     this.renderDetail();
+    if (this.framed) this.frame(false);
   }
 
   private renderCards(): void {
@@ -297,10 +281,7 @@ export class HangarScene extends Scene3D {
     if (isUnlocked(p.unlock, S.state.data)) {
       const changed = (this.tryLoadout as unknown as Record<string, string>)[p.slot] !== id;
       (this.tryLoadout as unknown as Record<string, string>)[p.slot] = id;
-      if (changed) {
-        this.rocket.setLoadout(this.tryLoadout, p.slot);
-        this.castShadows();
-      }
+      if (changed) this.stage.syncRocket(this.tryLoadout, p.slot);
       setText(this.tip, S.state.data.owned.includes(id) ? 'Looking good! Tap Equip to use it.' : 'Trying it on! Buy it to keep it.');
     } else setText(this.tip, 'That part is still locked. Keep exploring!');
     this.redrawPreview();
@@ -321,9 +302,7 @@ export class HangarScene extends Scene3D {
       sfx('sticker');
     }
     this.tryLoadout.stickers = [...st.data.loadout.stickers];
-    this.rocket.setLoadout(this.tryLoadout, 'stickers');
-    this.castShadows();
-    updateRocketTex(st.data.loadout);
+    this.stage.syncRocket(this.tryLoadout, 'stickers');
     this.redrawPreview();
     this.renderCards();
   }
@@ -346,7 +325,6 @@ export class HangarScene extends Scene3D {
     else if (save.owned.includes(p.id)) {
       action = button('Equip', 'wrench', () => {
         equipPart(st, p.id);
-        updateRocketTex(save.loadout);
         this.tryLoadout = { ...save.loadout, stickers: [...save.loadout.stickers] };
         sfx('equip');
         toast(`${p.name} equipped!`, 'wrench', 1800);
@@ -362,7 +340,6 @@ export class HangarScene extends Scene3D {
           const r = buy(st, p.id);
           if (!r.ok) return;
           equipPart(st, p.id);
-          updateRocketTex(save.loadout);
           this.tryLoadout = { ...save.loadout, stickers: [...save.loadout.stickers] };
           setText(this.coinText, String(save.coins));
           sfx('buy');

@@ -1,11 +1,9 @@
-import type { Application, Container } from 'pixi.js';
 import { R3 } from '../r3/R3';
 import type { QualitySetting } from '../systems/quality';
 import { h } from '../ui/dom';
 import type { BaseScene } from './BaseScene';
 import { FLAGS } from './flags';
 import { FixedLoop } from './loop';
-import type { Scene } from './Scene';
 import type { Scene3D } from './Scene3D';
 import { computeStage, type StageMetrics } from './stage';
 
@@ -19,14 +17,10 @@ export interface SafeInsets {
 }
 
 /**
- * Owns the renderers (Three.js for 3D scenes, Pixi only for screens not yet ported), the DOM UI
- * layer, the fixed-timestep loop and scene switching.
+ * Owns the Three.js renderer, the DOM UI layer, the fixed-timestep loop and scene switching.
  */
 export class Game {
   r3!: R3;
-  private pixi: Application | null = null;
-  private pixiWorld: Container | null = null;
-  private pixiLoading: Promise<void> | null = null;
   metrics: StageMetrics;
   /** Logical safe-area insets (notches, home bar). */
   safe: SafeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -40,6 +34,8 @@ export class Game {
   current: BaseScene | null = null;
   private currentParams: Record<string, unknown> = {};
   private factories = new Map<string, SceneFactory>();
+  /** Scenes that share one persistent 3D stage (the Academy) glide between each other instead of fading. */
+  private stages = new Map<string, string>();
   private switching = false;
   private hidden = false;
   private running = false;
@@ -91,42 +87,14 @@ export class Game {
     this.resize();
   }
 
-  /** Pixi is only created the first time a not-yet-ported 2D scene is shown. */
-  private ensurePixi(): Promise<void> {
-    if (this.pixi) return Promise.resolve();
-    if (!this.pixiLoading) {
-      this.pixiLoading = (async () => {
-        const { Application, Container } = await import('pixi.js');
-        const app = new Application();
-        await app.init({
-          preference: ['webgl', 'canvas'],
-          width: window.innerWidth,
-          height: window.innerHeight,
-          resolution: this.metrics.resolution,
-          autoDensity: true,
-          antialias: false,
-          backgroundColor: 0x140d3a,
-          powerPreference: 'high-performance',
-          autoStart: false,
-          sharedTicker: false,
-          hello: false,
-        });
-        const canvas = app.canvas as HTMLCanvasElement;
-        canvas.id = 'stage';
-        canvas.setAttribute('aria-hidden', 'true');
-        canvas.style.display = 'none';
-        this.host.insertBefore(canvas, this.uiRoot);
-        this.pixiWorld = new Container();
-        app.stage.addChild(this.pixiWorld);
-        this.pixi = app;
-        this.resize();
-      })();
-    }
-    return this.pixiLoading;
+  register(name: string, factory: SceneFactory, opts: { stage?: string } = {}): void {
+    this.factories.set(name, factory);
+    if (opts.stage) this.stages.set(name, opts.stage);
   }
 
-  register(name: string, factory: SceneFactory): void {
-    this.factories.set(name, factory);
+  /** The shared stage a scene lives on (or null). */
+  stageOf(name: string): string | null {
+    return this.stages.get(name) ?? null;
   }
 
   start(): void {
@@ -149,13 +117,10 @@ export class Game {
     const dt = ms / 1000;
     this.time += Math.min(dt, 0.25);
     this.loop.tick(dt);
-    const s = this.current;
+    const s = this.current as Scene3D | null;
     if (s) {
-      if (s.kind === '3d') {
-        const s3 = s as Scene3D;
-        s3.time += Math.min(dt, 0.25);
-        this.r3.render(s3.world, s3.camera, dt);
-      } else this.pixi?.render();
+      s.time += Math.min(dt, 0.25);
+      this.r3.render(s.world, s.camera, dt);
     }
     if (!this.switching) this.r3.sampleFrame(ms, Math.min(dt, 0.25));
     this.countFps(dt);
@@ -168,32 +133,26 @@ export class Game {
     if (this.switching) return;
     this.switching = true;
     try {
-      if (fade && this.current) {
+      const stage = this.stageOf(name);
+      const glide = !!stage && stage === this.stageOf(this.sceneName);
+      if (fade && this.current && !glide) {
         this.curtain.classList.add('on');
         await wait(220);
       }
       const old = this.current;
       if (old) {
         old.exit();
-        if (old.kind === '2d') this.pixiWorld?.removeChild((old as Scene).root);
         old.destroy();
       }
       this.current = null;
-      const scene = factory(params);
-      if (scene.kind === '2d') {
-        await this.ensurePixi();
-        this.pixiWorld!.addChild((scene as Scene).root);
-      }
-      this.showCanvas(scene.kind);
+      const scene = factory(params) as Scene3D;
+      if (glide) scene.ui.classList.add('glide-in');
       this.screenLayer.appendChild(scene.ui);
       this.current = scene;
       this.currentParams = params;
       scene.resize(this.metrics.width, this.metrics.height);
       await scene.enter();
-      if (scene.kind === '3d') {
-        const s3 = scene as Scene3D;
-        await this.r3.compile(s3.world, s3.camera);
-      }
+      await this.r3.compile(scene.world, scene.camera);
       this.loop.reset();
       this.lastNow = performance.now();
       this.r3.governor.settle(1.5);
@@ -210,12 +169,6 @@ export class Game {
   private reloadScene(): void {
     const name = this.sceneName;
     if (name) void this.go(name, this.currentParams, false);
-  }
-
-  private showCanvas(kind: '2d' | '3d'): void {
-    this.r3.canvas.style.display = kind === '3d' ? 'block' : 'none';
-    const pc = this.pixi?.canvas as HTMLCanvasElement | undefined;
-    if (pc) pc.style.display = kind === '2d' ? 'block' : 'none';
   }
 
   get isSwitching(): boolean {
@@ -244,10 +197,6 @@ export class Game {
     this.metrics = m;
     this.safe = readSafeInsets(m.scale);
     this.r3?.resize(w, h);
-    if (this.pixi?.renderer) {
-      this.pixi.renderer.resize(w, h, m.resolution);
-      this.pixi.stage.scale.set(m.scale);
-    }
     const st = this.uiRoot.style;
     st.width = `${m.width}px`;
     st.height = `${m.height}px`;
@@ -265,21 +214,18 @@ export class Game {
 
   /** Draws one frame without advancing game logic (hidden tabs, debugging, screenshots). */
   renderOnce(): void {
-    const s = this.current;
+    const s = this.current as Scene3D | null;
     if (!s) return;
     s.render(0);
-    if (s.kind === '3d') {
-      const s3 = s as Scene3D;
-      this.r3.render(s3.world, s3.camera, 1 / 60);
-    } else this.pixi?.render();
+    this.r3.render(s.world, s.camera, 1 / 60);
   }
 
   /** Debug/test helper: advance logic and render for a number of frames, even while hidden. */
   advance(frames = 1, dt = 1 / 60): void {
     for (let i = 0; i < frames; i++) {
       this.time += dt;
-      const s = this.current;
-      if (s?.kind === '3d') (s as Scene3D).time += dt;
+      const s = this.current as Scene3D | null;
+      if (s) s.time += dt;
       this.loop.tick(dt);
     }
     this.renderOnce();
@@ -306,12 +252,9 @@ export class Game {
     this.fpsTime += dt;
     if (this.fpsTime >= 0.5) {
       const fps = Math.round(this.fpsFrames / this.fpsTime);
-      const kind = this.current?.kind ?? '-';
-      if (kind === '3d') {
-        const st = this.r3.stats();
-        const g = this.r3.governor;
-        this.fpsEl.textContent = `${fps} fps · ${g.tier} ×${g.scale.toFixed(2)} @${this.r3.pixelRatio.toFixed(2)} · ${st.calls} calls · ${Math.round(st.triangles / 1000)}k tris · ${st.geometries}g ${st.textures}t`;
-      } else this.fpsEl.textContent = `${fps} fps · pixi`;
+      const st = this.r3.stats();
+      const g = this.r3.governor;
+      this.fpsEl.textContent = `${fps} fps · ${g.tier} ×${g.scale.toFixed(2)} @${this.r3.pixelRatio.toFixed(2)} · ${st.calls} calls · ${Math.round(st.triangles / 1000)}k tris · ${st.geometries}g ${st.textures}t`;
       this.fpsFrames = 0;
       this.fpsTime = 0;
     }

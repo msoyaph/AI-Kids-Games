@@ -1,4 +1,6 @@
 import {
+  Bone,
+  BufferAttribute,
   CapsuleGeometry,
   Color,
   ConeGeometry,
@@ -14,10 +16,15 @@ import {
   Shape,
   SphereGeometry,
   TorusGeometry,
+  Matrix4,
+  Skeleton,
+  SkinnedMesh,
   type BufferGeometry,
   type Material,
+  type ShaderMaterial,
   type Texture,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { CHAR_BY_ID, type AlienLook, type CharacterDef, type HumanLook } from '../../data/characters';
 import type { AstronautLook } from '../../data/types';
 import { markShared } from '../dispose';
@@ -124,9 +131,17 @@ function faceDecal(r: number, tex: Texture, emissive: boolean, width = 1.75, hei
 
 // ------------------------------------------------------------------ hair and accessories
 
+/** Very light hair (white, blond) is toned down a touch so it doesn't glow under bloom. */
+function hairTone(color: string): string {
+  const c = new Color(color);
+  const max = Math.max(c.r, c.g, c.b);
+  if (max > 0.62) c.multiplyScalar(0.62 / max);
+  return `#${c.getHexString()}`;
+}
+
 function hair(style: string, color: string, R: number): Group {
   const g = new Group();
-  const m = soft(color, 0.75);
+  const m = soft(hairTone(color), 0.75);
   const capG = geo('hairCap', () => new SphereGeometry(1, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.42));
   const cap = (s = 1.07) => {
     const c = mesh(capG, m, R * s);
@@ -272,18 +287,18 @@ function accessory(kind: string | undefined, R: number, hairColor: string, outfi
 // ------------------------------------------------------------------ the character
 
 interface Joints {
-  root: Group;
-  hips: Group;
-  torso: Group;
-  head: Group;
-  lShoulder: Group;
-  lElbow: Group;
-  rShoulder: Group;
-  rElbow: Group;
-  lHip: Group;
-  lKnee: Group;
-  rHip: Group;
-  rKnee: Group;
+  root: Bone;
+  hips: Bone;
+  torso: Bone;
+  head: Bone;
+  lShoulder: Bone;
+  lElbow: Bone;
+  rShoulder: Bone;
+  rElbow: Bone;
+  lHip: Bone;
+  lKnee: Bone;
+  rHip: Bone;
+  rKnee: Bone;
 }
 
 interface Pose {
@@ -317,6 +332,38 @@ export interface CharacterOptions {
   helmet?: boolean;
   /** Portrait framing: 'bust' (face) or 'wide' (whole head with helmet decorations). */
   frame?: 'bust' | 'wide' | 'full';
+  /** Bake static parts into a few skinned meshes (fewer draw calls). On by default. */
+  merge?: boolean;
+}
+
+const rigMats = new Map<string, Material>();
+
+/**
+ * How a part's material is merged: plain lit and glowing colors become vertex colors on a shared
+ * material (one draw for all of them); textured or see-through materials keep their own.
+ */
+function rigMaterial(m: Material, out: Color): { key: string; mat: Material; color: Color } {
+  const std = m as MeshStandardMaterial;
+  const basic = m as MeshBasicMaterial;
+  if (std.isMeshStandardMaterial && !std.map && !std.transparent && !(m as { isMeshPhysicalMaterial?: boolean }).isMeshPhysicalMaterial) {
+    const e = std.emissive.getHexString();
+    const key = `std:${std.roughness}:${std.metalness}:${std.envMapIntensity}:${e}:${std.emissiveIntensity}:${std.flatShading}:${std.side}`;
+    let mat = rigMats.get(key);
+    if (!mat) {
+      mat = markShared(new MeshStandardMaterial({ vertexColors: true, roughness: std.roughness, metalness: std.metalness, envMapIntensity: std.envMapIntensity, emissive: std.emissive.clone(), emissiveIntensity: std.emissiveIntensity, flatShading: std.flatShading, side: std.side }));
+      rigMats.set(key, mat);
+    }
+    return { key, mat, color: out.copy(std.color) };
+  }
+  if (basic.isMeshBasicMaterial && !basic.map && !basic.transparent) {
+    let mat = rigMats.get('basic');
+    if (!mat) {
+      mat = markShared(new MeshBasicMaterial({ vertexColors: true }));
+      rigMats.set('basic', mat);
+    }
+    return { key: 'basic', mat, color: out.copy(basic.color) };
+  }
+  return { key: `own:${m.uuid}`, mat: m, color: out.setRGB(1, 1, 1) };
 }
 
 export class Character {
@@ -348,18 +395,18 @@ export class Character {
   constructor(id: string, profile?: AstronautLook, opts: CharacterOptions = {}) {
     this.id = id;
     const def: CharacterDef = CHAR_BY_ID[id] ?? CHAR_BY_ID.player;
-    const root = new Group();
-    const hips = new Group();
-    const torso = new Group();
-    const head = new Group();
-    const lShoulder = new Group();
-    const lElbow = new Group();
-    const rShoulder = new Group();
-    const rElbow = new Group();
-    const lHip = new Group();
-    const lKnee = new Group();
-    const rHip = new Group();
-    const rKnee = new Group();
+    const root = new Bone();
+    const hips = new Bone();
+    const torso = new Bone();
+    const head = new Bone();
+    const lShoulder = new Bone();
+    const lElbow = new Bone();
+    const rShoulder = new Bone();
+    const rElbow = new Bone();
+    const lHip = new Bone();
+    const lKnee = new Bone();
+    const rHip = new Bone();
+    const rKnee = new Bone();
     this.j = { root, hips, torso, head, lShoulder, lElbow, rShoulder, rElbow, lHip, lKnee, rHip, rKnee };
     root.add(hips);
     hips.add(torso, lHip, rHip);
@@ -382,7 +429,87 @@ export class Character {
     this.headY = headY;
     this.headR = headR;
     this.height = headY + headR * 1.3;
+    if (opts.merge !== false) this.bakeRig();
     this.group.userData.onDispose = () => this.face?.dispose();
+  }
+
+  /**
+   * Fewer draw calls with rigid skinning: the joints are bones, and every static part is merged into
+   * one skinned mesh per material kind (plain colors become vertex colors), each vertex bound to the
+   * joint it rides on. A character drops from ~16 draws to ~4. Animated bits (cape, bobbing crest,
+   * jet flames) and custom-shader meshes stay separate.
+   */
+  private bakeRig(): void {
+    const bones = Object.values(this.j) as Bone[];
+    const index = new Map<Object3D, number>(bones.map((b, i) => [b, i]));
+    const keep = new Set<Object3D>();
+    if (this.cape) keep.add(this.cape);
+    if (this.bobber) keep.add(this.bobber);
+    for (const f of this.jet) keep.add(f.group);
+    this.group.updateMatrixWorld(true);
+    const inv = new Matrix4().copy(this.group.matrixWorld).invert();
+    const rel = new Matrix4();
+    const col = new Color();
+    const parts = new Map<string, { mat: Material; geos: BufferGeometry[]; order: number }>();
+    const owned: Mesh[] = [];
+    const walk = (o: Object3D, bone: number) => {
+      for (const c of o.children) {
+        if (keep.has(c)) continue;
+        const b = index.get(c);
+        if (b !== undefined) {
+          walk(c, b);
+          continue;
+        }
+        const m = c as Mesh;
+        if (!m.isMesh) {
+          walk(c, bone);
+          continue;
+        }
+        if (Array.isArray(m.material) || (m.material as ShaderMaterial).isShaderMaterial || c.children.length) continue;
+        const { key, mat, color } = rigMaterial(m.material, col);
+        let g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+        for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal' && name !== 'uv') g.deleteAttribute(name);
+        g.morphAttributes = {};
+        g.clearGroups();
+        if (!g.attributes.uv) g.setAttribute('uv', new BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+        rel.multiplyMatrices(inv, m.matrixWorld);
+        g.applyMatrix4(rel);
+        const n = g.attributes.position.count;
+        const cols = new Float32Array(n * 3);
+        const si = new Uint16Array(n * 4);
+        const sw = new Float32Array(n * 4);
+        for (let i = 0; i < n; i++) {
+          cols[i * 3] = color.r;
+          cols[i * 3 + 1] = color.g;
+          cols[i * 3 + 2] = color.b;
+          si[i * 4] = bone;
+          sw[i * 4] = 1;
+        }
+        g.setAttribute('color', new BufferAttribute(cols, 3));
+        g.setAttribute('skinIndex', new BufferAttribute(si, 4));
+        g.setAttribute('skinWeight', new BufferAttribute(sw, 4));
+        let part = parts.get(key);
+        if (!part) parts.set(key, (part = { mat, geos: [], order: 0 }));
+        part.geos.push(g);
+        part.order = Math.max(part.order, m.renderOrder);
+        owned.push(m);
+      }
+    };
+    walk(this.j.root, 0);
+    const skeleton = new Skeleton(bones);
+    for (const part of parts.values()) {
+      const merged = mergeGeometries(part.geos, false);
+      for (const g of part.geos) g.dispose();
+      if (!merged) continue;
+      const sm = new SkinnedMesh(merged, part.mat);
+      sm.renderOrder = part.order;
+      this.group.add(sm);
+      sm.updateMatrixWorld(true);
+      sm.bind(skeleton, sm.matrixWorld);
+      sm.computeBoundingSphere();
+      sm.boundingSphere!.radius *= 1.4;
+    }
+    for (const m of owned) m.removeFromParent();
   }
 
   // ---------------------------------------------------------------- builders

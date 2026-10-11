@@ -467,3 +467,14 @@ body.kbd-nav #ui button:focus, body.kbd-nav #ui [role=button]:focus, body.kbd-na
 /* Explore: the action prompt floats above the thing you can use. */
 .prompt-anchor { position: absolute; left: 0; top: 0; pointer-events: none; }
 .prompt.anchored { position: relative; left: auto; bottom: auto; transform: none; white-space: nowrap; font-size: 28px; padding: 8px 14px 8px 20px; }
+/* Hub screens glide (camera move) instead of fading: the DOM eases in on top. */
+@keyframes glide-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+#ui .screen.glide-in { animation: glide-in .45s ease-out both; }
+@media (prefers-reduced-motion: reduce) { #ui .screen.glide-in { animation-duration: .2s; } }
+/* Codex in the library: a window in the panels shows the hologram over the projector. */
+.codex-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.holo-window { flex: none; height: 38%; min-height: 180px; border-radius: 28px; border: 4px solid rgba(125,255,233,.7); box-shadow: inset 0 0 28px rgba(125,255,233,.35), 0 0 18px rgba(125,255,233,.25); display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.holo-window canvas { width: 150px; height: 150px; filter: drop-shadow(0 0 12px rgba(125,255,233,.8)); }
+.codex-right .codex-detail { flex: 1; min-height: 0; }
+/* Panels on Academy screens are a little see-through so the room shows around them. */
+.on-stage .panel { background: linear-gradient(180deg, rgba(58,42,154,.9), rgba(43,29,120,.9)); }

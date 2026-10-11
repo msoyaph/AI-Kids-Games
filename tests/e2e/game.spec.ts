@@ -52,6 +52,46 @@ test('progress is saved and survives a reload', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('the Academy: one 3D diorama for the hub screens, camera glides, tap the crew', async ({ page }) => {
+  const errors = watchErrors(page);
+  await boot(page);
+  await newGame(page);
+  const worldId = () => page.evaluate(() => (window as unknown as { __spacesky: { game: { current: { world: { uuid: string } } } } }).__spacesky.game.current.world.uuid);
+  const hub = await worldId();
+  // Moving between Academy rooms keeps the same 3D world and never closes the curtain.
+  let curtain = false;
+  await page.exposeFunction('sawCurtain', () => (curtain = true));
+  await page.evaluate(() => {
+    const c = document.querySelector('#ui .curtain')!;
+    new MutationObserver(() => c.classList.contains('on') && (window as unknown as { sawCurtain: () => void }).sawCurtain()).observe(c, { attributes: true });
+  });
+  for (const [nav, name] of [['nav-board', 'board'], ['btn-back', 'hub'], ['nav-codex', 'codex'], ['btn-back', 'hub'], ['nav-hangar', 'hangar'], ['btn-back', 'hub']] as const) {
+    await navTo(page, nav, name);
+    expect(await worldId()).toBe(hub);
+  }
+  expect(curtain).toBe(false);
+  await expect(page.getByTestId('codex-holo')).toHaveCount(0);
+  // Tap Commander Stella in the 3D building: she talks.
+  await page.waitForTimeout(1500);
+  const spot = await page.evaluate(() => {
+    const S = (window as unknown as { __spacesky: { game: { current: { stage: { cast: Map<string, { group: { position: { clone(): { y: number; project(c: unknown): { x: number; y: number } } } } }> }; camera: unknown } } } }).__spacesky;
+    const c = S.game.current;
+    const v = c.stage.cast.get('stella')!.group.position.clone();
+    v.y += 1;
+    const p = v.project(c.camera);
+    return { x: ((p.x + 1) / 2) * window.innerWidth, y: ((1 - p.y) / 2) * window.innerHeight };
+  });
+  await page.mouse.click(spot.x, spot.y);
+  await expect(page.getByTestId('dialogue')).toBeVisible();
+  await skipDialogue(page);
+  // Leaving for space frees the diorama; coming home builds a fresh one.
+  await go(page, 'map');
+  expect(await worldId()).not.toBe(hub);
+  await go(page, 'hub');
+  expect(await worldId()).not.toBe(hub);
+  expect(errors).toEqual([]);
+});
+
 test('3D flight: steering, boost, pause, and landing on the Moon', async ({ page }, info) => {
   const errors = watchErrors(page);
   await boot(page);

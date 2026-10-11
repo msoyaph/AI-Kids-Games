@@ -1,5 +1,3 @@
-import { Sprite } from 'pixi.js';
-import { Scene } from '../app/Scene';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { CHAR_BY_ID } from '../data/characters';
@@ -10,32 +8,27 @@ import { PART_BY_ID } from '../data/parts';
 import { STICKER_BY_ID } from '../data/stickers';
 import { drawToCanvas } from '../gfx/canvas';
 import { drawGlyph } from '../gfx/art/glyphs';
-import { drawLounge } from '../gfx/art/rooms';
-import { ensureTex } from '../gfx/textures';
 import { showDialogue } from '../ui/dialogue';
 import { clear, h } from '../ui/dom';
 import { button, iconEl } from '../ui/widgets';
 import { boardHooks } from './boardHooks';
 import { portraitEl } from '../ui/portraits';
+import { AcademyScene } from './AcademyScene';
 
 type Tab = 'missions' | 'daily' | 'races';
 type Status = 'done' | 'active' | 'new' | 'locked';
 
 /** The mission board: every mission by chapter, plus daily challenges and races. */
-export class BoardScene extends Scene {
+export class BoardScene extends AcademyScene {
   private tab: Tab = 'missions';
   private list: HTMLElement;
   private detail: HTMLElement;
   private selected: string | null = null;
   private tabBtns = new Map<Tab, HTMLButtonElement>();
-  private bg: Sprite;
 
   constructor(params: Record<string, unknown> = {}) {
     super('board');
     this.music = 'hub';
-    this.bg = new Sprite(ensureTex('room_lounge', 1600, 720, (c, w, hh) => drawLounge(c, w, hh), 0.5, 0.5, 1));
-    this.bg.alpha = 0.6;
-    this.root.addChild(this.bg);
     const tabs = h('div', { class: 'tabs board-tabs' });
     for (const [t, label, ic] of [['missions', 'Missions', 'flag'], ['daily', 'Daily', 'calendar'], ['races', 'Races', 'trophy']] as Array<[Tab, string, string]>) {
       const b = button(label, ic, () => this.setTab(t), { size: 'small', color: 'white', id: `tab-${t}`, sound: 'tab' });
@@ -52,6 +45,7 @@ export class BoardScene extends Scene {
   }
 
   override enter(): void {
+    this.showRoom(this.stage.academy.poses.board);
     S.state.emit({ type: 'visit', place: 'board' });
     this.selected = S.state.data.activeMission ?? S.missions.available()[0]?.id ?? null;
     this.setTab(this.tab);
@@ -60,11 +54,6 @@ export class BoardScene extends Scene {
   override back(): boolean {
     void S.game.go('hub');
     return true;
-  }
-
-  override resize(w: number, hh: number): void {
-    this.bg.position.set(w / 2, hh / 2);
-    this.bg.scale.set(Math.max(w / 1600, hh / 720));
   }
 
   private setTab(t: Tab): void {

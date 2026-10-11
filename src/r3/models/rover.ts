@@ -78,8 +78,9 @@ export class RoverModel {
     this.driver.group.scale.setScalar(0.62);
     this.driver.group.position.set(0.25, 0.3, 0);
     this.driver.group.rotation.y = Math.PI / 2;
-    this.driver.j.lHip.visible = false;
-    this.driver.j.rHip.visible = false;
+    // Legs tucked away inside the rover (bones, so shrink rather than hide).
+    this.driver.j.lHip.scale.setScalar(0.001);
+    this.driver.j.rHip.scale.setScalar(0.001);
     const bubble = new Mesh(geo('rv:bubble', () => new SphereGeometry(0.4, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2)), glassMat('#bfe9ff'));
     bubble.position.set(0.25, 0.64, 0);
     const ring = new Mesh(geo('rv:ring', () => new TorusGeometry(0.4, 0.045, 8, 28).rotateX(Math.PI / 2)), accent);

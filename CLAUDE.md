@@ -3,8 +3,7 @@
 A space exploration adventure game for kids aged 6–10, built for the "Ai Kids Games" site.
 Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, shipped as ONE self-contained
 `dist/index.html`. The 2D PixiJS version lives on `main`; the 3D upgrade is on branch `space-sky-3d`
-(plan: ~/.claude/plans/logical-toasting-walrus.md). During the port, screens not yet moved to 3D still use Pixi
-(created lazily); Pixi is deleted in 3D Phase 7.
+(plan: ~/.claude/plans/logical-toasting-walrus.md). Pixi is gone from this branch (every screen is 3D).
 
 ## Commands
 - `npm run dev` — dev server (Vite). In the desktop app use `.claude/launch.json` → `spacesky-dev` (port 5391).
@@ -30,7 +29,7 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 - `systems/quality.ts`: tier profiles (DPR cap, post, bake sizes, asteroid/particle/star budgets, shadows) and
   `QualityGovernor` (render scale first, then tier; Auto ceiling = detected tier). Settings: `quality`, `comfort`
   (null = follow prefers-reduced-motion, see `app/comfort.ts`), `flipY`.
-- Scenes: `app/BaseScene.ts` (DOM + lifecycle) → `Scene3D` (`world`, `camera`, `time`) or legacy `Scene` (Pixi).
+- Scenes: `app/BaseScene.ts` (DOM + lifecycle) → `Scene3D` (`world`, `camera`, `time`; or a borrowed world + `local`).
   `Game.go` compiles a 3D scene's shaders (`compileAsync`) behind the fade. Own rAF loop; pauses when hidden.
 - `index.html` checks WebGL2 before the bundle runs and shows a friendly "can't run" screen (`__noWebGL2`).
 - Planets (`r3/space/`): `recipes.ts` (per-body 3D look: true colors for real bodies, magic look for Zephyra,
@@ -50,10 +49,9 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   the part on (easeOutBack + `onSnap` callback). `update(dt, thrust, boost)` drives flames (`r3/fx/flame.ts`),
   blinkers, party lights, spinners. Shared materials/geometries are cached + `markShared`; the painted body
   CanvasTexture (pattern + stickers) is per rocket. `r3/fx/trail.ts` = camera-facing ribbon (ring buffer).
-- Hangar (`scenes/HangarScene.ts`, `r3/rooms/hangarBay.ts`): rocket hovering over a turntable in a hangar bay,
-  drag to spin (`hangar-spin`), camera focus per tab, `camera.setViewOffset` puts it in the left column; soft
-  shadows on High only (only MeshStandard parts cast); card thumbnails via `ui/rocketThumbs.ts` (queued 3D
-  snapshots). `?rockets[&n=4&seed=x&gloss=0]` = rocket contact sheet.
+- Hangar (`scenes/HangarScene.ts`): the stage rocket hovering over the Academy hangar turntable, drag to spin
+  (`hangar-spin`), camera focus per tab framed into the left column (`focusPose`); try-ons snap parts on; card
+  thumbnails via `ui/rocketThumbs.ts` (queued 3D snapshots). `?rockets[&n=4&seed=x&gloss=0]` = contact sheet.
 - 3D flight: `systems/flight3d.ts` (pure sim: auto-forward cruise, stick turns yaw/pitch, auto-level, Easy aim
   assist + planet orbit-hug, same boost/fuel/gravity/slingshot/bump/comet/pickup rules as flight.ts, hoop gates
   crossed by plane test, soft bounds bubble; `raceTune` for races: nimbler, half gravity, no slingshots),
@@ -95,22 +93,38 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   unit): orbit swoop chase-cam (2.6 s, 1.2 s in Comfort; tap/`btn-skip-swoop`/action skips), then a low 3/4
   camera that frames rocket + pad and comes down with you; pad beam, landing ring (green over the pad), drop
   line, height meter (`altitude`) next to the speed gauge, dust ring on touchdown.
+- The Academy (`r3/rooms/academy*.ts`: Layout = all dimensions/poses/spots, Kit/Atlas = merged building parts and
+  one painted canvas atlas, Rooms, Exterior, Decor): a dollhouse cutaway (upper: board | codex | badges; ground:
+  lounge | shop | lobby; hangar wing; launch pad) at dusk. `scenes/academyStage.ts` keeps ONE `AcademyStage`
+  (Academy + crew Characters + your rocket on the turntable + the current camera pose) alive across the hub
+  screens; `Game.register(name, f, {stage: 'academy'})` makes moves between them camera glides (no curtain,
+  `.glide-in` DOM). Screens extend `scenes/AcademyScene.ts` (borrowed world, `local` group freed on exit,
+  `showRoom(pose)` uses `fitFov` for narrow screens). The stage is released when a non-stage scene shows
+  (main.ts onSceneChange) or the GPU context is restored. Codex: the planet hologram over the library projector
+  shows through `.holo-window`; Shop: the 3D cadet on the try-on stage; Hangar: the stage rocket (`syncRocket`).
+  Subjects beside panels are framed with `r3/framing.ts` `focusPose` (view offset; unit-tested). Hub taps:
+  `AcademyStage.pick` (crew boxes, then `roomAt`). `?academy[&room=board&cast&decor=all&spin&ui]` review page.
+- Characters are rigid-skinned after building (`bakeRig`): joints are Bones, static parts merge into one
+  SkinnedMesh per material kind with plain colors as vertex colors (~7 draws per character instead of ~18).
+  Hide a limb by scaling its bone (not `.visible`). Portraits pass `merge: false`.
+- Cutscenes (`scenes/CutsceneScene.ts`) are 3D sets (Academy stage for Zibbo, Neptune + wormhole, wormhole
+  tunnel, Zephyra beacon); Phase 8 re-stages them with camera timelines.
 - Measure tiers with `?q=low|medium|high`: Auto picks High on this Mac (shadows add ~80 draw calls in levels).
 
-## Architecture (2D, still used by unported screens)
-- **Hybrid rendering**: Pixi draws the world (flight, map, landing, platformer, hub backdrop). A DOM layer (`#ui`)
-  draws menus, HUD, dialogue, touch controls. `#ui` is laid out in *logical units* (≥960×720) and scaled with a CSS
-  transform; Pixi's stage is scaled the same way (`app/stage.ts`). Safe-area insets are exposed as CSS vars `--safe-*`.
+## Architecture (shared)
+- **Rendering**: Three.js draws the world; a DOM layer (`#ui`) draws menus, HUD, dialogue, touch controls. `#ui` is
+  laid out in *logical units* (≥960×720) and scaled with a CSS transform (`app/stage.ts`). Safe-area insets are
+  exposed as CSS vars `--safe-*`.
 - **Fixed timestep** 60 Hz logic + interpolated render (`app/loop.ts`). Rendering stops when the tab is hidden.
-- **Scenes** (`src/scenes/*`) extend `app/Scene.ts`; each owns `root` (Pixi Container) and `ui` (DOM). Created fresh
-  per visit via `game.go(name, params)`; registered in `main.ts`.
+- **Scenes** (`src/scenes/*`) extend `app/Scene3D.ts` (`world`, `camera`, `ui` DOM). Created fresh per visit via
+  `game.go(name, params)`; registered in `main.ts`.
 - **Services** live on `S` (`app/services.ts`), filled during boot.
-- **Pure logic** in `src/systems/*` (no Pixi/DOM) so it can be unit tested.
+- **Pure logic** in `src/systems/*` (no rendering/DOM) so it can be unit tested.
 - **Content** is typed data in `src/data/*` (parts, bodies, characters, stickers, facts, missions, levels...).
   All space facts live in `src/data/facts.ts` for parent/teacher review.
-- **Art** is procedural: Canvas2D vector drawing (`gfx/canvas.ts`, `gfx/art/*`) baked into atlases (`gfx/atlas.ts`)
-  at bake resolution = min(2, dpr × scale). Planets/rocket are baked lazily as single textures (`gfx/textures.ts`).
-  UI icons are inline SVG strings (`ui/icons.ts`). No external assets, no web fonts.
+- **Art** is procedural: 3D models/shaders in `src/r3/*`; Canvas2D drawing (`gfx/canvas.ts`, `gfx/art/*`) for DOM
+  pictures (badges, stickers, glyphs, 2D fallbacks) and canvas textures. UI icons are inline SVG strings
+  (`ui/icons.ts`). No external assets, no web fonts.
 
 ## Status
 - [x] Phase 1: scaffold, single-file build, Pixi + DPR/resize, atlases, loading screen, title.
@@ -138,13 +152,16 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 - [x] 3D Phase 6: 3D landing (swoop, framing camera, landing aids, height meter) and 2.5D exploration of all 20
   areas (tile mesher, theme terrain/sky/scenery with the real sky planets, ~60 3D props, 3D cadet/rover/NPCs/
   Zibbo, floating prompts). Medium: 80–136 draw calls in levels, ~50–70 in landings.
-- [ ] 7 hub/menus (remove Pixi) · [ ] 8 cutscenes · [ ] 9 perf (merge character meshes: Low is ~100 calls in
-  levels vs a 60 target) · [ ] 10 tests/review/handoff
+- [x] 3D Phase 7: the Academy diorama (7 rooms, exterior, launch pad, dusk sky, 10 decorations) shared by hub,
+  board, hangar, lounge, codex, badges and shop with camera glides; 3D Codex hologram, shop try-on stage,
+  hangar turntable; 3D cutscene sets; character rigid skinning; Pixi removed (1.49 MB build).
+- [ ] 8 cutscenes · [ ] 9 perf (Low: hub ~95 calls, levels ~75 vs a 60 target — the rocket model is the next
+  merge candidate) · [ ] 10 tests/review/handoff
 
 ## Current numbers
 - Pacing model: Easy ≈ 6.7 h with all side missions (≈ 5.5 h story + free play); Normal ≈ 5.7 h.
 - Perf (tablet profile, DPR 2, M3 GPU): 60 fps, p95 16.7 ms in belt flight / big levels; still 60 fps with 4× CPU throttle.
-- Build: dist/index.html ≈ 1.1 MB on main; 2.36 MB on space-sky-3d while Pixi and Three are both bundled.
+- Build: dist/index.html ≈ 1.1 MB on main; ≈ 1.49 MB on space-sky-3d.
 
 ## Content conventions
 - Puzzles remember being solved via flags `solved:<puzzle>`, `reached:<marker>`, `door:<id>`; the mission engine treats

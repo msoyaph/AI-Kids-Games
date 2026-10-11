@@ -20,7 +20,6 @@
     "@playwright/test": "^1.64.0",
     "@types/node": "^24.19.2",
     "@types/three": "0.186.0",
-    "pixi.js": "^8.22.0",
     "postprocessing": "6.39.5",
     "three": "0.186.1",
     "typescript": "~5.9",

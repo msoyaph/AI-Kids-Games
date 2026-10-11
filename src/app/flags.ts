@@ -20,5 +20,6 @@ export const FLAGS = {
   rockets: p.has('rockets'),
   chars: p.has('chars'),
   props: p.has('props'),
+  academy: p.has('academy'),
   quality: (q === 'low' || q === 'medium' || q === 'high' ? q : null) as QualityTier | null,
 };

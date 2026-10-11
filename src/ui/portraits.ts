@@ -21,7 +21,8 @@ function profileKey(p?: AstronautLook): string {
 function render3d(id: string, mood: Mood, px: number, profile?: AstronautLook, opts?: CharacterOptions): HTMLCanvasElement | null {
   const r3 = S.game?.r3;
   if (!r3 || r3.lost) return null;
-  const ch = new Character(id, profile, opts);
+  // Drawn once, so skip the draw-call merge.
+  const ch = new Character(id, profile, { ...opts, merge: false });
   ch.freeze(mood);
   // Put the face at the origin and frame head and shoulders.
   ch.group.position.y = -ch.headY + ch.headR * 0.15;

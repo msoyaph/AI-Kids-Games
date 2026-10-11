@@ -1,23 +1,20 @@
-import { Sprite } from 'pixi.js';
-import { Scene } from '../app/Scene';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { BADGES } from '../data/badges';
 import { STICKERS } from '../data/stickers';
 import { drawToCanvas } from '../gfx/canvas';
-import { drawLounge } from '../gfx/art/rooms';
 import { drawSticker, drawStickerSlot } from '../gfx/art/stickers';
 import { drawBadge } from '../gfx/art/badges';
-import { ensureTex } from '../gfx/textures';
 import { clear, h } from '../ui/dom';
 import { toast } from '../ui/toast';
 import { button, iconEl } from '../ui/widgets';
+import { AcademyScene } from './AcademyScene';
 
 type Tab = 'badges' | 'stickers';
 
 
 /** Badges and the sticker book. */
-export class BadgesScene extends Scene {
+export class BadgesScene extends AcademyScene {
   private tab: Tab = 'badges';
   private body: HTMLElement;
   private tabBtns = new Map<Tab, HTMLButtonElement>();
@@ -25,13 +22,6 @@ export class BadgesScene extends Scene {
   constructor(params: Record<string, unknown> = {}) {
     super('badges');
     this.music = 'hub';
-    const bg = new Sprite(ensureTex('room_lounge', 1600, 720, (c, w, hh) => drawLounge(c, w, hh), 0.5, 0.5, 1));
-    bg.alpha = 0.5;
-    this.root.addChild(bg);
-    this.onResizeBg = (w, hh) => {
-      bg.position.set(w / 2, hh / 2);
-      bg.scale.set(Math.max(w / 1600, hh / 720));
-    };
     const d = S.state.data;
     const tabs = h('div', { class: 'tabs' });
     for (const [t, label, ic] of [['badges', `Badges ${d.badges.length}/${BADGES.length}`, 'badge'], ['stickers', `Sticker Book ${d.stickers.length}/${STICKERS.length}`, 'sticker']] as Array<[Tab, string, string]>) {
@@ -55,9 +45,8 @@ export class BadgesScene extends Scene {
     if (params.tab === 'stickers') this.tab = 'stickers';
   }
 
-  private onResizeBg: (w: number, h: number) => void;
-
   override enter(): void {
+    this.showRoom(this.stage.academy.poses.badges);
     S.state.emit({ type: 'visit', place: 'badges' });
     this.setTab(this.tab);
   }
@@ -65,10 +54,6 @@ export class BadgesScene extends Scene {
   override back(): boolean {
     void S.game.go('hub');
     return true;
-  }
-
-  override resize(w: number, hh: number): void {
-    this.onResizeBg(w, hh);
   }
 
   private setTab(t: Tab): void {

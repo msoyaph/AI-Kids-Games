@@ -1,4 +1,3 @@
-import 'pixi.js/unsafe-eval';
 import './ui/ui.css';
 import { Game } from './app/Game';
 import { AudioEngine } from './audio/audio';
@@ -7,7 +6,6 @@ import { settingsHooks } from './ui/settings';
 import { uiHooks } from './ui/widgets';
 import { S } from './app/services';
 import { saveNow, tickSession } from './app/session';
-import { bakeCore } from './gfx/textures';
 import { Input } from './input/input';
 import { TouchControls } from './input/touch';
 import { installHooks } from './app/hooks';
@@ -37,6 +35,7 @@ import { GalleryScene } from './scenes/GalleryScene';
 import { RocketGalleryScene } from './scenes/RocketGalleryScene';
 import { CharGalleryScene } from './scenes/CharGalleryScene';
 import { PropGalleryScene } from './scenes/PropGalleryScene';
+import { AcademyGalleryScene } from './scenes/AcademyGalleryScene';
 import { FLAGS } from './app/flags';
 import { createSave } from './systems/save/schema';
 import { loadSettings } from './systems/save/settings';
@@ -48,7 +47,25 @@ import { menuNavStep } from './ui/menuNav';
 import { clearTips } from './ui/tips';
 import { initSpeech, setReadAloud } from './ui/speech';
 import { clearPlanetBakes } from './r3/space/planets';
-import { clearSkyBakes } from './r3/space/sky';
+import { clearSkyBakes, skyCube, SKIES } from './r3/space/sky';
+import { academyWorld, releaseAcademyStage } from './scenes/academyStage';
+import type { Scene3D } from './app/Scene3D';
+
+/** Bake the skies every early screen uses behind the loading bar (planets bake with their scenes). */
+async function warmUp(game: Game): Promise<void> {
+  const r3 = game.r3;
+  const p = r3.profile;
+  const steps: Array<[string, () => void]> = [
+    ['Painting the sky...', () => skyCube(r3.renderer, SKIES.title, p.skySize, p.octaves)],
+    ['Counting stars...', () => skyCube(r3.renderer, SKIES.menu, p.skySize, p.octaves)],
+    ['Polishing star-coins...', () => skyCube(r3.renderer, SKIES.space, p.skySize, p.octaves)],
+  ];
+  for (let i = 0; i < steps.length; i++) {
+    setLoad(18 + (i / steps.length) * 72, steps[i][0]);
+    await new Promise((r) => setTimeout(r, 0));
+    if (!r3.lost) steps[i][1]();
+  }
+}
 
 function setLoad(pct: number, msg?: string): void {
   const fill = document.getElementById('boot-fill');
@@ -89,17 +106,18 @@ const PLAY_SCENES = new Set(['hub', 'map', 'flight', 'landing', 'explore', 'hang
 
 function registerScenes(game: Game): void {
   game.register('title', () => new TitleScene());
-  game.register('hub', () => new HubScene());
-  game.register('board', (p) => new BoardScene(p));
-  game.register('lounge', () => new LoungeScene());
+  const academy = { stage: 'academy' };
+  game.register('hub', () => new HubScene(), academy);
+  game.register('board', (p) => new BoardScene(p), academy);
+  game.register('lounge', () => new LoungeScene(), academy);
   game.register('map', () => new StarMapScene());
   game.register('flight', (p) => new FlightScene(p as unknown as FlightSceneParams));
   game.register('landing', (p) => new LandingScene(p as unknown as LandingParams));
   game.register('explore', (p) => new ExploreScene(p as unknown as ExploreParams));
-  game.register('hangar', () => new HangarScene());
-  game.register('shop', () => new ShopScene());
-  game.register('codex', () => new CodexScene());
-  game.register('badges', (p) => new BadgesScene(p));
+  game.register('hangar', () => new HangarScene(), academy);
+  game.register('shop', () => new ShopScene(), academy);
+  game.register('codex', () => new CodexScene(), academy);
+  game.register('badges', (p) => new BadgesScene(p), academy);
   game.register('cutscene', (p) => new CutsceneScene(p as unknown as CutsceneParams));
   game.register('credits', () => new CreditsScene());
   game.register('complete', () => new CompleteScene());
@@ -114,6 +132,7 @@ function registerScenes(game: Game): void {
   game.register('rockets', () => new RocketGalleryScene());
   game.register('chars', () => new CharGalleryScene());
   game.register('props', () => new PropGalleryScene());
+  game.register('academy', () => new AcademyGalleryScene());
 }
 
 async function boot(): Promise<void> {
@@ -127,6 +146,12 @@ async function boot(): Promise<void> {
   game.r3.onRestore.unshift(() => {
     clearPlanetBakes();
     clearSkyBakes();
+    releaseAcademyStage();
+  });
+  // The Academy diorama stays alive between hub screens and is freed when you leave it.
+  game.onSceneChange.push(() => {
+    const cur = game.current as Scene3D | null;
+    if (cur?.kind !== '3d' || cur.world !== academyWorld()) releaseAcademyStage();
   });
   setLoad(12, 'Warming up the engines...');
   initSpeech();
@@ -170,8 +195,7 @@ async function boot(): Promise<void> {
   window.addEventListener('pagehide', () => saveNow());
 
   setLoad(18, 'Painting planets...');
-  const msgs = ['Painting planets...', 'Polishing star-coins...', 'Building rockets...', 'Counting stars...'];
-  await bakeCore(game.metrics.bakeResolution, (p) => setLoad(18 + p * 72, msgs[Math.min(msgs.length - 1, Math.floor(p * msgs.length))]));
+  await warmUp(game);
   setLoad(95, 'Ready for launch!');
   registerScenes(game);
   installDirectors();
@@ -188,7 +212,7 @@ async function boot(): Promise<void> {
   setupRotateHint();
   if (new URLSearchParams(location.search).has('debug')) (window as unknown as { __spacesky: unknown }).__spacesky = S;
   game.start();
-  await game.go(FLAGS.gallery ? 'gallery' : FLAGS.rockets ? 'rockets' : FLAGS.chars ? 'chars' : FLAGS.props ? 'props' : 'title', {}, false);
+  await game.go(FLAGS.gallery ? 'gallery' : FLAGS.rockets ? 'rockets' : FLAGS.chars ? 'chars' : FLAGS.props ? 'props' : FLAGS.academy ? 'academy' : 'title', {}, false);
   // Let the first frames (post-processing shaders) compile behind the loading screen.
   await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
   setLoad(100);

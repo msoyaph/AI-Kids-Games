@@ -1,12 +1,8 @@
-import { Container, Sprite } from 'pixi.js';
-import { Scene } from '../app/Scene';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { CHAR_BY_ID } from '../data/characters';
 import { CHAPTER_NAMES } from '../data/missions';
-import { drawAcademy } from '../gfx/art/rooms';
-import { drawNpcSide } from '../gfx/art/characters';
-import { ensureTex, rocketTex, tex } from '../gfx/textures';
+import type { RoomId } from '../r3/rooms/academy';
 import type { HubPlace } from '../systems/events';
 import { h, setText } from '../ui/dom';
 import { showDialogue } from '../ui/dialogue';
@@ -14,6 +10,7 @@ import { button, iconEl } from '../ui/widgets';
 import { objectiveLabel, whereOf } from './director';
 import { hubHooks } from './hubHooks';
 import { portraitEl, warmPortraits } from '../ui/portraits';
+import { AcademyScene } from './AcademyScene';
 
 const PLACE_SCENE: Record<HubPlace, string> = {
   board: 'board', hangar: 'hangar', codex: 'codex', badges: 'badges', lounge: 'lounge', map: 'map', shop: 'shop',
@@ -23,19 +20,15 @@ const PLACE_ICON: Record<HubPlace, string> = {
   board: 'flag', hangar: 'wrench', codex: 'book', badges: 'badge', lounge: 'chat', map: 'rocket', shop: 'bag',
 };
 
-interface Npc {
-  id: string;
-  sprite: Sprite;
-  baseY: number;
-  phase: number;
-}
+/** Tapping a room in the diorama opens its screen. */
+const ROOM_PLACE: Partial<Record<RoomId, HubPlace>> = {
+  board: 'board', codex: 'codex', badges: 'badges', lounge: 'lounge', shop: 'shop', hangar: 'hangar',
+};
 
-/** The Space Sky Academy: home base. */
-export class HubScene extends Scene {
-  private bg: Sprite;
-  private crew = new Container();
-  private npcs: Npc[] = [];
-  private rocket: Sprite;
+/** The Space Sky Academy: home base, a 3D dollhouse of rooms you can tap (or use the buttons). */
+export class HubScene extends AcademyScene {
+  private downX = 0;
+  private downY = 0;
   private banner: HTMLElement;
   private bannerTitle: HTMLElement;
   private bannerObj: HTMLElement;
@@ -43,36 +36,14 @@ export class HubScene extends Scene {
   private goBtn: HTMLButtonElement;
   private navDots = new Map<string, HTMLElement>();
   private coinText: HTMLElement;
-  private t = 0;
   private refreshT = 0;
-  private shooting = new Sprite(tex('spark'));
-  private shootT = 3;
-  private shootX = 0;
-  private shootY = 0;
-  private viewW = 1280;
 
   constructor() {
     super('hub');
     this.music = 'hub';
-    this.bg = new Sprite(ensureTex('room_academy', 1600, 720, (c, w, hh) => drawAcademy(c, w, hh), 0.5, 0.5, 1));
-    this.rocket = new Sprite(rocketTex(S.state.data.loadout));
-    this.rocket.anchor.set(0.5, 1);
-    this.shooting.anchor.set(0.5);
-    this.shooting.blendMode = 'add';
-    this.shooting.visible = false;
-    this.root.addChild(this.bg, this.shooting, this.rocket, this.crew);
-    const cast = ['boltzy', 'stella', 'pip'];
-    if (S.state.flag('zibboJoined')) cast.push('zibbo');
-    for (const id of cast) {
-      const ch = CHAR_BY_ID[id];
-      const sp = new Sprite(ensureTex(`npc_${id}`, 96, 112, (c, w, hh) => drawNpcSide(c, ch, w, hh), 0.5, 1));
-      sp.anchor.set(0.5, 1);
-      sp.eventMode = 'static';
-      sp.cursor = 'pointer';
-      sp.on('pointertap', () => this.chat(id));
-      this.crew.addChild(sp);
-      this.npcs.push({ id, sprite: sp, baseY: 0, phase: Math.random() * 6 });
-    }
+    this.ui.classList.remove('on-stage');
+    this.stage.syncCast();
+    this.stage.syncRocket(S.state.data.loadout);
 
     // Top bar.
     const d = S.state.data;
@@ -121,9 +92,19 @@ export class HubScene extends Scene {
 
   override enter(): void {
     S.state.data.location = 'earth';
+    this.showRoom(this.stage.academy.overview);
+    const cv = S.game.r3.canvas;
+    cv.addEventListener('pointerdown', this.onDown);
+    cv.addEventListener('pointerup', this.onUp);
     this.refresh();
     hubHooks.onEnter(this);
     warmPortraits(['player', 'stella', 'pip', 'rio', 'boltzy', 'tuggy', ...(S.state.flag('zibboJoined') ? ['zibbo'] : [])], S.state.data.profile);
+  }
+
+  override exit(): void {
+    const cv = S.game.r3.canvas;
+    cv.removeEventListener('pointerdown', this.onDown);
+    cv.removeEventListener('pointerup', this.onUp);
   }
 
   override back(): boolean {
@@ -131,24 +112,21 @@ export class HubScene extends Scene {
     return true;
   }
 
-  override resize(w: number, h: number): void {
-    this.viewW = w;
-    this.bg.position.set(w / 2, h / 2);
-    const s = Math.max(w / 1600, h / 720);
-    this.bg.scale.set(s);
-    const ground = h / 2 + 720 * s * 0.3;
-    const xs: Record<string, number> = { boltzy: 0.28, stella: 0.43, pip: 0.66, zibbo: 0.56 };
-    for (const n of this.npcs) {
-      n.sprite.x = w / 2 + (xs[n.id] - 0.5) * 1600 * s;
-      n.baseY = ground + 8;
-      n.sprite.scale.set(Math.max(1, s * 1.1));
-    }
-    this.rocket.position.set(w / 2 + 0.41 * 1600 * s, ground - 10);
-    this.rocket.scale.set(0.7 * s);
-  }
+  private readonly onDown = (e: PointerEvent): void => {
+    this.downX = e.clientX;
+    this.downY = e.clientY;
+  };
+
+  /** A tap on a crew member chats; a tap on a room opens it. */
+  private readonly onUp = (e: PointerEvent): void => {
+    if (this.frozen || S.game.isSwitching || Math.hypot(e.clientX - this.downX, e.clientY - this.downY) > 12) return;
+    const r = S.game.r3.canvas.getBoundingClientRect();
+    const hit = this.stage.pick(this.camera, ((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    if (hit.crew) this.chat(hit.crew);
+    else if (hit.room && ROOM_PLACE[hit.room]) this.open(ROOM_PLACE[hit.room]!);
+  };
 
   override update(dt: number): void {
-    this.t += dt;
     this.refreshT -= dt;
     if (this.refreshT <= 0) {
       this.refreshT = 0.5;
@@ -157,30 +135,6 @@ export class HubScene extends Scene {
     const inp = S.input.state;
     const focused = document.activeElement && document.activeElement !== document.body;
     if (inp.actionPressed && !this.frozen && !focused) this.go();
-  }
-
-  override render(): void {
-    // A shooting star now and then.
-    this.shootT -= 1 / 60;
-    if (this.shootT <= 0) {
-      this.shootT = 5 + Math.random() * 6;
-      this.shootX = this.viewW * (0.1 + Math.random() * 0.5);
-      this.shootY = 40 + Math.random() * 120;
-      this.shooting.visible = true;
-    }
-    if (this.shooting.visible) {
-      this.shootX += 14;
-      this.shootY += 5;
-      this.shooting.position.set(this.shootX, this.shootY);
-      this.shooting.scale.set(1.2, 0.5);
-      this.shooting.rotation = 0.35;
-      this.shooting.alpha = Math.max(0, 1 - (this.shootY - 40) / 260);
-      if (this.shooting.alpha <= 0 || this.shootX > this.viewW) this.shooting.visible = false;
-    }
-    for (const n of this.npcs) {
-      n.sprite.y = n.baseY - Math.abs(Math.sin(this.t * 2 + n.phase)) * (n.id === 'zibbo' ? 14 : 3);
-    }
-    this.rocket.rotation = Math.sin(this.t * 0.8) * 0.01;
   }
 
   /** Update banner, coins and notification dots. */
@@ -236,6 +190,12 @@ export class HubScene extends Scene {
 
   private chat(id: string): void {
     sfx('click');
+    const c = this.stage.cast.get(id);
+    if (c) {
+      c.setAnim('wave');
+      setTimeout(() => c.setAnim(id === 'tuggy' ? 'hover' : 'idle'), 1600);
+    }
+    if (!CHAR_BY_ID[id]) return;
     void showDialogue(hubHooks.chatter(id));
   }
 }

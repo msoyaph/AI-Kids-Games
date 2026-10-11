@@ -1,13 +1,11 @@
 import { h } from '../ui/dom';
 
 /**
- * A screen of the game: a DOM element (menus/HUD) plus whatever the renderer draws.
+ * A screen of the game: a DOM element (menus/HUD) plus whatever the renderer draws (see `Scene3D`).
  * Scenes are created fresh on every visit and destroyed on exit.
- * `Scene3D` (Three.js) is the normal kind; `Scene` (Pixi) remains only for screens
- * that have not been moved to 3D yet.
  */
 export abstract class BaseScene {
-  abstract readonly kind: '2d' | '3d';
+  abstract readonly kind: '3d';
   readonly ui: HTMLElement;
   /** Music track to play while this scene is active. */
   music: string | null = null;
