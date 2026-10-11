@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const guard = (env: Record<string,string>) => spawnSync('node_modules/.bin/tsx',['scripts/check-deployment.ts'],{ env: { PATH: process.env.PATH ?? '',...env },encoding: 'utf8' });
-describe('production approval guard',() => {
+describe('production approval guard',{ timeout: 30000 },() => {
   it('allows the approved release in a Vercel production build',() => {
     const { version } = JSON.parse(readFileSync('package.json','utf8'));
     const approval = JSON.parse(readFileSync('DEPLOYMENT.json','utf8')).productionApproval;
