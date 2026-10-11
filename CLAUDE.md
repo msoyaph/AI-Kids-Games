@@ -74,3 +74,5 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
   Dev shortcuts (dev server only): `/?track=<id>[&autodrive][&mirror][&class=pro][&ai=7][&nointro]`, `/?arena=<id>`.
   Headless e2e: `node scripts/probe.mjs <url> <script.js>` uses Metal GPU (set SWIFTSHADER=1 to force software).
   `window.__calex.app` exposes the App (flows can be driven via `app.screens.*`, `app.loop.timeScale` speeds up sims).
+- Phase 9 ✅ local split-screen (2 players; H/V split; per-view HUD/minimap/camera; input auto-assignment:
+  2 pads → pad+pad, 1 pad → keyboard+pad, none → shared keyboard WASD | arrows; split quality profile).
