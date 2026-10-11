@@ -6,6 +6,7 @@ import { button, h, type Screen } from '../ui';
 import { choice } from './setup';
 import { renderPlaytest } from './playtest';
 import { startBenchmark } from './benchmark';
+import { controlsCard, deviceFor } from './controlsCard';
 import type { AssistSetting } from '../../tuning/balance';
 
 const ASSIST_HINTS: Record<AssistSetting, string> = {
@@ -81,6 +82,8 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
         h('div', { class: 'hint' }, 'Auto picks the best look your device can run smoothly, and lowers detail if the game slows down.'),
         choice('Show FPS', [[false, 'Off'], [true, 'On']], () => s.showFps, (v) => ((s.showFps = v), save())),
         choice('Screen shake', [[true, 'On'], [false, 'Off']], () => s.screenShake, (v) => ((s.screenShake = v), save())),
+        choice('HUD size', [[1, '100%'], [1.25, '125%'], [1.5, '150%']], () => s.hudSize, (v) => ((s.hudSize = v), save())),
+        h('div', { class: 'hint' }, 'Makes the race position, item box, timer and speed bigger and easier to read.'),
         choice('Reduce effects', [[false, 'Off'], [true, 'On']], () => s.reduceEffects, (v) => ((s.reduceEffects = v), save())),
         h('div', { class: 'hint' }, 'Turns off camera shake, speed blur and lines, hit pauses and flashing for a calmer view.'),
         choice('Split-screen', [['horizontal', 'Top / bottom'], ['vertical', 'Side by side']], () => s.splitMode, (v) => ((s.splitMode = v), save())),
@@ -118,7 +121,18 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
     } else if (t === 'playtest') {
       renderPlaytest(app, body, () => render('playtest'));
     } else {
-      renderControls(app, body, () => render('controls'));
+      renderControls(app, body, () => render('controls'), () => {
+        // same layer as this settings screen (it is an overlay when opened from the pause menu)
+        const overlay = app.ui.hasOverlay;
+        const src = { kind: 'any' } as const;
+        const card = controlsCard(app, [{ src, device: deviceFor(app, src) }], () => {
+          const again = settingsScreen(app, back, 'controls');
+          if (overlay) app.ui.showOverlay({ ...again, fullCover: true });
+          else app.ui.show(again);
+        });
+        if (overlay) app.ui.showOverlay({ ...card, fullCover: true });
+        else app.ui.show(card);
+      });
     }
   };
   render(tab);
@@ -150,7 +164,7 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
   };
 }
 
-function renderControls(app: App, body: HTMLElement, rerender: () => void): void {
+function renderControls(app: App, body: HTMLElement, rerender: () => void, showCard: () => void): void {
   const input = app.input;
   const s = app.saves.settings;
   const persist = (): void => {
@@ -158,6 +172,14 @@ function renderControls(app: App, body: HTMLElement, rerender: () => void): void
     s.padBindings = input.padBindings;
     app.saveSettings();
   };
+  body.appendChild(
+    h(
+      'div',
+      { class: 'setting-row' },
+      h('div', null, 'Controls card'),
+      button('Show controls', showCard, 'small'),
+    ),
+  );
   body.appendChild(h('div', { style: 'font-weight:900' }, 'Keyboard (1 player)'));
   for (const a of ACTIONS) {
     const keys = input.keyBindings.solo[a];

@@ -243,7 +243,7 @@ export class RaceSession {
     const hudMode = isBattle ? 'battle' : cfg.mode === 'timeTrial' || cfg.mode === 'school' ? 'timeTrial' : 'race';
     const touchHud = ctx.gr.isTouch && this.locals.length === 1;
     for (let i = 0; i < this.locals.length; i++) {
-      const h = new Hud(this.hudLayer, hudMode, i, { track: this.track ?? undefined, arena: this.arena ?? undefined }, cfg.mirror, this.locals.length > 1, touchHud);
+      const h = new Hud(this.hudLayer, hudMode, i, { track: this.track ?? undefined, arena: this.arena ?? undefined }, cfg.mirror, this.locals.length > 1, touchHud, ctx.settings.hudSize ?? 1);
       h.setRect(this.view.rectFor(i, this.locals.length));
       if (this.coinRush) h.setCoinMode();
       if (cfg.lesson) h.hideLaps();
@@ -262,6 +262,8 @@ export class RaceSession {
     ctx.input.touch.setMode(ctx.settings.touchSteer);
     ctx.input.touch.setAutoAccel(ctx.settings.autoAccel || ctx.gr.isTouch);
     ctx.input.touch.show(touchUsed && this.locals.length === 1);
+    // the look-back button makes room for a bigger item box (Settings → HUD size)
+    ctx.uiRoot.style.setProperty('--hud-scale', String(ctx.settings.hudSize ?? 1));
     const music = this.track ? this.track.data.music : this.arena!.data.music;
     ctx.audio.playMusic(music);
     ctx.audio.setFinalLap(false);

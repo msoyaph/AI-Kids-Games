@@ -87,15 +87,18 @@ export class Effects {
 
       // Drift sparks (tier colour) + skid marks
       if (k.drifting && k.grounded) {
-        a.sparks += dt * (k.driftTier > 0 ? 70 : 22);
-        const col = TIER_COLORS[k.driftTier];
+        // tiers differ in size, amount and height as well as colour (readable without colour vision)
+        const tier = k.driftTier;
+        a.sparks += dt * (tier > 0 ? 50 + tier * 20 : 22);
+        const col = TIER_COLORS[tier];
+        const size = tier > 0 ? 0.18 + tier * 0.07 : 0.14;
         while (a.sparks >= 1) {
           a.sparks -= 1;
           const side = rnd() < 0.5 ? -1 : 1;
           const px = side < 0 ? lx : rxp;
           const pz = side < 0 ? lz : rzp;
           const out = k.driftDir * 2.5;
-          this.glow.spawn(px, gy, pz, -fx * 3 + rx * out * rnd() + (rnd() - 0.5) * 2, 2 + rnd() * 3, -fz * 3 + rz * out * rnd() + (rnd() - 0.5) * 2, 0.22 + rnd() * 0.15, k.driftTier > 0 ? 0.26 : 0.14, 0.04, col, 1, 12, 1);
+          this.glow.spawn(px, gy, pz, -fx * 3 + rx * out * rnd() + (rnd() - 0.5) * 2, 2 + rnd() * (2 + tier * 1.2), -fz * 3 + rz * out * rnd() + (rnd() - 0.5) * 2, 0.22 + rnd() * 0.15, size, 0.04, col, 1, 12, 1);
         }
       }
       if (this.skidsOn) {

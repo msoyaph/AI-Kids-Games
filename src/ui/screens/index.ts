@@ -17,6 +17,7 @@ import { racerSelectScreen, garageScreen, cupSelectScreen, trackSelectScreen, vs
 import { resultsScreen, podiumScreen, showUnlocks } from './results';
 import { settingsScreen, pauseOverlay, confirmOverlay } from './settings';
 import { collectionScreen, challengesScreen, recordsScreen } from './extras';
+import { withControlsCard } from './controlsCard';
 
 export interface ScreenRegistry {
   title(): void;
@@ -58,7 +59,8 @@ export function registerScreens(app: App): void {
   const run = (cfg: SessionConfig, done: (r: SessionResult) => void): void => {
     lastCfg = cfg;
     lastDone = done;
-    app.startSession(cfg, done);
+    // first race on a keyboard / gamepad / touch screen: show the controls once
+    withControlsCard(app, cfg.players.map((p) => p.source), () => app.startSession(cfg, done));
   };
 
   /** Shared post-race bookkeeping: lifetime stats + challenges. Returns notes for the results screen. */

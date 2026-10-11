@@ -11,6 +11,16 @@ import { BALLOON_SVG, COIN_SVG, ITEM_ICONS } from './icons';
 import { Minimap, KART_COLORS } from './minimap';
 
 const TIER_CSS = ['#d8e6ff', '#3fa7ff', '#ff9f1c', '#ff4dd2'];
+/** Spark tiers also read as words + chevron counts, not only colours. */
+const TIER_WORDS = ['', 'MINI', 'SUPER', 'ULTRA'];
+/** Item warnings say what is coming as well as showing its icon. */
+const WARN_WORDS: Partial<Record<ItemId, string>> = {
+  paperPlane: 'PLANE!',
+  bumperBall: 'BALL!',
+  popper: 'POPPER!',
+  cloud: 'CLOUD!',
+  tornado: 'TWISTER!',
+};
 const ROULETTE: ItemId[] = ITEMS.map((i) => i.id);
 
 export type HudMode = 'race' | 'timeTrial' | 'battle';
@@ -51,9 +61,14 @@ export class Hud {
     mirror: boolean,
     readonly split: boolean,
     touch = false,
+    /** Settings → HUD size (1, 1.25, 1.5); split-screen caps it so two HUDs still fit. */
+    scale = 1,
   ) {
     this.root = document.createElement('div');
     this.root.className = `hud ${split ? 'split' : ''} ${touch ? 'touch' : ''} mode-${mode}`;
+    const sc = split ? Math.min(scale, 1.25) : scale;
+    this.root.style.setProperty('--hud-scale', String(sc));
+    if (sc > 1) this.root.classList.add('big');
     this.root.innerHTML = `
       <div class="hud-speedlines"></div>
       <div class="hud-threat"></div>
@@ -71,12 +86,12 @@ export class Hud {
       </div>
       <div class="hud-bl"></div>
       <div class="hud-br">
-        <div class="hud-spark"><i></i><i></i><i></i></div>
+        <div class="hud-spark" role="img" aria-label="Drift sparks"><span class="w"></span><i></i><i></i><i></i></div>
         <div class="hud-speed"><b>0</b><span>km/h</span></div>
       </div>
       <div class="hud-center"><div class="hud-banner"></div><div class="hud-count"></div></div>
       <div class="hud-pop"></div>
-      <div class="hud-warn"></div>
+      <div class="hud-warn"><div class="ic"></div><div class="w"></div></div>
       <div class="hud-player-tag">P${playerIndex + 1}</div>
     `;
     parent.appendChild(this.root);
@@ -102,13 +117,16 @@ export class Hud {
     this.el.pop = q('.hud-pop');
     this.el.threat = q('.hud-threat');
     this.el.warn = q('.hud-warn');
+    this.el.warnIcon = q('.hud-warn .ic');
+    this.el.warnWord = q('.hud-warn .w');
+    this.el.sparkWord = q('.hud-spark .w');
     this.el.goo = q('.hud-goo');
     this.el.cloud = q('.hud-cloud');
     this.el.speedlines = q('.hud-speedlines');
     this.el.tag = q('.hud-player-tag');
     this.minimap = new Minimap(course, mirror);
     q('.hud-bl').appendChild(this.minimap.canvas);
-    this.minimap.resize(split || touch ? 92 : 132);
+    this.minimap.resize(Math.round((split || touch ? 92 : 132) * sc));
     if (mode !== 'battle') this.el.battle.style.display = 'none';
     if (mode === 'battle') {
       this.el.posBox.style.display = 'none';
@@ -213,8 +231,13 @@ export class Hud {
     if (this.last.spark !== sparkKey) {
       const prevTier = typeof this.last.spark === 'number' ? Math.max(0, (this.last.spark as number) - 1) : 0;
       this.last.spark = sparkKey;
-      const pills = this.el.spark.children;
-      for (let i = 0; i < 3; i++) (pills[i] as HTMLElement).style.background = tier > i ? TIER_CSS[tier] : 'rgba(255,255,255,0.18)';
+      const pills = this.el.spark.querySelectorAll('i');
+      for (let i = 0; i < 3; i++) {
+        pills[i].style.background = tier > i ? TIER_CSS[tier] : 'rgba(255,255,255,0.18)';
+        pills[i].classList.toggle('lit', tier > i);
+      }
+      this.el.sparkWord.textContent = TIER_WORDS[tier];
+      this.el.spark.setAttribute('aria-label', tier ? `Drift sparks: ${TIER_WORDS[tier].toLowerCase()} (${tier} of 3)` : 'Drift sparks');
       this.el.spark.classList.toggle('on', k.drifting);
       this.el.spark.style.setProperty('--tier', TIER_CSS[tier]);
       if (tier > prevTier && !c.reduceEffects) {
@@ -232,7 +255,8 @@ export class Hud {
     this.toggle('calm', this.root, 'calm', !!c.reduceEffects);
     this.setOpacity('threat', this.el.threat, Math.min(1, k.threat * 1.1));
     if (k.threat > 0.25 && k.threatItem) {
-      this.setHtml('warn', this.el.warn, ITEM_ICONS[k.threatItem]);
+      this.setHtml('warn', this.el.warnIcon, ITEM_ICONS[k.threatItem]);
+      this.set('warnWord', this.el.warnWord, WARN_WORDS[k.threatItem] ?? 'LOOK OUT!');
       this.toggle('warnOn', this.el.warn, 'on', true);
     } else this.toggle('warnOn', this.el.warn, 'on', false);
     this.setOpacity('goo', this.el.goo, k.gooTime > 0 ? Math.min(1, k.gooTime) : 0);

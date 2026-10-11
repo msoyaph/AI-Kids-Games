@@ -93,6 +93,10 @@ export interface Settings {
   reduceEffects: boolean;
   /** Gamepad rumble / phone vibration. */
   rumble: boolean;
+  /** Race HUD size (1 = 100 %, 1.25, 1.5). */
+  hudSize: number;
+  /** Input types whose controls card has been shown before a race (shown once per type). */
+  controlsSeen: Partial<Record<'keyboard' | 'gamepad' | 'touch', boolean>>;
   keyBindings?: Record<KeyScheme, KeyBindings>;
   padBindings?: PadBindings;
 }
@@ -171,6 +175,8 @@ export function defaultSettings(touch = false): Settings {
     playtest: false,
     reduceEffects: prefersReducedMotion(),
     rumble: true,
+    hudSize: 1,
+    controlsSeen: {},
   };
 }
 
@@ -262,6 +268,8 @@ export function migrateSettings(raw: Raw, touch = false): Settings {
   }
   const out = { ...defaultSettings(touch), ...(d as Partial<Settings>), v: SETTINGS_VERSION };
   if (!['auto', 'off', 'light', 'full'].includes(out.assist)) out.assist = 'auto';
+  if (![1, 1.25, 1.5].includes(out.hudSize)) out.hudSize = 1;
+  if (!out.controlsSeen || typeof out.controlsSeen !== 'object') out.controlsSeen = {};
   return out;
 }
 

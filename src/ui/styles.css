@@ -210,6 +210,8 @@
   position: absolute;
   left: var(--pad-l);
   top: var(--pad-t);
+  transform-origin: top left;
+  scale: var(--hud-scale, 1);
 }
 .hud-pos {
   line-height: 0.85;
@@ -297,6 +299,8 @@
   position: absolute;
   right: var(--pad-r);
   top: var(--pad-t);
+  transform-origin: top right;
+  scale: var(--hud-scale, 1);
 }
 .hud-item {
   position: relative;
@@ -373,6 +377,8 @@
   right: var(--pad-r);
   bottom: var(--pad-b);
   text-align: right;
+  transform-origin: bottom right;
+  scale: var(--hud-scale, 1);
 }
 .hud-speed b {
   font-size: clamp(26px, 5vh, 44px);
@@ -385,9 +391,18 @@
 }
 .hud-spark {
   display: inline-flex;
-  gap: 4px;
+  align-items: center;
+  gap: 1px;
   opacity: 0.35;
   transition: opacity 0.15s;
+}
+.hud-spark .w {
+  min-width: 52px;
+  margin-right: 6px;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--tier, #fff);
+  text-align: right;
 }
 .hud-spark.on {
   opacity: 1;
@@ -408,13 +423,19 @@
 .hud.calm .hud-speedlines {
   display: none;
 }
+/* Spark tiers are chevrons: 1, 2 or 3 lit (shape + count + word, not only colour) */
 .hud-spark i {
   display: block;
-  width: 26px;
-  height: 10px;
-  border-radius: 6px;
+  width: 20px;
+  height: 22px;
   background: rgba(255, 255, 255, 0.18);
-  border: 2px solid rgba(29, 18, 80, 0.7);
+  clip-path: polygon(0 0, 50% 0, 100% 50%, 50% 100%, 0 100%, 50% 50%);
+}
+.hud-spark i.lit {
+  filter: drop-shadow(0 0 0 #1d1250);
+}
+.hud-spark i + i {
+  margin-left: -4px;
 }
 .hud-center {
   position: absolute;
@@ -422,6 +443,8 @@
   right: 0;
   top: 26%;
   text-align: center;
+  transform-origin: top center;
+  scale: var(--hud-scale, 1);
 }
 .hud-count {
   font-size: clamp(64px, 18vh, 160px);
@@ -476,7 +499,9 @@
 .hud-pop {
   position: absolute;
   left: calc(var(--pad-l) + 4px);
-  top: calc(var(--pad-t) + clamp(90px, 17vh, 160px));
+  top: calc(var(--pad-t) + clamp(90px, 17vh, 160px) * var(--hud-scale, 1));
+  transform-origin: top left;
+  scale: var(--hud-scale, 1);
   font-size: 26px;
   opacity: 0;
 }
@@ -511,16 +536,36 @@
   position: absolute;
   left: 50%;
   top: calc(var(--pad-t) + 4px);
-  width: 54px;
-  height: 54px;
-  margin-left: -27px;
-  border-radius: 50%;
-  background: rgba(255, 77, 109, 0.9);
-  padding: 8px;
-  box-sizing: border-box;
+  width: 110px;
+  margin-left: -55px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
   opacity: 0;
   transform: scale(0.5);
-  transition: all 0.15s;
+  transform-origin: top center;
+  scale: var(--hud-scale, 1);
+  transition: opacity 0.15s, transform 0.15s;
+}
+.hud-warn .ic {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: rgba(255, 77, 109, 0.9);
+  padding: 7px;
+  box-sizing: border-box;
+}
+.hud-warn .w {
+  padding: 0 8px;
+  border-radius: 8px;
+  background: #1d1250;
+  border: 2px solid #ff4d6d;
+  font-size: 15px;
+  color: #fff;
+  text-shadow: none;
+  white-space: nowrap;
 }
 .hud-warn.on {
   opacity: 1;
@@ -530,7 +575,7 @@
 @keyframes warnBob {
   to { transform: scale(1.12); }
 }
-.hud-warn svg {
+.hud-warn .ic svg {
   width: 100%;
   height: 100%;
 }
@@ -1034,13 +1079,14 @@
 /* Touch layout: keep HUD clear of the on-screen buttons */
 .hud.touch .hud-bl {
   bottom: auto;
-  top: calc(var(--pad-t) + clamp(96px, 30vh, 150px));
+  top: calc(var(--pad-t) + clamp(96px, 30vh, 150px) * var(--hud-scale, 1));
 }
 .hud.touch .hud-br {
   right: auto;
   left: 50%;
   bottom: calc(4px + var(--safe-b));
   transform: translateX(-50%);
+  transform-origin: bottom left;
   text-align: center;
 }
 .hud.touch .hud-speed b {
@@ -1054,11 +1100,26 @@
   font-size: clamp(38px, 12vh, 64px);
 }
 .hud.touch .hud-pop {
-  top: calc(var(--pad-t) + clamp(70px, 20vh, 110px));
+  top: calc(var(--pad-t) + clamp(70px, 20vh, 110px) * var(--hud-scale, 1));
   left: calc(var(--pad-l) + 70px);
 }
 .touch-controls .tc-look {
-  right: calc(12px + var(--safe-r) + clamp(64px, 17vh, 96px));
+  right: calc(12px + var(--safe-r) + clamp(64px, 17vh, 96px) * var(--hud-scale, 1));
+}
+/* touch: the warning sits below the pause button; the spark word sits above the chevrons (between the pads) */
+.hud.touch .hud-warn {
+  top: calc(var(--pad-t) + 52px);
+}
+.hud.touch .hud-spark {
+  position: relative;
+}
+.hud.touch .hud-spark .w {
+  position: absolute;
+  left: -20px;
+  right: -20px;
+  bottom: 100%;
+  margin: 0;
+  text-align: center;
 }
 
 .tc-accel.pulse {
@@ -1302,4 +1363,44 @@
   .btn.big > div > div:nth-child(2) {
     display: none;
   }
+}
+
+/* ---------------- Controls card ---------------- */
+.cc-cols {
+  display: grid;
+  gap: 14px;
+}
+.cc-cols.two {
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 90vw), 1fr));
+}
+.cc-title {
+  font-weight: 900;
+  font-size: clamp(16px, 2.6vh, 20px);
+  margin-bottom: 6px;
+}
+.cc-row {
+  display: grid;
+  grid-template-columns: 30px minmax(110px, auto) 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: clamp(13px, 2.2vh, 17px);
+}
+.cc-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 1px 7px;
+  border-radius: 7px;
+  background: #fff;
+  color: #1d1250;
+  font: inherit;
+  font-weight: 900;
+  font-size: 0.9em;
+  text-align: center;
+  box-shadow: 0 3px 0 rgba(29, 18, 80, 0.6);
 }
