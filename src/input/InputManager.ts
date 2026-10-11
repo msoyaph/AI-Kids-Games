@@ -239,6 +239,8 @@ export class InputManager {
       else if (this.has('moveDown', e.code)) a = 'down';
       else if (this.has('moveLeft', e.code)) a = 'left';
       else if (this.has('moveRight', e.code)) a = 'right';
+      // Escape with no screen open (e.g. the performance test) still means "back"
+      else if (e.code === 'Escape' && !e.repeat) a = 'back';
     }
     if (a) {
       e.preventDefault();

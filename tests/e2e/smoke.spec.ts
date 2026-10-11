@@ -162,6 +162,29 @@ test('menus open and close without errors', async ({ page }) => {
   expect(problems, problems.join('\n')).toEqual([]);
 });
 
+test('the performance test: ?bench=1 shows a result card, Settings starts it, Escape stops it, nothing is saved', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/?bench=1&seconds=6');
+  await expect(page.locator('.bench-badge')).toBeVisible();
+  await expect(page.locator('.modal.bench')).toBeVisible({ timeout: 180_000 });
+  await expect(page.locator('.bench-fps')).toContainText('FPS average');
+  const r = await page.evaluate(() => (window as unknown as { __benchResult: { frames: number; avgFps: number; drawCalls: { max: number }; gpu: string } }).__benchResult);
+  expect(r.frames).toBeGreaterThan(10);
+  expect(r.avgFps).toBeGreaterThan(0);
+  expect(r.drawCalls.max).toBeGreaterThan(5);
+  await page.getByRole('button', { name: 'Done' }).click();
+  // from Settings (the Performance row), then cancelled with Escape
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.locator('.setting', { hasText: 'Performance' }).getByRole('button').click();
+  await expect(page.locator('.hud')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
+  await expect(page.locator('.bench-badge')).toBeHidden();
+  const runs = await page.evaluate(() => JSON.parse(localStorage.getItem('theabonk.save') ?? '{}')?.stats?.runsPlayed ?? 0);
+  expect(runs).toBe(0);
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
 test('the daily run starts the day’s hero and map with no shop bonuses', async ({ page }) => {
   const problems = watchConsole(page);
   await page.goto('/');

@@ -45,3 +45,14 @@ Recorded at the start of the `theabonk-upgrade` branch so every later phase can 
 - Sim profiles (1000 enemies): GC < 3% on both maps, no new hot spots; Rimewood spends a
   little more in flow-field rebuilds (gusts move the player).
 - Build: 814 KB.
+
+## Upgrade phase 11 (benchmark + Low tier)
+- `?bench=1&seconds=12`, High, M3 Pro (pane, DPR 2, 1780×1434, load average ~50 from other
+  work): 97 fps average (120 Hz display), 38 fps 1% low, CPU 2.65 ms/frame, sim 0.5 ms,
+  57 draw calls avg / 65 max, 274k triangles avg / 300k max (budget 90 / 900k: ok).
+- Low tier at run start (Meadow): 23 draw calls, 64k triangles (no grass / flowers / small
+  decoration, fog ×0.72, far plane 150, pixel ratio 0.75).
+- Auto quality guesses: SwiftShader / llvmpipe / Intel HD & UHD → Low; Iris Xe, Radeon iGPU,
+  Mali / Adreno / PowerVR → Medium; others → High (touch devices → Tablet).
+- The `npm run bench-browser` matrix (software renderer, 4× CPU laptop, throttled tablet,
+  1000-enemy stress on both maps) is recorded with the touch-controller measurements below.

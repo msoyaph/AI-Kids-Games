@@ -27,6 +27,8 @@ import { enemyGeometry, ROLLER_BODY } from './models';
 /**
  * Render tier. 'tablet' is for phones / tablets: device-pixel ratio 1, no shadows, fewer
  * particles and decorative props (its runs also field fewer, tougher enemies — WorldOptions).
+ * 'low' is for integrated / old GPUs: 0.75 pixel ratio, no shadows / blob shadows / bloom,
+ * no grass or flowers, a shorter draw distance and fewer particles.
  */
 export type Quality = 'low' | 'medium' | 'high' | 'tablet';
 
@@ -62,6 +64,8 @@ export class GameRenderer {
   private showcaseId: string | null = null;
   quality: Quality = 'high';
   private menuT = 0;
+  /** Fog / far-plane scale (Low draws less of the distance). */
+  private drawScale = 1;
 
   constructor(canvas: HTMLCanvasElement, overlay: HTMLCanvasElement, quality: Quality) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', stencil: false });
@@ -122,6 +126,12 @@ export class GameRenderer {
     this.shrines.setShadows(shadows);
     this.enemies.shadowsEnabled = q !== 'low';
     this.particles.density = q === 'low' ? 0.4 : q === 'tablet' ? 0.35 : q === 'medium' ? 0.7 : 1;
+    // Low: everything past ~110 m is fog anyway — stop drawing it (the sky shrinks to fit)
+    this.drawScale = q === 'low' ? 0.72 : 1;
+    this.camera.far = q === 'low' ? 150 : 600;
+    this.camera.updateProjectionMatrix();
+    this.sky.setScale(q === 'low' ? 0.2 : 1);
+    this.setFog(1);
     if (this.terrain) {
       // rebuild static meshes with the right shadow flags
       this.worldKey = '';
@@ -137,9 +147,7 @@ export class GameRenderer {
     this.terrain = t;
     this.map = map;
     this.sky.setMap(map);
-    const fog = this.scene.fog as THREE.Fog;
-    fog.near = map.sky.fog[0];
-    fog.far = map.sky.fog[1];
+    this.setFog(1);
     this.snow.density = map.sky.snow;
     this.projectiles.setTelegraphStyle(map.palette.telegraphs === 'solid');
     if (this.bloom) this.bloom.threshold = map.sky.bloomThreshold;
@@ -154,7 +162,8 @@ export class GameRenderer {
         if (mat) mat.dispose();
       });
     }
-    this.worldGroup = buildWorldMesh(t, map, this.quality === 'high', this.quality === 'tablet' ? 0.45 : 1);
+    // decoration: none on Low, thinned on Tablet
+    this.worldGroup = buildWorldMesh(t, map, this.quality === 'high', this.quality === 'low' ? 0 : this.quality === 'tablet' ? 0.45 : 1);
     this.scene.add(this.worldGroup);
     this.worldKey = key;
   }
@@ -295,9 +304,14 @@ export class GameRenderer {
     else this.wind[0] = this.wind[1] = 0;
     this.snow.density = this.map.sky.snow * (1 + blizzard * 1.5);
     this.snow.update(dt, this.camera.position, this.wind[0], this.wind[1]);
+    this.setFog(1 - blizzard * 0.55, 1 - blizzard * 0.5);
+  }
+
+  /** Map fog × blizzard haze × the tier's draw distance. */
+  private setFog(nearMul: number, farMul = nearMul): void {
     const fog = this.scene.fog as THREE.Fog;
-    fog.near = this.map.sky.fog[0] * (1 - blizzard * 0.55);
-    fog.far = this.map.sky.fog[1] * (1 - blizzard * 0.5);
+    fog.near = this.map.sky.fog[0] * nearMul * this.drawScale;
+    fog.far = this.map.sky.fog[1] * farMul * this.drawScale;
   }
 
   /** Clear all transient visuals (new run / back to menu). */
@@ -331,9 +345,7 @@ export class GameRenderer {
     this.followSun(0, 0);
     this.clock += dt;
     this.sky.tick(this.clock);
-    const fog = this.scene.fog as THREE.Fog;
-    fog.near = this.map.sky.fog[0];
-    fog.far = this.map.sky.fog[1];
+    this.setFog(1);
     this.snow.density = this.map.sky.snow * 0.6;
     this.snow.update(dt, this.camera.position, 0, 0);
     this.draw();

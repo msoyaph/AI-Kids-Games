@@ -27,6 +27,15 @@ asset files, CDN links or web fonts.
   damage by source, cause of death, picks, build, slide/jump time, boss attack hit rates.
   Export from the title / game-over screen. `npm run analyze-playtests -- <folder>` compares
   exports with the simulator and prints suggestions (never edits files).
+- `?bench=1` — performance test (also Settings → Performance → Test…): fixed seed, bot-played
+  invulnerable Thea, 800-enemy horde (Tablet ×0.65), final boss at 20 s, orbiting camera,
+  3 s warm-up. Params `seconds`, `quality`, `map`, `enemies`. Result card (Copy) +
+  `window.__benchResult`; never touches the save. `npm run bench-browser -- [seconds]
+  [profile…]` runs the headless matrix (native tiers, SwiftShader, 4× CPU throttle, tablet,
+  1000-enemy stress on both maps). Logic in src/game/benchmark.ts (budgets per tier).
+- `?quality=low|medium|high|tablet` forces a render tier for the session (not saved). Auto
+  quality = Tablet on touch devices, else `tierForGpu(gpuName)` (software / old Intel → Low,
+  Iris / Radeon iGPU / mobile → Medium, else High).
 - `?tune=1` — live tuning panel (F2 hides). Export → `npm run apply-tuning -- file.json`
   (validates + rewrites the generated block in src/config/tuning.ts);
   `npm run simulate -- 8 0.7 --tuning file.json` tests an export headlessly.
@@ -232,6 +241,8 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
 - [x] 10. Audio: song sets (3 run songs per map, boss / final themes incl. Old Rime, menu,
   collection), new SFX (icicle, gust, shatter, bonk), pentatonic gem chimes, gain table +
   −1 dBFS limiter, offline audio report + test
+- [x] 11. Benchmark (`?bench=1`, Settings → Test…, result card, bench-browser matrix), Low
+  tier (no decor, 0.72× fog + 150 far plane with the sky scaled to fit), GPU-based auto quality
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

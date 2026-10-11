@@ -31,6 +31,11 @@ import { enemyIconUrl } from '../ui/icons';
 import { isTouchDevice, TouchControls } from '../input/touch';
 import type { Quality as RenderQuality } from '../render/Renderer';
 import { applyAccessClasses, reducedMotionOn, watchReducedMotion } from '../ui/access';
+import { BENCH, BenchRecorder, GAME_VERSION, gpuName, tierForGpu, type BenchResult } from './benchmark';
+import { Bot } from '../sim/bot';
+import { spawnBoss } from '../sim/bosses';
+import { enemyIndex } from '../config/enemies';
+import { TABLET_CROWD } from '../config/difficulty';
 
 const MAX_STEPS_PER_FRAME = 5;
 const TUNING_KEY = 'theabonk.tuning';
@@ -98,6 +103,11 @@ export class Game implements GameApi {
   private touchDevice: boolean;
   private store: KeyValueStore;
   private tuneSaveT = 0;
+  /** Quality 'auto' on desktops: a first guess from the graphics card's name. */
+  private autoTier: RenderQuality = 'high';
+  /** The performance test in progress (?bench=1, Settings → Test performance). */
+  private bench: { rec: BenchRecorder; bot: Bot; seconds: number; boss: boolean; map: MapId; prevQuality: RenderQuality | null } | null = null;
+  private benchBadge: HTMLElement;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -110,6 +120,8 @@ export class Game implements GameApi {
     if (checkAchievements(this.save.data).length > 0) this.save.save();
     this.touchDevice = isTouchDevice();
     this.renderer = new GameRenderer(canvas, overlay, this.effectiveQuality());
+    this.autoTier = tierForGpu(gpuName(this.renderer.renderer.getContext()));
+    if (this.renderer.quality !== this.effectiveQuality()) this.renderer.setQuality(this.effectiveQuality());
     this.input = new InputManager(canvas);
     this.ui = new UI(uiRoot);
     // touch: on-screen controls, touch-sized menus, landscape only
@@ -125,7 +137,8 @@ export class Game implements GameApi {
     }
     this.menus = new Menus(this);
     this.fpsEl = h('div', { class: 'fps hidden' });
-    uiRoot.append(this.fpsEl);
+    this.benchBadge = h('div', { class: 'bench-badge hidden' }, 'PERFORMANCE TEST — Esc stops');
+    uiRoot.append(this.fpsEl, this.benchBadge);
     this.showMenuMap(this.save.data.lastMap);
     this.input.onAction = (a) => this.onAction(a);
     this.input.uiKey = (e) => this.ui.handleKey(e);
@@ -231,16 +244,29 @@ export class Game implements GameApi {
     if (on) this.input.releaseLock();
   }
 
-  /** The render tier to use: 'auto' is Tablet on touch devices, High elsewhere. */
+  /**
+   * The render tier to use: ?quality= (testing / CI) wins, then the setting; 'auto' is Tablet
+   * on touch devices and a guess from the graphics card elsewhere (old / software GPUs → Low).
+   */
   private effectiveQuality(): RenderQuality {
+    const forced = urlParam('quality');
+    if (forced === 'low' || forced === 'medium' || forced === 'high' || forced === 'tablet') return forced;
     const q = this.save.data.settings.quality;
-    return q === 'auto' ? (this.touchDevice ? 'tablet' : 'high') : q;
+    return q === 'auto' ? this.autoQuality() : q;
+  }
+
+  /** What 'auto' picks on this device. */
+  autoQuality(): RenderQuality {
+    return this.touchDevice ? 'tablet' : this.autoTier;
   }
 
   start(): void {
     this.last = performance.now();
     this.menus.title();
     this.onMode?.('menu', null);
+    if (urlParam('bench') === '1') {
+      this.startBenchmark({ seconds: Number(urlParam('seconds')) || undefined, map: urlParam('map'), enemies: Number(urlParam('enemies')) || undefined });
+    }
     requestAnimationFrame(this.frame);
   }
 
@@ -346,7 +372,11 @@ export class Game implements GameApi {
       tuning: overrides,
       tuned: !!this.tuningPanel?.isTuned,
     });
-    const w = this.world;
+    this.enterRun(this.world);
+  }
+
+  /** Common run start: scene, camera, HUD, input. */
+  private enterRun(w: World, gameplay = true): void {
     this.renderer.showcaseEnemy(null);
     this.renderer.setTerrain(w.terrain, w.map);
     this.renderer.setCharacter(w.player.character);
@@ -363,8 +393,81 @@ export class Game implements GameApi {
     this.ui.close();
     this.ui.hud.show(true);
     this.ui.hud.showBanner(bannerText(w.map, BANNER.start));
-    this.setGameplayInput(true);
+    this.setGameplayInput(gameplay);
     this.onMode?.('run', w);
+  }
+
+  // ───────────────────────────── benchmark ─────────────────────────────
+
+  /** Whether a run (or the performance test) is on screen. */
+  inRun(): boolean {
+    return !!this.world;
+  }
+
+  /**
+   * Performance test: a fixed-seed run (Thea, invulnerable, played by the bot) with an
+   * 800-strong horde and the map's final boss at 20 s, while the camera slowly circles.
+   * Frames are measured after a short warm-up; the result card / window.__benchResult
+   * follow. Nothing is saved. `quality` overrides the tier for this test only.
+   */
+  startBenchmark(opts: { seconds?: number; quality?: string | null; map?: string | null; enemies?: number } = {}): void {
+    if (this.world) this.clearRun();
+    const q = opts.quality;
+    const quality: RenderQuality = q === 'low' || q === 'medium' || q === 'high' || q === 'tablet' ? q : this.renderer.quality;
+    const prevQuality = quality !== this.renderer.quality ? this.renderer.quality : null;
+    if (prevQuality) this.renderer.setQuality(quality);
+    const map: MapId = opts.map && isMapId(opts.map) ? opts.map : 'meadow';
+    const horde = opts.enemies && opts.enemies > 0 ? Math.min(3000, Math.floor(opts.enemies)) : BENCH.enemies;
+    const seconds = Math.min(600, Math.max(BENCH.warmup + 2, opts.seconds && opts.seconds > 0 ? opts.seconds : BENCH.seconds));
+    this.dailyDate = null;
+    this.world = newRun({
+      seed: BENCH.seed,
+      characterId: 'thea',
+      map,
+      // the tablet tier fields fewer Gloom, as in its real runs
+      stress: quality === 'tablet' ? Math.round(horde * TABLET_CROWD) : horde,
+      god: true,
+      tablet: quality === 'tablet',
+    });
+    this.bench = { rec: new BenchRecorder(), bot: new Bot(BENCH.seed, 0.9), seconds, boss: false, map, prevQuality };
+    this.enterRun(this.world, false);
+    this.benchBadge.classList.remove('hidden');
+  }
+
+  /** Benchmark autopilot between sim steps: level-ups, chests and the boss resolve themselves. */
+  private benchAutoplay(w: World, b: NonNullable<Game['bench']>): void {
+    for (let guard = 0; w.state === 'levelup' && guard < 20; guard++) resolveLevelUp(w, b.bot.chooseUpgrade(w));
+    if (w.state === 'chest') closeChest(w);
+    if (!b.boss && w.time >= BENCH.bossAt) {
+      b.boss = true;
+      spawnBoss(w, enemyIndex(w.map.finalBoss));
+    }
+  }
+
+  /** Record one frame (after the warm-up); finish when the test time is up. */
+  private benchFrame(w: World, b: NonNullable<Game['bench']>, frameMs: number, cpuMs: number, simMs: number): void {
+    const info = this.renderer.renderer.info.render;
+    // a hidden tab stalls rAF: that gap isn't a frame the game rendered slowly
+    if (w.time >= BENCH.warmup && frameMs < 1000) b.rec.frame(frameMs, cpuMs, simMs, info.calls, info.triangles, w.enemies.count);
+    if (w.time >= b.seconds) this.endBenchmark(true);
+  }
+
+  /** Stop the test (finished: show the result card; cancelled: back to the title). */
+  private endBenchmark(finished: boolean): void {
+    const b = this.bench;
+    if (!b) return;
+    this.bench = null;
+    this.benchBadge.classList.add('hidden');
+    const r = this.renderer.renderer;
+    const result = finished
+      ? b.rec.result({ version: GAME_VERSION, map: b.map, quality: this.renderer.quality, width: r.domElement.width, height: r.domElement.height, dpr: r.getPixelRatio(), gpu: gpuName(r.getContext()), seconds: b.seconds })
+      : null;
+    this.clearRun();
+    if (b.prevQuality) this.renderer.setQuality(b.prevQuality);
+    if (result) {
+      (window as unknown as { __benchResult?: BenchResult }).__benchResult = result;
+      this.menus.benchResult(result);
+    } else this.menus.title();
   }
 
   /** Today's daily run (UTC date → seed, map, hero; Normal, no shop bonuses). */
@@ -421,7 +524,7 @@ export class Game implements GameApi {
 
   pause(): void {
     const w = this.world;
-    if (!w || this.paused || w.state !== 'playing') return;
+    if (!w || this.paused || w.state !== 'playing' || this.bench) return;
     this.paused = true;
     this.setGameplayInput(false);
     this.menus.pause(w);
@@ -429,10 +532,15 @@ export class Game implements GameApi {
   }
 
   private autoPause(): void {
+    if (this.bench) return;
     if (this.world && this.world.state === 'playing' && !this.paused && !this.ui.hasScreen) this.pause();
   }
 
   private onAction(a: UiAction): void {
+    if (this.bench && (a === 'pause' || a === 'back')) {
+      this.endBenchmark(false);
+      return;
+    }
     if (a === 'debug') {
       this.showDebug = !this.showDebug;
       this.ui.debug.classList.toggle('hidden', !this.showDebug);
@@ -526,7 +634,7 @@ export class Game implements GameApi {
 
   /** Achievements can pop mid-run (e.g. kill counts); rewards apply immediately. */
   private liveAchievements(w: World): void {
-    if (w.options.tuned) return;
+    if (w.options.tuned || this.bench) return;
     const earned = checkAchievements(this.save.data, summarize(w, this.dailyDate));
     if (earned.length === 0) return;
     this.sound('achievement');
@@ -596,6 +704,7 @@ export class Game implements GameApi {
   private frame = (now: number, schedule = true): void => {
     if (schedule) requestAnimationFrame(this.frame);
     const t0 = performance.now();
+    const rawMs = now - this.last;
     let dt = (now - this.last) / 1000;
     this.last = now;
     if (!(dt > 0)) dt = 0;
@@ -611,30 +720,40 @@ export class Game implements GameApi {
       }
       // the evolution camera swing holds the action
       const running = !this.paused && w.state === 'playing' && !this.renderer.rig.orbiting;
+      const b = this.bench;
       if (running) {
-        this.input.consumeLook(dt, this.look);
-        this.renderer.rig.look(this.look.x, this.look.y);
-        if (this.input.wheel !== 0) {
-          const rig = this.renderer.rig;
-          rig.zoom = Math.max(6 - rig.tuning.distance, Math.min(20 - rig.tuning.distance, rig.zoom + this.input.wheel * 0.8));
-          this.input.wheel = 0;
+        if (b) {
+          // benchmark: the camera slowly circles the action
+          this.renderer.rig.yaw += dt * BENCH.orbit;
+        } else {
+          this.input.consumeLook(dt, this.look);
+          this.renderer.rig.look(this.look.x, this.look.y);
+          if (this.input.wheel !== 0) {
+            const rig = this.renderer.rig;
+            rig.zoom = Math.max(6 - rig.tuning.distance, Math.min(20 - rig.tuning.distance, rig.zoom + this.input.wheel * 0.8));
+            this.input.wheel = 0;
+          }
+          if (this.input.usingGamepad) this.padFrames++;
+          else this.kbFrames++;
         }
-        if (this.input.usingGamepad) this.padFrames++;
-        else this.kbFrames++;
         this.acc += dt;
         let steps = 0;
         const s0 = performance.now();
         while (this.acc >= DT && steps < MAX_STEPS_PER_FRAME && w.state === 'playing') {
-          this.buildSimInput();
-          const fresh = this.input.consumeJump();
-          // auto-hop: holding jump on the ground hops again (these hops get no bunny-hop boost)
-          const auto = !fresh && this.input.autoHop && w.player.onGround && this.input.jumpHeld();
-          this.simInput.jump = fresh || auto;
-          this.simInput.autoHop = auto;
+          if (b) b.bot.decide(w, this.simInput);
+          else {
+            this.buildSimInput();
+            const fresh = this.input.consumeJump();
+            // auto-hop: holding jump on the ground hops again (these hops get no bunny-hop boost)
+            const auto = !fresh && this.input.autoHop && w.player.onGround && this.input.jumpHeld();
+            this.simInput.jump = fresh || auto;
+            this.simInput.autoHop = auto;
+          }
           const wasSliding = w.player.sliding;
           step(w, this.simInput);
+          if (b) this.benchAutoplay(w, b);
           // a toggled slide switches itself off when the slide ends
-          if (wasSliding && !w.player.sliding && w.player.onGround) this.input.slideEnded();
+          else if (wasSliding && !w.player.sliding && w.player.onGround) this.input.slideEnded();
           this.acc -= DT;
           steps++;
         }
@@ -657,6 +776,7 @@ export class Game implements GameApi {
       }
       this.onWorldState(w);
       this.simMs = this.simMs * 0.9 + simT * 0.1;
+      if (b) this.benchFrame(w, b, rawMs, performance.now() - t0, simT);
     } else {
       this.renderer.renderMenu(dt);
     }

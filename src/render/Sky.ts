@@ -177,6 +177,13 @@ export class Sky {
     this.apply(m, m, 0);
   }
 
+  /** Shrink the dome, stars and aurora to fit a shorter camera far plane (Low tier). */
+  setScale(s: number): void {
+    this.mesh.scale.setScalar(s);
+    this.stars.scale.setScalar(s);
+    this.aurora.scale.setScalar(s);
+  }
+
   follow(x: number, z: number): void {
     this.mesh.position.set(x, 0, z);
     this.stars.position.set(x, 0, z);

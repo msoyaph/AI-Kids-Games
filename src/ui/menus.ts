@@ -20,6 +20,8 @@ import type { World } from '../sim/world';
 import { h, img, setText } from './dom';
 import { enemyIconUrl, iconUrl, portraitUrl } from './icons';
 import type { UI } from './UI';
+import { copyText } from './exporter';
+import type { BenchResult } from '../game/benchmark';
 
 export interface GameApi {
   ui: UI;
@@ -49,7 +51,15 @@ export interface GameApi {
   exportPlaytests(): void;
   clearPlaytests(): void;
   sound(name: 'click' | 'buy' | 'error' | 'back' | 'open' | 'achievement'): void;
+  /** Settings → Test performance (from the menus only). */
+  startBenchmark(): void;
+  /** What Graphics quality 'auto' picks on this device. */
+  autoQuality(): 'low' | 'medium' | 'high' | 'tablet';
+  /** A run is on screen (settings opened from the pause menu). */
+  inRun(): boolean;
 }
+
+const QUALITY_NAMES = { auto: 'Auto', low: 'Low', medium: 'Medium', high: 'High', tablet: 'Tablet' } as const;
 
 /** Icon used for each shop upgrade (reuses passive glyphs). */
 const SHOP_ICON: Record<string, [string, 'passive' | 'misc']> = {
@@ -662,7 +672,10 @@ export class Menus {
         slider('Look sensitivity', 'sensitivity', 0.2, 3, 0.1, (v) => `${v.toFixed(1)}×`),
         toggle('Invert look Y', 'invertY'),
         cycle('Camera control', 'mouseMode', ['auto', 'lock', 'drag'], { auto: 'Auto', lock: 'Mouse lock', drag: 'Hold to drag' }),
-        cycle('Graphics quality', 'quality', ['auto', 'low', 'medium', 'high', 'tablet'], { auto: 'Auto', low: 'Low', medium: 'Medium', high: 'High', tablet: 'Tablet' }),
+        cycle('Graphics quality', 'quality', ['auto', 'low', 'medium', 'high', 'tablet'], { ...QUALITY_NAMES, auto: `Auto (${QUALITY_NAMES[this.g.autoQuality()]})` }),
+        this.g.inRun()
+          ? null
+          : h('div', { class: 'setting' }, h('span', null, 'Performance'), h('button', { class: 'btn small', onclick: () => { this.g.sound('click'); this.g.startBenchmark(); } }, 'Test…')),
         toggle('Show FPS', 'showFps'),
         toggle('Screen shake', 'screenShake'),
         toggle('Damage numbers', 'damageNumbers'),
@@ -936,6 +949,51 @@ export class Menus {
       this.playtestRow(() => undefined),
     );
     this.g.ui.show('gameover', el, () => leave(() => this.title()), {}, true);
+  }
+
+  /** Performance test results: ready to screenshot or copy. */
+  benchResult(r: BenchResult): void {
+    const json = JSON.stringify(r, null, 2);
+    const area = h('textarea', { class: 'copy-text bench-json', readonly: true, spellcheck: 'false' }) as HTMLTextAreaElement;
+    area.value = json;
+    const status = h('span', { class: 'copy-status' });
+    const smooth = r.avgFps >= 55 && r.low1Fps >= 30;
+    const verdict = smooth ? 'Runs smoothly.' : r.avgFps >= 40 ? 'Playable, with some slow moments.' : 'Struggling on this computer.';
+    const tip =
+      r.quality !== 'low' && r.avgFps < 50 ? ' Try Graphics quality: Low.' : r.quality === 'low' && r.avgFps >= 58 && r.low1Fps >= 45 ? ' Medium may look nicer and still run well.' : '';
+    const k = (n: number): string => (n >= 10_000 ? `${Math.round(n / 1000)}k` : n.toLocaleString());
+    const rows: Array<[string, string]> = [
+      ['Frame time', `${r.avgFrameMs.toFixed(1)} ms avg · ${r.p99FrameMs.toFixed(1)} ms worst 1% · CPU ${r.cpuFrameMs.toFixed(1)} ms`],
+      ['Draw calls', `${r.drawCalls.avg} avg · ${r.drawCalls.max} max (budget ${r.budget.calls})`],
+      ['Triangles', `${k(r.triangles.avg)} avg · ${k(r.triangles.max)} max (budget ${k(r.budget.tris)})`],
+      ['Graphics quality', QUALITY_NAMES[r.quality]],
+      ['Resolution', `${r.resolution} (pixel ratio ${r.dpr})`],
+      ['Graphics card', r.gpu],
+      ['Test', `${mapDef(r.map).name} · ${r.enemiesMax} enemies at peak · ${r.seconds} s · v${r.version}`],
+    ];
+    const el = h(
+      'div',
+      { class: 'modal panel bench' },
+      h('div', { class: 'title small' }, 'Performance test'),
+      h(
+        'div',
+        { class: 'bench-fps' },
+        h('div', null, h('b', null, String(r.avgFps)), h('span', null, 'FPS average')),
+        h('div', null, h('b', null, String(r.low1Fps)), h('span', null, 'FPS 1% low')),
+      ),
+      h('div', { class: `subtitle${smooth ? '' : ' warn'}` }, verdict + tip, r.budget.ok ? '' : ' (Over the render budget for this quality.)'),
+      h('div', { class: 'go-stats bench-stats' }, ...rows.map(([a, b]) => h('div', { class: 'stat-row' }, h('span', null, a), h('b', null, b)))),
+      area,
+      h(
+        'div',
+        { class: 'row' },
+        h('button', { class: 'btn primary', onclick: () => copyText(area, status), 'data-autofocus': true }, 'Copy results'),
+        h('button', { class: 'btn', onclick: () => { this.g.sound('click'); this.g.startBenchmark(); } }, 'Run again'),
+        h('button', { class: 'btn ghost', onclick: () => { this.g.sound('back'); this.title(); } }, 'Done'),
+        status,
+      ),
+    );
+    this.g.ui.show('bench', el, () => this.title());
   }
 }
 

@@ -1942,6 +1942,66 @@ html.reduced-motion .boss-intro.pop {
   font-size: 1rem;
 }
 
+/* performance test result card */
+
+.bench {
+  width: min(46rem, 94vw);
+  max-height: 96vh;
+  overflow-y: auto;
+}
+
+.bench-fps {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+}
+
+.bench-fps > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bench-fps b {
+  font-size: 3.2rem;
+  line-height: 1;
+  color: var(--gold);
+}
+
+.bench-fps span {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.bench-stats {
+  width: 100%;
+}
+
+.bench-stats .stat-row {
+  font-size: 0.95rem;
+}
+
+.bench-stats .stat-row b {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.bench-json {
+  width: 100%;
+  height: 6rem;
+}
+
+.bench-badge {
+  color: #a8ecff;
+}
+
+.bench-badge.hidden {
+  display: none;
+}
+
 /* game over */
 
 .gameover {
@@ -2150,7 +2210,8 @@ html.reduced-motion .boss-intro.pop {
   color: #a8ecff;
 }
 
-.playtest-badge {
+.playtest-badge,
+.bench-badge {
   position: absolute;
   left: 50%;
   top: 0.15rem;

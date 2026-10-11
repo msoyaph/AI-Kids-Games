@@ -29,20 +29,7 @@ export function showCopyBox(host: HTMLElement, title: string, text: string): voi
   area.value = text;
   const status = h('span', { class: 'copy-status' });
   const close = (): void => box.remove();
-  const copy = (): void => {
-    area.focus();
-    area.select();
-    const done = (ok: boolean): void => {
-      status.textContent = ok ? 'Copied!' : 'Press Ctrl/Cmd+C to copy';
-    };
-    try {
-      const p = navigator.clipboard?.writeText(text);
-      if (p) p.then(() => done(true)).catch(() => done(false));
-      else done(false);
-    } catch {
-      done(false);
-    }
-  };
+  const copy = (): void => copyText(area, status);
   const box = h(
     'div',
     { class: 'copy-box' },
@@ -52,6 +39,22 @@ export function showCopyBox(host: HTMLElement, title: string, text: string): voi
   );
   host.append(box);
   area.select();
+}
+
+/** Copy a text box to the clipboard (selected either way, so Ctrl/Cmd+C works as a fallback). */
+export function copyText(area: HTMLTextAreaElement, status: HTMLElement): void {
+  area.focus();
+  area.select();
+  const done = (ok: boolean): void => {
+    status.textContent = ok ? 'Copied!' : 'Press Ctrl/Cmd+C to copy';
+  };
+  try {
+    const p = navigator.clipboard?.writeText(area.value);
+    if (p) p.then(() => done(true)).catch(() => done(false));
+    else done(false);
+  } catch {
+    done(false);
+  }
 }
 
 /** Ask the player to paste JSON (import). Resolves null on cancel. */
