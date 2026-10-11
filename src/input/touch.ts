@@ -1,14 +1,5 @@
 import { h } from '../ui/dom';
 
-/** A coarse (finger) pointer is the main input: phones and tablets. */
-export function isTouchDevice(): boolean {
-  try {
-    return matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints ?? 0) > 1;
-  } catch {
-    return false;
-  }
-}
-
 /** Keep receiving a finger's moves after it leaves the zone (never throws). */
 function capture(el: HTMLElement, id: number): void {
   try {

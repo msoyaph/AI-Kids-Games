@@ -28,7 +28,8 @@ import { Menus, rewardText, type GameApi } from '../ui/menus';
 import { UI } from '../ui/UI';
 import { ENEMIES } from '../config/enemies';
 import { enemyIconUrl } from '../ui/icons';
-import { isTouchDevice, TouchControls } from '../input/touch';
+import { TouchControls } from '../input/touch';
+import { touchFirstDevice } from '../input/mode';
 import type { Quality as RenderQuality } from '../render/Renderer';
 import { applyAccessClasses, reducedMotionOn, watchReducedMotion } from '../ui/access';
 import { BENCH, BenchRecorder, GAME_VERSION, gpuName, tierForGpu, type BenchResult } from './benchmark';
@@ -118,7 +119,9 @@ export class Game implements GameApi {
     this.save = new SaveManager(this.store);
     // unlocks added since the save was written (e.g. heroes earned by past progress) apply now
     if (checkAchievements(this.save.data).length > 0) this.save.save();
-    this.touchDevice = isTouchDevice();
+    // phones / tablets (a finger is the primary pointer) start in touch mode on the Tablet
+    // tier; touchscreen laptops keep their desktop tier and switch to touch when touched
+    this.touchDevice = touchFirstDevice();
     this.renderer = new GameRenderer(canvas, overlay, this.effectiveQuality());
     this.autoTier = tierForGpu(gpuName(this.renderer.renderer.getContext()));
     if (this.renderer.quality !== this.effectiveQuality()) this.renderer.setQuality(this.effectiveQuality());
@@ -128,7 +131,7 @@ export class Game implements GameApi {
     this.touch = new TouchControls(uiRoot);
     this.input.touch = this.touch;
     this.touch.onPause = () => this.onAction('pause');
-    this.touch.onTouch = () => this.setTouchMode(true);
+    this.input.onModeChange = (on) => this.setTouchMode(on);
     uiRoot.append(h('div', { class: 'rotate-hint' }, h('div', { class: 'rotate-phone' }), h('div', null, 'Turn your device sideways to play')));
     this.setTouchMode(this.touchDevice);
     if (this.touchDevice && this.save.data.stats.runsPlayed === 0 && this.save.data.lastDifficulty === 'normal') {
@@ -158,7 +161,8 @@ export class Game implements GameApi {
         this.input.releaseLock();
         return;
       }
-      if (!this.input.pointerLocked && this.world && this.world.state === 'playing' && !this.paused) {
+      // (touch taking over releases the lock on purpose: that's not a reason to pause)
+      if (!this.input.pointerLocked && !this.input.touchMode && this.world && this.world.state === 'playing' && !this.paused) {
         this.lockLostAt = performance.now();
         this.pause();
       }
@@ -235,13 +239,19 @@ export class Game implements GameApi {
     if (this.input.touchMode && h > w && this.world?.state === 'playing' && !this.paused) this.pause();
   }
 
-  /** Touch input in use: on-screen controls during runs, touch-sized menus. */
+  /**
+   * Touch input in use: on-screen controls during runs, touch-sized menus, no speedometer.
+   * Hybrid devices flip back and forth mid-run; each side's held state is dropped on the
+   * switch (no stuck stick, key or slide). Back on the mouse, the next click re-locks.
+   */
   private setTouchMode(on: boolean): void {
-    if (this.input.touchMode === on) return;
     this.input.touchMode = on;
     document.documentElement.classList.toggle('touch', on);
     this.touch.setVisible(on && this.input.gameplay);
-    if (on) this.input.releaseLock();
+    if (on) {
+      this.input.releaseLock();
+      this.input.clearKeys();
+    }
   }
 
   /**

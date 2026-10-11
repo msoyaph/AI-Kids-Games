@@ -39,6 +39,10 @@ asset files, CDN links or web fonts.
 - `?tune=1` — live tuning panel (F2 hides). Export → `npm run apply-tuning -- file.json`
   (validates + rewrites the generated block in src/config/tuning.ts);
   `npm run simulate -- 8 0.7 --tuning file.json` tests an export headlessly.
+- Real multi-touch in e2e: tests/e2e/touchHelpers.ts `Fingers` (CDP Input.dispatchTouchEvent,
+  Chromium only) and `emulateTouchLaptop` (stubs matchMedia: Chromium's touch emulation
+  always reports a coarse primary pointer). tests/e2e/hybrid.spec.ts runs on desktop
+  Chromium with `hasTouch`.
 - E2E needs `npx playwright install chromium firefox webkit` once. Projects: chromium,
   firefox (desktop specs) and webkit-tablet, webkit-phone, chromium-tablet (tests/e2e/
   touch.spec.ts only — synthetic touch Pointer Events drive the on-screen controls). On
@@ -134,9 +138,15 @@ Key rules:
   Check Xbox ids before PlayStation ("Xbox Wireless Controller" vs DS4 "Wireless Controller").
 - Pointer lock asks for raw input (unadjustedMovement) and falls back to a plain lock; if
   lock never works in a session (pointerlockerror before any success) look switches to drag.
-- Touch: `html.touch` (coarse pointer or first touch) shows the on-screen controls during
-  runs, enlarges tap targets, and hides the speedometer; portrait shows the rotate hint and
-  pauses. Quality 'auto' = Tablet on touch devices, High elsewhere. The tablet tier renders
+- Touch: `html.touch` shows the on-screen controls during runs, enlarges tap targets, and
+  hides the speedometer; portrait shows the rotate hint and pauses. Touch-first devices
+  (`touchFirstDevice()` = primary pointer coarse: phones / tablets) start in touch mode with
+  Quality 'auto' = Tablet and Relaxed preselected. Everything else (incl. touchscreen
+  laptops) starts in desktop mode on its GPU tier. `input.mode` (InputModeTracker,
+  input/mode.ts) flips modes mid-run: a touch/pen pointerdown → touch; a real key, mouse
+  click or >6 px of mouse travel, or gamepad input → desktop. Mouse events within 800 ms of
+  a touch are the browser's emulation and never count. Game.setTouchMode drops the other
+  side's held state; releasing pointer lock for touch never auto-pauses. The tablet tier renders
   lighter (DPR 1, no shadows, thinned decoration) and its runs field ~65% of the Gloom with
   HP / XP / coins ×1/0.65 (`mods.crowd / crowdHp / enemyXp / coinValue`; bosses untouched).
 - The last BOSS_RESERVE enemy-pool slots are bosses-only (a packed field never blocks one).
@@ -248,6 +258,16 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
   failure screenshots / traces uploaded), gpu.yml (self-hosted Mac, manual or pushes to
   main / theabonk-upgrade only, never pull requests), docs/CI.md (repo + runner setup,
   security). Nothing is pushed: the user creates the private repo.
+
+## Glass touch controller (on `theabonk-upgrade`, before upgrade phases 13–14)
+Plan: design → default on phones/tablets + hybrid switching → joystick → camera/buttons/
+haptics → touch-friendly screens → customisation + layout editor → performance (glass rule,
+quality governor) → accessibility → tests → handoff. `npx tsx scripts/glass-mockups.ts`
+(after a build) renders design contact sheets into test-results/glass-mockups.
+- [x] 1. Design: src/ui/glass.css (fake glass layers + optional real-blur ::before that
+  cross-fades; opacity per layer — an ancestor with opacity < 1 would become a backdrop root
+  and the blur would stop seeing the canvas), glassGlyphs.ts, glassLayout.ts
+- [x] 2. Touch-first detection, InputModeTracker hybrid switching, no pause on lock release
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

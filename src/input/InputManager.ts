@@ -2,6 +2,7 @@ import { inIframe, isTypingTarget } from '../core/env';
 import { defaultBindings, FIXED_KEYS, lookup, type Bindings, type GameAction, type PadFamily } from './actions';
 import { chooseActivePad, normalizePad, PadCalibration, padActive, rumblePad, type StdPad } from './gamepad';
 import type { TouchControls } from './touch';
+import { InputModeTracker } from './mode';
 
 export type UiAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'debug';
 
@@ -63,8 +64,19 @@ export class InputManager {
   rumbleEnabled = true;
   /** On-screen touch controls (phones / tablets), merged with everything else. */
   touch: TouchControls | null = null;
-  /** Touch is the active input: no pointer lock. */
-  touchMode = false;
+  /** Touch ↔ keyboard / mouse / gamepad: whichever the player used last. */
+  readonly mode = new InputModeTracker();
+  /** The player switched between touch and keyboard / mouse / gamepad. */
+  onModeChange: ((touch: boolean) => void) | null = null;
+  /** Touch is the active input: on-screen controls, no pointer lock. */
+  get touchMode(): boolean {
+    return this.mode.touch;
+  }
+  set touchMode(on: boolean) {
+    this.mode.touch = on;
+  }
+  private mouseX = NaN;
+  private mouseY = NaN;
   private touchLook = { x: 0, y: 0 };
   usingGamepad = false;
   wheel = 0;
@@ -78,6 +90,31 @@ export class InputManager {
       this.keys.clear();
       this.slideLatched = false;
     });
+    this.mode.onChange = (touch) => this.onModeChange?.(touch);
+    // which hands are on the device (capture phase: before any control handles the event)
+    window.addEventListener(
+      'pointerdown',
+      (e) => {
+        if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+          this.mouseX = NaN;
+          this.mode.touched(performance.now());
+        } else if (e.pointerType === 'mouse') this.mode.mousePressed(performance.now());
+      },
+      true,
+    );
+    window.addEventListener(
+      'pointermove',
+      (e) => {
+        if (e.pointerType !== 'mouse' || !this.mode.touch) {
+          this.mouseX = NaN;
+          return;
+        }
+        if (Number.isFinite(this.mouseX)) this.mode.mouseMoved(e.clientX - this.mouseX, e.clientY - this.mouseY, performance.now());
+        this.mouseX = e.clientX;
+        this.mouseY = e.clientY;
+      },
+      { passive: true },
+    );
     canvas.addEventListener('mousedown', this.onMouseDown);
     window.addEventListener('mouseup', this.onMouseUp);
     window.addEventListener('mousemove', this.onMouseMove);
@@ -199,6 +236,7 @@ export class InputManager {
 
   private onKeyDown = (e: KeyboardEvent): void => {
     this.usingGamepad = false;
+    this.mode.keyPressed(e.code);
     if (this.capture) {
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -253,6 +291,8 @@ export class InputManager {
   };
 
   private onMouseDown = (e: MouseEvent): void => {
+    // the mouse events a browser emulates after a tap are not the player using a mouse
+    if (this.mode.emulatedMouse(performance.now())) return;
     this.usingGamepad = false;
     if (!this.gameplay) return;
     if (this.mouseMode === 'lock') this.requestLock();
@@ -329,7 +369,10 @@ export class InputManager {
     if (this.padHeld.has('moveDown')) this.padMove.y = -1;
     if (this.padHeld.has('moveLeft')) this.padMove.x = -1;
     if (this.padHeld.has('moveRight')) this.padMove.x = 1;
-    if (padActive(pad)) this.usingGamepad = true;
+    if (padActive(pad)) {
+      this.usingGamepad = true;
+      this.mode.padUsed();
+    }
 
     const padPressed = (a: GameAction): boolean => this.bindings[a].pad.some((i) => pressed(i));
     if (padPressed('pause')) this.onAction?.('pause');
@@ -427,6 +470,13 @@ export class InputManager {
     }
     out.x = x;
     out.y = this.invertY ? -y : y;
+  }
+
+  /** Forget held keys / latched slide (touch took over). */
+  clearKeys(): void {
+    this.keys.clear();
+    this.jumpQueued = false;
+    this.slideLatched = false;
   }
 
   clearTransient(): void {
