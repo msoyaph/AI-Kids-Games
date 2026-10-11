@@ -1,23 +1,10 @@
 # Ai Kids Games
 
-A static, kid-friendly catalog for TheaBonk and the Light Crossing island preview.
-Published privately with Sites at https://ai-kids-games.real-tours-1786.chatgpt.site/.
-
-## What is included
-
-- Original mascot/wordmark and local SVG game illustrations.
-- Responsive home with rotating featured games, category rows, new games,
-  device-local favorites, and recently played.
-- Search, category pages, game details, and sandboxed fullscreen play views.
-- Phone navigation, computer-only game notice, light/dark mode, visible focus
-  rings, reduced motion support, parent information, About, and a friendly 404.
-- Typed registry and build-time validation. Interactive game scaffolder.
-- Route code splitting, lazy thumbnails, page titles/descriptions, Open Graph
-  metadata, favicon, and a web app manifest.
+A responsive catalog of five original first-party browser games: TheaBonk,
+Light Crossing, Vanex Defense, Space Sky and Calex Cart. This launch work targets
+Vercel preview; production needs approval. The older Sites deployment is unchanged.
 
 ## Run locally
-
-Requires a modern Node.js release supported by the locked dependencies.
 
 ```sh
 npm ci
@@ -28,105 +15,41 @@ npm test
 npm run test:e2e
 ```
 
-Dev: http://127.0.0.1:5190. Preview: http://127.0.0.1:4190.
-Playwright uses Google Chrome on macOS when installed. Else install its browser
-once with `npx playwright install chromium`. Tests use the production build;
-run `npm run build` first.
+Development: http://127.0.0.1:5190. Production-build preview: http://127.0.0.1:4190.
+Playwright uses installed Chrome on macOS, or its managed Chromium elsewhere.
+Run build before browser tests. Tests cover desktop, tablet and phone sizes;
+real hardware still needs the launch checklist.
 
-## Structure
+## Catalog and games
 
-```text
-src/
-  components/    Header, footer, cards, rows, icons, outbound-link dialog
-  data/games.ts  All typed game metadata
-  lib/           Registry checks, search, safe device-local lists, page metadata
-  pages/         Lazy-loaded routes
-  styles.css     Design tokens and responsive layout
-public/
-  games/<slug>/index.html    Self-contained real game builds
-  art/                      Original SVG thumbnails/banners
-scripts/                    Registry validation, add-game, game import helper
-tests/                      Vitest units and Playwright desktop/phone smoke tests
-game-sources/               Adapted source copies of the supplied games
-.openai/hosting.json        Sites identity and static dist configuration
-```
+Registry: src/data/games.ts. Build validation enforces metadata and local assets.
+Home features all games; Browse supports search, categories and minimum-age
+filtering. Details list controls, supported devices and age/content guidance.
+TheaBonk is computer-only. Calex Cart touch is solo; split-screen needs keyboard
+or gamepads. Favorites and recent lists persist locally under aikg: keys, with
+migration from previous site keys. Theme stays session-only.
 
-## Add a game
+Final game HTML is copied byte-for-byte to public/games/<slug>/index.html.
+BUILD_IMPORTS.json records verified hashes. Rebuild in the original source
+project and import with scripts/import-game-build.ts. There are no adapted
+source copies in this repository. See ADDING_A_GAME.md before adding a build.
 
-Put its build under `public/games/<slug>/index.html`, add an entry to
-`src/data/games.ts`, and add local artwork. Or run `npm run add-game` to scaffold
-all three interactively. See `ADDING_A_GAME.md` for metadata and game review.
+Game saves/settings remain in this browser under distinct namespaces. No ads,
+accounts, chat, analytics, uploads, cookies or remote fonts/scripts are included.
+The first-party iframe allows scripts, same-origin storage, pointer lock,
+fullscreen and gamepad. It does not isolate trusted games from the site;
+third-party games need a separate domain. See STORAGE_AUDIT.md.
 
-## Privacy and hosting
+Illustrations are original local SVG artwork, not gameplay screenshots. Three
+provided art pairs and two new SVG art pairs cover all five games.
 
-The catalog has no backend, accounts, chat, uploads, ads, analytics, cookies,
-tracking, or third-party network scripts. All libraries are compiled into local
-files. Browser requests load the site and game assets from the same origin.
-The only persistent app data is favorites/recent lists in localStorage, guarded
-against blocked or malformed storage. Theme and game progress are visit-only.
-Games have an inline security policy blocking network requests and use the
-requested sandbox permissions. Publish only reviewed, trusted game builds.
+## Deployment
 
-Sites publication is owner-private by default. The hosting service may require
-the owner's ChatGPT sign-in and has its own service policies. This is separate
-from the catalog's account-free design. No public sharing was enabled.
+Vercel: build `npm run build`, output `dist`, Vite preset. vercel.json serves
+existing files before the SPA fallback, revalidates unversioned game HTML and
+caches hashed site assets. Static route shells and sitemap use SITE_ORIGIN
+when supplied, otherwise the Vercel preview hostname. No secrets are required.
+Keep hosting analytics and injected toolbar/telemetry disabled on the game site.
 
-## Launch-game limitations
-
-Light Crossing's supplied project is an early island exploration preview. The
-site labels it accordingly; fishing, bug catching, crafting, villagers, and story
-are not connected in that build. On-screen directional controls were added to
-the hosted copy so its existing movement input works on phones/tablets.
-
-TheaBonk is a playable 3D action roguelite. Its hosted copy uses memory saves and
-disables default screen shake for reduced-motion visitors. It is listed for
-computers; a keyboard/mouse or gamepad is needed. 3D games require WebGL; frame
-rate depends on the device. Fullscreen support depends on the browser. Physical
-gamepad hardware was not available for verification.
-
-Illustrations are original promotional artwork, not gameplay screenshots.
-Builds generate static HTML shells with per-page metadata for every known route,
-plus a sitemap and friendly 404 shell. Titles and descriptions also update when
-visitors navigate in the browser. Search queries and favorites remain local.
-
-## Rebuild a launch game
-
-The `game-sources/` copies retain the original source and package lockfiles,
-with only the marketplace adaptations described above. Originals were not edited.
-Install and build in the game's source folder, then import its single HTML build:
-
-```sh
-cd game-sources/theabonk
-npm ci
-npm run build
-cd ../..
-npx tsx scripts/import-game-build.ts theabonk game-sources/theabonk/dist/index.html
-npm run build
-```
-
-Use `light-crossing` instead for the other game. The import helper restores the
-inline security policy. It does not review a new game's privacy or code.
-
-## Deployment on Vercel
-
-1. Put this source folder into a Git repository and import it as a Vercel project.
-2. Choose the Vite preset. Build command: `npm run build`. Output: `dist`.
-3. Keep the included `vercel.json`; it serves existing files and generated page
-   shells first, then falls back to `index.html` for unknown browser paths.
-4. Deploy, then verify a direct `/game/theabonk` visit and both iframe games.
-5. Update the absolute origin in `index.html`, `src/lib/meta.ts`, and
-   `scripts/generate-route-shells.ts` for your domain.
-6. Leave Vercel Web Analytics and Speed Insights disabled to keep the no-tracking
-   promise. No environment secrets or backend are required.
-
-Official guidance: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite)
-and [rewrites](https://vercel.com/docs/routing/rewrites).
-
-Netlify can use the supplied `public/_redirects`; deploy the `dist` folder.
-For any other static host, serve existing files first, then fall back to
-`index.html` for browser routes. A catch-all rewrite must never replace a game
-HTML response with the catalog shell.
-
-## Validation
-
-See `VERIFICATION.md` for final checks and local Lighthouse results.
+Preview first; do not run a production deployment without owner approval.
+See LAUNCH_REPORT.md for final validation and real-device checks.

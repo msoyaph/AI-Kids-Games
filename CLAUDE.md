@@ -24,14 +24,16 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
 5. COMPLETE: STORAGE_AUDIT.md records every persistent/probe key and scoped deletion.
    No collisions or global clears. Favorites/recent migrated to aikg: with merge,
    corruption handling and retry on quota failure. Clearing lists touches only site keys.
-6. Pending: documentation warning for third-party games; remove outdated preview/memory-save claims.
+6. COMPLETE: ADDING_A_GAME.md explicitly forbids third-party same-origin embedding
+   and requires a separate domain. README/parent/About copy reflect persistent
+   finished games. Removed obsolete adapted source copies and fixed art metadata.
 7. Pending: slow-download loading check and Vercel cache headers.
 8. Pending: existing tests and desktop/tablet/phone integrated QA, persistence and network checks.
 9. Pending: Vercel preview deployment and real-device checklist. Production requires user approval.
 
 Do not edit minified game builds. Any storage ownership defect must halt integration
 and be fixed in the original game's source project. Original game folders are read-only
-for this task. Old game-sources adaptations are obsolete and will be removed in step 6.
+for this task. The obsolete game-sources adaptations have been removed.
 Favorites/recently played use aikg:; legacy migration preserves existing device data.
 
 Existing Sites production remains unchanged. This launch targets Vercel preview first.

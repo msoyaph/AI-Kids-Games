@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-const origin = 'https://ai-kids-games.real-tours-1786.chatgpt.site';
-export function usePageMeta(title: string, description: string, image = '/art/light-crossing.svg') {
+const origin = window.location.origin;
+export function usePageMeta(title: string, description: string, image = '/art/light-crossing-banner.svg') {
   const { pathname } = useLocation();
   useEffect(() => {
     document.title = `${title} | Ai Kids Games`;

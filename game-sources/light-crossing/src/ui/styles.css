@@ -1,8 +1,0 @@
-:root {
-  --font: ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', 'Arial Rounded MT Bold', 'Nunito', 'Trebuchet MS', system-ui, sans-serif;
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #b4e2ff; font-family: var(--font); }
-#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-#ui { position: fixed; inset: 0; pointer-events: none; }
-.hud-clock { position: absolute; top: 12px; left: 12px; padding: 6px 14px; border-radius: 16px; background: #fffbefdd; color: #5a4a6a; font-weight: 700; }
