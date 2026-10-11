@@ -46,7 +46,17 @@ publish (.openai/hosting.json) is left untouched.
 
 Progress (one commit per step):
 1. COMPLETE: design plan approved (DESIGN_PLAN.md).
-2. TODO: gameplay capture pipeline and previews.
+2. COMPLETE: gameplay capture. `npm run capture-previews -- <slug>` (scripts/capture-
+   previews.ts, scripts/capture/{lib,encode,types}.ts, one route per game in
+   scripts/capture/<slug>.ts) records the real games headed in full Chromium with the
+   Metal flags (headless gives no canvas frames / ~18 fps tab capture), from the game
+   canvas at 60 fps (HUD-free). Capture-time shims only: keep the page "focused"
+   (games pause on blur) and esbuild's __name helper. Frame arrival times map moments
+   to video time; covered-window stalls are detected and retried. Outputs in
+   public/media/<slug>/ and src/data/media.json; raw takes in git-ignored captures/.
+   Loops are 7.2–8 s, all under 760 KB. Vanex (restyle) and Space Sky (3D) routes
+   are written to be rerun on their new builds; Vanex's source project already has
+   renamed towers, so routes must target the imported dist, not the source.
 3. TODO: covers, logos, Open Graph images.
 4. TODO: design system and shell.
 5. TODO: preview player and cards.

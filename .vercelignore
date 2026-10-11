@@ -4,3 +4,4 @@ dist
 .sites-runtime
 playwright-report
 test-results
+captures
