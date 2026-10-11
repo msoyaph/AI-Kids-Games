@@ -402,6 +402,7 @@ export class Menus {
         h('button', { class: 'btn', onclick: back, 'data-autofocus': true }, 'Done'),
         h('button', { class: 'btn ghost small', onclick: () => this.confirm('Erase all progress (gold, upgrades, unlocks, records)?', () => {
           save.reset();
+          this.g.clearRun();
           this.g.applySettings();
           this.title();
         }, () => this.settings(onBack)) }, 'Reset progress'),
@@ -501,7 +502,7 @@ export class Menus {
         h('button', { class: 'btn ghost', onclick: () => leave(() => this.title()) }, 'Title'),
       ),
     );
-    this.g.ui.show('gameover', el, () => leave(() => this.title()));
+    this.g.ui.show('gameover', el, () => leave(() => this.title()), {}, true);
   }
 }
 

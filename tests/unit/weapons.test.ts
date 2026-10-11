@@ -5,6 +5,8 @@ import { spawnEnemy } from '../../src/sim/combat';
 import { simulateRun } from '../../src/sim/headless';
 import { newRun } from '../../src/sim/run';
 import { step } from '../../src/sim/sim';
+import { Motion } from '../../src/sim/pools';
+import { applyChoice } from '../../src/sim/upgrades';
 import { addWeapon, levelUpWeapon } from '../../src/sim/weapons';
 import { emptyInput } from '../../src/sim/world';
 
@@ -42,6 +44,39 @@ describe('weapons', () => {
       expect(wi.damageDealt).toBeGreaterThan(0);
     });
   }
+});
+
+describe('orbit weapons', () => {
+  it('permanent orbiters survive the player hugging the map edge', () => {
+    const w = newRun({ seed: 12, characterId: 'brindle', god: true });
+    const wi = w.weapons[0];
+    while (wi.level < 5) levelUpWeapon(w, wi);
+    applyChoice(w, { kind: 'newPassive', id: 'hourglassSand', level: 1 });
+    applyChoice(w, { kind: 'evolve', id: 'lanterns', level: 1 });
+    expect(wi.def.id).toBe('everglow');
+    const input = emptyInput();
+    const run = (ticks: number): void => {
+      for (let t = 0; t < ticks; t++) {
+        step(w, input);
+        w.events.clear();
+        w.state = 'playing';
+        w.pendingLevels = 0;
+        w.pendingChests = 0;
+      }
+    };
+    const orbiters = (): number => {
+      let n = 0;
+      for (let i = 0; i < w.projectiles.count; i++) if (w.projectiles.alive[i] && w.projectiles.motion[i] === Motion.Orbit) n++;
+      return n;
+    };
+    run(30);
+    const before = orbiters();
+    expect(before).toBe(wi.stats.amount);
+    w.player.x = 147.5;
+    w.player.z = 0;
+    run(120);
+    expect(orbiters()).toBe(before);
+  });
 });
 
 describe('headless run', () => {

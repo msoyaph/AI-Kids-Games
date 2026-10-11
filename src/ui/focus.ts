@@ -9,9 +9,13 @@ export class FocusNav {
   private root: HTMLElement | null = null;
   onBack: (() => void) | null = null;
 
-  attach(root: HTMLElement, onBack: (() => void) | null = null): void {
+  attach(root: HTMLElement, onBack: (() => void) | null = null, autofocus = true): void {
     this.root = root;
     this.onBack = onBack;
+    if (!autofocus) {
+      root.focus({ preventScroll: true });
+      return;
+    }
     const first = (root.querySelector('[data-autofocus]') as HTMLElement | null) ?? this.items()[0];
     first?.focus({ preventScroll: true });
   }
@@ -36,7 +40,9 @@ export class FocusNav {
     if (items.length === 0) return false;
     let cur = document.activeElement as HTMLElement | null;
     if (!cur || !items.includes(cur)) {
-      items[0].focus({ preventScroll: true });
+      // nothing focused yet (modal screens): the first press just focuses
+      const first = (this.root.querySelector('[data-autofocus]') as HTMLElement | null) ?? items[0];
+      first.focus({ preventScroll: true });
       return true;
     }
     if (action === 'confirm') {

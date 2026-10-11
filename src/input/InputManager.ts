@@ -105,6 +105,9 @@ export class InputManager {
     if (this.gameplay) {
       if (e.code === 'Space' || e.code.startsWith('Arrow') || e.code === 'Tab') e.preventDefault();
       if (e.code === 'Escape' || e.code === 'KeyP') {
+        // consume it so the UI's own Escape handler doesn't immediately resume
+        e.preventDefault();
+        e.stopImmediatePropagation();
         if (!e.repeat) this.onAction?.('pause');
         return;
       }

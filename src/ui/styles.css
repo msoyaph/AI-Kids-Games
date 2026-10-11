@@ -148,6 +148,10 @@ body {
   background: radial-gradient(ellipse at center, rgba(28, 20, 48, 0.55), rgba(16, 10, 28, 0.82));
 }
 
+.screen:focus {
+  outline: none;
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;

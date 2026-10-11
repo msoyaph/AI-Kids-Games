@@ -13,21 +13,31 @@ export class UI {
   private hotkeys = new Map<string, () => void>();
   readonly debug: HTMLElement;
   screenName = '';
+  /** Input arriving before this time (ms) is ignored for confirm-type actions. */
+  private graceUntil = 0;
+  /** Game can veto Escape (e.g. right after Escape released pointer lock). */
+  escapeAllowed: () => boolean = () => true;
 
   constructor(readonly root: HTMLElement) {
     root.innerHTML = '';
     this.debug = h('pre', { class: 'debug hidden' });
     root.append(this.hud.root, this.debug);
     window.addEventListener('keydown', (e) => {
-      if (!this.screen) return;
+      if (!this.screen || e.defaultPrevented) return;
+      // a key held from gameplay (jump, 1–4, Enter) must not instantly pick something
+      const settling = performance.now() < this.graceUntil;
+      if (settling && (e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter')) {
+        e.preventDefault();
+        return;
+      }
       const fn = this.hotkeys.get(e.key) ?? this.hotkeys.get(e.code);
       if (fn) {
         e.preventDefault();
-        fn();
+        if (!e.repeat && !settling) fn();
         return;
       }
       if (e.code === 'Escape') {
-        if (this.nav.onBack) {
+        if (this.nav.onBack && !e.repeat && this.escapeAllowed()) {
           e.preventDefault();
           this.nav.onBack();
         }
@@ -46,14 +56,20 @@ export class UI {
     return this.screen !== null;
   }
 
-  show(name: string, el: HTMLElement, onBack: (() => void) | null = null, hotkeys: Record<string, () => void> = {}): void {
+  /**
+   * Show a modal screen. `modal` screens pop up mid-action (level-up, chest, game over):
+   * they get a short input grace period and no initial button focus, so a held jump /
+   * confirm key can't pick something by accident (arrows / d-pad focus the first item).
+   */
+  show(name: string, el: HTMLElement, onBack: (() => void) | null = null, hotkeys: Record<string, () => void> = {}, modal = false): void {
     this.close();
     this.screenName = name;
-    const wrap = h('div', { class: `screen screen-${name}` }, el);
+    const wrap = h('div', { class: `screen screen-${name}`, tabindex: -1 }, el);
     this.screen = wrap;
     this.root.append(wrap);
     this.hotkeys = new Map(Object.entries(hotkeys));
-    this.nav.attach(wrap, onBack);
+    this.graceUntil = modal ? performance.now() + 450 : 0;
+    this.nav.attach(wrap, onBack, !modal);
   }
 
   close(): void {
@@ -65,7 +81,9 @@ export class UI {
   }
 
   handleAction(a: UiAction): boolean {
-    return this.screen ? this.nav.handle(a) : false;
+    if (!this.screen) return false;
+    if (a === 'confirm' && performance.now() < this.graceUntil) return true;
+    return this.nav.handle(a);
   }
 
   // ───────────────────────────── in-run screens ─────────────────────────────
@@ -90,7 +108,7 @@ export class UI {
       ),
       h('div', { class: 'hint' }, 'Press 1–4 or click a card'),
     );
-    this.show('levelup', el, null, hot);
+    this.show('levelup', el, null, hot, true);
   }
 
   showChest(rewards: UpgradeChoice[], onClose: () => void): void {
@@ -105,6 +123,6 @@ export class UI {
       h('div', { class: 'rewards' }, ...list),
       h('button', { class: 'btn', onclick: onClose, 'data-autofocus': true }, 'Continue'),
     );
-    this.show('chest', el, onClose, { Enter: onClose, ' ': onClose });
+    this.show('chest', el, onClose, { Enter: onClose, ' ': onClose }, true);
   }
 }

@@ -154,7 +154,8 @@ export function updateProjectiles(w: World): void {
     }
     const x = pr.x[i];
     const z = pr.z[i];
-    if (x < -t.half || x > t.half || z < -t.half || z > t.half) {
+    // orbiters follow the player and must survive brushing past the map edge
+    if (motion !== Motion.Orbit && (x < -t.half || x > t.half || z < -t.half || z > t.half)) {
       pr.alive[i] = 0;
       continue;
     }

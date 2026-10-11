@@ -65,6 +65,21 @@ test('loads, starts a run and plays 30s without console errors', async ({ page }
   expect(problems, problems.join('\n')).toEqual([]);
 });
 
+test('Escape pauses and stays paused; Escape again resumes', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/');
+  await startRun(page);
+  await page.waitForTimeout(800);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.screen-pause')).toBeVisible();
+  await page.waitForTimeout(500);
+  await expect(page.locator('.screen-pause')).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { __theabonk: { paused: boolean } }).__theabonk.paused)).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.screen-pause')).toBeHidden();
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
 test('menus open and close without errors', async ({ page }) => {
   const problems = watchConsole(page);
   await page.goto('/');

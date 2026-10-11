@@ -118,7 +118,7 @@ export function hitEnemy(
 /** Damage enemies (not the player) within radius — explosions, bursts. */
 export function damageArea(w: World, x: number, z: number, radius: number, damage: number, crit: number, slot: number, knockback: number, slow = 0): number {
   const e = w.enemies;
-  const buf = w.scratch;
+  const buf = w.areaScratch;
   const n = w.grid.query(x, z, radius + 3.5, buf);
   let hits = 0;
   for (let k = 0; k < n; k++) {

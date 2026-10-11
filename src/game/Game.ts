@@ -86,11 +86,17 @@ export class Game implements GameApi {
       if (document.visibilityState === 'hidden') this.autoPause();
     });
     document.addEventListener('pointerlockchange', () => {
+      // a lock granted late (after a modal opened) must not trap the cursor
+      if (this.input.pointerLocked && !this.input.gameplay) {
+        this.input.releaseLock();
+        return;
+      }
       if (!this.input.pointerLocked && this.world && this.world.state === 'playing' && !this.paused) {
         this.lockLostAt = performance.now();
         this.pause();
       }
     });
+    this.ui.escapeAllowed = () => performance.now() - this.lockLostAt > 300;
   }
 
   resize(): void {
@@ -172,8 +178,9 @@ export class Game implements GameApi {
   quitToTitle(): void {
     const w = this.world;
     if (w && w.state !== 'dead' && w.state !== 'won') {
-      // abandoning still banks what was earned
-      w.state = 'dead';
+      // abandoning still banks what was earned (and quitting during the dawn
+      // countdown still counts as the victory it is)
+      w.state = w.director.victoryT > 0 ? 'won' : 'dead';
       applyRunResult(this.save.data, summarize(w));
       this.save.save();
     }

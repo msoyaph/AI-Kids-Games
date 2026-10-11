@@ -180,6 +180,8 @@ export interface World {
   /** Shared query scratch buffers (never hold across calls). */
   scratch: Int32Array;
   scratch2: Int32Array;
+  /** Reserved for damageArea (which can run inside loops that use `scratch`). */
+  areaScratch: Int32Array;
   /** Gameplay-relevant camera yaw is not needed; kept for bots / debugging only. */
   maxEnemies: number;
 }
@@ -261,6 +263,7 @@ export function createWorld(opts: WorldOptions): World {
     options: { stress, god: !!opts.god || stress > 0 },
     scratch: new Int32Array(2048),
     scratch2: new Int32Array(512),
+    areaScratch: new Int32Array(2048),
     maxEnemies: stress > 0 ? stress + 100 : CAPS.enemies,
   };
   return world;
