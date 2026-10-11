@@ -341,12 +341,23 @@ export class RaceView {
   dispose(): void {
     for (const d of this.disposers) d();
     this.effects.dispose();
+    // Free everything this race created; cached/shared geometries and materials are flagged `userData.shared`.
+    const mats = new Set<THREE.Material>();
     this.scene.traverse((o) => {
-      const mesh = o as THREE.Mesh;
-      if (mesh.geometry && !(mesh as unknown as { userData: { shared?: boolean } }).userData.shared) {
-        // geometries from caches are shared; only dispose per-race ones (track/props/sky/blobs)
-        if (mesh.name === 'track' || mesh.name === 'boostPads') mesh.geometry.dispose();
-      }
+      const m = o as THREE.Mesh;
+      if (m.geometry && !m.geometry.userData.shared) m.geometry.dispose();
+      const mat = m.material as THREE.Material | THREE.Material[] | undefined;
+      if (Array.isArray(mat)) mat.forEach((x) => mats.add(x));
+      else if (mat) mats.add(mat);
     });
+    for (const mat of mats) {
+      if (mat.userData.shared) continue;
+      const tex = (mat as THREE.MeshBasicMaterial).map;
+      tex?.dispose();
+      mat.dispose();
+    }
+    this.sun.shadow.map?.dispose();
+    this.scene.clear();
   }
+
 }

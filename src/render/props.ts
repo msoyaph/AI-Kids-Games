@@ -24,6 +24,7 @@ export function propGeometry(type: string): THREE.BufferGeometry | null {
   let g = geoCache.get(type);
   if (!g) {
     g = buildRecipe(recipe);
+    g.userData.shared = true;
     geoCache.set(type, g);
   }
   return g;

@@ -18,6 +18,7 @@ function cached(key: string, make: () => THREE.BufferGeometry): THREE.BufferGeom
   let g = geoCache.get(key);
   if (!g) {
     g = make();
+    g.userData.shared = true;
     geoCache.set(key, g);
   }
   return g;

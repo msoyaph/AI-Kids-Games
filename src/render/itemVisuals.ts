@@ -15,6 +15,7 @@ function geo(key: string): THREE.BufferGeometry {
   if (!g) {
     const recipe = (ITEM_MODELS as Record<string, Parameters<typeof buildRecipe>[0]>)[key];
     g = buildRecipe(recipe ?? []);
+    g.userData.shared = true;
     geoCache.set(key, g);
   }
   return g;

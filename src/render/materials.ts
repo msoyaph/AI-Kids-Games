@@ -21,6 +21,7 @@ export const Materials = {
   blob: new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false }),
 };
 
+for (const m of Object.values(Materials)) m.userData.shared = true;
 Materials.blob.polygonOffset = true;
 Materials.blob.polygonOffsetFactor = -2;
 Materials.blob.polygonOffsetUnits = -2;
