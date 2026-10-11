@@ -8,6 +8,7 @@ import { bakeEmotes } from './emotes';
 import { bakeAnimals } from './animals';
 import { bakeMine } from './mine';
 import { bakeFish } from './fish';
+import { bakeCrafted } from './crafted';
 import { VILLAGERS } from '../../data/villagers';
 import { drawCharacter, FRAMES, shadowSprite, type Look } from './characters';
 import { bakeObjects } from './objects';
@@ -26,6 +27,7 @@ export function bakeAll(atlas: Atlas): void {
   bakeAnimals(atlas);
   bakeMine(atlas);
   bakeFish(atlas);
+  bakeCrafted(atlas);
   for (const v of VILLAGERS) bakeCharacter(atlas, v.id, v.look as Look);
   atlas.add('shadow', shadowSprite(12));
   atlas.add('shadow.big', shadowSprite(16));

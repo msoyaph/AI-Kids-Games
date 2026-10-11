@@ -38,7 +38,8 @@ export function pickCatch(sim: Sim, zone: Zone, rng: Rng): Catch {
   const opts = biteable(sim, zone);
   const junkChance = opts.length ? 0.07 : 1;
   if (rng.chance(junkChance) || !opts.length) return { kind: 'junk', id: rng.pick(JUNK) };
-  const weights = opts.map((f) => (f.rare ? (sim.state.col.fish[f.id] ? 0.3 : 1.2) : Math.max(0.6, 6 - f.difficulty)));
+  const lucky = hasPerk(sim, 'luckyLure') ? 2 : 1;
+  const weights = opts.map((f) => (f.rare ? (sim.state.col.fish[f.id] ? 0.3 : 1.2) * lucky : Math.max(0.6, 6 - f.difficulty) * (f.difficulty >= 4 ? lucky : 1)));
   return { kind: 'fish', id: rng.weighted(opts, weights).id };
 }
 

@@ -8,7 +8,7 @@ import { ORES } from '../data/minerals';
 import { TOOL_TIERS } from '../tuning';
 import { remove, count } from './inventory';
 import { layerOf } from './mine';
-import { gainXp } from './skills';
+import { gainXp, hasPerk } from './skills';
 import { simInitHooks, type Sim } from './sim';
 import type { Loc } from './world';
 
@@ -156,7 +156,7 @@ export function updateCombat(sim: Sim, dt: number): void {
     }
     // bump the player
     if (dist < 11 && cb.invuln <= 0) {
-      const dmg = critterDamage(c);
+      const dmg = Math.ceil(critterDamage(c) * (hasPerk(sim, 'toughSkin') ? 0.5 : 1));
       p.hp = Math.max(0, p.hp - dmg);
       cb.invuln = 1.1;
       cb.events.push({ kind: 'hurt', x: p.x, y: p.y });

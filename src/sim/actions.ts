@@ -5,7 +5,7 @@
 import { tryItem, isTool, toolKind } from '../data/items';
 import { fertilize, harvest, isMature, plant } from './farming';
 import { remove } from './inventory';
-import { gainXp } from './skills';
+import { gainXp, hasPerk } from './skills';
 import type { Sim } from './sim';
 import { useTool, type ToolResult } from './tools';
 import type { WorldObject } from './types';
@@ -14,6 +14,7 @@ export type UseOutcome =
   | (ToolResult & { type: 'tool' })
   | { type: 'plant' | 'place' | 'fertilize'; ok: boolean; msg?: string }
   | { type: 'eat'; id: string }
+  | { type: 'special'; id: string }
   | { type: 'none'; ok: false; msg?: string };
 
 /** Spaces where the player may place craftables. */
@@ -46,7 +47,8 @@ export function useSelected(sim: Sim, tx: number, ty: number): UseOutcome {
     if (r.ok) remove(sim.p.inv, s.id, 1);
     return { type: 'fertilize', ...r };
   }
-  if (d.place) {
+  if (d.cat === 'special' && SPECIAL_ITEMS.has(s.id)) return { type: 'special', id: s.id };
+  if (d.place || s.id === 'tapper') {
     const r = placeItem(sim, s.id, tx, ty);
     if (r.ok) remove(sim.p.inv, s.id, 1);
     return { type: 'place', ...r };
@@ -54,6 +56,9 @@ export function useSelected(sim: Sim, tx: number, ty: number): UseOutcome {
   if (d.energy && d.energy > 0) return { type: 'eat', id: s.id };
   return { type: 'none', ok: false };
 }
+
+/** Items that do something when used (handled by the client). */
+export const SPECIAL_ITEMS = new Set(['homeWhistle', 'ropeLadder', 'popBomb', 'rainCharm']);
 
 /** Placement hooks: systems add custom placement (e.g. tapper on trees, crab pots on water). */
 export const placeHooks: ((sim: Sim, id: string, x: number, y: number) => { ok: boolean; msg?: string } | null)[] = [];
@@ -143,11 +148,12 @@ export function eat(sim: Sim, id: string): boolean {
   const d = tryItem(id);
   if (!d?.energy) return false;
   if (!remove(sim.p.inv, id, 1)) return false;
-  sim.gainEnergy(d.energy);
-  sim.p.hp = Math.min(sim.p.maxHp, sim.p.hp + Math.round(d.energy * 0.45));
+  const e = Math.round(d.energy * (hasPerk(sim, 'hearty') ? 1.25 : 1));
+  sim.gainEnergy(e);
+  sim.p.hp = Math.min(sim.p.maxHp, sim.p.hp + Math.round(e * (id === 'healingTea' ? 1.2 : 0.45)));
   if (d.buff) {
     sim.p.buffs = sim.p.buffs.filter((b) => b.id !== d.buff!.id);
-    sim.p.buffs.push({ ...d.buff, until: sim.absMinute() + d.buff.minutes });
+    sim.p.buffs.push({ ...d.buff, until: sim.absMinute() + d.buff.minutes * (hasPerk(sim, 'buffet') ? 2 : 1) });
   }
   return true;
 }

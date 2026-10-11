@@ -2,6 +2,7 @@
 import { cropStage } from '../sim/farming';
 import type { WorldObject } from '../sim/types';
 import type { Loc } from '../sim/world';
+import { DECO_PROP } from './art/crafted';
 
 export interface ObjSprite {
   name: string;
@@ -60,7 +61,17 @@ export function objSprite(o: WorldObject, season: number, loc: Loc, x: number, y
     case 'chest':
       return one(`obj.chest.${o.col ?? 0}`);
     case 'scarecrow':
-      return one('obj.scarecrow');
+      return one(o.id === 'deluxeScarecrow' ? 'obj.deluxeScarecrow' : 'obj.scarecrow');
+    case 'machine':
+    case 'beehouse': {
+      const s: ObjSprite = one(`obj.mach.${o.id}`);
+      if (o.out) s.overlay = 'obj.bubble.ready';
+      else if (o.inp) s.overlay = 'obj.bubble.busy';
+      s.overlayOy = -30;
+      return s;
+    }
+    case 'deco':
+      return one(DECO_PROP[o.id] ?? `obj.deco.${o.id}`);
     case 'sprinkler':
       return one(`obj.${o.id}`);
     case 'torch':

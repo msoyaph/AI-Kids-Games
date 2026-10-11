@@ -110,7 +110,7 @@ export function fertilize(loc: Loc, x: number, y: number, kind: number): { ok: b
 
 export function rollQuality(rng: Rng, lvl: number, fert: number, sim?: Sim): number {
   const gold = QUALITY.goldBase + QUALITY.goldPerLevel * lvl + QUALITY.fertGold[fert];
-  const sparkle = QUALITY.sparkleFert[fert] + (sim && hasPerk(sim, 'goldenTouch') ? 0.05 : 0);
+  const sparkle = QUALITY.sparkleFert[fert] + (sim && hasPerk(sim, 'bigHarvest') ? 0.05 : 0);
   const r = rng.next();
   if (r < sparkle) return 3;
   if (r < sparkle + gold) return 2;

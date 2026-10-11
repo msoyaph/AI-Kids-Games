@@ -67,6 +67,7 @@ export const SHOPS: Record<string, ShopDef> = {
         if (!c.seasons.includes(season) && !greenhouse) continue;
         out.push({ id: `seed.${c.id}`, price: CROP_BALANCE[c.id].seed });
       }
+      out.push({ id: 'flour', price: 50 }, { id: 'sugar', price: 50 }, { id: 'rice', price: 60 }, { id: 'oil', price: 120 });
       out.push({ id: 'basicFertilizer', price: 40 });
       out.push({ id: 'speedyGrow', price: 90 });
       for (const [id, p] of Object.entries(SAPLING_PRICES)) out.push({ id: `sapling.${id}`, price: p });

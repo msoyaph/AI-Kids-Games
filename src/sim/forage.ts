@@ -97,7 +97,8 @@ export function pickForage(sim: Sim, loc: Loc, x: number, y: number): string | n
   loc.removeObj(x, y);
   const lvl = level(sim, 'foraging');
   const rng = sim.rng(0xf0b, x, y);
-  const q = rng.chance(0.03 + lvl * 0.04) ? 2 : rng.chance(0.1 + lvl * 0.05) ? 1 : 0;
+  let q = rng.chance(0.03 + lvl * 0.04) ? 2 : rng.chance(0.1 + lvl * 0.05) ? 1 : 0;
+  if (hasPerk(sim, 'botanist')) q = Math.max(1, q);
   sim.give(o.id, hasPerk(sim, 'gatherer') && rng.chance(0.2) ? 2 : 1, q);
   sim.state.stats.forage++;
   gainXp(sim, 'foraging', 7);
@@ -194,7 +195,7 @@ function fillCrabPots(sim: Sim): void {
     if (!sim.hasLoc(id)) continue;
     const loc = sim.loc(id);
     for (const [i, o] of loc.objs) {
-      if (o.k !== 'crabpot' || !o.bait || o.out) continue;
+      if (o.k !== 'crabpot' || o.out || (!o.bait && !hasPerk(sim, 'trapper'))) continue;
       const x = i % loc.w, y = Math.floor(i / loc.w);
       const zone = zoneAt(loc, x, y);
       const rng = sim.rng(0xc4ab, x, y);

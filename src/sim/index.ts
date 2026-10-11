@@ -15,5 +15,7 @@ import './buildings';
 import './mine';
 import './critters';
 import './forage';
+import './crafting';
+import './machines';
 export { Sim } from './sim';
 export type { SavedLoc, SimEvents } from './sim';

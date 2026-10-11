@@ -86,6 +86,8 @@ export interface WorldObject {
   fq?: number;
   /** crabpot bait */
   bait?: boolean;
+  /** machine input quality */
+  q?: number;
 }
 
 export const SOIL_TILLED = 1;

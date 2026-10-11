@@ -7,4 +7,8 @@ import './villagers';
 import './animals';
 import './minerals';
 import './fish';
+import { registerArtisanGoods } from './recipes';
+registerArtisanGoods();
+import './machines';
+import './skills';
 export { ITEMS, item, tryItem } from './items';

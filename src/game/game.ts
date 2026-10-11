@@ -38,6 +38,7 @@ import { installVillagers, npcAtPointer, talkTo } from './villagers';
 import { installAnimals } from './animals';
 import { installMine } from './mine';
 import { installFishing } from './fishing';
+import { installCrafting } from './crafting';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
 
 export interface GameOptions {
@@ -62,9 +63,13 @@ export interface GameHooks {
   shopKeeper?: (g: Game, shop: string) => boolean;
   /** click on something under the mouse (villager, animal…) before using a tool */
   pointerInteract: ((g: Game) => boolean)[];
+  /** use a special item (home whistle, rain charm…) */
+  useItem?: (g: Game, id: string) => void;
+  /** steps after the day summary, before waking (perk choice, cutscenes…); call next() to continue */
+  afterDay: ((g: Game, next: () => void) => void)[];
 }
 
-export const HOOKS: GameHooks = { trigger: {}, onEnter: [], onUpdate: [], onRender: [], onAttach: [], interactNearby: [], special: {}, inspect: [], pointerInteract: [] };
+export const HOOKS: GameHooks = { trigger: {}, onEnter: [], onUpdate: [], onRender: [], onAttach: [], interactNearby: [], special: {}, inspect: [], pointerInteract: [], afterDay: [] };
 
 export class Game implements MenuHost {
   host!: RenderHost;
@@ -133,6 +138,7 @@ export class Game implements MenuHost {
     installAnimals(this);
     installMine(this);
     installFishing(this);
+    installCrafting(this);
     this.input.onAction = (a) => this.onRawAction(a);
     window.addEventListener('pagehide', () => this.suspend());
     document.addEventListener('visibilitychange', () => {
@@ -278,9 +284,18 @@ export class Game implements MenuHost {
     this.enterLocation();
     const close = this.modals.show(
       dayEndView(report, this.sim.state.day, () => close()),
-      { bare: true, onClose: () => void this.wakeUp() },
+      { bare: true, onClose: () => this.runAfterDay(0) },
     );
     this.busy = false;
+  }
+
+  private runAfterDay(i: number): void {
+    const f = HOOKS.afterDay[i];
+    if (!f) {
+      void this.wakeUp();
+      return;
+    }
+    f(this, () => this.runAfterDay(i + 1));
   }
 
   private async wakeUp(): Promise<void> {

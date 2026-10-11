@@ -205,6 +205,8 @@ export class Controller {
       } else if (out.msg) g.toasts.show(out.msg);
     } else if (out.type === 'eat') {
       this.askEat(out.id);
+    } else if (out.type === 'special') {
+      HOOKS.useItem?.(g, out.id);
     } else if (out.type === 'none' && out.msg) g.toasts.show(out.msg);
   }
 

@@ -168,7 +168,8 @@ function chopTree(sim: Sim, loc: Loc, x: number, y: number, dmg: number): ToolRe
   if (o.hp > 0) return R(true, 'swing', tiles);
   const rng = sim.rng(0x7ee, x, y);
   if (g >= 4) {
-    sim.give('wood', rng.range(TREE_BALANCE.wood[0], TREE_BALANCE.wood[1]));
+    sim.give('wood', rng.range(TREE_BALANCE.wood[0], TREE_BALANCE.wood[1]) + (hasPerk(sim, 'lumberjack') ? 3 : 0));
+    if (hasPerk(sim, 'lumberjack') && rng.chance(0.4)) sim.give('hardwood', 1);
     sim.give('sap', rng.range(1, 3));
     if (WILD_TREES[kind] && rng.chance(0.6)) sim.give(WILD_TREES[kind].seed, 1);
     loc.setObj(x, y, { k: 'stump', id: 'treestump', hp: TREE_BALANCE.stumpHp });
