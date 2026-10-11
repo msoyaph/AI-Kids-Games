@@ -6,6 +6,7 @@ import { Starfield } from '../gfx/starfield';
 import { planetTex, rocketTex, tex } from '../gfx/textures';
 import { h } from '../ui/dom';
 import { button } from '../ui/widgets';
+import { fullscreenAvailable, openSettings, toggleFullscreen } from '../ui/settings';
 
 export class TitleScene extends Scene {
   private stars = new Starfield(['#9b6bff', '#ff7ad9', '#4c7dff'], 'title');
@@ -32,7 +33,9 @@ export class TitleScene extends Scene {
     const logo = h('div', { class: 'title-logo' }, h('div', { class: 'logo-main' }, 'Space Sky'), h('div', { class: 'logo-sub' }, 'Academy Adventures'));
     const play = button('Play', 'play', () => void S.game.go('slots'), { color: 'green', size: 'big', id: 'btn-play' });
     const menu = h('div', { class: 'title-menu' }, play);
-    this.ui.append(logo, menu);
+    const corner = h('div', { class: 'title-corner' }, button('Settings', 'gear', () => openSettings(), { round: true, color: 'white', id: 'btn-settings' }));
+    if (fullscreenAvailable()) corner.prepend(button('Full screen', 'fullscreen', () => toggleFullscreen(), { round: true, color: 'white', id: 'btn-fullscreen' }));
+    this.ui.append(logo, menu, corner);
   }
 
   override resize(w: number, h: number): void {

@@ -70,7 +70,8 @@ export function normalize(raw: Raw): SaveData {
     const v = raw[key];
     const d = (base as unknown as Raw)[key];
     if (v === undefined || v === null) continue;
-    if (Array.isArray(d)) out[key] = isStrArr(v) ? v : d;
+    if (d === null) out[key] = typeof v === 'string' ? v : null;
+    else if (Array.isArray(d)) out[key] = isStrArr(v) ? v : d;
     else if (typeof d === 'object' && d !== null) out[key] = typeof v === 'object' && !Array.isArray(v) ? { ...(d as Raw), ...(v as Raw) } : d;
     else if (typeof d === typeof v) out[key] = v;
   }

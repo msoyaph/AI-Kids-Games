@@ -2,7 +2,7 @@ import 'pixi.js/unsafe-eval';
 import './ui/ui.css';
 import { Game } from './app/Game';
 import { S } from './app/services';
-import { saveNow, startSession, tickSession } from './app/session';
+import { saveNow, tickSession } from './app/session';
 import { bakeCore } from './gfx/textures';
 import { Input } from './input/input';
 import { TouchControls } from './input/touch';
@@ -21,9 +21,14 @@ import { HubScene } from './scenes/HubScene';
 import { LandingScene, type LandingParams } from './scenes/LandingScene';
 import { LoungeScene } from './scenes/LoungeScene';
 import { ShopScene } from './scenes/ShopScene';
+import { SlotsScene } from './scenes/SlotsScene';
+import { CreatorScene, type CreatorParams } from './scenes/CreatorScene';
+import { hubHooks } from './scenes/hubHooks';
+import { openSettings } from './ui/settings';
+import { pauseHooks } from './ui/pause';
+import { toast } from './ui/toast';
 import { StarMapScene } from './scenes/StarMapScene';
 import { TitleScene } from './scenes/TitleScene';
-import { loadSlot } from './systems/save/saveManager';
 import { createSave } from './systems/save/schema';
 import { loadSettings } from './systems/save/settings';
 import { GameState } from './systems/state';
@@ -90,12 +95,8 @@ function registerScenes(game: Game): void {
       cutsceneWaiters.push(resolve);
       void game.go('cutscene', { id });
     });
-  // Temporary until the slot screen exists: continue the last save or start a new one.
-  game.register('slots', () => {
-    const last = S.settings.lastSlot >= 0 ? loadSlot(S.settings.lastSlot) : null;
-    startSession(last ?? createSave(0));
-    return new HubScene();
-  });
+  game.register('slots', () => new SlotsScene());
+  game.register('creator', (p) => new CreatorScene(p as unknown as CreatorParams));
 }
 
 async function boot(): Promise<void> {
@@ -143,6 +144,15 @@ async function boot(): Promise<void> {
   registerScenes(game);
   installDirectors();
   installHooks();
+  hubHooks.settings = () => openSettings();
+  pauseHooks.settings = () => openSettings();
+  pauseHooks.goHome = () => {
+    S.state.data.location = 'earth';
+    S.state.bump('tows');
+    S.state.emit({ type: 'tow' });
+    toast('Beep boop! Tuggy towed you home to the Academy!', 'tow', 3000);
+    void game.go('hub');
+  };
   setupRotateHint();
   if (new URLSearchParams(location.search).has('debug')) (window as unknown as { __spacesky: unknown }).__spacesky = S;
   game.start();

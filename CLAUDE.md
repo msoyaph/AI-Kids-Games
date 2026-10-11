@@ -35,7 +35,7 @@ Vite + TypeScript (strict) + PixiJS 8, shipped as ONE self-contained `dist/index
 - [x] Phase 5: systems/missions.ts (data-driven engine), data/missions/*, presenter (ui/presenter.ts), director (scenes/director.ts), Hub/Board/Lounge scenes, save manager + migrations.
 - [x] Phase 6: 27 main + 16 side missions (data/missions/*), 19 levels (data/levels/*, auto-registered), story dialogue (data/dialogueStory.ts), CutsceneScene (zibbo/starpath/wormhole/finale), CreditsScene, CompleteScene.
 - [x] Phase 7: data/facts.ts (ALL facts), data/codex.ts, systems/codex.ts, data/badges.ts (40), systems/daily.ts, systems/race.ts, CodexScene, BadgesScene (badges + sticker book), app/hooks.ts wiring.
-- [ ] Phase 8: astronaut creator, settings, save slots.
+- [x] Phase 8: SlotsScene (3 slots, erase with confirm), CreatorScene (name, suit, helmet, skin, hair, face, difficulty), ui/settings.ts (volume, difficulty, read aloud, tips, fullscreen, help, erase), save tests.
 - [ ] Phase 9: audio, effects, onboarding.
 - [ ] Phase 10: tests, pacing.
 
