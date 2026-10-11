@@ -108,9 +108,11 @@ export function buildTrackProps(track: TrackModel, seed: string): { group: THREE
         const beyond = off - B;
         const roadY = rb.py[i] + rb.ry[i] * B * side;
         if (edge === EDGE_DROP || !hasGround || track.data.verge === false) {
-          // floating tracks: only place props when there's real ground below, otherwise skip
-          if (!hasGround) continue;
-          y = groundY;
+          // floating tracks: props float near road height (when allowed) or sit on the ground plane
+          if (!hasGround) {
+            if (!sc.float) continue;
+            y = roadY + rng.range(sc.float[0], sc.float[1]);
+          } else y = groundY;
         } else {
           const t = Math.min(1, beyond / 22);
           y = roadY + (Math.min(groundY, rb.py[i] - 0.4) - roadY) * t;

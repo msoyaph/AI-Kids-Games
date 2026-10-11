@@ -52,6 +52,12 @@ A shortcut is an open spline (`points`) with its own width/edge/surface, joining
 - Keep entry/exit angles shallow (< ~35°): karts can't turn 90° at speed and the AI uses pure pursuit.
 - Risk ideas: off-road surface (needs a Turbo Can), narrow drop-edged planks, a gap with a ramp, hazards on the line.
 - Aim for 10–35 % shorter than the road it skips. `aiUse` (0..1) tunes how often AI takes it.
+- Keep a shortcut's ramps and gaps clear of the main road's shoulder (start them a few metres out), otherwise the
+  main road's railing can catch karts flying over them.
+- Water/low-gravity `zones` also apply to shortcuts that skip that stretch; set `shortcuts: false` on a zone for a
+  dry bridge over a river.
+- `layout()` mark headings come from the last short segment of a curve, so a mark at the end of a curve can point
+  10–15° off the true tangent — allow for that when placing props with `offset()`.
 
 ## Items, boosts, hazards
 - `itemRows` (3–4 per track): rows of item pods across the road.
@@ -62,7 +68,8 @@ A shortcut is an open spline (`points`) with its own width/edge/surface, joining
 ## Look
 - `palette` (road, kerbs, off-road, walls, sides), `sky` (gradient, fog, ground plane colour/height or `null` for none,
   `backdrop`: mountains | skyline | clouds | dunes | stars, `night`).
-- `scatter`: random props along both sides (density per 100 m, distance range from the boundary).
+- `scatter`: random props along both sides (density per 100 m, distance range from the boundary). On tracks with no
+  ground plane, add `float: [min, max]` to scatter floating props (clouds, balloons, islands) around road height.
 - `props`: hand-placed landmarks (`y` defaults to the ground height).
 - Recipes are `ModelPart[]` (box/sphere/ico/cyl/cone/torus/capsule/wedge with position/scale/rotation/colour). Unit sizes: box 1×1×1,
   sphere/ico radius 0.5, cyl/cone radius 0.5 × height 1, torus outer diameter 1, wedge 1×1×1 rising toward −Z.

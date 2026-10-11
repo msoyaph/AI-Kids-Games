@@ -251,6 +251,8 @@ export interface RampData {
 
 export interface ZoneData extends URange {
   kind: 'water' | 'lowgrav';
+  /** Also applies on shortcuts that skip this stretch (default true). Set false for e.g. a bridge over a river. */
+  shortcuts?: boolean;
 }
 
 /** Moving or static hazards that bump karts (cartoony, never scary). */
@@ -334,6 +336,8 @@ export interface PropScatter {
   near: number;
   far: number;
   scale?: [number, number];
+  /** For tracks without ground: place props floating at road height + [min, max] metres. */
+  float?: [number, number];
 }
 
 export interface TrackData {

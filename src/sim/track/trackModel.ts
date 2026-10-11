@@ -349,6 +349,8 @@ export class TrackModel implements GroundModel {
   /** Max comfortable speed per main sample along the racing line (m/s at Pro top speed scale 1). */
   readonly lineCurv: Float32Array;
   readonly minY: number;
+  /** Zone flags that shortcuts inherit (zones can opt out). */
+  private readonly scZoneFlags: Uint8Array;
   private readonly hitA = makeRibbonHit();
   private readonly hitB = makeRibbonHit();
 
@@ -362,7 +364,14 @@ export class TrackModel implements GroundModel {
     this.gravityScale = data.gravity ?? 1;
     this.applyEdges(this.main, data.edge, data.edges ?? [], data.shoulder);
     for (const g of data.gaps ?? []) this.main.forURange(g, (i) => (this.main.flags[i] |= F_GAP));
-    for (const z of data.zones ?? []) this.main.forURange(z, (i) => (this.main.flags[i] |= z.kind === 'water' ? F_WATER : F_LOWGRAV));
+    this.scZoneFlags = new Uint8Array(this.main.n);
+    for (const z of data.zones ?? []) {
+      const f = z.kind === 'water' ? F_WATER : F_LOWGRAV;
+      this.main.forURange(z, (i) => {
+        this.main.flags[i] |= f;
+        if (z.shortcuts !== false) this.scZoneFlags[i] |= f;
+      });
+    }
     for (const p of data.boostPads ?? []) this.addPad(this.main, p.at, p.offset, p.width);
     for (const r of data.ramps ?? []) this.addRamp(this.main, r);
     this.main.computeBounds();
@@ -396,7 +405,8 @@ export class TrackModel implements GroundModel {
     let minY = Infinity;
     for (let i = 0; i < this.main.n; i++) minY = Math.min(minY, this.main.py[i]);
     this.minY = minY;
-    this.killY = Math.min(minY, data.sky.groundY ?? minY) - 30;
+    // Over a ground plane, a kart that falls through it is rescued straight away; otherwise fall a while.
+    this.killY = data.sky.ground !== null && data.sky.groundY !== undefined ? Math.min(minY - 3, data.sky.groundY - 1.5) : minY - 30;
     this.line = new Float32Array(this.main.n);
     this.lineCurv = new Float32Array(this.main.n);
     this.computeRacingLine();
@@ -632,7 +642,7 @@ export class TrackModel implements GroundModel {
     out.nz = best.nz;
     out.ramp = best.ramp;
     // zones are authored on the main road; shortcuts inherit them at the mapped distance
-    const zf = bestRibbon === 0 ? best.flags : best.flags | this.main.flags[this.main.indexAtS(shortcutS)];
+    const zf = bestRibbon === 0 ? best.flags : best.flags | this.scZoneFlags[this.main.indexAtS(shortcutS)];
     out.water = (zf & F_WATER) !== 0;
     out.lowGrav = (zf & F_LOWGRAV) !== 0;
     out.wallHit = false;
