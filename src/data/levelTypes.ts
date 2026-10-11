@@ -65,6 +65,8 @@ export interface LevelDef {
   groups?: Record<string, CrystalGroup>;
   /** Dialogue shown the first time you visit. */
   intro?: string;
+  /** Only open when this is true (areas on worlds with several areas). */
+  unlock?: Cond;
   /** Music track key. */
   music?: string;
 }

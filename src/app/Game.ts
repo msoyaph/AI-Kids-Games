@@ -149,6 +149,10 @@ export class Game {
     }
   }
 
+  get isSwitching(): boolean {
+    return this.switching;
+  }
+
   get sceneName(): string {
     return this.current?.name ?? '';
   }

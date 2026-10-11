@@ -103,6 +103,10 @@ export class HangarScene extends Scene {
 
   override enter(): void {
     S.state.emit({ type: 'visit', place: 'hangar' });
+    if (!S.state.flag('hangarHello')) {
+      S.state.setFlag('hangarHello');
+      S.state.post({ kind: 'dialogue', id: 'hangar_hello' });
+    }
     this.setTab('nose');
     this.redrawPreview();
   }

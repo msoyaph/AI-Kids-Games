@@ -1,5 +1,7 @@
 import type { Input } from '../input/input';
 import type { TouchControls } from '../input/touch';
+import type { MissionEngine } from '../systems/missions';
+import type { Settings } from '../systems/save/settings';
 import type { GameState } from '../systems/state';
 import type { Game } from './Game';
 
@@ -9,6 +11,8 @@ export interface Services {
   input: Input;
   touch: TouchControls;
   state: GameState;
+  missions: MissionEngine;
+  settings: Settings;
 }
 
 export const S = {} as Services;

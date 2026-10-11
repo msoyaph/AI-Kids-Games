@@ -2,7 +2,7 @@ import { Container, Graphics, Sprite, type Texture } from 'pixi.js';
 import { sfx } from '../audio/sfx';
 import { Scene } from '../app/Scene';
 import { S } from '../app/services';
-import { clamp, damp, lerp, lerpAngle } from '../core/mathx';
+import { clamp, damp, formatRaceTime, lerp, lerpAngle } from '../core/mathx';
 import { BODY_BY_ID, SYSTEM_BY_ID, type SystemId } from '../data/bodies';
 import { PART_BY_ID } from '../data/parts';
 import { FloatTexts, Particles, Shake } from '../gfx/particles';
@@ -27,6 +27,8 @@ export interface FlightSceneParams {
   from: SystemId;
   to: SystemId;
   startBody?: string;
+  /** Race course id when flying a time-trial race. */
+  course?: string;
 }
 
 type Mode = 'fly' | 'tow' | 'leaving';
@@ -95,6 +97,7 @@ export class FlightScene extends Scene {
   private scanT = 0;
   private scanned = new Set<string>();
   private arrivedSystems = new Set<string>();
+  private nearSent = new Set<string>();
   private blinkT = 0;
   private blinkOn = false;
   private sunScreenX = -200;
@@ -315,8 +318,12 @@ export class FlightScene extends Scene {
       this.handleEvents();
       this.handleNearby(dt, input.action, input.actionPressed);
       this.checkArrival();
+      this.checkNear();
       this.checkRescue(dt);
-      if (this.raceRunning) this.raceTime += dt;
+      if (this.raceRunning) {
+        this.raceTime += dt;
+        if (this.isRacing()) this.hud.setExtra(formatRaceTime(this.raceTime));
+      }
     } else if (this.mode === 'tow') {
       this.updateTow(dt);
       ship.px = ship.x;
@@ -490,6 +497,21 @@ export class FlightScene extends Scene {
         }
       }
     }
+  }
+
+  private checkNear(): void {
+    const ship = this.ship;
+    for (const b of this.layout.world.bodies) {
+      if (this.nearSent.has(b.id) || !BODY_BY_ID[b.id]) continue;
+      if (Math.hypot(ship.x - b.x, ship.y - b.y) - b.r < 280) {
+        this.nearSent.add(b.id);
+        S.state.emit({ type: 'near', body: b.id });
+      }
+    }
+  }
+
+  isRacing(): boolean {
+    return !!this.p.course;
   }
 
   currentSystem(): string {
