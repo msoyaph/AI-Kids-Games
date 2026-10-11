@@ -1,0 +1,13 @@
+import { describe,expect,it } from 'vitest';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { games } from '../src/data/games';
+import { validateRegistry } from '../src/lib/registry';
+describe('registry validation',() => {
+  it('accepts launch games and their real local assets',() => expect(validateRegistry(games,path => existsSync(resolve('public',path)))).toEqual([]));
+  it('rejects duplicate slugs',() => expect(validateRegistry([games[0],games[0]],() => true)).toContain('light-crossing: duplicate slug.'));
+  it('identifies missing game folders and images',() => { const errors = validateRegistry(games,() => false); expect(errors).toContain('theabonk: public/games/theabonk/index.html does not exist.'); expect(errors.some(error => error.includes('local image'))).toBe(true); });
+  it('reports missing required fields',() => expect(validateRegistry([{ ...games[0], title: '' }],() => true)).toContain('light-crossing: required field "title" is missing.'));
+  it('rejects unsafe slugs and remote artwork',() => { const errors = validateRegistry([{ ...games[0], slug: '../escape', thumbnail: 'https://example.com/image.svg' }],() => true); expect(errors.some(error => error.includes('lowercase slug'))).toBe(true); expect(errors.some(error => error.includes('local image'))).toBe(true); });
+  it('rejects invalid dates, colors, or empty controls',() => { const errors = validateRegistry([{ ...games[0], releaseDate: 'not-a-date', accentColor: 'red', controls: { types: [], howToPlay: [] } }],() => true); expect(errors.length).toBe(3); });
+});
