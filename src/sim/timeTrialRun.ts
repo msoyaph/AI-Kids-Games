@@ -39,7 +39,9 @@ export interface TimeTrialRunResult {
 
 /** The racer/kart used for a track's staff ghost (and its balance references), picked from the track id. */
 export function staffRacer(trackId: string): { racerId: string; kart: KartConfig } {
-  const racer = RACERS[hashString(trackId) % RACERS.length];
+  // picked from the original 12 racers so adding racers (e.g. Yuki) never changes an existing staff ghost
+  const pool = RACERS.slice(0, 12);
+  const racer = pool[hashString(trackId) % pool.length];
   return { racerId: racer.id, kart: { ...racer.defaultKart, paint: 'cherry', decal: 'none' } };
 }
 

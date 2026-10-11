@@ -171,11 +171,13 @@ export const BALANCE = {
     /** Per-track staff run: pace multiplier + seed — written by `npm run calibrate-staff` (between the markers). */
     tracks: {
       // <staff-pace>
+      'avalanche-peak': { pace: 0.9545, seed: 118 },
       'candy-factory': { pace: 0.954, seed: 118 },
       'canyon-run': { pace: 0.951, seed: 169 },
       'cinder-summit': { pace: 0.973, seed: 118 },
       'coral-dome-dash': { pace: 0.9855, seed: 118 },
       'crater-hop-base': { pace: 0.96, seed: 169 },
+      'crystal-cavern': { pace: 0.9315, seed: 101 },
       'frostpeak-pass': { pace: 0.99, seed: 169 },
       'gearworks-factory': { pace: 0.96, seed: 118 },
       'jadefall-temple': { pace: 0.947, seed: 152 },
