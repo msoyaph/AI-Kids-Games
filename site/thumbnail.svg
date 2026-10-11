@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Calex Cart</title>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#8a6bff"/>
+      <stop offset="1" stop-color="#2b1d6b"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="72" fill="url(#bg)"/>
+  <g opacity="0.16" fill="#fff"><path d="M256 230 L0 0 L120 0Z"/><path d="M256 230 L300 0 L420 0Z"/><path d="M256 230 L512 120 L512 260Z"/><path d="M256 230 L0 260 L0 400Z"/></g>
+  <path d="M0 360 Q140 310 256 350 T512 340 V512 H0Z" fill="#6ccf5a"/>
+  <g transform="translate(256 360) scale(0.72)">
+    <ellipse cx="0" cy="118" rx="230" ry="26" fill="#000" opacity="0.25"/>
+    <rect x="-200" y="20" width="400" height="80" rx="26" fill="#ff4d6d" stroke="#1d1250" stroke-width="8"/>
+    <path d="M-170 30 L-120 -20 L120 -20 L170 30Z" fill="#ff6f8a" stroke="#1d1250" stroke-width="8" stroke-linejoin="round"/>
+    <rect x="-150" y="50" width="300" height="22" rx="10" fill="#ffd23f"/>
+    <circle cx="-150" cy="100" r="46" fill="#26262e" stroke="#1d1250" stroke-width="6"/><circle cx="-150" cy="100" r="18" fill="#c0c8d8"/>
+    <circle cx="150" cy="100" r="46" fill="#26262e" stroke="#1d1250" stroke-width="6"/><circle cx="150" cy="100" r="18" fill="#c0c8d8"/>
+    <rect x="-56" y="-110" width="112" height="100" rx="40" fill="#3fa7ff" stroke="#1d1250" stroke-width="7"/>
+    <circle cx="0" cy="-160" r="66" fill="#ffd2a1" stroke="#1d1250" stroke-width="7"/>
+    <path d="M-70 -175 Q0 -250 70 -175 Z" fill="#ff4d6d" stroke="#1d1250" stroke-width="7" stroke-linejoin="round"/>
+    <rect x="-10" y="-186" width="96" height="18" rx="8" fill="#ff4d6d" stroke="#1d1250" stroke-width="6"/>
+    <ellipse cx="-22" cy="-158" rx="9" ry="13" fill="#1d1250"/><ellipse cx="24" cy="-158" rx="9" ry="13" fill="#1d1250"/>
+    <path d="M-22 -128 Q0 -110 22 -128" stroke="#1d1250" stroke-width="6" fill="none" stroke-linecap="round"/>
+  </g>
+  <g font-family="'Trebuchet MS','Arial Rounded MT Bold',Arial,sans-serif" font-weight="900" text-anchor="middle" stroke="#1d1250" stroke-width="9" paint-order="stroke">
+    <text x="256" y="118" font-size="104"><tspan fill="#ffd23f">C</tspan><tspan fill="#4ce0d2">A</tspan><tspan fill="#ff6fae">L</tspan><tspan fill="#8cff6b">E</tspan><tspan fill="#ffd23f">X</tspan></text>
+    <text x="256" y="208" font-size="96"><tspan fill="#ff6fae">C</tspan><tspan fill="#8cff6b">A</tspan><tspan fill="#4ce0d2">R</tspan><tspan fill="#ffd23f">T</tspan></text>
+  </g>
+</svg>
