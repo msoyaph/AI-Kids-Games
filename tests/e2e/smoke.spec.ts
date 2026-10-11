@@ -169,6 +169,29 @@ test('the daily run starts the day’s hero and map with no shop bonuses', async
   expect(problems, problems.join('\n')).toEqual([]);
 });
 
+test('remapped keys work in a run; accessibility options apply', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  // larger text applies at once
+  await page.locator('.setting', { hasText: 'Larger text' }).getByRole('button').click();
+  await expect(page.locator('html')).toHaveClass(/large-text/);
+  // remap: add J to Jump
+  await page.getByRole('button', { name: 'Remap…' }).click();
+  await page.locator('.remap-row', { hasText: 'Jump' }).locator('.chip.add').click();
+  await page.keyboard.press('KeyJ');
+  await expect(page.locator('.remap-row', { hasText: 'Jump' })).toContainText('J');
+  await page.getByRole('button', { name: 'Done' }).click();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await startRun(page);
+  await page.waitForTimeout(800);
+  await page.keyboard.press('KeyJ');
+  await page.waitForTimeout(500);
+  const jumps = await page.evaluate(() => (window as unknown as { __theabonk: { world: { stats: { jumps: number } } } }).__theabonk.world.stats.jumps);
+  expect(jumps).toBeGreaterThan(0);
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
 test('runs inside a sandboxed iframe (no storage, no pointer lock)', async ({ page, baseURL }) => {
   const problems = watchConsole(page);
   await page.setContent(`<!doctype html><html><body style="margin:0"><iframe id="g" sandbox="allow-scripts" src="${baseURL}/" style="width:1280px;height:720px;border:0"></iframe></body></html>`);

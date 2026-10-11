@@ -25,10 +25,12 @@ export interface SimInput {
   jump: boolean;
   /** Slide held. */
   slide: boolean;
+  /** This jump is an automatic hop (hold-to-hop): no bunny-hop speed bonus. */
+  autoHop: boolean;
 }
 
 export function emptyInput(): SimInput {
-  return { moveX: 0, moveZ: 0, jump: false, slide: false };
+  return { moveX: 0, moveZ: 0, jump: false, slide: false, autoHop: false };
 }
 
 export interface WeaponInstance {

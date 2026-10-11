@@ -1571,6 +1571,77 @@ body {
   min-width: 46rem;
 }
 
+.modal.settings {
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.settings-head {
+  grid-column: 1 / -1;
+  margin-top: 0.4rem;
+  font-weight: 900;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  border-bottom: 0.1rem solid var(--edge);
+  padding-bottom: 0.2rem;
+}
+
+.remap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: min(46rem, 90vw);
+}
+
+.remap-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.remap-label {
+  flex: 0 0 11rem;
+  font-weight: 800;
+}
+
+.remap-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--ink);
+  border: none;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  background: var(--paper);
+  box-shadow: 0 0.18rem 0 #b8a383;
+  outline: none;
+}
+
+.chip:focus,
+.chip:hover {
+  box-shadow: 0 0.18rem 0 #b8a383, 0 0 0 0.2rem var(--accent);
+}
+
+.chip.clash {
+  background: #ffd0c4;
+  box-shadow: 0 0.18rem 0 #c0503a;
+}
+
+.chip.add {
+  background: rgba(255, 248, 236, 0.15);
+  color: var(--paper);
+  box-shadow: inset 0 0 0 0.12rem var(--edge);
+}
+
 .setting {
   display: flex;
   align-items: center;
@@ -1882,4 +1953,71 @@ body {
   position: absolute;
   left: 8vw;
   bottom: 3.2rem;
+}
+
+/* ───────────────────────── accessibility ───────────────────────── */
+
+/* Larger text: the whole interface is sized in rem */
+html.large-text {
+  font-size: 125%;
+}
+
+/* Reduced motion: no animated movement or flashing in the interface */
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+  animation-duration: 0.001s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001s !important;
+  scroll-behavior: auto !important;
+}
+
+/* banners stay put (no zoom / drift) and are hidden by the HUD's own timer */
+html.reduced-motion .banner.pop {
+  animation: none !important;
+}
+
+html.reduced-motion .hurt-vignette.flash {
+  animation: none !important;
+  opacity: 0.35;
+}
+
+html.reduced-motion .gust.swirl .gust-arrow {
+  animation: none !important;
+}
+
+/* High contrast: solid backings and stronger outlines on everything you read in a run */
+html.high-contrast .hud .timer,
+html.high-contrast .hud .speedo,
+html.high-contrast .hud .speedo-label,
+html.high-contrast .hud .boss-name {
+  text-shadow: 0 0 0.25rem #000, 0 0 0.25rem #000, 0 0.1rem 0 #000;
+}
+
+html.high-contrast .hud .stat,
+html.high-contrast .hud .slot,
+html.high-contrast .hud .gust,
+html.high-contrast .banner {
+  background: rgba(8, 4, 16, 0.92);
+  box-shadow: inset 0 0 0 0.16rem #fff;
+}
+
+html.high-contrast .bar {
+  background: #000;
+  box-shadow: inset 0 0 0 0.16rem #fff;
+}
+
+html.high-contrast .bar-fill.hp {
+  background: #ff3b3b;
+}
+
+html.high-contrast .bar-fill.xp {
+  background: #2fd0ff;
+}
+
+html.high-contrast .panel,
+html.high-contrast .card,
+html.high-contrast .modal {
+  background: #120c22;
+  box-shadow: inset 0 0 0 0.16rem #fff;
 }

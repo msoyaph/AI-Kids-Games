@@ -51,7 +51,9 @@ src/
              occlusion.ts (GPU dithered fade of props between camera and player),
              Sky.ts (per-map moods + aurora), Snowfall.ts
   audio/     Web Audio synth SFX + procedural music
-  input/     keyboard/mouse/pointer-lock/gamepad (+ drag-look fallback in iframes)
+  input/     InputManager (the ONE keyboard listener: routes keys to the open menu via
+             ui.handleKey, else to gameplay through remappable bindings), actions.ts
+             (GameAction bindings, labels, conflicts), mouse/pointer-lock/gamepad
   ui/        DOM screens (title, select, shop, settings, pause, level-up, chest, game over),
              HUD, procedural canvas icons, menu focus navigation
   meta/      save schema + migration, gold/achievements/unlocks, daily.ts (UTC date →
@@ -93,6 +95,16 @@ Key rules:
   and map are playable even if locked. Records: best per date, newest 30 (`save.daily`).
 - Enemy data fields replace id checks: `model` (variants reuse a base model + `frostTrim`),
   `flying`, `bob`, `chill`, `roll`, `shotVisual`; bosses by `bossPattern`.
+- Flash safety: every blink / pulse goes through `render/flash.ts` (≤ 3 Hz, registered in
+  FLASH_EFFECTS — a test samples each; steady with reduced motion). Don't add raw
+  `Math.sin(time * k) > 0` blinks.
+- Accessibility (settings.access): reduced motion (auto/on/off → rig, PlayerView, flash
+  helper, CSS `html.reduced-motion`), colour-blind (Okabe-Ito warnings/gems + gem shapes),
+  larger text (`html.large-text` = 125% rem), high contrast. Warning circles always carry a
+  per-attack pattern + outline (telegraphBasic) and a "!" marker; so do wind-ups.
+- Remapping: settings.controls.bindings (Escape / F3 fixed; menus also always take arrows,
+  Enter, Escape, gamepad A/B/d-pad). Slide toggle and hold-to-hop (`SimInput.autoHop` → no
+  bunny-hop bonus) are options.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
   Save v2 (`meta/save.ts`): older saves are migrated in sanitizeSave and copied once to
   `theabonk.save.bak` just before the first write in the new format. v2 adds maps, difficulty
@@ -165,6 +177,9 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
 - [x] 5. Difficulty + Hard tiers, Ottie / Bramble / Nova + signature passives for all six,
   skip (1 free) / banish / reroll charges, daily run, collection (bestiary 3D preview),
   15 achievements
+- [x] 6. One input system + remapping, slide toggle / hold-to-hop, flash safety (3 Hz),
+  reduced motion, colour-blind palette + patterned telegraphs + "!" markers, larger text,
+  high contrast
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

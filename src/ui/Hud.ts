@@ -6,6 +6,7 @@ import { nearbyShrine } from '../sim/shrines';
 import type { World } from '../sim/world';
 import { h, img, setText, setWidth } from './dom';
 import { iconUrl } from './icons';
+import { minInterval } from '../render/flash';
 
 interface Slot {
   root: HTMLElement;
@@ -154,7 +155,13 @@ export class Hud {
     setTimeout(() => t.remove(), 4800);
   }
 
+  private lastHurtFlash = -1e9;
+
+  /** Red edge flash on taking damage, rate-limited for flash safety (≤ 2.5 a second). */
   hurt(): void {
+    const now = performance.now() / 1000;
+    if (now - this.lastHurtFlash < minInterval('hurtVignette')) return;
+    this.lastHurtFlash = now;
     this.hurtVignette.classList.remove('flash');
     void this.hurtVignette.offsetWidth;
     this.hurtVignette.classList.add('flash');

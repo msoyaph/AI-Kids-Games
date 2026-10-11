@@ -11,7 +11,8 @@ import { mergeTuning, TUNING_DEFAULTS, xpToNextWith, type TuningGroup } from '..
 import { TuningPanel } from '../ui/TuningPanel';
 import { PlaytestStore, recordRun } from '../meta/playtest';
 import { exportJson } from '../ui/exporter';
-import { InputManager, type UiAction } from '../input/InputManager';
+import { InputManager, type Captured, type UiAction } from '../input/InputManager';
+import type { PadFamily } from '../input/actions';
 import { applyRunResult, checkAchievements, metaBonuses, summarize, type RunOutcome } from '../meta/progression';
 import { SaveManager } from '../meta/save';
 import { GameRenderer } from '../render/Renderer';
@@ -24,6 +25,7 @@ import { emptyInput, type UpgradeChoice, type World } from '../sim/world';
 import { h } from '../ui/dom';
 import { Menus, rewardText, type GameApi } from '../ui/menus';
 import { UI } from '../ui/UI';
+import { applyAccessClasses, reducedMotionOn, watchReducedMotion } from '../ui/access';
 
 const MAX_STEPS_PER_FRAME = 5;
 const TUNING_KEY = 'theabonk.tuning';
@@ -103,6 +105,8 @@ export class Game implements GameApi {
     uiRoot.append(this.fpsEl);
     this.showMenuMap(this.save.data.lastMap);
     this.input.onAction = (a) => this.onAction(a);
+    this.input.uiKey = (e) => this.ui.handleKey(e);
+    watchReducedMotion(() => this.applySettings());
     this.applySettings();
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -210,6 +214,14 @@ export class Game implements GameApi {
     if (mapId && !this.world) this.showMenuMap(mapId);
   }
 
+  captureInput(cb: (c: Captured) => void): void {
+    this.input.captureNext(cb);
+  }
+
+  padFamily(): PadFamily {
+    return 'generic';
+  }
+
   showcaseEnemy(id: string | null): void {
     this.renderer.showcaseEnemy(id);
   }
@@ -230,6 +242,12 @@ export class Game implements GameApi {
     if (this.renderer.quality !== s.quality) this.renderer.setQuality(s.quality);
     this.input.sensitivity = s.sensitivity;
     this.input.invertY = s.invertY;
+    this.input.setBindings(s.controls.bindings);
+    this.input.slideToggle = s.controls.slideToggle;
+    this.input.autoHop = s.controls.autoHop;
+    const reduced = reducedMotionOn(s.access);
+    applyAccessClasses(s.access, reduced);
+    this.renderer.setAccess(reduced, s.access.colorblind);
     this.input.setMouseMode(this.tuningPanel ? 'drag' : s.mouseMode);
     this.renderer.rig.shakeEnabled = s.screenShake;
     this.renderer.fx.numbers.enabled = s.damageNumbers;
@@ -526,8 +544,15 @@ export class Game implements GameApi {
         const s0 = performance.now();
         while (this.acc >= DT && steps < MAX_STEPS_PER_FRAME && w.state === 'playing') {
           this.buildSimInput();
-          this.simInput.jump = this.input.consumeJump();
+          const fresh = this.input.consumeJump();
+          // auto-hop: holding jump on the ground hops again (these hops get no bunny-hop boost)
+          const auto = !fresh && this.input.autoHop && w.player.onGround && this.input.jumpHeld();
+          this.simInput.jump = fresh || auto;
+          this.simInput.autoHop = auto;
+          const wasSliding = w.player.sliding;
           step(w, this.simInput);
+          // a toggled slide switches itself off when the slide ends
+          if (wasSliding && !w.player.sliding && w.player.onGround) this.input.slideEnded();
           this.acc -= DT;
           steps++;
         }

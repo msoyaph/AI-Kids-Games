@@ -9,7 +9,7 @@ import { chestGeometry, coinGeometry, gemGeometry, heartGeometry, magnetGeometry
 /** Gems, coins, hearts, magnets, chests and hostile projectiles. */
 export class PickupRenderer {
   readonly group = new THREE.Group();
-  private gems: THREE.InstancedMesh;
+  private gems: THREE.InstancedMesh[];
   private kinds: THREE.InstancedMesh[];
   private shots: THREE.InstancedMesh[];
   private beams: THREE.InstancedMesh;
@@ -17,11 +17,27 @@ export class PickupRenderer {
   private kindCounts = new Int32Array(4);
   private shotCounts = new Int32Array(3);
 
+  private gemCounts = new Int32Array(GEM_TIERS.length);
+
+  /** Colour-blind mode: Okabe-Ito tier colours and a distinct shape per tier. */
+  setColorblind(on: boolean): void {
+    const cb = [0x56b4e9, 0x009e73, 0xcc79a7, 0xe69f00];
+    this.gems.forEach((m, k) => {
+      m.geometry.dispose();
+      m.geometry = gemGeometry(on ? k : 0);
+      this.tierColors[k].setHex(on ? cb[k] : GEM_TIERS[k].color);
+    });
+  }
+
   constructor() {
     this.group.name = 'pickups';
-    this.gems = makeInstanced(gemGeometry(), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a2a2a, flatShading: true }), CAPS.gems, true);
-    this.gems.name = 'gems';
-    this.group.add(this.gems);
+    const gemMat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a2a2a, flatShading: true });
+    this.gems = GEM_TIERS.map((_, k) => {
+      const m = makeInstanced(gemGeometry(), gemMat, CAPS.gems, true);
+      m.name = `gems:${k}`;
+      this.group.add(m);
+      return m;
+    });
     this.tierColors = GEM_TIERS.map((t) => new THREE.Color(t.color));
 
     const geos = [coinGeometry(), heartGeometry(), magnetGeometry(), chestGeometry()];
@@ -48,17 +64,20 @@ export class PickupRenderer {
   }
 
   update(w: World, alpha: number, time: number): void {
-    // gems
+    // gems (one mesh per tier: colour-blind mode gives each tier its own shape)
     const g = w.gems;
-    const ga = this.gems.instanceMatrix.array as Float32Array;
-    const gc = this.gems.instanceColor!.array as Float32Array;
-    let n = 0;
+    const gn = this.gemCounts;
+    gn.fill(0);
     for (let i = 0; i < g.count; i++) {
       if (!g.alive[i]) continue;
       const x = g.px[i] + (g.x[i] - g.px[i]) * alpha;
       const y = g.py[i] + (g.y[i] - g.py[i]) * alpha;
       const z = g.pz[i] + (g.z[i] - g.pz[i]) * alpha;
       const tier = g.tier[i];
+      const mesh = this.gems[tier];
+      const n = gn[tier]++;
+      const ga = mesh.instanceMatrix.array as Float32Array;
+      const gc = mesh.instanceColor!.array as Float32Array;
       const s = GEM_TIERS[tier].scale;
       const bob = g.grounded[i] && !g.magnet[i] ? Math.sin(time * 3 + i) * 0.08 : 0;
       TRS[0] = x;
@@ -74,9 +93,8 @@ export class PickupRenderer {
       gc[n * 3] = c.r;
       gc[n * 3 + 1] = c.g;
       gc[n * 3 + 2] = c.b;
-      n++;
     }
-    commitInstances(this.gems, n);
+    for (let k = 0; k < this.gems.length; k++) commitInstances(this.gems[k], gn[k]);
 
     // pickups
     const pk = w.pickups;

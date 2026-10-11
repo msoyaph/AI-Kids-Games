@@ -12,6 +12,8 @@ import type { CharacterDef } from '../config/types';
 import { weaponDef } from '../config/weapons';
 import { formatTime } from '../core/math';
 import { achievementContext, buy, COLLECTABLE, collectedCount, nextCost, refundAll, shopRank, totalSpent, type RunOutcome, type RunSummary } from '../meta/progression';
+import { defaultBindings, ACTION_LABELS, bind, conflicts, GAME_ACTIONS, keyLabel, padLabel, type GameAction, type PadFamily } from '../input/actions';
+import type { Captured } from '../input/InputManager';
 import type { SaveManager, Settings } from '../meta/save';
 import type { World } from '../sim/world';
 import { h, img, setText } from './dom';
@@ -29,6 +31,10 @@ export interface GameApi {
   showcase(characterId: string, mapId?: string): void;
   /** Show an enemy in the menu backdrop instead of the hero (null = back to the hero). */
   showcaseEnemy(id: string | null): void;
+  /** Remapping: the next key / gamepad button (null = cancelled with Escape). */
+  captureInput(cb: (c: Captured) => void): void;
+  /** Button names for the connected controller. */
+  padFamily(): PadFamily;
   quitToTitle(): void;
   /** Drop the finished run so menus get the idle backdrop again. */
   clearRun(): void;
@@ -608,6 +614,29 @@ export class Menus {
       });
       return h('div', { class: 'setting' }, h('span', null, label), b);
     };
+    /** Toggle for a nested setting (controls / access). */
+    const sub = (label: string, get: () => boolean, set: (v: boolean) => void): HTMLElement => {
+      const b = h('button', { class: 'btn small toggle' }, get() ? 'On' : 'Off');
+      b.classList.toggle('off', !get());
+      b.addEventListener('click', () => {
+        set(!get());
+        b.textContent = get() ? 'On' : 'Off';
+        b.classList.toggle('off', !get());
+        this.g.sound('click');
+        commit();
+      });
+      return h('div', { class: 'setting' }, h('span', null, label), b);
+    };
+    const cycleSub = <T extends string>(label: string, get: () => T, set: (v: T) => void, options: readonly T[], names: Record<T, string>): HTMLElement => {
+      const b = h('button', { class: 'btn small toggle' }, names[get()]);
+      b.addEventListener('click', () => {
+        set(options[(options.indexOf(get()) + 1) % options.length]);
+        b.textContent = names[get()];
+        this.g.sound('click');
+        commit();
+      });
+      return h('div', { class: 'setting' }, h('span', null, label), b);
+    };
     const pct = (v: number): string => `${Math.round(v * 100)}%`;
     const back = (): void => {
       this.g.sound('back');
@@ -630,6 +659,15 @@ export class Menus {
         toggle('Show FPS', 'showFps'),
         toggle('Screen shake', 'screenShake'),
         toggle('Damage numbers', 'damageNumbers'),
+        h('div', { class: 'settings-head' }, 'Controls'),
+        sub('Slide: tap to toggle', () => st.controls.slideToggle, (v) => (st.controls.slideToggle = v)),
+        sub('Hold jump to keep hopping', () => st.controls.autoHop, (v) => (st.controls.autoHop = v)),
+        h('div', { class: 'setting' }, h('span', null, 'Keys & buttons'), h('button', { class: 'btn small', onclick: () => this.controls(() => this.settings(onBack)) }, 'Remap…')),
+        h('div', { class: 'settings-head' }, 'Accessibility'),
+        cycleSub('Reduced motion', () => st.access.reducedMotion, (v) => (st.access.reducedMotion = v), ['auto', 'on', 'off'] as const, { auto: 'Auto (system)', on: 'On', off: 'Off' }),
+        sub('Colour-blind friendly colours', () => st.access.colorblind, (v) => (st.access.colorblind = v)),
+        sub('Larger text', () => st.access.largeText, (v) => (st.access.largeText = v)),
+        sub('High-contrast HUD', () => st.access.highContrast, (v) => (st.access.highContrast = v)),
       ),
       h(
         'div',
@@ -644,6 +682,76 @@ export class Menus {
       ),
     );
     this.g.ui.show('settings', el, back);
+  }
+
+  /** Remap every gameplay action: up to 4 keys and 4 gamepad buttons each. */
+  controls(onBack: () => void): void {
+    const save = this.g.save;
+    const b = save.data.settings.controls.bindings;
+    const fam = this.g.padFamily();
+    const note = h('div', { class: 'map-note' });
+    const table = h('div', { class: 'remap' });
+    const commit = (): void => {
+      save.save();
+      this.g.applySettings();
+    };
+    const render = (): void => {
+      table.innerHTML = '';
+      const clash = conflicts(b);
+      const clashInputs = new Set(clash.map((c) => c.input));
+      for (const a of GAME_ACTIONS) {
+        const chips: HTMLElement[] = [];
+        const chip = (text: string, input: string, onclick: () => void, remove: () => void): HTMLElement => {
+          const el = h('button', { class: `chip${clashInputs.has(input) ? ' clash' : ''}`, title: 'Click to change · right-click to remove' }, text);
+          el.addEventListener('click', onclick);
+          el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            remove();
+          });
+          return el;
+        };
+        b[a].keys.forEach((k, i) => chips.push(chip(keyLabel(k), `key:${k}`, () => listen(a, 'key', i), () => { b[a].keys.splice(i, 1); commit(); render(); })));
+        b[a].pad.forEach((p, i) => chips.push(chip(`Pad ${padLabel(p, fam)}`, `pad:${p}`, () => listen(a, 'pad', i), () => { b[a].pad.splice(i, 1); commit(); render(); })));
+        const add = h('button', { class: 'chip add', title: 'Add a key or button' }, '+');
+        add.addEventListener('click', () => listen(a, 'any', -1));
+        table.append(h('div', { class: 'remap-row' }, h('span', { class: 'remap-label' }, ACTION_LABELS[a]), h('span', { class: 'remap-chips' }, ...chips, add)));
+      }
+      setText(note, clash.length ? `Heads up: ${clash.map((c) => `${c.input.startsWith('key:') ? keyLabel(c.input.slice(4)) : padLabel(Number(c.input.slice(4)), fam)} does ${c.actions.map((x) => ACTION_LABELS[x].toLowerCase()).join(' and ')}`).join('; ')}.` : 'Click a key to change it, + to add one, right-click to remove. Escape and F3 are fixed.');
+    };
+    const listen = (a: GameAction, kind: 'key' | 'pad' | 'any', slot: number): void => {
+      setText(note, `${ACTION_LABELS[a]}: press a ${kind === 'pad' ? 'gamepad button' : kind === 'key' ? 'key' : 'key or gamepad button'}… (Escape cancels)`);
+      this.g.captureInput((c) => {
+        if (c && 'key' in c && kind !== 'pad') bind(b, a, { key: c.key }, kind === 'key' ? slot : -1);
+        else if (c && 'pad' in c && kind !== 'key') bind(b, a, { pad: c.pad }, kind === 'pad' ? slot : -1);
+        this.g.sound(c ? 'click' : 'back');
+        commit();
+        render();
+      });
+    };
+    const back = (): void => {
+      this.g.sound('back');
+      onBack();
+    };
+    render();
+    const el = h(
+      'div',
+      { class: 'modal panel settings controls' },
+      h('div', { class: 'title small' }, 'Controls'),
+      table,
+      note,
+      h(
+        'div',
+        { class: 'row' },
+        h('button', { class: 'btn', onclick: back, 'data-autofocus': true }, 'Done'),
+        h('button', { class: 'btn ghost small', onclick: () => {
+          save.data.settings.controls.bindings = defaultBindings();
+          commit();
+          this.g.sound('click');
+          this.controls(onBack);
+        } }, 'Reset to defaults'),
+      ),
+    );
+    this.g.ui.show('controls', el, back);
   }
 
   confirm(text: string, yes: () => void, no: () => void): void {

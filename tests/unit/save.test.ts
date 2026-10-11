@@ -200,7 +200,9 @@ describe('save format upgrades', () => {
     }
     expect(d.stats.bestTimeByChar).toEqual(v1.stats.bestTimeByChar);
     expect(d.stats.bossKills).toEqual(v1.stats.bossKills);
-    expect(d.settings).toEqual(v1.settings);
+    expect(d.settings).toMatchObject(v1.settings as object); // v1 settings kept; new sub-objects defaulted
+    expect(d.settings.controls.bindings.jump.keys).toEqual(['Space']);
+    expect(d.settings.access.reducedMotion).toBe('auto');
     // v1 had a single map
     expect(d.stats.bestTimeByMap).toEqual({ meadow: v1.stats.bestTime });
     expect(d.unlockedMaps).toEqual(['meadow']); // no win yet

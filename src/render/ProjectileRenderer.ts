@@ -1,14 +1,46 @@
 import * as THREE from 'three';
 import { CAPS } from '../config/balance';
+import { ENEMIES } from '../config/enemies';
 import { HazardKind } from '../sim/pools';
 import { VISUALS } from '../sim/weapons/common';
 import type { World } from '../sim/world';
-import { addAlphaAttribute, alphaBasic, commitInstances, makeInstanced, TRS, writeTRSFrom } from './instancing';
+import { addAlphaAttribute, addPatternAttribute, alphaBasic, commitInstances, makeInstanced, telegraphBasic, TRS, writeTRSFrom } from './instancing';
+import { blink } from './flash';
 import { lowPolyMaterial } from './geo';
 import { iceSpikeGeometry, icicleGeometry, projectileGeometry } from './models';
 import type { Particles } from './Particles';
 
 const tmpC = new THREE.Color();
+const MAX_MARKS = 64;
+
+/** 1 = show "!" while winding up (chargers, exploders, charging bosses); 2 = big (bosses). */
+const WARN_TYPE = new Uint8Array(ENEMIES.map((d) => (d.behavior === 'boss' ? (d.bossPattern === 'clockjaw' || d.bossPattern === 'oldRime' ? 2 : 0) : d.behavior === 'charger' || d.behavior === 'exploder' ? 1 : 0)));
+
+/** A warning sign: yellow triangle, dark outline, "!" (canvas → texture, no assets). */
+function warningTexture(): THREE.Texture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  if (ctx) {
+    ctx.beginPath();
+    ctx.moveTo(32, 4);
+    ctx.lineTo(61, 58);
+    ctx.lineTo(3, 58);
+    ctx.closePath();
+    ctx.fillStyle = '#ffd400';
+    ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1a1020';
+    ctx.stroke();
+    ctx.fillStyle = '#1a1020';
+    ctx.fillRect(28.5, 20, 7, 22);
+    ctx.fillRect(28.5, 46, 7, 7);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
 
 /** Player projectiles (per visual kind), ground hazards, enemy shockwave walls and auras. */
 export class ProjectileRenderer {
@@ -23,9 +55,15 @@ export class ProjectileRenderer {
   private icicles: THREE.InstancedMesh;
   private spikes: THREE.InstancedMesh;
   private discAlpha: THREE.InstancedBufferAttribute;
+  private discPattern: THREE.InstancedBufferAttribute;
   private wallAlpha: THREE.InstancedBufferAttribute;
+  /** "!" markers over enemy warnings (billboards). */
+  private marks: THREE.InstancedMesh;
   /** Solid (see-through) telegraphs instead of additive glow — for bright ground like snow. */
   private solid = false;
+  /** Okabe-Ito warning colours (colour-blind friendly). */
+  colorblind = false;
+  private camPos = new THREE.Vector3();
 
   constructor(private particles: Particles) {
     this.group.name = 'projectiles';
@@ -43,8 +81,9 @@ export class ProjectileRenderer {
 
     const dg = new THREE.CircleGeometry(1, 20);
     dg.rotateX(-Math.PI / 2);
-    this.discs = makeInstanced(dg, alphaBasic({ color: 0xffffff, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -4 }), CAPS.hazards, true);
+    this.discs = makeInstanced(dg, telegraphBasic({ color: 0xffffff, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -4 }), CAPS.hazards, true);
     this.discAlpha = addAlphaAttribute(this.discs, CAPS.hazards);
+    this.discPattern = addPatternAttribute(this.discs, CAPS.hazards);
     this.discs.renderOrder = 2;
     this.group.add(this.discs);
 
@@ -66,6 +105,29 @@ export class ProjectileRenderer {
     this.icicles = makeInstanced(icicleGeometry(), lowPolyMaterial(), 64, false);
     this.spikes = makeInstanced(iceSpikeGeometry(), lowPolyMaterial(), 128, false);
     this.group.add(this.icicles, this.spikes);
+
+    const mg = new THREE.PlaneGeometry(1, 1);
+    this.marks = makeInstanced(mg, new THREE.MeshBasicMaterial({ map: warningTexture(), transparent: true, depthWrite: false, toneMapped: false }), MAX_MARKS, false);
+    this.marks.renderOrder = 5;
+    this.group.add(this.marks);
+  }
+
+  /** Map a warning colour to the colour-blind palette when that mode is on. */
+  private warn(hex: number): number {
+    if (!this.colorblind) return hex;
+    switch (hex) {
+      case 0xff3b4f:
+      case 0xff4f6a:
+        return 0xd55e00; // vermillion
+      case 0xb48cff:
+        return 0xcc79a7; // reddish purple
+      case 0x9fe8ff:
+      case 0x8fe3ff:
+      case 0x1f62d8:
+        return this.solid ? 0x0072b2 : 0x56b4e9; // blue / sky blue
+      default:
+        return hex;
+    }
   }
 
   /** Glow (dark maps) or solid (bright, snowy maps) warning circles and shockwaves. */
@@ -77,6 +139,25 @@ export class ProjectileRenderer {
       mat.blending = solid ? THREE.NormalBlending : THREE.AdditiveBlending;
       mat.needsUpdate = true;
     }
+  }
+
+  /** Camera position for billboards (set by the renderer before update). */
+  setCamera(p: THREE.Vector3): void {
+    this.camPos.copy(p);
+  }
+
+  /** Write a camera-facing "!" marker. */
+  private mark(arr: Float32Array, n: number, x: number, y: number, z: number, size: number): number {
+    TRS[0] = x;
+    TRS[1] = y;
+    TRS[2] = z;
+    TRS[3] = Math.atan2(this.camPos.x - x, this.camPos.z - z);
+    TRS[4] = 0;
+    TRS[5] = size;
+    TRS[6] = size;
+    TRS[7] = size;
+    writeTRSFrom(arr, n * 16);
+    return n + 1;
   }
 
   update(w: World, alpha: number, time: number, px: number, py: number, pz: number): void {
@@ -134,8 +215,11 @@ export class ProjectileRenderer {
     const wa = this.walls.instanceMatrix.array as Float32Array;
     const wc = this.walls.instanceColor!.array as Float32Array;
     const daa = this.discAlpha.array as Float32Array;
+    const dpa = this.discPattern.array as Float32Array;
     const waa = this.wallAlpha.array as Float32Array;
     const solid = this.solid;
+    const ma = this.marks.instanceMatrix.array as Float32Array;
+    let nm = 0;
     const ia = this.icicles.instanceMatrix.array as Float32Array;
     const sa = this.spikes.instanceMatrix.array as Float32Array;
     let ni = 0;
@@ -146,9 +230,10 @@ export class ProjectileRenderer {
       if (!hz.alive[i]) continue;
       const kind = hz.kind[i];
       const fade = Math.min(1, hz.life[i] * 3, (hz.maxLife[i] - hz.life[i]) * 8);
-      tmpC.setHex(hz.color[i]);
+      tmpC.setHex(this.warn(hz.color[i]));
       let intensity = 0.5;
       let r = hz.radius[i];
+      let pattern = 0;
       if (kind === HazardKind.Fire) {
         intensity = (0.16 + Math.sin(time * 14 + i * 3) * 0.04) * fade;
         if (Math.random() < 0.5 * this.particles.density) {
@@ -163,8 +248,11 @@ export class ProjectileRenderer {
         const fuse = Math.max(0.01, hz.maxLife[i] - 0.05);
         const left = Math.max(0, hz.a0[i]);
         const f = 1 - left / Math.max(0.01, hz.maxLife[i]);
-        intensity = 0.12 + f * 0.3 + (Math.sin(time * 30) > 0 ? 0.08 : 0);
+        intensity = 0.12 + f * 0.3 + blink(time, 'slamWarn') * 0.08;
         const look = hz.a1[i];
+        // every attack type has its own pattern: slams stripes, icicles dots, spikes rings
+        pattern = look === 1 ? 2 : look === 2 ? 3 : 1;
+        if (nm < MAX_MARKS && look !== 2) nm = this.mark(ma, nm, hz.x[i], hz.y[i] + 2.4 + Math.sin(time * 4 + i) * 0.1, hz.z[i], 1.1);
         if (look === 1 && ni < 64) {
           // icicle: drops from high above, accelerating, onto the warning circle
           const t = left / fuse;
@@ -187,10 +275,11 @@ export class ProjectileRenderer {
           TRS[6] = hz.radius[i] * 0.9 * g;
           writeTRSFrom(sa, nsp++ * 16);
         }
-        if (look === 0) tmpC.setHex(0xff3b4f);
-        else if (solid) tmpC.setHex(0x1f62d8); // deep ice blue reads on snow
+        if (look === 0) tmpC.setHex(this.warn(0xff3b4f));
+        else if (solid) tmpC.setHex(this.warn(0x1f62d8)); // deep ice blue reads on snow
       } else if (kind === HazardKind.EnemyPuddle) {
         intensity = 0.2 * fade;
+        pattern = 4;
       } else if (kind === HazardKind.EnemyRing) {
         const rr = hz.a0[i];
         if (rr <= 0.05) continue;
@@ -227,6 +316,7 @@ export class ProjectileRenderer {
       TRS[6] = 1;
       TRS[7] = r;
       writeTRSFrom(da, nd * 16);
+      dpa[nd] = pattern;
       if (solid) {
         dc[nd * 3] = tmpC.r;
         dc[nd * 3 + 1] = tmpC.g;
@@ -240,7 +330,17 @@ export class ProjectileRenderer {
       }
       nd++;
     }
-    commitInstances(this.discs, nd, [this.discAlpha]);
+    // "!" over Gloom winding up a charge, lit fuses and bosses about to dash
+    const e = w.enemies;
+    for (let i = 0; i < e.count && nm < MAX_MARKS; i++) {
+      if (!e.alive[i] || e.state[i] !== 1 || !WARN_TYPE[e.type[i]]) continue;
+      const x = e.px[i] + (e.x[i] - e.px[i]) * alpha;
+      const z = e.pz[i] + (e.z[i] - e.pz[i]) * alpha;
+      const top = e.y[i] + ENEMIES[e.type[i]].height * e.scale[i] + 0.9;
+      nm = this.mark(ma, nm, x, top, z, WARN_TYPE[e.type[i]] === 2 ? 2 : 0.9);
+    }
+    commitInstances(this.marks, nm);
+    commitInstances(this.discs, nd, [this.discAlpha, this.discPattern]);
     commitInstances(this.walls, nw, [this.wallAlpha]);
     commitInstances(this.icicles, ni);
     commitInstances(this.spikes, nsp);

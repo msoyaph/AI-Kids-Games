@@ -521,8 +521,22 @@ export function shardGeometry(): THREE.BufferGeometry {
 
 // ───────────────────────────── pickups ─────────────────────────────
 
-export function gemGeometry(): THREE.BufferGeometry {
-  return new GeoBuilder().add(P.octa(0.28), 0xffffff, [0, 0, 0], [0, 0, 0], [1, 1.5, 1]).build();
+/**
+ * XP gem. Shape 0 is the classic crystal; 1–3 (cube, pyramid, star) tell tiers apart by
+ * shape as well as colour in colour-blind mode.
+ */
+export function gemGeometry(shape = 0): THREE.BufferGeometry {
+  const b = new GeoBuilder();
+  switch (shape) {
+    case 1:
+      return b.add(P.box(0.34, 0.34, 0.34), 0xffffff, [0, 0, 0], [0.6, 0, 0.6]).build();
+    case 2:
+      return b.add(P.tetra(0.38), 0xffffff, [0, 0, 0], [0.6, 0, 0.8]).build();
+    case 3:
+      return b.add(P.octa(0.3), 0xffffff, [0, 0, 0], [0, 0, 0], [1, 1.5, 1]).add(P.octa(0.3), 0xffffff, [0, 0, 0], [0, 0, Math.PI / 2], [1, 1.5, 1]).build();
+    default:
+      return b.add(P.octa(0.28), 0xffffff, [0, 0, 0], [0, 0, 0], [1, 1.5, 1]).build();
+  }
 }
 
 export function coinGeometry(): THREE.BufferGeometry {

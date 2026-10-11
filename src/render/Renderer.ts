@@ -17,6 +17,7 @@ import { ProjectileRenderer } from './ProjectileRenderer';
 import { ShrineRenderer } from './ShrineRenderer';
 import { Sky } from './Sky';
 import { Snowfall } from './Snowfall';
+import { setFlashSteady } from './flash';
 import { buildWorldMesh } from './worldMesh';
 import { ENEMIES } from '../config/enemies';
 import { lowPolyMaterial } from './geo';
@@ -142,6 +143,17 @@ export class GameRenderer {
     this.worldKey = key;
   }
 
+  /** Reduced motion (no shake / FOV kick / bob / streaks, steady blinks) and colour-blind palette. */
+  reducedMotion = false;
+  setAccess(reducedMotion: boolean, colorblind: boolean): void {
+    this.reducedMotion = reducedMotion;
+    this.rig.reducedMotion = reducedMotion;
+    this.playerView.reducedMotion = reducedMotion;
+    setFlashSteady(reducedMotion);
+    this.projectiles.colorblind = colorblind;
+    this.pickups.setColorblind(colorblind);
+  }
+
   /** Show an enemy (or null: the hero again) in the menu backdrop. */
   showcaseEnemy(id: string | null): void {
     this.showcaseId = id;
@@ -204,8 +216,8 @@ export class GameRenderer {
     const speed = Math.hypot(p.vx, p.vz);
     const gy = w.terrain.height(x, z);
     this.playerView.update(x, y, z, gy, p.yaw, speed, p.onGround, p.sliding, p.vy, dt, w.time, p.iframes > 0 || p.buffs.ward > 0);
-    // momentum feedback: wind streaks when moving fast, sparks when sliding
-    if (dt > 0 && speed > 11) {
+    // momentum feedback: wind streaks when moving fast (not with reduced motion), sparks when sliding
+    if (dt > 0 && speed > 11 && !this.reducedMotion) {
       const n = Math.min(3, (speed - 11) * 0.15 + Math.random());
       for (let k = 0; k < n; k++) {
         const side = (Math.random() - 0.5) * 1.6;
@@ -230,6 +242,7 @@ export class GameRenderer {
     const time = w.time + alpha / 60;
     this.enemies.update(w, alpha, time);
     this.pickups.update(w, alpha, time);
+    this.projectiles.setCamera(this.camera.position);
     this.projectiles.update(w, alpha, time, x, y, z);
     this.shrines.update(w, time);
     this.fx.update(dt, this.camera);

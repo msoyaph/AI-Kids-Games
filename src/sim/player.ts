@@ -153,7 +153,7 @@ export function updatePlayer(w: World, input: SimInput): void {
   if (p.jumpBuffer > 0 && p.coyote > 0) {
     p.vy = MOVE.jumpSpeed * mv.jump;
     hs = Math.hypot(p.vx, p.vz);
-    if ((p.sliding || p.landT < 0.15) && hs > 1 && hs < 26) {
+    if ((p.sliding || p.landT < 0.15) && hs > 1 && hs < 26 && !input.autoHop) {
       const ns = hs + MOVE.bhopBoost * mv.slideBoost;
       p.vx *= ns / hs;
       p.vz *= ns / hs;

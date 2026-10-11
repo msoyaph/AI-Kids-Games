@@ -5,6 +5,7 @@ import { MAPS } from '../config/maps';
 import { SHOP } from '../config/meta';
 import { WEAPONS } from '../config/weapons';
 import type { KeyValueStore } from '../core/storage';
+import { defaultBindings, sanitizeBindings, type Bindings } from '../input/actions';
 
 export type Quality = 'low' | 'medium' | 'high';
 export type MouseMode = 'auto' | 'lock' | 'drag';
@@ -20,6 +21,40 @@ export interface Settings {
   screenShake: boolean;
   damageNumbers: boolean;
   mouseMode: MouseMode;
+  /** Remapping and control options (kept when progress is reset). */
+  controls: ControlSettings;
+  access: AccessSettings;
+}
+
+export interface ControlSettings {
+  bindings: Bindings;
+  /** Slide key toggles instead of hold (switches off when the slide ends). */
+  slideToggle: boolean;
+  /** Hold jump to keep hopping (no bunny-hop speed bonus for automatic hops). */
+  autoHop: boolean;
+  /** Controller rumble. */
+  rumble: boolean;
+}
+
+export type ReducedMotion = 'auto' | 'on' | 'off';
+
+export interface AccessSettings {
+  /** Auto follows the system "reduce motion" preference. */
+  reducedMotion: ReducedMotion;
+  /** Okabe-Ito warning / pickup colours and shape-coded gems. */
+  colorblind: boolean;
+  /** 125% interface size. */
+  largeText: boolean;
+  /** Solid, high-contrast HUD. */
+  highContrast: boolean;
+}
+
+export function defaultControls(): ControlSettings {
+  return { bindings: defaultBindings(), slideToggle: false, autoHop: false, rumble: true };
+}
+
+export function defaultAccess(): AccessSettings {
+  return { reducedMotion: 'auto', colorblind: false, largeText: false, highContrast: false };
 }
 
 export interface LifetimeStats {
@@ -118,6 +153,8 @@ export function defaultSettings(): Settings {
     screenShake: true,
     damageNumbers: true,
     mouseMode: 'auto',
+    controls: defaultControls(),
+    access: defaultAccess(),
   };
 }
 
@@ -303,10 +340,30 @@ export function sanitizeSave(raw: unknown): SaveData {
     screenShake: bool(st.screenShake, def.screenShake),
     damageNumbers: bool(st.damageNumbers, def.damageNumbers),
     mouseMode: st.mouseMode === 'lock' || st.mouseMode === 'drag' || st.mouseMode === 'auto' ? st.mouseMode : def.mouseMode,
+    controls: sanitizeControls(st.controls),
+    access: sanitizeAccess(st.access),
   };
   d.lastCharacter = typeof raw.lastCharacter === 'string' && charIds.has(raw.lastCharacter) ? raw.lastCharacter : 'thea';
   d.version = SAVE_VERSION;
   return d;
+}
+
+function sanitizeControls(raw: unknown): ControlSettings {
+  const d = defaultControls();
+  if (!isObj(raw)) return d;
+  return { bindings: sanitizeBindings(raw.bindings), slideToggle: bool(raw.slideToggle, d.slideToggle), autoHop: bool(raw.autoHop, d.autoHop), rumble: bool(raw.rumble, d.rumble) };
+}
+
+function sanitizeAccess(raw: unknown): AccessSettings {
+  const d = defaultAccess();
+  if (!isObj(raw)) return d;
+  const rm = raw.reducedMotion;
+  return {
+    reducedMotion: rm === 'on' || rm === 'off' || rm === 'auto' ? rm : d.reducedMotion,
+    colorblind: bool(raw.colorblind, d.colorblind),
+    largeText: bool(raw.largeText, d.largeText),
+    highContrast: bool(raw.highContrast, d.highContrast),
+  };
 }
 
 /** Loads/saves SaveData through a never-throwing KeyValueStore. */

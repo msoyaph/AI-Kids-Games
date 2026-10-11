@@ -3,6 +3,7 @@ import { CAPS } from '../config/balance';
 import { ENEMIES } from '../config/enemies';
 import type { World } from '../sim/world';
 import { addFlashAttribute, commitInstances, flashLambert, makeInstanced, TRS, writeTRSFrom, writeTRSPitchFrom } from './instancing';
+import { blink, pulse } from './flash';
 import { enemyGeometry, ROLLER_BODY } from './models';
 
 const BEHAVIOR_CHARGER = 'charger';
@@ -81,7 +82,7 @@ export class EnemyRenderer {
         cr = 1.55;
         cg = 1.25;
         cb = 0.5;
-        flash = Math.max(flash, 0.12 + Math.sin(time * 6) * 0.08);
+        flash = Math.max(flash, 0.04 + pulse(time, 'elite') * 0.16);
       }
       if (this.isCharger[t]) {
         const st = e.state[i];
@@ -96,7 +97,7 @@ export class EnemyRenderer {
           sy *= 0.9;
         }
       } else if (this.isExploder[t] && e.state[i] === 1) {
-        flash = Math.max(flash, Math.sin(time * 40) > 0 ? 0.8 : 0);
+        flash = Math.max(flash, blink(time, 'fuse') * 0.8);
         s *= 1 + (1 - e.stT[i]) * 0.3;
         sy = s;
       }

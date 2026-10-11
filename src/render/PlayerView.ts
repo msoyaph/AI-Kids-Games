@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { blink as blinkAt } from './flash';
 import type { CharacterDef } from '../config/types';
 import { damp, lerp, lerpAngle } from '../core/math';
 import { lowPolyMaterial } from './geo';
@@ -6,6 +7,8 @@ import { characterGeometry } from './models';
 
 /** The player's on-screen body: procedural model + squash/stretch/lean animation. */
 export class PlayerView {
+  /** Reduced motion: no walk bob. */
+  reducedMotion = false;
   readonly root = new THREE.Group();
   private body = new THREE.Group();
   private mesh: THREE.Mesh | null = null;
@@ -95,7 +98,7 @@ export class PlayerView {
     this.squash = lerp(this.squash, 1, damp(10, dt));
     const stretch = onGround ? this.squash : 1 + Math.max(-0.1, Math.min(0.18, vy * 0.02));
     if (onGround && !sliding && speed > 1) this.bob += dt * (8 + speed * 0.6);
-    const bobY = onGround && !sliding ? Math.abs(Math.sin(this.bob)) * 0.09 * Math.min(1, speed / 6) : 0;
+    const bobY = onGround && !sliding && !this.reducedMotion ? Math.abs(Math.sin(this.bob)) * 0.09 * Math.min(1, speed / 6) : 0;
     this.body.position.y = y + bobY - (sliding ? 0.2 : 0);
     this.body.scale.set(1 / Math.sqrt(stretch), stretch * (sliding ? 0.8 : 1), 1 / Math.sqrt(stretch));
     // shadow
@@ -105,9 +108,10 @@ export class PlayerView {
     this.shadow.scale.setScalar(ss);
     // hurt flash / invulnerability blink
     this.flash = Math.max(0, this.flash - dt * 4);
-    const blink = invulnerable && Math.sin(time * 40) > 0;
+    // ≤ 3 Hz (flash safety); steady with reduced motion
+    const hidden = invulnerable && blinkAt(time, 'iframes') === 0;
     this.material.emissive.setRGB(this.flash * 0.9, this.flash * 0.2, this.flash * 0.2);
-    if (this.mesh) this.mesh.visible = !blink || this.flash > 0.5;
+    if (this.mesh) this.mesh.visible = !hidden || this.flash > 0.5;
     if (this.ghost && this.mesh) this.ghost.visible = this.mesh.visible && this.showGhost;
   }
 }

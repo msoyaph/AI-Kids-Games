@@ -17,6 +17,8 @@ export class CameraRig {
   private trauma = 0;
   private shakeT = 0;
   shakeEnabled = true;
+  /** Reduced motion: no shake, no speed FOV kick, no speed pull-back. */
+  reducedMotion = false;
   private fov = this.tuning.fov;
   private lift = 0;
 
@@ -51,7 +53,7 @@ export class CameraRig {
     this.smoothTarget.z += (z - this.smoothTarget.z) * kh;
     this.smoothTarget.y += (y - this.smoothTarget.y) * kv;
 
-    const dist = Math.max(3, T.distance + this.zoom) + Math.min(4, speed * T.speedPullback);
+    const dist = Math.max(3, T.distance + this.zoom) + (this.reducedMotion ? 0 : Math.min(4, speed * T.speedPullback));
     const cp = Math.cos(this.pitch);
     const ox = Math.sin(this.yaw) * cp;
     const oy = Math.sin(this.pitch);
@@ -82,7 +84,7 @@ export class CameraRig {
     // shake
     this.trauma = Math.max(0, this.trauma - dt * 1.6);
     this.shakeT += dt;
-    if (this.shakeEnabled && this.trauma > 0) {
+    if (this.shakeEnabled && !this.reducedMotion && this.trauma > 0) {
       const s = this.trauma * this.trauma * 0.6;
       cx += Math.sin(this.shakeT * 47.3) * s;
       cy += Math.sin(this.shakeT * 53.1 + 1.3) * s;
@@ -91,7 +93,7 @@ export class CameraRig {
     cam.position.set(cx, cy, cz);
     cam.lookAt(this.smoothTarget.x, this.smoothTarget.y + 1.6, this.smoothTarget.z);
 
-    const wantFov = T.fov + Math.min(T.fovKickMax, Math.max(0, speed - T.fovKickStart) * T.fovKickPerSpeed);
+    const wantFov = this.reducedMotion ? T.fov : T.fov + Math.min(T.fovKickMax, Math.max(0, speed - T.fovKickStart) * T.fovKickPerSpeed);
     this.fov += (wantFov - this.fov) * damp(4, dt);
     if (Math.abs(cam.fov - this.fov) > 0.01) {
       cam.fov = this.fov;
