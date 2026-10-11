@@ -53,3 +53,11 @@ for this task. The obsolete game-sources adaptations have been removed.
 Favorites/recently played use aikg:; legacy migration preserves existing device data.
 
 Existing Sites production remains unchanged. This launch targets Vercel preview first.
+
+## Homepage review changes
+
+Removed the selected welcome strip, hero eyebrow badge and Featured/Recently
+Played/New Games/category subtitles. Kept headings, game content and controls.
+Added a small top gap after removing the strip. Apply the same cosmetic changes
+to the existing two-game Sites version and the five-game Vercel preview; the
+five-game production launch still requires owner approval.
