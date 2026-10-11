@@ -33,6 +33,7 @@ export class Atlas {
   private textures = new Map<string, Texture>();
   private sources: CanvasSource[] = [];
   private canvases: HTMLCanvasElement[] = [];
+  private warned = new Set<string>();
   /** Raw sprites kept for DOM icon sheets. */
   readonly raw = new Map<string, PixelCanvas>();
 
@@ -111,7 +112,10 @@ export class Atlas {
   tex(name: string): Texture {
     const t = this.textures.get(name);
     if (!t) {
-      if (import.meta.env?.DEV) console.warn('missing sprite', name);
+      if (import.meta.env?.DEV && !this.warned.has(name)) {
+        this.warned.add(name);
+        console.warn('missing sprite', name);
+      }
       return Texture.EMPTY;
     }
     return t;

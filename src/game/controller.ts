@@ -115,6 +115,7 @@ export class Controller {
     if (isTool(s.id)) {
       const k = toolKind(s.id);
       if (k === 'rod' || k === 'bonk' || k === 'sling') {
+        if (k !== 'rod' && this.locked) return;
         g.useSpecialTool(k);
         return;
       }
@@ -153,6 +154,12 @@ export class Controller {
         },
       },
     ]);
+  }
+
+  /** Play a quick tool swing without a world effect (bonk stick, slingshot). */
+  flashTool(k: ToolKind, total: number): void {
+    if (this.locked) return;
+    this.startSwing(k, total, total * 0.4, () => {});
   }
 
   private startSwing(k: ToolKind, total: number, impact: number, fn: () => void): void {

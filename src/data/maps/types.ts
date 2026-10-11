@@ -71,6 +71,8 @@ export interface MapDef {
   region?: string;
   /** rectangles kept free of random clutter / forage */
   clearZones?: { x: number; y: number; w: number; h: number }[];
+  /** mine layer palette for cave tiles (0..3) */
+  tileset?: number;
   /** farm building plots: id → footprint */
   plots?: Record<string, { x: number; y: number; w: number; h: number }>;
 }

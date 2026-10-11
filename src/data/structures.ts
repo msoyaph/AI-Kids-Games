@@ -97,7 +97,7 @@ export const PROPS: Record<string, PropDef> = {
   sign: { sprite: 'prop.sign', solid: true },
   mailbox: { sprite: 'prop.mailbox', solid: true },
   bin: { sprite: 'prop.bin', solid: true, w: 2 },
-  fence: { sprite: 'prop.fence', solid: true },
+  fence: { sprite: 'obj.woodFence.1', solid: true },
   crate: { sprite: 'prop.crate', solid: true },
   barrel: { sprite: 'prop.barrel', solid: true },
   fountain: { sprite: 'prop.fountain', solid: true, w: 2, h: 2 },

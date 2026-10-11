@@ -180,7 +180,11 @@ export class WorldView {
         const v = hash32(tx, ty) % TER_VARIANTS;
         const px = (tx - x0) * TILE, py = (ty - y0) * TILE;
         let tex: Texture;
-        if (t === Ter.CLIFF && loc.ter(tx, ty - 1) !== Ter.CLIFF) tex = a.tex(`ter.cliftop.${v}.s${s}`);
+        const ts = loc.def.tileset;
+        if (ts !== undefined && (t === Ter.CAVE || t === Ter.CAVEWALL)) {
+          if (t === Ter.CAVEWALL && loc.ter(tx, ty + 1) === Ter.CAVE) tex = a.tex(`cavetop.${v}.m${ts}`);
+          else tex = a.tex(`ter.${t}.${v}.m${ts}`);
+        } else if (t === Ter.CLIFF && loc.ter(tx, ty - 1) !== Ter.CLIFF) tex = a.tex(`ter.cliftop.${v}.s${s}`);
         else tex = this.terTex[s][t]?.[v] ?? this.terTex[0][0][0];
         this.tmpSprite(tex, px, py);
         if (t === Ter.WATER || t === Ter.DEEPWATER) {

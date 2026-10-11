@@ -74,6 +74,23 @@ export function objSprite(o: WorldObject, season: number, loc: Loc, x: number, y
     }
     case 'path':
       return { name: `floor.${o.id}`, fw: 1, fh: 1, flat: true };
+    case 'rock':
+      if (o.id.startsWith('geode')) return one(`obj.${o.id}`);
+      return one(`obj.${o.id}.${(o.n ?? 0) % 3}`);
+    case 'ore':
+      return one(`obj.ore.${o.id}.${loc.def.tileset ?? 0}`);
+    case 'gem':
+      return one(`obj.gem.${o.id}.${loc.def.tileset ?? 0}`);
+    case 'ice':
+      return one('obj.ice');
+    case 'box':
+      return one('obj.box');
+    case 'ladder':
+      return { name: o.id === 'blocked' ? 'obj.ladder.blocked' : 'obj.ladder', fw: 1, fh: 1, flat: false };
+    case 'mineChest':
+      return one('obj.mineChest');
+    case 'heartstone':
+      return one('obj.heartstone.1');
     case 'grass':
       return one(`obj.grass.${(o.n ?? 0) % 2}.s${season}`);
     case 'part':

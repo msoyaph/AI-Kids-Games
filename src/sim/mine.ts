@@ -135,7 +135,7 @@ export function buildMineFloor(): MapDef {
     const x = i % MINE_W, y = (i / MINE_W) | 0;
     if (Math.abs(x - sx) + Math.abs(y - sy) > 3 && !b.isTaken(x, y)) b.prop(deco, x, y);
   }
-  return b.build({ id: 'mine', name: `Mine · Floor ${floor}`, outdoor: false, farmable: false, music: `mine${L}`, water: 'mine', dark: true, region: LAYER_NAMES[L] });
+  return b.build({ id: 'mine', name: `Mine · Floor ${floor}`, outdoor: false, farmable: false, music: `mine${L}`, water: 'mine', dark: true, region: LAYER_NAMES[L], tileset: L });
 }
 
 function buildHeartChamber(): MapDef {
@@ -161,7 +161,7 @@ function buildHeartChamber(): MapDef {
   b.trigger(10, 10, 'ladderUp');
   b.point('start', 10, 9, 3);
   b.point('heart', 10, 5);
-  return b.build({ id: 'mine', name: 'The Heart of the Valley', outdoor: false, farmable: false, music: 'heart', water: 'none', dark: true, region: 'Crystal Core' });
+  return b.build({ id: 'mine', name: 'The Heart of the Valley', outdoor: false, farmable: false, music: 'heart', water: 'none', dark: true, region: 'Crystal Core', tileset: 3 });
 }
 
 registerMap('mine', buildMineFloor);

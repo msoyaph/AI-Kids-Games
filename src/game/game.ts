@@ -36,6 +36,7 @@ import { Fader, Modals, Toasts } from '../ui/widgets';
 import { Controller } from './controller';
 import { installVillagers, npcAtPointer, talkTo } from './villagers';
 import { installAnimals } from './animals';
+import { installMine } from './mine';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
 
 export interface GameOptions {
@@ -96,6 +97,7 @@ export class Game implements MenuHost {
   private fpsAcc = 0;
   private fpsN = 0;
   private titleT = 0;
+  private lastErr = -1e9;
   private busy = false;
   private unsub: (() => void)[] = [];
 
@@ -128,6 +130,7 @@ export class Game implements MenuHost {
     this.initUI();
     installVillagers(this);
     installAnimals(this);
+    installMine(this);
     this.input.onAction = (a) => this.onRawAction(a);
     window.addEventListener('pagehide', () => this.suspend());
     document.addEventListener('visibilitychange', () => {
@@ -487,11 +490,18 @@ export class Game implements MenuHost {
       this.fpsAcc = 0;
       this.fpsN = 0;
     }
-    if (this.sim) {
+    requestAnimationFrame((tt) => this.frame(tt));
+    if (!this.sim) return;
+    try {
       this.update(dt);
       this.render(dt);
+    } catch (e) {
+      // keep the game loop alive; report once in a while
+      if (t - this.lastErr > 3000) {
+        this.lastErr = t;
+        console.error(e);
+      }
     }
-    requestAnimationFrame((tt) => this.frame(tt));
   }
 
   update(dt: number): void {
@@ -540,6 +550,15 @@ export class Game implements MenuHost {
     this.cam.y = mh <= vh ? mh / 2 : clamp(this.cam.y, vh / 2, mh - vh / 2);
   }
 
+  private shakeT = 0;
+  private shakeAmp = 0;
+  /** Gentle screen shake (respects settings). */
+  shake(amount: number): void {
+    if (!this.settings.screenShake || this.settings.reducedMotion) return;
+    this.shakeAmp = amount;
+    this.shakeT = 0.25;
+  }
+
   /** Optional camera override (cutscenes / title). */
   camTarget: { x: number; y: number } | null = null;
 
@@ -566,7 +585,13 @@ export class Game implements MenuHost {
     this.cam.y += (ty - this.cam.y) * follow;
     this.clampCamera();
     const z = this.host.zoom;
-    const camX = Math.round(this.cam.x * z) / z, camY = Math.round(this.cam.y * z) / z;
+    let sx = 0, sy = 0;
+    if (this.shakeT > 0) {
+      this.shakeT -= dt;
+      sx = Math.round((Math.random() - 0.5) * this.shakeAmp);
+      sy = Math.round((Math.random() - 0.5) * this.shakeAmp);
+    }
+    const camX = Math.round((this.cam.x + sx) * z) / z, camY = Math.round((this.cam.y + sy) * z) / z;
     this.view.root.scale.set(z);
     this.view.root.x = Math.round(this.host.width / 2 - camX * z);
     this.view.root.y = Math.round(this.host.height / 2 - camY * z);
