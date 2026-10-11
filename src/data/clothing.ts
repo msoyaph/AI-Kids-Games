@@ -147,7 +147,7 @@ export function clothingItem(c: ClothingDef): ItemDef {
     price: c.price,
     stack: 1,
     desc: c.desc,
-    icon: { s: ICON_SHAPE[c.slot], c: c.color, c2: c.color2 },
+    icon: { s: ICON_SHAPE[c.slot], c: c.color, c2: c.color2, v: c.shape, p: c.pattern },
     tags: c.tags,
   };
 }

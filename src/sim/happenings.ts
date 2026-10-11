@@ -130,11 +130,13 @@ export function skateRings(g: Game): { x: number; z: number }[] {
   const rng = dayRng(g.state.seed, 7, 'rings');
   rng.shuffle(pond);
   const out: { x: number; z: number }[] = [];
-  for (const i of pond) {
-    const x = (i % w.size) + 0.5, z = Math.floor(i / w.size) + 0.5;
-    if (out.every((r) => Math.hypot(r.x - x, r.z - z) > 2.2)) out.push({ x, z });
-    if (out.length === 5) break;
-  }
+  // spread out first; on a small pond the last rings sit closer so there are always five
+  for (const gap of [2.2, 1.6, 1.1])
+    for (const i of pond) {
+      if (out.length === 5) return out;
+      const x = (i % w.size) + 0.5, z = Math.floor(i / w.size) + 0.5;
+      if (out.every((r) => Math.hypot(r.x - x, r.z - z) > gap)) out.push({ x, z });
+    }
   return out;
 }
 
@@ -150,16 +152,18 @@ function updateFestival(g: Game): void {
   if (st.done) return;
   if (f.id === 'lanternSkate') {
     const p = g.state.player;
-    skateRings(g).forEach((r, k) => {
+    const rings = skateRings(g);
+    const need = Math.min(f.need, rings.length);
+    rings.forEach((r, k) => {
       const key = `ring${k}`;
       if (st.got.includes(key) || Math.hypot(p.x - r.x, p.z - r.z) > 0.75) return;
       st.got.push(key);
       st.progress++;
       g.emit('sfx', { name: 'sparkle' });
       g.emit('fx', { kind: 'sparkle', x: r.x, y: 0, z: r.z, color: 0xffd27a });
-      g.toast(`Ring ${st.progress} of 5!`, 'good');
+      g.toast(`Ring ${st.progress} of ${need}!`, 'good');
     });
-    if (st.progress >= f.need) finishFestival(g);
+    if (st.progress >= need) finishFestival(g);
   }
 }
 
@@ -243,11 +247,20 @@ export function buyFromMerchant(g: Game, e: StockEntry): boolean {
 
 // ---------------------------------------------------------------- meteor showers
 
-/** A clear night with shooting stars (about one night in eight, after Chapter 2). */
+/** The night's roll for shooting stars (about one night in eight), before the weather has its say. */
+export function meteorRoll(g: Game, day: number): boolean {
+  return dayRng(g.state.seed, day, 'meteor').next() < 0.13;
+}
+
+/**
+ * A clear night with shooting stars (after Chapter 2). Today uses today's weather; an earlier
+ * night only counts if it really had them (remembered in `flags.meteorDay` each morning).
+ */
 export function meteorNight(g: Game, day = g.state.clock.day): boolean {
   if (!happeningsOpen(g)) return false;
+  if (day !== g.state.clock.day) return g.state.flags.meteorDay === day;
   if (g.state.weather.today === 'rain') return false;
-  return dayRng(g.state.seed, day, 'meteor').next() < 0.13;
+  return meteorRoll(g, day);
 }
 
 /** Shooting stars are visible now. */
@@ -324,6 +337,8 @@ export function checkMuseumComplete(g: Game): void {
 
 function dailyHappenings(g: Game): void {
   stardustSpawns(g);
+  // remember tonight (today's weather is rolled by now) so tomorrow's stardust matches the sky
+  if (meteorNight(g)) g.state.flags.meteorDay = g.state.clock.day;
   dailyGlowStreak(g);
   const f = festivalToday(g);
   if (f) g.toast(`🎉 Today is the ${f.name}! It starts at ${f.hours[0] > 12 ? `${f.hours[0] - 12} PM` : `${f.hours[0]} AM`} in the plaza.`, 'good');

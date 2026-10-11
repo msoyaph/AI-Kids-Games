@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { makeGame } from './helpers';
 import { nextDay, setHour } from './story';
 import type { Game } from '../src/sim/game';
-import { buyFromMerchant, festivalHandIn, festivalNow, festivalState, festivalToday, merchantHere, merchantStock, meteorNight, pondFrozen, skateRings, birthdayToday, museumComplete } from '../src/sim/happenings';
+import { buyFromMerchant, festivalHandIn, festivalNow, festivalState, festivalToday, merchantHere, merchantStock, meteorNight, meteorRoll, meteorsNow, pondFrozen, skateRings, birthdayToday, museumComplete } from '../src/sim/happenings';
 import { setSeason, setSeasonsPaused } from '../src/sim/seasons';
 import { give, countItem } from '../src/sim/inventory';
 import { contestOpen, startContest, updateContest } from '../src/sim/challenges';
@@ -20,6 +20,7 @@ import { BUGS, FISH, FOSSILS } from '../src/data/registry';
 import { BIRTHDAYS } from '../src/data/festivals';
 import { VILLAGERS } from '../src/data/villagers';
 import { Ground } from '../src/world/types';
+import { rollWeather } from '../src/sim/weather';
 import { money } from '../src/sim/inventory';
 import { pitchTent } from '../src/sim/housing';
 
@@ -116,6 +117,17 @@ describe('festivals', () => {
     expect(g.world.isWater(g.world.idx(Math.floor(g.state.player.x), Math.floor(g.state.player.z)))).toBe(false);
   });
 
+  it('every island has five skate rings on its pond, even a small one', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const g = makeGame(seed * 37 + 1);
+      const rings = skateRings(g);
+      expect(rings, `seed ${seed * 37 + 1}`).toHaveLength(5);
+      for (const r of rings) expect(g.world.ground(g.world.idx(Math.floor(r.x), Math.floor(r.z)))).toBe(Ground.Pond);
+      expect(new Set(rings.map((r) => `${r.x},${r.z}`)).size).toBe(5);
+    }
+    expect(skateRings(makeGame(2026))).toHaveLength(5);
+  });
+
   it('everyone gathers in the plaza, and the host waits by the Great Lantern', () => {
     const g = laterGame(606, 'autumn', 5);
     g.state.villagers.tansy = { movedIn: true, homeId: 0, friendship: 0, talkedDay: 0, giftDay: 0, giftsToday: 0, rewardsGiven: 0, metDay: 1 };
@@ -176,15 +188,41 @@ describe('Wanda, meteors and birthdays', () => {
 
   it('a meteor night leaves stardust on the beach, which teaches a recipe', () => {
     const g = laterGame(621, 'summer', 1);
+    const dust = () => Object.values(g.state.world.objects).filter((o) => o.item === 'stardust').length;
+    // find a night with shooting stars and clear skies
     let day = 2;
-    while (!meteorNight(g, day - 1) && day < 200) day++;
-    expect(day).toBeLessThan(200);
-    g.state.clock.day = day - 1;
+    for (; day < 300; day++) {
+      if (!meteorRoll(g, day)) continue;
+      g.state.clock.day = day - 1;
+      nextDay(g);
+      if (meteorNight(g)) break;
+    }
+    expect(day).toBeLessThan(300);
+    expect(meteorsNow(g)).toBe(false);
+    setHour(g, 21);
+    expect(meteorsNow(g)).toBe(true);
     nextDay(g);
-    const dust = Object.values(g.state.world.objects).filter((o) => o.item === 'stardust');
-    expect(dust.length).toBeGreaterThan(0);
+    expect(dust()).toBeGreaterThan(0);
+    setHour(g, 2); // after midnight it's still last night's shower
+    expect(meteorsNow(g)).toBe(true);
     give(g, 'stardust', 1, 'pickup');
     expect(g.state.recipes).toContain('r_furn_stardust_lamp');
+  });
+
+  it('no stardust after a night when rain hid the stars', () => {
+    const g = laterGame(623, 'summer', 1);
+    let day = 2;
+    while (!(meteorRoll(g, day) && rollWeather(g.state.seed, day) === 'rain') && day < 3000) day++;
+    expect(day).toBeLessThan(3000);
+    g.state.clock.day = day - 1;
+    nextDay(g);
+    expect(g.state.weather.today).toBe('rain');
+    expect(meteorNight(g)).toBe(false);
+    setHour(g, 21);
+    expect(meteorsNow(g)).toBe(false);
+    nextDay(g);
+    expect(meteorNight(g, day)).toBe(false);
+    expect(Object.values(g.state.world.objects).some((o) => o.item === 'stardust')).toBe(false);
   });
 
   it("birthdays: they stay home for their party and gifts count double", () => {

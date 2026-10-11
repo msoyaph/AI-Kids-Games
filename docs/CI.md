@@ -4,7 +4,7 @@ There are two workflows:
 
 | Workflow | Runs on | When | What it checks |
 |---|---|---|---|
-| `.github/workflows/ci.yml` | GitHub's standard Ubuntu runner (free minutes, no GPU) | Pushes to `main` and `lightcrossing-upgrade`, pull requests into `main` from branches of this repository (never from forks), or by hand | Typecheck, build, build under 2 MB, unit tests (including a full story playthrough), story pacing, and the browser smoke tests at **Low quality** on software WebGL (SwiftShader) with longer timeouts |
+| `.github/workflows/ci.yml` | GitHub's standard Ubuntu runner (free minutes, no GPU) | Pushes to `main` and `lightcrossing-upgrade`, pull requests into `main` from branches of this repository (never from forks), or by hand | Typecheck, build, build under 2 MB, unit tests (including full story playthroughs and a year after the story), story pacing, and the browser smoke tests at **Low quality** on software WebGL (SwiftShader) with longer timeouts |
 | `.github/workflows/gpu-e2e.yml` | **Your own Mac** (a self-hosted runner with the labels `self-hosted, macOS, ARM64, gpu`) | Pushes to `main` and `lightcrossing-upgrade`, or by hand. **Never on pull requests.** | The browser smoke tests at normal quality on the real GPU (Metal), then the performance benchmark for Low, Medium and High |
 
 When something fails, the test report, screenshots and traces are uploaded as an artifact (see [Reading results](#6-reading-results)).

@@ -1,7 +1,7 @@
 {
   "name": "light-crossing",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Light Crossing \u2014 a cozy procedural island life-sim for the browser",
   "scripts": {

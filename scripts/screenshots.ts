@@ -63,8 +63,42 @@ window.__shot = {
   },
   look(g, x, z, minute, facing = 0) {
     const p = g.state.player; p.x = x; p.z = z; p.facing = facing;
+    p.level = g.world.height(g.world.idx(Math.floor(x), Math.floor(z)));
     if (minute !== undefined) g.state.clock.minute = minute;
     window.__lc.view.rig.snap(p.x, 0, p.z);
+  },
+  async season(g, season, day = 3) {
+    const SE = await import('/src/sim/seasons.ts');
+    g.state.quests.chapter = Math.max(g.state.quests.chapter, 3);
+    SE.setSeason(g, season, day);
+    SE.setSeasonsPaused(g, true);
+    g.state.weather.today = 'sunny';
+  },
+  async decorate(g) {
+    const H = await import('/src/sim/housing.ts');
+    const I = await import('/src/sim/inventory.ts');
+    const IN = await import('/src/sim/interior.ts');
+    g.state.home.level = Math.max(g.state.home.level, 2);
+    const ids = ['furn_woven_rug', 'furn_plank_table', 'furn_twiggy_chair', 'furn_pocket_fern', 'furn_driftwood_shelf', 'furn_wick_lantern', 'furn_bellbloom_vase', 'furn_sunset_painting', 'furn_sunny_wallclock', 'furn_leafy_wreath', 'furn_lantern_sconce'];
+    for (const id of ids) I.give(g, id, 1);
+    IN.enterInterior(g, 'home');
+    const slot = (id) => g.state.player.inv.findIndex((s) => s && s.id === id);
+    H.placeFromPockets(g, slot('furn_woven_rug'), 3, 3, 0);
+    H.placeFromPockets(g, slot('furn_plank_table'), 3, 2, 0);
+    H.placeFromPockets(g, slot('furn_twiggy_chair'), 5, 2, 3);
+    H.placeFromPockets(g, slot('furn_pocket_fern'), 7, 0, 0);
+    H.placeFromPockets(g, slot('furn_driftwood_shelf'), 0, 0, 0);
+    const table = g.state.home.furniture.find((f) => f.id === 'furn_plank_table');
+    if (table) {
+      H.placeOnSurface(g, { kind: 'pocket', index: slot('furn_wick_lantern') }, table.uid, 0);
+      H.placeOnSurface(g, { kind: 'pocket', index: slot('furn_bellbloom_vase') }, table.uid, 1);
+    }
+    H.placeWall(g, { kind: 'pocket', index: slot('furn_sunset_painting') }, 0, 2);
+    H.placeWall(g, { kind: 'pocket', index: slot('furn_sunny_wallclock') }, 0, 5);
+    H.placeWall(g, { kind: 'pocket', index: slot('furn_leafy_wreath') }, 1, 2);
+    H.placeWall(g, { kind: 'pocket', index: slot('furn_lantern_sconce') }, 0, 0);
+    IN.rebuildRoom(g);
+    return IN;
   },
   homeOf(g, id) { return g.state.world.structures.find((s) => s.owner === id && s.type === 'villagerHome'); },
   inside(g, I, kind) {
@@ -78,6 +112,8 @@ window.__shot = {
 `;
 
 type Scene = { name: string; run: (page: Page) => Promise<void> };
+/** scenes where the toasts are part of the picture */
+const keepToasts = ['dialogue-big-text'];
 
 const scenes: Scene[] = [
   {
@@ -168,6 +204,160 @@ const scenes: Scene[] = [
       });
     },
   },
+  // ---- after the upgrade: every season, every interior, festivals and young-player features
+  ...(['spring', 'summer', 'autumn', 'winter'] as const).map(
+    (season): Scene => ({
+      name: `island-${season}`,
+      run: async (page) => {
+        await page.evaluate(async (season) => {
+          const S = (window as any).__shot;
+          const g = await S.newGame(777);
+          await S.town(g, ['tansy', 'rusk', 'juno', 'kip']);
+          await S.season(g, season);
+          const plaza = g.world.gen.lots.plaza;
+          S.look(g, plaza.x + plaza.w / 2, plaza.z + plaza.d + 2, 11 * 60);
+        }, season);
+      },
+    }),
+  ),
+  ...['bellamy', 'juno', 'percival', 'kip', 'mochi', 'marlowe'].map(
+    (id): Scene => ({
+      name: `villager-${id}`,
+      run: async (page) => {
+        await page.evaluate(async (id) => {
+          const S = (window as any).__shot;
+          const g = await S.newGame(777);
+          await S.town(g, [id]);
+          const I = await S.imp('/src/sim/interior.ts');
+          S.inside(g, I, 'villager:' + id);
+        }, id);
+      },
+    }),
+  ),
+  {
+    name: 'home-decorated',
+    run: async (page) => {
+      await page.evaluate(async () => {
+        const S = (window as any).__shot;
+        const g = await S.newGame(777);
+        await S.town(g, []);
+        const IN = await S.decorate(g);
+        S.inside(g, IN, 'home');
+      });
+    },
+  },
+  {
+    name: 'basement',
+    run: async (page) => {
+      await page.evaluate(async () => {
+        const S = (window as any).__shot;
+        const g = await S.newGame(777);
+        await S.town(g, []);
+        const H = await S.imp('/src/sim/housing.ts');
+        const I = await S.imp('/src/sim/inventory.ts');
+        const IN = await S.imp('/src/sim/interior.ts');
+        g.state.home.level = 3;
+        S.inside(g, IN, 'home');
+        IN.changeFloor(g, 'basement');
+        for (const id of ['furn_woven_rug', 'furn_plank_table', 'furn_pocket_fern', 'furn_twiggy_chair']) I.give(g, id, 1);
+        const slot = (id: string) => g.state.player.inv.findIndex((s: any) => s && s.id === id);
+        H.placeFromPockets(g, slot('furn_woven_rug'), 4, 4, 0);
+        H.placeFromPockets(g, slot('furn_plank_table'), 4, 3, 0);
+        H.placeFromPockets(g, slot('furn_twiggy_chair'), 6, 3, 3);
+        H.placeFromPockets(g, slot('furn_pocket_fern'), 1, 1, 0);
+        IN.rebuildRoom(g);
+        const rt = IN.interiorRT(g);
+        rt.x = rt.room.w / 2; rt.z = rt.room.d - 2.2; rt.facing = Math.PI;
+      });
+    },
+  },
+  {
+    name: 'museum',
+    run: async (page) => {
+      await page.evaluate(async () => {
+        const S = (window as any).__shot;
+        const g = await S.newGame(777);
+        await S.town(g, []);
+        const R = await S.imp('/src/data/registry.ts');
+        const M = await S.imp('/src/sim/museum.ts');
+        const I = await S.imp('/src/sim/inventory.ts');
+        for (const c of [...R.FISH.slice(0, 10), ...R.BUGS.slice(0, 10), ...R.FOSSILS.slice(0, 6)]) {
+          I.give(g, c.id, 1);
+          M.donateSlot(g, g.state.player.inv.findIndex((s: any) => s && s.id === c.id));
+        }
+        const IN = await S.imp('/src/sim/interior.ts');
+        S.inside(g, IN, 'museum');
+      });
+    },
+  },
+  {
+    name: 'festival-feast',
+    run: async (page) => {
+      await page.evaluate(async () => {
+        const S = (window as any).__shot;
+        const g = await S.newGame(777);
+        await S.town(g, ['tansy', 'rusk', 'bellamy', 'juno', 'percival', 'kip', 'mochi', 'marlowe']);
+        await S.season(g, 'autumn', 5);
+        const plaza = g.world.gen.lots.plaza;
+        S.look(g, plaza.x + plaza.w / 2, plaza.z + plaza.d + 2.5, 17.5 * 60);
+      });
+    },
+  },
+  {
+    name: 'festival-skate',
+    run: async (page) => {
+      await page.evaluate(async () => {
+        const S = (window as any).__shot;
+        const g = await S.newGame(777);
+        await S.town(g, ['juno']);
+        await S.season(g, 'winter', 5);
+        const E = await S.imp('/src/sim/happenings.ts');
+        const rings = E.skateRings(g);
+        const r = rings[rings.length - 1];
+        S.look(g, r.x, r.z + 1.5, 18 * 60, Math.PI);
+      });
+    },
+  },
+  {
+    name: 'wardrobe',
+    run: async (page) => {
+      await page.evaluate(async () => {
+        const S = (window as any).__shot;
+        const g = await S.newGame(777);
+        await S.town(g, []);
+        const W = await S.imp('/src/sim/wardrobe.ts');
+        const C = await S.imp('/src/data/clothing.ts');
+        const owned = g.state.wardrobe.owned;
+        for (const c of C.CLOTHING.slice(0, 18)) owned.push(c.id);
+        for (const slot of ['hat', 'dress', 'shoes', 'bag']) {
+          const c = C.CLOTHING.find((x: any) => x.slot === slot);
+          if (!c) continue;
+          if (!owned.includes(c.id)) owned.push(c.id);
+          W.wear(g, c.id);
+        }
+        const IN = await S.decorate(g);
+        S.inside(g, IN, 'home');
+        (window as any).__lc.panels.wardrobe();
+      });
+    },
+  },
+  {
+    name: 'dialogue-big-text',
+    run: async (page) => {
+      await page.evaluate(async () => {
+        const S = (window as any).__shot;
+        const app = (window as any).__lc;
+        const g = await S.newGame(777);
+        await S.town(g, ['tansy']);
+        app.settings.textSize = 1.5;
+        app.applySettings();
+        const h = S.homeOf(g, 'tansy');
+        S.look(g, h.x + 1.5, h.z + 4.5, 12 * 60, Math.PI);
+        const C = await S.imp('/src/ui/conversation.ts');
+        void C.talkToVillager(app, g, 'tansy');
+      });
+    },
+  },
 ];
 
 async function main(): Promise<void> {
@@ -186,6 +376,8 @@ async function main(): Promise<void> {
     await page.evaluate(HELPERS);
     await s.run(page);
     await page.waitForTimeout(1500);
+    // setup toasts (achievements from the scripted set-up) would cover the scene
+    if (!keepToasts.includes(s.name)) await page.evaluate(() => document.querySelectorAll('.toasts > *').forEach((t) => t.remove()));
     const file = join(outDir, `${s.name}${quality ? `-${quality}` : ''}.jpg`);
     await page.screenshot({ path: file, type: 'jpeg', quality: 82 });
     console.log('saved', file);

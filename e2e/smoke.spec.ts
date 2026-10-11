@@ -106,3 +106,42 @@ test('the single-file build runs from file:// and inside a sandboxed iframe', as
   await wait(page, 3000);
   expect(errors).toEqual([]);
 });
+
+test('a save made inside Lantern Hall comes back inside after a reload, under lightcrossing.* keys', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto(`/${Q}`);
+  await newGame(page);
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('Enter');
+    await wait(page, 300);
+  }
+  type G = { state: { player: Record<string, unknown> & { x: number; z: number }; clock: { day: number } }; runtime: { interior?: { room: { kind: string } } } };
+  type A = { game: G; saveNow(quiet?: boolean): boolean; debugStep(n: number): void };
+  // step inside Lantern Hall (as the door would) and save
+  const saved = await page.evaluate(() => {
+    const app = (window as unknown as { __lc: A }).__lc;
+    const p = app.game.state.player;
+    p.location = 'hall';
+    p.indoor = { x: 3.5, z: 5.5, facing: 0, ret: { x: p.x, z: p.z, facing: 0 } };
+    return app.saveNow(true);
+  });
+  expect(saved).toBe(true);
+  const keys = await page.evaluate(() => Object.keys(localStorage));
+  expect(keys.length).toBeGreaterThan(0);
+  expect(keys.filter((k) => !k.startsWith('lightcrossing.'))).toEqual([]);
+  expect(keys).toContain('lightcrossing.slot0');
+  const size = await page.evaluate(() => localStorage.getItem('lightcrossing.slot0')!.length);
+  expect(size).toBeLessThan(300 * 1024);
+
+  await page.reload();
+  await page.getByRole('button', { name: /Start|Continue/ }).click();
+  await page.getByRole('button', { name: 'Continue' }).first().click();
+  await page.waitForFunction(() => !!(window as unknown as { __lc: A }).__lc.game);
+  await wait(page, 1500);
+  const back = await page.evaluate(() => {
+    const g = (window as unknown as { __lc: A }).__lc.game;
+    return { location: g.state.player.location, room: g.runtime.interior?.room.kind ?? null };
+  });
+  expect(back).toEqual({ location: 'hall', room: 'hall' });
+  expect(errors).toEqual([]);
+});

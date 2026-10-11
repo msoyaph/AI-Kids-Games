@@ -43,7 +43,7 @@ jobs:
       - name: Build is under 2 MB
         run: npm run size
 
-      - name: Unit tests (includes a full story playthrough)
+      - name: Unit tests (full story playthroughs and a year after the story)
         run: npm test
 
       - name: Story pacing stays near 6 hours

@@ -84,6 +84,10 @@ export interface IconSpec {
   c: number;
   c2?: number;
   c3?: number;
+  /** clothing: the piece's shape (hoodie, beanie, sandals...) */
+  v?: string;
+  /** clothing: its pattern (stripe, dots, stars...) */
+  p?: string;
 }
 
 export type FurnModel =

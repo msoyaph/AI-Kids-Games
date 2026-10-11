@@ -242,9 +242,23 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   - Both: `permissions: contents: read`, `persist-credentials: false`, actions pinned by SHA. Lint with `actionlint`
     (`.github/actionlint.yaml` declares the `gpu` label).
 
+- Phase 10 done: testing, screenshots, handoff.
+  - `tests/postgame.test.ts`: the full story, then a 28-day year (all seasons, every festival, both contests each season,
+    Wanda, birthdays, a meteor night, the basement), save/load and the 300 KB budget at the end.
+  - Fixes found by it: Lantern Skate always gets 5 rings (closer spacing on small ponds; ~1 in 5 islands only had 3–4);
+    stardust only follows a night that really had shooting stars (`flags.meteorDay`, `meteorRoll`), not one hidden by rain.
+  - e2e: save inside Lantern Hall → reload → resumes inside; every localStorage key has the `lightcrossing.` prefix.
+  - Screenshots: `scripts/screenshots.ts` scenes for every season, every interior (8 villager rooms, home, basement, shop,
+    hall, museum), two festivals, closet, big-text dialogue; `docs/screenshots/after/` (+ `-low/-medium/-high` variants).
+  - Polish from the review: clothing icons drawn per shape + pattern (`drawClothing` in ui/icons.ts, `IconSpec.v/p`);
+    interior windows have a frame, panes and a sky tinted by time of day (none in the basement); phone font sizes
+    survive the text-size setting.
+  - README: playtest mode, performance tiers + benchmark table, CI, handoff (slug, storage keys, sizes, recapture art).
+
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run size && npm run e2e && npm run pacing`
-(217 unit tests incl. full new-game → festival playthroughs, one per season, and the readability check; 2 e2e tests.)
+(220 unit tests incl. full new-game → festival playthroughs, one per season, a year after the story, and the readability
+check; 3 e2e tests. Build 1,207 kB (1.15 MiB); pacing 5.86 h.)
 
 ## Known issues / limitations
 - Pacing is a model estimate (scripts/pacing.ts), not measured with real players.

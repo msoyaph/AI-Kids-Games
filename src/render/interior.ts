@@ -19,6 +19,11 @@ import { buildCharacter, animateRig, type Rig } from './models/character';
 const WALL_H = 2.6;
 const mat = vcolMat();
 const glowMat = curved(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0xffd27a, emissiveIntensity: 0.9 }));
+/** window panes: sky blue by day, warm sunset, deep blue at night (tinted every frame) */
+const paneMat = curved(new THREE.MeshLambertMaterial({ color: 0xbfe6f5, emissive: 0x9fd3ee, emissiveIntensity: 0.6 }));
+const PANE_DAY = new THREE.Color(0x9fd3ee);
+const PANE_DUSK = new THREE.Color(0xf6b38a);
+const PANE_NIGHT = new THREE.Color(0x26346b);
 const glassMat = curved(new THREE.MeshLambertMaterial({ color: 0xcdeff8, transparent: true, opacity: 0.28, depthWrite: false }));
 
 function patternColor(pattern: string, c: number, c2: number, x: number, z: number): number {
@@ -206,13 +211,24 @@ export class InteriorView {
     const shell = new THREE.Mesh(merge(P), mat);
     shell.receiveShadow = true;
     this.room.add(shell);
-    // a window on the back wall (unless a wall decoration hangs there)
+    // a window on the back wall (unless a wall decoration hangs there; none underground)
     const winX = w * 0.62;
-    const covered = isHome && (hd.walls ?? []).some((wi) => wi.wall === 0 && winX + 0.6 > wi.pos && winX - 0.6 < wi.pos + (item(wi.id).furn?.w ?? 1));
+    const covered = room.kind === 'basement' || (isHome && (hd.walls ?? []).some((wi) => wi.wall === 0 && winX + 0.6 > wi.pos && winX - 0.6 < wi.pos + (item(wi.id).furn?.w ?? 1)));
     if (!covered) {
-      const win = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.05), glowMat);
-      win.position.set(winX, 1.55, 0.02);
-      this.room.add(win);
+      const y = 1.55;
+      const trim = mixHex(wc, 0x5b4a68, 0.35);
+      const F = [
+        part(box(1.36, 0.08, 0.08), trim, { pos: [winX, y + 0.44, 0.04] }),
+        part(box(0.08, 0.88, 0.08), trim, { pos: [winX - 0.64, y, 0.04] }),
+        part(box(0.08, 0.88, 0.08), trim, { pos: [winX + 0.64, y, 0.04] }),
+        part(box(0.05, 0.8, 0.06), trim, { pos: [winX, y, 0.05] }),
+        part(box(1.2, 0.05, 0.06), trim, { pos: [winX, y, 0.05] }),
+        part(box(1.5, 0.07, 0.18), mixHex(trim, 0xffffff, 0.35), { pos: [winX, y - 0.44, 0.09] }),
+      ];
+      this.room.add(new THREE.Mesh(merge(F), mat));
+      const pane = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.03), paneMat);
+      pane.position.set(winX, y, 0.015);
+      this.room.add(pane);
     }
 
     if (isHome) this.buildHome(g, room);
@@ -510,6 +526,12 @@ export class InteriorView {
     const rt = interiorRT(g);
     if (!rt) return;
     this.sync(g);
+    // the sky through the window follows the time of day
+    const hr = g.state.clock.minute / 60;
+    const dusk = Math.max(0, 1 - Math.abs(hr - 18.5) / 1.5) + Math.max(0, 1 - Math.abs(hr - 6) / 1);
+    const night = hr >= 19.5 || hr < 5 ? 1 : 0;
+    paneMat.emissive.copy(PANE_DAY).lerp(PANE_DUSK, Math.min(1, dusk)).lerp(PANE_NIGHT, night);
+    paneMat.color.copy(paneMat.emissive);
     if (playerRig.root.parent !== this.scene) this.scene.add(playerRig.root);
     playerRig.root.position.set(rt.x, 0, rt.z);
     playerRig.root.rotation.y = rt.facing;
