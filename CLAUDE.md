@@ -330,6 +330,10 @@ quality governor) → accessibility → tests → handoff. `npx tsx scripts/glas
   angles; taps level-ups and chests), governor e2e (24× CPU throttle → Auto steps to Low),
   `scripts/touch-shots.ts` visual review. Playtest runs record `input: 'touch'` and
   `controls` (size, auto camera, stick mode, hand, glass, governor steps).
+- [x] 10. Handoff: README touch section + Ai Kids Games registry notes (devices, controls,
+  quick start, remove the keyboard-required note), BASELINES controls table.
+  Screenshots: scripts/touch-shots.ts (GLASS=fake|blur env), scripts/glass-mockups.ts and
+  scripts/screenshot-review.ts write into the git-ignored shots/ folder.
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

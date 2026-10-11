@@ -105,3 +105,23 @@ the chevron angle on the chevrons rather than inherited from the stick):
 - Real blur cost 2–3 fps at High on the throttled phone / tablet and nothing on the laptop.
   Rule (`glassFor`): **real blur only on High on non-touch-first devices** (touchscreen
   laptops); phones, tablets and every other tier use fake glass.
+
+**Final matrix, every tier** (finished build, quiet machine — load average ~3; 12 s runs,
+medians of 2 interleaved; avg / 1% low FPS)
+
+| Profile | Tier | No controls | Fake glass | Real blur |
+| --- | --- | --- | --- | --- |
+| Phone (Pixel 7) 4× CPU | Low | 59 / 30 | 59 / 29 | 58 / 28 |
+| | Medium | 60 / 46 | 60 / 41 | 60 / 35 |
+| | High | 60 / 33 | 59 / 30 | 58 / 30 |
+| | **Tablet (= Auto)** | **60 / 53** | **60 / 45** | 60 / 51 |
+| Tablet (Galaxy Tab S9) 4× CPU | Low | 59 / 30 | 58 / 30 | 58 / 30 |
+| | Medium | 60 / 38 | 60 / 37 | 60 / 35 |
+| | High | 60 / 33 | 60 / 33 | 59 / 29 |
+| | **Tablet (= Auto)** | **60 / 60** | **60 / 48** | 60 / 50 |
+| Touchscreen laptop, full GPU | High | 60 / 60 | 60 / 60 | 60 / 60 |
+| WebKit iPhone 15 | Tablet (= Auto) | 60 / 36 | 60 / 46 | 60 / 54 |
+| WebKit iPad Pro 11 | Tablet (= Auto) | 60 / 49 | 60 / 50 | 60 / 51 |
+
+No average-FPS loss at Auto on the throttled phone and tablet with the glass controls; the
+1% lows move within run-to-run noise (WebKit iPhone's "no controls" scored lowest).

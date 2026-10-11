@@ -7,6 +7,9 @@ Bonkwright and her friends hold a moonlit meadow against the Gloom from dusk unt
 Weapons fire on their own. Your job is to move well, slide, jump, and build a combo that
 survives 20 minutes and three bosses.
 
+It plays on computers (keyboard and mouse, or a gamepad) and on **phones and tablets** with
+on-screen glass touch controls.
+
 Every model is procedural low-poly geometry built in code, and every sound and note of
 music is synthesized with the Web Audio API. There are no asset files.
 `npm run build` produces **one self-contained `dist/index.html`** that you can double-click,
@@ -50,6 +53,28 @@ host anywhere, or embed in a sandboxed iframe.
 The game pauses automatically when the tab or iframe loses focus. Inside an iframe, the
 camera defaults to hold-to-drag, because pointer lock is often sandboxed away. You can
 change this in Settings → Camera control.
+
+### Touch (phones and tablets)
+
+Phones and tablets get frosted-glass touch controls automatically (landscape; turning the
+device upright pauses with a "turn sideways" hint).
+
+| Action | Touch |
+| --- | --- |
+| Move | Put your thumb down on the left half: a stick appears under it. Push to the edge for full speed. |
+| Look | Drag on the right half. The camera also swings in behind Thea by itself (Settings → Touch controls → "Camera follows me"). |
+| Jump / Slide | The big **JUMP** and **SLIDE** buttons, bottom right. Slide is hold, or tap-to-toggle (Settings → Slide: tap to toggle). Jumping out of a slide keeps your speed. |
+| Pause | The **II** button in the top-right corner |
+| Choose upgrade | Tap a card. Reroll, Skip and Banish are buttons. |
+
+**Settings → Touch controls** has size (Small, Medium, Large), how see-through they are,
+a left-handed layout, a stick that stays put instead of following the thumb, camera
+drag speed, vibration (Android; iPhone and iPad browsers don't vibrate), high-contrast
+controls, and **Edit layout** (drag the buttons anywhere that doesn't cover the timer, the
+boss bar or the health bar; resize them; Reset to default).
+
+Touchscreen laptops and iPads with a keyboard switch automatically: touch the screen and the
+controls appear; use a key, the mouse or a gamepad and they hide again.
 
 ### Heroes
 
@@ -141,6 +166,23 @@ npm run bench -- 1000 20
 Headless simulation benchmark (enemies, seconds).
 
 ---
+
+## Ai Kids Games registry notes
+
+TheaBonk now supports phones and tablets with touch. Changes for the site's entry
+(`src/data/games.ts`, slug `theabonk`):
+
+- `supportedDevices`: `["Computer", "Tablet", "Phone"]`
+- `controls.types`: add `"Touch"` → `["Keyboard", "Mouse", "Gamepad", "Touch"]`
+- `controls.howToPlay`: add *"On phones and tablets, put your thumb down on the left to
+  move, drag on the right to look, and tap JUMP and SLIDE. Tap a card to pick an upgrade."*
+- `quickStart`: first step → *"Move Thea with WASD, the arrow keys, a gamepad stick, or your
+  left thumb on a phone or tablet."*; third step → *"When you level up, pick a new power
+  with 1–4, a click, or a tap."*
+- `contentNotes`: remove *"A keyboard and mouse or gamepad is required."* — keep the rest.
+- Remove the "works best on a computer" notice for TheaBonk.
+- Phones play in landscape. A modern phone or tablet runs it at Auto quality (the Tablet
+  tier); slower devices step down automatically.
 
 ## Adding content
 
