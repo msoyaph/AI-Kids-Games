@@ -3,14 +3,16 @@
  * and a tablet: dusk, night, a big wave and a boss fight, per quality tier. Used for the
  * visual review of the touch controller.
  *
- * Usage: npm run build && npx tsx scripts/touch-shots.ts [outDir=test-results/touch-shots] [tier ...]
+ * Usage: npm run build && npx tsx scripts/touch-shots.ts [outDir=shots/touch] [tier ...]
  */
 import { chromium, devices, type CDPSession, type Page } from '@playwright/test';
 import { existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const out = resolve(process.argv[2] ?? 'test-results/touch-shots');
+const out = resolve(process.argv[2] ?? 'shots/touch');
+// GLASS=fake|blur forces the glass style (default: the game's own rule)
+const glass = process.env.GLASS === 'fake' || process.env.GLASS === 'blur' ? process.env.GLASS : '';
 const tiers = process.argv.slice(3).length ? process.argv.slice(3) : ['tablet'];
 mkdirSync(out, { recursive: true });
 const dist = resolve('dist/index.html');
@@ -33,7 +35,8 @@ async function touch(cdp: CDPSession, type: 'touchStart' | 'touchMove' | 'touchE
 }
 
 async function setScene(page: Page, scene: Scene, tier: string): Promise<void> {
-  const q = scene === 'wave' ? `?seed=7&quality=${tier}&stress=500` : `?seed=7&quality=${tier}`;
+  const g = glass ? `&glass=${glass}` : '';
+  const q = (scene === 'wave' ? `?seed=7&quality=${tier}&stress=500` : `?seed=7&quality=${tier}`) + g;
   await page.goto(url + q, { waitUntil: 'domcontentloaded', timeout: 120_000 });
   await page.waitForFunction(() => (window as unknown as { __theabonk?: unknown }).__theabonk, null, { timeout: 60_000 });
   await page.evaluate((scene) => {
@@ -71,7 +74,7 @@ for (const [dev, opts] of Object.entries(DEVICES)) {
       const jump = await page.locator('.gbtn-jump').boundingBox();
       if (scene === 'wave' && jump) await touch(cdp, 'touchStart', [{ x: sx + 35, y: sy - 45, id: 1 }, { x: jump.x + jump.width * 0.45, y: jump.y + jump.height * 0.5, id: 2 }]);
       await page.waitForTimeout(scene === 'wave' ? 180 : 400);
-      await page.screenshot({ path: `${out}/${dev}-${tier}-${scene}.png` });
+      await page.screenshot({ path: `${out}/${dev}-${tier}-${scene}${glass ? `-${glass}` : ''}.png` });
       await touch(cdp, 'touchEnd', []);
       console.log(`${dev} ${tier} ${scene}`);
     }

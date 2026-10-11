@@ -62,12 +62,16 @@
   transition: opacity 0.4s ease;
 }
 
-.glass-ui.blur-layer .glass::before {
+.glass-ui.blur-layer .gstick::before,
+.glass-ui.blur-layer .gbtn-jump::before,
+.glass-ui.blur-layer .gbtn-slide::before {
   -webkit-backdrop-filter: blur(12px) saturate(1.4);
   backdrop-filter: blur(12px) saturate(1.4);
 }
 
-.glass-ui.blur-on .glass::before {
+.glass-ui.blur-on .gstick::before,
+.glass-ui.blur-on .gbtn-jump::before,
+.glass-ui.blur-on .gbtn-slide::before {
   opacity: var(--g-o);
 }
 
@@ -120,6 +124,7 @@
   left: 0;
   top: 0;
   pointer-events: none;
+  will-change: transform;
   width: var(--g-b);
   height: var(--g-b);
   margin: calc(var(--g-b) / -2) 0 0 calc(var(--g-b) / -2);
@@ -149,7 +154,10 @@
   inset: 0;
   border-radius: 50%;
   opacity: 0;
-  background: conic-gradient(from calc(var(--ang, 0deg) - 44deg), rgba(255, 255, 255, 0.25) 0deg, #fff 22deg 66deg, rgba(255, 255, 255, 0.25) 88deg, transparent 88deg 360deg);
+  /* a fixed wedge pointing up, rotated to the push direction (transform: compositor only) */
+  background: conic-gradient(from -44deg, rgba(255, 255, 255, 0.25) 0deg, #fff 22deg 66deg, rgba(255, 255, 255, 0.25) 88deg, transparent 88deg 360deg);
+  transform: rotate(var(--ang, 0deg));
+  will-change: transform, opacity;
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7.5px), #000 calc(100% - 7px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 7.5px), #000 calc(100% - 7px));
   transition: opacity 0.12s;
@@ -228,6 +236,23 @@
   height: 44%;
   margin: -22% 0 0 -22%;
   transform: translate3d(var(--kx, 0px), var(--ky, 0px), 0);
+  will-change: transform;
+}
+
+/* the bead's specular highlight: its own layer, slid the other way as the knob moves */
+.gstick-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: max(0.75, var(--g-o));
+  background: radial-gradient(42% 36% at 38% 30%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.38) 38%, rgba(255, 255, 255, 0) 72%);
+  transform: translate3d(var(--shx, 0px), var(--shy, 0px), 0);
+  will-change: transform;
+}
+
+.glass-ui.hc .gstick-shine {
+  display: none;
 }
 
 .gstick-knob.back {
@@ -237,7 +262,6 @@
 .gstick-knob::after {
   opacity: max(0.75, var(--g-o));
   background:
-    radial-gradient(42% 36% at var(--hx, 38%) var(--hy, 30%), rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.38) 38%, rgba(255, 255, 255, 0) 72%),
     radial-gradient(farthest-side at 50% 62%, rgba(var(--g-rim), 0.4), rgba(var(--g-rim), 0.18) 58%, rgba(var(--g-tint), 0.6) 100%);
   box-shadow:
     inset 0 -6px 10px rgba(12, 8, 24, 0.32),
@@ -290,28 +314,61 @@
   inset: 4px;
 }
 
-.gbtn > svg,
-.gbtn > span {
+/* the glyph + label; a second, dark copy shows while lit (cross-fade = compositor only) */
+.g-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--d) * 0.03);
   opacity: max(0.8, var(--g-o));
+  transition: opacity 0.06s;
 }
 
-.gbtn > svg {
+.g-face > svg {
   width: 40%;
   height: auto;
   overflow: visible;
   filter: drop-shadow(0 1px 1.5px rgba(10, 6, 20, 0.7));
 }
 
-.gbtn-pause > svg {
+.gbtn-pause .g-face > svg {
   width: 34%;
+}
+
+.g-face-lit {
+  opacity: 0;
+  color: #2a2140;
+  text-shadow: none;
+}
+
+.g-face-lit > svg {
+  filter: none;
+}
+
+.gbtn.down .g-face {
+  opacity: 0;
+}
+
+.gbtn.down .g-face-lit {
+  opacity: 1;
 }
 
 .gbtn.down {
   transform: translateY(2px) scale(0.96);
 }
 
-.gbtn.down::after {
-  opacity: max(0.85, var(--g-o));
+/* the lit (pressed) look is pre-painted on its own layer and only fades in: pressing a
+   button costs no repaint of the glass */
+.g-lit {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.06s;
   background:
     radial-gradient(90% 70% at 32% 16%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 62%),
     linear-gradient(180deg, rgba(var(--g-rim), 0.82), rgba(var(--g-rim), 0.62) 72%);
@@ -323,11 +380,8 @@
     0 2px 6px rgba(12, 8, 24, 0.3);
 }
 
-.gbtn.down > svg,
-.gbtn.down > span {
-  color: #2a2140;
-  text-shadow: none;
-  filter: none;
+.gbtn.down .g-lit {
+  opacity: max(0.85, var(--g-o));
 }
 
 /* toggled slide stays lit: teal rim + a small lock dot */
@@ -363,25 +417,15 @@
   pointer-events: none;
 }
 
+/* one ripple element per button, replayed with the Web Animations API (transform + opacity) */
 .g-ripple {
   position: absolute;
   width: 140%;
   height: 140%;
   margin: -70% 0 0 -70%;
   border-radius: 50%;
+  opacity: 0;
   background: radial-gradient(closest-side, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.25) 70%, rgba(255, 255, 255, 0));
-  animation: g-ripple 0.45s ease-out forwards;
-}
-
-@keyframes g-ripple {
-  0% {
-    transform: scale(0.15);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0;
-  }
 }
 
 /* ───────────── high contrast: solid, no frost or blur ───────────── */
@@ -411,12 +455,15 @@
   opacity: 0.8;
 }
 
-.glass-ui.hc .gbtn > svg,
-.glass-ui.hc .gbtn > span {
+.glass-ui.hc .g-face:not(.g-face-lit) {
   opacity: 1;
 }
 
-.glass-ui.hc .gbtn.down::after {
+.glass-ui.hc .gbtn.down .g-face:not(.g-face-lit) {
+  opacity: 0;
+}
+
+.glass-ui.hc .g-lit {
   background: rgb(var(--g-rim));
   box-shadow:
     inset 0 0 0 3px #1a1030,

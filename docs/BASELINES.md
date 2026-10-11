@@ -56,3 +56,52 @@ Recorded at the start of the `theabonk-upgrade` branch so every later phase can 
   Mali / Adreno / PowerVR → Medium; others → High (touch devices → Tablet).
 - The `npm run bench-browser` matrix (software renderer, 4× CPU laptop, throttled tablet,
   1000-enemy stress on both maps) is recorded with the touch-controller measurements below.
+
+## Glass touch controller (performance, step 7)
+All numbers: `npm run bench-browser` on an M3 Pro (Metal), 800-enemy benchmark (520 on the
+Tablet tier), avg FPS / 1% low FPS. "4× CPU" = CDP CPU throttling (a phone-class CPU); the
+GPU is not throttled, so GPU-side costs (real blur) are lower bounds. The machine was shared
+with other work (load average 8–30), so rows were run interleaved, 3 times, and medians kept.
+
+**Desktop / laptop matrix (30 s, no controls)**
+
+| Profile | Avg / 1% low | CPU ms/frame | Draw calls | Triangles |
+| --- | --- | --- | --- | --- |
+| Native High (1600×900) | 60 / 60 | 2.7 | 68 | 305k |
+| Native Medium | 60 / 60 | 1.6 | 61 | 272k |
+| Native Low | 60 / 60 | 1.4 | 50 | 218k |
+| SwiftShader Low (worst case, software WebGL) | 8 / 2 | 6.6 | 49 | 216k |
+| Laptop 4× CPU, Medium | 52 / 23 | 10.1 | 61 | 272k |
+| Laptop 4× CPU, Medium, **1000-enemy stress** | 51 / 23 | 11.4 | 62 | 312k |
+| 1000-enemy stress, Meadow, High | 60 / 56 | 2.9 | 70 | 339k |
+| 1000-enemy stress, Rimewood, High | 60 / 60 | 2.7 | 72 | 433k |
+
+**What the controls cost, and the glass rule** (12 s runs, medians of 3)
+
+First pass (before optimising): fake glass cost a dropped frame per button press at 4× CPU
+(the press repainted the button's gradients and added a ripple element); per-frame stick
+updates restyled the whole stick. After making every per-frame and per-press change a
+compositor-only change (transforms / opacity on their own layers, a pre-painted lit layer
+and glyph face that cross-fade, ripples via the Web Animations API, writes only on change,
+the chevron angle on the chevrons rather than inherited from the stick):
+
+| Profile | No controls | Fake glass | Real blur |
+| --- | --- | --- | --- |
+| Phone (Pixel 7) 4× CPU, Tablet tier (= Auto) | 60 / 51 | 59 / 30 | 60 / 45 |
+| Tablet (Galaxy Tab S9) 4× CPU, Tablet tier (= Auto) | 60 / 45 | 59 / 30 | 60 / 51 |
+| Phone 4× CPU, High | 58 / 30 | 57 / 30 | 55 / 27 |
+| Tablet 4× CPU, High | 58 / 30 | 55 / 30 | 56 / 30 |
+| Laptop (touchscreen), High, full GPU | 60 / 60 | 60 / 60 | 60 / 60 |
+| WebKit iPhone 15, Tablet tier (unthrottled) | 60 / 48 | 60 / 48 | 60 / 53 |
+| WebKit iPad Pro 11, Tablet tier (unthrottled) | 60 / 45 | 60 / 44 | 60 / 41 |
+
+- Average FPS at Auto on the throttled phone and tablet: 60 → 59–60 with the controls (within
+  run-to-run noise). The 1% low (the slowest ~5 frames of a 9 s window) is noise-dominated
+  here — real blur, which does strictly more work than fake glass, scored *better* — so treat
+  those columns as ±15 fps.
+- A Chromium trace (Galaxy Tab, 4× CPU, 5 s) puts the controls' main-thread cost at ~0.7 ms
+  of style recalculation + ~0.3 ms of layer updates per frame with a thumb moving every frame
+  (≈ 0.25 ms at full speed); paint and raster are unchanged.
+- Real blur cost 2–3 fps at High on the throttled phone / tablet and nothing on the laptop.
+  Rule (`glassFor`): **real blur only on High on non-touch-first devices** (touchscreen
+  laptops); phones, tablets and every other tier use fake glass.

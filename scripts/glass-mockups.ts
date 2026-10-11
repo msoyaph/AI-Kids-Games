@@ -4,7 +4,7 @@
  * src/ui/glass.css in different states, in fake-glass and real-blur versions, and builds a
  * contact sheet per device plus a close-up sheet of every control state.
  *
- * Usage: npm run build && npx tsx scripts/glass-mockups.ts [outDir=test-results/glass-mockups]
+ * Usage: npm run build && npx tsx scripts/glass-mockups.ts [outDir=shots/glass-mockups]
  */
 import { chromium, devices, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -13,7 +13,7 @@ import { pathToFileURL } from 'node:url';
 import { GLYPHS } from '../src/input/glassGlyphs';
 import { buttonSizes, defaultLayout, stickBase, type GlassSize } from '../src/input/glassLayout';
 
-const out = resolve(process.argv[2] ?? 'test-results/glass-mockups');
+const out = resolve(process.argv[2] ?? 'shots/glass-mockups');
 mkdirSync(out, { recursive: true });
 const dist = resolve('dist/index.html');
 if (!existsSync(dist)) {
@@ -94,20 +94,20 @@ async function overlay(page: Page, state: State, blur: boolean, size: GlassSize 
       const hx = 38 - Math.sin(r) * mag * 12;
       const hy = 30 + Math.cos(r) * mag * 12;
       const stickCls = ['glass', 'gstick', state.push ? 'active' : 'idle', state.hurt ? 'hurt' : '', state.fast ? 'fast' : ''].join(' ');
-      const ripple = '<span class="g-ripple" style="left:42%;top:46%;animation-delay:-0.17s;animation-play-state:paused"></span>';
+      const ripple = '<span class="g-ripple" style="left:42%;top:46%;opacity:0.55;transform:scale(0.55)"></span>';
       const root = document.createElement('div');
       root.className = ['glass-ui', blur ? 'blur-layer blur-on' : '', state.hc ? 'hc' : ''].join(' ');
       root.dataset.size = size;
       root.innerHTML = `
         <div class="${stickCls}" style="--sx:${layout.stick.x}px;--sy:${layout.stick.y}px;--ang:${ang}deg;--mag:${mag};--mang:${ang}deg">
           ${g.stickChevrons}<div class="gstick-ring"></div><div class="gstick-halo"></div>${g.speed}
-          <div class="glass gstick-knob" style="--kx:${kx}px;--ky:${ky}px;--hx:${hx}%;--hy:${hy}%"></div>
+          <div class="glass gstick-knob" style="--kx:${kx}px;--ky:${ky}px"><div class="gstick-shine" style="--shx:${(hx - 38) * 0.6}px;--shy:${(hy - 30) * 0.6}px"></div></div>
         </div>
         <button class="glass gbtn gbtn-jump${state.jumpDown ? ' down' : ''}" style="--x:${layout.jump.x}px;--y:${layout.jump.y}px;--d:${btn.jump}px" aria-label="Jump">
-          <div class="g-clip">${state.jumpDown ? ripple : ''}</div>${g.jump}<span>JUMP</span></button>
+          <div class="g-clip">${state.jumpDown ? ripple : ''}</div><div class="g-lit"></div><span class="g-face">${g.jump}<span>JUMP</span></span><span class="g-face g-face-lit">${g.jump}<span>JUMP</span></span></button>
         <button class="glass gbtn gbtn-slide${state.slideDown ? ' down' : ''}${state.latched ? ' latched' : ''}" style="--x:${layout.slide.x}px;--y:${layout.slide.y}px;--d:${btn.slide}px" aria-label="Slide">
-          <div class="g-clip">${state.slideDown ? ripple : ''}</div><i class="g-dot"></i>${g.slide}<span>SLIDE</span></button>
-        <button class="glass gbtn gbtn-pause" style="--x:${layout.pause.x}px;--y:${layout.pause.y}px" aria-label="Pause">${g.pause}</button>`;
+          <div class="g-clip">${state.slideDown ? ripple : ''}</div><div class="g-lit"></div><i class="g-dot"></i><span class="g-face">${g.slide}<span>SLIDE</span></span><span class="g-face g-face-lit">${g.slide}<span>SLIDE</span></span></button>
+        <button class="glass gbtn gbtn-pause" style="--x:${layout.pause.x}px;--y:${layout.pause.y}px" aria-label="Pause"><span class="g-face">${g.pause}</span></button>`;
       document.getElementById('ui')!.append(root);
     },
     { g: GLYPHS, layout, base, btn, state, blur, size },

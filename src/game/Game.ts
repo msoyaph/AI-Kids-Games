@@ -28,7 +28,8 @@ import { Menus, rewardText, type GameApi } from '../ui/menus';
 import { UI } from '../ui/UI';
 import { ENEMIES } from '../config/enemies';
 import { enemyIconUrl } from '../ui/icons';
-import { TouchControls } from '../input/touch';
+import { glassFor, TouchControls } from '../input/touch';
+import { GOVERNOR, QualityGovernor, stepDown } from './governor';
 import { touchFirstDevice } from '../input/mode';
 import { autoCameraTurn } from '../render/autoCamera';
 import type { Quality as RenderQuality } from '../render/Renderer';
@@ -97,6 +98,7 @@ export class Game implements GameApi {
   playtest: PlaytestStore | null = null;
   private padFrames = 0;
   private kbFrames = 0;
+  private touchFrames = 0;
   /** The boss banner line waiting for its intro card. */
   private bossLine = '';
   /** When the level-up picker opens (after the hit-stop); 0 = none pending. */
@@ -107,8 +109,16 @@ export class Game implements GameApi {
   private tuneSaveT = 0;
   /** Quality 'auto' on desktops: a first guess from the graphics card's name. */
   private autoTier: RenderQuality = 'high';
+  /** The quality governor stepped Auto down this session (sticks until reload, never saved). */
+  private sessionTier: RenderQuality | null = null;
+  private governor = new QualityGovernor();
+  /** A step down waiting for a screen to cover the scene (level-up / chest), and since when. */
+  private govPending: RenderQuality | null = null;
+  private govPendingAt = 0;
+  /** Governor steps this run, for playtest records. */
+  private govDrops: Array<{ at: number; from: RenderQuality; to: RenderQuality }> = [];
   /** The performance test in progress (?bench=1, Settings → Test performance). */
-  private bench: { rec: BenchRecorder; bot: Bot; seconds: number; boss: boolean; map: MapId; prevQuality: RenderQuality | null } | null = null;
+  private bench: { rec: BenchRecorder; bot: Bot; seconds: number; boss: boolean; map: MapId; prevQuality: RenderQuality | null; controls: 'none' | 'fake' | 'blur'; t: number } | null = null;
   private benchBadge: HTMLElement;
 
   constructor(
@@ -155,6 +165,8 @@ export class Game implements GameApi {
     window.addEventListener('blur', () => this.autoPause());
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') this.autoPause();
+      // the quality governor starts afresh when the tab comes back
+      else this.governor.reset(performance.now() / 1000, GOVERNOR.settle);
     });
     document.addEventListener('pointerlockchange', () => {
       // a lock granted late (after a modal opened) must not trap the cursor
@@ -196,8 +208,15 @@ export class Game implements GameApi {
       recordRun(w, {
         player: 'human',
         result,
-        input: this.padFrames > this.kbFrames ? 'gamepad' : 'kbm',
+        input: this.touchFrames >= Math.max(this.padFrames, this.kbFrames) && this.touchFrames > 0 ? 'touch' : this.padFrames > this.kbFrames ? 'gamepad' : 'kbm',
         quality: this.save.data.settings.quality,
+        controls:
+          this.touchFrames > 0
+            ? (() => {
+                const t = this.save.data.settings.touch;
+                return { size: t.size, autoCamera: t.autoCamera, fixedStick: t.fixedStick, leftHanded: t.leftHanded, glass: this.touch.glassMode, governor: this.govDrops.map((d): [number, string, string] => [d.at, d.from, d.to]) };
+              })()
+            : undefined,
         difficulty: w.tier > 0 ? `${w.difficulty}${w.tier}` : w.difficulty,
       }),
     );
@@ -266,9 +285,33 @@ export class Game implements GameApi {
     return q === 'auto' ? this.autoQuality() : q;
   }
 
-  /** What 'auto' picks on this device. */
+  /** What 'auto' picks on this device (or what the governor stepped it down to this session). */
   autoQuality(): RenderQuality {
-    return this.touchDevice ? 'tablet' : this.autoTier;
+    return this.sessionTier ?? (this.touchDevice ? 'tablet' : this.autoTier);
+  }
+
+  /** Phones / tablets on their light tiers field the smaller, tougher crowd (TABLET_CROWD). */
+  private lightCrowd(q: RenderQuality): boolean {
+    return q === 'tablet' || (q === 'low' && this.touchDevice);
+  }
+
+  /** The governor only steps in for Auto quality (not a chosen tier, ?quality=, or the test). */
+  private governing(): boolean {
+    return this.save.data.settings.quality === 'auto' && !urlParam('quality') && !this.bench;
+  }
+
+  /** Step Auto down one tier now (behind a covering screen, or after waiting too long). */
+  private applyQualityStep(w: World): void {
+    const to = this.govPending;
+    this.govPending = null;
+    if (!to) return;
+    const from = this.renderer.quality;
+    this.sessionTier = to;
+    this.renderer.setQuality(to);
+    // the touch glass cross-fades to fake glass (no pop)
+    this.touch.setGlass(glassFor(to, this.touchDevice));
+    this.governor.reset(performance.now() / 1000, GOVERNOR.settle);
+    this.govDrops.push({ at: Math.round(w.time), from, to });
   }
 
   start(): void {
@@ -276,7 +319,7 @@ export class Game implements GameApi {
     this.menus.title();
     this.onMode?.('menu', null);
     if (urlParam('bench') === '1') {
-      this.startBenchmark({ seconds: Number(urlParam('seconds')) || undefined, map: urlParam('map'), enemies: Number(urlParam('enemies')) || undefined });
+      this.startBenchmark({ seconds: Number(urlParam('seconds')) || undefined, map: urlParam('map'), enemies: Number(urlParam('enemies')) || undefined, controls: urlParam('controls') });
     }
     requestAnimationFrame(this.frame);
   }
@@ -330,6 +373,9 @@ export class Game implements GameApi {
     const s = this.save.data.settings;
     const q = this.effectiveQuality();
     if (this.renderer.quality !== q) this.renderer.setQuality(q);
+    // ?glass=fake|blur forces the style (screenshots / comparisons); else the measured rule
+    const forced = urlParam('glass');
+    this.touch.setGlass(this.bench ? this.touch.glassMode : forced === 'fake' || forced === 'blur' ? forced : glassFor(this.renderer.quality, this.touchDevice));
     this.touch.sensitivity = s.touch.lookSensitivity;
     this.touch.slideToggle = s.controls.slideToggle;
     this.input.sensitivity = s.sensitivity;
@@ -388,7 +434,7 @@ export class Game implements GameApi {
       tier: difficulty === 'hard' ? Math.min(opts.tier ?? d.lastTier, d.unlockedTier) : 0,
       daily: !!daily,
       // the tablet tier fields fewer (but tougher, richer) Gloom
-      tablet: this.renderer.quality === 'tablet',
+      tablet: this.lightCrowd(this.renderer.quality),
       stress,
       // the daily is the same for everyone: no shop bonuses or unlocked extras
       meta: daily ? undefined : metaBonuses(d),
@@ -411,9 +457,12 @@ export class Game implements GameApi {
     this.acc = 0;
     this.achT = 1;
     this.levelUpAt = 0;
-    this.padFrames = this.kbFrames = 0;
+    this.padFrames = this.kbFrames = this.touchFrames = 0;
     this.paused = false;
     this.lastWorldState = 'playing';
+    this.governor.reset(performance.now() / 1000);
+    this.govPending = null;
+    this.govDrops = [];
     this.ui.close();
     this.ui.hud.show(true);
     this.ui.hud.showBanner(bannerText(w.map, BANNER.start));
@@ -438,6 +487,26 @@ export class Game implements GameApi {
     if (!this.world) this.ui.hud.show(on);
   }
 
+  private hintBot: Bot | null = null;
+  private hintWorld: World | null = null;
+  private hintInput = emptyInput();
+
+  /**
+   * Test hook (touch playthrough e2e): where the bot would move Thea right now (world x / z,
+   * plus whether it wants to jump / slide). Read-only — it never feeds the simulation.
+   */
+  botHint(): { x: number; z: number; jump: boolean; slide: boolean } | null {
+    const w = this.world;
+    if (!w || w.state !== 'playing') return null;
+    if (this.hintWorld !== w || !this.hintBot) {
+      this.hintBot = new Bot(w.seed, 0.8);
+      this.hintWorld = w;
+    }
+    this.hintBot.decide(w, this.hintInput);
+    const i = this.hintInput;
+    return { x: i.moveX, z: i.moveZ, jump: i.jump, slide: i.slide };
+  }
+
   /** Whether a run (or the performance test) is on screen. */
   inRun(): boolean {
     return !!this.world;
@@ -449,7 +518,7 @@ export class Game implements GameApi {
    * Frames are measured after a short warm-up; the result card / window.__benchResult
    * follow. Nothing is saved. `quality` overrides the tier for this test only.
    */
-  startBenchmark(opts: { seconds?: number; quality?: string | null; map?: string | null; enemies?: number } = {}): void {
+  startBenchmark(opts: { seconds?: number; quality?: string | null; map?: string | null; enemies?: number; controls?: string | null } = {}): void {
     if (this.world) this.clearRun();
     const q = opts.quality;
     const quality: RenderQuality = q === 'low' || q === 'medium' || q === 'high' || q === 'tablet' ? q : this.renderer.quality;
@@ -466,9 +535,15 @@ export class Game implements GameApi {
       // the tablet tier fields fewer Gloom, as in its real runs
       stress: quality === 'tablet' ? Math.round(horde * TABLET_CROWD) : horde,
       god: true,
-      tablet: quality === 'tablet',
+      tablet: this.lightCrowd(quality),
     });
-    this.bench = { rec: new BenchRecorder(), bot: new Bot(BENCH.seed, 0.9), seconds, boss: false, map, prevQuality };
+    const controls = opts.controls === 'fake' || opts.controls === 'blur' ? opts.controls : 'none';
+    this.bench = { rec: new BenchRecorder(), bot: new Bot(BENCH.seed, 0.9), seconds, boss: false, map, prevQuality, controls, t: 0 };
+    // touch controls overlay: a scripted thumb works them, so their real cost is measured
+    if (controls !== 'none') {
+      this.touch.setMode('preview');
+      this.touch.setGlass(controls);
+    }
     this.enterRun(this.world, false);
     this.benchBadge.classList.remove('hidden');
   }
@@ -499,10 +574,12 @@ export class Game implements GameApi {
     this.benchBadge.classList.add('hidden');
     const r = this.renderer.renderer;
     const result = finished
-      ? b.rec.result({ version: GAME_VERSION, map: b.map, quality: this.renderer.quality, width: r.domElement.width, height: r.domElement.height, dpr: r.getPixelRatio(), gpu: gpuName(r.getContext()), seconds: b.seconds })
+      ? b.rec.result({ version: GAME_VERSION, map: b.map, quality: this.renderer.quality, width: r.domElement.width, height: r.domElement.height, dpr: r.getPixelRatio(), gpu: gpuName(r.getContext()), seconds: b.seconds, controls: b.controls })
       : null;
     this.clearRun();
     if (b.prevQuality) this.renderer.setQuality(b.prevQuality);
+    if (b.controls !== 'none') this.touch.setMode('play');
+    this.touch.setGlass(glassFor(this.renderer.quality, this.touchDevice));
     if (result) {
       (window as unknown as { __benchResult?: BenchResult }).__benchResult = result;
       this.menus.benchResult(result);
@@ -608,6 +685,7 @@ export class Game implements GameApi {
       case 'chest':
         this.setGameplayInput(false);
         this.sound('open');
+        this.applyQualityStep(w);
         this.ui.showChest(w.chestRewards, () => {
           closeChest(w);
           this.ui.close();
@@ -642,6 +720,8 @@ export class Game implements GameApi {
 
   private showLevelUp(w: World): void {
     this.setGameplayInput(false);
+    // a pending governor step happens behind the picker (no visible hitch mid-action)
+    this.applyQualityStep(w);
     const pick = (c: UpgradeChoice | null): void => {
       this.sound(c ? 'buy' : 'back');
       const more = resolveLevelUp(w, c);
@@ -782,7 +862,8 @@ export class Game implements GameApi {
             rig.zoom = Math.max(6 - rig.tuning.distance, Math.min(20 - rig.tuning.distance, rig.zoom + this.input.wheel * 0.8));
             this.input.wheel = 0;
           }
-          if (this.input.usingGamepad) this.padFrames++;
+          if (this.input.touchMode) this.touchFrames++;
+          else if (this.input.usingGamepad) this.padFrames++;
           else this.kbFrames++;
         }
         this.acc += dt;
@@ -826,7 +907,19 @@ export class Game implements GameApi {
       }
       this.onWorldState(w);
       this.simMs = this.simMs * 0.9 + simT * 0.1;
-      if (b) this.benchFrame(w, b, rawMs, performance.now() - t0, simT);
+      if (b) {
+        b.t += dt;
+        if (b.controls !== 'none') this.touch.demo(b.t);
+        this.benchFrame(w, b, rawMs, performance.now() - t0, simT);
+      } else if (running && this.governing()) {
+        // quality governor: step down when Auto keeps running well under 60 fps
+        const nowS = performance.now() / 1000;
+        if (!this.govPending && stepDown(this.renderer.quality) && this.governor.frame(nowS, rawMs)) {
+          this.govPending = stepDown(this.renderer.quality);
+          this.govPendingAt = nowS;
+        }
+        if (this.govPending && nowS - this.govPendingAt > GOVERNOR.applyWithin) this.applyQualityStep(w);
+      }
     } else {
       this.renderer.renderMenu(dt);
     }

@@ -27,6 +27,8 @@ export interface PlaytestRun {
   level: number;
   kills: number;
   causeOfDeath: string | null;
+  /** Touch play: control settings and quality-governor steps (absent for keyboard / pad). */
+  controls?: PlaytestControls;
   damageBySource: Record<string, number>;
   hitsBySource: Record<string, number>;
   /** Item keys used by picks/chests ("kind:id"), interned to keep records small. */
@@ -40,6 +42,16 @@ export interface PlaytestRun {
   passives: Array<[string, number]>;
   movement: { slideTime: number; airTime: number; jumps: number; topSpeed: number };
   bosses: Array<{ id: string; spawnedAt: number; killedAt: number | null; damageTaken: number; attacks: Record<string, { used: number; hits: number }> }>;
+}
+
+export interface PlaytestControls {
+  size: string;
+  autoCamera: boolean;
+  fixedStick: boolean;
+  leftHanded: boolean;
+  glass: 'fake' | 'blur';
+  /** Auto quality steps this run: [run time s, from, to]. */
+  governor: Array<[number, string, string]>;
 }
 
 export interface PlaytestFile {
@@ -61,6 +73,7 @@ export interface RecordContext {
   input?: string;
   quality?: string;
   result?: PlaytestRun['result'];
+  controls?: PlaytestControls;
   now?: Date;
 }
 
@@ -98,6 +111,7 @@ export function recordRun(w: World, ctx: RecordContext = {}): PlaytestRun {
     player: ctx.player ?? 'human',
     input: ctx.input ?? 'kbm',
     quality: ctx.quality ?? 'unknown',
+    ...(ctx.controls ? { controls: ctx.controls } : {}),
     tuned: w.options.tuned,
     result,
     time: r1(w.time),

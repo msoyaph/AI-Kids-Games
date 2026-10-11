@@ -30,6 +30,18 @@ export const DEFAULT_TOUCH_LOOK: TouchLook = { size: 'm', opacity: 1, leftHanded
 export type GlassMode = 'fake' | 'blur';
 
 /**
+ * Real blur only where the benchmark showed it costs no frames (docs/BASELINES.md, touch
+ * controller table): High quality on a laptop-class GPU (touchscreen laptops). On phones and
+ * tablets it cost frames even at High, so they — and every other tier, incl. Auto on touch
+ * devices — use fake glass.
+ */
+export const BLUR_ON_HIGH = true;
+
+export function glassFor(quality: string, touchFirst: boolean): GlassMode {
+  return quality === 'high' && BLUR_ON_HIGH && !touchFirst ? 'blur' : 'fake';
+}
+
+/**
  * play: live controls during a run; preview: shown (not touchable) behind the Touch controls
  * settings; edit: shown for the layout editor, which moves them with showPlacement().
  */
@@ -102,6 +114,9 @@ export class TouchControls {
   private zoneLook: HTMLElement;
   private stick: HTMLElement;
   private knob: HTMLElement;
+  private shine: HTMLElement;
+  private ring: HTMLElement;
+  private speed: HTMLElement;
   private jump: HTMLElement;
   private slide: HTMLElement;
   private pause: HTMLElement;
@@ -110,11 +125,23 @@ export class TouchControls {
   constructor(parent: HTMLElement) {
     this.zoneStick = h('div', { class: 'tzone tzone-stick' });
     this.zoneLook = h('div', { class: 'tzone tzone-look' });
-    this.knob = h('div', { class: 'glass gstick-knob' });
-    this.stick = h('div', { class: 'glass gstick gone', html: GLYPHS.stickChevrons + '<div class="gstick-ring"></div><div class="gstick-halo"></div>' + GLYPHS.speed });
+    this.shine = h('div', { class: 'gstick-shine' });
+    this.knob = h('div', { class: 'glass gstick-knob' }, this.shine);
+    this.ring = h('div', { class: 'gstick-ring' });
+    this.stick = h('div', { class: 'glass gstick gone', html: GLYPHS.stickChevrons });
+    this.stick.append(this.ring, h('div', { class: 'gstick-halo' }));
+    this.stick.insertAdjacentHTML('beforeend', GLYPHS.speed);
+    this.speed = this.stick.querySelector('.gstick-speed') as unknown as HTMLElement;
     this.stick.append(this.knob);
     const button = (cls: string, label: string, glyph: string, text: string | null): HTMLElement => {
-      const b = h('button', { class: `glass gbtn ${cls}`, 'aria-label': label, html: `<div class="g-clip"></div>${cls === 'gbtn-slide' ? '<i class="g-dot"></i>' : ''}${glyph}${text ? `<span>${text}</span>` : ''}` });
+      // two pre-rendered faces (normal, and dark-on-cream for the lit press) that cross-fade:
+      // a press changes only opacity and transform, never paint
+      const face = `${glyph}${text ? `<span>${text}</span>` : ''}`;
+      const b = h('button', {
+        class: `glass gbtn ${cls}`,
+        'aria-label': label,
+        html: `<div class="g-clip"><span class="g-ripple"></span></div><div class="g-lit"></div>${cls === 'gbtn-slide' ? '<i class="g-dot"></i>' : ''}<span class="g-face">${face}</span><span class="g-face g-face-lit" aria-hidden="true">${face}</span>`,
+      });
       return b;
     };
     this.jump = button('gbtn-jump', 'Jump', GLYPHS.jump, 'JUMP');
@@ -407,21 +434,34 @@ export class TouchControls {
     });
   }
 
+  /**
+   * Per-frame writes are transforms (and one opacity) on elements that are their own
+   * compositor layers — no repaints, no style inheritance through the subtree.
+   */
   private paint(): void {
     if (this.painted) return;
     this.painted = true;
-    const s = this.stick.style;
-    s.setProperty('--sx', `${this.cx}px`);
-    s.setProperty('--sy', `${this.cy}px`);
-    s.setProperty('--ang', `${this.reading.ang}deg`);
-    s.setProperty('--mag', String(Math.min(1, this.reading.raw * 1.15)));
-    const k = this.knob.style;
-    k.setProperty('--kx', `${this.kx}px`);
-    k.setProperty('--ky', `${this.ky}px`);
-    // the highlight slides the other way, like light on a glass bead
+    // only what changed: rewriting the stick base (the parent) every frame would restyle the
+    // whole stick — ~1 ms a frame on a phone-speed CPU
+    const d = this.base * 0.44;
     const travel = this.base * TRAVEL;
-    k.setProperty('--hx', `${38 - (this.kx / travel) * 12}%`);
-    k.setProperty('--hy', `${30 - (this.ky / travel) * 12}%`);
+    this.write(this.stick, 'transform', `translate3d(${this.cx.toFixed(1)}px, ${this.cy.toFixed(1)}px, 0)`);
+    this.write(this.ring, 'transform', `rotate(${this.reading.ang.toFixed(0)}deg)`);
+    this.write(this.ring, '--mag', Math.min(1, this.reading.raw * 1.15).toFixed(2));
+    this.write(this.knob, 'transform', `translate3d(${this.kx.toFixed(1)}px, ${this.ky.toFixed(1)}px, 0)`);
+    // the highlight slides the other way, like light on a glass bead
+    this.write(this.shine, 'transform', `translate3d(${((-this.kx / travel) * d * 0.12).toFixed(1)}px, ${((-this.ky / travel) * d * 0.12).toFixed(1)}px, 0)`);
+  }
+
+  private written = new WeakMap<HTMLElement, Map<string, string>>();
+
+  /** Set a style property only when its value changed. */
+  private write(el: HTMLElement, prop: string, value: string): void {
+    let m = this.written.get(el);
+    if (!m) this.written.set(el, (m = new Map()));
+    if (m.get(prop) === value) return;
+    m.set(prop, value);
+    el.style.setProperty(prop, value);
   }
 
   /** Thea took damage: the stick rim flashes (≤ 3 Hz; shape + brightness, not only colour). */
@@ -440,7 +480,8 @@ export class TouchControls {
 
   /** Sliding fast: the rim glows, chevrons point along the movement (degrees from screen up). */
   setFast(on: boolean, angleDeg: number): void {
-    if (on) this.stick.style.setProperty('--mang', `${angleDeg.toFixed(0)}deg`);
+    // on the chevrons themselves, in 5° steps: a variable on the stick would restyle all of it
+    if (on) this.write(this.speed, '--mang', `${Math.round(angleDeg / 5) * 5}deg`);
     if (on === this.fast) return;
     this.fast = on;
     this.stick.classList.toggle('fast', on);
@@ -468,13 +509,44 @@ export class TouchControls {
   }
 
   private ripple(btn: HTMLElement, e: PointerEvent): void {
-    if (this.look.reducedMotion) return;
-    const clip = btn.firstElementChild as HTMLElement | null;
-    if (!clip) return;
     const r = btn.getBoundingClientRect();
-    const dot = h('span', { class: 'g-ripple', style: `left:${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%;top:${(((e.clientY - r.top) / r.height) * 100).toFixed(1)}%` });
-    clip.replaceChildren(dot);
-    dot.addEventListener('animationend', () => dot.remove());
+    this.rippleAt(btn, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+  }
+
+  /** A soft ripple from a point (fractions of the button), unless motion is reduced. */
+  private rippleAt(btn: HTMLElement, fx: number, fy: number): void {
+    if (this.look.reducedMotion) return;
+    const dot = btn.querySelector<HTMLElement>('.g-ripple');
+    if (!dot || typeof dot.animate !== 'function') return;
+    dot.style.left = `${(fx * 100).toFixed(1)}%`;
+    dot.style.top = `${(fy * 100).toFixed(1)}%`;
+    dot.getAnimations().forEach((a) => a.cancel());
+    dot.animate(
+      [
+        { transform: 'scale(0.15)', opacity: 1 },
+        { transform: 'scale(1)', opacity: 0 },
+      ],
+      { duration: 450, easing: 'ease-out' },
+    );
+  }
+
+  private demoPhase = 0;
+
+  /**
+   * Benchmark: a scripted thumb (preview mode) so the overlay's real cost is measured — the
+   * stick circles, Jump and Slide press with ripples every 1.6 s.
+   */
+  demo(t: number): void {
+    const travel = this.base * TRAVEL;
+    this.stick.classList.remove('idle', 'gone');
+    this.stick.classList.add('active');
+    this.setKnob(Math.cos(t * 2.2) * travel * 0.9, Math.sin(t * 2.2) * travel * 0.9);
+    const phase = t % 1.6;
+    this.jump.classList.toggle('down', phase < 0.18);
+    this.slide.classList.toggle('down', phase > 0.8 && phase < 1.1);
+    if (phase < this.demoPhase) this.rippleAt(this.jump, 0.5, 0.5);
+    if (phase > 0.8 && this.demoPhase <= 0.8) this.rippleAt(this.slide, 0.5, 0.5);
+    this.demoPhase = phase;
   }
 
   /** Show / hide the live controls (runs). A preview / edit mode keeps them on screen. */

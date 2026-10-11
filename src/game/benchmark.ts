@@ -33,6 +33,8 @@ export interface BenchResult {
   version: string;
   map: string;
   quality: Quality;
+  /** On-screen touch controls during the test: none, fake glass or real blur. */
+  controls: 'none' | 'fake' | 'blur';
   resolution: string;
   dpr: number;
   gpu: string;
@@ -75,7 +77,7 @@ export class BenchRecorder {
     return this.frameMs.length;
   }
 
-  result(ctx: { version: string; map: string; quality: Quality; width: number; height: number; dpr: number; gpu: string; seconds: number }): BenchResult {
+  result(ctx: { version: string; map: string; quality: Quality; width: number; height: number; dpr: number; gpu: string; seconds: number; controls?: 'none' | 'fake' | 'blur' }): BenchResult {
     const n = Math.max(1, this.frameMs.length);
     const total = this.frameMs.reduce((a, b) => a + b, 0);
     const sorted = [...this.frameMs].sort((a, b) => a - b);
@@ -92,6 +94,7 @@ export class BenchRecorder {
       version: ctx.version,
       map: ctx.map,
       quality: ctx.quality,
+      controls: ctx.controls ?? 'none',
       resolution: `${ctx.width}×${ctx.height}`,
       dpr: Math.round(ctx.dpr * 100) / 100,
       gpu: ctx.gpu,

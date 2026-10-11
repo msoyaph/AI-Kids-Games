@@ -264,7 +264,7 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
 Plan: design → default on phones/tablets + hybrid switching → joystick → camera/buttons/
 haptics → touch-friendly screens → customisation + layout editor → performance (glass rule,
 quality governor) → accessibility → tests → handoff. `npx tsx scripts/glass-mockups.ts`
-(after a build) renders design contact sheets into test-results/glass-mockups.
+(after a build) renders design contact sheets into shots/glass-mockups (git-ignored; test-results/ is wiped by every Playwright run).
 - [x] 1. Design: src/ui/glass.css (fake glass layers + optional real-blur ::before that
   cross-fades; opacity per layer — an ancestor with opacity < 1 would become a backdrop root
   and the blur would stop seeing the canvas), glassGlyphs.ts, glassLayout.ts
@@ -305,6 +305,31 @@ quality governor) → accessibility → tests → handoff. `npx tsx scripts/glas
   or cover the HUD (hudRects: live HUD + room for the boss bar / warnings) is refused with a
   reason. TouchControls: setLayout / placement / showPlacement / setMode('play' | 'preview' |
   'edit'); setVisible only affects play mode.
+- [x] 7. Performance: `?bench=1&controls=none|fake|blur` shows the controls with a scripted
+  thumb (TouchControls.demo); `npm run bench-browser -- 15 touch` = Chromium phone / tablet
+  at 4× CPU × every tier × none / fake / blur + WebKit iPhone / iPad (`BENCH_FILE=` benches
+  a frozen copy of a build; `--repeat N` interleaves and reports medians). Glass rule:
+  `glassFor(quality, touchFirst)` — real blur only on High on non-touch-first devices
+  (touchscreen laptops: measured free there); phones / tablets and every other tier use fake
+  glass (blur cost frames on throttled phones / tablets even at High). Per-frame stick
+  updates are compositor-only (transforms on their own layers: stick, rotated wedge, knob,
+  .gstick-shine highlight); a press fades in the pre-painted .g-lit layer and replays one
+  .g-ripple via the Web Animations API — no repaints (the first version dropped a frame per
+  press at 4× CPU). Real blur sits only on the stick base and Jump / Slide. Quality governor (game/governor.ts, Auto only, never
+  in the benchmark or with ?quality=): median frame slower than 48 fps over 4 s (after a 5 s
+  warm-up / 3 s settle; > 250 ms gaps ignored) → one step down (High → Medium → Low, Tablet
+  → Low), applied behind the next level-up / chest screen or after 8 s; sticks for the
+  session (`sessionTier`), never steps up mid-run, glass cross-fades. Touch devices on Low
+  keep the tablet crowd (`lightCrowd`).
+- [x] 8. Accessibility: reduced motion (no ripple / pulse / spring, slower auto camera),
+  high-contrast controls (also on with the high-contrast HUD), ≥ 48 px targets at Small,
+  thumb zones below the top HUD band, defaults + editor never cover the HUD.
+- [x] 9. Tests: touch e2e on chromium-tablet / chromium-phone (real CDP touches) and WebKit
+  (synthetic pointers), tests/e2e/touch-playthrough.spec.ts (5-minute touch-only run on
+  the Pixel 7 profile, steered by `Game.botHint()` — read-only bot advice converted to stick
+  angles; taps level-ups and chests), governor e2e (24× CPU throttle → Auto steps to Low),
+  `scripts/touch-shots.ts` visual review. Playtest runs record `input: 'touch'` and
+  `controls` (size, auto camera, stick mode, hand, glass, governor steps).
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera
