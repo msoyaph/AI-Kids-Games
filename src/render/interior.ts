@@ -3,10 +3,14 @@ import * as THREE from 'three';
 import { BUG_BY_ID, FISH_BY_ID, FOSSIL_BY_ID, item } from '../data/registry';
 import type { Game } from '../sim/game';
 import { footprint } from '../sim/housing';
-import { interiorRT, MUSEUM_WING_W, type Room } from '../sim/interior';
+import { interiorRT, MUSEUM_WING_W, roomVillager, type Room } from '../sim/interior';
+import { agents } from '../sim/agents';
+import { NPC_BY_ID, VILLAGER_BY_ID } from '../data/villagers';
+import { approachAngle } from '../core/math';
 import { mixHex } from '../core/math';
 import { vcolMat, curved } from './curve';
-import { box, merge, part, sphere } from './models/geo';
+import { box, cyl, merge, part, sphere } from './models/geo';
+import { toolMesh } from './models/tools';
 import { furnitureGeo } from './models/furniture';
 import { buildBug, buildFish, buildFossil, flapWings, type BugModel } from './models/creatures';
 import { buildCharacter, animateRig, type Rig } from './models/character';
@@ -66,7 +70,7 @@ export class InteriorView {
   private room = new THREE.Group();
   private bugs: { m: BugModel; base: THREE.Vector3 }[] = [];
   private fish: { g: THREE.Group; base: THREE.Vector3; t: number }[] = [];
-  private npc: Rig | null = null;
+  private people: { id: string; rig: Rig; x: number; z: number; facing: number; bubble: THREE.Group | null }[] = [];
   private key = '';
   private camX = 0;
   private time = 0;
@@ -107,10 +111,14 @@ export class InteriorView {
     const rt = interiorRT(g);
     if (!rt) return;
     const h = g.state.home;
+    const room = rt.room;
+    const kind = room.kind;
     const key =
-      rt.room.kind === 'home'
+      kind === 'home'
         ? `home|${h.level}|${h.wallpaper}|${h.flooring}|${h.furniture.map((f) => `${f.uid}:${f.x},${f.z},${f.rot}`).join(';')}`
-        : `museum|${g.state.museum.donated.length}`;
+        : kind === 'museum'
+          ? `museum|${g.state.museum.donated.length}`
+          : `${kind}|${g.state.clock.day}|${room.shelves.map((sh) => `${sh.stock?.id ?? ''}${sh.sold ? '!' : ''}`).join(',')}|${room.decor.map((d) => d.id).join(',')}`;
     if (key === this.key) return;
     this.key = key;
     this.build(g, rt.room);
@@ -124,11 +132,20 @@ export class InteriorView {
     this.room.clear();
     this.bugs = [];
     this.fish = [];
-    this.npc = null;
+    this.people = [];
     const { w, d } = room;
     const isHome = room.kind === 'home';
-    const [fc, fc2, fp] = isHome ? surface(g.state.home.flooring, [0xb9d99a, 0xa9cf8a, 'plain']) : [0xe9dcc6, 0xdccdb2, 'tiles'];
-    const [wc, wc2, wp] = isHome ? surface(g.state.home.wallpaper, [0xf3e3c3, 0xe9d4ae, 'plain']) : [0xf2ece0, 0xe4dccb, 'stripe'];
+    const isMuseum = room.kind === 'museum';
+    const [fc, fc2, fp] = isHome
+      ? surface(g.state.home.flooring, [0xb9d99a, 0xa9cf8a, 'plain'])
+      : room.floor
+        ? surface(room.floor, [0xe9dcc6, 0xdccdb2, 'tiles'])
+        : [0xe9dcc6, 0xdccdb2, 'tiles'];
+    const [wc, wc2, wp] = isHome
+      ? surface(g.state.home.wallpaper, [0xf3e3c3, 0xe9d4ae, 'plain'])
+      : room.wall
+        ? surface(room.wall, [0xf2ece0, 0xe4dccb, 'stripe'])
+        : [0xf2ece0, 0xe4dccb, 'stripe'];
     const P: THREE.BufferGeometry[] = [];
     for (let z = 0; z < d; z++)
       for (let x = 0; x < w; x++) P.push(part(box(1, 0.1, 1), patternColor(fp, fc, fc2, x, z), { pos: [x + 0.5, -0.05, z + 0.5] }));
@@ -141,7 +158,7 @@ export class InteriorView {
     // baseboard + door mat
     P.push(part(box(w, 0.14, 0.14), mixHex(wc, 0x5b4a68, 0.35), { pos: [w / 2, 0.07, 0.02] }));
     P.push(part(box(1.0, 0.03, 0.6), 0xc98d62, { pos: [room.door.x + 0.5, 0.015, d - 0.3] }));
-    if (!isHome) {
+    if (isMuseum) {
       for (let k = 1; k < 3; k++)
         for (let z = 0; z < 8; z++) P.push(part(box(0.3, WALL_H * 0.8, 1), 0xe0d6c4, { pos: [k * MUSEUM_WING_W + 0.5, WALL_H * 0.4, z + 0.5] }));
     }
@@ -154,7 +171,140 @@ export class InteriorView {
     this.room.add(win);
 
     if (isHome) this.buildHome(g, room);
-    else this.buildMuseum(g, room);
+    else if (isMuseum) this.buildMuseum(g, room);
+    else this.buildPlace(g, room);
+    this.buildPeople(room);
+  }
+
+  /** Shop, Lantern Hall and villager homes: layout furniture, fixtures, shelves, signs. */
+  private buildPlace(_g: Game, room: Room): void {
+    for (const dc of room.decor) {
+      const obj = furnitureObject(dc.id);
+      if (!obj) continue;
+      if (dc.gift) {
+        // gifts sit on their own 1x1 spot, scaled to fit
+        const f = item(dc.id).furn!;
+        obj.scale.setScalar(Math.min(1, 0.95 / Math.max(f.w, f.d)));
+        obj.position.set(dc.x + 0.5, 0, dc.z + 0.5);
+        obj.rotation.y = 0.35;
+      } else {
+        const fp = footprint(dc.id, dc.r ?? 0);
+        obj.position.set(dc.x + fp.w / 2, 0, dc.z + fp.d / 2);
+        obj.rotation.y = -(dc.r ?? 0) * (Math.PI / 2);
+      }
+      this.room.add(obj);
+    }
+    const P: THREE.BufferGeometry[] = [];
+    const G: THREE.BufferGeometry[] = [];
+    for (const f of room.fixtures) {
+      const cx = f.x + f.w / 2, cz = f.z + f.d / 2;
+      switch (f.id) {
+        case 'desk':
+          P.push(part(box(f.w - 0.1, 0.78, 0.8), 0x8fc9c2, { pos: [cx, 0.39, cz] }), part(box(f.w + 0.05, 0.08, 0.92), 0xf6e7c8, { pos: [cx, 0.82, cz] }));
+          P.push(part(box(0.3, 0.04, 0.22), 0xffffff, { pos: [cx - 0.35, 0.87, cz + 0.1], rot: [0, 0.3, 0] }), part(cyl(0.06, 0.07, 0.12, 8), 0xe07a4a, { pos: [cx + 0.45, 0.92, cz] }));
+          G.push(part(sphere(0.12, 8, 6), 0xffd27a, { pos: [cx + 0.1, 0.98, cz - 0.1] }));
+          break;
+        case 'counter':
+          P.push(part(box(f.w - 0.05, 0.9, 0.9), 0xc98d62, { pos: [cx, 0.45, cz] }), part(box(f.w + 0.1, 0.08, 1.0), 0xf3dcb5, { pos: [cx, 0.92, cz] }));
+          P.push(part(box(0.5, 0.28, 0.36), 0x6f8f9f, { pos: [cx + 1.1, 1.1, cz] }), part(box(0.44, 0.06, 0.3), 0xf6d36b, { pos: [cx + 1.1, 1.27, cz] }));
+          P.push(part(box(0.7, 0.04, 0.45), 0xffffff, { pos: [cx - 0.9, 0.97, cz] }));
+          break;
+        case 'board':
+          P.push(part(box(0.16, 1.3, f.d - 0.1), 0xa47a52, { pos: [f.x + 0.12, 1.15, cz] }), part(box(0.06, 1.1, f.d - 0.3), 0xe8cfa4, { pos: [f.x + 0.22, 1.15, cz] }));
+          for (let k = 0; k < 4; k++) P.push(part(box(0.03, 0.28, 0.3), [0xfff6e6, 0xffe3d1, 0xd4f2e8, 0xfff8d6][k]!, { pos: [f.x + 0.27, 0.9 + (k % 2) * 0.42, f.z + 0.45 + Math.floor(k / 2) * 0.9] }));
+          break;
+        case 'kiosk':
+          P.push(part(box(0.7, 1.1, 0.6), 0xb9a6e0, { pos: [cx, 0.55, cz] }), part(box(0.6, 0.4, 0.06), 0x5b4a68, { pos: [cx - 0.33, 1.0, cz], rot: [0, Math.PI / 2, 0] }));
+          G.push(part(sphere(0.16, 8, 6), 0xbfe8ff, { pos: [cx, 1.3, cz] }));
+          break;
+      }
+    }
+    // shop: shelves + today's stock
+    for (const sh of room.shelves) {
+      const cx = sh.x + 0.5, cz = sh.z + 0.5;
+      let top = 0.64;
+      if (sh.kind === 'table') P.push(part(box(0.86, 0.6, 0.86), 0xe8cfa4, { pos: [cx, 0.3, cz] }), part(box(0.92, 0.05, 0.92), 0xc9a477, { pos: [cx, 0.62, cz] }));
+      else {
+        // an open shelf unit with its back against the nearest wall
+        const yaw = sh.x === 0 ? Math.PI / 2 : sh.x === room.w - 1 ? -Math.PI / 2 : 0;
+        const at = (lx: number, y: number, lz: number): [number, number, number] => [cx + lx * Math.cos(yaw) + lz * Math.sin(yaw), y, cz - lx * Math.sin(yaw) + lz * Math.cos(yaw)];
+        const wood = 0xc9a477, board = 0xf0dcb8;
+        P.push(part(box(0.92, 1.4, 0.06), wood, { pos: at(0, 0.7, -0.36), rot: [0, yaw, 0] }));
+        P.push(part(box(0.06, 1.4, 0.5), wood, { pos: at(-0.43, 0.7, -0.12), rot: [0, yaw, 0] }), part(box(0.06, 1.4, 0.5), wood, { pos: at(0.43, 0.7, -0.12), rot: [0, yaw, 0] }));
+        for (const y of [0.08, 0.6, 1.38]) P.push(part(box(0.86, 0.05, 0.5), board, { pos: at(0, y, -0.12), rot: [0, yaw, 0] }));
+        top = 0.63;
+      }
+      if (!sh.stock || sh.sold) continue;
+      const m = this.stockModel(sh.stock.id, cx, top, cz);
+      m.position.set(sh.kind === 'table' ? cx : cx + (sh.x === 0 ? -0.1 : sh.x === room.w - 1 ? 0.1 : 0), top, sh.kind === 'table' ? cz : cz - (sh.z === 0 ? 0.1 : 0));
+      this.room.add(m);
+    }
+    if (P.length) {
+      const m = new THREE.Mesh(merge(P), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      this.room.add(m);
+    }
+    if (G.length) this.room.add(new THREE.Mesh(merge(G), glowMat));
+    // a sign over the back wall
+    const vid = roomVillager(room.kind);
+    const title = room.kind === 'shop' ? 'The Curled Leaf' : room.kind === 'hall' ? 'Lantern Hall' : vid ? `${VILLAGER_BY_ID[vid]?.name ?? ''}'s Home` : '';
+    if (title) {
+      const plaque = textPlaque(title, 2.6, 0.55);
+      plaque.position.set(room.w / 2, 2.25, 0.03);
+      this.room.add(plaque);
+    }
+  }
+
+  /** A small model of a stocked item on a shelf. */
+  private stockModel(id: string, x: number, y: number, z: number): THREE.Object3D {
+    const def = item(id);
+    if (def.furn) {
+      const obj = furnitureObject(id)!;
+      obj.scale.setScalar(0.42 / Math.max(def.furn.w, def.furn.d));
+      obj.position.set(x, y, z);
+      obj.rotation.y = 0.4;
+      return obj;
+    }
+    if (def.tool) {
+      const t = toolMesh(def.tool.kind, def.tool.sturdy);
+      const g = new THREE.Group();
+      t.rotation.set(0, 0, -1.25);
+      t.position.set(-0.3, 0.06, 0);
+      t.scale.setScalar(0.7);
+      g.add(t);
+      g.position.set(x, y, z);
+      return g;
+    }
+    const c = def.icon.c, c2 = def.icon.c2 ?? def.icon.c;
+    let geo: THREE.BufferGeometry;
+    if (def.cat === 'wallpaper' || def.cat === 'flooring') {
+      geo = merge([part(cyl(0.11, 0.11, 0.62, 10), c, { rot: [0, 0, Math.PI / 2], pos: [0, 0.12, 0] }), part(cyl(0.115, 0.115, 0.12, 10), c2, { rot: [0, 0, Math.PI / 2], pos: [0.2, 0.12, 0] })]);
+    } else if (def.cat === 'fruit') {
+      geo = merge([part(box(0.5, 0.12, 0.4), 0xa47a52, { pos: [0, 0.06, 0] }), ...[[-0.12, 0], [0.12, 0], [0, 0.1]].map(([ox, oz]) => part(sphere(0.1, 8, 6), c, { pos: [ox!, 0.2, oz!] }))]);
+    } else if (def.cat === 'sapling') {
+      geo = merge([part(cyl(0.12, 0.1, 0.18, 8), 0xc98d62, { pos: [0, 0.09, 0] }), part(cyl(0.02, 0.02, 0.3, 4), 0x8a6a4a, { pos: [0, 0.3, 0] }), part(sphere(0.14, 6, 5), 0x8fd18a, { pos: [0, 0.48, 0] })]);
+    } else {
+      // seed packets
+      geo = merge([part(box(0.22, 0.3, 0.04), 0xfff6e6, { pos: [-0.12, 0.15, 0], rot: [0, 0.2, 0] }), part(box(0.16, 0.12, 0.05), c, { pos: [-0.12, 0.18, 0.01], rot: [0, 0.2, 0] }), part(box(0.22, 0.3, 0.04), 0xfff6e6, { pos: [0.14, 0.15, 0.05], rot: [0, -0.2, 0] }), part(box(0.16, 0.12, 0.05), c2, { pos: [0.14, 0.18, 0.06], rot: [0, -0.2, 0] })]);
+    }
+    const m = new THREE.Mesh(geo, mat);
+    m.castShadow = true;
+    m.position.set(x, y, z);
+    return m;
+  }
+
+  /** Characters standing in the room. */
+  private buildPeople(room: Room): void {
+    for (const p of room.people) {
+      const look = VILLAGER_BY_ID[p.id]?.look ?? NPC_BY_ID[p.id]?.look;
+      if (!look) continue;
+      const rig = buildCharacter({ species: look.species, skin: look.fur, accent: look.accent, outfit: look.outfit, eyes: look.eyes, blush: look.blush, scale: VILLAGER_BY_ID[p.id] ? 1 : 1.08 });
+      rig.root.position.set(p.x, 0, p.z);
+      rig.root.rotation.y = p.facing;
+      this.room.add(rig.root);
+      this.people.push({ id: p.id, rig, x: p.x, z: p.z, facing: p.facing, bubble: null });
+    }
   }
 
   private buildHome(g: Game, room: Room): void {
@@ -244,9 +394,6 @@ export class InteriorView {
         mat,
       );
       this.room.add(m);
-      this.npc = buildCharacter({ species: 'bat', skin: 0x8a7a9a, accent: 0xf3d6c8, outfit: 0xb9a6e0, eyes: 1 });
-      this.npc.root.position.set(desk.x + desk.w / 2, 0, desk.z - 0.25);
-      this.room.add(this.npc.root);
     }
   }
 
@@ -261,7 +408,31 @@ export class InteriorView {
     const room = rt.room;
     const a = g.action;
     animateRig(playerRig, dt, { speed: rt.speed, action: a ? Math.min(1, a.t / a.dur) : -1, actionKind: a ? a.kind : '' });
-    if (this.npc) animateRig(this.npc, dt, { speed: 0, action: -1, talking: false });
+    // people turn to face the player when close, and show emotes from conversations
+    for (const pp of this.people) {
+      const a = agents(g).get(pp.id);
+      const near = Math.hypot(rt.x - pp.x, rt.z - pp.z) < 3.2;
+      const want = near ? Math.atan2(rt.x - pp.x, rt.z - pp.z) : 0;
+      pp.facing = approachAngle(pp.facing, want, dt * 5);
+      pp.rig.root.rotation.y = pp.facing;
+      animateRig(pp.rig, dt, { speed: 0, action: -1, talking: !!a?.talking });
+      const emote = a?.emote;
+      if (emote && !pp.bubble) {
+        pp.bubble = new THREE.Group();
+        const heart = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), new THREE.MeshBasicMaterial({ color: emote.kind === 'heart' ? 0xff7f9f : 0xffd166 }));
+        pp.bubble.add(heart);
+        this.room.add(pp.bubble);
+      }
+      if (pp.bubble) {
+        if (!emote) {
+          this.room.remove(pp.bubble);
+          pp.bubble = null;
+        } else {
+          pp.bubble.position.set(pp.x, 1.85 + Math.sin(emote.t * 6) * 0.05, pp.z);
+          pp.bubble.scale.setScalar(Math.min(1, (2.2 - emote.t) * 5));
+        }
+      }
+    }
     for (const f of this.fish) {
       f.t += dt;
       f.g.position.set(f.base.x + Math.sin(f.t * 0.8) * 0.15, f.base.y + Math.sin(f.t * 1.3) * 0.05, f.base.z + Math.cos(f.t * 0.8) * 0.12);

@@ -316,10 +316,15 @@ export class App {
     g.ui.open = (panel, arg) => this.panels[panel]?.(arg);
     g.bus.on('toast', (t) => this.hud.toast(t.text, t.kind, t.item));
     g.bus.on('sfx', (e) => this.audio.play(e.name, { vol: e.vol, pitch: e.pitch }));
+    // doors: cut to dark, then fade the new room in
     g.bus.on('location', () => {
-      this.fadeEl.classList.add('quick', 'on');
-      setTimeout(() => this.fadeEl.classList.remove('on'), 160);
-      setTimeout(() => this.fadeEl.classList.remove('quick'), 500);
+      const f = this.fadeEl;
+      f.classList.add('cut', 'on');
+      void f.offsetWidth;
+      f.classList.remove('cut');
+      f.classList.add('door');
+      setTimeout(() => f.classList.remove('on'), 90);
+      setTimeout(() => f.classList.remove('door'), 700);
     });
     g.bus.on('dayStarted', () => this.saveNow(true));
     g.bus.on('fx', (f) => {

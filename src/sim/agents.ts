@@ -8,6 +8,7 @@ import { findPath, lineClear } from './pathfind';
 import { facingVec, tileOf } from './player';
 import { reachableComponents, residents, vstate } from './villagers';
 import { findStructure } from './structures';
+import { enterInterior } from './interior';
 import type { Structure } from './state';
 
 export interface Agent {
@@ -38,7 +39,8 @@ export function agents(g: Game): Map<string, Agent> {
   return m;
 }
 
-function currentActivity(id: string, hour: number): Activity {
+/** A villager's scheduled activity at `hour`. */
+export function activityOf(id: string, hour: number): Activity {
   const def = VILLAGER_BY_ID[id];
   if (!def) return 'home';
   let act: Activity = 'home';
@@ -55,21 +57,46 @@ function doorOf(s: { x: number; z: number; w: number; d: number }): { x: number;
   return { x: s.x + Math.floor(s.w / 2) + 0.5, z: s.z + s.d + 0.5 };
 }
 
+/** The island spot just outside a room's front door (null if that building doesn't exist). */
+export function roomDoorOf(g: Game, kind: string): { x: number; z: number } | null {
+  const vid = kind.startsWith('villager:') ? kind.slice(9) : null;
+  const s = vid ? homeOf(g, vid) : findStructure(g, kind === 'home' ? 'home' : kind === 'shop' ? 'shop' : kind === 'hall' ? 'hall' : 'museum');
+  return s ? doorOf(s) : null;
+}
+
+/** Pemberly waits in the plaza for the festival (all of its last mission, and festival night). */
+export function pemberlyOutdoors(g: Game): boolean {
+  return !!g.state.quests.active.m5_finale || g.state.flags.finaleDay === g.state.clock.day;
+}
+
+/** Which room someone is inside right now (null = outdoors / not on the island). */
+export function personRoom(g: Game, id: string): string | null {
+  if (id === 'pemberly') return pemberlyOutdoors(g) ? null : 'hall';
+  if (id === 'fennimore') return findStructure(g, 'shop') ? 'shop' : null;
+  if (id === 'vesper') return findStructure(g, 'museum') ? 'museum' : null;
+  if (!VILLAGER_BY_ID[id] || !g.state.villagers[id]?.movedIn || !homeOf(g, id)) return null;
+  const a = agents(g).get(id);
+  // walking home still counts as outdoors until they're through the door
+  if (a && a.visible) return null;
+  return activityOf(id, Math.floor(g.state.clock.minute / 60)) === 'home' ? `villager:${id}` : null;
+}
+
 /** NPC post positions. */
 function npcPost(g: Game, id: string): { x: number; z: number; facing: number; visible: boolean } | null {
   const h = g.state.clock.minute / 60;
   const lots = g.world.gen.lots;
+  // Pemberly works inside Lantern Hall, except for the festival in the plaza
   if (id === 'pemberly') {
-    const hall = lots.hall;
-    const awake = h >= 6 && h < 23;
-    return { x: hall.x + hall.w / 2 + 1.6, z: hall.z + hall.d + 1.2, facing: 0, visible: awake };
+    if (!pemberlyOutdoors(g)) return null;
+    const pl = lots.plaza;
+    return { x: pl.x + pl.w / 2 + 1.3, z: pl.z + pl.d / 2 + 1.1, facing: 0, visible: true };
   }
+  // Fennimore minds his cart outdoors; once the shop is built he works behind its counter
   if (id === 'fennimore') {
-    const s = findStructure(g, 'shop') ?? findStructure(g, 'shopCart');
-    if (!s) return null;
+    const s = findStructure(g, 'shopCart');
+    if (!s || findStructure(g, 'shop')) return null;
     const open = h >= 8 && h < 22;
-    if (s.type === 'shopCart') return { x: s.x + s.w + 0.4, z: s.z + s.d - 0.3, facing: -Math.PI / 2 + 0.3, visible: open };
-    return { x: s.x + s.w / 2 + 1.4, z: s.z + s.d + 0.7, facing: 0, visible: open };
+    return { x: s.x + s.w + 0.4, z: s.z + s.d - 0.3, facing: -Math.PI / 2 + 0.3, visible: open };
   }
   if (id === 'vesper') {
     const tent = findStructure(g, 'museumTent');
@@ -209,7 +236,7 @@ export function updateAgents(g: Game, dt: number): void {
       a.facing = approachAngle(a.facing, Math.atan2(p.x - a.x, p.z - a.z), dt * 8);
       continue;
     }
-    const act = currentActivity(a.id, hour);
+    const act = activityOf(a.id, hour);
     if (act !== a.activity) {
       a.activity = act;
       a.path = [];
@@ -323,7 +350,17 @@ export function emote(g: Game, id: string, kind: string): void {
   if (a) a.emote = { kind, t: 2.2 };
 }
 
-/** Knock on a villager's door: talk if they're home. */
+const AWAY: Record<string, string> = {
+  plaza: 'at the plaza',
+  beach: 'at the beach',
+  river: 'by the river',
+  forest: 'in the forest',
+  museum: 'at the museum',
+  shop: 'at the shop',
+  wander: 'out for a walk',
+};
+
+/** Knock on a villager's door: come in if they're home. */
 export function homeResolver(g: Game, ctx: InteractCtx): Interaction | null {
   const s = ctx.frontStruct;
   if (!s || s.type !== 'villagerHome' || !s.owner) return null;
@@ -333,18 +370,16 @@ export function homeResolver(g: Game, ctx: InteractCtx): Interaction | null {
     label: `Knock on ${name}'s door`,
     priority: 85,
     run: () => {
+      g.emit('sfx', { name: 'knock' });
       const a = agents(g).get(id);
-      if (a && !a.visible) {
-        const d = doorOf(s);
-        a.x = d.x;
-        a.z = d.z;
-        a.visible = true;
-        a.talking = true;
+      if (a && !a.visible && activityOf(id, Math.floor(g.state.clock.minute / 60)) === 'home') {
         a.path = [];
-        a.wait = 20;
-        g.emit('sfx', { name: 'knock' });
-        g.ui.open('talk', id);
-      } else g.toast(`${name} isn't home right now.`);
+        g.emit('knocked', { npc: id });
+        enterInterior(g, `villager:${id}`);
+      } else {
+        const act = activityOf(id, Math.floor(g.state.clock.minute / 60));
+        g.toast(`${name} isn't home right now.${AWAY[act] ? ` Maybe ${AWAY[act]}?` : ''}`);
+      }
     },
   };
 }

@@ -238,6 +238,7 @@ export function applyEffect(g: Game, e: Effect): void {
       break;
     case 'finale':
       g.state.flags.lighthouseLit = 1;
+      g.state.flags.finaleDay = g.state.clock.day;
       g.state.quests.finished = true;
       g.emit('structuresChanged', {});
       g.emit('finale', {});

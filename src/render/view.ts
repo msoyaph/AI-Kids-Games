@@ -144,8 +144,13 @@ export class GameView {
     for (const a of agentsOf(this.game).values()) a.talking = false;
   }
 
-  /** Project a world point (with the world curve applied) to CSS pixels. */
+  /** Project a world point (with the world curve applied) to CSS pixels. Indoors, (x,z) are room coordinates. */
   project(x: number, y: number, z: number): { x: number; y: number; visible: boolean } {
+    if (this.game.state.player.location !== 'island' && this.preview === null) {
+      const v = new THREE.Vector3(x, y, z).project(this.interior.camera);
+      const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
+      return { x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, visible: v.z < 1 };
+    }
     const o = sharedUniforms.uCurveOrigin.value;
     const k = sharedUniforms.uCurveK.value;
     const dx = x - o.x, dz = z - o.z;

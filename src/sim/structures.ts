@@ -1,7 +1,7 @@
 // Building interactions on the island + construction sites that finish overnight.
 import type { Game, InteractCtx, Interaction } from './game';
 import type { Structure, StructType } from './state';
-import { enterInterior } from './interior';
+import { canEnter, enterInterior, type RoomKind } from './interior';
 import { give } from './inventory';
 
 export function structureLabel(s: Structure): string {
@@ -71,20 +71,21 @@ export function structureResolver(g: Game, ctx: InteractCtx): Interaction | null
       return { label: 'Enter home', priority: 85, run: () => enterInterior(g, 'home') };
     case 'workbench':
       return { label: 'Craft at workbench', priority: 85, run: () => g.ui.open('craft') };
-    case 'shop':
     case 'shopCart': {
       const h = g.state.clock.minute / 60;
       const open = h >= 8 && h < 22;
       return {
-        label: s.type === 'shop' ? 'Shop at The Curled Leaf' : "Browse Fennimore's cart",
+        label: "Browse Fennimore's cart",
         priority: 85,
         run: () => (open ? g.ui.open('shop') : g.toast('Closed for the night. Open 8 AM – 10 PM!')),
       };
     }
+    case 'shop':
+      return { label: 'Enter The Curled Leaf', priority: 85, run: () => tryEnter(g, 'shop') };
     case 'hall':
-      return { label: 'Enter Lantern Hall', priority: 85, run: () => g.ui.open('talk', 'pemberly') };
+      return { label: 'Enter Lantern Hall', priority: 85, run: () => tryEnter(g, 'hall') };
     case 'museum':
-      return { label: 'Enter the museum', priority: 85, run: () => enterInterior(g, 'museum') };
+      return { label: 'Enter the museum', priority: 85, run: () => tryEnter(g, 'museum') };
     case 'museumTent':
       return { label: "Visit Vesper's tent", priority: 85, run: () => g.ui.open('talk', 'vesper') };
     case 'lighthouse':
@@ -98,6 +99,12 @@ export function structureResolver(g: Game, ctx: InteractCtx): Interaction | null
     default:
       return null;
   }
+}
+
+function tryEnter(g: Game, kind: RoomKind): void {
+  const ok = canEnter(g, kind);
+  if (ok.ok) enterInterior(g, kind);
+  else g.toast(ok.reason ?? 'Closed.', 'warn');
 }
 
 export function inspectLighthouse(g: Game): void {

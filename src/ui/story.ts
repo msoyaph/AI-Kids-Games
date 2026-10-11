@@ -1,16 +1,15 @@
 // Story presentation: quest talk hooks, mission messages, chapter banners, HUD tracker + compass.
 import type { App } from '../app';
-import { agents } from '../sim/agents';
 import type { Game } from '../sim/game';
 import { startPlotPlacement } from '../sim/placement';
-import { active, markerTarget, objectiveLive, objectiveValue, questOptions, questRT, talkScene } from '../sim/quests';
-import { findStructure } from '../sim/structures';
+import { active, objectiveLive, objectiveValue, questOptions, questRT, talkScene } from '../sim/quests';
 import { parseLine } from '../sim/talk';
-import { Region } from '../world/types';
 import { makeBox, type TalkOption } from './conversation';
 import { contestOptions } from './journal';
 import { btn, clear, h, type Panel } from './dom';
 import { sendHint, trackedMission } from '../sim/hints';
+import { markerPos } from '../sim/markers';
+export { markerPos };
 import { fmt } from '../core/math';
 
 const ctxOf = (g: Game) => ({ player: g.state.player.name });
@@ -133,9 +132,9 @@ export class QuestTracker {
         this.el.append(h('div', { class: `tr-obj ${v.done ? 'done' : ''}` }, v.done ? '✓ ' : '○ ', o.label, count));
       });
     }
-    // compass arrow toward the marker
+    // compass arrow toward the marker (indoors: toward the person, or the door)
     const t = markerPos(g, m);
-    if (!t || g.state.player.location !== 'island') {
+    if (!t) {
       this.arrow.style.display = 'none';
       return;
     }
@@ -163,46 +162,6 @@ export class QuestTracker {
       this.arrow.style.transform = `translate(-50%,-50%) rotate(${a + Math.PI / 2}rad)`;
     }
   }
-}
-
-export function markerPos(g: Game, m: ReturnType<typeof active>[number]): { x: number; y: number; z: number } | null {
-  const t = markerTarget(g, m);
-  if (!t) return null;
-  if (t.npc) {
-    const a = agents(g).get(t.npc);
-    if (a && a.visible) return { x: a.x, y: 2.2, z: a.z };
-    if (t.npc === 'pemberly') {
-      const l = g.world.gen.lots.hall;
-      return { x: l.x + l.w / 2, y: 3, z: l.z + l.d };
-    }
-    const home = g.state.world.structures.find((s) => s.owner === t.npc && s.type === 'villagerHome');
-    if (home) return { x: home.x + 1.5, y: 2.5, z: home.z + 3 };
-    if (t.npc === 'fennimore') {
-      const s = findStructure(g, 'shop') ?? findStructure(g, 'shopCart');
-      if (s) return { x: s.x + s.w / 2, y: 2.5, z: s.z + s.d };
-    }
-    if (t.npc === 'vesper') {
-      const s = findStructure(g, 'museum') ?? findStructure(g, 'museumTent');
-      if (s) return { x: s.x + s.w / 2, y: 2.5, z: s.z + s.d };
-    }
-    return null;
-  }
-  if (t.struct) {
-    const s = findStructure(g, t.struct as never);
-    if (s) return { x: s.x + s.w / 2, y: s.level * 1.4 + 3, z: s.z + s.d / 2 };
-    return null;
-  }
-  if (t.lot) {
-    const l = g.world.gen.lots[t.lot as keyof typeof g.world.gen.lots];
-    if (l) return { x: l.x + l.w / 2, y: 2, z: l.z + l.d / 2 };
-  }
-  if (t.region !== undefined) {
-    if (t.region === Region.Summit) {
-      const l = g.world.gen.lots.lighthouse;
-      return { x: l.x + 1, y: 4, z: l.z + 1 };
-    }
-  }
-  return null;
 }
 
 // ---------------------------------------------------------------- quest log

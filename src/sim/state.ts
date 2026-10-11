@@ -99,7 +99,17 @@ export interface InvSlot {
   dur?: number;
 }
 
-export type Location = 'island' | 'home' | 'museum';
+/** Where the player is: the island, or inside a room ('home', 'museum', 'shop', 'hall', 'villager:<id>'). */
+export type Location = 'island' | 'home' | 'museum' | 'shop' | 'hall' | `villager:${string}`;
+
+/** Position inside a room (saved so a save made indoors resumes indoors). */
+export interface IndoorPos {
+  x: number;
+  z: number;
+  facing: number;
+  /** island spot to return to when leaving */
+  ret: { x: number; z: number; facing: number };
+}
 
 export interface PlayerState {
   name: string;
@@ -115,6 +125,8 @@ export interface PlayerState {
   glints: number;
   lumens: number;
   location: Location;
+  /** set while indoors */
+  indoor?: IndoorPos;
 }
 
 export interface PlacedFurniture {
@@ -162,6 +174,8 @@ export interface VillagerState {
   request?: VillagerRequest;
   rewardsGiven: number;
   metDay: number;
+  /** furniture the player gave them, most recent first (shown in their home) */
+  gifts?: string[];
 }
 
 export interface MissionProgress {

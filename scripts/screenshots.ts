@@ -67,6 +67,13 @@ window.__shot = {
     window.__lc.view.rig.snap(p.x, 0, p.z);
   },
   homeOf(g, id) { return g.state.world.structures.find((s) => s.owner === id && s.type === 'villagerHome'); },
+  inside(g, I, kind) {
+    g.state.clock.minute = 12.5 * 60;
+    I.enterInterior(g, kind);
+    const rt = I.interiorRT(g);
+    rt.x = rt.room.door.x + 0.5; rt.z = rt.room.d - 2.2; rt.facing = Math.PI;
+    document.querySelector('.fade')?.classList.remove('on');
+  },
 };
 `;
 
@@ -95,7 +102,7 @@ const scenes: Scene[] = [
         const h = S.homeOf(g, 'tansy');
         S.look(g, h.x + 1.5, h.z + 4.5, 12 * 60, Math.PI);
         const I = await S.imp('/src/sim/interior.ts');
-        if ((I as any).enterVillagerHome) (I as any).enterVillagerHome(g, 'tansy');
+        if ((I as any).villagerRoom) S.inside(g, I, 'villager:tansy');
       });
     },
   },
@@ -109,7 +116,7 @@ const scenes: Scene[] = [
         const h = S.homeOf(g, 'rusk');
         S.look(g, h.x + 1.5, h.z + 4.5, 12 * 60, Math.PI);
         const I = await S.imp('/src/sim/interior.ts');
-        if ((I as any).enterVillagerHome) (I as any).enterVillagerHome(g, 'rusk');
+        if ((I as any).villagerRoom) S.inside(g, I, 'villager:rusk');
       });
     },
   },
@@ -123,8 +130,19 @@ const scenes: Scene[] = [
         const s = g.state.world.structures.find((x: any) => x.type === 'shop');
         S.look(g, s.x + s.w / 2, s.z + s.d + 2.5, 11 * 60, Math.PI);
         const I = await S.imp('/src/sim/interior.ts');
-        if ((I as any).enterShop) (I as any).enterShop(g);
+        if ((I as any).buildShopRoom) S.inside(g, I, 'shop');
         else (window as any).__lc.panels.shop();
+      });
+    },
+  },
+  {
+    name: 'hall',
+    run: async (page) => {
+      await page.evaluate(async () => {
+        const S = (window as any).__shot;
+        const g = await S.newGame(777);
+        const I = await S.imp('/src/sim/interior.ts');
+        S.inside(g, I, 'hall');
       });
     },
   },

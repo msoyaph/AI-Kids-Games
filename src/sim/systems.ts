@@ -8,7 +8,7 @@ import { bugResolver, resetBugs, updateBugs } from './bugs';
 import { dailyConstruction, structureResolver } from './structures';
 import { dailyHome } from './housing';
 import { dailyShopReset } from './economy';
-import { interiorResolve, stepInterior } from './interior';
+import { interiorResolve, resumeIndoors, stepInterior } from './interior';
 import { decorResolver } from './decor';
 import { dailyVillagers } from './villagers';
 import { homeResolver, talkResolver, updateAgents } from './agents';
@@ -74,11 +74,11 @@ export function installSystems(g: Game): void {
 }
 
 export function createGame(state: GameState): Game {
-  // interiors are runtime-only: a save made indoors resumes outside the door
-  if (state.player.location !== 'island') state.player.location = 'island';
   const g = new Game(state);
   installSystems(g);
   g.ensureDayRolled();
+  // a save made indoors resumes indoors
+  resumeIndoors(g);
   dailyChallenges(g);
   tryStart(g);
   return g;

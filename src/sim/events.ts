@@ -32,6 +32,8 @@ export interface GameEvents {
   watered: { tile: number };
   flowerBred: { color: string; species: number };
   talked: { npc: string };
+  /** knocked on a villager's door while they were home */
+  knocked: { npc: string };
   gifted: { npc: string; item: string; reaction: 'love' | 'like' | 'neutral' | 'dislike' };
   requestDone: { npc: string; kind: string };
   friendshipUp: { npc: string; level: number };

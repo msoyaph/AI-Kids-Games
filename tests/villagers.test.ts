@@ -4,6 +4,7 @@ import { VILLAGERS, VILLAGER_BY_ID } from '../src/data/villagers';
 import { confirmPlacement, placementRT, scheduleMoveIn, startPlotPlacement } from '../src/sim/placement';
 import { findPath } from '../src/sim/pathfind';
 import { agents, updateAgents } from '../src/sim/agents';
+import { personRoom } from '../src/sim/agents';
 import { countItem, give } from '../src/sim/inventory';
 import { hasItemDef, RECIPE_BY_ID } from '../src/data/registry';
 import { makeGame } from './helpers';
@@ -124,6 +125,8 @@ describe('villagers', () => {
     const ag = agents(g).get('tansy')!;
     expect(ag).toBeTruthy();
     expect(Math.hypot(ag.x - start.x, ag.z - start.z)).toBeGreaterThan(0.5);
-    expect(agents(g).get('pemberly')).toBeTruthy();
+    // Pemberly works inside Lantern Hall (outdoors only for the festival)
+    expect(agents(g).get('pemberly')).toBeUndefined();
+    expect(personRoom(g, 'pemberly')).toBe('hall');
   });
 });

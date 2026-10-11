@@ -108,7 +108,7 @@ registerPhoneApp({
     const wrap = h('div', { class: 'map-wrap' }, cv);
     // big pulsing star on the tracked mission's target
     const m = trackedMission(g);
-    const t = m ? markerPos(g, m) : null;
+    const t = m ? markerPos(g, m, 'island') : null;
     if (t) {
       const N = g.world.size;
       wrap.append(h('div', { class: 'map-star', style: `left:${(t.x / N) * 100}%;top:${(t.z / N) * 100}%` }, '★'));

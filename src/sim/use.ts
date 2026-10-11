@@ -30,7 +30,7 @@ export function canUseNow(g: Game, slot: number): boolean {
   if (!s) return false;
   const v = useVerb(g, slot);
   if (v === 'Plant') return g.state.player.location === 'island' && canPlantAt(g, frontTile(g.world, g.state.player), s.id);
-  if (v === 'Place') return g.state.player.location !== 'museum';
+  if (v === 'Place') return g.state.player.location === 'island' || g.state.player.location === 'home';
   return v !== null;
 }
 

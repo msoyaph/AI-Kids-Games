@@ -118,18 +118,30 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   - `scripts/pacing.ts` exports `estimatePacing()` (per-mission estimates); `npm run analyze-playtests -- <folder>`
     (`scripts/analyze-playtests.ts`) prints medians vs model and *suggests* missions.ts / economy.ts edits.
 
+- Phase 2 done: walk-in interiors.
+  - `src/sim/interior.ts`: `RoomKind` = 'home' | 'museum' | 'shop' | 'hall' | `villager:<id>`; `buildRoom` builds a `Room`
+    (solid grid, fixtures, `people`, shop `shelves` with today's `dailyStock`, `decor` incl. villager gifts).
+    `canEnter` (shop 8–22, villager only when `villagerIsHome`), `enterInterior(g, kind, resume?)`, `exitInterior`,
+    `resumeIndoors` (createGame: saves made indoors resume indoors via `player.indoor`; impossible rooms → outside).
+  - Layouts are data: `src/data/interiors.ts` (8 personality homes, `HALL_ROOM`, `SHOP_ROOM` shelves). Gifted furniture
+    → `VillagerState.gifts` (latest 6) → gift slots. Villager schedules gained a midday `home` slot.
+  - Whereabouts: `agents.ts` `personRoom` / `roomDoorOf` / `activityOf`. Pemberly is inside the hall (outdoors in the
+    plaza only during m5_finale / `flags.finaleDay`), Fennimore at the cart then behind the shop counter, Vesper in the
+    museum. Knocking enters a villager's home if they're in, else says where they probably are.
+  - Markers: `src/sim/markers.ts` `markerPos(g, m, 'view'|'island')` — outside: the door of the room the person is in;
+    inside: the person, or the exit. `GameView.project` uses the interior camera indoors. Door fade = cut + 0.5 s fade-in.
+
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
-(141 unit tests incl. a full new-game → festival playthrough; 2 e2e tests.)
+(152 unit tests incl. a full new-game → festival playthrough; 2 e2e tests.)
 
 ## Known issues / limitations
-- Villager homes, the shop and Lantern Hall have no walk-in interiors (conversation + panels instead).
 - Outdoor decorations auto-face the player; move them by picking up and re-placing.
 - Pacing is a model estimate (scripts/pacing.ts), not measured with real players.
 - Off macOS, headless e2e falls back to SwiftShader (very slow but functional).
 - `npm audit` flags `braces` via vite-plugin-singlefile → micromatch (dev-only build dependency).
 - Audio starts after the first user gesture (browser autoplay policy).
-- Reloading mid-contest cancels the contest; saving indoors resumes at the door outside.
+- Reloading mid-contest cancels the contest.
 
 ## Story / quest notes
 - Missions auto-start when `requires` are done and `minDay` reached, unless `startTalk` (then the giver

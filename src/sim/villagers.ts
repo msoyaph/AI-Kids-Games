@@ -5,6 +5,7 @@ import { FRUITS } from '../data/fruit';
 import { BUGS, FISH, FURNITURE_SHOP, item } from '../data/registry';
 import { flowerItemId, LOST_ITEMS } from '../data/items';
 import { HEART, VILLAGERS, VILLAGER_BY_ID } from '../data/villagers';
+import { GIFT_SLOTS } from '../data/interiors';
 import { Ground, Region } from '../world/types';
 import { learnRecipe } from './crafting';
 import { sellPrice } from './economy';
@@ -93,6 +94,8 @@ export function giveGift(g: Game, id: string, slot: number): Reaction | null {
   }
   const itemId = s.id;
   removeItem(g, itemId, 1, 'gift');
+  // furniture gifts show up in their home (most recent first)
+  if (item(itemId).furn) v.gifts = [itemId, ...(v.gifts ?? [])].slice(0, GIFT_SLOTS);
   const r = reactionTo(id, itemId);
   if (v.giftsToday < FRIEND.giftsPerDay) addFriendship(g, id, FRIEND[r]);
   v.giftsToday++;
