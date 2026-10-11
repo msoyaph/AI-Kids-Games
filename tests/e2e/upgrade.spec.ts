@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, slow } from './fixtures';
 import { boot, quickRace, skipControlsCard, watch } from './helpers';
 
 test('playtest mode: badge, records a race, export and clear', async ({ page }, info) => {
@@ -9,7 +9,7 @@ test('playtest mode: badge, records a race, export and clear', async ({ page }, 
   await expect(page.locator('.playtest-badge')).toHaveText(/Playtest recording on/);
   await quickRace(page);
   await page.evaluate(() => (window.__calex.app.loop.timeScale = 4));
-  await page.waitForFunction(() => window.__calex.app.session?.world.raceTime > 8, null, { timeout: 30_000 });
+  await page.waitForFunction(() => window.__calex.app.session?.world.raceTime > 8, null, { timeout: slow(30_000) });
   await page.evaluate(() => window.__calex.app.quitToMenu());
   const log = await page.evaluate(() => JSON.parse(localStorage.getItem('calexcart.playtest') ?? '[]'));
   expect(log.length).toBe(1);
@@ -51,7 +51,7 @@ test('playtest export inside the sandboxed iframe shows a copy box', async ({ br
   );
   await host.goto('http://localhost:4173/__host.html');
   const frame = host.frameLocator('#g');
-  await expect(frame.locator('.big-logo')).toBeVisible({ timeout: 20_000 });
+  await expect(frame.locator('.big-logo')).toBeVisible({ timeout: slow(20_000) });
   await expect(frame.locator('.playtest-badge')).toBeVisible();
   const g = host.frames().find((f) => f.url().startsWith('http://localhost:4173/?playtest'))!;
   await g.evaluate(() => {
@@ -71,7 +71,7 @@ test('recovers from a lost WebGL context with "Tap to continue"', async ({ page 
   const w = watch(page);
   await boot(page);
   await quickRace(page);
-  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: 20_000 });
+  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(20_000) });
   const lost = await page.evaluate(() => {
     const c = document.getElementById('gl') as HTMLCanvasElement;
     const gl = (c.getContext('webgl2') ?? c.getContext('webgl')) as WebGLRenderingContext | null;
@@ -93,16 +93,16 @@ test('recovers from a lost WebGL context with "Tap to continue"', async ({ page 
   if (info.project.name.endsWith('desktop')) await btn.click();
   else await btn.tap();
   await expect(page.locator('.ctx-lost')).toHaveCount(0);
-  await page.waitForFunction((t) => window.__calex.app.session.world.raceTime > t + 0.5, t0, { timeout: 10_000 });
+  await page.waitForFunction((t) => window.__calex.app.session.world.raceTime > t + 0.5, t0, { timeout: slow(10_000) });
   // still rendering: draw calls are being issued again
-  await page.waitForFunction(() => window.__calex.app.gr.stats().calls > 5, null, { timeout: 10_000 });
+  await page.waitForFunction(() => window.__calex.app.gr.stats().calls > 5, null, { timeout: slow(10_000) });
   expect(w.errors.filter((e) => !/context/i.test(e))).toEqual([]);
 });
 
 test('performance test runs from the URL and reports numbers', async ({ page }) => {
   const w = watch(page);
   await page.goto('/?bench=1&seconds=4&quality=low');
-  await expect(page.locator('.bench-card')).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('.bench-card')).toBeVisible({ timeout: slow(60_000) });
   await expect(page.locator('.bench-card')).toContainText('average FPS');
   const r = await page.evaluate(() => (window.__calex as unknown as { lastBench: { avgFps: number; maxDraws: number; timeline: unknown[] } }).lastBench);
   expect(r.avgFps).toBeGreaterThan(5);
@@ -133,7 +133,7 @@ test('High-tier shaders (water, road sheen, pod shimmer, rim light, skinned driv
       a.gr.quality.adaptive = false;
       a.gr.quality.setSetting('high');
     });
-    await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: 20_000 });
+    await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(20_000) });
     await page.evaluate(() => window.__calex.app.session.world.karts[0].startBoost(2)); // speed blur on
     await page.waitForTimeout(800);
     expect(await page.evaluate(() => window.__calex.app.gr.stats().calls)).toBeGreaterThan(5);
@@ -162,7 +162,7 @@ test('instant replay: watch the race again with every camera, then back to the r
   const track = page.locator('.ui-root [data-nav]').filter({ hasText: 'Seashell Boardwalk' }).first();
   if (touch) await track.tap();
   else await track.click();
-  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: 30_000 });
+  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(30_000) });
   await page.evaluate(() => {
     const a = window.__calex.app;
     const k = a.session.world.karts[0];
@@ -172,7 +172,7 @@ test('instant replay: watch the race again with every camera, then back to the r
     a.loop.timeScale = 8;
   });
   const replayBtn = page.locator('.ui-root [data-nav]').filter({ hasText: 'Replay' }).first();
-  await expect(replayBtn).toBeVisible({ timeout: 90_000 });
+  await expect(replayBtn).toBeVisible({ timeout: slow(90_000) });
   await page.evaluate(() => (window.__calex.app.loop.timeScale = 1));
   if (touch) await replayBtn.tap();
   else await replayBtn.click();
@@ -223,7 +223,7 @@ test('Driving School: new-player prompt, lesson intro, a lesson to the medal scr
   await tap(/Glider Rings/);
   await expect(page.locator('.lesson-steps')).toBeVisible();
   await tap(/Let's go!/);
-  await page.waitForFunction(() => window.__calex.app.session?.lessonSim, null, { timeout: 20_000 });
+  await page.waitForFunction(() => window.__calex.app.session?.lessonSim, null, { timeout: slow(20_000) });
   await expect(page.locator('.lesson-status')).toContainText('Rings');
   await page.evaluate(() => {
     const a = window.__calex.app;
@@ -233,7 +233,7 @@ test('Driving School: new-player prompt, lesson intro, a lesson to the medal scr
     k.player = 0;
     a.loop.timeScale = 6;
   });
-  await expect(page.locator('.ui-root [data-nav]').filter({ hasText: 'Retry' }).first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('.ui-root [data-nav]').filter({ hasText: 'Retry' }).first()).toBeVisible({ timeout: slow(60_000) });
   await page.evaluate(() => (window.__calex.app.loop.timeScale = 1));
   const school = await page.evaluate(() => window.__calex.app.save.school);
   expect(school.gliders).toBeTruthy();
@@ -269,11 +269,11 @@ test('Coin Rush in Coin Carnival: pick the rule, coins on the HUD, coin results'
   await tap(/Coin Carnival/);
   await tap(/^2 min$/);
   await tap(/Start!/);
-  await page.waitForFunction(() => window.__calex.app.session?.coinRush && window.__calex.app.session.world.phase === 'race', null, { timeout: 30_000 });
+  await page.waitForFunction(() => window.__calex.app.session?.coinRush && window.__calex.app.session.world.phase === 'race', null, { timeout: slow(30_000) });
   await expect(page.locator('.hud-battle.coins')).toBeVisible();
   // the player's kart just sits there; the AI racers play the match at 8× speed
   await page.evaluate(() => (window.__calex.app.loop.timeScale = 8));
-  await expect(page.locator('.ui-root [data-nav]').filter({ hasText: 'Rematch' }).first()).toBeVisible({ timeout: 90_000 });
+  await expect(page.locator('.ui-root [data-nav]').filter({ hasText: 'Rematch' }).first()).toBeVisible({ timeout: slow(90_000) });
   await page.evaluate(() => (window.__calex.app.loop.timeScale = 1));
   await expect(page.locator('.screen .table').first()).toContainText('🪙');
   const total = await page.evaluate(() => window.__calex.app.session.world.karts.reduce((s: number, k: { raceStats: { coins: number } }) => s + k.raceStats.coins, 0));

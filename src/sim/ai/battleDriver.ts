@@ -25,6 +25,17 @@ class BattleDriver {
   private retarget = 0;
   private reverse = 0;
   private stuck = 0;
+  /** Coins we gave up on (unreachable for now) → race time until we try them again. */
+  private readonly ignore = new Map<number, number>();
+  private lastCoin = -1;
+  private coinSince = 0;
+  private readonly ignoreBox = new Map<number, number>();
+  private lastBox = -1;
+  private boxSince = 0;
+  /** Real progress check: where we were at the last sample (speed alone stays high while grinding a wall). */
+  private sampleT = 0;
+  private sx = 0;
+  private sz = 0;
   private readonly probe: GroundHit = makeGroundHit();
   private readonly hint = { ribbon: 0, sample: 0 };
   readonly brain: ItemBrain;
@@ -66,8 +77,45 @@ class BattleDriver {
       this.retarget = this.rng.range(1, 2.2);
       this.pickTarget();
     }
+    // a coin we can't get to within 6 s (or while stuck) is dropped for a while
+    if (this.coinTarget !== this.lastCoin) {
+      this.lastCoin = this.coinTarget;
+      this.coinSince = 0;
+    } else if (this.coinTarget >= 0) {
+      this.coinSince += dt;
+      if (this.coinSince > 6) this.giveUpCoin(8);
+    }
+    if (this.boxTarget !== this.lastBox) {
+      this.lastBox = this.boxTarget;
+      this.boxSince = 0;
+    } else if (this.boxTarget >= 0) {
+      this.boxSince += dt;
+      if (this.boxSince > 6) {
+        this.ignoreBox.set(this.boxTarget, w.raceTime + 8);
+        this.boxTarget = -1;
+        this.lastBox = -1;
+        this.retarget = 0;
+      }
+    }
+    // (the window restarts after every reverse, or backing out would itself look like being stuck)
+    this.sampleT = this.reverse > 0 ? 0 : this.sampleT + dt;
+    if (this.reverse > 0) {
+      this.sx = k.x;
+      this.sz = k.z;
+    }
+    if (this.sampleT >= 2) {
+      const moved = Math.hypot(k.x - this.sx, k.z - this.sz);
+      if (moved < 3 && w.raceTime > 4) {
+        this.reverse = 0.9;
+        if (this.coinTarget >= 0) this.giveUpCoin(5);
+      }
+      this.sampleT = 0;
+      this.sx = k.x;
+      this.sz = k.z;
+    }
     let tx = k.x + Math.sin(k.yaw) * 10;
     let tz = k.z + Math.cos(k.yaw) * 10;
+    const pickup = (this.coinTarget >= 0 && !!this.coins) || this.boxTarget >= 0;
     if (this.coinTarget >= 0 && this.coins) {
       const c = this.coins[this.coinTarget];
       if (!c.active) this.retarget = 0;
@@ -105,6 +153,11 @@ class BattleDriver {
     const err = wrapAngle(want - k.yaw);
     let steer = clamp(-err * (2 + this.skill), -1, 1);
     let throttle = Math.abs(err) > 1.6 ? 0.4 : 1;
+    // close to a coin/pod but pointing past it: ease off (or brake) instead of circling it forever
+    if (pickup) {
+      const dist = Math.hypot(tx - k.x, tz - k.z);
+      if (dist < 12 && Math.abs(err) > 0.7) throttle = Math.abs(err) > 1.3 && k.speed > 7 ? -0.4 : 0.3;
+    }
     // unstick
     if (k.speed < 1.2 && w.raceTime > 2 && this.reverse <= 0) {
       this.stuck += dt;
@@ -121,6 +174,13 @@ class BattleDriver {
     inp.steer = steer;
     inp.throttle = throttle;
     inp.drift = false;
+  }
+
+  private giveUpCoin(seconds: number): void {
+    this.ignore.set(this.coinTarget, this.world.raceTime + seconds);
+    this.coinTarget = -1;
+    this.lastCoin = -1;
+    this.retarget = 0;
   }
 
   private pickTarget(): void {
@@ -143,21 +203,28 @@ class BattleDriver {
         }
       }
       let best = Infinity;
+      const now = this.world.raceTime;
       this.coins.forEach((c, i) => {
-        if (!c.active || (c.owner === k.index && c.ownerTime > 0)) return;
+        if (!c.active || (c.owner === k.index && c.ownerTime > 0) || (this.ignore.get(i) ?? -1) > now) return;
         const d = Math.hypot(c.x - k.x, c.z - k.z) + this.rng.range(0, 6) * (1 - this.skill);
         if (d < best) {
           best = d;
           this.coinTarget = i;
         }
       });
-      if (this.coinTarget >= 0 && (k.item || best < 18)) return;
+      if (this.coinTarget >= 0) {
+        // coins are the point of Coin Rush: only detour to an item pod when one is much closer than any coin
+        let pod = Infinity;
+        if (!k.item && k.rouletteTime <= 0) for (const b of this.items.boxes) if (b.respawn <= 0) pod = Math.min(pod, Math.hypot(b.x - k.x, b.z - k.z));
+        if (!(pod < 20 && pod < best * 0.5)) return;
+      }
       this.coinTarget = -1;
     }
     if (!k.item && k.rouletteTime <= 0) {
       let bd = Infinity;
+      const now = this.world.raceTime;
       this.items.boxes.forEach((b, i) => {
-        if (b.respawn > 0) return;
+        if (b.respawn > 0 || (this.ignoreBox.get(i) ?? -1) > now) return;
         const d = (b.x - k.x) ** 2 + (b.z - k.z) ** 2;
         if (d < bd) {
           bd = d;

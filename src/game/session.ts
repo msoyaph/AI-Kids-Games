@@ -417,6 +417,13 @@ export class RaceSession {
         if (h && e.good) h.banner('ROCKET START!', 'gold', 1.2);
         break;
       }
+      case 'lesson': {
+        // Driving School: say what happened in words too (gates also change colour and sound)
+        const h = this.huds[0];
+        if (h && e.kind === 'miss') h.banner('✗ Missed a gate (+2 s)', 'warn', 1.4);
+        else if (h && e.kind === 'gate') h.banner('✓ Gate!', 'info', 0.7);
+        break;
+      }
       case 'miniTurbo': {
         const h = hudFor(e.kart);
         if (h && e.tier === 3) h.banner('SUPER TURBO!', 'info', 0.8);

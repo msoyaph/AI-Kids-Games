@@ -153,7 +153,11 @@ export class Ui {
     if (this.focused?.tagName === 'INPUT') this.focused.blur();
     this.focused = el;
     el.classList.add('focus');
-    if (el.tagName === 'INPUT' && document.activeElement !== el) el.focus({ preventScroll: true });
+    if (el.tagName === 'INPUT' && document.activeElement !== el) {
+      // like tabbing into a field: select the text so typing replaces the suggestion
+      el.focus({ preventScroll: true });
+      (el as HTMLInputElement).select();
+    }
     el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     if (sound) this.audio.ui('move');
   }
@@ -175,6 +179,27 @@ export class Ui {
     const r = cur.getBoundingClientRect();
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
+    if (dy !== 0) {
+      // Up/down: go to the nearest ROW fully above/below, then the button in it closest across. (Plain distance
+      // skipped rows that sit off to one side, e.g. the Settings tabs above right-aligned sliders.)
+      let rowGap = Infinity;
+      const rows: Array<{ el: HTMLElement; gap: number; across: number }> = [];
+      for (const el of items) {
+        if (el === cur) continue;
+        const b = el.getBoundingClientRect();
+        const gap = dy > 0 ? b.top - r.bottom : r.top - b.bottom;
+        if (gap < -4) continue;
+        const g = Math.max(0, gap);
+        rows.push({ el, gap: g, across: Math.abs(b.left + b.width / 2 - cx) });
+        rowGap = Math.min(rowGap, g);
+      }
+      let pick: { el: HTMLElement; gap: number; across: number } | null = null;
+      for (const c of rows) if (c.gap <= rowGap + 12 && (!pick || c.across < pick.across || (c.across === pick.across && c.gap < pick.gap))) pick = c;
+      if (pick) {
+        this.setFocus(pick.el);
+        return;
+      }
+    }
     let best: HTMLElement | null = null;
     let bestScore = Infinity;
     for (const el of items) {

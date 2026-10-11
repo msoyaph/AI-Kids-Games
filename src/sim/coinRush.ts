@@ -2,7 +2,7 @@ import type { World } from './world';
 import type { ItemSystem, HitEffect } from './items/itemSystem';
 import type { ArenaModel } from './arena';
 import { Kart, RespawnState } from './kart';
-import { makeGroundHit } from './ground';
+import { makeGroundHit, RAMP_NONE } from './ground';
 
 /** Shared shape of the arena modes' rules (balloon battle, coin rush) as seen by the session, HUD and AI. */
 export interface ArenaRules {
@@ -61,17 +61,7 @@ export class CoinRushRules implements ArenaRules {
       k.score = 0;
       k.balloons = 0;
     }
-    // candidate coin spots: a grid over the arena, kept where the ground is drivable (not inside obstacles)
-    const n = 14;
-    const S = arena.data.size;
-    for (let i = 0; i <= n; i++) {
-      for (let j = 0; j <= n; j++) {
-        const x = -S + (2 * S * i) / n;
-        const z = -S + (2 * S * j) / n;
-        const g = arena.query(x, 30, z, this.hint, this.hit);
-        if (g.hit && !g.wallHit && Math.hypot(x, z) < S * 0.98) this.spots.push({ x, y: g.height, z });
-      }
-    }
+    this.findSpots(arena);
     const prev = items.onHit;
     items.onHit = (victim, attacker, item, effect) => {
       prev?.(victim, attacker, item, effect);
@@ -79,6 +69,74 @@ export class CoinRushRules implements ArenaRules {
     };
     world.postStep.push((dt) => this.update(dt));
     for (let i = 0; i < FIELD_COINS; i++) this.spawnField();
+  }
+
+  /**
+   * Coin spots a kart can actually reach: a 1.5 m grid of ground a kart fits on (queried at kart height, so
+   * obstacles and walls count), flood-filled from the start spots over gentle steps (ramps up to platforms are
+   * fine). Coins only go on flat, non-ramp ground with 3 m of room all round.
+   */
+  private findSpots(arena: ArenaModel): void {
+    const S = arena.data.size;
+    const step = 1.5;
+    const n = Math.floor((2 * S) / step);
+    const N = n + 1;
+    const height = new Float32Array(N * N).fill(NaN);
+    const ramp = new Uint8Array(N * N);
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j < N; j++) {
+        const x = -S + i * step;
+        const z = -S + j * step;
+        const top = arena.query(x, 30, z, this.hint, this.hit);
+        const h = top.height;
+        const onRamp = top.ramp !== RAMP_NONE;
+        if (!arena.query(x, h + 0.5, z, this.hint, this.hit).wallHit) {
+          height[i * N + j] = h;
+          ramp[i * N + j] = onRamp ? 1 : 0;
+        }
+      }
+    }
+    // flood fill from the start spots
+    const reached = new Uint8Array(N * N);
+    const queue: number[] = [];
+    for (const p of arena.spawnPoints) {
+      const c = Math.round((p.x + S) / step) * N + Math.round((p.z + S) / step);
+      if (c >= 0 && c < N * N && !Number.isNaN(height[c]) && !reached[c]) {
+        reached[c] = 1;
+        queue.push(c);
+      }
+    }
+    while (queue.length) {
+      const c = queue.pop()!;
+      const i = Math.floor(c / N);
+      const j = c % N;
+      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const a = i + di;
+        const b = j + dj;
+        if (a < 0 || b < 0 || a >= N || b >= N) continue;
+        const o = a * N + b;
+        if (reached[o] || Number.isNaN(height[o]) || Math.abs(height[o] - height[c]) > 0.7) continue;
+        reached[o] = 1;
+        queue.push(o);
+      }
+    }
+    for (let i = 2; i < N - 2; i++) {
+      for (let j = 2; j < N - 2; j++) {
+        const c = i * N + j;
+        if (!reached[c] || ramp[c]) continue;
+        let flat = true;
+        for (let a = -2; a <= 2 && flat; a++) {
+          for (let b = -2; b <= 2; b++) {
+            const o = (i + a) * N + (j + b);
+            if (!reached[o] || ramp[o] || Math.abs(height[o] - height[c]) > 0.1) {
+              flat = false;
+              break;
+            }
+          }
+        }
+        if (flat) this.spots.push({ x: -S + i * step, y: height[c], z: -S + j * step });
+      }
+    }
   }
 
   placeStart(): void {

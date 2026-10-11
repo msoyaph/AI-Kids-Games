@@ -162,11 +162,35 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   All 4 Frost tracks use corrected markers (no legacy flag) and pass `validateTracks --all-classes` (6 runs each:
   8/8 finish, 0 falls). Staff calibrated for all 20 tracks. Worst-case storage @20 tracks: 1.08 MB / 1.5 MB budget
   (60 ghosts 936 KB, slots 48 KB, playtest log 100 KB, settings 1 KB). Build 1.21 MB.
-- [ ] Phase 8 — accessibility
-- [ ] Phase 9 — CI
+- [x] Phase 8 — accessibility: spark tiers = 1–3 chevrons + word (MINI/SUPER/ULTRA) on the HUD and bigger/more/
+  higher in-world sparks per tier; item warnings = icon + word (PLANE!/BALL!/POPPER!/CLOUD!/TWISTER!); Driving
+  School gates also say ✓/✗ in a banner; Settings → Graphics → HUD size 100/125/150 % (`settings.hudSize`, CSS
+  `--hud-scale` via the `scale` property per corner; split-screen caps at 125 %; minimap canvas resized, touch
+  look-button moves aside); controls card (`src/ui/screens/controlsCard.ts`) before the first race per device
+  (`settings.controlsSeen`), shown from the menu funnel `run()` in `screens/index.ts` (debug-hook races skip it),
+  re-openable in Settings → Controls. Menus: Tab/Shift+Tab step through every button; up/down use row-first
+  spatial nav (nearest row, then closest across) — fixed Settings tabs being unreachable with arrows; the name box
+  is in the focus order (selects its text, Enter starts). e2e: `tests/e2e/a11y.spec.ts` (keyboard reachability
+  BFS on 13 screens + Tab cycle, gamepad-only journey, touch-only screens + 28 px targets); e2e tests that aren't
+  about the card call `skipControlsCard()`.
+- [x] Phase 9 — CI: `.github/workflows/ci.yml` (Ubuntu: npm ci → typecheck → build with `scripts/checkSize.mjs`
+  (now part of `npm run build`, fails ≥ 2,000,000 bytes) → vitest → `npm run validate` → Playwright Chromium +
+  WebKit, all 6 projects, with `CI` (300 s tests, ×3 explicit waits via `slow()`, 1 retry, 1 worker, HTML report)
+  and `CALEX_TESTMODE=1` (fixture in `tests/e2e/fixtures.ts` sets `window.__CALEX_TESTMODE` → `app.enterTestMode()`:
+  Low + reduced effects; `?testmode=1` does the same) → report/screenshots uploaded on failure, `index.html` on
+  success). `.github/workflows/mac-gpu.yml`: optional self-hosted Mac runner (label `calex-mac`), manual or push
+  only, never PRs, guarded by `repository.private && actor == owner`, full quality + benchmark; warning text at
+  the top of the file and in README. `CALEX_SWIFTSHADER=1` forces software GL locally to rehearse CI. Spec files
+  import `test`/`expect` from `./fixtures`, not `@playwright/test`.
 - [ ] Phase 10 — testing, balance, screenshot review, final report
 
 ### Upgrade notes / decisions log
+- Phase 8/9 Coin Rush fix (found by a flaky e2e): AI circled coins (no slow-down), coins spawned inside obstacles
+  (spot query at y=30 skips obstacles) and karts got wedged inside raised platforms / under ramp ends (every move
+  rejected as "too tall"). Now: coin spots = flood fill of kart-height-clear ground from the spawn points, flat
+  non-ramp cells with 3 m room; AI eases off near a target it points past, gives up a coin/pod after 6 s, detects
+  "stuck" by distance moved (window restarts after reversing); arena platforms/ramp sides taller than `stepUp`
+  above the kart are walls that push out. Per-AI coins in 2 min: min 0–4 → ≥ 9 in every arena.
 - Baseline finding: on 9/16 tracks the plain Pro AI (best of 5 seeds) beats the staff ghost → fixed in Phase 2.
 - `storage.ts`: `writeKeyStatus` → 'ok' | 'memory' (storage unavailable) | 'full' (quota); probe key is now
   `calexcart.__probe` (never touch other games' keys). e2e helpers live in `tests/e2e/helpers.ts`; new feature

@@ -25,4 +25,15 @@ describe('settings migration', () => {
     expect(resolveAssist('auto', 'gamepad')).toBe('off');
     expect(resolveAssist('full', 'keyboard')).toBe('full');
   });
+  it('HUD size and the controls card: old settings get defaults, bad values are repaired, choices are kept', () => {
+    const old = migrateSettings({ v: 2, assist: 'light', master: 0.5 });
+    expect(old.hudSize).toBe(1);
+    expect(old.controlsSeen).toEqual({});
+    expect(old.master).toBe(0.5);
+    expect(migrateSettings({ v: 2, hudSize: 7 }).hudSize).toBe(1);
+    expect(migrateSettings({ v: 2, controlsSeen: 'yes' }).controlsSeen).toEqual({});
+    const kept = migrateSettings({ ...defaultSettings(), hudSize: 1.5, controlsSeen: { touch: true } });
+    expect(kept.hudSize).toBe(1.5);
+    expect(kept.controlsSeen).toEqual({ touch: true });
+  });
 });

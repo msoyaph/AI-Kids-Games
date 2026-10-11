@@ -134,9 +134,20 @@ export class ArenaModel implements GroundModel {
     out.ribbonT = 0;
     const R = TUNING.kartRadius;
 
-    // platforms (raised floors)
+    // platforms (raised floors); met from below, their sides are walls (bumps could otherwise wedge a kart inside)
     for (const p of d.platforms) {
-      if (Math.abs(x - p.x) <= p.hx && Math.abs(z - p.z) <= p.hz && p.h > out.height) out.height = p.h;
+      const ex = p.hx - Math.abs(x - p.x);
+      const ez = p.hz - Math.abs(z - p.z);
+      if (ex < 0 || ez < 0) continue;
+      if (p.h > y + TUNING.stepUp) {
+        const pen = Math.min(ex, ez) + R * 0.5;
+        if (pen > out.wallDepth) {
+          out.wallHit = true;
+          out.wallNx = ex < ez ? Math.sign(x - p.x) || 1 : 0;
+          out.wallNz = ex < ez ? 0 : Math.sign(z - p.z) || 1;
+          out.wallDepth = pen;
+        }
+      } else if (p.h > out.height) out.height = p.h;
     }
     // ramps
     for (const r of this.ramps) {
@@ -146,6 +157,21 @@ export class ArenaModel implements GroundModel {
       const side = lx * -r.dz + lz * r.dx;
       if (along >= 0 && along <= r.len && Math.abs(side) <= r.halfW) {
         const h = (along / r.len) * r.h;
+        if (h > y + TUNING.stepUp) {
+          // the tall back or sides of a jump ramp met from floor level: a wall to push off, not a floor
+          // (before, a kart that slipped in there had every move rejected and stayed stuck)
+          const back = r.len - along;
+          const edge = r.halfW - Math.abs(side);
+          const pen = Math.min(back, edge) + R * 0.5;
+          if (pen > out.wallDepth) {
+            out.wallHit = true;
+            const sd = side >= 0 ? 1 : -1;
+            out.wallNx = back < edge ? r.dx : -r.dz * sd;
+            out.wallNz = back < edge ? r.dz : r.dx * sd;
+            out.wallDepth = pen;
+          }
+          continue;
+        }
         if (h >= out.height) {
           out.height = h;
           const slope = r.h / r.len;

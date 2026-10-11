@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { test, expect, slow } from './fixtures';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
@@ -26,7 +27,7 @@ function watch(page: Page): { errors: string[]; external: string[] } {
 async function boot(page: Page, url = '/'): Promise<void> {
   await page.goto(url);
   await page.waitForFunction(() => !!window.__calex?.app);
-  await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
+  await expect(page.locator('#boot')).toBeHidden({ timeout: slow(15_000) });
 }
 
 /** Tap/click a menu button by visible text. */
@@ -70,7 +71,7 @@ test('menus → versus race → pause → quit', async ({ page }, info) => {
   await expect(page.locator('.hud')).toBeVisible();
   await expect(page.locator('.hud-minimap')).toBeVisible();
   if (touch) await expect(page.locator('.touch-controls')).toBeVisible();
-  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: 20_000 });
+  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(20_000) });
   // drive: hold accelerate
   if (touch) {
     const accel = page.locator('.tc-drift');
@@ -142,7 +143,7 @@ test('gamepad navigates menus and drives', async ({ page }, info) => {
   await expect(page.locator('.controls-card .cc-title')).toContainText('Gamepad');
   await expect(page.locator('.controls-card')).toContainText('RB');
   await tapButton(0);
-  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: 20_000 });
+  await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: slow(20_000) });
   await page.evaluate(() => {
     const p = (window as unknown as { __pad: { buttons: Array<{ pressed: boolean; value: number }> } }).__pad;
     p.buttons[0].pressed = true;
@@ -160,7 +161,7 @@ test('runs from file:// (double-click) and inside a sandboxed iframe', async ({ 
   const w = watch(page);
   await page.goto(fileUrl);
   await page.waitForFunction(() => !!window.__calex?.app);
-  await expect(page.locator('.big-logo')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('.big-logo')).toBeVisible({ timeout: slow(15_000) });
   expect(w.errors).toEqual([]);
   // sandboxed iframe, as on the Ai Kids Games site
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
@@ -175,7 +176,7 @@ test('runs from file:// (double-click) and inside a sandboxed iframe', async ({ 
   const hw = watch(host);
   await host.goto('http://localhost:4173/__host.html');
   const frame = host.frameLocator('#g');
-  await expect(frame.locator('.big-logo')).toBeVisible({ timeout: 20_000 });
+  await expect(frame.locator('.big-logo')).toBeVisible({ timeout: slow(20_000) });
   await frame.locator('.title-screen').click();
   await expect(frame.getByText('Choose a save')).toBeVisible();
   // keyboard reaches the game inside the iframe

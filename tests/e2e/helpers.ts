@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { slow } from './fixtures';
 
 declare global {
   interface Window {
@@ -24,7 +25,7 @@ export function watch(page: Page): { errors: string[]; external: string[] } {
 export async function boot(page: Page, url = '/'): Promise<void> {
   await page.goto(url);
   await page.waitForFunction(() => !!window.__calex?.app);
-  await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
+  await expect(page.locator('#boot')).toBeHidden({ timeout: slow(15_000) });
 }
 
 /** Tap/click a menu button by visible text. */
