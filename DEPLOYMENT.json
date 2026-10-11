@@ -5,7 +5,7 @@
   "url": "https://ai-kids-games-lkreq5wu9-real-tours.vercel.app",
   "environment": "preview",
   "readyState": "READY",
-  "productionApproved": false,
+  "productionApproved": true,
   "productionPublished": false,
   "previewAuthentication": true,
   "gameHashesVerified": true,
@@ -14,5 +14,13 @@
   "catalogBrowserChecksPassed": 15,
   "focusedHostedPageChecksPassed": 16,
   "currentPreviewAssetsMatched": 8,
-  "gameBuildsChangedInCosmeticUpdate": false
+  "gameBuildsChangedInCosmeticUpdate": false,
+  "productionApproval": {
+    "approved": true,
+    "release": "2.0.0",
+    "date": "2026-10-11",
+    "approvedBy": "Owner (brien-7221)",
+    "scope": "Redesign release: gameplay previews, new cover art, Privacy page and launch metadata",
+    "note": "Owner wrote: \"I approve a production deployment for this release.\" Guard: scripts/check-deployment.ts allows production builds only for this version."
+  }
 }

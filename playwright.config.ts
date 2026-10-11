@@ -2,6 +2,8 @@ import { defineConfig,devices } from '@playwright/test';
 import { existsSync } from 'node:fs';
 const chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const remote = process.env.AIKG_BASE_URL;
+// Temporary Vercel protection-bypass secret for hosted QA on a protected preview (never committed; revoke after use).
+const bypass = process.env.AIKG_VERCEL_BYPASS;
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,
@@ -9,7 +11,7 @@ export default defineConfig({
   timeout: 90000,
   reporter: [['list'],['json',{ outputFile: process.env.AIKG_QA_REPORT || 'test-results/launch-results.json' }]],
   expect: { timeout: 10000 },
-  use: { actionTimeout: 20000,navigationTimeout: 30000,baseURL: remote || 'http://127.0.0.1:4190',storageState: process.env.AIKG_QA_STORAGE_STATE,trace: remote ? 'off' : 'retain-on-failure', launchOptions: { ...(existsSync(chrome) ? { executablePath: chrome } : {}),args: ['--enable-webgl','--enable-unsafe-swiftshader'] } },
+  use: { actionTimeout: 20000,navigationTimeout: 30000,baseURL: remote || 'http://127.0.0.1:4190',storageState: process.env.AIKG_QA_STORAGE_STATE,extraHTTPHeaders: bypass ? { 'x-vercel-protection-bypass': bypass,'x-vercel-set-bypass-cookie': 'true' } : undefined,trace: remote ? 'off' : 'retain-on-failure', launchOptions: { ...(existsSync(chrome) ? { executablePath: chrome } : {}),args: ['--enable-webgl','--enable-unsafe-swiftshader'] } },
   projects: [{ name: 'desktop',use: { ...devices['Desktop Chrome'],viewport: { width: 1440,height: 1000 } } },{ name: 'tablet',use: { ...devices['iPad Pro 11'],browserName: 'chromium' } },{ name: 'phone',use: { ...devices['iPhone 13'],browserName: 'chromium' } }],
   webServer: remote ? undefined : { command: 'npx tsx scripts/serve-dist.ts 4190',url: 'http://127.0.0.1:4190',reuseExistingServer: true,timeout: 90000 }
 });
