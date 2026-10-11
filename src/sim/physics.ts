@@ -76,7 +76,7 @@ export function stepKart(k: Kart, ground: GroundModel, env: StepEnv, dt: number)
     const aspd = Math.abs(vf);
     if (k.drifting) {
       const t = (steer * k.driftDir + 1) * 0.5; // 0 = steering outward, 1 = steering into the drift
-      k.yaw -= k.driftDir * p.turnRate * (0.48 + 0.82 * t) * Math.min(1, aspd / 10) * dt;
+      k.yaw -= k.driftDir * p.turnRate * (0.3 + 1.0 * t) * Math.min(1, aspd / 10) * dt;
     } else {
       const lowSpeed = clamp(aspd / 7, 0, 1);
       const highSpeed = 1 - 0.18 * clamp((aspd - 0.6 * p.topSpeed) / (0.4 * p.topSpeed), 0, 1);

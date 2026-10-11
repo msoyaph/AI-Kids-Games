@@ -41,6 +41,10 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - `src/render/trackMesh.ts` (strips: road/kerbs/dashes/shoulders/verges/walls/fences/skirts/ramps/pads/gate),
   `props.ts` (instanced scatter from `data/props.ts` recipes), `raceView.ts` (scene assembly, cameras,
   blob shadows or follow shadow-map on High, split-screen viewports).
+- `src/sim/ai/` — `aiDriver.ts` (pure-pursuit on racing line + personal lane wander, corner-based drifting to a
+  skill-dependent spark tier, shortcut decisions per lap, item-box seeking, kart/hazard avoidance, rocket-start
+  timing, tricks, unstick-by-reversing); `aiController.ts` (spawns drivers per AI kart with class skill ± variance,
+  mild rubber-band vs best human via World.speedMul, steering assist for players).
 - `src/data/` — typed content (`types.ts` is the contract for everything).
 - `scripts/probe.mjs` — open the game in headless Chromium and evaluate JS (`window.__calex` debug hook).
   Note: headless SwiftShader renders slowly, so drive-tests belong in Vitest sim tests; use the browser pane for visuals.
@@ -52,3 +56,5 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - Phase 4 ✅ drift tiers/mini-turbo/hop/tricks/boost pads/gliders/water+low-grav in physics; visual feedback via
   `render/particles.ts` (pooled THREE.Points, 2 draw calls) + `effects.ts` (sparks by tier, smoke, dust, flames,
   trails, bubbles, bursts on events, skid marks, camera shake), underwater fog tint.
+- Phase 5 ✅ AI racers with personalities (data/aiProfiles.ts), rubber-banding, steering assist; AI sim tests.
+  Dev harness: `/?autodrive` lets the AI drive the player kart (handy for visual checks).

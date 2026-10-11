@@ -8,6 +8,7 @@ import { TEST_LOOP } from './data/tracks/testLoop';
 import { RaceTracker } from './sim/race';
 import { RaceView } from './render/raceView';
 import { formatTime, ordinal } from './core/math';
+import { AiController } from './sim/ai/aiController';
 
 function nextFrame(): Promise<void> {
   return new Promise((r) => requestAnimationFrame(() => r()));
@@ -49,6 +50,10 @@ async function boot(): Promise<void> {
   });
   const race = new RaceTracker(world, track, 3);
   race.placeGrid([1, 2, 3, 0]);
+  const autodrive = params.has('autodrive');
+  if (autodrive) world.karts[0].player = -1;
+  const ai = new AiController(world, track);
+  if (autodrive) world.karts[0].player = 0;
   world.karts[0].autoAccel = gr.isTouch;
   bootUi?.set(0.6, 'Planting trees');
   await nextFrame();
@@ -57,12 +62,12 @@ async function boot(): Promise<void> {
   const hud = document.createElement('div');
   hud.style.cssText = 'position:absolute;top:8px;left:8px;font:700 14px monospace;color:#fff;text-shadow:0 1px 2px #000;pointer-events:none;white-space:pre';
   uiRoot.appendChild(hud);
-  (window as unknown as { __calex: unknown }).__calex = { world, input, track, race };
+  (window as unknown as { __calex: unknown }).__calex = { world, input, track, race, ai };
 
   const loop = new GameLoop({
     step: (dt) => {
       const k = world.karts[0];
-      input.fillKartInput(0, k.input, k.autoAccel, world.phase === 'race');
+      if (!autodrive) input.fillKartInput(0, k.input, k.autoAccel, world.phase === 'race');
       world.step(dt);
       world.events.drain((e) => view.onEvent(e));
     },
