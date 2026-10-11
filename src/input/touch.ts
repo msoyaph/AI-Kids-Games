@@ -1,7 +1,7 @@
 import { h } from '../ui/dom';
 import { minInterval } from '../render/flash';
 import { GLYPHS } from './glassGlyphs';
-import { buttonSizes, defaultLayout, stickBase, type GlassLayout, type GlassSize, type Insets } from './glassLayout';
+import { resolveLayout, stickBase, type CustomLayout, type GlassSize, type Insets, type Placement, type Placed } from './glassLayout';
 import { stickReading, stickResponse } from './stick';
 
 /** Keep receiving a finger's moves after it leaves the element (never throws). */
@@ -28,6 +28,12 @@ export const DEFAULT_TOUCH_LOOK: TouchLook = { size: 'm', opacity: 1, leftHanded
 
 /** Real backdrop blur, or the layered "fake glass" (no blur). */
 export type GlassMode = 'fake' | 'blur';
+
+/**
+ * play: live controls during a run; preview: shown (not touchable) behind the Touch controls
+ * settings; edit: shown for the layout editor, which moves them with showPlacement().
+ */
+export type TouchMode = 'play' | 'preview' | 'edit';
 
 /** Thumb zones start below the top HUD band (timer, boss bar, warnings). */
 const ZONE_TOP = 0.22;
@@ -81,7 +87,10 @@ export class TouchControls {
   private kx = 0;
   private ky = 0;
   private base = 120;
-  private layout: GlassLayout | null = null;
+  private custom: CustomLayout = {};
+  private placed: Placement | null = null;
+  private mode: TouchMode = 'play';
+  private playVisible = false;
   private reading = stickReading();
   private painted = true;
   private raf = 0;
@@ -123,7 +132,7 @@ export class TouchControls {
       this.stickId = e.pointerId;
       capture(zs, e.pointerId);
       clearTimeout(this.hideTimer);
-      if (!this.look.fixedStick || !this.layout) {
+      if (!this.look.fixedStick || !this.placed) {
         // floating: the stick appears under the thumb (kept fully on screen)
         const r = this.base / 2;
         this.cx = Math.max(r, Math.min(innerWidth - r, e.clientX));
@@ -276,24 +285,36 @@ export class TouchControls {
     return this.glass;
   }
 
-  /** Where things go: the default layout for this screen + handedness. */
+  /** Safe-area insets (notches, rounded corners, home bar), CSS px. */
+  safeInsets(): Insets {
+    const cs = getComputedStyle(this.safeProbe);
+    return { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
+  }
+
+  /** The interface's root font size (bigger with Larger text). */
+  private rem(): number {
+    return parseFloat(getComputedStyle(document.documentElement).fontSize) || 12;
+  }
+
+  /** The player's moved / resized controls (Settings → Touch controls → Edit layout). */
+  setLayout(custom: CustomLayout): void {
+    this.custom = custom;
+    this.relayout();
+  }
+
+  /** Where every control is right now (centres + diameters). */
+  get placement(): Placement {
+    if (!this.placed) this.relayout();
+    return this.placed!;
+  }
+
+  /** Where things go: the default layout + the player's own, for this screen and hand. */
   relayout(): void {
     const w = innerWidth;
     const hgt = innerHeight;
-    const cs = getComputedStyle(this.safeProbe);
-    const safe: Insets = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
     this.base = stickBase(w, hgt, this.look.size);
-    const lay = defaultLayout(w, hgt, this.look.size, safe, this.look.leftHanded);
-    this.layout = lay;
-    const s = buttonSizes(this.base);
-    const place = (el: HTMLElement, p: { x: number; y: number }, d: number): void => {
-      el.style.setProperty('--x', `${p.x}px`);
-      el.style.setProperty('--y', `${p.y}px`);
-      el.style.setProperty('--d', `${d}px`);
-    };
-    place(this.jump, lay.jump, s.jump);
-    place(this.slide, lay.slide, s.slide);
-    place(this.pause, lay.pause, s.pause);
+    const p = resolveLayout(w, hgt, this.look.size, this.safeInsets(), this.look.leftHanded, this.custom, this.rem());
+    this.showPlacement(p);
     // thumb zones: the stick side and the camera side (below the top HUD band)
     const half = `${Math.round(w * 0.5)}px`;
     const zs = this.zoneStick.style;
@@ -302,15 +323,49 @@ export class TouchControls {
     zs.width = zl.width = half;
     zs.left = this.look.leftHanded ? half : '0px';
     zl.left = this.look.leftHanded ? '0px' : half;
-    if (this.look.fixedStick && this.stickId < 0) {
-      this.cx = lay.stick.x;
-      this.cy = lay.stick.y;
+  }
+
+  /**
+   * Put the controls at a placement (the layout editor drags them through this). The stick's
+   * spot is where a fixed stick sits; in preview / edit it always shows there.
+   */
+  showPlacement(p: Placement): void {
+    this.placed = p;
+    const place = (el: HTMLElement, c: Placed): void => {
+      el.style.setProperty('--x', `${c.x}px`);
+      el.style.setProperty('--y', `${c.y}px`);
+      el.style.setProperty('--d', `${c.d}px`);
+    };
+    place(this.jump, p.jump);
+    place(this.slide, p.slide);
+    place(this.pause, p.pause);
+    // a resized stick: its base follows the placed diameter
+    this.base = p.stick.d;
+    this.root.style.setProperty('--g-b', `${p.stick.d}px`);
+    const showStick = this.look.fixedStick || this.mode !== 'play';
+    if (showStick && this.stickId < 0) {
+      this.cx = p.stick.x;
+      this.cy = p.stick.y;
       this.stick.classList.remove('gone');
       this.stick.classList.add('idle');
-    } else if (!this.look.fixedStick && this.stickId < 0) {
+    } else if (!showStick && this.stickId < 0) {
       this.stick.classList.add('gone');
     }
     this.schedule();
+  }
+
+  /** Live play, a settings preview, or the layout editor (see TouchMode). */
+  setMode(mode: TouchMode): void {
+    if (mode === this.mode) return;
+    this.mode = mode;
+    this.reset();
+    this.root.classList.toggle('preview', mode !== 'play');
+    this.root.classList.toggle('hidden', mode === 'play' ? !this.playVisible : false);
+    this.relayout();
+  }
+
+  get touchMode(): TouchMode {
+    return this.mode;
   }
 
   private setKnob(dx: number, dy: number): void {
@@ -332,7 +387,7 @@ export class TouchControls {
     this.stick.classList.remove('active');
     // the bead springs back to the centre
     this.knob.classList.add('back');
-    if (this.look.fixedStick) this.stick.classList.add('idle');
+    if (this.look.fixedStick || this.mode !== 'play') this.stick.classList.add('idle');
     else {
       clearTimeout(this.hideTimer);
       this.hideTimer = window.setTimeout(() => {
@@ -422,7 +477,10 @@ export class TouchControls {
     dot.addEventListener('animationend', () => dot.remove());
   }
 
+  /** Show / hide the live controls (runs). A preview / edit mode keeps them on screen. */
   setVisible(on: boolean): void {
+    this.playVisible = on;
+    if (this.mode !== 'play') return;
     const was = !this.root.classList.contains('hidden');
     this.root.classList.toggle('hidden', !on);
     if (!on) this.reset();
@@ -446,7 +504,7 @@ export class TouchControls {
     this.slide.classList.remove('down', 'latched');
     this.stick.classList.remove('active', 'hurt', 'fast');
     this.fast = false;
-    if (this.look.fixedStick) this.stick.classList.add('idle');
+    if (this.look.fixedStick || this.mode !== 'play') this.stick.classList.add('idle');
     else this.stick.classList.add('gone');
     this.schedule();
   }

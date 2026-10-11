@@ -295,6 +295,16 @@ quality governor) → accessibility → tests → handoff. `npx tsx scripts/glas
   Slide rise above the bottom HUD band (bottomHudBand, uiRem) at big sizes; resolveLayout /
   toLayoutItem / layoutProblems for the editor (unit-tested on phone + tablet sizes,
   both hands, all three sizes).
+- [x] 6. Customisation: save `settings.touch` (size, opacity, leftHanded, fixedStick,
+  autoCamera, lookSensitivity, haptics, highContrast, layout — sanitizeTouch; layout items are
+  corner-anchored offsets in short-side units + scale 0.8–1.25, stored right-handed).
+  Settings → Touch controls (Menus.touchSettings; shown when the device has a touchscreen)
+  previews the real controls around a narrow panel (TouchControls.setMode('preview')).
+  Edit layout (ui/layoutEditor.ts): drag to move, round handle or Smaller / Bigger to
+  resize, Reset to default; a move that would leave the safe area, overlap another control
+  or cover the HUD (hudRects: live HUD + room for the boss bar / warnings) is refused with a
+  reason. TouchControls: setLayout / placement / showPlacement / setMode('play' | 'preview' |
+  'edit'); setVisible only affects play mode.
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

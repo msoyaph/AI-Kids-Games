@@ -25,6 +25,52 @@ export interface Settings {
   /** Remapping and control options (kept when progress is reset). */
   controls: ControlSettings;
   access: AccessSettings;
+  /** On-screen glass controls (phones, tablets, touchscreens). */
+  touch: TouchSettings;
+}
+
+/** Glass touch controls: look, behaviour and the player's own layout. */
+export interface TouchSettings {
+  size: 's' | 'm' | 'l';
+  /** 0.4–1 */
+  opacity: number;
+  /** Stick on the right, buttons on the left. */
+  leftHanded: boolean;
+  /** The stick stays put instead of appearing under the thumb. */
+  fixedStick: boolean;
+  /** The camera swings in behind Thea's movement. */
+  autoCamera: boolean;
+  /** Camera drag speed (separate from the mouse). */
+  lookSensitivity: number;
+  /** Short vibrations (Android). */
+  haptics: boolean;
+  /** Solid, high-contrast controls. */
+  highContrast: boolean;
+  /** Edit layout: moved / resized controls (right-handed; mirrored for left-handed). */
+  layout: TouchLayout;
+}
+
+export type TouchControlId = 'stick' | 'jump' | 'slide' | 'pause';
+export const TOUCH_CONTROL_IDS: readonly TouchControlId[] = ['stick', 'jump', 'slide', 'pause'];
+
+/**
+ * One moved control: anchored to the nearest screen corner (ax / ay: 0 = left / top,
+ * 1 = right / bottom) with an offset from that corner of the safe area in units of the
+ * screen's short side (so it survives resolution and rotation), plus a size scale.
+ */
+export interface TouchLayoutItem {
+  ax: 0 | 1;
+  ay: 0 | 1;
+  dx: number;
+  dy: number;
+  /** 0.8–1.25 */
+  s: number;
+}
+
+export type TouchLayout = Partial<Record<TouchControlId, TouchLayoutItem>>;
+
+export function defaultTouch(): TouchSettings {
+  return { size: 'm', opacity: 1, leftHanded: false, fixedStick: false, autoCamera: true, lookSensitivity: 1, haptics: true, highContrast: false, layout: {} };
 }
 
 export interface ControlSettings {
@@ -156,6 +202,7 @@ export function defaultSettings(): Settings {
     mouseMode: 'auto',
     controls: defaultControls(),
     access: defaultAccess(),
+    touch: defaultTouch(),
   };
 }
 
@@ -343,6 +390,7 @@ export function sanitizeSave(raw: unknown): SaveData {
     mouseMode: st.mouseMode === 'lock' || st.mouseMode === 'drag' || st.mouseMode === 'auto' ? st.mouseMode : def.mouseMode,
     controls: sanitizeControls(st.controls),
     access: sanitizeAccess(st.access),
+    touch: sanitizeTouch(st.touch),
   };
   d.lastCharacter = typeof raw.lastCharacter === 'string' && charIds.has(raw.lastCharacter) ? raw.lastCharacter : 'thea';
   d.version = SAVE_VERSION;
@@ -353,6 +401,36 @@ function sanitizeControls(raw: unknown): ControlSettings {
   const d = defaultControls();
   if (!isObj(raw)) return d;
   return { bindings: sanitizeBindings(raw.bindings), slideToggle: bool(raw.slideToggle, d.slideToggle), autoHop: bool(raw.autoHop, d.autoHop), rumble: bool(raw.rumble, d.rumble) };
+}
+
+function sanitizeTouch(raw: unknown): TouchSettings {
+  const d = defaultTouch();
+  if (!isObj(raw)) return d;
+  const layout: TouchLayout = {};
+  if (isObj(raw.layout)) {
+    for (const id of TOUCH_CONTROL_IDS) {
+      const it = raw.layout[id];
+      if (!isObj(it)) continue;
+      layout[id] = {
+        ax: it.ax === 1 ? 1 : 0,
+        ay: it.ay === 1 ? 1 : 0,
+        dx: num(it.dx, 0.2, 0, 2),
+        dy: num(it.dy, 0.2, 0, 2),
+        s: num(it.s, 1, 0.8, 1.25),
+      };
+    }
+  }
+  return {
+    size: raw.size === 's' || raw.size === 'm' || raw.size === 'l' ? raw.size : d.size,
+    opacity: num(raw.opacity, d.opacity, 0.4, 1),
+    leftHanded: bool(raw.leftHanded, d.leftHanded),
+    fixedStick: bool(raw.fixedStick, d.fixedStick),
+    autoCamera: bool(raw.autoCamera, d.autoCamera),
+    lookSensitivity: num(raw.lookSensitivity, d.lookSensitivity, 0.3, 3),
+    haptics: bool(raw.haptics, d.haptics),
+    highContrast: bool(raw.highContrast, d.highContrast),
+    layout,
+  };
 }
 
 function sanitizeAccess(raw: unknown): AccessSettings {

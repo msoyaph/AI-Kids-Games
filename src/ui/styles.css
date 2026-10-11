@@ -2562,3 +2562,88 @@ html.touch .collection-screen {
     transform: rotate(-90deg);
   }
 }
+
+/* ───────────────────────── touch controls settings + layout editor ───────────────────────── */
+
+/* narrow and centred, so the previewed controls stay visible around it */
+.modal.touch-settings {
+  width: min(30rem, 52vw);
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+}
+
+.settings-list .btn.toggle {
+  min-width: 8.5rem;
+}
+
+.layout-editor {
+  position: absolute;
+  inset: 0;
+}
+
+.le-surface {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  touch-action: none;
+  background: rgba(16, 10, 28, 0.25);
+}
+
+.le-ring,
+.le-handle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.le-ring {
+  box-shadow: 0 0 0 3px var(--accent), 0 0 0 5px rgba(16, 10, 28, 0.6);
+}
+
+.le-ring.bad {
+  box-shadow: 0 0 0 3px var(--danger), 0 0 0 5px rgba(16, 10, 28, 0.6);
+}
+
+/* the resize handle: a big round grip on the ring (48 px to touch) */
+.le-handle {
+  width: 48px;
+  height: 48px;
+  background: radial-gradient(circle, var(--paper) 0 9px, var(--accent) 10px 15px, transparent 16px);
+}
+
+.le-ring.hidden,
+.le-handle.hidden {
+  display: none;
+}
+
+.le-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(26rem, 46vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  pointer-events: auto;
+  text-align: center;
+}
+
+.le-status {
+  min-height: 2.6em;
+  font-weight: 700;
+  font-size: max(1rem, 14px);
+}
+
+.le-status.bad {
+  color: #ffb3b8;
+}

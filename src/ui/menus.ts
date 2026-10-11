@@ -22,6 +22,9 @@ import { enemyIconUrl, iconUrl, portraitUrl } from './icons';
 import type { UI } from './UI';
 import { copyText } from './exporter';
 import type { BenchResult } from '../game/benchmark';
+import { TouchControls } from '../input/touch';
+import { hasTouchScreen } from '../input/mode';
+import { layoutEditor } from './layoutEditor';
 
 export interface GameApi {
   ui: UI;
@@ -57,6 +60,11 @@ export interface GameApi {
   autoQuality(): 'low' | 'medium' | 'high' | 'tablet';
   /** A run is on screen (settings opened from the pause menu). */
   inRun(): boolean;
+  /** Touch controls on screen behind a menu: live (play), a preview, or for the layout editor. */
+  touchPreview(mode: 'play' | 'preview' | 'edit'): void;
+  touchControls(): TouchControls;
+  /** Show the HUD behind the layout editor (from the title menus). */
+  hudPreview(on: boolean): void;
 }
 
 const QUALITY_NAMES = { auto: 'Auto', low: 'Low', medium: 'Medium', high: 'High', tablet: 'Tablet' } as const;
@@ -696,6 +704,9 @@ export class Menus {
         sub('Hold jump to keep hopping', () => st.controls.autoHop, (v) => (st.controls.autoHop = v)),
         h('div', { class: 'setting' }, h('span', null, 'Keys & buttons'), h('button', { class: 'btn small', onclick: () => this.controls(() => this.settings(onBack)) }, 'Remap…')),
         sub('Controller rumble', () => st.controls.rumble, (v) => (st.controls.rumble = v)),
+        hasTouchScreen() || document.documentElement.classList.contains('touch')
+          ? h('div', { class: 'setting' }, h('span', null, 'Touch controls'), h('button', { class: 'btn small', onclick: () => this.touchSettings(() => this.settings(onBack)) }, 'Customize…'))
+          : null,
         h('div', { class: 'setting' }, h('span', null, 'Controller'), h('button', { class: 'btn small', onclick: () => this.controllerTest(() => this.settings(onBack)) }, 'Test…')),
         h('div', { class: 'settings-head' }, 'Accessibility'),
         cycleSub('Reduced motion', () => st.access.reducedMotion, (v) => (st.access.reducedMotion = v), ['auto', 'on', 'off'] as const, { auto: 'Auto (system)', on: 'On', off: 'Off' }),
@@ -716,6 +727,107 @@ export class Menus {
       ),
     );
     this.g.ui.show('settings', el, back);
+  }
+
+  /**
+   * Settings → Touch controls. The real controls stay on screen around the panel (preview
+   * mode) and change as you change the options.
+   */
+  touchSettings(onBack: () => void): void {
+    const save = this.g.save;
+    const t = save.data.settings.touch;
+    this.g.touchPreview('preview');
+    const commit = (): void => {
+      save.save();
+      this.g.applySettings();
+    };
+    const toggle = (label: string, get: () => boolean, set: (v: boolean) => void): HTMLElement => {
+      const b = h('button', { class: 'btn small toggle' }, get() ? 'On' : 'Off');
+      b.classList.toggle('off', !get());
+      b.addEventListener('click', () => {
+        set(!get());
+        b.textContent = get() ? 'On' : 'Off';
+        b.classList.toggle('off', !get());
+        this.g.sound('click');
+        commit();
+      });
+      return h('div', { class: 'setting' }, h('span', null, label), b);
+    };
+    const cycle = <T extends string>(label: string, get: () => T, set: (v: T) => void, options: readonly T[], names: Record<T, string>): HTMLElement => {
+      const b = h('button', { class: 'btn small toggle' }, names[get()]);
+      b.addEventListener('click', () => {
+        set(options[(options.indexOf(get()) + 1) % options.length]);
+        b.textContent = names[get()];
+        this.g.sound('click');
+        commit();
+      });
+      return h('div', { class: 'setting' }, h('span', null, label), b);
+    };
+    const slider = (label: string, get: () => number, set: (v: number) => void, min: number, max: number, step: number, fmt: (v: number) => string): HTMLElement => {
+      const val = h('b', null, fmt(get()));
+      const input = h('input', { type: 'range', min, max, step, value: String(get()) }) as HTMLInputElement;
+      input.addEventListener('input', () => {
+        set(Number(input.value));
+        val.textContent = fmt(Number(input.value));
+        commit();
+      });
+      return h('label', { class: 'setting' }, h('span', null, label), input, val);
+    };
+    const back = (): void => {
+      this.g.sound('back');
+      this.g.touchPreview('play');
+      onBack();
+    };
+    const haptics = TouchControls.canVibrate()
+      ? toggle('Vibration', () => t.haptics, (v) => (t.haptics = v))
+      : h('div', { class: 'setting' }, h('span', null, 'Vibration'), h('button', { class: 'btn small toggle off', disabled: true }, 'Not on this device'));
+    const el = h(
+      'div',
+      { class: 'modal panel settings touch-settings' },
+      h('div', { class: 'title small' }, 'Touch controls'),
+      h(
+        'div',
+        { class: 'settings-list' },
+        cycle('Size', () => t.size, (v) => (t.size = v), ['s', 'm', 'l'] as const, { s: 'Small', m: 'Medium', l: 'Large' }),
+        slider('See-through', () => Math.round((1 - t.opacity) * 100), (v) => (t.opacity = 1 - v / 100), 0, 60, 5, (v) => `${v}%`),
+        toggle('Left-handed', () => t.leftHanded, (v) => (t.leftHanded = v)),
+        cycle('Stick', () => (t.fixedStick ? 'fixed' : 'float'), (v) => (t.fixedStick = v === 'fixed'), ['float', 'fixed'] as const, { float: 'Under my thumb', fixed: 'Stays put' }),
+        toggle('Camera follows me', () => t.autoCamera, (v) => (t.autoCamera = v)),
+        slider('Camera drag speed', () => t.lookSensitivity, (v) => (t.lookSensitivity = v), 0.3, 3, 0.1, (v) => `${v.toFixed(1)}×`),
+        haptics,
+        toggle('High-contrast controls', () => t.highContrast, (v) => (t.highContrast = v)),
+      ),
+      h(
+        'div',
+        { class: 'row' },
+        h('button', { class: 'btn primary', onclick: back, 'data-autofocus': true }, 'Done'),
+        h('button', { class: 'btn small', onclick: () => {
+          this.g.sound('click');
+          this.layoutEditor(() => this.touchSettings(onBack));
+        } }, 'Edit layout…'),
+      ),
+    );
+    this.g.ui.show('touch-settings', el, back);
+  }
+
+  /** Move / resize the touch controls (Reset to default inside). */
+  layoutEditor(onBack: () => void): void {
+    const save = this.g.save;
+    const t = save.data.settings.touch;
+    this.g.touchPreview('edit');
+    this.g.hudPreview(true);
+    const done = (layout: Record<string, unknown> | null): void => {
+      if (layout) {
+        t.layout = layout as typeof t.layout;
+        save.save();
+        this.g.applySettings();
+      }
+      this.g.sound(layout ? 'buy' : 'back');
+      this.g.hudPreview(false);
+      onBack();
+    };
+    const el = layoutEditor({ touch: this.g.touchControls(), size: t.size, leftHanded: t.leftHanded, layout: t.layout, onDone: done });
+    this.g.ui.show('layout', el, () => done(null));
   }
 
   /** Remap every gameplay action: up to 4 keys and 4 gamepad buttons each. */

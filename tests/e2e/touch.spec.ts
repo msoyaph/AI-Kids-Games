@@ -265,3 +265,107 @@ test('menus and the level-up screen are easy to tap; the controls come back afte
   await expect(page.locator('.touch-ui')).toBeVisible();
   expect(problems, problems.join('\n')).toEqual([]);
 });
+
+type Placed = { x: number; y: number; d: number };
+const placement = (page: Page): Promise<Record<'stick' | 'jump' | 'slide' | 'pause', Placed>> =>
+  page.evaluate(() => (window as unknown as { __theabonk: { touch: { placement: Record<'stick' | 'jump' | 'slide' | 'pause', Placed> } } }).__theabonk.touch.placement);
+
+/** A synthetic finger drag on an element (works in every engine). */
+async function dragOn(page: Page, selector: string, from: [number, number], to: [number, number], steps = 8): Promise<void> {
+  await page.evaluate(
+    async ({ selector, from, to, steps }) => {
+      const el = document.querySelector(selector) as HTMLElement;
+      const ev = (type: string, x: number, y: number): boolean => el.dispatchEvent(new PointerEvent(type, { pointerId: 21, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y }));
+      ev('pointerdown', from[0], from[1]);
+      for (let k = 1; k <= steps; k++) {
+        await new Promise((r) => setTimeout(r, 16));
+        ev('pointermove', from[0] + ((to[0] - from[0]) * k) / steps, from[1] + ((to[1] - from[1]) * k) / steps);
+      }
+      ev('pointerup', to[0], to[1]);
+    },
+    { selector, from, to, steps },
+  );
+}
+
+async function openTouchSettings(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Settings', exact: true }).tap();
+  await page.locator('.setting', { hasText: 'Touch controls' }).getByRole('button').tap();
+  await expect(page.locator('.touch-settings')).toBeVisible();
+  // the real controls are previewed around the panel
+  await expect(page.locator('.glass-ui.preview')).toBeVisible();
+}
+
+test('Touch controls settings preview live; Large and left-handed apply in the run', async ({ page }) => {
+  const problems = watch(page);
+  await open(page, '/?seed=7');
+  const vp = page.viewportSize()!;
+  await openTouchSettings(page);
+  const before = await placement(page);
+  await page.locator('.setting', { hasText: 'Size' }).getByRole('button').tap();
+  await expect(page.locator('.setting', { hasText: 'Size' }).getByRole('button')).toHaveText('Large');
+  await expect(page.locator('.glass-ui')).toHaveAttribute('data-size', 'l');
+  expect((await placement(page)).jump.d).toBeGreaterThan(before.jump.d);
+  await page.locator('.setting', { hasText: 'Left-handed' }).getByRole('button').tap();
+  const lefty = await placement(page);
+  expect(lefty.jump.x, 'buttons move to the left').toBeLessThan(vp.width / 2);
+  expect(lefty.stick.x, 'the stick moves to the right').toBeGreaterThan(vp.width / 2);
+  expect(lefty.pause.x, 'Pause stays top-right').toBeGreaterThan(vp.width / 2);
+  await page.getByRole('button', { name: 'Done' }).first().tap();
+  await page.getByRole('button', { name: 'Done' }).first().tap();
+  await page.getByRole('button', { name: 'Play', exact: true }).tap();
+  await page.getByRole('button', { name: 'Start run' }).tap();
+  await expect(page.locator('.glass-ui:not(.preview)')).toBeVisible();
+  const zone = (await page.locator('.tzone-stick').boundingBox())!;
+  expect(zone.x, 'the stick side is on the right').toBeGreaterThanOrEqual(vp.width / 2 - 1);
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('Edit layout: drag a button, no overlaps or HUD cover, size limits, and it survives a reload', async ({ page }) => {
+  const problems = watch(page);
+  await open(page, '/?seed=7');
+  const vp = page.viewportSize()!;
+  await openTouchSettings(page);
+  await page.getByRole('button', { name: 'Edit layout…' }).tap();
+  await expect(page.locator('.layout-editor')).toBeVisible();
+  const p0 = await placement(page);
+  // move Jump up and left a little
+  const target: [number, number] = [p0.jump.x - 70, p0.jump.y - 60];
+  await dragOn(page, '.le-surface', [p0.jump.x, p0.jump.y], target);
+  let p = await placement(page);
+  expect(p.jump.x).toBeCloseTo(target[0], 0);
+  expect(p.jump.y).toBeCloseTo(target[1], 0);
+  // onto Slide: refused, Jump stays where it was
+  await dragOn(page, '.le-surface', [p.jump.x, p.jump.y], [p0.slide.x, p0.slide.y]);
+  await expect(page.locator('.le-status.bad')).toBeVisible();
+  let q = await placement(page);
+  expect(Math.hypot(q.jump.x - q.slide.x, q.jump.y - q.slide.y), 'never overlaps Slide').toBeGreaterThanOrEqual((q.jump.d + q.slide.d) / 2);
+  // over the timer: refused
+  await dragOn(page, '.le-surface', [q.jump.x, q.jump.y], [vp.width / 2, 30]);
+  q = await placement(page);
+  expect(q.jump.y, 'never covers the timer').toBeGreaterThan(80);
+  // bigger, up to the limit
+  const d0 = q.jump.d;
+  for (let k = 0; k < 8; k++) await page.getByRole('button', { name: 'Bigger' }).tap();
+  q = await placement(page);
+  expect(q.jump.d).toBeGreaterThan(d0);
+  expect(q.jump.d).toBeLessThanOrEqual(p0.jump.d * 1.25 + 0.5);
+  const saved = q.jump;
+  await page.getByRole('button', { name: 'Done' }).first().tap();
+  await expect(page.locator('.touch-settings')).toBeVisible();
+  // the layout is stored in the save and comes back after a reload
+  await open(page, '/?seed=7');
+  p = await placement(page);
+  expect(p.jump.x).toBeCloseTo(saved.x, 0);
+  expect(p.jump.y).toBeCloseTo(saved.y, 0);
+  expect(p.jump.d).toBeCloseTo(saved.d, 0);
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('theabonk.save') ?? '{}').settings?.touch?.layout);
+  expect(stored?.jump).toBeTruthy();
+  // Reset to default puts everything back
+  await openTouchSettings(page);
+  await page.getByRole('button', { name: 'Edit layout…' }).tap();
+  await page.getByRole('button', { name: 'Reset to default' }).tap();
+  await page.getByRole('button', { name: 'Done' }).first().tap();
+  p = await placement(page);
+  expect(p.jump.x).toBeCloseTo(p0.jump.x, 0);
+  expect(problems, problems.join('\n')).toEqual([]);
+});

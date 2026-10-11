@@ -330,7 +330,7 @@ export class Game implements GameApi {
     const s = this.save.data.settings;
     const q = this.effectiveQuality();
     if (this.renderer.quality !== q) this.renderer.setQuality(q);
-    this.touch.sensitivity = s.sensitivity;
+    this.touch.sensitivity = s.touch.lookSensitivity;
     this.touch.slideToggle = s.controls.slideToggle;
     this.input.sensitivity = s.sensitivity;
     this.input.invertY = s.invertY;
@@ -341,7 +341,19 @@ export class Game implements GameApi {
     const reduced = reducedMotionOn(s.access);
     applyAccessClasses(s.access, reduced);
     this.renderer.setAccess(reduced, s.access.colorblind);
-    this.touch.setLook({ reducedMotion: reduced, highContrast: s.access.highContrast });
+    const t = s.touch;
+    this.touch.setLook({
+      reducedMotion: reduced,
+      // the high-contrast HUD brings high-contrast controls with it
+      highContrast: t.highContrast || s.access.highContrast,
+      size: t.size,
+      opacity: t.opacity,
+      leftHanded: t.leftHanded,
+      fixedStick: t.fixedStick,
+    });
+    this.touch.setLayout(t.layout);
+    this.touch.autoCamera = t.autoCamera;
+    this.touch.haptics = t.haptics;
     this.input.setMouseMode(this.tuningPanel ? 'drag' : s.mouseMode);
     this.renderer.rig.shakeEnabled = s.screenShake;
     this.renderer.fx.numbers.enabled = s.damageNumbers;
@@ -410,6 +422,21 @@ export class Game implements GameApi {
   }
 
   // ───────────────────────────── benchmark ─────────────────────────────
+
+  /** Show the touch controls behind a menu (Touch controls settings / layout editor), or not. */
+  touchPreview(mode: 'play' | 'preview' | 'edit'): void {
+    this.touch.setMode(mode);
+  }
+
+  /** The touch controls (the layout editor reads and moves them). */
+  touchControls(): TouchControls {
+    return this.touch;
+  }
+
+  /** Show the HUD for reference behind the layout editor (menus only; runs show it anyway). */
+  hudPreview(on: boolean): void {
+    if (!this.world) this.ui.hud.show(on);
+  }
 
   /** Whether a run (or the performance test) is on screen. */
   inRun(): boolean {

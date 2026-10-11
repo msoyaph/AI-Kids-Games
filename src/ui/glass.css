@@ -92,6 +92,12 @@
   display: none;
 }
 
+/* settings preview / layout editor: on screen, but not live */
+.glass-ui.preview .tzone,
+.glass-ui.preview .gbtn {
+  pointer-events: none;
+}
+
 /* thumb zones (placed by TouchControls.relayout: stick side / camera side, below the HUD) */
 .tzone {
   position: absolute;
