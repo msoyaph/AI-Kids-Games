@@ -185,7 +185,7 @@ export class Game {
     this.held = !!input?.actionHeld;
     this.moveMag = input ? Math.hypot(input.move.x, input.move.z) : 0;
     this.moveIntent = input ? { x: input.move.x, z: input.move.z, run: input.move.run } : { x: 0, z: 0, run: false };
-    const canMove = this.mode === 'play' && !this.action && input && this.state.player.location === 'island';
+    const canMove = (this.mode === 'play' || this.mode === 'placement') && !this.action && input && this.state.player.location === 'island';
     if (canMove) {
       stepPlayer(this.world, this.state.player, this.motion, { ...input.move, sneak: this.sneaking, run: input.move.run && !this.sneaking }, dt);
     } else {

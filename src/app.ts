@@ -18,6 +18,14 @@ import { controlsPanel, PauseMenu } from './ui/screens/pause';
 import { confirmPanel, SlotScreen } from './ui/screens/slots';
 import { TitleScreen } from './ui/screens/title';
 import { registerPanels } from './ui/register';
+import { sharedUniforms } from './render/curve';
+import { installStory, pumpInbox, QuestTracker } from './ui/story';
+import { questRT } from './sim/quests';
+import { Phone } from './ui/phone';
+import { settingsBody, settingsPanel } from './ui/settings';
+import { runFinale } from './ui/finale';
+import type { TalkHooks } from './ui/conversation';
+import { cancelPlacement, placementRT } from './sim/placement';
 
 const AUTOSAVE_SEC = 60;
 const TITLE_SEED = 20261011;
@@ -28,6 +36,7 @@ export class App {
   readonly ui: UIManager;
   readonly hud: Hud;
   private reel: ReelBar;
+  private tracker: QuestTracker;
   readonly saves = new SaveManager();
   settings: Settings;
   game: Game | null = null;
@@ -38,6 +47,10 @@ export class App {
   private autosaveT = 0;
   private fadeEl = h('div', { class: 'fade' });
   private last = performance.now();
+  /** audio engine (set in phase 9) */
+  audio: { blip(voice: number): void } | null = null;
+  /** story layer hooks into conversations */
+  talkHooks: TalkHooks = { intro: async () => false, options: () => [] };
   /** panel factories other modules can open via game.ui.open */
   panels: Record<string, (arg?: unknown) => void> = {};
 
@@ -56,6 +69,7 @@ export class App {
     this.ui = new UIManager(root);
     this.hud = new Hud(root);
     this.reel = new ReelBar(root);
+    this.tracker = new QuestTracker(root);
     document.body.appendChild(this.fadeEl);
     this.applySettings();
     this.demo = createGame(newGameState(TITLE_SEED, 'Demo'));
@@ -63,6 +77,11 @@ export class App {
     this.demo.mode = 'cutscene';
     this.ui.onChange = () => this.syncMode();
     registerPanels(this);
+    installStory(this);
+    this.panels.phone = (start) => this.game && this.ui.push(new Phone(this.ui, this, start as string | undefined));
+    this.panels.settings = () => this.ui.push(settingsPanel(this));
+    this.panels.settingsInline = (body) => settingsBody(this, body as HTMLElement);
+    this.panels.credits = () => this.titleCredits();
     this.showTitle();
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') this.saveNow(true);
@@ -73,6 +92,7 @@ export class App {
 
   applySettings(): void {
     this.view.rig.settings = { ...this.settings.camera };
+    sharedUniforms.uCurveK.value = 0.0068 * this.settings.curve;
     this.view.sky.setShadows(this.settings.shadows);
     this.view.renderer.shadowMap.enabled = this.settings.shadows;
     this.saves.saveSettings(this.settings);
@@ -181,6 +201,11 @@ export class App {
     this.view.attach(g);
     this.hud.setVisible(true);
     g.ui.confirm = (text, yes, no) => confirmPanel(this.ui, text, yes, no);
+    g.ui.say = (speaker, lines, done) => {
+      questRT(g).inbox.push({ speaker, lines });
+      done?.();
+    };
+    g.bus.on('finale', () => setTimeout(() => runFinale(this), 400));
     g.ui.open = (panel, arg) => this.panels[panel]?.(arg);
     g.bus.on('toast', (t) => this.hud.toast(t.text, t.kind, t.item));
     g.bus.on('dayStarted', () => this.saveNow(true));
@@ -216,6 +241,27 @@ export class App {
     );
   }
 
+  titleCredits(): void {
+    const p: Panel = {
+      modal: true,
+      el: h(
+        'div',
+        { class: 'screen', style: 'z-index:9' },
+        h('div', { class: 'dim' }),
+        h(
+          'div',
+          { class: 'panel center', style: 'padding:24px;width:min(480px,92vw);text-align:center' },
+          h('h2', { style: 'justify-content:center' }, 'Light Crossing'),
+          h('p', null, 'A cozy island life-sim. Every model, texture, icon and melody is generated in code at runtime.'),
+          h('p', { class: 'muted' }, 'Built with three.js, the Web Audio API and TypeScript.'),
+          h('p', { class: 'muted tiny' }, 'Inspired by the gentle joys of slow island living.'),
+          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => this.ui.pop(p) }, 'Close'),
+        ),
+      ),
+    };
+    this.ui.push(p);
+  }
+
   /** Floating "+item" icon rising from a world point. */
   floatIcon(id: string, x: number, y: number, z: number): void {
     const p = this.view.project(x, y, z);
@@ -236,6 +282,11 @@ export class App {
   }
 
   private gameplayCommand(g: Game, c: Command): void {
+    if (placementRT(g) && (c === 'pause' || c === 'back' || c === 'cancel')) {
+      cancelPlacement(g);
+      this.hud.toast('Placement cancelled.');
+      return;
+    }
     switch (c) {
       case 'action':
         g.act();
@@ -301,6 +352,8 @@ export class App {
       }
       this.hud.update(g);
       this.reel.update(g);
+      this.tracker.update(this);
+      pumpInbox(this);
     } else {
       this.demo.update(dt, null);
     }

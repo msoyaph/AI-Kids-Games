@@ -1,14 +1,20 @@
 import './ui/styles.css';
 import { App } from './app';
-import { give } from './sim/inventory';
+import { questRT } from './sim/quests';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLDivElement;
 const app = new App(canvas, ui);
 
-// Temporary until the story missions hand out tools (phase 6).
+// Opening narration for a brand-new island.
 app.onNewGame = (g) => {
-  for (const id of ['net_flimsy', 'rod_flimsy', 'axe_flimsy', 'shovel_flimsy', 'can_flimsy']) give(g, id, 1, 'start');
+  questRT(g).inbox.unshift({
+    speaker: '',
+    lines: [
+      '[neutral]After many quiet days at sea, your little boat bumps against a weathered dock.',
+      '[happy]Driftlight Isle! Somewhere past the plaza, a lantern is glowing in the window of Lantern Hall.',
+    ],
+  });
 };
 
 (window as unknown as { __lc: unknown }).__lc = app;

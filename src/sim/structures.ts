@@ -2,6 +2,7 @@
 import type { Game, InteractCtx, Interaction } from './game';
 import type { Structure, StructType } from './state';
 import { enterInterior } from './interior';
+import { give } from './inventory';
 
 export function structureLabel(s: Structure): string {
   switch (s.type) {
@@ -71,14 +72,25 @@ export function structureResolver(g: Game, ctx: InteractCtx): Interaction | null
     case 'workbench':
       return { label: 'Craft at workbench', priority: 85, run: () => g.ui.open('craft') };
     case 'shop':
-    case 'shopCart':
-      return { label: s.type === 'shop' ? 'Shop at The Curled Leaf' : "Browse Fennimore's cart", priority: 85, run: () => g.ui.open('shop') };
+    case 'shopCart': {
+      const h = g.state.clock.minute / 60;
+      const open = h >= 8 && h < 22;
+      return {
+        label: s.type === 'shop' ? 'Shop at The Curled Leaf' : "Browse Fennimore's cart",
+        priority: 85,
+        run: () => (open ? g.ui.open('shop') : g.toast('Closed for the night. Open 8 AM – 10 PM!')),
+      };
+    }
     case 'hall':
-      return { label: 'Enter Lantern Hall', priority: 85, run: () => g.ui.open('hall') };
+      return { label: 'Enter Lantern Hall', priority: 85, run: () => g.ui.open('talk', 'pemberly') };
     case 'museum':
       return { label: 'Enter the museum', priority: 85, run: () => enterInterior(g, 'museum') };
     case 'museumTent':
-      return { label: "Visit Vesper's tent", priority: 85, run: () => g.ui.open('museumDesk') };
+      return { label: "Visit Vesper's tent", priority: 85, run: () => g.ui.open('talk', 'vesper') };
+    case 'lighthouse':
+      return { label: 'Inspect the lighthouse', priority: 85, run: () => inspectLighthouse(g) };
+    case 'plazaLantern':
+      return { label: 'Admire the Great Lantern', priority: 60, run: () => g.ui.say('', [g.state.flags.lighthouseLit ? '[happy]The Great Lantern glows warmly. Its light reaches all the way to the lighthouse.' : '[neutral]The Great Lantern of the plaza. It has not been lit in years.']) };
     case 'noticeBoard':
       return { label: 'Read the notice board', priority: 85, run: () => g.ui.open('board') };
     case 'construction':
@@ -86,4 +98,22 @@ export function structureResolver(g: Game, ctx: InteractCtx): Interaction | null
     default:
       return null;
   }
+}
+
+export function inspectLighthouse(g: Game): void {
+  if (g.state.flags.lighthouseLit) {
+    g.ui.say('', ['[happy]The Driftlight lighthouse sweeps its warm beam across the sea. Every lantern finds its way home.']);
+    return;
+  }
+  const first = !g.state.flags.lighthouseSeen;
+  g.state.flags.lighthouseSeen = 1;
+  if (first) {
+    g.state.flags.lensGiven = 1;
+    give(g, 'lens', 1, 'lighthouse');
+    g.ui.say('', [
+      '[neutral]The old lighthouse creaks in the wind. Its great lamp is dark and dusty.',
+      '[surprised]Wedged in the lamp frame is a heavy, cloudy lens. You carefully pry it loose.',
+      '[neutral]Got the Old Lighthouse Lens! Pemberly will want to hear about this.',
+    ]);
+  } else g.ui.say('', ['[neutral]The lamp room is empty, waiting for its lens and a reason to shine.']);
 }

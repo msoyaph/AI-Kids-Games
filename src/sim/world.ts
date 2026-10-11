@@ -99,6 +99,15 @@ export class World {
     }
   }
 
+  /** Can a character stand on this tile at all? */
+  standable(i: number): boolean {
+    if (this.isWater(i)) return false;
+    const st = this.structure(i);
+    if (st && !WALKABLE_STRUCT.has(st.type)) return false;
+    const o = this.obj(i);
+    return !(o && SOLID_OBJ.has(o.k));
+  }
+
   /** Whether moving from tile `from` into neighbouring tile `to` is blocked. */
   blocked(from: number, to: number): boolean {
     const tx = to % this.size, tz = (to / this.size) | 0;

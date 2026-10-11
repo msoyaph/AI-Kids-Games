@@ -68,6 +68,21 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   scene/camera (curve disabled indoors), furniture editor (place/move/rotate/store, walls/floors),
   storage, outdoor decorations (multi-tile 'deco' objects: anchor + 'fill' tiles), 3D furniture thumbnails.
 
+- Phase 5 done: 8 villagers + 3 NPCs (data/villagers.ts), personality dialogue pools (data/dialogue.ts),
+  agents with schedules + A* (sim/agents.ts, sim/pathfind.ts), friendship/gifts/requests/heart rewards
+  (sim/villagers.ts), plot placement mode (sim/placement.ts), dialogue box + canvas portraits, knock on doors.
+- Phase 6 (core) done: mission engine (sim/quests.ts) over data/missions.ts (5 chapters, 31 missions),
+  objective kinds event/state/deliver/talk, effects, chapter banners, quest inbox → dialogue, HUD tracker +
+  compass marker, Glowpad phone (Missions/Map/Island Glow/Settings), island rating (sim/rating.ts),
+  festival cutscene + credits + completion screen. Story driver for tests in tests/story.ts.
+
+## Story / quest notes
+- Missions auto-start when `requires` are done and `minDay` reached, unless `startTalk` (then the giver
+  shows the intro when talked to). Talk/deliver objectives surface through `talkScene`/`questOptions`, which
+  the UI (`ui/story.ts`) plugs into conversations via `app.talkHooks`.
+- State objectives use `STATE_FNS` in sim/quests.ts (homeLevel, plot, museum, rating, bridges, ramps...).
+- Special deliver tokens: item `$nativeFruit`, cat `foreignFruit` / `fossil`.
+
 ## Testing tips
 - The Claude browser pane may be hidden → rAF paused. Use `window.__lc.debugStep(frames)` to advance the
   game synchronously, and dispatch `KeyboardEvent`s on window for input. `window.__lc` is the App.

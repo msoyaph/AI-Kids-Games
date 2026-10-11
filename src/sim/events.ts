@@ -58,4 +58,5 @@ export interface GameEvents {
   finale: Record<string, never>;
   catalogNew: { id: string };
   recipeLearned: { id: string; source: string };
+  regionVisited: { region: number };
 }

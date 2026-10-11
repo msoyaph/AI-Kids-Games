@@ -10,6 +10,11 @@ import { dailyHome } from './housing';
 import { dailyShopReset } from './economy';
 import { interiorResolve, stepInterior } from './interior';
 import { decorResolver } from './decor';
+import { dailyVillagers } from './villagers';
+import { homeResolver, talkResolver, updateAgents } from './agents';
+import { confirmPlacement, placementRT, updatePlacement } from './placement';
+import { installQuests, tryStart } from './quests';
+import { tileOf } from './player';
 import { Game } from './game';
 import type { GameState } from './state';
 
@@ -20,6 +25,7 @@ export function installSystems(g: Game): void {
   g.onDay(dailyConstruction);
   g.onDay(dailyHome);
   g.onDay(dailyShopReset);
+  g.onDay(dailyVillagers);
   g.onDay(dailyGarden);
   g.onDay(dailySpawns);
   g.onDay(resetFishing);
@@ -29,17 +35,35 @@ export function installSystems(g: Game): void {
   g.addResolver(bugResolver);
   g.addResolver(structureResolver);
   g.addResolver(decorResolver);
+  g.addResolver(talkResolver);
+  g.addResolver(homeResolver);
+  g.onPress((game) => {
+    if (!placementRT(game)) return false;
+    confirmPlacement(game);
+    return true;
+  });
   g.interiorResolver = interiorResolve;
   g.onPress((game) => {
     if (!fishingRT(game).cast) return false;
     fishingPress(game);
     return true;
   });
+  installQuests(g);
+  g.onUpdate((game) => {
+    if (game.state.player.location !== 'island') return;
+    const reg = game.world.region(tileOf(game.world, game.state.player.x, game.state.player.z));
+    if (reg && !game.state.flags[`visited_${reg}`]) {
+      game.state.flags[`visited_${reg}`] = 1;
+      game.emit('regionVisited', { region: reg });
+    }
+  });
   g.onUpdate((game, dt) => {
     if (game.state.player.location !== 'island') {
       if (game.mode === 'play' && !game.action) stepInterior(game, game.moveIntent.x, game.moveIntent.z, game.moveIntent.run, dt);
       return;
     }
+    updateAgents(game, dt);
+    updatePlacement(game);
     updateFishing(game, dt, game.held, game.moveMag > 0.35);
     updateBugs(game, dt, game.held);
   });
@@ -51,5 +75,6 @@ export function createGame(state: GameState): Game {
   const g = new Game(state);
   installSystems(g);
   g.ensureDayRolled();
+  tryStart(g);
   return g;
 }

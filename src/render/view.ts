@@ -12,6 +12,10 @@ import { equippedTool } from '../sim/tools';
 import { toolMesh } from './models/tools';
 import { CritterView } from './critters';
 import { InteriorView, furnitureObject } from './interior';
+import { AgentView } from './agents';
+import { PlacementView } from './placement';
+import { FestivalScene, LighthouseBeam } from './cutscene';
+import { agents as agentsOf } from '../sim/agents';
 import { setThumbProvider } from '../ui/icons';
 import { LEVEL_HEIGHT } from '../world/types';
 
@@ -24,6 +28,11 @@ export class GameView {
   private water!: WaterRenderer;
   objects!: ObjectRenderer;
   critters!: CritterView;
+  agents!: AgentView;
+  placement!: PlacementView;
+  festival = new FestivalScene();
+  beam = new LighthouseBeam();
+  onFestivalEnd: (() => void) | null = null;
   readonly interior = new InteriorView();
   private structGroup = new THREE.Group();
   private structMeshes = new Map<number, { obj: THREE.Group; key: string }>();
@@ -107,7 +116,9 @@ export class GameView {
     this.water = new WaterRenderer(game.world.size / 2);
     this.objects = new ObjectRenderer(game.world, this.itemVisual);
     this.critters = new CritterView(game);
-    this.islandRoot.add(this.terrain.group, this.water.mesh, this.objects.group, this.structGroup, this.critters.group);
+    this.agents = new AgentView(game);
+    this.placement = new PlacementView(game);
+    this.islandRoot.add(this.terrain.group, this.water.mesh, this.objects.group, this.structGroup, this.critters.group, this.agents.group, this.placement.group, this.festival.group, this.beam.pivot);
     this.objects.rebuild();
     this.syncStructures();
     this.rebuildPlayer();
@@ -118,6 +129,16 @@ export class GameView {
     game.bus.on('fx', (f) => {
       if (f.kind === 'rockHit') this.rig.shake = 0.6;
     });
+  }
+
+  startFestival(): void {
+    this.festival.start(this.game);
+    this.rig.snap(this.festival.cam.target.x, this.festival.cam.target.y, this.festival.cam.target.z);
+  }
+
+  stopFestival(): void {
+    this.festival.stop();
+    for (const a of agentsOf(this.game).values()) a.talking = false;
   }
 
   /** Project a world point (with the world curve applied) to CSS pixels. */
@@ -206,7 +227,19 @@ export class GameView {
       action: a ? Math.min(1, a.t / a.dur) : -1,
       actionKind: a ? a.kind : equippedTool(g) ? 'hold' : '',
     });
-    if (this.preview === 'title') {
+    if (this.festival.active) {
+      const c = this.festival.cam;
+      this.rig.zoomOverride = c.dist / this.rig.baseDistance / this.rig.settings.zoom;
+      this.rig.pitchOverride = c.pitch;
+      this.rig.follow(c.target.x, c.target.y, c.target.z, dt);
+      if (!this.festival.frame(dt, g)) {
+        this.rig.zoomOverride = 1;
+        this.rig.pitchOverride = null;
+        const cb = this.onFestivalEnd;
+        this.onFestivalEnd = null;
+        cb?.();
+      }
+    } else if (this.preview === 'title') {
       this.orbit += dt * 0.05;
       const N = g.world.size;
       const r = N * 0.28;
@@ -222,7 +255,11 @@ export class GameView {
     }
     sharedUniforms.uCurveOrigin.value.copy(this.rig.target);
     this.critters.frame(dt, this.rig.target, this.sky.night);
+    this.agents.frame(dt);
+    this.beam.frame(g, this.time, this.sky.night);
+    this.placement.frame();
     this.sky.update(g.state.clock.minute, g.state.weather.today, this.rig.target);
     this.renderer.render(this.scene, this.rig.camera);
   }
 }
+

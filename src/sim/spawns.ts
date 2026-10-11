@@ -127,6 +127,18 @@ export function dailySpawns(g: Game): void {
     branches++;
   }
 
+  // 3b. loose stones next to rocks (so the very first tools can be crafted)
+  for (const key of Object.keys(objs)) {
+    const i = +key;
+    if (objs[i]?.k !== 'rock') continue;
+    const x = i % N, z = (i / N) | 0;
+    const [dx, dz] = DIRS8[rng.int(0, 7)]!;
+    if (!w.inb(x + dx, z + dz)) continue;
+    const j = w.idx(x + dx, z + dz);
+    if (objs[j] || w.structure(j) || w.isWater(j) || w.height(j) !== w.height(i)) continue;
+    objs[j] = { k: 'item', item: 'stone', q: 1, tag: 'spawn' };
+  }
+
   // 4. shells + a message bottle on the beach
   for (let k = 0; k < DAILY.shells; k++) place(take(sand), { k: 'item', item: weightedPick(rng, SHELL_TABLE), q: 1, tag: 'spawn' });
   place(take(sand), { k: 'item', item: 'bottle', q: 1, tag: 'spawn' });

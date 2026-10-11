@@ -121,8 +121,9 @@ export class Hud {
         this.toolBox.style.display = '';
       } else this.toolBox.style.display = 'none';
     }
+    const pl = g.runtime.placement as { valid: boolean; reason: string; kind: string } | undefined;
     const inter = g.mode === 'play' && !g.action ? g.resolve() : null;
-    const label = inter ? inter.label : '';
+    const label = pl ? (pl.valid ? `Place ${pl.kind === 'plot' ? 'the home plot' : `the ${pl.kind}`} here  ·  Esc to cancel` : `${pl.reason}  ·  Esc to cancel`) : inter ? inter.label : '';
     if (label !== this.lastPrompt) {
       this.lastPrompt = label;
       this.prompt.innerHTML = '';

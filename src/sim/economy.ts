@@ -74,6 +74,9 @@ export function dailyStock(g: Game, stage: ShopStage): StockEntry[] {
   seeds.forEach((s) => add(s.id, false));
   add('sapling_round', false);
   if (stage === 'shop') add('sapling_pine', false);
+  // an imported (non-native) fruit every day
+  const foreign = FRUITS.filter((_, i) => i !== g.world.gen.nativeFruit);
+  add(rng.pick(foreign).id, false);
   for (const t of ['net_flimsy', 'rod_flimsy', 'shovel_flimsy', 'axe_flimsy', 'can_flimsy']) add(t, false);
   if (stage === 'shop') {
     rng.shuffle([...FURNITURE_SHOP]).slice(0, 5).forEach((f) => add(f.id, true));
