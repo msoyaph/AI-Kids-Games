@@ -65,3 +65,11 @@ export async function quickRace(page: Page, opts: { track?: string; ai?: number;
     }
   }, { track: opts.track ?? 'seashell-boardwalk', ai: opts.ai ?? 3, autopilot: opts.autopilot ?? true });
 }
+
+/** Mark the controls card as seen on every device (tests that aren't about the card). */
+export async function skipControlsCard(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const a = window.__calex.app;
+    a.saves.settings.controlsSeen = { keyboard: true, gamepad: true, touch: true };
+  });
+}

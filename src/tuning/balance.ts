@@ -181,6 +181,7 @@ export const BALANCE = {
       'frostpeak-pass': { pace: 0.99, seed: 169 },
       'gearworks-factory': { pace: 0.96, seed: 118 },
       'jadefall-temple': { pace: 0.947, seed: 152 },
+      'lantern-village': { pace: 0.98, seed: 101 },
       'neon-nightway': { pace: 0.981, seed: 169 },
       'prism-parkway': { pace: 0.9575, seed: 118 },
       'rooftop-rally': { pace: 0.956, seed: 118 },

@@ -159,6 +159,9 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   "Replay 🎬" on every results screen; memory only), Driving School (`src/data/school.ts` lessons + medals,
   `src/sim/school.ts` LessonSim, `src/sim/schoolRun.ts`, `src/render/schoolVisuals.ts`, `src/ui/screens/school.ts`,
   courses `school-ring`/`school-park` in `SCHOOL_TRACKS`, save field `school`, main-menu prompt for new players).
+  All 4 Frost tracks use corrected markers (no legacy flag) and pass `validateTracks --all-classes` (6 runs each:
+  8/8 finish, 0 falls). Staff calibrated for all 20 tracks. Worst-case storage @20 tracks: 1.08 MB / 1.5 MB budget
+  (60 ghosts 936 KB, slots 48 KB, playtest log 100 KB, settings 1 KB). Build 1.21 MB.
 - [ ] Phase 8 — accessibility
 - [ ] Phase 9 — CI
 - [ ] Phase 10 — testing, balance, screenshot review, final report

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { boot, quickRace, watch } from './helpers';
+import { boot, quickRace, skipControlsCard, watch } from './helpers';
 
 test('playtest mode: badge, records a race, export and clear', async ({ page }, info) => {
   test.skip(!info.project.name.endsWith('desktop'), 'runs once');
@@ -147,6 +147,7 @@ test('instant replay: watch the race again with every camera, then back to the r
   const touch = info.project.name.endsWith('phone');
   const w = watch(page);
   await boot(page);
+  await skipControlsCard(page);
   // a real Versus race through the menus, driven by the autopilot at 8× speed
   await page.evaluate(() => {
     const a = window.__calex.app;
@@ -211,6 +212,7 @@ test('Driving School: new-player prompt, lesson intro, a lesson to the medal scr
   };
   const w = watch(page);
   await boot(page);
+  await skipControlsCard(page);
   await page.evaluate(() => {
     const a = window.__calex.app;
     a.saves.create(1, 'Newbie');
@@ -252,6 +254,7 @@ test('Coin Rush in Coin Carnival: pick the rule, coins on the HUD, coin results'
   };
   const w = watch(page);
   await boot(page);
+  await skipControlsCard(page);
   await page.evaluate(() => {
     const a = window.__calex.app;
     a.saves.create(1, 'Coins');

@@ -110,7 +110,7 @@ const NAME_IDEAS = ['Turbo Star', 'Zoom Zoom', 'Drift King', 'Speedy', 'Sparky',
 
 export function nameEntryScreen(app: App, slot: number): Screen {
   let name = NAME_IDEAS[Math.floor(Math.random() * NAME_IDEAS.length)];
-  const input = h('input', { type: 'text', maxlength: '14', value: name, 'aria-label': 'Racer name', style: 'font:900 24px var(--font);padding:10px 14px;border-radius:14px;border:3px solid #fff;width:min(320px,80vw);text-align:center' }) as HTMLInputElement;
+  const input = h('input', { type: 'text', maxlength: '14', value: name, 'aria-label': 'Racer name', 'data-nav': '1', style: 'font:900 24px var(--font);padding:10px 14px;border-radius:14px;border:3px solid #fff;width:min(320px,80vw);text-align:center' }) as HTMLInputElement;
   input.addEventListener('input', () => (name = input.value.replace(/[^\p{L}\p{N} _-]/gu, '').slice(0, 14)));
   const ideas = h('div', { class: 'menu-row', style: 'justify-content:center;max-width:640px' });
   for (const n of NAME_IDEAS.slice(0, 8)) ideas.appendChild(button(n, () => ((input.value = n), (name = n)), 'small ghost'));
@@ -126,9 +126,21 @@ export function nameEntryScreen(app: App, slot: number): Screen {
     h('div', { class: 'hint' }, 'Use a nickname — not your real name!'),
     input,
     ideas,
-    button("Let's go!", go, 'big yellow'),
   );
-  return { el, onBack: () => app.screens.slots() };
+  const goBtn = button("Let's go!", go, 'big yellow');
+  el.appendChild(goBtn);
+  return {
+    el,
+    onBack: () => app.screens.slots(),
+    // start on "Let's go!" (focusing the text box would pop up the phone keyboard straight away)
+    focus: goBtn,
+    // Enter while typing in the name box starts the game
+    onMenu: (a) => {
+      if (a !== 'confirm' || document.activeElement !== input) return false;
+      go();
+      return true;
+    },
+  };
 }
 
 export function mainMenuScreen(app: App): Screen {

@@ -149,8 +149,11 @@ export class Ui {
   setFocus(el: HTMLElement, sound = true): void {
     if (this.focused === el) return;
     this.focused?.classList.remove('focus');
+    // text fields take real focus so you can type; leaving one gives it back
+    if (this.focused?.tagName === 'INPUT') this.focused.blur();
     this.focused = el;
     el.classList.add('focus');
+    if (el.tagName === 'INPUT' && document.activeElement !== el) el.focus({ preventScroll: true });
     el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     if (sound) this.audio.ui('move');
   }
@@ -193,11 +196,25 @@ export class Ui {
     if (best) this.setFocus(best);
   }
 
+  /** Tab / Shift+Tab: the next / previous button in reading order (wraps). */
+  private step(d: number): void {
+    const items = this.navigables();
+    if (items.length === 0) return;
+    const i = this.focused ? items.indexOf(this.focused) : -1;
+    this.setFocus(items[i < 0 ? (d > 0 ? 0 : items.length - 1) : (i + d + items.length) % items.length]);
+  }
+
   private onMenu(a: MenuAction): void {
     const s = this.screen;
     if (!s) return;
     if (s.onMenu?.(a)) return;
     switch (a) {
+      case 'nextItem':
+        this.step(1);
+        break;
+      case 'prevItem':
+        this.step(-1);
+        break;
       case 'up':
         this.move(0, -1);
         break;

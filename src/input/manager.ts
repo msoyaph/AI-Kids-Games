@@ -9,7 +9,7 @@ export type InputSource =
   | { kind: 'combo'; scheme: KeyScheme; index: number }
   | { kind: 'touch' };
 
-export type MenuAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'tabPrev' | 'tabNext';
+export type MenuAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'tabPrev' | 'tabNext' | 'nextItem' | 'prevItem';
 
 export type Device = 'keyboard' | 'gamepad' | 'touch';
 
@@ -104,9 +104,13 @@ export class InputManager {
     this.lastDevice = 'keyboard';
     const tag = (e.target as HTMLElement | null)?.tagName;
     if ((tag === 'INPUT' || tag === 'TEXTAREA') && !this.captureKey) {
-      // typing a name: only Enter confirms, everything else belongs to the text field
+      // typing a name: Enter confirms, Esc goes back, ↑/↓ and Tab leave the field; other keys belong to the text field
       if (e.code === 'Enter' || e.code === 'NumpadEnter') this.emitMenu('confirm', 'keyboard');
       if (e.code === 'Escape') this.emitMenu('back', 'keyboard');
+      if (e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'Tab') {
+        e.preventDefault();
+        this.emitMenu(e.code === 'ArrowUp' ? 'up' : e.code === 'ArrowDown' ? 'down' : e.shiftKey ? 'prevItem' : 'nextItem', 'keyboard');
+      }
       return;
     }
     if (this.captureKey) {
@@ -161,6 +165,10 @@ export class InputManager {
         break;
       case 'KeyE':
         if (!e.repeat) this.emitMenu('tabNext', 'keyboard');
+        break;
+      case 'Tab':
+        // sequential focus through every button, in reading order (the browser's own Tab is blocked)
+        this.emitMenu(e.shiftKey ? 'prevItem' : 'nextItem', 'keyboard');
         break;
     }
   };

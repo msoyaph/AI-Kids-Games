@@ -61,6 +61,11 @@ test('menus → versus race → pause → quit', async ({ page }, info) => {
   await press(page, 'Calex', touch);
   await press(page, /Next/, touch);
   await press(page, 'Seashell Boardwalk', touch);
+  // first race on this device: the controls card, then the race
+  await expect(page.locator('.controls-card')).toBeVisible();
+  await expect(page.locator('.controls-card .cc-title')).toContainText(touch ? 'Touch' : 'Keyboard');
+  if (touch) await press(page, /Got it/, touch);
+  else await page.keyboard.press('Enter');
   // race HUD up
   await expect(page.locator('.hud')).toBeVisible();
   await expect(page.locator('.hud-minimap')).toBeVisible();
@@ -133,6 +138,10 @@ test('gamepad navigates menus and drives', async ({ page }, info) => {
   await tapButton(13); // D-pad down from the cup tabs to the first track
   await expect(page.locator('.ui-root .focus')).toContainText('Seashell');
   await tapButton(0); // confirm
+  // first race with a gamepad: the controls card shows the pad buttons; A starts the race
+  await expect(page.locator('.controls-card .cc-title')).toContainText('Gamepad');
+  await expect(page.locator('.controls-card')).toContainText('RB');
+  await tapButton(0);
   await page.waitForFunction(() => window.__calex.app.session?.world.phase === 'race', null, { timeout: 20_000 });
   await page.evaluate(() => {
     const p = (window as unknown as { __pad: { buttons: Array<{ pressed: boolean; value: number }> } }).__pad;
