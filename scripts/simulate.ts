@@ -24,6 +24,7 @@ const log = (s: string): void => {
 };
 const t0 = Date.now();
 const avg = (a: number[]): number => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+const entries8 = RACERS.slice(0, 8).map((r) => ({ racerId: r.id, kart: { ...r.defaultKart, paint: 'cherry', decal: 'none' } }));
 
 // ---------------------------------------------------------------- 1. completion
 if (!fairOnly) {
@@ -33,7 +34,6 @@ log('|---|---|---|---|---|');
 const classes: SpeedClass[] = ['rookie', 'pro', 'champion'];
 const classTimes: Record<SpeedClass, number[]> = { rookie: [], pro: [], champion: [] };
 let failures = 0;
-const entries8 = RACERS.slice(0, 8).map((r) => ({ racerId: r.id, kart: { ...r.defaultKart, paint: 'cherry', decal: 'none' } }));
 for (const t of TRACKS) {
   const cells: string[] = [];
   for (const c of [...classes, 'mirror' as const]) {

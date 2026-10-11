@@ -35,7 +35,7 @@ export function staffGhost(trackId: string): StaffGhost {
   world.events.enabled = false;
   const race = new RaceTracker(world, track, 3);
   race.placeGrid([0]);
-  const ai = new AiController(world, track, { noRubberBand: true, skillBonus: { 0: 0.6 }, personality: { 0: 'careful' } });
+  const ai = new AiController(world, track, { noRubberBand: true, skillBonus: { 0: 0.1 }, personality: { 0: 'balanced' } });
   const items = new ItemSystem(world, track, track, { set: 'all', boxes: [] });
   ai.attachItems(items);
   if (track.data.hazards?.length) new HazardSystem(world, track, items.hazards);
