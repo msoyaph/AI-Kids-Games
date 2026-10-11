@@ -1,18 +1,30 @@
+import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import type { Game } from '../data/games';
 import { usePreferences } from '../lib/preferences';
 import { Icon } from './Icon';
-import styles from './GameCard.module.css';
-import { mediaFor } from '../lib/media';
-export function FavoriteButton({ game, large = false }: { game: Game; large?: boolean }) {
+import Preview from './Preview';
+
+/** Heart on a card, or a labelled Save button on the details page. */
+export function FavoriteButton({ game,large = false }: { game: Game; large?: boolean }) {
   const { favorites,toggleFavorite } = usePreferences(); const saved = favorites.includes(game.slug);
-  return <button className={`favorite-button ${saved ? 'saved' : ''} ${large ? 'favorite-large' : ''}`} onClick={() => toggleFavorite(game.slug)} aria-label={`${saved ? 'Remove' : 'Add'} ${game.title} ${saved ? 'from' : 'to'} favorites`} aria-pressed={saved}><Icon name="heart" filled={saved} />{large && <span>{saved ? 'Saved to favorites' : 'Add to favorites'}</span>}</button>;
+  const label = `${saved ? 'Remove' : 'Add'} ${game.title} ${saved ? 'from' : 'to'} favorites`;
+  if (large) return <button className="button secondary save-button" onClick={() => toggleFavorite(game.slug)} aria-pressed={saved} aria-label={label}><Icon name="heart" filled={saved} />{saved ? 'Saved' : 'Save'}</button>;
+  return <button className="heart" onClick={() => toggleFavorite(game.slug)} aria-pressed={saved} aria-label={label}><span><Icon name="heart" filled={saved} size={20} /></span></button>;
 }
-export default function GameCard({ game, eager = false }: { game: Game; eager?: boolean }) {
-  return <article className={`game-card ${styles.card}`}>
-    <Link to={`/game/${game.slug}`} className="game-card-link">
-      <div className="game-card-art" style={{ backgroundColor: game.accentColor }}><img src={mediaFor(game).cover} alt={`Original illustration for ${game.title}`} width="720" height="720" loading={eager ? 'eager' : 'lazy'} decoding="async" /><span className="age-badge">{game.ageGuidance}</span><span className="card-play"><Icon name="play" filled /></span></div>
-      <div className="card-copy"><div className="card-title-row"><h3>{game.title}</h3><Icon name="arrow" size={20} /></div><p>{game.tagline}</p><div className="card-meta"><span className={`category-label ${game.categories[0].toLowerCase()}`}>{game.categories[0]}</span><span><span className={`status-dot ${game.status === 'Ready to play' ? '' : 'preview'}`} />{game.status}</span></div></div>
+
+export interface Span { lg: number; md: number; solo: boolean }
+
+export default function GameCard({ game,eager = false,span }: { game: Game; eager?: boolean; span?: Span }) {
+  const [active,setActive] = useState(false);
+  const style = span ? { '--span-lg': span.lg,'--span-md': span.md } as CSSProperties : undefined;
+  return <article className={`card${span?.solo ? ' solo' : ''}`} style={style}>
+    <Link to={`/game/${game.slug}`} className="card-link game-card-link" onPointerEnter={event => { if (event.pointerType === 'mouse') setActive(true); }} onPointerLeave={() => setActive(false)} onFocus={() => setActive(true)} onBlur={() => setActive(false)}>
+      <div className="card-media">
+        <Preview game={game} still="cover" active={active} eager={eager} />
+        <span className="card-badge">{game.ageGuidance}</span>
+      </div>
+      <div className="card-text"><h3 className="card-title">{game.title}</h3><p className="card-meta">{game.status === 'Coming soon' ? 'Coming soon' : game.categories[0]}</p></div>
     </Link>
     <FavoriteButton game={game} />
   </article>;
