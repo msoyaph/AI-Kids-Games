@@ -1,14 +1,18 @@
 import { DIFFICULTIES, starsFor, type Difficulty } from '../data/difficulty';
-import { ELEMENT_ORDER, ELEMENTS, counterOf, type ElementId } from '../data/elements';
+import { ELEMENT_ORDER, ELEMENTS, counterOf } from '../data/elements';
 import type { MapDef } from '../data/maps/types';
 import type { WaveDef } from '../data/waves';
 import { buildFailMsg, randomLine } from '../data/strings';
+import { elementPrefix } from '../data/enemies';
+import { t } from '../i18n';
+import { enemyStatGrid, towerLevelTable } from '../ui/statTables';
 import { TARGET_MODES, TOWERS, type TowerId } from '../data/towers';
-import { elementIconUrl, towerIconUrl, type Atlas } from '../render/atlas/bake';
+import { atlasIconUrl, elementIconUrl, enemyTexName, towerIconUrl, type Atlas } from '../render/atlas/bake';
 import { TILE } from '../render/MapPainter';
 import { isTouchDevice, type QualityProfile } from '../render/quality';
 import { WorldView } from '../render/WorldView';
 import { Gestures } from '../input/Gestures';
+import type { Enemy } from '../sim/enemy';
 import type { Tower } from '../sim/entities';
 import { Ev, type GameEvent } from '../sim/events';
 import { DT, Game, type GameMode } from '../sim/Game';
@@ -124,7 +128,7 @@ export class GameScreen implements Screen, HudHost {
     });
     this.hud.update();
     this.app.achievements.onUnlock = (def) => {
-      this.hud.banner('Badge earned', def.name);
+      this.hud.banner(t('game.banner.badge'), def.name);
       this.app.audio.ui('star');
     };
     // Re-fit the camera whenever HUD chrome changes size (drawer filled, fonts, rotation).
@@ -223,20 +227,20 @@ export class GameScreen implements Screen, HudHost {
       case Ev.WaveStart: {
         const n = e.value;
         const total = this.game.totalWaves;
-        if (e.kind) this.hud.banner('Boss inbound', `Wave ${n}`);
-        else if (n === total) this.hud.banner('Final wave', 'Hold the line');
-        else if (n === 1) this.hud.banner('Breach detected', 'Wave 1');
+        if (e.kind) this.hud.banner(t('game.banner.boss'), t('game.banner.waveN', { n }));
+        else if (n === total) this.hud.banner(t('game.banner.final'), t('game.banner.holdLine'));
+        else if (n === 1) this.hud.banner(t('game.banner.breach'), t('game.banner.waveN', { n: 1 }));
         break;
       }
       case Ev.WaveClear:
-        if (e.value2 > 0) this.hud.toast(`Wave ${e.id} cleared · +${e.value} bonus · +${e.value2} interest`);
-        else this.hud.toast(`Wave ${e.id} cleared · +${e.value} bonus`);
+        if (e.value2 > 0) this.hud.toast(t('game.toast.waveClearInterest', { n: e.id, bonus: e.value, interest: e.value2 }));
+        else this.hud.toast(t('game.toast.waveClear', { n: e.id, bonus: e.value }));
         break;
       case Ev.Crystal:
-        this.hud.banner('Element core recovered', 'Choose an element');
+        this.hud.banner(t('game.banner.core'), t('game.banner.chooseElement'));
         break;
       case Ev.Leak:
-        if (this.game.lives > 0 && this.game.lives <= 3) this.hud.toast('Warning: Citadel integrity critical.', true);
+        if (this.game.lives > 0 && this.game.lives <= 3) this.hud.toast(t('game.toast.critical'), true);
         break;
     }
   };
@@ -302,7 +306,7 @@ export class GameScreen implements Screen, HudHost {
         best = e;
       }
     }
-    if (best) this.showEnemyInfo(best.def.id, best.element, best.shield);
+    if (best) this.showEnemyInfo(best);
   }
 
   private showGhost(cx: number, cy: number, withConfirm = true): void {
@@ -322,8 +326,8 @@ export class GameScreen implements Screen, HudHost {
     this.confirmEl?.remove();
     this.confirmEl = null;
     if (!this.ghost) return;
-    const yes = h('button.btn.green', { 'aria-label': 'Build here', disabled: !ok }, '✓');
-    const no = h('button.btn.red', { 'aria-label': 'Cancel' }, '✕');
+    const yes = h('button.btn.green', { 'aria-label': t('game.confirm.build'), disabled: !ok }, '✓');
+    const no = h('button.btn.red', { 'aria-label': t('common.cancel') }, '✕');
     yes.addEventListener('click', () => this.ghost && this.tryBuild(this.ghost.cx, this.ghost.cy));
     no.addEventListener('click', () => this.clearGhost());
     this.confirmEl = h('div.confirm', null, yes, no);
@@ -461,21 +465,21 @@ export class GameScreen implements Screen, HudHost {
     this.modal = showModal(
       this.el,
       [
-        h('h2', null, 'Paused'),
+        h('h2', null, t('pause.title')),
         h('p', null, tip),
         h(
           'div.row',
           null,
-          h('button.btn.green.big', { onClick: () => this.closeModal() }, 'Resume'),
+          h('button.btn.green.big', { onClick: () => this.closeModal() }, t('pause.resume')),
         ),
         h(
           'div.row',
           null,
-          h('button.btn', { onClick: () => this.nav.restart() }, 'Restart'),
-          h('button.btn.ghost', { onClick: () => this.nav.quit() }, 'Sector map'),
+          h('button.btn', { onClick: () => this.nav.restart() }, t('pause.restart')),
+          h('button.btn.ghost', { onClick: () => this.nav.quit() }, t('nav.sectorMap')),
         ),
       ],
-      { onBackdrop: () => this.closeModal(), label: 'Paused' },
+      { onBackdrop: () => this.closeModal(), label: t('pause.title') },
     );
   }
 
@@ -490,18 +494,18 @@ export class GameScreen implements Screen, HudHost {
         'button.el-btn',
         {
           disabled: owned,
-          style: { background: `linear-gradient(180deg, #${E.light.toString(16).padStart(6, '0')} -40%, #${E.color.toString(16).padStart(6, '0')} 60%)` },
-          'aria-label': `${E.name}${owned ? ' (already yours)' : ''}`,
+          style: `--el:#${E.color.toString(16).padStart(6, '0')}`,
+          'aria-label': owned ? t('element.pick.owned', { name: E.name }) : E.name,
         },
         img(elementIconUrl(this.atlas, id, 88), E.name),
-        h('span.en', null, owned ? `${E.name} ✓` : E.name),
-        h('span.eb', null, `Strong vs ${ELEMENTS[E.beats].name}`),
+        h('span.en', null, owned ? t('element.pick.ownedMark', { name: E.name }) : E.name),
+        h('span.eb', null, t('element.pick.strongVs', { name: ELEMENTS[E.beats].name })),
       );
       btn.addEventListener('click', () => {
         if (g.chooseElement(id)) {
           this.app.audio.ui('pick');
           this.closeModal();
-          this.hud.toast(`${E.name} unlocked! ${E.why}.`);
+          this.hud.toast(t('game.toast.unlocked', { name: E.name, why: E.why }));
           if (g.crystals > 0) setTimeout(() => this.openElementPick(), 300);
         }
       });
@@ -511,42 +515,67 @@ export class GameScreen implements Screen, HudHost {
     this.modal = showModal(
       this.el,
       [
-        pipSays(first ? 'Choose your first element. Each one changes how your towers fight, so pick what this map needs.' : 'Element core recovered. Pick another element to expand your arsenal.'),
+        pipSays(first ? t('element.pick.first') : t('element.pick.more')),
         grid,
-        h('div.row', null, h('button.btn.ghost', { onClick: () => this.closeModal() }, 'Later')),
+        h('div.row', null, h('button.btn.ghost', { onClick: () => this.closeModal() }, t('common.later'))),
       ],
-      { label: 'Choose an element' },
+      { label: t('game.banner.chooseElement') },
     );
   }
 
   showTowerInfo(id: TowerId): void {
     if (this.modal) return;
     const def = TOWERS[id];
-    const st = def.levels[0]!;
-    const els = def.elements;
-    const strong = els.map((e) => ELEMENTS[ELEMENTS[e].beats].name);
+    const strong = def.elements.map((e) => ELEMENTS[ELEMENTS[e].beats].name);
     this.paused = true;
     this.modal = showModal(
       this.el,
       [
-        h('div.info-card', null, img(towerIconUrl(id, 4, 144), def.name, 'portrait'), h('div', null, h('h4', null, def.name), h('p', null, def.blurb), h('p', null, `Special: ${def.ability}`), strong.length ? h('p', null, `Strong vs ${strong.join(' & ')} enemies`) : h('p', null, 'No element: equal damage to everything'), h('p', null, def.targets === 'ground' ? 'Ground targets only' : 'Hits ground and air'), h('p', null, `Cost ${st.cost} · Range ${st.range.toFixed(1)}`))),
-        h('div.row', null, h('button.btn.green', { onClick: () => this.closeModal() }, 'OK')),
+        h(
+          'div.info-card.codex-card',
+          null,
+          h(
+            'header',
+            null,
+            img(towerIconUrl(id, 4, 144), def.name, 'portrait'),
+            h(
+              'div',
+              null,
+              h('h4', null, def.name),
+              h('div.chips', null, h('span.chip', null, def.ability), h('span.chip.dim', null, def.targets === 'ground' ? t('hud.groundOnly') : t('hud.groundAir'))),
+              h('p', null, def.blurb),
+              h('p', null, strong.length ? t('info.strongVs', { names: strong.join(' & ') }) : t('info.noElement')),
+            ),
+          ),
+          towerLevelTable(def),
+        ),
+        h('div.row', null, h('button.btn.green', { onClick: () => this.closeModal() }, t('common.ok'))),
       ],
-      { onBackdrop: () => this.closeModal(), label: def.name },
+      { onBackdrop: () => this.closeModal(), label: def.name, cls: 'wide' },
     );
   }
 
-  showEnemyInfo(id: string, el: ElementId | null, shield: ElementId | null): void {
-    const def = (this.game.enemies.find((e) => e.def.id === id) ?? this.game.enemies[0])?.def;
-    if (!def) return;
-    const lines = [h('h4', null, (el ? `${ELEMENTS[el].name} ` : '') + def.name), h('p', null, def.blurb), h('p', null, def.tip)];
-    if (el) lines.push(h('p', null, `Weak to ${ELEMENTS[counterOf(el)].name} (${ELEMENTS[counterOf(el)].why}).`));
-    if (shield) lines.push(h('p', null, `${ELEMENTS[shield].name} ward: only ${ELEMENTS[counterOf(shield)].name} damage gets through in full.`));
+  showEnemyInfo(e: Enemy): void {
+    if (this.modal) return;
+    const def = e.def;
+    const el = e.element;
+    const lines: (HTMLElement | null)[] = [
+      h('h4', null, el && !def.shiftElement ? t('info.enemyName', { prefix: elementPrefix(el), name: def.name }) : def.name),
+      h('p', null, def.blurb),
+      enemyStatGrid(def, { hp: e.hp, maxHp: e.maxHp, armor: e.effectiveArmor }),
+      el ? h('p', null, t('info.weakTo', { name: ELEMENTS[counterOf(el)].name, why: ELEMENTS[counterOf(el)].why })) : null,
+      e.shield ? h('p', null, t('info.ward', { name: ELEMENTS[e.shield].name, counter: ELEMENTS[counterOf(e.shield)].name })) : null,
+      h('p.tip', null, def.tip),
+    ];
     this.paused = true;
-    this.modal = showModal(this.el, [h('div.info-card', null, h('div', null, ...lines)), h('div.row', null, h('button.btn.green', { onClick: () => this.closeModal() }, 'OK'))], {
-      onBackdrop: () => this.closeModal(),
-      label: def.name,
-    });
+    this.modal = showModal(
+      this.el,
+      [
+        h('div.info-card.codex-card', null, h('header', null, img(atlasIconUrl(this.atlas, enemyTexName(def.id, def.elemental ? el : null), 144), def.name, 'portrait'), h('div', null, ...lines.filter(Boolean)))),
+        h('div.row', null, h('button.btn.green', { onClick: () => this.closeModal() }, t('common.ok'))),
+      ],
+      { onBackdrop: () => this.closeModal(), label: def.name },
+    );
   }
 
   private finish(): void {
@@ -561,30 +590,30 @@ export class GameScreen implements Screen, HudHost {
       if (won) {
         const line = randomLine('line.win');
         this.modal = showModal(this.el, [
-          h('h2', null, 'Sector secured'),
+          h('h2', null, t('end.won')),
           starsHtml(stars, 3, true),
           pipSays(line, 'cheeky'),
-          h('p', null, `Lives ${g.lives}/${g.maxLives} · ${g.stats.kills} destroyed`),
-          result.badges?.length ? h('p', null, `New badge${result.badges.length > 1 ? 's' : ''}: ${result.badges.join(', ')}`) : null,
+          h('p', null, t('end.livesKills', { lives: g.lives, max: g.maxLives, kills: g.stats.kills })),
+          result.badges?.length ? h('p', null, t('end.newBadges', { count: result.badges.length, names: result.badges.join(', ') })) : null,
           h(
             'div.row',
             null,
-            this.nav.next ? h('button.btn.green.big', { onClick: () => this.nav.next!() }, 'Next sector') : null,
-            h('button.btn', { onClick: () => this.nav.restart() }, 'Replay'),
-            h('button.btn.ghost', { onClick: () => this.nav.quit() }, 'Sector map'),
+            this.nav.next ? h('button.btn.green.big', { onClick: () => this.nav.next!() }, t('end.next')) : null,
+            h('button.btn', { onClick: () => this.nav.restart() }, t('end.replay')),
+            h('button.btn.ghost', { onClick: () => this.nav.quit() }, t('nav.sectorMap')),
           ),
         ].filter(Boolean) as HTMLElement[]);
         this.app.audio.ui('star');
       } else {
         const endless = this.opts.mode === 'endless';
-        const line = endless ? `You held until wave ${g.waveNum}.` : randomLine('line.lose');
+        const line = endless ? t('end.endlessLine', { n: g.waveNum }) : randomLine('line.lose');
         this.modal = showModal(this.el, [
-          h('h2', null, endless ? 'Run complete' : 'Defense breached'),
+          h('h2', null, endless ? t('end.endlessTitle') : t('end.lost')),
           pipSays(line),
-          endless && result.newBest ? h('p', null, '🏆 New best wave!') : null,
-          result.badges?.length ? h('p', null, `New badge${result.badges.length > 1 ? 's' : ''}: ${result.badges.join(', ')}`) : null,
+          endless && result.newBest ? h('p', null, t('end.newBest')) : null,
+          result.badges?.length ? h('p', null, t('end.newBadges', { count: result.badges.length, names: result.badges.join(', ') })) : null,
           h('p', null, randomLine('tip')),
-          h('div.row', null, h('button.btn.green.big', { onClick: () => this.nav.restart() }, 'Retry'), h('button.btn.ghost', { onClick: () => this.nav.quit() }, 'Sector map')),
+          h('div.row', null, h('button.btn.green.big', { onClick: () => this.nav.restart() }, t('end.retry')), h('button.btn.ghost', { onClick: () => this.nav.quit() }, t('nav.sectorMap'))),
         ].filter(Boolean) as HTMLElement[]);
       }
     }, 900);
@@ -594,7 +623,7 @@ export class GameScreen implements Screen, HudHost {
     const s = this.app.save.data.settings;
     if (s.rotateHintSeen || !this.touch) return;
     if (innerHeight <= innerWidth || innerWidth > 700) return;
-    const hint = h('div.rotate-hint.panel', { role: 'status' }, 'Rotate your device for a wider view of the field.', h('button.btn.round.ghost', { 'aria-label': 'Dismiss', onClick: () => hint.remove() }, '✕'));
+    const hint = h('div.rotate-hint.panel', { role: 'status' }, t('game.rotateHint'), h('button.btn.round.ghost', { 'aria-label': t('common.dismiss'), onClick: () => hint.remove() }, '✕'));
     this.el.append(hint);
     setTimeout(() => hint.remove(), 6000);
     s.rotateHintSeen = true;

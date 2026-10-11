@@ -1,4 +1,5 @@
 import { mapsOfWorld, TOTAL_STARS, WORLDS } from '../../data/worlds';
+import { t } from '../../i18n';
 import { h, img } from '../../ui/dom';
 import { starsHtml } from '../../ui/modals';
 import { mapThumbUrl } from '../../ui/thumbs';
@@ -19,27 +20,27 @@ export class WorldMapScreen implements Screen {
         const unlocked = open && nav.mapUnlocked(m.id);
         const btn = h(
           'button.mapbtn',
-          { disabled: !unlocked, 'aria-label': `${m.name}${unlocked ? '' : ' (locked)'}`, onClick: () => nav.briefing(m, 'campaign') },
+          { disabled: !unlocked, 'aria-label': unlocked ? m.name : t('sectors.locked', { name: m.name }), onClick: () => nav.briefing(m, 'campaign') },
           img(mapThumbUrl(m), '', 'thumb'),
-          h('span.mname', null, unlocked ? m.name : '🔒'),
+          h('span.mname', { class: unlocked ? '' : 'locked' }, unlocked ? m.name : t('sectors.lockedShort')),
           starsHtml(save.stars(m.id)),
         );
         maps.append(btn);
       });
       const card = h(
         'div.world.panel',
-        { class: open ? '' : 'locked', style: { boxShadow: `inset 0 0 0 3px ${w.color}88, 0 10px 30px rgba(5,0,25,.45)` } },
+        { class: open ? '' : 'locked', style: `--world:${w.color}` },
         h('h3', null, w.name),
         h('div.wdesc', null, w.blurb),
         maps,
       );
-      if (!open) card.append(h('div.lock-note', null, '🔒', `Collect ${w.starsToUnlock}★ to open`, h('span', { style: 'font-size:14px;opacity:.85' }, `You have ${total}★`)));
+      if (!open) card.append(h('div.lock-note', null, t('sectors.collect', { n: w.starsToUnlock }), h('span.have', null, t('sectors.have', { n: total }))));
       worlds.append(card);
     }
     this.el = h(
       'div.screen.menu',
       null,
-      h('div.topbar', null, h('button.btn.round', { onClick: () => nav.title(), 'aria-label': 'Back' }, '←'), h('h2', null, 'Pick a map'), h('div.stat', null, `★ ${total}/${TOTAL_STARS}`)),
+      h('div.topbar', null, h('button.btn.round', { onClick: () => nav.title(), 'aria-label': t('common.back') }, '←'), h('h2', null, t('sectors.title')), h('div.stat', null, t('sectors.starsTotal', { n: total, total: TOTAL_STARS }))),
       worlds,
     );
   }

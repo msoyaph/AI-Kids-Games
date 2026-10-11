@@ -20,7 +20,7 @@ test('menus → map → build a tower → creatures poof', async ({ page, baseUR
   // first-time players are offered the tutorial — skip it here
   await page.getByRole('button', { name: 'Skip' }).click();
   await page.getByRole('button', { name: 'Breach Point' }).click();
-  await page.getByRole('button', { name: /Play!/ }).click();
+  await page.getByRole('button', { name: /Deploy/ }).click();
   await waitForGame(page);
   // the first element pick opens automatically
   await page.getByRole('button', { name: 'Water', exact: true }).click();
@@ -89,7 +89,7 @@ test('encyclopedia and badges open', async ({ page, baseURL }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /Codex/ }).click();
   await expect(page.getByText('Eclipse Beam')).toBeVisible();
-  await page.getByRole('tab', { name: /Creatures/ }).click();
+  await page.getByRole('tab', { name: /Constructs/ }).click();
   await expect(page.getByText('Archon Null')).toBeVisible();
   await page.getByRole('button', { name: 'Back' }).click();
   await page.getByRole('button', { name: /Badges/ }).click();
@@ -102,14 +102,14 @@ test('tutorial guides the first steps', async ({ page, baseURL }, info) => {
   await page.goto('/');
   await page.getByRole('button', { name: /training/i }).click();
   await waitForGame(page);
-  await expect(page.getByText("Hi, I'm Pip!")).toBeVisible();
+  await expect(page.getByText(/PIP online/)).toBeVisible();
   await page.getByRole('button', { name: /Next/ }).click();
   await pickTower(page, /Bolt Turret/);
-  await expect(page.locator('.tutorial .bubble')).toContainText('glowing square');
+  await expect(page.locator('.tutorial .bubble')).toContainText('highlighted plate');
   const c = await cellCenter(page, 5, 3);
   await tap(page, info, c.x, c.y);
   if (isTouch(info)) await page.getByRole('button', { name: 'Build here' }).click();
-  await expect(page.locator('.tutorial .bubble')).toContainText('GO');
+  await expect(page.locator('.tutorial .bubble')).toContainText('Start');
   expectClean(g);
 });
 

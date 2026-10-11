@@ -20,7 +20,8 @@ export function installFonts(resolution: number): void {
       stroke: { color: '#070b16', width: 6, join: 'round' },
       letterSpacing: 1,
     },
-    chars: [['0', '9'], ['A', 'Z'], ['a', 'z'], '+-!?.,%x :'],
+    // ASCII plus the accented letters Filipino (and Spanish loanwords) use
+    chars: [['0', '9'], ['A', 'Z'], ['a', 'z'], '+-!?.,%x :×·ÁÉÍÓÚÑÜáéíóúñü'],
     resolution: Math.min(2, Math.max(1, resolution)),
     padding: 4,
   });
@@ -38,7 +39,7 @@ class Label {
   }
 }
 
-/** Pooled floating "+5" / "WOW!" labels in world space. */
+/** Pooled floating "+5" / "CRIT 120" labels in world space. */
 export class FloatingText {
   readonly container = new Container();
   private active: Label[] = [];

@@ -1,5 +1,6 @@
 import { atlasIconUrl, enemyTexName, towerIconUrl } from '../../render/atlas/bake';
 import { h, img } from '../../ui/dom';
+import { t } from '../../i18n';
 import { pipUrl } from '../../ui/modals';
 import type { App, Screen } from '../App';
 import type { Nav } from '../flow';
@@ -42,23 +43,23 @@ export class TitleScreen implements Screen {
     const buttons = h(
       'div.menu-buttons',
       null,
-      h('button.btn.green.big', { onClick: () => nav.worlds() }, 'Campaign'),
+      h('button.btn.green.big', { onClick: () => nav.worlds() }, t('title.campaign')),
       h(
         'div.row2',
         null,
-        h('button.btn', { onClick: () => nav.tutorial() }, save.tutorialDone ? 'Training' : 'Start training'),
+        h('button.btn', { onClick: () => nav.tutorial() }, save.tutorialDone ? t('title.training') : t('title.startTraining')),
         h(
           'button.btn',
           {
-            onClick: () => (endlessOpen ? nav.endless() : nav.toast('Clear the Verdant Reach to unlock Endless.')),
+            onClick: () => (endlessOpen ? nav.endless() : nav.toast(t('title.endlessHint'))),
             class: endlessOpen ? '' : 'disabled',
-            'aria-label': endlessOpen ? 'Endless' : 'Endless (locked)',
+            'aria-label': endlessOpen ? t('title.endless') : t('title.endlessLocked'),
           },
-          endlessOpen ? 'Endless' : 'Endless · locked',
+          endlessOpen ? t('title.endless') : t('title.endlessLockedShort'),
         ),
       ),
-      h('div.row2', null, h('button.btn', { onClick: () => nav.encyclopedia() }, 'Codex'), h('button.btn', { onClick: () => nav.badges() }, 'Badges')),
-      h('div.row2', null, h('button.btn', { onClick: () => nav.settings() }, 'Settings'), fullscreenAvailable() ? h('button.btn.ghost', { onClick: () => toggleFullscreen() }, 'Full screen') : null),
+      h('div.row2', null, h('button.btn', { onClick: () => nav.encyclopedia() }, t('title.codex')), h('button.btn', { onClick: () => nav.badges() }, t('title.badges'))),
+      h('div.row2', null, h('button.btn', { onClick: () => nav.settings() }, t('title.settings')), fullscreenAvailable() ? h('button.btn.ghost', { onClick: () => toggleFullscreen() }, t('title.fullscreen')) : null),
     );
     this.el = h(
       'div.screen.menu',
@@ -69,13 +70,13 @@ export class TitleScreen implements Screen {
         h(
           'div.hero-art',
           null,
-          h('div.logo', { role: 'heading', 'aria-level': '1' }, h('small', null, 'Crystal Defense Grid'), 'Vanex Defense'),
-          h('div.tag', null, 'The Shardbound are pouring through the rifts. Build the grid, master six elements and hold the line, Commander.'),
+          h('div.logo', { role: 'heading', 'aria-level': '1' }, h('small', null, t('title.kicker')), t('title.name')),
+          h('div.tag', null, t('title.tag')),
           showcase,
         ),
         buttons,
       ),
-      h('div.version', null, `v2.0 · ${app.save.totalStars()} STARS`),
+      h('div.version', null, t('title.version', { v: '2.0', stars: t('unit.stars', { count: app.save.totalStars() }) })),
     );
   }
 }

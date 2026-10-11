@@ -3,6 +3,7 @@ import { CAMPAIGN_MAPS, nextMap, TUTORIAL_MAP } from '../data/maps';
 import type { MapDef } from '../data/maps/types';
 import { mapsOfWorld, WORLDS } from '../data/worlds';
 import { TOWERS } from '../data/towers';
+import { t } from '../i18n';
 import type { Game, GameMode } from '../sim/Game';
 import { h, img } from '../ui/dom';
 import { pipSays, showModal, starsHtml, type ModalHandle } from '../ui/modals';
@@ -60,12 +61,12 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
       if (!save.data.tutorialDone && !sessionStorageFlag('tutorialOffered')) {
         app.show(new WorldMapScreen(app, nav));
         modal = showModal(app.ui, [
-          pipSays('New here? I can show you how to play in my garden. It only takes a minute!'),
+          pipSays(t('flow.offerTraining')),
           h(
             'div.row',
             null,
-            h('button.btn.green.big', { onClick: () => nav.tutorial() }, '🦊 Show me!'),
-            h('button.btn.ghost', { onClick: () => closeModal() }, 'Skip'),
+            h('button.btn.green.big', { onClick: () => nav.tutorial() }, t('flow.startTraining')),
+            h('button.btn.ghost', { onClick: () => closeModal() }, t('common.skip')),
           ),
         ]);
         return;
@@ -96,7 +97,7 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
     briefing: (map, mode) => {
       closeModal();
       let diff: Difficulty = save.data.lastDifficulty;
-      const diffRow = h('div.diff-row', { role: 'radiogroup', 'aria-label': 'Difficulty' });
+      const diffRow = h('div.diff-row', { role: 'radiogroup', 'aria-label': t('brief.difficulty') });
       const render = (): void => {
         diffRow.replaceChildren();
         for (const d of DIFFICULTY_ORDER) {
@@ -105,7 +106,7 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
             'button.btn',
             { class: d === diff ? 'gold' : '', role: 'radio', 'aria-checked': String(d === diff), onClick: () => ((diff = d), render(), (blurb.textContent = DIFFICULTIES[d].blurb)) },
             h('span', null, def.label),
-            mode === 'campaign' ? starsHtml(save.stars(map.id, d)) : h('span.sub', null, `${def.lives} ❤`),
+            mode === 'campaign' ? starsHtml(save.stars(map.id, d)) : h('span.sub', null, t('brief.lives', { n: def.lives })),
           );
           diffRow.append(b);
         }
@@ -116,7 +117,7 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
       const actions = h(
         'div.row',
         null,
-        h('button.btn.ghost', { onClick: () => closeModal() }, 'Back'),
+        h('button.btn.ghost', { onClick: () => closeModal() }, t('common.back')),
         h(
           'button.btn.green.big',
           {
@@ -126,13 +127,13 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
               nav.play(map, diff, mode);
             },
           },
-          '▶ Play!',
+          t('brief.deploy'),
         ),
       );
       modal = showModal(
         app.ui,
         [
-          h('h2', null, mode === 'endless' ? `♾ ${map.name}` : map.name),
+          h('h2', null, mode === 'endless' ? t('brief.endlessTitle', { name: map.name }) : map.name),
           h(
             'div.brief',
             null,
@@ -140,7 +141,7 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
             h(
               'div.brief-right',
               null,
-              pipSays(mode === 'endless' ? `Waves never stop here! How far can you go?${best ? ` Your best: wave ${best}.` : ''}` : map.story),
+              pipSays(mode === 'endless' ? t('brief.endlessStory') + (best ? ' ' + t('brief.endlessBest', { n: best }) : '') : map.story),
               diffRow,
               blurb,
               actions,
@@ -249,18 +250,18 @@ class EndlessScreen implements Screen {
       grid.append(
         h(
           'button.mapbtn',
-          { disabled: !ok, onClick: () => nav.briefing(m, 'endless'), 'aria-label': `${m.name}${ok ? '' : ' (locked)'}` },
+          { disabled: !ok, onClick: () => nav.briefing(m, 'endless'), 'aria-label': ok ? m.name : t('endless.locked', { name: m.name }) },
           img(mapThumbUrl(m), '', 'thumb'),
-          h('span.mname', null, ok ? m.name : '🔒 Win it first'),
-          h('span', { style: 'font-size:13px;font-weight:800' }, best ? `Best: wave ${best}` : ok ? 'No record yet' : ''),
+          h('span.mname', null, ok ? m.name : t('endless.winFirst')),
+          h('span', { style: 'font-size:13px;font-weight:800' }, best ? t('endless.best', { n: best }) : ok ? t('endless.noRecord') : ''),
         ),
       );
     }
     this.el = h(
       'div.screen.menu',
       null,
-      h('div.topbar', null, h('button.btn.round', { onClick: () => nav.title(), 'aria-label': 'Back' }, '←'), h('h2', null, '♾ Endless')),
-      h('p', { style: 'margin:0 0 12px;font-size:16px' }, 'Creatures keep coming and get stronger every wave. How far can you go?'),
+      h('div.topbar', null, h('button.btn.round', { onClick: () => nav.title(), 'aria-label': t('common.back') }, '←'), h('h2', null, t('endless.title'))),
+      h('p', { style: 'margin:0 0 12px;font-size:16px' }, t('endless.intro')),
       grid,
     );
   }

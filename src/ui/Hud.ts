@@ -1,4 +1,5 @@
 import { ELEMENT_ORDER, ELEMENTS, type ElementId } from '../data/elements';
+import { formatNumber, t } from '../i18n';
 import { ENEMIES } from '../data/enemies';
 import { BASIC_TOWERS, comboFor, ELEMENT_TOWERS, MAX_LEVEL, sellValue, targetModeLabel, TOWERS, type TowerId } from '../data/towers';
 import { wavePreview } from '../data/waves';
@@ -53,7 +54,7 @@ export class Hud {
   private speedBtn: HTMLButtonElement;
   private pauseBtn: HTMLButtonElement;
   private crystalWrap = h('div.crystal-btn');
-  private bossBar = h('div.bossbar.panel', { 'aria-label': 'Boss health' });
+  private bossBar = h('div.bossbar.panel', { 'aria-label': t('hud.bossHealth') });
   private bossName = h('span.bname');
   private bossFill = h('i');
   private bossFrame = 0;
@@ -73,17 +74,17 @@ export class Hud {
 
   constructor(private readonly host: HudHost) {
     const a = host.atlas;
-    this.livesStat = h('div.stat.lives', { title: 'Lives' }, img(atlasIconUrl(a, 'heart', 64), ''), h('div.sv', null, h('span.lbl', null, 'Lives'), this.livesNum));
-    this.coinsStat = h('div.stat.coins', { title: 'Gold' }, img(atlasIconUrl(a, 'coin', 64), ''), h('div.sv', null, h('span.lbl', null, 'Gold'), this.coinsNum));
-    const waveStat = h('div.stat.wave', { title: 'Wave' }, h('div.sv', null, h('span.lbl', null, 'Wave'), this.waveNum));
-    this.goBtn = h('button.btn.green', { onClick: () => host.sendWave(), 'aria-label': 'Send next wave' }, 'Deploy');
-    this.nextWrap = h('div.next-wave', { title: 'Next wave' }, this.nextIcons, this.nextTimer, this.goBtn);
-    this.speedBtn = h('button.btn.round', { onClick: () => host.cycleSpeed(), 'aria-label': 'Game speed' }, '1x');
-    this.pauseBtn = h('button.btn.round', { onClick: () => host.togglePause(), 'aria-label': 'Pause' }, '❚❚');
+    this.livesStat = h('div.stat.lives', { title: t('hud.lives') }, img(atlasIconUrl(a, 'heart', 64), ''), h('div.sv', null, h('span.lbl', null, t('hud.lives')), this.livesNum));
+    this.coinsStat = h('div.stat.coins', { title: t('hud.gold') }, img(atlasIconUrl(a, 'coin', 64), ''), h('div.sv', null, h('span.lbl', null, t('hud.gold')), this.coinsNum));
+    const waveStat = h('div.stat.wave', { title: t('hud.wave') }, h('div.sv', null, h('span.lbl', null, t('hud.wave')), this.waveNum));
+    this.goBtn = h('button.btn.green', { onClick: () => host.sendWave(), 'aria-label': t('hud.sendWave') }, t('hud.deploy'));
+    this.nextWrap = h('div.next-wave', { title: t('hud.nextWave') }, this.nextIcons, this.nextTimer, this.goBtn);
+    this.speedBtn = h('button.btn.round', { onClick: () => host.cycleSpeed(), 'aria-label': t('hud.speed') }, t('hud.speedX', { n: 1 }));
+    this.pauseBtn = h('button.btn.round', { onClick: () => host.togglePause(), 'aria-label': t('hud.pause') }, '❚❚');
     const top = h('div.hud-top', null, this.livesStat, this.coinsStat, waveStat, h('div.hud-right', null, this.nextWrap, this.speedBtn, this.pauseBtn));
 
-    this.drawer = h('div.drawer.panel', { 'aria-label': 'Build towers' }, this.cardsEl);
-    this.fab = h('div.build-fab', null, h('button.btn.gold', { onClick: () => this.setDrawerOpen(!this.drawerOpen), 'aria-label': 'Build' }, '🔨 Build'));
+    this.drawer = h('div.drawer.panel', { 'aria-label': t('hud.buildTowers') }, this.cardsEl);
+    this.fab = h('div.build-fab', null, h('button.btn.gold', { onClick: () => this.setDrawerOpen(!this.drawerOpen), 'aria-label': t('hud.build') }, t('hud.build')));
     this.chip = h('div.picked-chip.panel');
     this.chip.style.display = 'none';
     this.bossBar.append(this.bossName, h('span.bbar', null, this.bossFill));
@@ -142,19 +143,19 @@ export class Hud {
     if (g.lives !== L.lives) {
       if (L.lives >= 0 && g.lives < L.lives) this.flash(this.livesStat, 'flash-bad');
       L.lives = g.lives;
-      setText(this.livesNum, String(g.lives));
+      setText(this.livesNum, formatNumber(g.lives));
     }
     const coins = Math.floor(g.coins);
     if (coins !== L.coins) {
       if (L.coins >= 0 && coins > L.coins + 8) this.flash(this.coinsStat, 'flash-good');
       L.coins = coins;
-      setText(this.coinsNum, String(coins));
+      setText(this.coinsNum, formatNumber(coins));
       this.refreshAffordability();
       this.refreshPanelButtons();
     }
     if (g.waveNum !== L.wave) {
       L.wave = g.waveNum;
-      setText(this.waveNum, g.totalWaves === Infinity ? `${Math.max(1, g.waveNum)}` : `${Math.max(1, g.waveNum)}/${g.totalWaves}`);
+      setText(this.waveNum, g.totalWaves === Infinity ? formatNumber(Math.max(1, g.waveNum)) : t('hud.waveOf', { n: Math.max(1, g.waveNum), total: g.totalWaves }));
     }
     // next wave preview
     const next = g.nextWave;
@@ -167,26 +168,26 @@ export class Hud {
           const def = ENEMIES[p.enemy];
           const el = def.elemental ? p.element : null;
           this.nextIcons.append(img(atlasIconUrl(this.host.atlas, enemyTexName(p.enemy, el), 64), def.name));
-          this.nextIcons.append(h('span.cnt', null, `${p.count}`));
+          this.nextIcons.append(h('span.cnt', null, formatNumber(p.count)));
         }
-        if (next.boss) this.nextIcons.append(h('span.boss-tag', null, 'BOSS'));
+        if (next.boss) this.nextIcons.append(h('span.boss-tag', null, t('hud.boss')));
       }
       this.nextWrap.style.display = next ? '' : 'none';
     }
     const timer = g.nextWaveTimer > 0 ? Math.ceil(g.nextWaveTimer) : -1;
     if (timer !== L.timer) {
       L.timer = timer;
-      setText(this.nextTimer, timer > 0 ? `${timer}s` : '');
+      setText(this.nextTimer, timer > 0 ? t('unit.seconds', { n: timer }) : '');
     }
     const early = g.earlyBonus;
     if (early !== L.early || (g.waveNum === 0) !== (L.early === -5)) {
       L.early = g.waveNum === 0 ? -5 : early;
       if (g.waveNum === 0) {
-        setText(this.goBtn, 'Start');
+        setText(this.goBtn, t('hud.start'));
         this.goBtn.classList.add('pulse');
       } else {
         this.goBtn.classList.remove('pulse');
-        setText(this.goBtn, early > 0 ? `Call +${early}` : 'Call wave');
+        setText(this.goBtn, early > 0 ? t('hud.callBonus', { n: early }) : t('hud.call'));
       }
     }
     if (g.crystals !== L.crystals) {
@@ -196,9 +197,9 @@ export class Hud {
         this.crystalWrap.append(
           h(
             'button.btn.gold.pulse',
-            { onClick: () => this.host.openElementPick(), 'aria-label': 'Pick an element' },
+            { onClick: () => this.host.openElementPick(), 'aria-label': t('hud.pickElement') },
             img(atlasIconUrl(this.host.atlas, 'gem', 64)),
-            g.crystals > 1 ? `${g.crystals} element cores ready` : 'Element core ready',
+            t('hud.coresReady', { count: g.crystals }),
           ),
         );
       }
@@ -210,7 +211,7 @@ export class Hud {
     }
     if (this.host.speed !== L.speed) {
       L.speed = this.host.speed;
-      setText(this.speedBtn, `${this.host.speed}x`);
+      setText(this.speedBtn, t('hud.speedX', { n: this.host.speed }));
     }
     if (this.host.paused !== L.paused) {
       L.paused = this.host.paused;
@@ -265,13 +266,13 @@ export class Hud {
       const els = h('span.els', null, ...def.elements.map((e) => img(elementIconUrl(a, e, 40), ELEMENTS[e].name)));
       const el = h(
         'button.card',
-        { 'aria-label': `${def.name}, ${cost} coins`, title: `${def.name} — ${def.blurb}` },
+        { 'aria-label': t('hud.cardLabel', { name: def.name, cost }), title: t('hud.cardTitle', { name: def.name, blurb: def.blurb }) },
         key <= 10 && !this.host.touch ? h('span.key', null, String(key % 10)) : null,
         els,
         img(towerIconUrl(id, 1, 104), def.name, 'icon'),
         h('span.nm', null, def.name),
-        h('span.dps', null, `DPS ${Math.round(towerDps(def, def.levels[0]!))}`),
-        h('span.cost', null, img(atlasIconUrl(a, 'coin', 32)), String(cost)),
+        h('span.dps', null, t('hud.dps', { n: Math.round(towerDps(def, def.levels[0]!)) })),
+        h('span.cost', null, img(atlasIconUrl(a, 'coin', 32)), formatNumber(cost)),
       );
       key++;
       this.attachPress(el, () => {
@@ -289,14 +290,14 @@ export class Hud {
       if (g.unlocked.includes(e)) continue;
       const el = h(
         'button.card.locked',
-        { 'aria-label': `${ELEMENTS[e].name} is locked`, title: 'Find an Element Crystal to unlock' },
+        { 'aria-label': t('hud.elementLocked', { name: ELEMENTS[e].name }), title: t('hud.elementLockedTitle') },
         img(elementIconUrl(a, e, 80), ELEMENTS[e].name, 'icon'),
         h('span.nm', null, ELEMENTS[e].name),
         h('span.cost', null, '🔒'),
       );
       el.addEventListener('click', () => {
         if (g.crystals > 0) this.host.openElementPick();
-        else this.toast('Locked: earn an element core to unlock it.');
+        else this.toast(t('hud.lockedToast'));
       });
       this.cards.push({ el, cost: 0, id: null, el2: e });
       this.cardsEl.append(el);
@@ -367,41 +368,41 @@ export class Hud {
     const def = TOWERS[id];
     this.chip.append(
       img(towerIconUrl(id, 1, 88), def.name),
-      h('span.hint', null, this.host.touch ? `Tap a plate to place ${def.name}` : `Click a plate to place ${def.name}`),
-      h('button.btn.round.red', { onClick: () => this.host.selectBuild(null), 'aria-label': 'Cancel building' }, '✕'),
+      h('span.hint', null, t(this.host.touch ? 'hud.place.touch' : 'hud.place.mouse', { name: def.name })),
+      h('button.btn.round.red', { onClick: () => this.host.selectBuild(null), 'aria-label': t('hud.cancelBuild') }, '✕'),
     );
   }
 
   // ------------------------------------------------------------ tower panel
 
-  private renderPanel(t: Tower | null): void {
+  private renderPanel(tw: Tower | null): void {
     this.tpanel?.remove();
     this.tpanel = null;
     this.tpanelRefs = {};
-    this.el.classList.toggle('panel-open', !!t);
-    if (!t) {
+    this.el.classList.toggle('panel-open', !!tw);
+    if (!tw) {
       this.drawer.style.visibility = '';
       return;
     }
     // On phones the panel replaces the drawer; on big screens it floats above it.
     if (!this.pinned) this.drawer.style.visibility = 'hidden';
-    const def = t.def;
-    const pips = h('span.pips', { 'aria-label': `Level ${t.level} of ${MAX_LEVEL}` });
-    for (let i = 1; i <= MAX_LEVEL; i++) pips.append(h('span.pip-dot', { class: i <= t.level ? 'on' : '' }));
+    const def = tw.def;
+    const pips = h('span.pips', { 'aria-label': t('hud.levelOf', { n: tw.level, max: MAX_LEVEL }) });
+    for (let i = 1; i <= MAX_LEVEL; i++) pips.append(h('span.pip-dot', { class: i <= tw.level ? 'on' : '' }));
     const kills = h('span', null);
-    const info = h('div.tinfo', null, h('span.chip', null, def.ability), def.targets === 'ground' ? h('span', null, 'Ground only') : h('span', null, 'Ground + air'), kills);
-    const table = this.statsTable(t);
+    const info = h('div.tinfo', null, h('span.chip', null, def.ability), def.targets === 'ground' ? h('span', null, t('hud.groundOnly')) : h('span', null, t('hud.groundAir')), kills);
+    const table = this.statsTable(tw);
     const target =
       def.behavior === 'pulse'
         ? undefined
-        : h('button.btn.ghost', { onClick: () => this.host.cycleTargeting(), 'aria-label': 'Change target' }, `Target: ${targetModeLabel(t.mode)}`);
-    const upgrade = h('button.btn.green', { onClick: () => this.host.upgradeSelected(), 'aria-label': 'Upgrade' });
-    const sell = h('button.btn.red', { onClick: () => this.host.sellSelected(), 'aria-label': 'Sell' }, `Sell +${sellValue(t.invested)}`);
-    const close = h('button.btn.round.ghost.close', { onClick: () => this.host.deselect(), 'aria-label': 'Close' }, '✕');
+        : h('button.btn.ghost', { onClick: () => this.host.cycleTargeting(), 'aria-label': t('hud.changeTarget') }, t('hud.target', { mode: targetModeLabel(tw.mode) }));
+    const upgrade = h('button.btn.green', { onClick: () => this.host.upgradeSelected(), 'aria-label': t('hud.upgrade') });
+    const sell = h('button.btn.red', { onClick: () => this.host.sellSelected(), 'aria-label': t('hud.sell') }, t('hud.sellValue', { n: sellValue(tw.invested) }));
+    const close = h('button.btn.round.ghost.close', { onClick: () => this.host.deselect(), 'aria-label': t('common.close') }, '✕');
     const panel = h(
       'div.tpanel.panel',
       null,
-      img(towerIconUrl(def.id, t.level, 128), def.name, 'icon'),
+      img(towerIconUrl(def.id, tw.level, 128), def.name, 'icon'),
       h('div', null, h('div.tname', null, def.name, pips, ...def.elements.map((e) => img(elementIconUrl(this.host.atlas, e, 40), ELEMENTS[e].name))), info),
       close,
       table,
@@ -410,7 +411,7 @@ export class Hud {
     // Short (landscape phone) screens: a side sheet on the half away from the tower.
     if (window.innerHeight <= 520) {
       panel.classList.add('side');
-      if (this.host.towerScreenX(t) > window.innerWidth / 2) panel.classList.add('left');
+      if (this.host.towerScreenX(tw) > window.innerWidth / 2) panel.classList.add('left');
     }
     panel.querySelectorAll('.tname img').forEach((i) => ((i as HTMLElement).style.width = (i as HTMLElement).style.height = '20px'));
     this.tpanel = panel;
@@ -420,10 +421,10 @@ export class Hud {
   }
 
   /** Current vs next-level numbers, with the change highlighted. */
-  private statsTable(t: Tower): HTMLElement {
-    const now = statLines(t.def, t.stats);
-    const nextStats = t.level < MAX_LEVEL ? t.def.levels[t.level]! : null;
-    const next = nextStats ? statLines(t.def, nextStats) : null;
+  private statsTable(tw: Tower): HTMLElement {
+    const now = statLines(tw.def, tw.stats);
+    const nextStats = tw.level < MAX_LEVEL ? tw.def.levels[tw.level]! : null;
+    const next = nextStats ? statLines(tw.def, nextStats) : null;
     const rows = now.slice(0, 6).map((line) => {
       const n = next?.find((x) => x.key === line.key);
       const delta = n ? n.value - line.value : 0;
@@ -432,28 +433,28 @@ export class Hud {
     });
     return h(
       'table.stats-table',
-      { 'aria-label': 'Tower stats' },
-      h('thead', null, h('tr', null, h('th', null, 'Stat'), h('th', null, 'Now'), next ? h('th', null, `Level ${t.level + 1}`) : null)),
+      { 'aria-label': t('hud.towerStats') },
+      h('thead', null, h('tr', null, h('th', null, t('hud.col.stat')), h('th', null, t('hud.col.now')), next ? h('th', null, t('hud.col.level', { n: tw.level + 1 })) : null)),
       h('tbody', null, ...rows),
     );
   }
 
   refreshPanelButtons(): void {
-    const t = this.host.selected;
+    const tw = this.host.selected;
     const r = this.tpanelRefs;
-    if (!t || !r.upgrade) return;
+    if (!tw || !r.upgrade) return;
     const g = this.host.game;
-    if (t.level >= MAX_LEVEL) {
-      setText(r.upgrade, 'Max level');
+    if (tw.level >= MAX_LEVEL) {
+      setText(r.upgrade, t('hud.maxLevel'));
       r.upgrade.disabled = true;
     } else {
-      const cost = g.upgradeCost(t);
-      setText(r.upgrade, `Upgrade · ${cost}`);
+      const cost = g.upgradeCost(tw);
+      setText(r.upgrade, t('hud.upgradeCost', { cost }));
       r.upgrade.disabled = g.coins < cost;
     }
-    if (r.sell) setText(r.sell, `Sell +${sellValue(t.invested)}`);
-    if (r.target) setText(r.target, `Target: ${targetModeLabel(t.mode)}`);
-    if (r.kills) setText(r.kills, `${t.kills} destroyed · ${Math.round(t.damageDone).toLocaleString()} dmg`);
+    if (r.sell) setText(r.sell, t('hud.sellValue', { n: sellValue(tw.invested) }));
+    if (r.target) setText(r.target, t('hud.target', { mode: targetModeLabel(tw.mode) }));
+    if (r.kills) setText(r.kills, t('hud.towerRecord', { kills: tw.kills, dmg: Math.round(tw.damageDone) }));
   }
 
   // ------------------------------------------------------------ messages

@@ -1,4 +1,5 @@
 import { ACHIEVEMENTS } from '../../data/achievements';
+import { t } from '../../i18n';
 import { badgeUrl } from '../../render/atlas/drawBadge';
 import { h, img } from '../../ui/dom';
 import type { App, Screen } from '../App';
@@ -16,16 +17,16 @@ export class BadgesScreen implements Screen {
       grid.append(
         h(
           'div.badge-card.panel',
-          { class: on ? '' : 'locked', 'aria-label': `${a.name}: ${a.desc}${on ? ' (earned)' : ''}` },
+          { class: on ? '' : 'locked', 'aria-label': t(on ? 'badges.cardLabelEarned' : 'badges.cardLabel', { name: a.name, desc: a.desc }) },
           img(badgeUrl(a.id, a.icon, a.color, on), '', 'medal'),
-          h('div', null, h('h4', null, on ? a.name : `${a.name}`), h('p', null, a.desc), on ? h('p', { style: 'color:#9cff7a;font-weight:800' }, '✓ Earned!') : null),
+          h('div', null, h('h4', null, a.name), h('p', null, a.desc), on ? h('p.earned', null, t('badges.earned')) : null),
         ),
       );
     }
     this.el = h(
       'div.screen.menu',
       null,
-      h('div.topbar', null, h('button.btn.round', { onClick: () => nav.title(), 'aria-label': 'Back' }, '←'), h('h2', null, '🏅 Badges'), h('div.stat', null, `${n}/${ACHIEVEMENTS.length}`)),
+      h('div.topbar', null, h('button.btn.round', { onClick: () => nav.title(), 'aria-label': t('common.back') }, '←'), h('h2', null, t('badges.title')), h('div.stat', null, t('hud.waveOf', { n, total: ACHIEVEMENTS.length }))),
       grid,
     );
   }

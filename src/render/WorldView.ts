@@ -1,4 +1,5 @@
 import { Container, Graphics, Sprite, Texture, CanvasSource } from 'pixi.js';
+import { t as tr } from '../i18n';
 import { easeOutBack, lerp, lerpAngle } from '../core/math';
 import { ELEMENT_ORDER, ELEMENTS, type ElementId } from '../data/elements';
 import { ENEMIES } from '../data/enemies';
@@ -934,10 +935,10 @@ export class WorldView {
         }
         break;
       case Ev.ShieldBlock:
-        if (this.fxRng.chance(0.35)) this.text.spawn('WARD', X, Y - 30, ELEMENTS[e.tag as ElementId]?.light ?? WHITE, 0.36, 0.5, -30);
+        if (this.fxRng.chance(0.35)) this.text.spawn(tr('fx.ward'), X, Y - 30, ELEMENTS[e.tag as ElementId]?.light ?? WHITE, 0.36, 0.5, -30);
         break;
       case Ev.Crit:
-        this.text.spawn(`CRIT ${num(e.value)}`, X, Y - 34, 0xffb347, 0.62, 0.8, -50);
+        this.text.spawn(tr('fx.crit', { n: num(e.value) }), X, Y - 34, 0xffb347, 0.62, 0.8, -50);
         {
           const o = this.particlesAdd.begin(this.atlas.get('sparkle'), X, Y - 10);
           o.life = 0.4;
@@ -976,7 +977,7 @@ export class WorldView {
             this.particlesAdd.emit(o);
           }
         }
-        if (e.type === Ev.Upgrade) this.text.spawn(`LEVEL ${e.value}`, X, Y - 36, 0x3dffa0, 0.5, 1);
+        if (e.type === Ev.Upgrade) this.text.spawn(tr('fx.level', { n: e.value }), X, Y - 36, 0x3dffa0, 0.5, 1);
         break;
       }
       case Ev.Sell:
@@ -1141,7 +1142,7 @@ export class WorldView {
     this.killY += y;
     if (this.killStreak >= 4 && this.time - this.lastStreakText > 0.6) {
       this.lastStreakText = this.time;
-      this.text.spawn(`SHATTER x${this.killStreak}`, this.killX / this.killStreak, this.killY / this.killStreak - 50, 0x9ff3ff, 0.62, 1.1, -30);
+      this.text.spawn(tr('fx.shatter', { n: this.killStreak }), this.killX / this.killStreak, this.killY / this.killStreak - 50, 0x9ff3ff, 0.62, 1.1, -30);
     }
   }
 

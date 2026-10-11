@@ -70,6 +70,9 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   Approved 2026-10-11. Battle map, towers, constructs, FX, HUD, tower panel and title are restyled; other
   screens/text (briefing, codex, tutorial, element picker, world maps 2–4, badges screen) are still v1 → Phase 3.
 - Phase 2 done: `tuning.ts`, i18n core (data text moved to `en.ts`), save v4 + v3-fixture migration test.
+- Phase 3 done: every screen restyled (codex with real per-level stats via `src/ui/statTables.ts`, hex badge
+  insignia, sectioned settings, dark element picker), ALL UI text in `en.ts` (PIP tutorial, briefings, HUD,
+  battle labels), connected story for worlds 1–4 (Reach → Wastes → Frostspire → Hollow Deep / Archon Null).
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

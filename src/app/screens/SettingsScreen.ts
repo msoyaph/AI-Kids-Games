@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import type { QualitySetting } from '../../render/quality';
 import { h } from '../../ui/dom';
 import { pipSays, showModal } from '../../ui/modals';
@@ -36,27 +37,29 @@ export class SettingsScreen implements Screen {
     const rows = h(
       'div.settings',
       null,
-      slider('🎵 Music', s.music, (v) => {
+      h('h3.section', null, t('settings.section.audio')),
+      slider(t('settings.music'), s.music, (v) => {
         s.music = v;
         app.audio.setVolumes(s.music, s.sfx);
         save();
       }),
-      slider('🔊 Sounds', s.sfx, (v) => {
+      slider(t('settings.sfx'), s.sfx, (v) => {
         s.sfx = v;
         app.audio.setVolumes(s.music, s.sfx);
         app.audio.ui('click');
         save();
       }),
+      h('h3.section', null, t('settings.section.display')),
       h(
         'div.setting.panel',
         null,
-        h('label', null, '✨ Picture quality'),
+        h('label', null, t('settings.quality')),
         seg<QualitySetting>(
           [
-            ['auto', 'Auto'],
-            ['low', 'Low'],
-            ['medium', 'Medium'],
-            ['high', 'High'],
+            ['auto', t('settings.q.auto')],
+            ['low', t('settings.q.low')],
+            ['medium', t('settings.q.medium')],
+            ['high', t('settings.q.high')],
           ],
           s.quality,
           (v) => {
@@ -69,11 +72,11 @@ export class SettingsScreen implements Screen {
       h(
         'div.setting.panel',
         null,
-        h('label', null, '📳 Screen shake'),
+        h('label', null, t('settings.shake')),
         seg<'on' | 'off'>(
           [
-            ['on', 'On'],
-            ['off', 'Off'],
+            ['on', t('settings.on')],
+            ['off', t('settings.off')],
           ],
           s.shake ? 'on' : 'off',
           (v) => {
@@ -85,11 +88,11 @@ export class SettingsScreen implements Screen {
       h(
         'div.setting.panel',
         null,
-        h('label', null, '🔢 Damage numbers'),
+        h('label', null, t('settings.damageNumbers')),
         seg<'on' | 'off'>(
           [
-            ['on', 'On'],
-            ['off', 'Off'],
+            ['on', t('settings.on')],
+            ['off', t('settings.off')],
           ],
           s.damageNumbers ? 'on' : 'off',
           (v) => {
@@ -98,10 +101,11 @@ export class SettingsScreen implements Screen {
           },
         ),
       ),
+      h('h3.section', null, t('settings.section.gameplay')),
       h(
         'div.setting.panel',
         null,
-        h('label', null, '⏩ Starting speed'),
+        h('label', null, t('settings.speed')),
         seg<1 | 2 | 3>(
           [
             [1, '1x'],
@@ -115,31 +119,32 @@ export class SettingsScreen implements Screen {
           },
         ),
       ),
-      fullscreenAvailable() ? h('div.setting.panel', null, h('label', null, '⛶ Full screen'), h('button.btn', { onClick: () => toggleFullscreen() }, 'Toggle')) : null,
+      fullscreenAvailable() ? h('div.setting.panel', null, h('label', null, t('settings.fullscreen')), h('button.btn', { onClick: () => toggleFullscreen() }, t('settings.toggle'))) : null,
+      h('h3.section', null, t('settings.section.data')),
       h(
         'div.setting.panel',
         null,
-        h('label', null, '🗑 Start over'),
-        h('button.btn.red', { onClick: () => this.confirmReset() }, 'Reset progress'),
+        h('label', null, t('settings.resetLabel')),
+        h('button.btn.red', { onClick: () => this.confirmReset() }, t('settings.reset')),
       ),
-      app.save.persistent ? null : h('p', { style: 'text-align:center;opacity:.85' }, 'Saving is turned off in this browser, so progress lasts until you close the page.'),
+      app.save.persistent ? null : h('p', { style: 'text-align:center;opacity:.85' }, t('settings.noStorage')),
     );
     this.el = h(
       'div.screen.menu',
       null,
-      h('div.topbar', null, h('button.btn.round', { onClick: () => onBack(), 'aria-label': 'Back' }, '←'), h('h2', null, '⚙ Settings')),
+      h('div.topbar', null, h('button.btn.round', { onClick: () => onBack(), 'aria-label': t('common.back') }, '←'), h('h2', null, t('settings.title'))),
       rows,
     );
   }
 
   private confirmReset(): void {
     const m = showModal(this.app.ui, [
-      h('h2', null, 'Start over?'),
-      pipSays('This removes all your stars, badges and records. Your settings stay the same. Are you sure?'),
+      h('h2', null, t('settings.resetTitle')),
+      pipSays(t('settings.resetBody')),
       h(
         'div.row',
         null,
-        h('button.btn.green.big', { onClick: () => m.close() }, 'No, keep them!'),
+        h('button.btn.green.big', { onClick: () => m.close() }, t('settings.resetKeep')),
         h(
           'button.btn.red',
           {
@@ -149,7 +154,7 @@ export class SettingsScreen implements Screen {
               this.onBack();
             },
           },
-          'Yes, reset',
+          t('settings.resetYes'),
         ),
       ),
     ]);

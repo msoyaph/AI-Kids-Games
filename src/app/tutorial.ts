@@ -1,4 +1,5 @@
 import type { WaveDef } from '../data/waves';
+import { t } from '../i18n';
 import { Ev, type GameEvent } from '../sim/events';
 import { h } from '../ui/dom';
 import { pipUrl } from '../ui/modals';
@@ -56,12 +57,12 @@ export class Tutorial {
     readonly s: GameScreen,
     private readonly onSkip: () => void,
   ) {
-    this.nextBtn = h('button.btn.green', { onClick: () => this.advance() }, 'Next ▶');
-    const skip = h('button.btn.ghost', { onClick: () => this.skip(), 'aria-label': 'Skip tutorial' }, 'Skip');
+    this.nextBtn = h('button.btn.green', { onClick: () => this.advance() }, t('tut.next'));
+    const skip = h('button.btn.ghost', { onClick: () => this.skip(), 'aria-label': t('tut.skip') }, t('common.skip'));
     this.box = h(
       'div.tutorial.panel',
       { role: 'status', 'aria-live': 'polite' },
-      h('img.face', { src: pipUrl('happy', 120), alt: 'Pip' }),
+      h('img.face', { src: pipUrl('happy', 120), alt: 'PIP' }),
       h('div.tut-body', null, this.textEl, h('div.tut-actions', null, skip, this.nextBtn)),
     );
     const g = s.game;
@@ -69,9 +70,9 @@ export class Tutorial {
       if (g.coins < n) g.coins = n;
     };
     this.steps = [
-      { text: "Hi, I'm Pip! The Grumblewumps want to borrow our shiny crystals. Let's stop them together!", next: true },
+      { text: t('tut.intro'), next: true },
       {
-        text: s.touch ? 'Tap the Arrow Post at the bottom to choose it.' : 'Click the Arrow Post at the bottom to choose it.',
+        text: s.touch ? t('tut.pickTower.touch') : t('tut.pickTower.mouse'),
         glow: '.drawer .card',
         enter: () => {
           topUp(60);
@@ -80,19 +81,19 @@ export class Tutorial {
         done: () => s.buildType === 'arrow',
       },
       {
-        text: s.touch ? 'Now tap the glowing square, then tap ✓ to build!' : 'Now click the glowing square to build it!',
+        text: s.touch ? t('tut.build.touch') : t('tut.build.mouse'),
         cell: [5, 3],
         enter: () => (this.towersAtStart = g.towers.length),
         done: () => g.towers.length > this.towersAtStart,
       },
-      { text: 'Great! Press GO to send the first creatures.', glow: '.next-wave .btn', done: () => g.waveNum >= 1 },
+      { text: t('tut.start'), glow: '.next-wave .btn', done: () => g.waveNum >= 1 },
       {
-        text: 'Your tower shoots them, and they poof into coins! Watch the wave finish.',
+        text: t('tut.watch'),
         mood: 'cheeky',
         done: () => this.waveCleared >= 1,
       },
       {
-        text: 'Creatures walk AROUND towers. Build on the two glowing squares to make their path longer!',
+        text: t('tut.maze'),
         cell: [8, 4],
         enter: () => {
           topUp(50);
@@ -104,16 +105,16 @@ export class Tutorial {
           return g.towers.length >= this.towersAtStart + 2;
         },
       },
-      { text: 'See the arrows on the ground? That is the new, longer path. Press GO again!', glow: '.next-wave .btn', enter: () => s.selectBuild(null), done: () => g.waveNum >= 2 },
-      { text: 'Nice! Wait for this wave to finish…', done: () => this.waveCleared >= 2 },
+      { text: t('tut.route'), glow: '.next-wave .btn', enter: () => s.selectBuild(null), done: () => g.waveNum >= 2 },
+      { text: t('tut.wait'), done: () => this.waveCleared >= 2 },
       {
-        text: s.touch ? 'Now tap one of your towers.' : 'Now click one of your towers.',
+        text: s.touch ? t('tut.select.touch') : t('tut.select.mouse'),
         enter: () => topUp(40),
         done: () => !!s.selected,
       },
-      { text: 'Tap Upgrade to make it stronger. Each tower can reach level 4!', glow: '.tpanel .btn.green', enter: () => topUp(40), done: () => g.stats.upgrades >= 1 },
+      { text: t('tut.upgrade'), glow: '.tpanel .btn.green', enter: () => topUp(40), done: () => g.stats.upgrades >= 1 },
       {
-        text: 'Ooh, a sparkly Element Crystal! Tap "Pick an element!" and choose a power.',
+        text: s.touch ? t('tut.core.touch') : t('tut.core.mouse'),
         glow: '.crystal-btn .btn',
         enter: () => {
           s.deselect();
@@ -122,7 +123,7 @@ export class Tutorial {
         done: () => g.unlocked.length >= 1,
       },
       {
-        text: 'Build your new element tower! Look for it in the tower bar.',
+        text: t('tut.elementTower'),
         enter: () => {
           topUp(80);
           if (!s.hud.pinned) s.hud.setDrawerOpen(true);
@@ -131,12 +132,12 @@ export class Tutorial {
         done: () => g.towers.filter((t) => t.def.kind !== 'basic').length > this.towersAtStart,
       },
       {
-        text: 'Each element beats another: Water beats Fire, Fire beats Nature, Nature beats Water. Light, Shadow and Earth make a circle too!',
+        text: t('tut.wheel'),
         next: true,
       },
-      { text: 'Send the next waves! Tip: the 1x button makes the game go faster.', glow: '.next-wave .btn', done: () => g.waveNum >= 4 },
+      { text: t('tut.speed'), glow: '.next-wave .btn', done: () => g.waveNum >= 4 },
       {
-        text: 'Here is ANOTHER crystal! Pick a second element. Two elements make a COMBO tower!',
+        text: t('tut.core2'),
         glow: '.crystal-btn .btn',
         enter: () => {
           g.crystals = Math.max(g.crystals, 1);
@@ -144,7 +145,7 @@ export class Tutorial {
         done: () => g.unlocked.length >= 2,
       },
       {
-        text: 'Combo towers are at the end of the tower bar. Build one!',
+        text: t('tut.combo'),
         enter: () => {
           topUp(160);
           if (!s.hud.pinned) s.hud.setDrawerOpen(true);
@@ -152,7 +153,7 @@ export class Tutorial {
         done: () => g.stats.combosBuilt >= 1,
       },
       {
-        text: "You're a natural! Beat the last waves to finish my garden. Hold a finger on anything to learn more about it.",
+        text: t('tut.done'),
         mood: 'cheeky',
         next: true,
       },

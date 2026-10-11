@@ -1,5 +1,6 @@
 import { drawPip } from '../render/atlas/drawPip';
 import { h } from './dom';
+import { t } from '../i18n';
 
 const pipCache = new Map<string, string>();
 
@@ -18,7 +19,7 @@ export function pipUrl(mood: 'happy' | 'cheeky' = 'happy', size = 144): string {
 
 /** Pip with a speech bubble. */
 export function pipSays(text: string, mood: 'happy' | 'cheeky' = 'happy'): HTMLElement {
-  const face = h('img.face', { src: pipUrl(mood), alt: 'Pip' });
+  const face = h('img.face', { src: pipUrl(mood), alt: 'PIP' });
   return h('div.pip', null, face, h('div.bubble', null, text));
 }
 
@@ -32,7 +33,7 @@ export interface ModalHandle {
  * Returns a handle to close it.
  */
 export function showModal(root: HTMLElement, content: HTMLElement[], opts: { onBackdrop?: () => void; cls?: string; label?: string } = {}): ModalHandle {
-  const box = h('div.modal.panel', { role: 'dialog', 'aria-modal': 'true', 'aria-label': opts.label ?? 'Dialog', class: opts.cls }, ...content);
+  const box = h('div.modal.panel', { role: 'dialog', 'aria-modal': 'true', 'aria-label': opts.label ?? t('modal.dialog'), class: opts.cls }, ...content);
   const back = h('div.modal-back', null, box);
   back.addEventListener('pointerdown', (e) => {
     if (e.target === back) opts.onBackdrop?.();
@@ -47,7 +48,7 @@ export function showModal(root: HTMLElement, content: HTMLElement[], opts: { onB
 }
 
 export function starsHtml(n: number, max = 3, big = false): HTMLElement {
-  const wrap = h('span.stars', { 'aria-label': `${n} of ${max} stars`, class: big ? 'big' : '' });
+  const wrap = h('span.stars', { 'aria-label': t('stars.label', { n, max }), class: big ? 'big' : '' });
   for (let i = 0; i < max; i++) wrap.append(h('span.star', { class: i < n ? 'on' : '' }, '★'));
   return wrap;
 }

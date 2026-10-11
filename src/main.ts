@@ -7,7 +7,7 @@ import { EncyclopediaScreen } from './app/screens/EncyclopediaScreen';
 import { SettingsScreen } from './app/screens/SettingsScreen';
 import { SaveStore } from './app/save';
 import { mapById } from './data/maps';
-import { resolveLocale, setLocale } from './i18n';
+import { resolveLocale, setLocale, t } from './i18n';
 import type { Difficulty } from './data/difficulty';
 import { bakeAtlas } from './render/atlas/bake';
 import { installFonts } from './render/FloatingText';
@@ -35,13 +35,13 @@ async function boot(): Promise<void> {
   const setting = save.data.settings.quality;
   const startTier = setting === 'auto' ? tier : setting;
   const stage = new Stage();
-  progress(0.05, 'Powering up the Citadel…');
+  progress(0.05, t('boot.power'));
   await stage.init(document.getElementById('game')!, renderResolution(QUALITY_PROFILES[startTier]));
-  progress(0.12, 'Forging towers and constructs…');
+  progress(0.12, t('boot.forge'));
   const bakeScale = detectBakeScale(startTier);
   const atlas = await bakeAtlas(bakeScale, stage.maxTextureSize, (p) => progress(0.12 + p * 0.83));
   installFonts(stage.resolution);
-  progress(1, 'Ready!');
+  progress(1, t('boot.ready'));
   const app = new App(stage, atlas, save, document.getElementById('ui')!, tier, bakeScale);
   if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__vanex = { stage, atlas, app };
 
@@ -80,5 +80,5 @@ async function boot(): Promise<void> {
 
 boot().catch((err: unknown) => {
   console.error(err);
-  progress(1, 'Something went wrong. Please reload the page.');
+  progress(1, t('boot.error'));
 });

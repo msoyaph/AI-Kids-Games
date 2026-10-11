@@ -1,31 +1,45 @@
 import { css, darken, lighten } from '../../core/math';
 import type { BadgeIcon } from '../../data/achievements';
 import { ELEMENTS } from '../../data/elements';
-import { ballGradient, circle, coinShape, elementIcon, fillStroke, gemShape, glowDot, heartShape, polygon, roundRect, shine, starPath, type Ctx } from './paint';
+import { ballGradient, circle, coinShape, elementIcon, fillStroke, gemShape, glowDot, heartShape, roundRect, shine, starPath, type Ctx } from './paint';
+import { chamferPoly, metalGradient, runeRing, strokePath, TECH } from './tech';
 
-/** A round medal with ribbon and an icon. Locked badges are grey with a padlock feel. */
+/** A hexagonal service insignia with rank chevrons and an icon. Locked badges are dim steel. */
 export function drawBadge(ctx: Ctx, size: number, icon: BadgeIcon, color: number, unlocked: boolean): void {
   const s = size / 100;
   ctx.save();
   ctx.scale(s, s);
-  const col = unlocked ? color : 0x6a6487;
-  // ribbon
-  for (const side of [-1, 1]) {
+  const col = unlocked ? color : 0x4a5570;
+  // rank chevrons under the plate
+  for (let i = 0; i < 2; i++) {
+    const y = 80 + i * 9;
     ctx.beginPath();
-    ctx.moveTo(50 + side * 6, 52);
-    ctx.lineTo(50 + side * 24, 96);
-    ctx.lineTo(50 + side * 14, 90);
-    ctx.lineTo(50 + side * 8, 98);
-    ctx.lineTo(50 + side * -6, 56);
+    ctx.moveTo(30, y - 6);
+    ctx.lineTo(50, y + 4);
+    ctx.lineTo(70, y - 6);
+    ctx.lineTo(70, y);
+    ctx.lineTo(50, y + 10);
+    ctx.lineTo(30, y);
     ctx.closePath();
-    fillStroke(ctx, css(side < 0 ? darken(col, 0.15) : lighten(col, 0.1)), darken(col, 0.55), 2);
+    fillStroke(ctx, css(i === 0 ? col : darken(col, 0.25)), TECH.ink, 2);
   }
-  if (unlocked) glowDot(ctx, 50, 44, 46, color, 0.45);
-  // medal rim
-  polygon(ctx, 50, 44, 12, 36, 0);
-  fillStroke(ctx, ballGradient(ctx, 50, 44, 36, unlocked ? 0xffd23f : 0x9a96b0), unlocked ? 0x8a5a00 : 0x3a3456, 3);
-  circle(ctx, 50, 44, 27);
-  fillStroke(ctx, ballGradient(ctx, 50, 44, 27, col), darken(col, 0.55), 2.5);
+  if (unlocked) glowDot(ctx, 50, 44, 46, color, 0.35);
+  // steel hex plate
+  chamferPoly(ctx, 50, 44, 6, 38, 4, Math.PI / 6);
+  ctx.fillStyle = metalGradient(ctx, 14, 8, 86, 82, unlocked ? TECH.steel : TECH.steelDark);
+  ctx.fill();
+  strokePath(ctx, TECH.ink, 3);
+  chamferPoly(ctx, 50, 44, 6, 35, 3, Math.PI / 6);
+  strokePath(ctx, unlocked ? TECH.gold : TECH.steelLight, 1.4, unlocked ? 0.9 : 0.4);
+  // coloured core
+  chamferPoly(ctx, 50, 44, 6, 27, 3, Math.PI / 6);
+  const g = ctx.createLinearGradient(50, 18, 50, 70);
+  g.addColorStop(0, css(lighten(col, 0.25)));
+  g.addColorStop(1, css(darken(col, 0.45)));
+  ctx.fillStyle = g;
+  ctx.fill();
+  strokePath(ctx, darken(col, 0.6), 2);
+  runeRing(ctx, 50, 44, 31, unlocked ? color : TECH.steelLight, 12, 1.4, unlocked ? 0.9 : 0.35);
   const ic = unlocked ? 0xffffff : 0xb8b4cc;
   switch (icon) {
     case 'star':
