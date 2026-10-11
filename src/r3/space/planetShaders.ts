@@ -465,7 +465,7 @@ void main() {
   float fres = pow(1.0 - max(dot(Ng, V), 0.0), 2.2);
   col = mix(col, uAtmo * (uSunColor * 0.9) * smoothstep(-0.2, 0.5, ndlG), clamp(fres * uAtmoStrength * 0.85, 0.0, 1.0));
   if (uEmissiveMode > 0.5) {
-    float g = uEmissiveMode < 1.5 ? smoothstep(0.2, 0.05, h) : smoothstep(0.82, 0.95, h);
+    float g = uEmissiveMode < 1.5 ? smoothstep(0.2, 0.05, h) : smoothstep(0.72, 0.9, h);
     float pulse = 0.85 + 0.15 * sin(uTime * 2.0 + h * 30.0);
     col += uEmissive * g * pulse * (0.35 + 0.65 * smoothstep(0.3, -0.2, ndlG));
   }

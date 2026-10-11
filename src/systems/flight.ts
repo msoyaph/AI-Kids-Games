@@ -137,8 +137,8 @@ export function makeBody(id: string, x: number, y: number, r: number, pull: numb
 
 /** Surface gravity (units/s²) of a body with pull = 1. Falls off with distance squared. */
 export const SURFACE_G = 380;
-const SLING_MIN_SWEEP = 1.35; // radians (~77°): a real swoop, not just flying past
-const COMET_BOOST = 1.45;
+export const SLING_MIN_SWEEP = 1.35; // radians (~77°): a real swoop, not just flying past
+export const COMET_BOOST = 1.45;
 
 /** Advance the ship one fixed step. Mutates ship/world and writes what happened into ev. */
 export function stepFlight(ship: Ship, world: FlightWorld, input: SteerInput, p: FlightParams, dt: number, ev: FlightEvents): void {

@@ -1,6 +1,6 @@
 import { S } from '../app/services';
 import { BODY_BY_ID, SYSTEM_BY_ID } from '../data/bodies';
-import type { FBody } from '../systems/flight';
+import type { Body3 } from '../systems/flight3d';
 import type { FlightExtras } from '../systems/flightWorld';
 import type { FlightScene, FlightSceneParams } from './FlightScene';
 
@@ -8,6 +8,8 @@ export interface FlightTarget {
   x: number;
   y: number;
   r: number;
+  /** Height above the orbital plane (3D flight). */
+  h?: number;
 }
 
 /**
@@ -26,7 +28,7 @@ export interface FlightDirector {
   onTowedHome(scene: FlightScene): void;
 }
 
-export function findBody(scene: FlightScene, id: string): FBody | null {
+export function findBody(scene: FlightScene, id: string): Body3 | null {
   return scene.getLayout().world.bodies.find((b) => b.id === id) ?? null;
 }
 

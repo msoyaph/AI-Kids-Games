@@ -3,7 +3,7 @@ import { sfx } from '../audio/sfx';
 import { BODY_BY_ID, bodyForArea, SYSTEM_BY_ID, type SystemDef, type SystemId } from '../data/bodies';
 import { levelById } from '../data/levels';
 import type { ObjectiveDef, Where } from '../data/missionTypes';
-import type { FBody } from '../systems/flight';
+import type { Body3 } from '../systems/flight3d';
 import { STICKERS } from '../data/stickers';
 import { condOk } from '../systems/level';
 import type { FlightExtras } from '../systems/flightWorld';
@@ -99,36 +99,37 @@ function missionFlightDirector(p: FlightSceneParams): FlightDirector {
   }
 
   // Everything below runs every frame, so it reuses objects and avoids closures.
-  const out: FlightTarget = { x: 0, y: 0, r: 0 };
-  const set = (x: number, y: number, r: number): FlightTarget => {
+  const out: FlightTarget = { x: 0, y: 0, r: 0, h: 0 };
+  const set = (x: number, y: number, r: number, hh = 0): FlightTarget => {
     out.x = x;
     out.y = y;
     out.r = r;
+    out.h = hh;
     return out;
   };
   /** Nearest alive item in a list (coins, fuel, hauls, glimmers). */
-  const nearestAlive = (scene: FlightScene, list: Array<{ x: number; y: number; alive: boolean }>, r: number): FlightTarget | null => {
+  const nearestAlive = (scene: FlightScene, list: Array<{ x: number; y: number; h: number; alive: boolean }>, r: number): FlightTarget | null => {
     const ship = scene.getShip();
     let bi = -1;
     let bd = Infinity;
     for (let i = 0; i < list.length; i++) {
       const it = list[i];
       if (!it.alive) continue;
-      const d = (it.x - ship.x) ** 2 + (it.y - ship.y) ** 2;
+      const d = (it.x - ship.x) ** 2 + (it.y - ship.y) ** 2 + (it.h - ship.h) ** 2;
       if (d < bd) {
         bd = d;
         bi = i;
       }
     }
-    return bi >= 0 ? set(list[bi].x, list[bi].y, r) : null;
+    return bi >= 0 ? set(list[bi].x, list[bi].y, r, list[bi].h) : null;
   };
   // Cached objective lookup: only recomputed when the tracked mission or step changes.
   let cacheMission: string | null = '';
   let cacheStep = -1;
   let cacheObj: ObjectiveDef | null = null;
   let cacheSeen: string[] = [];
-  let cacheBody: FBody | null = null;
-  let cacheFallback: FBody | null = null;
+  let cacheBody: Body3 | null = null;
+  let cacheFallback: Body3 | null = null;
   let cacheScene: FlightScene | null = null;
   const refresh = (scene: FlightScene) => {
     const id = S.state.data.activeMission;
@@ -159,25 +160,25 @@ function missionFlightDirector(p: FlightSceneParams): FlightDirector {
       const world = scene.getLayout().world;
       if (scene.isRacing()) {
         const g = world.gates[world.nextGate];
-        return g ? set(g.x, g.y, g.r * 0.5) : null;
+        return g ? set(g.x, g.y, g.r * 0.5, g.h) : null;
       }
       refresh(scene);
       const o = cacheObj;
       if (o) {
         if (o.kind === 'gates' && world.gates.length) {
           const g = world.gates[world.nextGate];
-          if (g) return set(g.x, g.y, g.r * 0.5);
+          if (g) return set(g.x, g.y, g.r * 0.5, g.h);
         }
         if (o.kind === 'scan' && o.target) {
           const ship = scene.getShip();
           const prefix = o.target.endsWith(':');
-          let best: FBody | null = null;
+          let best: Body3 | null = null;
           let bd = Infinity;
           for (let i = 0; i < world.bodies.length; i++) {
             const b = world.bodies[i];
             const hit = prefix ? b.id.startsWith(o.target) : b.id === o.target;
             if (!hit || cacheSeen.includes(b.id)) continue;
-            const d = (b.x - ship.x) ** 2 + (b.y - ship.y) ** 2;
+            const d = (b.x - ship.x) ** 2 + (b.y - ship.y) ** 2 + (b.h - ship.h) ** 2;
             if (d < bd) {
               bd = d;
               best = b;

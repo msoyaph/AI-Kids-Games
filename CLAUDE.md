@@ -54,6 +54,15 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   drag to spin (`hangar-spin`), camera focus per tab, `camera.setViewOffset` puts it in the left column; soft
   shadows on High only (only MeshStandard parts cast); card thumbnails via `ui/rocketThumbs.ts` (queued 3D
   snapshots). `?rockets[&n=4&seed=x&gloss=0]` = rocket contact sheet.
+- 3D flight: `systems/flight3d.ts` (pure sim: auto-forward cruise, stick turns yaw/pitch, auto-level, Easy aim
+  assist + planet orbit-hug, same boost/fuel/gravity/slingshot/bump/comet/pickup rules as flight.ts, hoop gates
+  crossed by plane test, soft bounds bubble; `raceTune` for races: nimbler, half gravity, no slingshots),
+  `systems/world3d.ts` (`liftLayout`: 2D buildFlight → 3D heights; Saturn ring ice flat in the ring plane; race
+  `heights` in data/races.ts), `systems/flightBot.ts` (autopilot used by tests/unit/flightBots.test.ts and pacing).
+  World axes: map (x, y) + height h → three.js (x, h, y) via `toV`. Directors return FlightTarget with optional h.
+  Scene: `scenes/FlightScene.ts` (Scene3D), `r3/flight/flightView.ts` (planets, instanced coins/fuel/ice/glimmers,
+  asteroid LOD buckets, comets with dust+ion tails away from the Sun, hoops, satellites), `r3/flight/flightFx.ts`
+  (ChaseCam never rolls, ≤6° FOV kick, SpeedDust, Easy GuideTrail, DOM FloatLabels). Gamepad B = action in play.
 - Post: NO multisampled render targets (they corrupted frames on ANGLE-Metal with many draws) → FXAA in its own
   pass after the merged bloom/tone-map pass (FXAA merged with bloom caused dark halos). Bloom threshold 1.25.
 - `scripts/shot.mjs <path> <out.png> [w h waitMs js]` (env `NEWGAME=1`, `BASE=`) for headless screenshots
@@ -95,7 +104,9 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   warp cinematic, 3D Codex pictures, "Space Is Huge!" Codex page (`scale`, unlocked on launch).
 - [x] 3D Phase 3: rocket from all 52 hangar items (+ sticker decals), fit system + tests, flames, trails, 3D hangar
   turntable with snap-on animation and sparkles, 3D card thumbnails, two-column settings panel.
-- [ ] 4 flight · [ ] 4 flight · [ ] 5 characters · [ ] 6 landing/explore · [ ] 7 hub/menus
+- [x] 3D Phase 4: 3D flight (chase cam, steering, Easy assists, comfort), all flight content in 3D, Tuggy tow,
+  Saturn ring races with hoops, bots for every trip and race, pacing +3 warp/swoop cinematics (Easy 6.7 h, Normal 5.7 h).
+- [ ] 5 characters · [ ] 4 flight · [ ] 5 characters · [ ] 6 landing/explore · [ ] 7 hub/menus
   (remove Pixi) · [ ] 8 cutscenes · [ ] 9 perf · [ ] 10 tests/review/handoff
 
 ## Current numbers

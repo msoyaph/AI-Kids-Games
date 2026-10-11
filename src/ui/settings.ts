@@ -69,7 +69,7 @@ function controlsHelp(): void {
   ];
   const table = h('div', { class: 'help-table' }, h('div', { class: 'help-row head' }, h('span', null, ''), h('span', null, 'Keyboard'), h('span', null, 'Touch')));
   for (const [what, key, touch] of rows) table.append(h('div', { class: 'help-row' }, h('span', null, what), h('span', null, key), h('span', null, touch)));
-  const panel = h('div', { class: 'panel col', 'data-testid': 'controls-help' }, h('div', { class: 'h2' }, 'How to play'), table, h('div', { class: 'muted' }, 'Gamepad: left stick to steer, A to boost or jump, X to do things, Start to pause.'), button('Got it!', 'check', () => closeTopModal(), { color: 'green', id: 'btn-help-ok' }));
+  const panel = h('div', { class: 'panel col', 'data-testid': 'controls-help' }, h('div', { class: 'h2' }, 'How to play'), table, h('div', { class: 'muted' }, 'Gamepad: left stick to steer, A to boost or jump, B to do things (land, scan, talk), Start to pause.'), button('Got it!', 'check', () => closeTopModal(), { color: 'green', id: 'btn-help-ok' }));
   openModal(panel);
 }
 

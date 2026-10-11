@@ -41,12 +41,16 @@ export interface PacingAssumptions {
   haul: number;
   /** Matches DiffTuning.routeScale. */
   routeScale: number;
+  /** 3D: launch-and-warp cinematic on the Star Map before each trip (s, skippable). */
+  warp: number;
+  /** 3D: camera swoop from orbit down to the landing pad (s). */
+  swoop: number;
 }
 
 export const ASSUMPTIONS: Record<Difficulty, PacingAssumptions> = {
   // Easy: autopilot landings, auto-scan and steering help make flying quicker; kids still wander.
-  easy: { cruise: 240, inSystem: 70, landing: 28, perColumn: 1.3, puzzle: 100, wpm: 70, menus: 55, freePlay: 900, lost: 1.2, scan: 12, gates: 100, race: 140, haul: 110, routeScale: 0.85 },
-  normal: { cruise: 290, inSystem: 55, landing: 55, perColumn: 1.05, puzzle: 80, wpm: 110, menus: 50, freePlay: 780, lost: 1.12, scan: 18, gates: 80, race: 120, haul: 90, routeScale: 1 },
+  easy: { cruise: 240, inSystem: 70, landing: 28, perColumn: 1.3, puzzle: 100, wpm: 70, menus: 55, freePlay: 900, lost: 1.2, scan: 12, gates: 100, race: 140, haul: 110, routeScale: 0.85, warp: 3, swoop: 2.5 },
+  normal: { cruise: 290, inSystem: 55, landing: 55, perColumn: 1.05, puzzle: 80, wpm: 110, menus: 50, freePlay: 780, lost: 1.12, scan: 18, gates: 80, race: 120, haul: 90, routeScale: 1, warp: 3, swoop: 2.5 },
 };
 
 export interface ChapterPace {
@@ -91,7 +95,7 @@ function missionSeconds(m: MissionDef, a: PacingAssumptions, at: Where, explored
       t += a.inSystem;
       return;
     }
-    t += routeLength(at.system, sys, a.routeScale) / a.cruise + a.inSystem * 0.6;
+    t += routeLength(at.system, sys, a.routeScale) / a.cruise + a.inSystem * 0.6 + a.warp;
     at.system = sys;
     at.area = null;
   };
@@ -99,7 +103,7 @@ function missionSeconds(m: MissionDef, a: PacingAssumptions, at: Where, explored
     if (at.area === area) return;
     const body = bodyForArea(area);
     if (body) travelTo(body.system as SystemId);
-    t += a.landing;
+    t += a.landing + a.swoop;
     const first = !exploredAreas.has(area);
     exploredAreas.add(area);
     // First visits: explore most of the level; later visits: go straight to the goal.
@@ -120,7 +124,7 @@ function missionSeconds(m: MissionDef, a: PacingAssumptions, at: Where, explored
         if (area && area !== 'lounge') visitArea(area);
         else if (area === 'lounge' && at.system !== 'earth') {
           travelTo('earth');
-          t += a.landing;
+          t += a.landing + a.swoop;
           at.area = null;
         }
         t += 15;
@@ -132,12 +136,12 @@ function missionSeconds(m: MissionDef, a: PacingAssumptions, at: Where, explored
         break;
       case 'land':
         if (sys) travelTo(sys);
-        t += a.landing;
+        t += a.landing + a.swoop;
         if (body && BODY_BY_ID[body]?.areas?.[0]) visitArea(BODY_BY_ID[body].areas![0]);
         break;
       case 'home':
         travelTo('earth');
-        t += a.landing;
+        t += a.landing + a.swoop;
         at.area = null;
         break;
       case 'collect':
@@ -164,7 +168,7 @@ function missionSeconds(m: MissionDef, a: PacingAssumptions, at: Where, explored
         break;
       case 'deliver':
         if (sys) travelTo(sys);
-        t += a.landing;
+        t += a.landing + a.swoop;
         break;
       case 'coins':
         t += ((o.count ?? 10) / 25) * 60;

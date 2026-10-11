@@ -34,6 +34,8 @@ const KEY_PAUSE = new Set(['Escape', 'KeyP']);
 export type InputSource = 'keyboard' | 'touch' | 'gamepad' | 'mouse';
 
 export class Input {
+  /** True in play scenes (set by the touch controls' mode): the gamepad B button acts. */
+  gameplay = false;
   readonly state: InputState = {
     x: 0, y: 0, boost: false, boostPressed: false, action: false, actionPressed: false, jumpPressed: false, jump: false,
     pausePressed: false, navX: 0, navY: 0, confirmPressed: false, backPressed: false, anyPressed: false,
@@ -134,6 +136,11 @@ export class Input {
         x = pad.x;
         y = pad.y;
         this.setSource('gamepad');
+      }
+      // During play (flight, landing, exploring) the B button does things too; in menus it means "back".
+      if (this.gameplay && pad.back) {
+        pad.action = true;
+        pad.back = false;
       }
       if (pad.boost) boost = true;
       if (pad.action) action = true;

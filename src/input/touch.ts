@@ -142,6 +142,7 @@ export class TouchControls {
 
   setMode(mode: ControlMode): void {
     this.mode = mode;
+    this.input.gameplay = mode !== 'none';
     this.el.dataset.mode = mode;
     this.el.style.display = mode === 'none' ? 'none' : '';
     if (mode === 'explore') this.setBoost('Jump', 'jump');

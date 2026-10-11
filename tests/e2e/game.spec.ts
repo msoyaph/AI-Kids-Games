@@ -52,15 +52,18 @@ test('progress is saved and survives a reload', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('flight: steering, boost, pause, and landing on the Moon', async ({ page }, info) => {
+test('3D flight: steering, boost, pause, and landing on the Moon', async ({ page }, info) => {
   const errors = watchErrors(page);
   await boot(page);
   await newGame(page);
   await go(page, 'flight', { from: 'earth', to: 'earth' });
   await skipDialogue(page);
   await closePopups(page);
-  const shipX = () => page.evaluate(() => (window as unknown as { __spacesky: { game: { current: { getShip: () => { x: number } } } } }).__spacesky.game.current.getShip().x);
-  const x0 = await shipX();
+  const ship = () => page.evaluate(() => {
+    const s = (window as unknown as { __spacesky: { game: { current: { getShip: () => { x: number; y: number; yaw: number; boostTime: number } } } } }).__spacesky.game.current.getShip();
+    return { x: s.x, y: s.y, yaw: s.yaw, boost: s.boostTime };
+  });
+  const s0 = await ship();
   const touch = info.project.name !== 'desktop';
   if (touch) {
     // Drag the floating joystick to the right.
@@ -81,19 +84,27 @@ test('flight: steering, boost, pause, and landing on the Moon', async ({ page },
     await page.keyboard.press('Space');
     await page.keyboard.up('ArrowRight');
   }
-  expect(await shipX()).toBeGreaterThan(x0 + 100);
+  // The rocket flies forward by itself and the stick turned it right.
+  const s1 = await ship();
+  expect(Math.hypot(s1.x - s0.x, s1.y - s0.y)).toBeGreaterThan(150);
+  expect(s1.yaw).toBeGreaterThan(s0.yaw + 0.12);
   // Pause menu.
   await page.getByTestId('btn-pause').click();
   await expect(page.getByTestId('pause-menu')).toBeVisible();
   await page.getByTestId('btn-resume').click();
   // Fly next to the Moon and land.
   await page.evaluate(() => {
-    const sc = (window as unknown as { __spacesky: { game: { current: { getLayout: () => { world: { bodies: Array<{ id: string; x: number; y: number; r: number }> } }; getShip: () => { x: number; y: number; vx: number; vy: number } } } } }).__spacesky.game.current;
+    type V = { x: number; y: number; h: number; r: number; id: string };
+    const sc = (window as unknown as { __spacesky: { game: { current: { getLayout: () => { world: { bodies: V[] } }; getShip: () => V & { vx: number; vy: number; vh: number; yaw: number; pitch: number } } } } }).__spacesky.game.current;
     const moon = sc.getLayout().world.bodies.find((b) => b.id === 'moon')!;
-    const ship = sc.getShip();
-    ship.x = moon.x + moon.r + 70;
-    ship.y = moon.y;
-    ship.vx = ship.vy = 0;
+    const s = sc.getShip();
+    s.x = moon.x + moon.r + 60;
+    s.y = moon.y;
+    s.h = moon.h;
+    s.vx = s.vy = s.vh = 0;
+    // Skim along the surface so the Land button stays up.
+    s.yaw = Math.PI / 2;
+    s.pitch = 0;
   });
   await expect(page.getByTestId('flight-prompt')).toBeVisible();
   if (touch) {

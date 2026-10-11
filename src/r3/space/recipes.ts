@@ -92,7 +92,7 @@ const R: Record<string, Omit<PlanetRecipe, 'seed' | 'real'>> = {
   pluto: { kind: 'pluto', colors: ['#bb9678', '#6b3f2e', '#f2e8da', '#9a7258', '#d8c0a6'], p: [0, 0, 0, 0], atmo: '#cfe0ff', atmoStrength: 0.18, tilt: 120 * deg, spin: 0.02, bump: 0.9 },
   charon: { kind: 'cratered', colors: ['#8f8b88', '#6c6865', '#a9a5a1', '#6e4a3e'], p: [0.8, 0.4, 0.2, 5], atmo: null, atmoStrength: 0, tilt: 0, spin: 0.02, bump: 1.1 },
   // Made-up worlds: bright and magical, clearly not real planets.
-  zephyra: { kind: 'alien', colors: ['#5b3fd8', '#27c9b4', '#ff9ad9', '#fff7b3', '#3a2a9e'], p: [0.5, 0, 0, 0], atmo: '#c89bff', atmoStrength: 1.0, clouds: { color: '#ffe6fb', coverage: 0.35, speed: 0.015 }, rings: { inner: 1.35, outer: 1.9, colors: ['#ff9ad9', '#b07bff'], opacity: 0.7 }, tilt: 0.35, spin: 0.05, bump: 0.6, emissive: { color: '#7dffe9', mode: 2, strength: 1.6 } },
+  zephyra: { kind: 'alien', colors: ['#5b3fd8', '#27c9b4', '#ff9ad9', '#fff7b3', '#3a2a9e'], p: [0.5, 0, 0, 0], atmo: '#c89bff', atmoStrength: 1.0, clouds: { color: '#ffe6fb', coverage: 0.35, speed: 0.015 }, rings: { inner: 1.35, outer: 1.9, colors: ['#ff9ad9', '#b07bff'], opacity: 0.7 }, tilt: 0.35, spin: 0.05, bump: 0.6, emissive: { color: '#7dffe9', mode: 2, strength: 2.6 } },
   tibble: { kind: 'candy', colors: ['#ff7ad9', '#ffe066', '#ffffff'], p: [5, 0, 0, 0], atmo: '#ffc2ee', atmoStrength: 0.5, tilt: 0.4, spin: 0.08, bump: 0.3 },
   tobble: { kind: 'candy', colors: ['#2de0c7', '#4c7dff', '#ffffff'], p: [3, 1, 0, 0], atmo: '#a8fff1', atmoStrength: 0.5, tilt: -0.3, spin: 0.06, bump: 0.3 },
 };
