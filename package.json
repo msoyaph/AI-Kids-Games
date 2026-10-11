@@ -18,7 +18,11 @@
     "bench": "tsx scripts/bench.ts",
     "readability": "tsx scripts/readability.ts",
     "size": "tsx scripts/check-size.ts",
-    "e2e:low": "E2E_LOW=1 playwright test"
+    "e2e:low": "E2E_LOW=1 playwright test --project=desktop",
+    "e2e:touch": "playwright test --project=chromium-* --project=webkit-*",
+    "e2e:layout": "playwright test --project=layout-chromium --project=layout-webkit",
+    "e2e:ci": "playwright test --project=desktop --project=chromium-phone-portrait --project=webkit-phone-landscape --project=layout-chromium --grep-invert \"Chapter 1\"",
+    "touch-audit": "tsx scripts/touch-audit.ts"
   },
   "dependencies": {
     "three": "^0.186.1"

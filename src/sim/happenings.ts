@@ -123,6 +123,14 @@ export function finishFestival(g: Game): void {
 
 /** Lantern Skate: rings on the frozen pond (tile centres), generated per island. */
 export function skateRings(g: Game): { x: number; z: number }[] {
+  const cached = g.runtime.skateRings as { x: number; z: number }[] | undefined;
+  if (cached) return cached;
+  const out = findSkateRings(g);
+  g.runtime.skateRings = out;
+  return out;
+}
+
+function findSkateRings(g: Game): { x: number; z: number }[] {
   const w = g.world;
   const pond: number[] = [];
   for (let i = 0; i < w.size * w.size; i++) if (w.ground(i) === Ground.Pond) pond.push(i);
@@ -140,6 +148,14 @@ export function skateRings(g: Game): { x: number; z: number }[] {
   return out;
 }
 
+/** Distance from point (px, pz) to the segment a→b. */
+function segDist(ax: number, az: number, bx: number, bz: number, px: number, pz: number): number {
+  const dx = bx - ax, dz = bz - az;
+  const L = dx * dx + dz * dz;
+  const t = L > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / L)) : 0;
+  return Math.hypot(ax + dx * t - px, az + dz * t - pz);
+}
+
 /** Is the pond frozen solid right now (Lantern Skate)? */
 export function pondFrozen(g: Game): boolean {
   return festivalNow(g)?.id === 'lanternSkate';
@@ -154,9 +170,13 @@ function updateFestival(g: Game): void {
     const p = g.state.player;
     const rings = skateRings(g);
     const need = Math.min(f.need, rings.length);
+    // swept: skating straight through a ring between two frames still counts
+    let last = (g.runtime.skateLast as { x: number; z: number } | undefined) ?? { x: p.x, z: p.z };
+    if (Math.hypot(p.x - last.x, p.z - last.z) > 2) last = { x: p.x, z: p.z }; // a jump, not a skate
+    g.runtime.skateLast = { x: p.x, z: p.z };
     rings.forEach((r, k) => {
       const key = `ring${k}`;
-      if (st.got.includes(key) || Math.hypot(p.x - r.x, p.z - r.z) > 0.75) return;
+      if (st.got.includes(key) || segDist(last.x, last.z, p.x, p.z, r.x, r.z) > 0.75) return;
       st.got.push(key);
       st.progress++;
       g.emit('sfx', { name: 'sparkle' });
@@ -356,27 +376,32 @@ function syncFrozenPond(g: Game): void {
   const w = g.world;
   const here = w.idx(Math.floor(p.x), Math.floor(p.z));
   if (!w.isWater(here)) return;
-  for (let r = 1; r < 12; r++)
-    for (let dz = -r; dz <= r; dz++)
-      for (let dx = -r; dx <= r; dx++) {
-        const x = Math.floor(p.x) + dx, z = Math.floor(p.z) + dz;
-        if (!w.inb(x, z) || !w.standable(w.idx(x, z))) continue;
-        p.x = x + 0.5;
-        p.z = z + 0.5;
-        p.level = w.height(w.idx(x, z));
-        return;
-      }
+  // the nearest dry tile, preferring the ice's own level (never up on a cliff you can't get down from)
+  const level = w.height(here);
+  for (const sameLevel of [true, false])
+    for (let r = 1; r < 12; r++)
+      for (let dz = -r; dz <= r; dz++)
+        for (let dx = -r; dx <= r; dx++) {
+          const x = Math.floor(p.x) + dx, z = Math.floor(p.z) + dz;
+          if (!w.inb(x, z) || !w.standable(w.idx(x, z))) continue;
+          if (sameLevel && w.height(w.idx(x, z)) !== level) continue;
+          p.x = x + 0.5;
+          p.z = z + 0.5;
+          p.level = w.height(w.idx(x, z));
+          return;
+        }
 }
 
 export function installHappenings(g: Game): void {
   g.onDay(dailyHappenings);
   let t = 0;
   g.onUpdate((game, dt) => {
+    // festival activities every frame (a skater passing through a ring must never be missed)
+    updateFestival(game);
     t += dt;
     if (t < 0.5) return;
     t = 0;
     syncFrozenPond(game);
-    updateFestival(game);
     starNightSpawns(game);
     // shooting stars: a heads-up once per night
     if (meteorsNow(game) && game.state.flags.meteorToast !== game.state.clock.day && hour(game) >= 20) {

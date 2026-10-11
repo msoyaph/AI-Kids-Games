@@ -103,6 +103,13 @@ export class QuestTracker {
   constructor(root: HTMLElement) {
     root.appendChild(this.el);
     root.appendChild(this.arrow);
+    this.hide();
+  }
+
+  /** Title screens: no mission tracker or marker. */
+  hide(): void {
+    this.el.style.display = 'none';
+    this.arrow.style.display = 'none';
   }
 
   update(app: App): void {
@@ -145,7 +152,8 @@ export class QuestTracker {
     }
     const pr = app.view.project(t.x, t.y, t.z);
     const W = window.innerWidth, H = window.innerHeight;
-    const inside = pr.visible && pr.x > 40 && pr.x < W - 40 && pr.y > 60 && pr.y < H - 60;
+    // on screen only where it doesn't sit on the HUD or the touch buttons
+    const inside = pr.visible && pr.x > 40 && pr.x < W - 40 && pr.y > 60 && pr.y < H - 60 && app.hudLayout.free(pr.x, pr.y - 45, 4);
     this.arrow.style.display = '';
     if (inside) {
       this.arrow.classList.add('onscreen');
@@ -161,7 +169,9 @@ export class QuestTracker {
         dy = -dy;
       }
       const a = Math.atan2(dy, dx);
-      const r = Math.min(W, H) * 0.42;
+      // toward the edge, but pulled in until it's clear of the HUD
+      let r = Math.min(W, H) * 0.42;
+      while (r > 50 && !app.hudLayout.free(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.9, 20)) r -= 8;
       this.arrow.style.left = `${cx + Math.cos(a) * r}px`;
       this.arrow.style.top = `${cy + Math.sin(a) * r * 0.9}px`;
       this.arrow.style.transform = `translate(-50%,-50%) rotate(${a + Math.PI / 2}rad)`;

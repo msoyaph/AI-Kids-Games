@@ -220,7 +220,7 @@ export function updateBugs(g: Game, dt: number, held: boolean): void {
   }
   g.sneaking = rt.ready;
   const speed = g.motion.speed;
-  const sneaking = rt.ready && speed < 1.6;
+  const sneaking = (rt.ready || g.creeping) && speed < 1.6;
   for (const b of rt.bugs) {
     b.t += dt;
     b.life -= dt;

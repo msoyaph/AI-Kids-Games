@@ -84,15 +84,31 @@ export class Hud {
   }
 
   keyLabel(): string {
-    return this.device === 'gamepad' ? 'A' : this.device === 'touch' ? '●' : 'E';
+    return this.device === 'gamepad' ? 'A' : this.device === 'touch' ? 'A' : 'E';
   }
 
+  /** waiting toasts (shown as room allows, see `pump`) */
+  private queue: { text: string; kind: string; itemId?: string }[] = [];
+
   toast(text: string, kind = 'info', itemId?: string): void {
-    const t = h('div', { class: `toast ${kind}` }, itemId ? iconImg(itemId, 'icon sm') : null, text);
-    this.toasts.appendChild(t);
-    while (this.toasts.children.length > 4) this.toasts.firstChild?.remove();
-    setTimeout(() => t.classList.add('out'), 2600);
-    setTimeout(() => t.remove(), 3100);
+    if (this.queue.some((q) => q.text === text)) return;
+    this.queue.push({ text, kind, itemId });
+    // never pile up: keep the newest few
+    while (this.queue.length > 6) this.queue.shift();
+  }
+
+  /** Show waiting toasts while there's room for them (`room` = how many more fit right now). */
+  pump(room: (showing: number) => number): void {
+    if (!this.queue.length) return;
+    const showing = Array.from(this.toasts.children).filter((c) => !c.classList.contains('out')).length;
+    let n = room(showing);
+    while (n-- > 0 && this.queue.length) {
+      const q = this.queue.shift()!;
+      const t = h('div', { class: `toast ${q.kind}` }, q.itemId ? iconImg(q.itemId, 'icon sm') : null, q.text);
+      this.toasts.appendChild(t);
+      setTimeout(() => t.classList.add('out'), 2600);
+      setTimeout(() => t.remove(), 3100);
+    }
   }
 
   update(g: Game): void {
@@ -128,7 +144,8 @@ export class Hud {
     }
     const pl = g.runtime.placement as { valid: boolean; reason: string; kind: string } | undefined;
     const inter = g.mode === 'play' && !g.action ? g.resolve() : null;
-    const label = pl ? (pl.valid ? `Place ${pl.kind === 'plot' ? 'the home plot' : `the ${pl.kind}`} here  ·  Esc to cancel` : `${pl.reason}  ·  Esc to cancel`) : inter ? inter.label : '';
+    const cancel = this.device === 'touch' ? '' : this.device === 'gamepad' ? '  ·  B to cancel' : '  ·  Esc to cancel';
+    const label = pl ? (pl.valid ? `Place ${pl.kind === 'plot' ? 'the home plot' : `the ${pl.kind}`} here${cancel}` : `${pl.reason}${cancel}`) : inter ? inter.label : '';
     if (label !== this.lastPrompt) {
       this.lastPrompt = label;
       this.prompt.innerHTML = '';

@@ -6,7 +6,8 @@ import type { Game } from './sim/game';
 import { newGameState, DEFAULT_LOOK, type Appearance } from './sim/state';
 import { SaveManager, type WriteResult } from './sim/save';
 import { createGame } from './sim/systems';
-import { cycleTool, equipKind, putAway, TOOL_ORDER } from './sim/tools';
+import { cycleTool, equipKind, equippedTool, putAway, TOOL_ORDER } from './sim/tools';
+import { interiorFront, interiorRT } from './sim/interior';
 import { DEFAULT_SETTINGS, type Settings } from './settings';
 import { h, UIManager, type Panel } from './ui/dom';
 import { Hud } from './ui/hud';
@@ -23,6 +24,8 @@ import { installStory, pumpInbox, QuestTracker } from './ui/story';
 import { installEventsUI } from './ui/events';
 import { ReadAloud } from './ui/speech';
 import { Governor, guessTier, QUALITY, urlTier, type QualityTier } from './render/quality';
+import { TapMover, pickTile } from './input/tapmove';
+import { actionTarget } from './sim/target';
 import { RecipeTracker } from './ui/recipeTrack';
 import { benchPanel, runBenchmark, type BenchResult } from './ui/bench';
 import { questRT } from './sim/quests';
@@ -30,6 +33,7 @@ import { Phone } from './ui/phone';
 import { settingsBody, settingsPanel } from './ui/settings';
 import { runFinale } from './ui/finale';
 import { AudioEngine } from './audio/engine';
+import { HudLayout } from './ui/hudLayout';
 import { TipManager } from './ui/tips';
 import { TouchControls } from './ui/touch';
 import { toolRing } from './ui/toolring';
@@ -59,6 +63,8 @@ export class App {
   private recipeTrack: RecipeTracker;
   private contestHud: ContestHud;
   private tips: TipManager;
+  /** keeps HUD pieces apart and inside the safe area */
+  hudLayout!: HudLayout;
   private touch: TouchControls;
   readonly saves = new SaveManager();
   settings: Settings;
@@ -66,7 +72,7 @@ export class App {
   /** the island shown behind title / creator */
   private demo: Game;
   private slot = -1;
-  private mode: 'title' | 'game' = 'title';
+  mode: 'title' | 'game' = 'title';
   private autosaveT = 0;
   private fadeEl = h('div', { class: 'fade' });
   private last = performance.now();
@@ -75,6 +81,8 @@ export class App {
   private glLost = false;
   private glPaused = false;
   private glCard = h('div', { class: 'gl-card', role: 'button' });
+  /** tap to walk (touch): walks a path to the tapped spot */
+  readonly tapMove = new TapMover();
   /** benchmark: steers the player instead of the controls (see ui/bench.ts) */
   benchDriver: ((dt: number) => { x: number; z: number }) | null = null;
   /** read-aloud (browser speech; silently unavailable where unsupported) */
@@ -129,10 +137,12 @@ export class App {
     this.demo.mode = 'cutscene';
     this.ui.onChange = () => this.syncMode();
     this.ui.sfx = (n) => this.audio.play(n);
-    const unlock = () => this.audio.unlock();
-    window.addEventListener('pointerdown', unlock);
-    window.addEventListener('keydown', unlock);
-    window.addEventListener('touchstart', unlock);
+    // audio and read-aloud may only start inside a tap or key press (iOS wants touchend / click)
+    const unlock = () => {
+      this.audio.unlock();
+      this.speech.prime();
+    };
+    for (const ev of ['pointerdown', 'keydown', 'touchstart', 'touchend', 'click']) window.addEventListener(ev, unlock, { capture: true, passive: true });
     registerPanels(this);
     installStory(this);
     installEventsUI(this);
@@ -158,7 +168,8 @@ export class App {
             }
             this.ui.closeAll();
             startBuildPlacement(g, kind);
-            this.hud.toast(kind === 'bridge' ? 'Stand on a river bank facing the water. E to build, Esc to cancel.' : 'Stand two tiles from a cliff, facing it. E to build, Esc to cancel.');
+            const keys = this.hud.device === 'touch' ? 'Tap ✔ Place to build.' : this.hud.device === 'gamepad' ? 'A to build, B to cancel.' : 'E to build, Esc to cancel.';
+            this.hud.toast(kind === 'bridge' ? `Stand on a river bank facing the water. ${keys}` : `Stand two tiles from a cliff, facing it. ${keys}`);
           },
         };
       };
@@ -167,6 +178,7 @@ export class App {
       return out;
     });
     root.appendChild(this.ptBadge);
+    this.hudLayout = new HudLayout(this, root);
     // the graphics can be lost (low memory, a GPU reset): pause, then continue on a tap
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
@@ -182,13 +194,16 @@ export class App {
       this.view.interior.invalidate();
       this.glCard.textContent = 'Tap to continue';
     });
-    this.glCard.addEventListener('pointerdown', () => {
-      if (this.glLost) return;
+    const resumeGl = (e: Event) => {
+      e.preventDefault();
+      if (this.glLost || !this.glPaused) return;
       this.glPaused = false;
       this.glCard.style.display = 'none';
       this.applySettings();
       this.last = performance.now();
-    });
+    };
+    // a tap, a click or a key: whichever comes first
+    for (const ev of ['pointerdown', 'touchend', 'click']) this.glCard.addEventListener(ev, resumeGl);
     document.body.appendChild(this.glCard);
     const activity = () => {
       if (this.game) this.game.idleSec = 0;
@@ -197,10 +212,13 @@ export class App {
     window.addEventListener('wheel', activity, { passive: true });
     window.addEventListener('keydown', activity);
     this.showTitle();
+    // backgrounded or the phone locked: save, pause (the pause menu waits for a tap) and go quiet
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') this.saveNow(true);
+      if (document.visibilityState === 'hidden') this.goneAway();
+      else this.cameBack();
     });
-    window.addEventListener('pagehide', () => this.saveNow(true));
+    window.addEventListener('pagehide', () => this.goneAway());
+    document.addEventListener('freeze', () => this.goneAway());
     requestAnimationFrame((t) => this.loop(t));
   }
 
@@ -445,6 +463,23 @@ export class App {
     return ok;
   }
 
+  /** The page is hidden (another app, a locked phone, another tab). */
+  goneAway(): void {
+    this.saveNow(true);
+    this.audio.setHidden(true);
+    this.speech.stop();
+    this.input.touch.action = false;
+    this.input.touch.x = this.input.touch.z = 0;
+    this.tapMove.cancel();
+    const g = this.game;
+    if (g && this.mode === 'game' && !this.ui.modalOpen && !this.benchDriver && g.mode === 'play') this.openPause();
+  }
+
+  cameBack(): void {
+    this.audio.setHidden(false);
+    this.last = performance.now();
+  }
+
   quitToTitle(): void {
     this.saveNow(true);
     void this.fade(() => this.showTitle());
@@ -548,6 +583,40 @@ export class App {
     }
   }
 
+  /** A tap on the game world (touch): use the glowing spot, or walk to what was tapped. */
+  tap(x: number, y: number): void {
+    const g = this.game;
+    if (!g || this.mode !== 'game' || this.ui.modalOpen || g.action) return;
+    if (g.mode !== 'play' && g.mode !== 'placement') return;
+    const pick = pickTile(g, (a, b, c) => this.view.project(a, b, c), x, y);
+    if (!pick) return;
+    this.tapPing(x, y);
+    const p = g.state.player;
+    const rt = interiorRT(g);
+    if (p.location !== 'island' && rt) {
+      const f = interiorFront(g);
+      const here = Math.floor(rt.z) * rt.room.w + Math.floor(rt.x);
+      if ((pick.tile === f.z * rt.room.w + f.x || pick.tile === here) && g.resolve()) {
+        this.input.push('action');
+        return;
+      }
+    } else if (g.mode === 'play') {
+      const t = actionTarget(g);
+      const near = t && (pick.tile === t.tile || Math.hypot(pick.x - t.x, pick.z - t.z) < (equippedTool(g)?.kind === 'rod' ? 1.6 : 0.6));
+      if ((near && t.ok) || (pick.tile === tileOf(g.world, p.x, p.z) && g.resolve())) {
+        this.input.push('action');
+        return;
+      }
+    }
+    if (!this.tapMove.start(g, pick)) this.hud.toast("Can't walk there.", 'warn');
+  }
+
+  private tapPing(x: number, y: number): void {
+    const el = h('div', { class: 'tap-ping', style: `left:${x}px;top:${y}px` });
+    this.root.appendChild(el);
+    setTimeout(() => el.remove(), 500);
+  }
+
   /** Advance the game synchronously (testing / hidden tabs where rAF is paused). */
   debugStep(frames: number, dt = 1 / 60): void {
     for (let k = 0; k < frames; k++) this.tick(dt, k === frames - 1);
@@ -598,11 +667,17 @@ export class App {
     this.ui.update(dt);
     if (g && this.mode === 'game') {
       const free = !this.ui.modalOpen;
+      if (this.tapMove.active && (!free || Math.abs(f.moveX) + Math.abs(f.moveZ) > 0.05 || g.action)) this.tapMove.cancel();
+      const tapDrive = free && this.tapMove.active ? this.tapMove.drive(g, dt, (use) => use && g.act()) : null;
+      if (tapDrive) {
+        f.moveX = tapDrive.x;
+        f.moveZ = tapDrive.z;
+      }
       const drive = this.benchDriver?.(dt);
       if (drive) {
         g.idleSec = 0;
         g.update(dt, { move: { x: drive.x, z: drive.z, run: false }, actionHeld: false });
-      } else g.update(dt, free ? { move: { x: f.moveX, z: f.moveZ, run: f.run }, actionHeld: f.actionHeld } : null);
+      } else g.update(dt, free ? { move: { x: f.moveX, z: f.moveZ, run: f.run, sneak: f.sneak }, actionHeld: f.actionHeld } : null);
       this.playtest?.tick(dt, this.ui.topName);
       this.autosaveT += dt;
       if (this.autosaveT > (g.state.events.active ? 15 : AUTOSAVE_SEC)) {
@@ -618,9 +693,12 @@ export class App {
       pumpInbox(this);
     } else {
       this.demo.update(dt, null);
+      this.tracker.hide();
     }
     if (render) this.view.frame(dt);
     this.touch.update();
+    this.hudLayout.update();
+    this.hud.pump((n) => this.hudLayout.toastRoom(n));
     this.updateAudio(dt);
   }
 

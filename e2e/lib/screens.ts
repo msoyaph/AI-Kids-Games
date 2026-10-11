@@ -188,18 +188,36 @@ export async function checkLayout(page: Page, insets: Viewport['insets'], minTap
         }
         if (Math.min(f.width, f.height) < min - 0.5 && !e.matches('.dim, textarea')) issues.push({ kind: 'small', what: name(e), detail: `${Math.round(f.width)}x${Math.round(f.height)}` });
       }
+      // every tap target must be the thing a finger hits at its centre (nothing laid over it),
+      // except what an open menu's backdrop deliberately covers
+      for (const [e, r] of rects) {
+        const top = document.elementFromPoint(r.left + r.w / 2, r.top + r.h / 2);
+        if (!top || e.contains(top) || top.contains(e)) continue;
+        if (top.closest('.screen, .dim, .editor, .decor-edit, .dlg-wrap, .gl-card, .fade')) continue;
+        issues.push({ kind: 'overlap', what: name(e), detail: `can't be tapped: ${name(top)} is on top` });
+      }
       const els = [...rects.keys()];
       const hit = (a: { left: number; top: number; right: number; bottom: number }, b: typeof a) => {
         const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
         const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
         return w > 2 && h > 2 ? { x: (Math.max(a.left, b.left) + Math.min(a.right, b.right)) / 2, y: (Math.max(a.top, b.top) + Math.min(a.bottom, b.bottom)) / 2 } : null;
       };
+      const round = (e: Element) => {
+        const r = (e as HTMLElement).getBoundingClientRect();
+        return parseFloat(getComputedStyle(e).borderTopLeftRadius) >= Math.min(r.width, r.height) / 2 - 1 && Math.abs(r.width - r.height) < 2;
+      };
       for (let i = 0; i < els.length; i++)
         for (let j = i + 1; j < els.length; j++) {
           const a = els[i]!, b = els[j]!;
           if (a.contains(b) || b.contains(a)) continue;
-          if (a.matches('.dim') || b.matches('.dim')) continue;
-          if (hit(rects.get(a)!, rects.get(b)!)) issues.push({ kind: 'overlap', what: name(a), detail: `overlaps ${name(b)}` });
+          if (a.matches('.dim, .tc-zone') || b.matches('.dim, .tc-zone')) continue;
+          if (!hit(rects.get(a)!, rects.get(b)!)) continue;
+          if (round(a) && round(b)) {
+            const ra = rects.get(a)!.full, rb = rects.get(b)!.full;
+            const d = Math.hypot(ra.left + ra.width / 2 - (rb.left + rb.width / 2), ra.top + ra.height / 2 - (rb.top + rb.height / 2));
+            if (d >= (ra.width + rb.width) / 2 - 2) continue;
+          }
+          issues.push({ kind: 'overlap', what: name(a), detail: `overlaps ${name(b)}` });
         }
       // HUD pieces: never on top of each other, of a tap target, or of an open menu
       const hud = Array.from(document.querySelectorAll('.hud-clock, .hud-money .pill, .hud-tool, .hud-prompt:not(.hidden), .tracker, .rtrack, .contest-hud, .tip, .reel, .toast, .pt-badge, .tc-sneak')).filter(shown);
@@ -211,6 +229,10 @@ export async function checkLayout(page: Page, insets: Viewport['insets'], minTap
           if (a.matches('.toast') && b.matches('.toast')) continue;
           if (hit(hudRect.get(a)!, hudRect.get(b)!)) issues.push({ kind: 'covers', what: name(a), detail: `HUD overlaps ${name(b)}` });
         }
+      // HUD pieces ignore touches, so make them hit-testable for a moment to see what's painted on top
+      const probe = document.createElement('style');
+      probe.textContent = '.hud-lane *, .hud *, .tracker, .rtrack, .toast, .tip, .reel, .contest-hud, .pt-badge, .tc-sneak { pointer-events: auto !important; }';
+      document.head.append(probe);
       for (const a of hud) {
         const ra = hudRect.get(a)!;
         if (ra.left < ins.l - 1 || ra.top < ins.t - 1 || ra.right > vw - ins.r + 1 || ra.bottom > vh - ins.b + 1) issues.push({ kind: 'unsafe', what: name(a), detail: `HUD ${Math.round(ra.left)},${Math.round(ra.top)}-${Math.round(ra.right)},${Math.round(ra.bottom)}` });
@@ -222,6 +244,7 @@ export async function checkLayout(page: Page, insets: Viewport['insets'], minTap
           if (top && a.contains(top)) issues.push({ kind: 'covers', what: name(a), detail: `HUD covers ${name(b)}` });
         }
       }
+      probe.remove();
       // readable text: nothing visible under 12 px
       const walker = document.createTreeWalker(document.getElementById('ui') ?? document.body, NodeFilter.SHOW_TEXT);
       const small = new Set<string>();

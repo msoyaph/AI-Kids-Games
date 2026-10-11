@@ -284,3 +284,34 @@ check; 3 e2e tests. Build 1,207 kB (1.15 MiB); pacing 5.86 h.)
   `e2e/lib/screens.ts`: every screen + `checkLayout()` (off screen, inside simulated safe areas `--sat/--sar/--sab/--sal`,
   tap targets < 48 px, overlapping tap targets, HUD covering menus, text < 12 px). `npx tsx scripts/touch-audit.ts
   --out <dir> [--engines chromium,webkit] [--viewports …] [--screens …]` screenshots + `report.md`.
+- Steps 2–4 done: phones and tablets by touch (portrait and landscape fully supported; no rotate hint).
+  - Touch controls (`src/ui/touch.ts`, touch events only so Chromium/WebKit behave alike): floating stick anywhere
+    (push < 50% = 🐾 sneak → `input.touch.sneak` → `g.creeping`: SNEAK_SPEED + quiet for bugs; ≥ 95% = run), tap =
+    `App.tap` (tap-to-move via `src/input/tapmove.ts` `pickTile` + `TapMover`: ground → walk there; person/door/item
+    with empty hands → walk up and use; with a tool → walk up and face, tap the ring again to use it; a building →
+    its front door; the door mat indoors → walk out). While a fish is on the line any touch is A (tap to hook, hold to
+    reel). Buttons: big contextual A ("Dig", "Talk"…), Run, Tools (opens the ring), Bag, Glowpad, ☰ (pause menu),
+    and ✔ Place / ✕ Cancel during placement. Keyboard or gamepad use hides them until the next touch
+    (`Input.lastDevice`; canvas uses pointer events so a tap's fake mouse events never count as the mouse).
+  - Target ring (`src/sim/target.ts` `actionTarget` + `src/render/target.ts`): the tile A will touch (green = something
+    happens, white = tool in hand, nothing there). Interactions may carry `tile` (pick up / pull weeds act underfoot).
+  - HUD layout (`src/ui/hudLayout.ts`, every frame): left column (clock, tracker, recipe tracker), right column
+    (money, Glowpad/☰), the lane (playtest badge, contest timer, reel bar, tips, toasts) beside or under them, the
+    prompt / Place bar lifted over the touch buttons; quest marker kept clear (`hudLayout.free`). Toasts queue
+    (`Hud.pump`): ≤ 2 at a time on phones, only in free space, held while a full-screen menu is open.
+  - CSS: safe areas via `--sat/--sar/--sab/--sal` (tests override them to simulate notches); `html.touch-ui` (touch device:
+    48 px tap targets) and `html.touch-play` (controls showing) — never name a page class `touch` (that's the controls
+    container). Menus sit at z 7 above the HUD, scroll inside the safe area; HUD buttons (tracker 🔊, recipe ✕) at z 6
+    above the touch layer (z 5). Buttons default to 15 px (WebKit's form default is 11 px).
+  - Editor on touch: drag a piece (keeps the grab offset), tap to pick / place, "＋ Add" drawer, toolbar with nudge
+    arrows, Turn, On table / On floor (`floorOnly`), Put away, Walls, Undo; mouse/keyboard unchanged.
+  - Mobile browser: no pinch / double-tap zoom, pull-to-refresh, callouts or selection (gesturestart, touch-action,
+    overscroll-behavior); `interactive-widget=resizes-content` + `src/ui/viewport.ts` (--vvt/--vvh keep menus in the
+    visual viewport, focused fields scrolled into view); audio unlock on touchend/click with a silent iOS kick;
+    `ReadAloud.prime()` on the first tap; `src/ui/fullscreen.ts` (only where supported: not iPhone, not an iframe
+    without permission); hidden page → save, pause menu, audio suspended (`App.goneAway/cameBack`); Auto quality =
+    Low on phones (`guessTier(nav, screen)`); "Tap to continue" listens to pointer/touch/click.
+  - Fixes found on the way: Lantern Skate rings checked every frame with a swept test (fast skaters missed rings);
+    the melting pond puts you on land at the ice's level; the tool ring sizes itself to the safe area.
+  - `?preview=<scene>` (`src/preview.ts`): cover/spring/summer/autumn/winter/festival/home/shop/villager — a staged,
+    UI-free scene for the site's previews (slot -1, never saved; sets `window.__previewReady`).

@@ -1,6 +1,8 @@
 // Home decorating editor: floor, wall and tabletop pieces, big kid-friendly buttons, undo.
 // Arrows move the cursor (or the piece you're holding); small pieces snap onto the table, desk,
 // dresser or shelf under the cursor, and wall pieces slide along the walls.
+// Touch: drag a piece to move it (or tap to pick it up, tap again to put it down); the pieces list
+// is a drawer ("＋ Add") so the room stays visible on phones.
 import * as THREE from 'three';
 import { item } from '../data/registry';
 import type { Command } from '../input/input';
@@ -50,6 +52,8 @@ type Held =
 
 export const UNDO_LIMIT = 10;
 
+const touchUI = () => document.documentElement.classList.contains('touch-ui');
+
 export class EditorPanel implements Panel {
   name = 'editor';
   el: HTMLElement;
@@ -69,13 +73,20 @@ export class EditorPanel implements Panel {
   private bar = h('div', { class: 'editor-bar' });
   private previewKey = '';
   private listMode = false;
+  /** small pieces go on the floor even over a table */
+  private floorOnly = false;
   private onDown: (e: PointerEvent) => void;
+  private onTouch: (e: TouchEvent) => void;
+  private drag: { id: number; sx: number; sy: number; moved: boolean; grabbed: boolean } | null = null;
+  /** where on the held piece the finger is (tiles from its corner), so it moves with the finger */
+  private grabOff = { x: 0, z: 0 };
 
   constructor(private ui: UIManager, private g: Game, private view: InteriorView, private canvas: HTMLCanvasElement) {
+    const add = btn('＋ Add', () => this.el.classList.toggle('list-open'), 'editor-add', { 'aria-label': 'Add furniture' });
     this.el = h(
       'div',
       { class: 'editor' },
-      h('div', { class: 'panel editor-panel' }, h('h2', null, 'Decorate', h('span', { class: 'spacer' }), btn('✔ Done', () => ui.pop(this), 'primary')), this.status, this.side),
+      h('div', { class: 'panel editor-panel' }, h('h2', null, 'Decorate', h('span', { class: 'spacer' }), add, btn('✔ Done', () => ui.pop(this), 'primary')), this.status, this.side),
       this.bar,
     );
     const { w, d } = roomSize(g);
@@ -83,12 +94,15 @@ export class EditorPanel implements Panel {
     this.cz = Math.floor(d / 2);
     this.onDown = (e) => this.pointer(e);
     canvas.addEventListener('pointerdown', this.onDown);
+    this.onTouch = (e) => this.touch(e);
+    for (const t of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) canvas.addEventListener(t, this.onTouch as EventListener, { passive: false });
     this.buildBar();
     this.render();
   }
 
   onClose(): void {
     this.canvas.removeEventListener('pointerdown', this.onDown);
+    for (const t of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) this.canvas.removeEventListener(t, this.onTouch as EventListener);
     this.cancelHeld();
     this.view.cursor.visible = false;
     this.view.preview.clear();
@@ -99,9 +113,51 @@ export class EditorPanel implements Panel {
 
   // ---------------------------------------------------------------- input
 
+  /** Mouse / pen: click picks up or puts down (touch has its own drag handling below). */
   private pointer(e: PointerEvent): void {
+    if (e.pointerType === 'touch') return;
+    this.grabOff = { x: 0, z: 0 };
+    if (this.aim(e.clientX, e.clientY)) {
+      this.confirm();
+      this.sync();
+    }
+  }
+
+  /** Touch: press on a piece and drag it; a tap picks up / puts down like a click. */
+  private touch(e: TouchEvent): void {
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    if (!t) return;
+    if (e.type === 'touchstart') {
+      if (this.drag || e.touches.length > 1) return;
+      this.drag = { id: t.identifier, sx: t.clientX, sy: t.clientY, moved: false, grabbed: false };
+      if (!this.held) this.grabOff = { x: 0, z: 0 };
+      if (!this.aim(t.clientX, t.clientY)) return;
+      if (!this.held) {
+        const fx = this.cx, fz = this.cz;
+        this.confirm();
+        this.drag.grabbed = !!this.held;
+        if (this.held) this.grabOff = { x: fx - this.cx, z: fz - this.cz };
+      }
+      this.sync();
+      return;
+    }
+    const d = this.drag;
+    if (!d || t.identifier !== d.id) return;
+    if (e.type === 'touchmove') {
+      if (Math.hypot(t.clientX - d.sx, t.clientY - d.sy) > 10) d.moved = true;
+      if (d.moved && this.aim(t.clientX, t.clientY)) this.sync();
+      return;
+    }
+    this.drag = null;
+    if (e.type === 'touchend' && this.held && (d.moved || !d.grabbed)) this.confirm();
+    this.sync();
+  }
+
+  /** Point the cursor at the floor tile or wall spot under a screen point. */
+  private aim(clientX: number, clientY: number): boolean {
     const rect = this.canvas.getBoundingClientRect();
-    const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+    const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
     const ray = new THREE.Raycaster();
     ray.setFromCamera(ndc, this.view.camera);
     const { w, d } = roomSize(this.g);
@@ -122,21 +178,20 @@ export class EditorPanel implements Panel {
         const dist = hit.distanceTo(ray.ray.origin);
         if (!best || dist < best.dist) best = { wall, pos: Math.floor(along), dist };
       }
-      if (!best) return;
+      if (!best) return false;
       this.wall = best.wall;
       this.wpos = this.fitWallPos(best.wall, best.pos);
-      this.confirm();
-      this.sync();
-      return;
+      return true;
     }
     const hit = new THREE.Vector3();
-    if (!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit)) return;
-    const x = Math.floor(hit.x), z = Math.floor(hit.z);
-    if (x < 0 || z < 0 || x >= w || z >= d) return;
-    this.cx = x;
-    this.cz = z;
-    this.confirm();
-    this.sync();
+    if (!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit)) return false;
+    if (hit.x < 0 || hit.z < 0 || hit.x >= w || hit.z >= d) return false;
+    // a piece you're holding keeps the spot where the finger holds it
+    const fp = this.held && !this.isWallPiece(this.held.id) ? footprint(this.held.id, this.rot) : { w: 1, d: 1 };
+    const off = this.held ? this.grabOff : { x: 0, z: 0 };
+    this.cx = Math.max(0, Math.min(w - fp.w, Math.floor(hit.x) - Math.min(off.x, fp.w - 1)));
+    this.cz = Math.max(0, Math.min(d - fp.d, Math.floor(hit.z) - Math.min(off.z, fp.d - 1)));
+    return true;
   }
 
   command(c: Command): boolean {
@@ -250,7 +305,7 @@ export class EditorPanel implements Panel {
   private target(): { kind: 'surface'; parent: number; slot: number } | { kind: 'floor' } | { kind: 'wall' } {
     if (!this.held) return { kind: 'floor' };
     if (this.isWallPiece(this.held.id)) return { kind: 'wall' };
-    if (isSmall(this.held.id)) {
+    if (isSmall(this.held.id) && !this.floorOnly) {
       const s = surfaceAt(this.g, this.cx, this.cz);
       const selfUid = this.held.kind === 'floor' ? this.held.uid : -1;
       if (s && s.parent.uid !== selfUid) return { kind: 'surface', parent: s.parent.uid, slot: s.slot };
@@ -474,39 +529,60 @@ export class EditorPanel implements Panel {
       text = t.kind === 'wall' ? `${name}: pick a spot on the ${WALL_NAMES[this.wall]}.` : t.kind === 'surface' ? `${name}: it will sit on top.` : `${name}: pick a spot on the floor.`;
     } else if (this.wallMode) {
       const wi = wallItemAt(g, this.wall, this.wpos);
-      text = wi ? `${item(wi.id).name} — tap ✋ Move or 📦 Put away.` : 'Walls: pick a wall piece from the list, or tap one to move it.';
+      text = wi ? `${item(wi.id).name} — tap ✋ Move or 📦 Put away.` : `Walls: pick a wall piece from ${touchUI() ? '＋ Add' : 'the list'}, or tap one to move it.`;
     } else {
       const s = surfaceAt(g, this.cx, this.cz);
       const pf = (s ? itemOnSlot(g, s.parent.uid, s.slot) : undefined) ?? furnitureAt(g, this.cx, this.cz);
-      text = pf ? `${item(pf.id).name} — tap ✋ Move, 🔄 Turn or 📦 Put away.` : 'Pick something from the list, or tap a piece to move it.';
+      text = pf
+        ? `${item(pf.id).name} — ${touchUI() ? 'drag it, or tap' : 'tap'} ✋ Move, 🔄 Turn or 📦 Put away.`
+        : touchUI()
+          ? 'Tap ＋ Add to pick a piece, or drag a piece to move it.'
+          : 'Pick something from the list, or tap a piece to move it.';
     }
-    this.status.append(h('div', { class: 'editor-say' }, text), h('div', { class: 'tiny muted' }, 'Keys: arrows move · E place · R turn · X put away · U undo · F walls'));
+    this.status.append(h('div', { class: 'editor-say' }, text), h('div', { class: 'tiny muted editor-keys' }, 'Keys: arrows move · E place · R turn · X put away · U undo · F walls'));
     const undoBtn = this.bar.querySelector('[data-act="undo"]') as HTMLButtonElement | null;
     if (undoBtn) undoBtn.disabled = this.undo.length === 0;
     const wallBtn = this.bar.querySelector('[data-act="walls"]') as HTMLButtonElement | null;
     if (wallBtn) {
-      wallBtn.textContent = this.wallMode ? '🪑 Floor' : '🖼 Walls';
+      this.label(wallBtn, this.wallMode ? '🪑' : '🖼', this.wallMode ? 'Floor' : 'Walls');
       wallBtn.disabled = !!held;
     }
+    // small pieces: on the table under them, or on the floor
+    const tableBtn = this.bar.querySelector('[data-act="table"]') as HTMLButtonElement | null;
+    if (tableBtn) {
+      const small = !!held && isSmall(held.id) && !this.isWallPiece(held.id);
+      tableBtn.style.display = small ? '' : 'none';
+      this.label(tableBtn, this.floorOnly ? '⬇' : '⬆', this.floorOnly ? 'On floor' : 'On table');
+    }
+    const placeBtn = this.bar.querySelector('[data-act="confirm"]') as HTMLButtonElement | null;
+    if (placeBtn) this.label(placeBtn, '✋', held ? 'Place' : 'Move');
+  }
+
+  private label(b: HTMLElement, icon: string, cap: string): void {
+    const ico = b.querySelector('.eb-ico'), c = b.querySelector('.eb-cap');
+    if (ico && ico.textContent !== icon) ico.textContent = icon;
+    if (c && c.textContent !== cap) c.textContent = cap;
   }
 
   private buildBar(): void {
-    const big = (label: string, act: string, f: () => void, cls = '') => btn(label, () => {
-      f();
-      this.sync();
-    }, `editor-btn ${cls}`, { 'data-act': act, 'aria-label': act });
+    const big = (icon: string, cap: string, act: string, f: () => void, cls = '') =>
+      btn([h('span', { class: 'eb-ico' }, icon), cap ? h('span', { class: 'eb-cap' }, cap) : null], () => {
+        f();
+        this.sync();
+      }, `editor-btn ${cls}`, { 'data-act': act, 'aria-label': cap || act });
     this.bar.append(
       h(
         'div',
         { class: 'editor-pad' },
-        big('⬆', 'up', () => this.step(0, -1)),
-        h('div', { class: 'row' }, big('⬅', 'left', () => this.step(-1, 0)), big('⬇', 'down', () => this.step(0, 1)), big('➡', 'right', () => this.step(1, 0))),
+        big('⬆', '', 'up', () => this.step(0, -1)),
+        h('div', { class: 'row' }, big('⬅', '', 'left', () => this.step(-1, 0)), big('⬇', '', 'down', () => this.step(0, 1)), big('➡', '', 'right', () => this.step(1, 0))),
       ),
-      big('✋ Move / Place', 'confirm', () => this.confirm(), 'primary'),
-      big('🔄 Turn', 'rotate', () => this.rotate()),
-      big('📦 Put away', 'store', () => this.store()),
-      big('🖼 Walls', 'walls', () => this.toggleWalls()),
-      big('↩️ Undo', 'undo', () => this.doUndo()),
+      big('✋', 'Move', 'confirm', () => this.confirm(), 'primary'),
+      big('🔄', 'Turn', 'rotate', () => this.rotate()),
+      big('⬆', 'On table', 'table', () => (this.floorOnly = !this.floorOnly)),
+      big('📦', 'Put away', 'store', () => this.store()),
+      big('🖼', 'Walls', 'walls', () => this.toggleWalls()),
+      big('↩️', 'Undo', 'undo', () => this.doUndo()),
     );
   }
 
@@ -533,6 +609,9 @@ export class EditorPanel implements Panel {
         return;
       }
       if (this.held && this.held.kind !== 'new') this.cancelHeld();
+      this.el.classList.remove('list-open');
+      this.floorOnly = false;
+      this.grabOff = { x: 0, z: 0 };
       this.held = { kind: 'new', src, id };
       this.pendingSnap = null;
       this.rot = 0;

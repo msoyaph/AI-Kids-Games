@@ -279,9 +279,9 @@ export function foragingResolver(g: Game, ctx: InteractCtx): Interaction | null 
   const { here, front, hereObj, frontObj, tool } = ctx;
   const sameLevel = w.height(front) === w.height(here) || !!w.structure(here);
   // pick up / pluck
-  if (hereObj && hereObj.k === 'item') return { label: `Pick up ${item(hereObj.item ?? '').name}`, priority: 95, run: () => pickUp(g, here) };
+  if (hereObj && hereObj.k === 'item') return { label: `Pick up ${item(hereObj.item ?? '').name}`, priority: 95, tile: here, run: () => pickUp(g, here) };
   if (frontObj && frontObj.k === 'item' && sameLevel) return { label: `Pick up ${item(frontObj.item ?? '').name}`, priority: 92, run: () => pickUp(g, front) };
-  if (hereObj && hereObj.k === 'weed') return { label: 'Pull weeds', priority: 88, run: () => pluck(g, here) };
+  if (hereObj && hereObj.k === 'weed') return { label: 'Pull weeds', priority: 88, tile: here, run: () => pluck(g, here) };
   if (frontObj && frontObj.k === 'weed' && sameLevel) return { label: 'Pull weeds', priority: 86, run: () => pluck(g, front) };
 
   if (tool) {

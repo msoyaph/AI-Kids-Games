@@ -82,6 +82,21 @@ export class ReadAloud {
     }
   }
 
+  private primed = false;
+  /** Call inside a tap: lets iOS speak later lines that aren't started by a tap. */
+  prime(): void {
+    if (this.primed || !this.available || !this.enabled) return;
+    this.primed = true;
+    try {
+      const u = this.make(' ');
+      if (!u) return;
+      (u as { volume?: number }).volume = 0;
+      this.synth!.speak(u);
+    } catch {
+      /* ignore */
+    }
+  }
+
   stop(): void {
     try {
       this.synth?.cancel();

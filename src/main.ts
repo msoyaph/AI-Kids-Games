@@ -1,6 +1,8 @@
 import './ui/styles.css';
 import { App } from './app';
 import { devTools } from './dev';
+import { installViewport } from './ui/viewport';
+import { previewScene, runPreview } from './preview';
 import { questRT } from './sim/quests';
 import { rollWeather, weatherName } from './sim/weather';
 import { SEASONS, SEASON_DAYS, SEASON_ICON, SEASON_NAME } from './sim/seasons';
@@ -10,6 +12,16 @@ import { CHALLENGES } from './data/challenges';
 import { CONTEST_DAYS, FESTIVALS } from './data/festivals';
 import { VILLAGER_BY_ID } from './data/villagers';
 import { birthdayToday, contestDay, festivalToday, happeningsOpen, meteorNight, merchantHere } from './sim/happenings';
+
+// Phones and tablets: no pinch / double-tap zoom and no long-press menus while playing (iOS ignores
+// user-scalable=no, so this is done here too). Menus still scroll; text fields still get their menu.
+const isField = (t: EventTarget | null) => t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement;
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('touchmove', (e) => e.touches.length > 1 && e.preventDefault(), { passive: false });
+document.addEventListener('dblclick', (e) => e.preventDefault());
+window.addEventListener('contextmenu', (e) => !isField(e.target) && e.preventDefault());
+
+installViewport();
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLDivElement;
@@ -28,7 +40,12 @@ app.onNewGame = (g) => {
 
 (window as unknown as { __lc: unknown }).__lc = app;
 // scene helpers for tests and screenshots (see src/dev.ts)
-(app as unknown as { dev: unknown }).dev = devTools(app);
+const dev = devTools(app);
+(app as unknown as { dev: unknown }).dev = dev;
+
+// ?preview=<scene>: a staged, UI-free scene for the site's cover art and previews (src/preview.ts)
+const preview = previewScene();
+if (preview) setTimeout(() => runPreview(app, dev, preview), 300);
 
 // ?bench=1 runs the performance test at the current tier, ?bench=all runs Low, Medium and High
 try {

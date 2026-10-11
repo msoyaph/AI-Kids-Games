@@ -1,5 +1,6 @@
 // Settings: audio, text speed, camera, visuals, controls, onboarding tips.
 import type { App } from '../app';
+import { fullscreenSupported, isFullscreen, toggleFullscreen } from './fullscreen';
 import { sharedUniforms } from '../render/curve';
 import { btn, h, type Panel } from './dom';
 import { playtestSettings } from './playtest';
@@ -80,6 +81,7 @@ export function settingsBody(app: App, body: HTMLElement): void {
           ),
         ]
       : []),
+    ...(fullscreenSupported() ? [h('div', { class: 'opt-row' }, h('label', null, 'Screen'), btn(isFullscreen() ? '⛶ Leave full screen' : '⛶ Full screen', () => toggleFullscreen(), 'small'))] : []),
     h('div', { class: 'row wrap', style: 'margin-top:8px' }, btn('Test performance', () => {
       const go = () => {
         app.ui.closeAll();

@@ -31,10 +31,16 @@ export const QUALITY: Record<QualityTier, QualitySpec> = {
 };
 
 /** A sensible first guess for Auto, from what the browser tells us about the device. */
-export function guessTier(nav: { hardwareConcurrency?: number; userAgent?: string; maxTouchPoints?: number } = typeof navigator !== 'undefined' ? navigator : {}): QualityTier {
+export function guessTier(
+  nav: { hardwareConcurrency?: number; userAgent?: string; maxTouchPoints?: number } = typeof navigator !== 'undefined' ? navigator : {},
+  scr: { width: number; height: number } | null = typeof screen !== 'undefined' ? screen : null,
+): QualityTier {
   const ua = nav.userAgent ?? '';
   const touch = (nav.maxTouchPoints ?? 0) > 1 || /iPad|iPhone|Android|Mobile/i.test(ua);
   const cores = nav.hardwareConcurrency ?? 4;
+  // phones (short side under 600 CSS px) always start on Low: small screens, tight memory, hot hands
+  const phone = /iPhone|iPod/i.test(ua) || (touch && !!scr && Math.min(scr.width, scr.height) < 600);
+  if (phone) return 'low';
   if (touch) return cores >= 8 ? 'medium' : 'low';
   return cores >= 8 ? 'high' : 'medium';
 }

@@ -49,11 +49,11 @@ jobs:
       - name: Story pacing stays near 6 hours
         run: npm run pacing -- --check
 
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
 
-      - name: Browser smoke test (Low quality, software WebGL)
-        run: npm run e2e
+      - name: Browser tests at Low quality on software WebGL (desktop smoke, touch spot checks, layouts)
+        run: npm run e2e:ci
         env:
           E2E_LOW: '1'
 

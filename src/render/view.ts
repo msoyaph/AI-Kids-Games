@@ -1,5 +1,6 @@
 // GameView: builds the Three.js scene from the simulation and keeps it in sync.
 import * as THREE from 'three';
+import { TargetMarker } from './target';
 import type { Game } from '../sim/game';
 import { CameraRig } from './camera';
 import { sharedUniforms } from './curve';
@@ -41,6 +42,8 @@ export class GameView {
   beam = new LighthouseBeam();
   onFestivalEnd: (() => void) | null = null;
   readonly interior = new InteriorView();
+  /** ring on the tile the action button will affect */
+  readonly target = new TargetMarker();
   private structGroup = new THREE.Group();
   private structMeshes = new Map<number, { obj: THREE.Group; key: string }>();
   player!: Rig;
@@ -152,7 +155,7 @@ export class GameView {
     this.placement = new PlacementView(game);
     this.particles = new Particles(game);
     this.events = new EventsView(game);
-    this.islandRoot.add(this.terrain.group, this.water.mesh, this.water.extras, this.objects.group, this.structGroup, this.critters.group, this.agents.group, this.placement.group, this.festival.group, this.beam.pivot, this.particles.group, this.events.group);
+    this.islandRoot.add(this.terrain.group, this.water.mesh, this.water.extras, this.objects.group, this.structGroup, this.critters.group, this.agents.group, this.placement.group, this.festival.group, this.beam.pivot, this.particles.group, this.events.group, this.target.group);
     this.objects.setSeason(SEASONS[game.state.season?.index ?? 0]!);
     this.applyQuality(this.quality);
     this.objects.rebuild();
@@ -295,6 +298,7 @@ export class GameView {
       speed: g.motion.speed,
       action: a ? Math.min(1, a.t / a.dur) : -1,
       actionKind: a ? a.kind : equippedTool(g) ? 'hold' : '',
+      sneaking: g.sneaking || g.creeping,
     });
     if (this.festival.active) {
       const c = this.festival.cam;
@@ -332,6 +336,7 @@ export class GameView {
     this.particles.frame(dt, this.sky.night, this.rig.target);
     this.events.frame(dt, this.rig.target);
     this.placement.frame();
+    this.target.frame(dt, g);
     this.sky.season = g.state.season?.index ?? 1;
     this.sky.update(g.state.clock.minute, g.state.weather.today, this.rig.target);
     this.water.frame(dt, g.state.clock.minute / 60, this.sky.night, this.rig.target, g.state.season?.index === 3);
