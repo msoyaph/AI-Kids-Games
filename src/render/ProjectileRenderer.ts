@@ -128,6 +128,7 @@ export class ProjectileRenderer {
         intensity = 0.2 * fade;
       } else if (kind === HazardKind.EnemyRing) {
         const rr = hz.a0[i];
+        if (rr <= 0.05) continue;
         writeTRS(wa, nw * 16, hz.x[i], hz.y[i] - 0.1, hz.z[i], 0, 0, rr, 1, rr);
         const f = 0.9 * Math.min(1, (hz.radius[i] - rr) / 4);
         wc[nw * 3] = tmpC.r * f;

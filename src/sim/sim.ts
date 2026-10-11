@@ -1,4 +1,6 @@
-import { DT } from '../config/balance';
+import { DT, RUN_LENGTH } from '../config/balance';
+import { BANNER } from '../config/waves';
+import { Ev } from '../core/events';
 import { updateDirector } from './director';
 import { enemyContacts, killDepleted, updateEnemies, updateEnemyShots } from './enemyAI';
 import { updateHazards } from './hazards';
@@ -66,6 +68,29 @@ function compact(w: World): void {
   w.pickups.compact();
 }
 
+/** Dawn at 20:00 (or the Regent's defeat) wins the run after a short celebration. */
+function checkVictory(w: World): void {
+  const d = w.director;
+  if (!d.dawn && w.time >= RUN_LENGTH && w.options.stress === 0) {
+    d.dawn = true;
+    d.victoryT = 3;
+    w.events.push(Ev.Banner, 0, 0, 0, 0, 0, 0, BANNER.dawn);
+    // the Gloom melts away in the sunlight
+    const e = w.enemies;
+    for (let i = 0; i < e.count; i++) {
+      if (!e.alive[i]) continue;
+      e.alive[i] = 0;
+      w.events.push(Ev.EnemyDie, e.x[i], e.y[i], e.z[i], e.type[i], e.scale[i], 0);
+    }
+    w.director.bossUid = 0;
+  }
+  if (d.victoryT > 0) {
+    w.player.iframes = Math.max(w.player.iframes, 0.5);
+    d.victoryT -= DT;
+    if (d.victoryT <= 0) w.state = 'won';
+  }
+}
+
 /** Advance the world by one fixed 1/60 s tick. */
 export function step(w: World, input: SimInput): void {
   if (w.state !== 'playing') return;
@@ -74,7 +99,8 @@ export function step(w: World, input: SimInput): void {
   savePrevious(w);
 
   updatePlayer(w, input);
-  updateDirector(w);
+  if (!w.director.dawn && w.director.victoryT <= 0) updateDirector(w);
+  checkVictory(w);
 
   const e = w.enemies;
   w.grid.build(e.x, e.z, e.alive, e.count);

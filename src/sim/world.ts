@@ -134,6 +134,9 @@ export interface DirectorState {
   bossMaxHp: number;
   finalBossDefeated: boolean;
   lastSegment: number;
+  /** Counts down to the victory screen once the run is won. */
+  victoryT: number;
+  dawn: boolean;
 }
 
 export interface WorldOptions {
@@ -252,7 +255,7 @@ export function createWorld(opts: WorldOptions): World {
     pendingChests: 0,
     choices: [],
     chestRewards: [],
-    director: { spawnAcc: 0, eventIndex: 0, bossUid: 0, bossType: -1, bossMaxHp: 0, finalBossDefeated: false, lastSegment: -1 },
+    director: { spawnAcc: 0, eventIndex: 0, bossUid: 0, bossType: -1, bossMaxHp: 0, finalBossDefeated: false, lastSegment: -1, victoryT: 0, dawn: false },
     stats: { kills: 0, damageTaken: 0, coins: 0, bossKills: {}, evolutions: 0, shrinesBroken: 0, chestsOpened: 0, topSpeed: 0, elitesKilled: 0 },
     unlockedWeapons: new Set(opts.unlockedWeapons ?? []),
     options: { stress, god: !!opts.god || stress > 0 },
