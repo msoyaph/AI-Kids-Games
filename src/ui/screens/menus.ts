@@ -133,7 +133,7 @@ export function nameEntryScreen(app: App, slot: number): Screen {
 
 export function mainMenuScreen(app: App): Screen {
   app.menu.setView('showcase');
-  app.menu.offsetX = -3.2;
+  app.menu.offsetX = -4.4;
   app.menu.showKart(app.save.racer, app.save.kart);
   const s = app.save;
   const trophies = Object.values(s.trophies);
@@ -164,6 +164,14 @@ export function mainMenuScreen(app: App): Screen {
       app.screens.racerSelect(0, () => app.screens.trackSelect());
     }),
   );
+  const canFullscreen = typeof document !== 'undefined' && document.fullscreenEnabled;
+  const fsButton = canFullscreen
+    ? button(document.fullscreenElement ? '⤢ Exit fullscreen' : '⛶ Fullscreen', () => {
+        if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+        else void document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => app.toast('Fullscreen isn’t allowed here.'));
+        setTimeout(() => app.screens.mainMenu(), 300);
+      }, 'small ghost')
+    : null;
   const row = h(
     'div',
     { class: 'menu-row' },
@@ -180,7 +188,7 @@ export function mainMenuScreen(app: App): Screen {
     h('div', { class: 'topbar' }, h('div', { class: 'title-h' }, 'Calex Cart', h('span', { class: 'sub' }, `· ${s.name}`)), h('div', { class: 'spacer' }), h('div', { class: 'hint' }, `🏆 ${trophies.length}  (${gold} gold) · 🎯 ${done} · 🏎 ${s.unlocks.racers.length}/${RACERS.length}`)),
     h('div', { style: 'flex:1;display:flex;flex-direction:column;justify-content:center;gap:12px;min-height:0' }, col),
     row,
-    h('div', { style: 'margin-top:8px' }, button('↩ Change save', () => app.screens.slots(), 'small ghost')),
+    h('div', { class: 'menu-row', style: 'margin-top:8px' }, button('↩ Change save', () => app.screens.slots(), 'small ghost'), fsButton),
   );
   return {
     el,

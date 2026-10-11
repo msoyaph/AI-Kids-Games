@@ -38,12 +38,13 @@ export function statsBlock(stats: Stats, compare?: Stats): HTMLElement {
 // ---------------------------------------------------------------------------
 export function racerSelectScreen(app: App, player: number, next: () => void): Screen {
   app.menu.setView('showcase');
-  app.menu.offsetX = 3.4;
+  app.menu.offsetX = -4.6;
+  app.menu.offsetY = -0.9;
   const s = app.save;
   let current = app.flow.racers[player] ?? s.racer;
   if (!s.unlocks.racers.includes(current)) current = s.unlocks.racers[0];
   const kart = (): KartConfig => (player === 0 ? s.kart : app.kartFor(1));
-  const info = h('div', { class: 'panel menu-col', style: 'width:min(360px,40vw);min-width:220px' });
+  const info = h('div', { class: 'panel menu-col', style: 'gap:6px;padding:10px 14px' });
   const grid = h('div', { class: 'grid scroll', style: 'grid-template-columns:repeat(auto-fill,minmax(clamp(74px,11vw,104px),1fr));flex:1;min-height:0;align-content:start;padding:4px' });
   const cards = new Map<string, HTMLButtonElement>();
   const show = (id: string): void => {
@@ -98,7 +99,7 @@ export function racerSelectScreen(app: App, player: number, next: () => void): S
     'div',
     { class: 'dim' },
     h('div', { class: 'topbar' }, h('div', { class: 'title-h' }, title), h('div', { class: 'spacer' }), player === 0 ? button('🔧 Customize kart', () => app.screens.garage(() => app.screens.racerSelect(player, next)), 'small teal') : null),
-    h('div', { style: 'flex:1;display:flex;gap:14px;min-height:0' }, h('div', { style: 'flex:1;display:flex;flex-direction:column;min-height:0;min-width:0' }, grid), info),
+    h('div', { style: 'flex:1;display:flex;gap:14px;min-height:0' }, h('div', { style: 'flex:1.15;display:flex;flex-direction:column;min-height:0;min-width:0' }, grid), h('div', { style: 'flex:1;display:flex;flex-direction:column;min-width:200px;max-width:420px' }, h('div', { style: 'flex:1;min-height:30%' }), info)),
   );
   return {
     el,
@@ -107,6 +108,7 @@ export function racerSelectScreen(app: App, player: number, next: () => void): S
     onExit: () => {
       obs.disconnect();
       app.menu.offsetX = 0;
+      app.menu.offsetY = 0;
     },
   };
 }
@@ -118,7 +120,8 @@ type GarageTab = 'body' | 'wheels' | 'glider' | 'paint' | 'decal';
 
 export function garageScreen(app: App, back: () => void, tab: GarageTab = 'body'): Screen {
   app.menu.setView('garage');
-  app.menu.offsetX = 3.2;
+  app.menu.offsetX = -4.2;
+  app.menu.offsetY = -0.9;
   const s = app.save;
   const before = kartStats(s.racer, s.kart);
   const preview = (): void => app.menu.showKart(s.racer, s.kart);
@@ -182,7 +185,7 @@ export function garageScreen(app: App, back: () => void, tab: GarageTab = 'body'
     { class: 'dim' },
     h('div', { class: 'topbar' }, h('div', { class: 'title-h' }, 'Garage'), h('div', { class: 'spacer' }), button('Done', back, 'small yellow')),
     tabs,
-    h('div', { style: 'flex:1;display:flex;gap:14px;min-height:0;margin-top:8px' }, h('div', { style: 'flex:1;display:flex;flex-direction:column;min-height:0;min-width:0' }, grid), h('div', { class: 'panel', style: 'width:min(300px,34vw);min-width:200px;align-self:flex-start' }, h('div', { style: 'font-weight:900;margin-bottom:6px' }, findRacer(s.racer).name), statsHost, h('div', { class: 'hint', style: 'margin-top:8px' }, 'Green bars went up, orange bars went down.'))),
+    h('div', { style: 'flex:1;display:flex;gap:14px;min-height:0;margin-top:8px' }, h('div', { style: 'flex:1.15;display:flex;flex-direction:column;min-height:0;min-width:0' }, grid), h('div', { style: 'flex:1;display:flex;flex-direction:column;min-width:200px;max-width:400px' }, h('div', { style: 'flex:1;min-height:30%' }), h('div', { class: 'panel', style: 'padding:10px 14px' }, h('div', { style: 'font-weight:900;margin-bottom:6px' }, findRacer(s.racer).name), statsHost, h('div', { class: 'hint', style: 'margin-top:6px' }, 'Green bars went up, orange bars went down.')))),
   );
   const order: GarageTab[] = ['body', 'wheels', 'glider', 'paint', 'decal'];
   return {
@@ -196,7 +199,10 @@ export function garageScreen(app: App, back: () => void, tab: GarageTab = 'body'
       }
       return false;
     },
-    onExit: () => (app.menu.offsetX = 0),
+    onExit: () => {
+      app.menu.offsetX = 0;
+      app.menu.offsetY = 0;
+    },
   };
 }
 

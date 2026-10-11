@@ -31,8 +31,10 @@ export class MenuScene {
   private readonly confetti: ParticlePool;
   private view: MenuView = 'title';
   private t = 0;
-  /** Where the showcase kart sits on screen (shifted right when a side panel is open). */
+  /** Where the showcase kart sits on screen (camera shift; negative X moves the kart right). */
   offsetX = 0;
+  /** Vertical framing shift (negative moves the kart up the screen). */
+  offsetY = 0;
 
   constructor(private readonly gr: GameRenderer) {
     buildSky(this.scene, { top: 0x6a4cff, bottom: 0xffc6e8, fog: 0xffd6ee, sun: 0xffffff, ambient: 0xffffff, ground: 0x8cff6b }, 300);
@@ -164,9 +166,10 @@ export class MenuScene {
       case 'showcase':
       case 'garage': {
         if (this.current) this.current.group.rotation.y += dt * 0.5;
-        const dist = this.view === 'garage' ? 9.5 : 11;
-        this.camera.position.set(this.offsetX, 3.6, dist);
-        this.camera.lookAt(this.offsetX, 1.6, 0);
+        const portrait = this.camera.aspect < 1.2 ? 1.25 : 1;
+        const dist = (this.view === 'garage' ? 13.5 : 15) * portrait;
+        this.camera.position.set(this.offsetX, 3.6 + this.offsetY * 0.5, dist);
+        this.camera.lookAt(this.offsetX, 1.6 + this.offsetY, 0);
         break;
       }
       case 'podium': {
