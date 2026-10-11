@@ -83,10 +83,10 @@ separate saves; lists on the old Sites domain cannot automatically transfer.
 
 ## Deployment
 
-Current preview: https://ai-kids-games-m7zdjkpiq-real-tours.vercel.app
+Current preview: https://ai-kids-games-lkreq5wu9-real-tours.vercel.app
 
 Vercel project: real-tours/ai-kids-games. Deployment
-`dpl_Djvq2uCxFAQ1mSPapjikTQUUhD5R` is READY and is a preview (API target=null,
+`dpl_3JdVoZLrnSvoc9dpcFbvZqD7829v` is READY and is a preview (API target=null,
 CLI Preview, build VERCEL_ENV=preview). DEPLOYMENT.json records this identity.
 Vercel authentication is still enabled; sign in with the owner/team account on
 real devices. The site itself makes no other-origin runtime requests. The host
@@ -111,7 +111,7 @@ other-origin runtime requests. Temporary authenticated automation access was
 revoked after QA; access cookies are never shipped.
 
 Production is not authorized and has not been published. The existing Sites
-version received only the separately requested homepage copy removal; its
+version received the separately requested page and card cosmetic edits; its
 two-game catalog remains. After real-device checks, request owner approval before
 any production deployment or promotion.
 
@@ -123,3 +123,12 @@ browser checks pass across desktop, tablet and phone. Both versions pass
 phrase-removal and layout checks at 855 and 390 pixels. The full 13 hosted
 integration checks above apply to the original launch preview; game builds
 and embedding/storage behavior are unchanged by this presentation edit.
+
+## Page and card review follow-up
+
+Removed the selected Browse and Favorites introductions and Parents eyebrow,
+and hid Light Crossing’s category/status row in both versions. Both builds
+and all 15 catalog tests pass. Sixteen local and sixteen hosted page checks
+pass at 889 and 390 pixels, covering Home/Browse/Favorites/Parents. Eight hosted
+preview assets match the local build. Sites version 3 is published. Temporary
+preview QA access was revoked; production approval is still pending.

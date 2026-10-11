@@ -1,8 +1,8 @@
 {
   "provider": "Vercel",
   "project": "ai-kids-games",
-  "deploymentId": "dpl_Djvq2uCxFAQ1mSPapjikTQUUhD5R",
-  "url": "https://ai-kids-games-m7zdjkpiq-real-tours.vercel.app",
+  "deploymentId": "dpl_3JdVoZLrnSvoc9dpcFbvZqD7829v",
+  "url": "https://ai-kids-games-lkreq5wu9-real-tours.vercel.app",
   "environment": "preview",
   "readyState": "READY",
   "productionApproved": false,
@@ -10,5 +10,9 @@
   "previewAuthentication": true,
   "gameHashesVerified": true,
   "gameCacheControl": "public, max-age=0, must-revalidate",
-  "hashedAssetCacheControl": "public, max-age=31536000, immutable"
+  "hashedAssetCacheControl": "public, max-age=31536000, immutable",
+  "catalogBrowserChecksPassed": 15,
+  "focusedHostedPageChecksPassed": 16,
+  "currentPreviewAssetsMatched": 8,
+  "gameBuildsChangedInCosmeticUpdate": false
 }

@@ -40,7 +40,7 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
    landscape on touch devices; registry guidance now says so. Native Safari and
    physical controller checks remain on the real-device checklist.
 9. COMPLETE: Vercel preview READY at
-   https://ai-kids-games-m7zdjkpiq-real-tours.vercel.app. All 13 original hosted browser
+   https://ai-kids-games-lkreq5wu9-real-tours.vercel.app. All 13 original hosted browser
    checks pass; hosted game hashes, revalidation/304 and immutable asset cache
    verified. Production was not published: a guard stopped Vercel's first-attempt
    production classification; the second attempt is preview. Temporary QA access
@@ -81,3 +81,8 @@ tablet and phone. Sixteen focused checks cover Home/Browse/Favorites/Parents
 in both versions at 889 and 390 pixel widths: requested text and Light Crossing
 metadata are absent, other card metadata remains, and there is no overflow or
 page error.
+
+Published verification: Sites version 3 is live; the refreshed Vercel preview
+is READY. Sixteen hosted page checks pass across both versions and widths;
+eight preview assets match the local build. Temporary QA access is revoked.
+The five-game production deployment remains unapproved.
