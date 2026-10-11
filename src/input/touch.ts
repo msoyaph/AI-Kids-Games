@@ -5,8 +5,8 @@ import type { ItemId } from '../data/types';
 import { ITEM_ICONS } from '../ui/icons';
 import { PointerRouter, type PointerOwner } from './touch/pointers';
 import { clampKnob, floatingOrigin, stickResponse } from './touch/stick';
-import { bestDefaultLayout, hudRects, stickZone, targetSize, touchHudScale, type ControlId, type Insets, type Layout, type Rect, type Viewport } from './touch/layout';
-import { DEFAULT_TOUCH_CONFIG, type TouchConfig, type TouchSteerMode } from './touch/config';
+import { SCALE_MAX, SCALE_MIN, defaultLayout, hudRects, solveLayout, stickZone, targetSize, touchHudScale, type ControlId, type Insets, type Layout, type Rect, type Viewport } from './touch/layout';
+import { DEFAULT_TOUCH_CONFIG, layoutFor, type TouchConfig, type TouchSteerMode } from './touch/config';
 
 export interface TouchState {
   steer: number;
@@ -34,6 +34,52 @@ const BUTTONS: Array<{ id: Exclude<ControlId, 'stick'>; tc: string; label: strin
   { id: 'look', tc: 'look', label: '', icon: '👀', aria: 'Look behind' },
   { id: 'pause', tc: 'pause', label: '', icon: 'II', aria: 'Pause' },
 ];
+
+/** The controls' DOM (also used, static, by the Settings preview). Every control carries `data-ctl` for the editor. */
+export const CONTROLS_MARKUP = `
+  <div class="tc-zone" aria-hidden="true"></div>
+  <div class="tc-stick glass" data-ctl="stick" role="slider" aria-label="Steering joystick" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0">
+    <span class="tc-ticks" aria-hidden="true"><i>‹</i><i>›</i></span>
+    <div class="tc-trail"></div><div class="tc-trail t2"></div>
+    <div class="tc-knob"></div>
+    <div class="tc-badge"></div>
+    <i class="tc-handle" aria-hidden="true"></i>
+  </div>
+  <div class="tc-pads" data-ctl="stick">
+    <div class="tc-btn tc-left" aria-label="Steer left"><div class="glass face"><span class="ico">◀</span></div></div>
+    <div class="tc-btn tc-right" aria-label="Steer right"><div class="glass face"><span class="ico">▶</span></div></div>
+    <i class="tc-handle" aria-hidden="true"></i>
+  </div>
+  ${BUTTONS.map((b) => `<div class="tc-btn tc-${b.tc}" data-tc="${b.tc}" data-ctl="${b.id}" role="button" aria-label="${b.aria}"><div class="glass face"><i class="tint"></i><span class="ico">${b.icon}</span>${b.label ? `<span class="lbl">${b.label}</span>` : ''}<i class="ripple"></i></div><i class="tc-handle" aria-hidden="true"></i></div>`).join('')}
+  <div class="tc-probe" aria-hidden="true"></div>
+`;
+
+/** Put every control of a `CONTROLS_MARKUP` root where layout `L` says (stick at its resting spot). */
+export function positionControls(root: HTMLElement, L: Layout, zone: Rect): void {
+  for (const b of BUTTONS) place(root.querySelector(`.tc-${b.tc}`) as HTMLElement, L[b.id].x, L[b.id].y, L[b.id].d);
+  const s = L.stick;
+  const stick = root.querySelector('.tc-stick') as HTMLElement;
+  stick.style.width = stick.style.height = `${s.d}px`;
+  stick.style.setProperty('--d', `${s.d}px`);
+  stick.style.left = `${s.x - s.d / 2}px`;
+  stick.style.top = `${s.y - s.d / 2}px`;
+  // ◀ ▶ pads share the stick's spot
+  const pads = root.querySelector('.tc-pads') as HTMLElement;
+  const pd = Math.round(s.d * 0.8);
+  const gap = Math.round(pd * 0.22);
+  pads.style.left = `${s.x - pd - gap / 2}px`;
+  pads.style.top = `${s.y - pd / 2}px`;
+  pads.style.width = `${pd * 2 + gap}px`;
+  pads.style.height = `${pd}px`;
+  const [l, r] = [root.querySelector('.tc-left') as HTMLElement, root.querySelector('.tc-right') as HTMLElement];
+  for (const p of [l, r]) {
+    p.style.width = p.style.height = `${pd}px`;
+    p.style.setProperty('--d', `${pd}px`);
+  }
+  r.style.left = `${pd + gap}px`;
+  const z = root.querySelector('.tc-zone') as HTMLElement;
+  Object.assign(z.style, { left: `${zone.x}px`, top: `${zone.y}px`, width: `${zone.w}px`, height: `${zone.h}px` });
+}
 
 export class TouchControls {
   readonly state: TouchState = { steer: 0, accel: false, brake: false, drift: false, item: false, aimBack: false, lookBack: false, pause: false };
@@ -74,21 +120,7 @@ export class TouchControls {
   constructor(parent: HTMLElement) {
     this.root = document.createElement('div');
     this.root.className = 'touch-controls gc-fake hidden';
-    this.root.innerHTML = `
-      <div class="tc-zone" aria-hidden="true"></div>
-      <div class="tc-stick glass" role="slider" aria-label="Steering joystick" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0">
-        <span class="tc-ticks" aria-hidden="true"><i>‹</i><i>›</i></span>
-        <div class="tc-trail"></div><div class="tc-trail t2"></div>
-        <div class="tc-knob"></div>
-        <div class="tc-badge"></div>
-      </div>
-      <div class="tc-pads">
-        <div class="tc-btn tc-left" aria-label="Steer left"><div class="glass face"><span class="ico">◀</span></div></div>
-        <div class="tc-btn tc-right" aria-label="Steer right"><div class="glass face"><span class="ico">▶</span></div></div>
-      </div>
-      ${BUTTONS.map((b) => `<div class="tc-btn tc-${b.tc}" data-tc="${b.tc}" role="button" aria-label="${b.aria}"><div class="glass face"><i class="tint"></i><span class="ico">${b.icon}</span>${b.label ? `<span class="lbl">${b.label}</span>` : ''}<i class="ripple"></i></div></div>`).join('')}
-      <div class="tc-probe" aria-hidden="true"></div>
-    `;
+    this.root.innerHTML = CONTROLS_MARKUP;
     parent.appendChild(this.root);
     const q = <T extends HTMLElement>(sel: string): T => this.root.querySelector(sel) as T;
     this.zone = q('.tc-zone');
@@ -254,9 +286,15 @@ export class TouchControls {
     return { w: r.width || window.innerWidth, h, safe, hudScale: touchHudScale(this.hudScale, h) };
   }
 
-  /** The layout these settings would produce right now (also used by the settings preview / editor). */
+  /** The default layout for these settings (sizes the editor scales from). */
+  defaultFor(vp = this.viewport()): Layout {
+    return defaultLayout(vp, this.config.size, this.config.leftHanded);
+  }
+
+  /** The layout these settings would produce right now: the player's edited layout for this orientation, or the
+   * default — always made legal (safe area, off the HUD, no overlaps). */
   computeLayout(vp = this.viewport()): Layout {
-    return bestDefaultLayout(vp, this.config.size, this.config.leftHanded, this.hudRects(vp));
+    return layoutFor(vp, this.config, this.hudRects(vp));
   }
 
   /** The race HUD's real boxes when it's on screen (exact), otherwise the layout model's estimate. */
@@ -275,32 +313,103 @@ export class TouchControls {
 
   relayout(): void {
     const vp = this.viewport();
-    const L = this.computeLayout(vp);
-    this.layout = L;
-    // buttons: the element is the touch target (≥ 48 px); the glass face inside is the visual size
-    for (const b of BUTTONS) place(this.btn[b.id], L[b.id].x, L[b.id].y, L[b.id].d);
-    // stick (also the fixed stick's spot and the floating stick's resting "ghost" spot)
-    const s = L.stick;
-    this.stick.style.width = this.stick.style.height = `${s.d}px`;
-    this.stick.style.setProperty('--d', `${s.d}px`);
-    this.rest = { x: s.x, y: s.y };
-    this.placeStick(s.x, s.y);
-    // ◀ ▶ pads share the stick's spot
-    const pd = Math.round(s.d * 0.8);
-    const gap = Math.round(pd * 0.22);
-    this.pads.style.left = `${s.x - pd - gap / 2}px`;
-    this.pads.style.top = `${s.y - pd / 2}px`;
-    this.pads.style.width = `${pd * 2 + gap}px`;
-    this.pads.style.height = `${pd}px`;
-    for (const p of [this.leftPad, this.rightPad]) {
-      p.style.width = p.style.height = `${pd}px`;
-      p.style.setProperty('--d', `${pd}px`);
-    }
-    this.rightPad.style.left = `${pd + gap}px`;
-    // floating zone
-    const z = stickZone(vp, this.config.leftHanded);
-    Object.assign(this.zone.style, { left: `${z.x}px`, top: `${z.y}px`, width: `${z.w}px`, height: `${z.h}px` });
+    this.apply(this.editing ? this.editing.layout : this.computeLayout(vp), vp);
   }
+
+  /** Position everything for layout L (the stick's spot is also the floating stick's resting "ghost" spot). */
+  private apply(L: Layout, vp = this.viewport()): void {
+    this.layout = L;
+    this.rest = { x: L.stick.x, y: L.stick.y };
+    positionControls(this.root, L, stickZone(vp, this.config.leftHanded));
+  }
+
+  // ------------------------------------------------------------------------------------------------ layout editor
+  private editing: { layout: Layout; onChange: (L: Layout, blocked: boolean) => void } | null = null;
+  /** The editor's toolbar steps out of the way while a control is being dragged. */
+  onEditDrag?: (dragging: boolean) => void;
+
+  get isEditing(): boolean {
+    return !!this.editing;
+  }
+
+  /**
+   * Edit layout: drag a control to move it, drag its corner handle to resize it (0.8–1.4×). The others make room;
+   * nothing may leave the safe area, cover the HUD or overlap. `onChange` reports each change (and whether the
+   * finger is asking for a spot that isn't allowed, so the editor can flash it).
+   */
+  startEditing(onChange: (L: Layout, blocked: boolean) => void, from?: Layout): void {
+    this.releaseSteer();
+    this.reset();
+    const L = from ?? this.computeLayout();
+    this.editing = { layout: L, onChange };
+    this.root.classList.add('editing');
+    this.root.addEventListener('pointerdown', this.editDown, { capture: true });
+    this.apply(L);
+  }
+
+  stopEditing(): void {
+    if (!this.editing) return;
+    this.editing = null;
+    this.root.classList.remove('editing');
+    this.root.removeEventListener('pointerdown', this.editDown, { capture: true });
+    this.root.querySelectorAll('.selected, .blocked').forEach((el) => el.classList.remove('selected', 'blocked'));
+    if (this.visible) this.relayout();
+  }
+
+  /** The layout being edited. */
+  get editedLayout(): Layout | null {
+    return this.editing?.layout ?? null;
+  }
+
+  private readonly editDown = (e: PointerEvent): void => {
+    const ed = this.editing;
+    const t = e.target as HTMLElement;
+    const ctlEl = t.closest('[data-ctl]') as HTMLElement | null;
+    if (!ed || !ctlEl) return;
+    // in edit mode a control never acts (no drifting, no pausing): it only moves
+    e.preventDefault();
+    e.stopPropagation();
+    const id = ctlEl.dataset.ctl as ControlId;
+    const resize = t.classList.contains('tc-handle');
+    const vp = this.viewport();
+    const hud = this.hudRects(vp);
+    const def = this.defaultFor(vp)[id].d;
+    const start = { ...ed.layout[id] };
+    const off = { x: e.clientX - start.x, y: e.clientY - start.y };
+    const startDist = Math.max(10, Math.hypot(e.clientX - start.x, e.clientY - start.y));
+    this.root.querySelectorAll('.selected').forEach((el) => el.classList.remove('selected'));
+    this.root.querySelectorAll(`[data-ctl="${id}"]`).forEach((el) => el.classList.add('selected'));
+    const update = (ev: PointerEvent, final: boolean): void => {
+      const want = { ...ed.layout[id] };
+      if (resize) {
+        const k = Math.hypot(ev.clientX - start.x, ev.clientY - start.y) / startDist;
+        want.d = Math.round(Math.min(def * SCALE_MAX, Math.max(def * SCALE_MIN, start.d * k)));
+      } else {
+        want.x = ev.clientX - off.x;
+        want.y = ev.clientY - off.y;
+      }
+      // while dragging the moved control is pinned (the others make room); on release everything settles
+      const solved = solveLayout({ ...ed.layout, [id]: want }, vp, hud, final ? [] : [id]);
+      const got = solved.layout[id];
+      const blocked = Math.hypot(got.x - want.x, got.y - want.y) > 6 || got.d !== want.d;
+      this.root.querySelectorAll(`[data-ctl="${id}"]`).forEach((el) => el.classList.toggle('blocked', blocked && !final));
+      ed.layout = solved.layout;
+      this.apply(ed.layout, vp);
+      ed.onChange(ed.layout, blocked);
+    };
+    this.onEditDrag?.(true);
+    this.router.claim(
+      e,
+      {
+        move: (ev) => update(ev, false),
+        up: (ev) => {
+          if (ev) update(ev, true);
+          this.onEditDrag?.(false);
+        },
+      },
+      ctlEl,
+    );
+  };
 
   private placeStick(x: number, y: number): void {
     const d = this.layout?.stick.d ?? 132;

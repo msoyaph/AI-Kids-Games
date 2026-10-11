@@ -105,7 +105,16 @@ Decisions: tablets may race in portrait, phones keep the rotate screen; vibratio
   stick/pads. Haptics: `InputManager.rumble` is now gamepad-only (unchanged for pads); new `InputManager.buzz`
   (touch only, `navigator.vibrate`, ≥ 80 ms apart, `buzzCount` for tests) on drift tier up 18 ms, item hit 40 ms
   (not goo/cloud), landing impact > 9 25 ms. On/off = `settings.rumble` ("Rumble & vibration").
-- [ ] Step 4 — Touch settings tab, layout editor, tablet portrait
+- [x] Step 4 — Settings → 📱 Touch tab (`renderTouch` + live `touchPreview` in settings.ts: scaled replica built
+  from the shared `CONTROLS_MARKUP` + `positionControls`, half sand / half night backdrop): steering mode (moved
+  from Gameplay), joystick floating/fixed, size, opacity 40–100 %, left-handed, high contrast, Rumble & vibration,
+  Edit layout / Reset. Editor `src/ui/screens/touchLayout.ts`: the real controls in edit mode
+  (`TouchControls.startEditing/stopEditing`, capture-phase pointerdown, drag = move, yellow corner = resize
+  0.8–1.4×, dragged control pinned while others make room, red outline when blocked, snaps on release), HUD
+  no-go zones, toolbar parks itself where it covers nothing and fades while dragging. Saved per orientation in
+  `settings.touch.layout.{landscape,portrait}` as fractions + size multiples (`toSaved`/`applySaved`, mirrored
+  when switching hands; `layoutFor(vp, config)` = the one layout rule). Rotate hint now phones only
+  (max-width 600 px): tablets race upright.
 - [ ] Step 5 — performance (blur measurement, fake/real policy, crossfade)
 - [ ] Step 6 — accessibility
 - [ ] Step 7 — tests, visual review, playtest fields, report

@@ -1,6 +1,9 @@
 import type { App } from '../../game/app';
 import { ACTIONS, ACTION_LABELS, PAD_BUTTON_NAMES, keyLabel, type Action } from '../../input/bindings';
-import { TouchControls } from '../../input/touch';
+import { CONTROLS_MARKUP, TouchControls, positionControls } from '../../input/touch';
+import { hudRects, stickZone, touchHudScale, type Viewport } from '../../input/touch/layout';
+import { layoutFor } from '../../input/touch/config';
+import { touchLayoutScreen } from './touchLayout';
 import type { QualitySetting } from '../../render/quality';
 import { button, h, type Screen } from '../ui';
 import { choice } from './setup';
@@ -46,7 +49,7 @@ export function slider(label: string, get: () => number, set: (v: number) => voi
   return h('div', { class: 'setting-row' }, h('div', null, label), b);
 }
 
-export type SettingsTab = 'audio' | 'graphics' | 'gameplay' | 'controls' | 'playtest';
+export type SettingsTab = 'audio' | 'graphics' | 'gameplay' | 'touch' | 'controls' | 'playtest';
 type Tab = SettingsTab;
 
 /** The hidden Playtest tab appears after tapping the Settings title 5 times (or while playtest mode is on). */
@@ -57,8 +60,8 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
   const save = (): void => app.saveSettings();
   const tabs = h('div', { class: 'tabs' });
   const body = h('div', { class: 'panel menu-col scroll', style: 'flex:1;min-height:0' });
-  const order: Tab[] = ['audio', 'graphics', 'gameplay', 'controls'];
-  const names: Record<Tab, string> = { audio: '🔊 Sound', graphics: '🎨 Graphics', gameplay: '🏎 Gameplay', controls: '🎮 Controls', playtest: '🧪 Playtest' };
+  const order: Tab[] = ['audio', 'graphics', 'gameplay', 'touch', 'controls'];
+  const names: Record<Tab, string> = { audio: '🔊 Sound', graphics: '🎨 Graphics', gameplay: '🏎 Gameplay', touch: '📱 Touch', controls: '🎮 Controls', playtest: '🧪 Playtest' };
   const syncOrder = (): void => {
     const want = playtestRevealed || s.playtest;
     if (want && !order.includes('playtest')) order.push('playtest');
@@ -102,22 +105,10 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
         choice('Auto-accelerate', [[false, 'Off'], [true, 'On']], () => s.autoAccel, (v) => ((s.autoAccel = v), save())),
         choice('Camera distance', [[0.85, 'Close'], [1, 'Normal'], [1.18, 'Far']], () => s.cameraDistance, (v) => ((s.cameraDistance = v), save())),
         choice('Rumble & vibration', [[true, 'On'], [false, 'Off']], () => s.rumble, (v) => ((s.rumble = v), save())),
-        choice('Touch steering', [['joystick', 'Joystick'], ['buttons', 'Buttons'], ['tilt', 'Tilt']], () => s.touchSteer, (v) => {
-          if (v === 'tilt') {
-            void TouchControls.requestTiltPermission().then((ok) => {
-              if (!ok) {
-                app.toast('Tilt isn’t available here — using buttons.');
-                s.touchSteer = 'buttons';
-              } else s.touchSteer = 'tilt';
-              save();
-              render('gameplay');
-            });
-          } else {
-            s.touchSteer = v;
-            save();
-          }
-        }),
+        h('div', { class: 'hint' }, 'Touch steering, the joystick and its layout are in the 📱 Touch tab.'),
       );
+    } else if (t === 'touch') {
+      renderTouch(app, body, () => render('touch'), back);
     } else if (t === 'playtest') {
       renderPlaytest(app, body, () => render('playtest'));
     } else {
@@ -262,4 +253,95 @@ export function confirmOverlay(app: App, text: string, yes: () => void, no?: () 
     }, 'pink'), button('No', cancel, 'yellow')),
   );
   return { el, onBack: cancel, focus: el.querySelectorAll<HTMLElement>('[data-nav]')[1] };
+}
+
+/** Settings → 📱 Touch controls: steering mode, joystick, size, opacity, hands, contrast, vibration, layout. */
+function renderTouch(app: App, body: HTMLElement, rerender: () => void, back: () => void): void {
+  const s = app.saves.settings;
+  const t = s.touch;
+  const set = (patch: Partial<typeof t>): void => {
+    s.touch = { ...s.touch, ...patch };
+    app.saveSettings();
+    rerender();
+  };
+  body.append(
+    touchPreview(app),
+    choice('Steering', [['joystick', 'Joystick'], ['buttons', 'Buttons'], ['tilt', 'Tilt']], () => s.touchSteer, (v) => {
+      if (v === 'tilt') {
+        void TouchControls.requestTiltPermission().then((ok) => {
+          if (!ok) {
+            app.toast('Tilt isn’t available here — using the joystick.');
+            s.touchSteer = 'joystick';
+          } else s.touchSteer = 'tilt';
+          app.saveSettings();
+          rerender();
+        });
+      } else {
+        s.touchSteer = v;
+        app.saveSettings();
+        rerender();
+      }
+    }),
+    choice('Joystick', [['floating', 'Floating'], ['fixed', 'Fixed']], () => t.stick, (v) => set({ stick: v })),
+    h('div', { class: 'hint' }, t.stick === 'floating' ? 'Floating: the joystick appears wherever your thumb lands on that side of the screen.' : 'Fixed: the joystick stays in one place.'),
+    choice('Size', [['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']], () => t.size, (v) => set({ size: v })),
+    slider('Opacity', () => s.touch.opacity, (v) => {
+      s.touch = { ...s.touch, opacity: Math.max(0.4, Math.min(1, Math.round(v * 100) / 100)) };
+      app.saveSettings();
+      const p = body.querySelector('.touch-preview .touch-controls') as HTMLElement | null;
+      p?.style.setProperty('--tc-opacity', String(s.touch.opacity));
+    }),
+    choice('Left-handed', [[false, 'Off'], [true, 'On']], () => t.leftHanded, (v) => set({ leftHanded: v })),
+    choice('High contrast', [[false, 'Off'], [true, 'On']], () => t.highContrast, (v) => set({ highContrast: v })),
+    choice('Rumble & vibration', [[true, 'On'], [false, 'Off']], () => s.rumble, (v) => ((s.rumble = v), app.saveSettings())),
+    h('div', { class: 'hint' }, 'Short buzzes when your sparks level up, when an item hits you and on big landings. Works on Android phones; iPhones and iPads don’t allow vibration in the browser.'),
+    h(
+      'div',
+      { class: 'setting-row' },
+      h('div', null, 'Layout'),
+      h(
+        'div',
+        { class: 'menu-row', style: 'justify-content:flex-end' },
+        button('✏️ Edit layout', () => {
+          const overlay = app.ui.hasOverlay;
+          const again = (): void => {
+            const scr = settingsScreen(app, back, 'touch');
+            if (overlay) app.ui.showOverlay({ ...scr, fullCover: true });
+            else app.ui.show(scr);
+          };
+          if (overlay) app.ui.closeOverlay(false);
+          app.ui.show(touchLayoutScreen(app, again));
+        }, 'small'),
+        t.layout ? button('Reset to default', () => set({ layout: undefined }), 'small ghost') : null,
+      ),
+    ),
+  );
+}
+
+/** A live, scaled replica of the touch controls with the current settings, over a bright and a dark track strip. */
+function touchPreview(app: App): HTMLElement {
+  const s = app.saves.settings;
+  const portrait = app.gr.isTouch && window.innerHeight > window.innerWidth;
+  const vp: Viewport = app.gr.isTouch
+    ? { w: window.innerWidth, h: window.innerHeight, safe: { l: 0, t: 0, r: 0, b: 0 }, hudScale: touchHudScale(s.hudSize, window.innerHeight) }
+    : { w: 844, h: 390, safe: { l: 0, t: 0, r: 0, b: 0 }, hudScale: touchHudScale(s.hudSize, 390) };
+  const L = layoutFor(vp, s.touch);
+  const root = h('div', { class: `touch-controls preview gc-fake ${s.touchSteer} ${s.touch.stick === 'fixed' ? 'fixed' : ''} ${s.touch.leftHanded ? 'lefty' : ''} ${s.touch.highContrast ? 'gc-hc' : ''} ${s.reduceEffects ? 'calm' : ''}`, html: CONTROLS_MARKUP, 'aria-hidden': 'true' });
+  root.style.width = `${vp.w}px`;
+  root.style.height = `${vp.h}px`;
+  root.style.setProperty('--tc-opacity', String(s.touch.opacity));
+  positionControls(root, L, stickZone(vp, s.touch.leftHanded));
+  if (s.autoAccel || app.gr.isTouch) root.querySelector('.tc-accel')?.classList.add('off');
+  const hud = hudRects(vp, s.touch.leftHanded).map((r) => h('div', { class: 'tp-hud', style: `left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px` }));
+  const stage = h('div', { class: 'tp-stage', style: `width:${vp.w}px;height:${vp.h}px` }, ...hud, root);
+  // the frame keeps the screen's shape and fits both the panel's width and ~40 % of the screen's height
+  const frame = h('div', { class: `touch-preview ${portrait ? 'portrait' : ''}`, style: `aspect-ratio:${vp.w} / ${vp.h};width:min(100%, calc(40vh * ${(vp.w / vp.h).toFixed(3)}))` }, stage, h('span', { class: 'tp-tag left' }, 'Seashell Boardwalk'), h('span', { class: 'tp-tag right' }, 'Neon Nightway'));
+  // scale the full-size stage down to the frame
+  const fit = (): void => {
+    const k = frame.clientWidth / vp.w;
+    if (k > 0) stage.style.transform = `scale(${k})`;
+  };
+  requestAnimationFrame(fit);
+  new ResizeObserver(fit).observe(frame);
+  return frame;
 }

@@ -4,6 +4,19 @@ export type ControlId = 'stick' | 'drift' | 'item' | 'brake' | 'accel' | 'look' 
 export const CONTROL_IDS: ControlId[] = ['stick', 'drift', 'item', 'brake', 'accel', 'look', 'pause'];
 export type TouchSize = 'small' | 'medium' | 'large';
 
+/** A player-edited layout: centre as a fraction of the screen, size as a multiple of the default size. Made with
+ * `lefty` handedness (switching hands mirrors it). */
+export interface SavedLayout {
+  lefty: boolean;
+  controls: Partial<Record<ControlId, { x: number; y: number; s: number }>>;
+}
+
+/** Resize range in the layout editor. */
+export const SCALE_MIN = 0.8;
+export const SCALE_MAX = 1.4;
+/** Controls that stay put when switching hands (they sit by the HUD, which doesn't move). */
+const UNMIRRORED: ControlId[] = ['look', 'pause'];
+
 /** A control: centre + visual diameter. */
 export interface Slot {
   x: number;
@@ -239,4 +252,28 @@ export function bestDefaultLayout(vp: Viewport, size: TouchSize, leftHanded: boo
     if (last.ok) return last.layout;
   }
   return last!.layout;
+}
+
+/** Apply a saved (edited) layout on top of the default one; mirrors it if it was made for the other hand. */
+export function applySaved(def: Layout, saved: SavedLayout | undefined, vp: Viewport, leftHanded: boolean): Layout {
+  const L = { ...def };
+  if (!saved) return L;
+  const mirror = saved.lefty !== leftHanded;
+  for (const id of CONTROL_IDS) {
+    const c = saved.controls[id];
+    if (!c) continue;
+    const fx = mirror && !UNMIRRORED.includes(id) ? 1 - c.x : c.x;
+    L[id] = { x: fx * vp.w, y: c.y * vp.h, d: Math.round(def[id].d * c.s) };
+  }
+  return L;
+}
+
+/** Turn an edited layout back into the saved form (fractions of the screen + size multiples). */
+export function toSaved(L: Layout, def: Layout, vp: Viewport, leftHanded: boolean): SavedLayout {
+  const controls: SavedLayout['controls'] = {};
+  for (const id of CONTROL_IDS) {
+    const s = Math.min(SCALE_MAX, Math.max(SCALE_MIN, L[id].d / def[id].d));
+    controls[id] = { x: +(L[id].x / vp.w).toFixed(4), y: +(L[id].y / vp.h).toFixed(4), s: +s.toFixed(3) };
+  }
+  return { lefty: leftHanded, controls };
 }

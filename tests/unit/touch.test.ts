@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { STICK, clampKnob, floatingOrigin, stickResponse } from '../../src/input/touch/stick';
 import { bestDefaultLayout, touchHudScale, CONTROL_IDS, MIN_TARGET, defaultLayout, diameters, hudRects, layoutProblems, solveLayout, stickZone, targetSize, type Layout, type Viewport } from '../../src/input/touch/layout';
-import { DEFAULT_TOUCH_CONFIG, sanitizeTouchConfig } from '../../src/input/touch/config';
+import { DEFAULT_TOUCH_CONFIG, layoutFor, sanitizeTouchConfig } from '../../src/input/touch/config';
+import { applySaved, toSaved } from '../../src/input/touch/layout';
 
 const R = 40; // knob travel radius (px)
 
@@ -86,3 +87,35 @@ describe('touch settings', () => {
     expect(sanitizeTouchConfig({ stick: 'fixed', size: 'large', opacity: 0.6, leftHanded: true, highContrast: true })).toEqual({ stick: 'fixed', size: 'large', opacity: 0.6, leftHanded: true, highContrast: true });
   });
 });
+
+describe('edited layouts', () => {
+  it('save → load gives back the same spots and sizes (per orientation)', () => {
+    const def = defaultLayout(phone, 'medium', false);
+    const edited: Layout = { ...def, item: { ...def.item, x: def.item.x - 90, y: def.item.y - 20, d: Math.round(def.item.d * 1.2) } };
+    const saved = toSaved(edited, def, phone, false);
+    const back = applySaved(def, saved, phone, false);
+    expect(back.item.x).toBeCloseTo(edited.item.x, 0);
+    expect(back.item.y).toBeCloseTo(edited.item.y, 0);
+    expect(back.item.d).toBe(edited.item.d);
+    const cfg = { ...DEFAULT_TOUCH_CONFIG, layout: { landscape: saved } };
+    expect(layoutFor(phone, cfg).item.x).toBeCloseTo(edited.item.x, 0);
+    // the portrait tablet has no edited layout yet: it uses its default
+    expect(layoutFor(tabletPortrait, cfg)).toEqual(layoutFor(tabletPortrait, DEFAULT_TOUCH_CONFIG));
+  });
+  it('switching hands mirrors an edited layout instead of breaking it', () => {
+    const def = defaultLayout(phone, 'medium', false);
+    const saved = toSaved(def, def, phone, false);
+    const lefty = applySaved(defaultLayout(phone, 'medium', true), saved, phone, true);
+    expect(lefty.stick.x).toBeCloseTo(phone.w - def.stick.x, 0);
+    expect(lefty.pause.x).toBeCloseTo(def.pause.x, 0); // pause and look stay by the HUD
+  });
+  it('a corrupted stored layout is repaired (never crashes, never off screen)', () => {
+    const c = sanitizeTouchConfig({ layout: { landscape: { lefty: false, controls: { drift: { x: 7, y: -3, s: 9 }, item: { x: 'a' } } }, portrait: 'junk' } });
+    expect(c.layout?.landscape?.controls.drift).toEqual({ x: 1, y: 0, s: 1.4 });
+    expect(c.layout?.landscape?.controls.item).toBeUndefined();
+    expect(c.layout?.portrait).toBeUndefined();
+    const L = layoutFor(phone, c);
+    expect(layoutProblems(L, phone, hudRects(phone))).toEqual([]);
+  });
+});
+
