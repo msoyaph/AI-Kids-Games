@@ -1,0 +1,156 @@
+// Renders all tile objects (trees, rocks, flowers, items...) through instanced layers.
+import * as THREE from 'three';
+import { hash01 } from '../core/rng';
+import { FRUITS, COCONUT } from '../data/fruit';
+import { Ground, LEVEL_HEIGHT } from '../world/types';
+import type { World } from '../sim/world';
+import { InstancedLayer } from './instanced';
+import { natureGeo } from './models/nature';
+import { PAL, FLOWER_COLORS } from './palette';
+import { vcolMat } from './curve';
+
+export const FLOWER_COLOR_ORDER = ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'];
+
+export type ItemVisual = (id: string) => { shape: 'branch' | 'shell' | 'bundle' | 'bottle' | 'fruit' | 'stone'; color: number };
+
+export class ObjectRenderer {
+  readonly group = new THREE.Group();
+  private layers: Record<string, InstancedLayer> = {};
+  dirty = true;
+
+  constructor(private world: World, private itemVisual: ItemVisual) {
+    const mat = vcolMat();
+    const sway = vcolMat({ sway: true });
+    const L = (name: string, geo: THREE.BufferGeometry, m: THREE.Material, cap: number, shadow = true) => {
+      const layer = new InstancedLayer(geo, m, cap, { shadow });
+      this.layers[name] = layer;
+      this.group.add(layer.mesh);
+    };
+    L('trunk', natureGeo.trunk(), mat, 256);
+    L('canopy', natureGeo.canopy(), mat, 256);
+    L('pineTrunk', natureGeo.pineTrunk(), mat, 256);
+    L('pineCanopy', natureGeo.pineCanopy(), mat, 256);
+    L('palm', natureGeo.palm(), mat, 64);
+    L('fruit', natureGeo.fruit(), mat, 128);
+    L('rock', natureGeo.rock(), mat, 32);
+    L('flowerStem', natureGeo.flowerStem(), sway, 256, false);
+    L('flowerPetals', natureGeo.flowerPetals(), sway, 256, false);
+    L('weed', natureGeo.weed(), sway, 128, false);
+    L('sapling', natureGeo.sapling(), mat, 64);
+    L('dig', natureGeo.digSpot(), mat, 32, false);
+    L('hole', natureGeo.hole(), mat, 32, false);
+    L('stone', natureGeo.stoneChunk(), mat, 64);
+    L('grass', natureGeo.grass(), sway, 2048, false);
+    this.buildGrass();
+  }
+
+  private buildGrass(): void {
+    const g = this.world.gen;
+    const layer = this.layers.grass!;
+    layer.begin();
+    for (let z = 0; z < g.size; z++)
+      for (let x = 0; x < g.size; x++) {
+        const i = z * g.size + x;
+        if (g.ground[i] !== Ground.Grass) continue;
+        const h = hash01(x, z, 401);
+        if (h > 0.4) continue;
+        const n = h < 0.12 ? 2 : 1;
+        for (let k = 0; k < n; k++) {
+          const ox = hash01(x, z, 402 + k) * 0.8 + 0.1, oz = hash01(x, z, 403 + k) * 0.8 + 0.1;
+          const lvl = g.height[i]!;
+          const col = lvl === 0 ? 0x8cc76f : lvl === 1 ? 0x86bf78 : 0x8fc58a;
+          layer.push(x + ox, lvl * LEVEL_HEIGHT, z + oz, h * 30, 0.8 + hash01(x, z, 404) * 0.5, col);
+        }
+      }
+    layer.end();
+  }
+
+  rebuild(): void {
+    this.dirty = false;
+    const w = this.world;
+    const N = w.size;
+    const names = Object.keys(this.layers).filter((n) => n !== 'grass');
+    for (const n of names) this.layers[n]!.begin();
+    const Ls = this.layers;
+    for (const key in w.state.world.objects) {
+      const i = +key;
+      const o = w.state.world.objects[i]!;
+      const tx = i % N, tz = (i / N) | 0;
+      const x = tx + 0.5, z = tz + 0.5;
+      const y = w.height(i) * LEVEL_HEIGHT;
+      const rot = hash01(i, 5) * Math.PI * 2;
+      const s = 0.9 + hash01(i, 6) * 0.22;
+      switch (o.k) {
+        case 'tree':
+        case 'fruitTree': {
+          Ls.trunk!.push(x, y, z, rot, s, 0xffffff);
+          const leaf = o.k === 'fruitTree' ? 0x8ccf7d : PAL.leaf[(o.v ?? 0) % PAL.leaf.length]!;
+          Ls.canopy!.push(x, y, z, rot, s, leaf);
+          if (o.k === 'fruitTree' && (o.f ?? 0) > 0) {
+            const fc = FRUITS[o.v ?? 0]?.color ?? 0xffffff;
+            const slots = [
+              [0.52, 1.25, 0.3],
+              [-0.42, 1.4, 0.42],
+              [0.08, 1.2, -0.55],
+            ];
+            for (let k = 0; k < Math.min(3, o.f ?? 0); k++) {
+              const [fx, fy, fz] = slots[k]!;
+              const c = Math.cos(rot), sn = Math.sin(rot);
+              Ls.fruit!.push(x + (fx! * c + fz! * sn) * s, y + fy! * s, z + (-fx! * sn + fz! * c) * s, 0, 1, fc);
+            }
+          }
+          break;
+        }
+        case 'pine':
+          Ls.pineTrunk!.push(x, y, z, rot, s, 0xffffff);
+          Ls.pineCanopy!.push(x, y, z, rot, s, PAL.pine[(o.v ?? 0) % PAL.pine.length]!);
+          break;
+        case 'palm': {
+          Ls.palm!.push(x, y, z, rot, s, 0xffffff);
+          const c = Math.cos(rot), sn = Math.sin(rot);
+          for (let k = 0; k < Math.min(2, o.f ?? 0); k++) {
+            const fx = 0.3 + (k ? 0.1 : -0.06), fz = k ? 0.1 : -0.1;
+            Ls.fruit!.push(x + (fx * c + fz * sn) * s, y + 1.5 * s, z + (-fx * sn + fz * c) * s, 0, 1.15, COCONUT.color);
+          }
+          break;
+        }
+        case 'rock':
+          Ls.rock!.push(x, y, z, rot, 1, PAL.rock[(o.v ?? 0) % PAL.rock.length]!);
+          break;
+        case 'flower': {
+          const grown = (o.g ?? 3) >= 2;
+          const fs = grown ? 1 : 0.6;
+          const color = FLOWER_COLORS[FLOWER_COLOR_ORDER[(o.v ?? 0) % 16] ?? 'red'] ?? 0xffffff;
+          Ls.flowerStem!.push(x, y, z, rot, fs, 0xffffff);
+          if (grown) Ls.flowerPetals!.push(x, y, z, rot, fs, color);
+          if (o.w) Ls.stone!.push(x + 0.25, y - 0.05, z + 0.2, 0, 2.2, 0x6fa0c8, 0.15);
+          break;
+        }
+        case 'weed':
+          Ls.weed!.push(x, y, z, rot, s, 0xffffff);
+          break;
+        case 'sapling': {
+          const g = o.g ?? 0;
+          const sc = 0.7 + g * 0.25;
+          Ls.sapling!.push(x, y, z, rot, sc, o.item === 'sapling_pine' ? PAL.pine[0]! : PAL.leaf[1]!);
+          break;
+        }
+        case 'dig':
+          Ls.dig!.push(x, y, z, rot, 1, 0xffffff);
+          break;
+        case 'hole':
+          Ls.hole!.push(x, y, z, rot, 1, 0xffffff);
+          break;
+        case 'item': {
+          const vis = this.itemVisual(o.item ?? '');
+          if (vis.shape === 'stone') Ls.stone!.push(x, y, z, rot, 1.4, vis.color);
+          else Ls.stone!.push(x, y, z, rot, vis.shape === 'branch' ? 1.0 : 1.3, vis.color, vis.shape === 'shell' ? 0.6 : 1);
+          break;
+        }
+        default:
+          break;
+      }
+    }
+    for (const n of names) this.layers[n]!.end();
+  }
+}
