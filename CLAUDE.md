@@ -70,7 +70,8 @@ Key rules:
 
 ## Balance notes
 `npm run simulate -- 16 0.7` (16 seeds/hero, bot skill 0.7 ≈ "decent player", no meta):
-Thea ~12:20, Pip ~11:30, Brindle ~14:20 average survival; ~12% first-run wins. Deaths
+Thea ~12:35, Pip ~11:30, Brindle ~15:00 average survival (overall ~13:00); ~25% first-run
+wins. Deaths
 cluster at the boss gates (5:00 Grumblecap, 10:00 Clockjaw, 15:00+ Regent). Skill 0.45 →
 ~11:10, 0.9 → ~13:10. Main knobs: `enemyHpScale`/`enemyDamageScale` (balance.ts), wave
 `rate/minAlive/maxAlive` (waves.ts), boss hp/projectileDamage (enemies.ts + bosses.ts),
