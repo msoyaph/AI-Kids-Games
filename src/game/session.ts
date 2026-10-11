@@ -398,6 +398,7 @@ export class RaceSession {
       });
     }
     this.ctx.audio.update(w, this.locals, dt);
+    this.ctx.input.touch.setCountdown(w.phase === 'countdown' || w.phase === 'intro');
     this.view.render();
   }
 

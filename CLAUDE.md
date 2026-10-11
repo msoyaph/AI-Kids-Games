@@ -61,21 +61,19 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - `scripts/probe.mjs` — open the game in headless Chromium and evaluate JS (`window.__calex` debug hook).
   Note: headless SwiftShader renders slowly, so drive-tests belong in Vitest sim tests; use the browser pane for visuals.
 
-## Status
-- Phase 1 ✅ scaffold, single-file build, renderer + adaptive DPR, inline loading screen.
-- Phase 2 ✅ kart physics, keyboard/gamepad/touch input, chase camera on a test arena; physics unit tests.
-- Phase 3 ✅ spline track system + mesh generator, laps/positions/wrong-way/respawn; sim tests (tests/sim).
-- Phase 4 ✅ drift tiers/mini-turbo/hop/tricks/boost pads/gliders/water+low-grav in physics; visual feedback via
-  `render/particles.ts` (pooled THREE.Points, 2 draw calls) + `effects.ts` (sparks by tier, smoke, dust, flames,
-  trails, bubbles, bursts on events, skid marks, camera shake), underwater fog tint.
-- Phase 5 ✅ AI racers with personalities (data/aiProfiles.ts), rubber-banding, steering assist; AI sim tests.
-- Phase 6 ✅ items (12), rolls, AI item use. Phase 7 🚧 tracks: Sunrise Cup done; other cups built by agents.
-- Phase 8 ✅ Grand Prix, Time Trial (+ghosts, staff ghosts), Versus (single/cup, options), Battle (4 arenas).
-  Dev shortcuts (dev server only): `/?track=<id>[&autodrive][&mirror][&class=pro][&ai=7][&nointro]`, `/?arena=<id>`.
-  Headless e2e: `node scripts/probe.mjs <url> <script.js>` uses Metal GPU (set SWIFTSHADER=1 to force software).
-  `window.__calex.app` exposes the App (flows can be driven via `app.screens.*`, `app.loop.timeScale` speeds up sims).
-- Phase 10 ✅ 12 racers (6 unlocked), 8 bodies / 6 wheels / 5 gliders / 12 paints / 12 decals with stat mods,
-  garage, 34 challenges (`data/challenges.ts`, evaluated in `game/challenges.ts`) — every locked item is a
-  challenge reward (unit-tested); cups/classes unlock via trophies (`game/progression.ts`).
-- Phase 9 ✅ local split-screen (2 players; H/V split; per-view HUD/minimap/camera; input auto-assignment:
-  2 pads → pad+pad, 1 pad → keyboard+pad, none → shared keyboard WASD | arrows; split quality profile).
+## Status (all 13 phases complete)
+- 16 tracks / 4 cups (Sunrise, Thunder, Galaxy, Legend), 4 battle arenas, 12 racers, 12 items, 34 challenges,
+  22 procedural songs. Modes: Grand Prix, Time Trial (+ghosts/staff), Versus (single/cup), Battle, 2P split.
+- Tests: `npm test` (84 unit + headless sim incl. every-track completion per class and weight-class fairness),
+  `npm run test:e2e` (Playwright desktop/tablet/phone, file://, sandboxed iframe, gamepad stub).
+- Perf (Apple M3 Pro, built game): 60 fps on every track with 8 racers, including 4–6× CPU throttling + mobile
+  profile and split-screen; ~2 ms CPU/frame at 6× throttle; 33–53 draw calls; per-race GPU resources released.
+- Track validation: `npx tsx scripts/validateTracks.ts` (all OK); balance report: `npm run sim`.
+
+## Gotchas
+- `layout()` mark headings at the end of curves are skewed 10–15° (tracks compensate; don't "fix" the builder
+  without re-placing props in agent-authored tracks).
+- Headless Playwright on macOS uses `--use-angle=metal`; SwiftShader is ~10× slower (CI fallback).
+- Chrome blocks localhost iframes inside about:blank (private network access) — host pages in e2e are served
+  via `page.route` on the same origin.
+- Shared/cached geometries & materials set `userData.shared = true`; RaceView.dispose frees everything else.

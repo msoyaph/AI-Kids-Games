@@ -181,6 +181,14 @@ export class TouchControls {
     this.accelBtn.style.display = on ? 'none' : '';
   }
 
+  /** During the countdown the GO button is shown (pulsing) so touch players can try a rocket start. */
+  setCountdown(on: boolean): void {
+    if (!this.autoAccel) return;
+    const want = on ? '' : 'none';
+    if (this.accelBtn.style.display !== want) this.accelBtn.style.display = want;
+    this.accelBtn.classList.toggle('pulse', on);
+  }
+
   show(on: boolean): void {
     if (this.visible === on) return;
     this.visible = on;
