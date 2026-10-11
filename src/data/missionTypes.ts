@@ -91,6 +91,8 @@ export interface MissionDef {
   glyph: GlyphId;
   requires: string[];
   requiresFlags?: string[];
+  /** Flags set as soon as the mission starts (e.g. to open an exploration area). */
+  startFlags?: string[];
   briefing: string;
   done: string;
   objectives: ObjectiveDef[];

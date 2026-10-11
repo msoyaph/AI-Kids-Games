@@ -6,7 +6,13 @@ import { saveNow, startSession, tickSession } from './app/session';
 import { bakeCore } from './gfx/textures';
 import { Input } from './input/input';
 import { TouchControls } from './input/touch';
+import { installHooks } from './app/hooks';
+import { BadgesScene } from './scenes/BadgesScene';
 import { BoardScene } from './scenes/BoardScene';
+import { CodexScene } from './scenes/CodexScene';
+import { CompleteScene } from './scenes/CompleteScene';
+import { CreditsScene } from './scenes/CreditsScene';
+import { CutsceneScene, cutsceneWaiters, type CutsceneParams } from './scenes/CutsceneScene';
 import { installDirectors } from './scenes/director';
 import { ExploreScene, type ExploreParams } from './scenes/ExploreScene';
 import { FlightScene, type FlightSceneParams } from './scenes/FlightScene';
@@ -23,7 +29,7 @@ import { loadSettings } from './systems/save/settings';
 import { GameState } from './systems/state';
 import { h } from './ui/dom';
 import { anyModalOpen, closeTopModal } from './ui/modal';
-import { pumpMessages } from './ui/presenter';
+import { presenterHooks, pumpMessages } from './ui/presenter';
 import { initSpeech, setReadAloud } from './ui/speech';
 
 function setLoad(pct: number, msg?: string): void {
@@ -61,7 +67,7 @@ function setupRotateHint(): void {
 }
 
 /** Scenes that count as "playing" for the play-time clock. */
-const PLAY_SCENES = new Set(['hub', 'map', 'flight', 'landing', 'explore', 'hangar', 'shop', 'board', 'lounge', 'codex', 'badges', 'cutscene']);
+const PLAY_SCENES = new Set(['hub', 'map', 'flight', 'landing', 'explore', 'hangar', 'shop', 'board', 'lounge', 'codex', 'badges', 'cutscene', 'credits']);
 
 function registerScenes(game: Game): void {
   game.register('title', () => new TitleScene());
@@ -74,6 +80,16 @@ function registerScenes(game: Game): void {
   game.register('explore', (p) => new ExploreScene(p as unknown as ExploreParams));
   game.register('hangar', () => new HangarScene());
   game.register('shop', () => new ShopScene());
+  game.register('codex', () => new CodexScene());
+  game.register('badges', (p) => new BadgesScene(p));
+  game.register('cutscene', (p) => new CutsceneScene(p as unknown as CutsceneParams));
+  game.register('credits', () => new CreditsScene());
+  game.register('complete', () => new CompleteScene());
+  presenterHooks.cutscene = (id) =>
+    new Promise<void>((resolve) => {
+      cutsceneWaiters.push(resolve);
+      void game.go('cutscene', { id });
+    });
   // Temporary until the slot screen exists: continue the last save or start a new one.
   game.register('slots', () => {
     const last = S.settings.lastSlot >= 0 ? loadSlot(S.settings.lastSlot) : null;
@@ -126,6 +142,7 @@ async function boot(): Promise<void> {
   setLoad(95, 'Ready for launch!');
   registerScenes(game);
   installDirectors();
+  installHooks();
   setupRotateHint();
   if (new URLSearchParams(location.search).has('debug')) (window as unknown as { __spacesky: unknown }).__spacesky = S;
   game.start();

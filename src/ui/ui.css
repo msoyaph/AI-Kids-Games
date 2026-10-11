@@ -311,3 +311,48 @@ body.portrait #rotate-hint:not(.dismissed) { display: flex; }
 .crew-btn:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(10,6,40,.55); }
 .crew-btn canvas { width: 110px; height: 110px; }
 .lounge-tip { align-self: center; font-size: 30px; text-shadow: 0 3px 0 var(--ink); }
+
+/* ---------------------------------------------------------------- Cutscenes, credits, completion */
+.cutscene-skip { position: absolute; right: calc(20px + var(--safe-r,0px)); top: calc(16px + var(--safe-t,0px)); pointer-events: auto; }
+.credits-view { position: absolute; inset: 0; overflow: hidden; display: flex; justify-content: center; pointer-events: none; }
+.credits-roll { display: flex; flex-direction: column; align-items: center; gap: 56px; text-align: center; padding-top: 760px; animation: credits-up linear forwards; }
+@keyframes credits-up { from { transform: translateY(0); } to { transform: translateY(-100%); } }
+.credits-block { display: flex; flex-direction: column; gap: 10px; }
+.credits-line { font-size: 32px; text-shadow: 0 3px 0 var(--ink); }
+.complete-wrap { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.complete-wrap canvas { width: 150px; height: 150px; animation: bob 1.4s ease-in-out infinite alternate; }
+.stat-grid { display: grid; grid-template-columns: repeat(3, 210px); gap: 12px; }
+.stat-tile { display: flex; flex-direction: column; align-items: center; padding: 10px; border-radius: 22px; background: rgba(10,6,40,.55); border: 4px solid var(--ink); }
+.stat-tile .ico { width: 46px; height: 46px; }
+.stat-val { font-size: 36px; font-weight: 900; color: var(--yellow); text-shadow: 0 3px 0 var(--ink); }
+.stat-lbl { font-size: 20px; opacity: .85; }
+
+/* ---------------------------------------------------------------- Codex, badges, sticker book, facts */
+.codex-left { width: 52%; min-width: 420px; gap: 10px; padding: 12px; }
+.codex-grid { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); }
+.codex-card { min-height: 0; }
+.codex-card canvas { width: 80px; height: 80px; }
+.codex-detail { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 18px; }
+.codex-detail canvas { width: 170px; height: 170px; flex: none; }
+.fact-list { display: flex; flex-direction: column; gap: 10px; }
+.fact { display: flex; align-items: center; gap: 12px; font-size: 26px; line-height: 1.25; padding: 8px 12px; border-radius: 18px; background: rgba(255,255,255,.1); }
+.awards-body { flex: 1; min-height: 0; padding: 16px; }
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.badge-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px; border-radius: 22px; background: rgba(10,6,40,.4); border: 4px solid rgba(32,18,77,.8); text-align: center; opacity: .75; }
+.badge-card.earned { background: linear-gradient(180deg, #ffffff, #e2e8ff); color: var(--ink); opacity: 1; border-color: var(--ink); }
+.badge-card canvas { width: 96px; height: 104px; }
+.badge-desc { font-size: 18px; opacity: .8; line-height: 1.15; }
+.badge-lock { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; }
+.sticker-page { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; padding: 14px; border-radius: 26px; background: repeating-linear-gradient(0deg, #fff6e0, #fff6e0 38px, #f1e4c4 38px, #f1e4c4 40px); border: 5px solid var(--ink); }
+.sticker-spot { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px; border-radius: 20px; border: none; background: transparent; color: var(--ink); }
+.sticker-spot canvas { width: 96px; height: 96px; }
+.sticker-spot:not(.got) canvas { filter: invert(.6); }
+.sticker-spot.got canvas { animation: wiggle 2.5s ease-in-out infinite; }
+.sticker-name { font-size: 18px; font-weight: 900; text-align: center; }
+.fact-card { position: absolute; left: calc(20px + var(--safe-l,0px)); bottom: calc(210px + var(--safe-b,0px)); display: flex; align-items: center; gap: 14px; width: min(640px, 70%); padding: 12px 14px; border-radius: 26px; background: linear-gradient(180deg, #ffffff, #e6ecff); color: var(--ink); border: 5px solid var(--ink); box-shadow: 0 8px 0 rgba(10,6,40,.5); animation: slide-up .4s ease-out; pointer-events: auto; z-index: 20; transition: opacity .35s, transform .35s; }
+.fact-card.out { opacity: 0; transform: translateY(30px); }
+.fact-card canvas { width: 90px; height: 90px; flex: none; }
+.fact-head { font-size: 22px; color: #6b3fd4; font-weight: 900; }
+.fact-text { font-size: 26px; line-height: 1.2; }
+.daily-bar { width: 100%; height: 18px; margin-top: 4px; }
+.mission-row.daily.done { opacity: .7; }

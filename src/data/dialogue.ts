@@ -1,4 +1,5 @@
 import type { Line } from './dialogueTypes';
+import { STORY_DIALOGUE } from './dialogueStory';
 
 /**
  * All conversations. Short sentences for early readers. `{name}` is the player's name.
@@ -91,6 +92,43 @@ export const DIALOGUE: Record<string, Line[]> = {
     { who: 'rio', text: 'What a coin collector! Here is some new paint.' },
   ],
 
+  // ---------------------------------------------------------------- NPCs in exploration areas
+  mars_kit: [
+    { who: 'kit', text: 'Howdy, {name}! I am Ranger Kit. I look after the Mars Outpost.' },
+    { who: 'kit', text: 'Mars is red because its dust has rust in it!', mood: 'wow' },
+  ],
+  ceres_pots: [
+    { who: 'pots', text: 'Beep! Welcome to Ceres Station. I am Pots, the cook!' },
+    { who: 'pots', text: 'Ceres is the biggest thing in the asteroid belt. It is a dwarf planet!' },
+  ],
+  callisto_zibbo: [
+    { who: 'zibbo', text: 'Zib-zib! You fixed my pod! Thank you!', mood: 'wow' },
+    { who: 'zibbo', text: 'My name is Zibbo. I am an explorer from far away.' },
+  ],
+  ganymede_ada: [
+    { who: 'ada', text: 'Hi! I am Doctor Ada. I study the moons of Jupiter.' },
+    { who: 'ada', text: 'Ganymede is the biggest moon in the whole solar system!' },
+  ],
+  titan_fin: [
+    { who: 'fin', text: 'Ahoy, cadet! I am Captain Fin of Titan Station.' },
+    { who: 'fin', text: 'Titan has lakes. But they are not water. They are full of liquid methane!' },
+  ],
+  triton_ivy: [
+    { who: 'ivy', text: 'Brrr! Hi, I am Ivy. Triton is one of the coldest places we know!' },
+    { who: 'ivy', text: 'Those geysers shoot gas way up high. Ride them!' },
+  ],
+  village_ollo: [
+    { who: 'ollo', text: 'Welcome, friend from far away. I am Glowkeeper Ollo.' },
+    { who: 'ollo', text: 'I take care of our Star Beacon. It guides explorers home.' },
+  ],
+  village_wobb: [
+    { who: 'wobb', text: 'Hello! I am Wobb. I grow glow-berries!' },
+    { who: 'wobb', text: 'They taste like sunshine and bubbles.' },
+  ],
+  bubble_pibble: [
+    { who: 'pibble', text: 'Hee hee! Bounce on the bubbles! It is the best!', mood: 'wow' },
+  ],
+
   moon_intro: [
     { who: 'sol', text: 'Welcome to Moon Base, {name}!' },
     { who: 'sol', text: 'Look up! That blue ball is Earth, your home.', mood: 'wow' },
@@ -100,6 +138,8 @@ export const DIALOGUE: Record<string, Line[]> = {
     { who: 'sol', text: 'There is no air on the Moon. That is why we wear space suits!' },
   ],
 };
+
+Object.assign(DIALOGUE, STORY_DIALOGUE);
 
 export function dialogue(id: string): Line[] {
   return DIALOGUE[id] ?? [];

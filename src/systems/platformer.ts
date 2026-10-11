@@ -97,7 +97,7 @@ export interface POrb { x: number; y: number; vy: number; px: number; py: number
 export interface PBumbler { x: number; y: number; vx: number; px: number; minX: number; maxX: number; squish: number }
 export type PickupKind = 'coin' | 'sticker' | 'sample' | 'item';
 export interface PPickup { ent: LevelEnt; kind: PickupKind; x: number; y: number; taken: boolean }
-export interface PNpc { ent: LevelEnt; x: number; y: number }
+export interface PNpc { ent: LevelEnt; x: number; y: number; hidden: boolean }
 export interface PGoal { ent: LevelEnt; x: number; y: number; reached: boolean }
 
 export interface PlatWorld {
@@ -200,12 +200,13 @@ export function buildPlatWorld(model: LevelModel, cfg: PlatCfg, include: (e: Lev
         if (d?.kind === 'crystal') w.crystals.push({ ent: e, group: d.group, color: d.start ?? 0, x: cx, y: by, bumpT: 0 });
         break;
       case 'npc':
-        w.npcs.push({ ent: e, x: cx, y: by });
+        w.npcs.push({ ent: e, x: cx, y: by, hidden: false });
         break;
       case 'goal':
         w.goals.push({ ent: e, x: cx, y: by, reached: false });
         break;
       case 'sign':
+      case 'panel':
         w.signs.push({ ent: e, x: cx, y: by });
         break;
       default:
@@ -461,12 +462,29 @@ export function geyserOn(w: PlatWorld, tx: number): boolean {
   return (w.time + tx * 0.37) % 3.2 < 1.3;
 }
 
+/** Does something falling from `prevBottom` to `bottom` land on a thin platform? */
+function landsOnPlatform(w: PlatWorld, x: number, width: number, prevBottom: number, bottom: number): number | null {
+  const ty = Math.floor(bottom / TILE);
+  const top = ty * TILE;
+  if (prevBottom > top + 1) return null;
+  for (let tx = Math.floor((x + 2) / TILE); tx <= Math.floor((x + width - 2) / TILE); tx++) {
+    if (tileAt(w.model, tx, ty) === T_PLATFORM) return top;
+  }
+  return null;
+}
+
 function stepBlocks(w: PlatWorld, dt: number): void {
   for (const b of w.blocks) {
     b.px = b.x;
     b.py = b.y;
     b.vy = Math.min(b.vy + w.cfg.gravity * dt, 900);
     const ny = b.y + b.vy * dt;
+    const plat = b.vy > 0 ? landsOnPlatform(w, b.x, TILE, b.y + TILE, ny + TILE) : null;
+    if (plat !== null) {
+      b.y = plat - TILE;
+      b.vy = 0;
+      continue;
+    }
     if (overlapsSolid(w, b.x + 1, ny, TILE - 2, TILE) || blockAt(w, b.x + 1, ny, TILE - 2, TILE, b)) {
       // Land on the tile/block below (snap to grid row).
       b.y = Math.floor((ny + TILE) / TILE) * TILE - TILE;
@@ -490,6 +508,12 @@ function stepOrbs(w: PlatWorld, p: PPlayer, dt: number): void {
     }
     o.vy = Math.min(o.vy + w.cfg.gravity * dt, 800);
     const ny = o.y + o.vy * dt;
+    const plat = o.vy > 0 ? landsOnPlatform(w, o.x - 16, 32, o.y + 20, ny + 20) : null;
+    if (plat !== null) {
+      o.y = plat - 20;
+      o.vy = 0;
+      continue;
+    }
     if (overlapsSolid(w, o.x - 16, ny - 16, 32, 36)) {
       o.vy = 0;
     } else o.y = ny;
@@ -601,7 +625,7 @@ export function findInteraction(w: PlatWorld, p: PPlayer, out: Interaction): Int
       found = true;
     }
   };
-  for (let i = 0; i < w.npcs.length; i++) consider('talk', i, w.npcs[i].x, w.npcs[i].y, 90);
+  for (let i = 0; i < w.npcs.length; i++) if (!w.npcs[i].hidden) consider('talk', i, w.npcs[i].x, w.npcs[i].y, 90);
   if (p.carry >= 0) {
     for (let i = 0; i < w.machines.length; i++) if (!w.machines[i].powered) consider('deliver', i, w.machines[i].x, w.machines[i].y, 110);
   } else {
@@ -684,6 +708,39 @@ function checkGroup(w: PlatWorld, group: string, ev: PlatEvents): void {
   w.solvedGroups.add(group);
   w.active.add(group);
   ev.solved.push(def.puzzle);
+}
+
+/** Restore puzzles solved on an earlier visit (machines stay powered, crystals stay matched, doors stay open). */
+export function restoreSolved(w: PlatWorld, isSolved: (puzzle: string) => boolean, doorOpen: (id: string) => boolean): void {
+  for (const m of w.machines) {
+    if (isSolved(m.puzzle)) {
+      m.powered = true;
+      m.have = m.needs;
+      w.active.add(m.id);
+      // The orbs it used are gone.
+      let used = 0;
+      for (const o of w.orbs) {
+        if (used >= m.needs) break;
+        if (!o.used) {
+          o.used = true;
+          used++;
+        }
+      }
+    }
+  }
+  for (const [gid, g] of Object.entries(w.model.def.groups ?? {})) {
+    if (!isSolved(g.puzzle)) continue;
+    w.solvedGroups.add(gid);
+    w.active.add(gid);
+    const list = w.crystals.filter((c) => c.group === gid);
+    list.forEach((c, i) => (c.color = g.target[i] ?? c.color));
+  }
+  for (const d of w.doors) {
+    if (doorOpen(d.id)) {
+      d.latched = true;
+      d.amount = 1;
+    }
+  }
 }
 
 /** Put blocks and orbs back where they started (pause menu "Reset puzzle"). */

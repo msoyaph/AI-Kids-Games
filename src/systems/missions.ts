@@ -80,6 +80,7 @@ export class MissionEngine {
     const def = this.byId[id];
     if (!def || this.progress(id) || !this.requirementsMet(def)) return false;
     this.state.data.missions[id] = { status: 'active', step: 0, count: 0, seen: [] };
+    for (const f of def.startFlags ?? []) this.state.setFlag(f);
     if (track) this.state.data.activeMission = id;
     this.state.post({ kind: 'dialogue', id: def.briefing });
     this.beginStep(def);
@@ -199,6 +200,9 @@ export class MissionEngine {
     if (obj.kind === 'equip' && obj.part && obj.part !== 'any') {
       return Object.values(this.state.data.loadout).includes(obj.part);
     }
+    // Puzzles and places remember being done, so finishing them early never blocks a mission.
+    if (obj.kind === 'solve' && obj.puzzle) return this.state.flag(`solved:${obj.puzzle}`);
+    if (obj.kind === 'reach' && obj.marker) return this.state.flag(`reached:${obj.marker}`);
     return false;
   }
 

@@ -8,7 +8,8 @@ import { PART_BY_ID } from '../data/parts';
 import { FloatTexts, Particles, Shake } from '../gfx/particles';
 import { hexNum } from '../gfx/palette';
 import { Starfield } from '../gfx/starfield';
-import { planetDiscFraction, planetTex, rocketTex, tex } from '../gfx/textures';
+import { ensureTex, planetDiscFraction, planetTex, rocketTex, tex } from '../gfx/textures';
+import { drawGlyph } from '../gfx/art/glyphs';
 import { nozzlePositions, ROCKET_H, ROCKET_W } from '../gfx/art/rocket';
 import {
   landableNear, makeEvents, makeShip, resetEvents, scannableNear, shipSpeed, stepFlight,
@@ -63,6 +64,7 @@ export class FlightScene extends Scene {
   private haulSprites: Sprite[] = [];
   private glimmerSprites: Sprite[] = [];
   private stickerSprite: Sprite | null = null;
+  private wormhole: Sprite | null = null;
   private rocket = new Container();
   private rocketBody: Sprite;
   private flames: Sprite[] = [];
@@ -188,7 +190,12 @@ export class FlightScene extends Scene {
     const w = this.layout.world;
     for (const b of w.bodies) {
       let s: Sprite;
-      if (BODY_BY_ID[b.id]) {
+      if (b.id === 'wormhole') {
+        s = new Sprite(ensureTex('map_wormhole', 140, 140, (c, w) => drawGlyph(c, 'wormhole', w / 2, w / 2, w * 0.45)));
+        s.anchor.set(0.5);
+        s.scale.set((b.r * 2.2) / 140);
+        this.wormhole = s;
+      } else if (BODY_BY_ID[b.id]) {
         const t = planetTex(b.id);
         s = new Sprite(t);
         s.anchor.set(0.5);
@@ -501,6 +508,13 @@ export class FlightScene extends Scene {
 
   private checkNear(): void {
     const ship = this.ship;
+    // After the story trip, flying into the wormhole always takes you to Zephyra.
+    const worm = this.layout.world.bodies.find((q) => q.id === 'wormhole');
+    if (worm && this.mode === 'fly' && S.state.flag('wormholeDone') && Math.hypot(ship.x - worm.x, ship.y - worm.y) < worm.r + 70) {
+      this.mode = 'leaving';
+      void S.game.go('cutscene', { id: 'wormhole' });
+      return;
+    }
     for (const b of this.layout.world.bodies) {
       if (this.nearSent.has(b.id) || !BODY_BY_ID[b.id]) continue;
       if (Math.hypot(ship.x - b.x, ship.y - b.y) - b.r < 280) {
@@ -771,6 +785,11 @@ export class FlightScene extends Scene {
     for (let i = 0; i < this.bodySprites.length; i++) {
       const b = world.bodies[i];
       if (!BODY_BY_ID[b.id]) this.bodySprites[i].rotation = Math.sin(this.t + i) * 0.2;
+    }
+    if (this.wormhole) {
+      this.wormhole.rotation = this.t * 1.4;
+      const sc = (world.bodies.find((q) => q.id === 'wormhole')!.r * 2.2) / 140;
+      this.wormhole.scale.set(sc * (1 + Math.sin(this.t * 3) * 0.05));
     }
     if (this.stickerSprite?.visible) {
       this.stickerSprite.rotation = Math.sin(this.t * 2) * 0.3;

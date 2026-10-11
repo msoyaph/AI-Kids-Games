@@ -1,4 +1,4 @@
-import { Container, Sprite, TilingSprite, type Texture } from 'pixi.js';
+import { Container, Sprite, Text, TilingSprite, type Texture } from 'pixi.js';
 import { Scene } from '../app/Scene';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
@@ -8,7 +8,7 @@ import { CHAR_BY_ID } from '../data/characters';
 import { dialogue } from '../data/dialogue';
 import { ITEM_BY_ID, itemName } from '../data/items';
 import { levelById } from '../data/levels';
-import { CRYSTAL_COLORS, type EntDef } from '../data/levelTypes';
+import { CRYSTAL_COLORS, CRYSTAL_NAMES, type EntDef } from '../data/levelTypes';
 import { stickerForLevel } from '../data/stickers';
 import { theme, type Theme } from '../data/themes';
 import { drawAstronautSide, drawNpcSide, drawRover, ASTRO_POSES, type AstroPose } from '../gfx/art/characters';
@@ -21,9 +21,12 @@ import { hexNum } from '../gfx/palette';
 import { ensureAtlas, ensureTex, planetDiscFraction, planetTex, rocketTex, tex } from '../gfx/textures';
 import { condOk, entCond, parseLevel, tileAt, TILE, T_GEYSER, T_GOO, T_GROUND, T_ICE, T_PAD, T_PLATFORM, T_ROCK, isSolidTile, type LevelModel } from '../systems/level';
 import {
-  buildPlatWorld, doInteraction, findInteraction, geyserOn, makePlatEvents, makePlayer, platCfg, resetPlatEvents, resetPuzzle, stepPlatformer,
+  buildPlatWorld, doInteraction, findInteraction, geyserOn, makePlatEvents, makePlayer, platCfg, resetPlatEvents, resetPuzzle, restoreSolved, stepPlatformer,
   type Interaction, type PlatEvents, type PlatWorld, type PPlayer,
 } from '../systems/platformer';
+import { roundRect, ink, circle } from '../gfx/canvas';
+import { C } from '../gfx/palette';
+import { openAreas } from './director';
 import { showDialogue } from '../ui/dialogue';
 import { h, setText } from '../ui/dom';
 import { Hud } from '../ui/hud';
@@ -82,6 +85,11 @@ export class ExploreScene extends Scene {
   private bumblerSprites: Sprite[] = [];
   private npcSprites: Sprite[] = [];
   private geysers: Array<{ tx: number; ty: number }> = [];
+  private machineLabels: Text[] = [];
+  private crystalTicks: Sprite[] = [];
+  private buddy: Sprite | null = null;
+  private trail: Array<[number, number, number]> = [];
+  private condT = 0;
   private marker = new Sprite(tex('marker'));
   private hud: Hud;
   private prompt: HTMLElement;
@@ -130,9 +138,12 @@ export class ExploreScene extends Scene {
     this.world = buildPlatWorld(
       this.model,
       cfg,
-      (e) => condOk(entCond(e), condState),
+      // NPCs are always built so they can appear during a mission (they are hidden until then).
+      (e) => e.kind === 'npc' || condOk(entCond(e), condState),
       (key) => st.data.collected.includes(key),
     );
+    restoreSolved(this.world, (pz) => st.flag(`solved:${pz}`), (id) => st.flag(`door:${id}`));
+    this.refreshHidden();
     // Hidden sticker only if not found yet.
     const stickerDef = stickerForLevel(def.id);
     for (const pk of this.world.pickups) if (pk.kind === 'sticker' && (!stickerDef || st.data.stickers.includes(stickerDef.id))) pk.taken = true;
@@ -143,6 +154,12 @@ export class ExploreScene extends Scene {
     this.root.addChild(this.cam);
     this.cam.addChild(this.backLayer, ...this.tileChunks, this.itemLayer, this.actorLayer, this.fxNorm, this.fxAdd, this.marker, this.floats);
     this.playerSprite.anchor.set(0.5, 1);
+    if (st.flag('zibboJoined') && !this.world.npcs.some((n) => (n.ent.def as Extract<EntDef, { kind: 'npc' }>).char === 'zibbo')) {
+      this.buddy = new Sprite(ensureTex('npc_zibbo', 96, 112, (c, ww, hh) => drawNpcSide(c, CHAR_BY_ID.zibbo, ww, hh), 0.5, 1));
+      this.buddy.anchor.set(0.5, 1);
+      this.buddy.scale.set(0.7);
+      this.actorLayer.addChild(this.buddy);
+    }
     this.actorLayer.addChild(this.playerSprite);
     this.marker.anchor.set(0.5, 1);
     this.marker.visible = false;
@@ -294,7 +311,7 @@ export class ExploreScene extends Scene {
     pad.position.set(w.exitX, w.exitY - 6);
     pad.scale.set(0.7);
     this.backLayer.addChild(pad, rocket);
-    for (const s of w.signs) this.addAt(this.backLayer, tex('p_sign'), s.x, s.y + 2);
+    for (const sg of w.signs) if (sg.ent.def?.kind === 'sign') this.addAt(this.backLayer, tex('p_sign'), sg.x, sg.y + 2);
     for (const g of w.goals) this.addAt(this.backLayer, tex('p_goal'), g.x, g.y + 2);
     for (const pl of w.plates) {
       const s = this.addAt(this.backLayer, tex(pl.heavy ? 'p_plateHeavy' : 'p_plateUp'), pl.x, pl.y + 2);
@@ -304,7 +321,33 @@ export class ExploreScene extends Scene {
       const art = (m.ent.def as Extract<EntDef, { kind: 'machine' }>).art;
       this.machineSprites.push(this.addAt(this.backLayer, tex(`p_m_${art}_off`), m.x, m.y + 2));
     }
-    for (const c of w.crystals) this.crystalSprites.push(this.addAt(this.backLayer, tex('p_crystal'), c.x, c.y + 2));
+    for (const c of w.crystals) {
+      this.crystalSprites.push(this.addAt(this.backLayer, tex('p_crystal'), c.x, c.y + 2));
+      const tick = this.addAt(this.itemLayer, tex('spark'), c.x, c.y - 92);
+      tick.tint = 0x8cff66;
+      tick.visible = false;
+      this.crystalTicks.push(tick);
+    }
+    for (const m of w.machines) {
+      const t = new Text({ text: '', style: { fontFamily: 'ui-rounded, "Arial Rounded MT Bold", sans-serif', fontSize: 30, fontWeight: '900', fill: '#ffffff', stroke: { color: '#20124d', width: 7, join: 'round' } } });
+      t.anchor.set(0.5);
+      t.position.set(m.x, m.y - 130);
+      this.itemLayer.addChild(t);
+      this.machineLabels.push(t);
+    }
+    for (const sg of w.signs) {
+      const d = sg.ent.def;
+      if (d?.kind !== 'panel') continue;
+      const target = this.model.def.groups?.[d.group]?.target ?? [];
+      const key = `panel_${this.model.def.id}_${d.group}`;
+      const t = ensureTex(key, 40 + target.length * 40, 110, (c, ww, hh) => {
+        c.fillStyle = C.ink;
+        c.fillRect(ww / 2 - 4, hh * 0.5, 8, hh * 0.5);
+        ink(c, roundRect(4, 6, ww - 8, hh * 0.5, 12), '#fff6e0', 4);
+        target.forEach((col, i) => ink(c, circle(30 + i * 40, 6 + hh * 0.25, 14), CRYSTAL_COLORS[col], 3));
+      }, 0.5, 1);
+      this.addAt(this.backLayer, t, sg.x, sg.y + 2);
+    }
     for (const d of w.doors) {
       const box = new Container();
       for (let k = 0; k < d.h / TILE; k++) {
@@ -322,6 +365,7 @@ export class ExploreScene extends Scene {
       const s = this.addAt(this.actorLayer, t, n.x, n.y + 2);
       const face = (n.ent.def as Extract<EntDef, { kind: 'npc' }>).face ?? (n.x > w.exitX ? -1 : 1);
       s.scale.x = face;
+      s.visible = !n.hidden;
       this.npcSprites.push(s);
     }
     for (const pk of w.pickups) {
@@ -411,6 +455,13 @@ export class ExploreScene extends Scene {
     this.floats.update(dt);
     this.shake.update(dt);
     if (p.onGround && Math.abs(p.vx) > 10) this.walkDist += Math.abs(p.vx) * dt;
+    this.condT -= dt;
+    if (this.condT <= 0) {
+      this.condT = 0.4;
+      this.refreshHidden();
+    }
+    this.trail.push([p.x + this.world.cfg.pw / 2, p.y + this.world.cfg.ph, p.facing]);
+    if (this.trail.length > 24) this.trail.shift();
     exploreHooks.update(this, dt);
   }
 
@@ -463,18 +514,20 @@ export class ExploreScene extends Scene {
     }
     for (const g of ev.goals) {
       const d = g.ent.def as Extract<EntDef, { kind: 'goal' }>;
+      st.setFlag(`reached:${d.marker}`);
       st.emit({ type: 'reach', marker: d.marker, area });
       this.fxAdd.burst(tex('spark'), g.x, g.y - 40, 24, 300, 0.8, 0.8, '#ffe066');
       sfx('goal');
       this.updateObjective();
     }
     for (const id of ev.opened) {
-      void id;
+      st.setFlag(`door:${id}`);
       toast('A door opened!', 'check', 1800);
       sfx('door');
     }
     for (const puzzle of ev.solved) {
       st.bump('puzzles');
+      st.setFlag(`solved:${puzzle}`);
       st.emit({ type: 'solve', puzzle, area });
       this.floats.show('Solved!', cx, p.y - 30, '#8cff66', 50);
       this.fxAdd.burst(tex('spark'), cx, p.y, 30, 380, 0.9, 0.8, '#8cff66');
@@ -507,9 +560,15 @@ export class ExploreScene extends Scene {
       }
       case 'sign': {
         const sgn = w.signs[it.index];
-        const d = sgn.ent.def as Extract<EntDef, { kind: 'sign' }>;
+        const d = sgn.ent.def;
+        let text = '';
+        if (d?.kind === 'sign') text = d.text;
+        else if (d?.kind === 'panel') {
+          const target = this.model.def.groups?.[d.group]?.target ?? [];
+          text = `Make the crystals match: ${target.map((c) => CRYSTAL_NAMES[c]).join(', ')}. Tap a crystal to change its color.`;
+        }
         this.busy = true;
-        void showDialogue([{ who: 'sign', text: d.text }]).then(() => (this.busy = false));
+        void showDialogue([{ who: 'sign', text }]).then(() => (this.busy = false));
         break;
       }
       case 'exit':
@@ -525,15 +584,41 @@ export class ExploreScene extends Scene {
     }
   }
 
+  /** Show or hide NPCs that only appear at a certain point in a mission. */
+  private refreshHidden(): void {
+    const cs = exploreHooks.condState();
+    this.world.npcs.forEach((n, i) => {
+      n.hidden = !condOk(entCond(n.ent), cs);
+      const sp = this.npcSprites[i];
+      if (sp && sp.visible === n.hidden) {
+        sp.visible = !n.hidden;
+        if (!n.hidden) {
+          this.fxAdd.burst(tex('spark'), n.x, n.y - 50, 20, 260, 0.8, 0.8, '#fff7b3');
+          sfx('sparkle');
+        }
+      }
+    });
+  }
+
   private askLeave(): void {
     this.busy = true;
+    const others = openAreas(this.bodyId).filter((a) => a !== this.model.def.id);
+    const hop = h('div', { class: 'col area-list' });
+    for (const a of others) {
+      hop.append(button(`Hop to ${levelById(a)?.name ?? a}`, 'planet', () => {
+        closeTopModal();
+        sfx('launch');
+        void S.game.go('explore', { area: a });
+      }, { color: 'white', id: `hop-${a}` }));
+    }
     const panel = h(
       'div',
       { class: 'panel col center', 'data-testid': 'leave-panel' },
       h('div', { class: 'h2' }, 'Fly away?'),
+      others.length ? hop : null,
       h('div', { class: 'row' },
         button('Not yet', 'back', () => closeTopModal(), { color: 'white', id: 'btn-stay' }),
-        button('Fly!', 'rocket', () => {
+        button('Star Map', 'rocket', () => {
           closeTopModal();
           this.leave();
         }, { color: 'green', size: 'big', id: 'btn-fly' }),
@@ -686,6 +771,11 @@ export class ExploreScene extends Scene {
       const m = w.machines[i];
       const art = (m.ent.def as Extract<EntDef, { kind: 'machine' }>).art;
       this.machineSprites[i].texture = tex(`p_m_${art}_${m.powered ? 'on' : 'off'}`);
+      const lbl = this.machineLabels[i];
+      lbl.visible = !m.powered;
+      const txt = `${m.have} / ${m.needs}`;
+      if (lbl.text !== txt) lbl.text = txt;
+      lbl.y = m.y - 130 + Math.sin(this.t * 3 + i) * 4;
     }
     for (let i = 0; i < w.crystals.length; i++) {
       const c = w.crystals[i];
@@ -693,6 +783,11 @@ export class ExploreScene extends Scene {
       sp.tint = hexNum(CRYSTAL_COLORS[c.color]);
       const solved = w.solvedGroups.has(c.group);
       sp.scale.set(1 + c.bumpT * 0.6 + (solved ? Math.sin(this.t * 4) * 0.05 : 0));
+      // Easy: a little green sparkle shows which crystals are already right.
+      const g = this.model.def.groups?.[c.group];
+      const idx = w.crystals.filter((q) => q.group === c.group).indexOf(c);
+      this.crystalTicks[i].visible = S.state.difficulty === 'easy' && !solved && !!g && g.target[idx] === c.color;
+      this.crystalTicks[i].rotation = this.t * 2;
     }
     for (let i = 0; i < w.bumblers.length; i++) {
       const b = w.bumblers[i];
@@ -704,6 +799,12 @@ export class ExploreScene extends Scene {
     for (let i = 0; i < this.npcSprites.length; i++) {
       const sp = this.npcSprites[i];
       sp.scale.y = 1 + Math.sin(this.t * 2 + i) * 0.02;
+    }
+    // Zibbo follows a little behind you.
+    if (this.buddy && this.trail.length) {
+      const [bx, by, bf] = this.trail[0];
+      this.buddy.position.set(bx - bf * 40, by + 2 - Math.abs(Math.sin(this.t * 6)) * 10);
+      this.buddy.scale.x = 0.7 * bf;
     }
     // Interaction marker.
     const cur = this.current;

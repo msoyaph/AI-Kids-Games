@@ -33,11 +33,18 @@ Vite + TypeScript (strict) + PixiJS 8, shipped as ONE self-contained `dist/index
 - [x] Phase 3: StarMapScene, LandingScene (systems/landing.ts), ExploreScene (systems/level.ts, platformer.ts, reachability.ts), tiles/themes, dialogue UI, read-aloud.
 - [x] Phase 4: HangarScene (parts, half-star stats, try-on), ShopScene (outfits, room decor), systems/economy.ts.
 - [x] Phase 5: systems/missions.ts (data-driven engine), data/missions/*, presenter (ui/presenter.ts), director (scenes/director.ts), Hub/Board/Lounge scenes, save manager + migrations.
-- [ ] Phase 6: chapters 1–5, finale, credits.
-- [ ] Phase 7: codex, facts, badges, dailies, races, sticker book.
+- [x] Phase 6: 27 main + 16 side missions (data/missions/*), 19 levels (data/levels/*, auto-registered), story dialogue (data/dialogueStory.ts), CutsceneScene (zibbo/starpath/wormhole/finale), CreditsScene, CompleteScene.
+- [x] Phase 7: data/facts.ts (ALL facts), data/codex.ts, systems/codex.ts, data/badges.ts (40), systems/daily.ts, systems/race.ts, CodexScene, BadgesScene (badges + sticker book), app/hooks.ts wiring.
 - [ ] Phase 8: astronaut creator, settings, save slots.
 - [ ] Phase 9: audio, effects, onboarding.
 - [ ] Phase 10: tests, pacing.
+
+## Content conventions
+- Puzzles remember being solved via flags `solved:<puzzle>`, `reached:<marker>`, `door:<id>`; the mission engine treats
+  an already-solved puzzle/marker as complete when its objective starts (no soft-locks from doing things early).
+- Mission items/samples in levels use `when: { mission }` so they only appear while needed.
+- Areas on multi-area worlds use `unlock` conds (flags set by mission `startFlags`).
+- Level files: `LEVEL=<id,...> npx vitest run tests/unit/levels.test.ts` checks one level (reachability, soft-locks).
 
 ## Gotchas
 - Headless Chromium renders WebGL in software; e2e timings are much slower than real devices.
