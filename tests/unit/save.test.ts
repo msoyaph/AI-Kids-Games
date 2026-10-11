@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useMemoryStorage } from '../../src/core/storage';
 import { compactLoc, deserialize, expandLoc, migrate, saveToSlot, loadSlot, SAVE_VERSION, serialize } from '../../src/sim/save';
-import { Sim, rleDecode, rleEncode } from '../../src/sim/sim';
+import { Sim } from '../../src/sim';
+import { rleDecode, rleEncode } from '../../src/sim/sim';
 import { SOIL_TILLED, SOIL_WATERED } from '../../src/sim/types';
 import { TUNING } from '../../src/tuning';
 

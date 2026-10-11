@@ -1,5 +1,7 @@
 /** Maps world objects to sprite names + footprint, for the renderer. */
+import { cropStage } from '../sim/farming';
 import type { WorldObject } from '../sim/types';
+import type { Loc } from '../sim/world';
 
 export interface ObjSprite {
   name: string;
@@ -10,11 +12,21 @@ export interface ObjSprite {
   oy?: number;
   /** draw flat on ground (no y-sort) */
   flat?: boolean;
+  /** optional sprite drawn on top (tapper bucket, machine "ready" bubble…) */
+  overlay?: string;
+  overlayOy?: number;
 }
 
 const one = (name: string, oy = 0): ObjSprite => ({ name, fw: 1, fh: 1, oy });
 
-export function objSprite(o: WorldObject, season: number): ObjSprite | null {
+/** Extra resolvers registered by later systems (machines, mine, forage…). */
+export const spriteHooks: ((o: WorldObject, season: number, loc: Loc, x: number, y: number) => ObjSprite | null | undefined)[] = [];
+
+export function objSprite(o: WorldObject, season: number, loc: Loc, x: number, y: number): ObjSprite | null {
+  for (const h of spriteHooks) {
+    const r = h(o, season, loc, x, y);
+    if (r !== undefined) return r;
+  }
   switch (o.k) {
     case 'weed':
       return one(`obj.weed.${(o.n ?? 0) % 3}.s${season}`);
@@ -23,16 +35,28 @@ export function objSprite(o: WorldObject, season: number): ObjSprite | null {
     case 'twig':
       return one(`obj.twig.${(o.n ?? 0) % 2}`);
     case 'stump':
-      return one('obj.stump');
+      return one(o.id === 'treestump' ? 'obj.treestump' : 'obj.stump');
     case 'log':
       return { name: 'obj.log', fw: 2, fh: 2 };
     case 'boulder':
       return { name: 'obj.boulder', fw: 2, fh: 2 };
     case 'tree': {
       const st = Math.min(4, o.g ?? 0);
-      if (o.hp !== undefined && o.hp <= 0) return one('obj.treestump');
-      return one(`tree.${o.id}.${st}.s${season}`);
+      const s: ObjSprite = one(`tree.${o.id}.${st}.s${season}`);
+      if (o.tap) s.overlay = o.tap.out ? 'obj.tapper.ready' : 'obj.tapper';
+      return s;
     }
+    case 'fruitTree': {
+      const g = o.g ?? 0;
+      const st = g >= 10 ? 3 : g >= 6 ? 2 : g >= 3 ? 1 : 0;
+      if (st === 3 && (o.n ?? 0) > 0) return one(`ftree.${o.id}.fruit.s${season}`);
+      return one(`ftree.${o.id}.${st}.s${season}`);
+    }
+    case 'crop':
+      if (o.dead) return one(`crop.${o.id}.dead`);
+      return one(`crop.${o.id}.${cropStage(o, loc, x, y)}`);
+    case 'giant':
+      return { name: `giant.${o.id}`, fw: 3, fh: 3 };
     case 'part':
       return null;
     default:

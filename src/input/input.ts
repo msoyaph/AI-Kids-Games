@@ -48,6 +48,7 @@ export class Input {
     const code = e.code;
     if (!e.repeat) {
       const a = KEYMAP[code];
+      this.fromPointer = false;
       if (a) {
         this.push(a);
         if (a === 'use') this.holdUse = true;
@@ -59,6 +60,41 @@ export class Input {
     }
     this.keys.add(code);
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(code)) e.preventDefault();
+  }
+
+  /** set when the latest 'use'/'interact' came from a pointer click (use the hovered tile) */
+  fromPointer = false;
+
+  /** Mouse + pen pointer handling on the game canvas (touch is handled by the touch module). */
+  attachCanvas(canvas: HTMLCanvasElement): void {
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    canvas.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch') return;
+      this.pointer.x = e.offsetX;
+      this.pointer.y = e.offsetY;
+      this.pointer.active = true;
+      this.pointer.kind = 'mouse';
+      this.lastDevice = 'mouse';
+    });
+    canvas.addEventListener('pointerleave', (e) => {
+      if (e.pointerType !== 'touch') this.pointer.active = false;
+    });
+    canvas.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch') return;
+      this.pointer.x = e.offsetX;
+      this.pointer.y = e.offsetY;
+      this.pointer.active = true;
+      this.pointer.kind = 'mouse';
+      this.lastDevice = 'mouse';
+      this.fromPointer = true;
+      if (e.button === 0) {
+        this.holdUse = true;
+        this.push('use');
+      } else if (e.button === 2) this.push('interact');
+    });
+    window.addEventListener('pointerup', (e) => {
+      if (e.pointerType !== 'touch' && e.button === 0 && this.lastDevice === 'mouse') this.holdUse = false;
+    });
   }
 
   push(a: Action): void {
@@ -101,7 +137,7 @@ export class Input {
     }
     this.moveX = x;
     this.moveY = y;
-    if (!this.keys.has('Space') && !this.keys.has('KeyC') && this.lastDevice === 'keyboard') this.holdUse = false;
+    if (this.lastDevice === 'keyboard' && !this.keys.has('Space') && !this.keys.has('KeyC')) this.holdUse = false;
   }
 }
 

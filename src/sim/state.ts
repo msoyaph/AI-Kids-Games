@@ -50,6 +50,8 @@ export interface PlayerState {
   crafts: string[];
   /** total coins earned (for achievements / farm rating) */
   earned: number;
+  /** water left in the watering can */
+  water: number;
 }
 
 export interface PetState {
@@ -214,6 +216,8 @@ export interface GameState {
   lastShip: { items: { id: string; n: number; v: number }[]; total: number } | null;
   /** suspended mid-day save flag */
   suspended: boolean;
+  /** items that didn't fit in the bag wait in the Lost & Found box at home */
+  overflow: ItemStack[];
 }
 
 export const seasonOf = (day: number): number => Math.floor(day / 10) % 4;

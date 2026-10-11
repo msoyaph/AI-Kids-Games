@@ -18,6 +18,13 @@ export interface NewGameOptions {
 
 export const DEFAULT_LOOK: PlayerLook = { skin: 0xf2c49b, hair: 0x6a4630, hairStyle: 'short', shirt: 0x4f7fe0, pants: 0x46301f };
 
+function startInventory(): GameState['player']['inv'] {
+  const inv: GameState['player']['inv'] = new Array(TUNING.inventoryStart).fill(null);
+  ['tool.hoe', 'tool.can', 'tool.axe', 'tool.pick', 'tool.scythe'].forEach((id, i) => (inv[i] = { id, n: 1, q: 0 }));
+  inv[5] = { id: 'seed.radish', n: 12, q: 0 };
+  return inv;
+}
+
 export function createState(o: NewGameOptions): GameState {
   const seed = (o.seed ?? Math.floor(Math.random() * 2 ** 31)) >>> 0;
   return {
@@ -37,7 +44,7 @@ export function createState(o: NewGameOptions): GameState {
       hp: TUNING.maxHp,
       maxHp: TUNING.maxHp,
       coins: TUNING.startCoins,
-      inv: new Array(TUNING.inventoryStart).fill(null),
+      inv: startInventory(),
       sel: 0,
       tools: { hoe: 0, can: 0, axe: 0, pick: 0, scythe: 0, rod: -1, bonk: -1, sling: -1 },
       xp: { farming: 0, foraging: 0, fishing: 0, mining: 0, cooking: 0 },
@@ -46,6 +53,7 @@ export function createState(o: NewGameOptions): GameState {
       recipes: ['friedEgg', 'salad'],
       crafts: ['chest', 'scarecrow', 'woodFence', 'woodPath', 'torch', 'basicFertilizer'],
       earned: 0,
+      water: 25,
     },
     pet: { kind: o.pet, name: o.petName || (o.pet === 'dog' ? 'Biscuit' : 'Mochi'), color: o.petColor ?? 0, love: 0, petted: false, bowl: false },
     day: 0,
@@ -69,6 +77,7 @@ export function createState(o: NewGameOptions): GameState {
     bin: [],
     lastShip: null,
     suspended: false,
+    overflow: [],
   };
 }
 

@@ -20,6 +20,7 @@ const CHUNK_PX = CHUNK * TILE;
 interface ObjEntry {
   sprite: Sprite;
   key: string;
+  overlay: Sprite | null;
 }
 
 export class WorldView {
@@ -91,7 +92,10 @@ export class WorldView {
     this.chunkTex = [];
     for (const s of this.staticSprites) this.release(s);
     this.staticSprites = [];
-    for (const e of this.objSprites.values()) this.release(e.sprite);
+    for (const e of this.objSprites.values()) {
+      this.release(e.sprite);
+      if (e.overlay) this.release(e.overlay);
+    }
     this.objSprites.clear();
   }
 
@@ -272,28 +276,39 @@ export class WorldView {
     const seen = new Set<number>();
     const season = this.season;
     for (const [i, o] of loc.objs) {
-      const os = this.objResolver(o, season);
+      const tx = i % loc.w, ty = Math.floor(i / loc.w);
+      const os = this.objResolver(o, season, loc, tx, ty);
       if (!os || os.flat || o.k === 'path') continue;
       seen.add(i);
-      const key = os.name + '|' + (os.oy ?? 0);
+      const key = os.name + '|' + (os.oy ?? 0) + '|' + (os.overlay ?? '');
       let e = this.objSprites.get(i);
       if (e && e.key === key) continue;
       const tex = this.atlas.tex(os.name);
       if (!e) {
-        e = { sprite: this.acquire(tex), key };
+        e = { sprite: this.acquire(tex), key, overlay: null };
         this.objSprites.set(i, e);
       } else {
         e.sprite.texture = tex;
         e.key = key;
       }
-      const tx = i % loc.w, ty = Math.floor(i / loc.w);
       e.sprite.x = tx * TILE + (os.fw * TILE) / 2;
       e.sprite.y = (ty + os.fh) * TILE + (os.oy ?? 0);
       e.sprite.zIndex = (ty + os.fh) * TILE - 1;
+      if (os.overlay) {
+        if (!e.overlay) e.overlay = this.acquire(this.atlas.tex(os.overlay));
+        else e.overlay.texture = this.atlas.tex(os.overlay);
+        e.overlay.x = e.sprite.x;
+        e.overlay.y = e.sprite.y + (os.overlayOy ?? 0);
+        e.overlay.zIndex = e.sprite.zIndex + 0.5;
+      } else if (e.overlay) {
+        this.release(e.overlay);
+        e.overlay = null;
+      }
     }
     for (const [i, e] of this.objSprites) {
       if (!seen.has(i)) {
         this.release(e.sprite);
+        if (e.overlay) this.release(e.overlay);
         this.objSprites.delete(i);
       }
     }

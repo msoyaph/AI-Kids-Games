@@ -77,3 +77,96 @@ export const TUNING = {
 } as const;
 
 export type Tuning = typeof TUNING;
+
+// ── Crop balance: days to mature, regrow days, seed price, sell price, farming XP, yield ──
+export interface CropBalance {
+  days: number;
+  regrow?: number;
+  seed: number;
+  sell: number;
+  xp: number;
+  yield?: [number, number];
+}
+
+export const CROP_BALANCE: Record<string, CropBalance> = {
+  // spring
+  radish: { days: 4, seed: 20, sell: 40, xp: 8 },
+  lettuce: { days: 4, seed: 25, sell: 50, xp: 8 },
+  carrot: { days: 5, seed: 30, sell: 65, xp: 10 },
+  potato: { days: 6, seed: 45, sell: 80, xp: 12, yield: [1, 2] },
+  strawberry: { days: 7, regrow: 3, seed: 70, sell: 70, xp: 12 },
+  peas: { days: 6, regrow: 3, seed: 40, sell: 40, xp: 10 },
+  cauliflower: { days: 8, seed: 80, sell: 190, xp: 22 },
+  tulip: { days: 5, seed: 20, sell: 45, xp: 8 },
+  // summer
+  tomato: { days: 7, regrow: 3, seed: 50, sell: 55, xp: 12 },
+  corn: { days: 8, regrow: 4, seed: 75, sell: 55, xp: 12 },
+  blueberry: { days: 8, regrow: 3, seed: 80, sell: 35, xp: 12, yield: [2, 3] },
+  melon: { days: 9, seed: 80, sell: 260, xp: 26 },
+  sunflower: { days: 6, seed: 60, sell: 80, xp: 12 },
+  hotpepper: { days: 5, regrow: 2, seed: 40, sell: 40, xp: 9 },
+  greenbean: { days: 7, regrow: 3, seed: 50, sell: 40, xp: 10 },
+  wheat: { days: 4, seed: 10, sell: 25, xp: 5 },
+  // autumn
+  pumpkin: { days: 9, seed: 100, sell: 330, xp: 30 },
+  cranberry: { days: 7, regrow: 3, seed: 120, sell: 75, xp: 14, yield: [2, 2] },
+  grape: { days: 8, regrow: 3, seed: 60, sell: 80, xp: 12 },
+  eggplant: { days: 5, regrow: 4, seed: 30, sell: 60, xp: 10 },
+  yam: { days: 7, seed: 60, sell: 160, xp: 18 },
+  beet: { days: 5, seed: 20, sell: 70, xp: 10 },
+  broccoli: { days: 6, seed: 50, sell: 115, xp: 14 },
+  // winter (cold-hardy)
+  kale: { days: 5, seed: 40, sell: 100, xp: 12 },
+  spinach: { days: 4, seed: 30, sell: 60, xp: 9 },
+  brussels: { days: 8, regrow: 3, seed: 60, sell: 55, xp: 12 },
+};
+
+/** Fruit & tapper trees. */
+export const TREE_BALANCE = {
+  /** days per growth stage for wild trees (seed → grown in 4 stages) */
+  wildStageDays: 3,
+  fruitTreeDays: 10,
+  fruitPerDayMax: 3,
+  tapperDays: { oak: 4, maple: 3, pine: 3 } as Record<string, number>,
+  chopHp: 10,
+  stumpHp: 4,
+  wood: [8, 12] as [number, number],
+};
+
+/** Sell prices for basic items (crops/fish/etc. have their own tables). */
+export const PRICES: Record<string, number> = {
+  wood: 2, stone: 2, fiber: 1, sap: 2, hardwood: 15, coal: 15, clay: 20, mixedSeeds: 0,
+  acorn: 5, mapleSeed: 5, pineCone: 5,
+  oakResin: 120, mapleSyrup: 150, pineTar: 100,
+  cherry: 70, peach: 120, orange: 100, apple: 90, pear: 95,
+  basicFertilizer: 2, deluxeFertilizer: 10, speedyGrow: 20,
+};
+
+export const SAPLING_PRICES: Record<string, number> = { cherry: 900, peach: 1400, orange: 1200, apple: 1000, pear: 1100 };
+
+/** Tool behaviour by tier (0 basic, 1 copper, 2 iron, 3 gold). */
+export const TOOL_TIERS = {
+  /** watering can capacity */
+  canCapacity: [25, 45, 70, 100],
+  /** axe/pick damage per hit */
+  damage: [2, 3, 4, 6],
+  /** upgrade cost [coins, bar id, bars] */
+  upgrade: [
+    [0, '', 0],
+    [2000, 'copperBar', 5],
+    [5000, 'ironBar', 5],
+    [10000, 'goldBar', 5],
+  ] as [number, string, number][],
+  upgradeDays: 2,
+};
+
+/** Quality roll: chance of gold star = base + per level + fertilizer bonus. */
+export const QUALITY = {
+  goldBase: 0.02,
+  goldPerLevel: 0.025,
+  fertGold: [0, 0.12, 0.25, 0],
+  sparkleFert: [0, 0, 0.08, 0],
+  silverMult: 2.2,
+  /** speedy grow reduces days by this fraction */
+  speedyGrow: 0.25,
+};

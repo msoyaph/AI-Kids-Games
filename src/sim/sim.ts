@@ -3,10 +3,12 @@
  * used by the client, the test bot and unit tests. No DOM / Pixi imports here.
  */
 import { Emitter } from '../core/events';
+import { Rng, hash32 } from '../core/rng';
 import { DIR_DX, DIR_DY, TILE, dirFromVec, type Dir } from '../core/math';
 import { getMapDef, hasMap, type MapContext } from '../data/maps';
 import type { StructurePlacement } from '../data/maps/types';
 import { TUNING } from '../tuning';
+import { addItem } from './inventory';
 import { moveBody } from './movement';
 import { createState, generateFarmClutter, type NewGameOptions } from './newgame';
 import type { GameState } from './state';
@@ -32,6 +34,9 @@ export interface SimEvents extends Record<string, unknown> {
   passout: { min: number };
   newDay: { day: number };
   tired: { energy: number };
+  levelUp: { skill: string; level: number };
+  pickup: { id: string; n: number; q: number };
+  anim: { kind: string; x: number; y: number };
 }
 
 /** Festival-day check is provided by the festival system (set at startup). */
@@ -51,6 +56,10 @@ export class Sim {
   paused = false;
   /** set by the client while walking */
   moving = false;
+  /** level-ups gained today (reported at bedtime) */
+  pendingLevelUps: { skill: string; level: number }[] = [];
+  /** messages produced by morning systems (shown in the day summary) */
+  morningNotes: string[] = [];
 
   constructor(state: GameState, savedLocs: Record<string, SavedLoc> = {}) {
     this.state = state;
@@ -239,6 +248,26 @@ export class Sim {
     return this.state.day * 1440 + this.state.min;
   }
 
+  // ── Items ────────────────────────────────────────────────
+  /** Give the player items; anything that doesn't fit goes to the Lost & Found box at home. */
+  give(id: string, n = 1, q = 0, quiet = false): void {
+    if (n <= 0) return;
+    const left = addItem(this.p.inv, id, n, q);
+    if (left > 0) {
+      const o = this.state.overflow.find((s) => s.id === id && s.q === q);
+      if (o) o.n += left;
+      else this.state.overflow.push({ id, n: left, q });
+      this.ev.emit('toast', { text: 'Your bag is full! Extra items went to the Lost & Found box at home.', icon: 'ui.bag' });
+    }
+    this.state.col.found[id] = (this.state.col.found[id] ?? 0) + n;
+    if (!quiet) this.ev.emit('pickup', { id, n, q });
+  }
+
+  /** Daily deterministic RNG for a purpose + coordinates. */
+  rng(salt: number, a = 0, b = 0): Rng {
+    return new Rng(hash32(this.state.seed, this.state.day, salt, a, b));
+  }
+
   // ── Energy ───────────────────────────────────────────────
   /** Spend energy; returns false (and warns) if the player is too tired. */
   useEnergy(n: number): boolean {
@@ -261,7 +290,8 @@ export class Sim {
   /** End the day: overnight systems run, then a new morning starts in bed. */
   sleep(passedOut = false): DayReport {
     const st = this.state;
-    const r: DayReport = { day: st.day, shipped: [], total: 0, levelUps: [], notes: [], passedOut };
+    const r: DayReport = { day: st.day, shipped: [], total: 0, levelUps: this.pendingLevelUps, notes: [], passedOut };
+    this.pendingLevelUps = [];
     if (st.min >= TUNING.sleepyMin) st.stats.sleepsLate++;
     for (const s of SYSTEMS) s.endDay?.(this, r);
     st.day++;
@@ -277,7 +307,10 @@ export class Sim {
     const bed = house.def.points.bed ?? { x: 3, y: 3 };
     this.warpTo('farmhouse', bed.x, bed.y, 0);
     this.lastTick = Math.floor(st.min / 10);
+    this.morningNotes = [];
     for (const s of SYSTEMS) s.startDay?.(this);
+    r.notes.push(...this.morningNotes);
+    this.morningNotes = [];
     this.ev.emit('newDay', { day: st.day });
     return r;
   }

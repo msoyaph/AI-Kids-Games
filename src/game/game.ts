@@ -8,9 +8,16 @@ import { bakeAll, bakeCharacter } from '../render/art';
 import type { Look } from '../render/art/characters';
 import { bakeIcons } from '../render/art/icons';
 import { createRenderer, type RenderHost } from '../render/renderer';
+import { Fx } from '../render/fx';
 import { WorldView } from '../render/world-view';
+import type { ToolKind } from '../data/items';
+import type { WorldObject } from '../sim/types';
+import { INV_CSS } from '../ui/inventory';
+import { iconName, itemName } from '../ui/itemview';
+import { openShipping } from '../ui/ship';
+import { Controller } from './controller';
 import { loadSlot, saveToSlot } from '../sim/save';
-import { Sim } from '../sim/sim';
+import { Sim } from '../sim';
 import { seasonOf } from '../sim/state';
 import type { NewGameOptions } from '../sim/newgame';
 import { TUNING } from '../tuning';
@@ -62,6 +69,8 @@ export class Game {
   private titleT = 0;
   private busy = false;
   private unsub: (() => void)[] = [];
+  fx = new Fx();
+  ctl!: Controller;
 
   constructor(opts: GameOptions) {
     this.opts = opts;
@@ -83,6 +92,10 @@ export class Game {
     this.playerShadow.alpha = 0.25;
     this.playerShadow.label = 'nocull';
     this.playerShadow.texture = this.atlas.tex('shadow');
+    this.ctl = new Controller(this);
+    this.view.fx.addChild(this.fx.layer);
+    this.view.top.addChild(this.ctl.layer);
+    this.input.attachCanvas(this.host.app.canvas as HTMLCanvasElement);
     this.initUI();
     this.input.onAction = (a) => this.onRawAction(a);
     window.addEventListener('pagehide', () => this.suspend());
@@ -95,7 +108,7 @@ export class Game {
 
   private initUI(): void {
     const style = document.createElement('style');
-    style.textContent = CSS;
+    style.textContent = CSS + INV_CSS;
     document.head.appendChild(style);
     initIcons(this.atlas);
     applySettingsToDom(this.settings);
@@ -143,6 +156,14 @@ export class Game {
       ev.on('sleepy', () => this.toasts.show("It's getting late... you feel sleepy. Time for bed soon!", 'ui.moon', 5000)),
       ev.on('passout', () => void this.goToBed(true)),
       ev.on('tired', () => this.toasts.show("You're out of energy! Eat a snack or head to bed.", 'ui.energy')),
+      ev.on('pickup', (e) => this.toasts.pickup(iconName(e.id, this.sim.p.tools), `+${e.n} ${itemName(e.id)}`)),
+      ev.on('levelUp', (e) => this.toasts.show(`Your ${e.skill} skill grew to level ${e.level}!`, 'ui.star2', 4500)),
+      ev.on('anim', (e) => {
+        if (e.kind === 'shake') {
+          const s = this.view.spriteAt(this.sim.here, e.x, e.y);
+          if (s) this.fx.shake(s);
+        }
+      }),
     );
   }
 
@@ -239,10 +260,37 @@ export class Game {
 
   enterLocation(): void {
     const loc = this.sim.here;
+    this.fx.clear();
     this.view.setLoc(loc, seasonOf(this.sim.state.day));
-    this.view.sorted.addChild(this.playerShadow, this.player);
+    this.view.sorted.addChild(this.playerShadow, this.player, this.ctl.tool);
     this.snapCamera();
   }
+
+  locName(): string {
+    const id = this.sim.p.loc;
+    if (id === 'farm') return `${this.sim.p.farm} Farm`;
+    return this.sim.here.def.name;
+  }
+
+  screenToWorld(cssX: number, cssY: number): { x: number; y: number } {
+    const z = this.host.zoom, dpr = this.host.dpr;
+    return { x: (cssX * dpr - this.view.root.x) / z, y: (cssY * dpr - this.view.root.y) / z };
+  }
+
+  /** Sound hook (audio system plugs in here). */
+  sfx(_id: string): void {}
+
+  /** Fishing rod / bonk stick / slingshot — wired up by later systems. */
+  useSpecialTool(_k: ToolKind): void {
+    this.toasts.show('You can use this soon!');
+  }
+
+  /** Talk to nearby villagers / pet animals (later systems). */
+  interactNearby(): void {}
+
+  openChest(_x: number, _y: number): void {}
+
+  inspectObject(_o: WorldObject, _x: number, _y: number): void {}
 
   // ── Input ────────────────────────────────────────────────
   private onRawAction(a: Action): void {
@@ -298,7 +346,8 @@ export class Game {
       if (this.modals.open) continue;
       if (a === 'menu') this.openMenu();
       else if (a.startsWith('slot')) this.selectSlot(parseInt(a.slice(4), 10));
-      else if (a === 'interact') this.interact();
+      else if (a === 'interact') this.ctl.interact();
+      else if (a === 'use') this.ctl.use(this.input.fromPointer);
       else if (a === 'prevTool') this.selectSlot((this.sim.p.sel + TUNING.toolbarSize - 1) % TUNING.toolbarSize);
       else if (a === 'nextTool') this.selectSlot((this.sim.p.sel + 1) % TUNING.toolbarSize);
     }
@@ -314,6 +363,10 @@ export class Game {
   }
 
   runTrigger(action: string, _arg?: string): void {
+    if (action === 'ship') {
+      openShipping(this.sim, this.modals, (id) => this.sfx(id));
+      return;
+    }
     if (action === 'bed') {
       const late = this.sim.state.min >= TUNING.sleepyMin;
       this.modals.ask('Go to bed?', late ? "It's late — a good sleep will restore your energy." : 'Sleeping ends the day and saves your game.', [
@@ -354,14 +407,17 @@ export class Game {
       return;
     }
     this.handleActions();
-    if (!this.modals.open) {
+    this.ctl.update(dt);
+    if (!this.modals.open && !this.ctl.locked) {
       const before = this.sim.p.loc;
       this.sim.movePlayer(input.moveX, input.moveY, dt);
       if (this.sim.p.loc !== before) this.enterLocation();
     } else this.sim.moving = false;
+    if (this.mode === 'play' && !this.modals.open) this.ctl.updateTarget();
     this.sim.update(dt);
+    this.fx.update(dt);
     this.walkT = this.sim.moving ? this.walkT + dt : 0;
-    this.hud.update(this.sim, this.sim.here.def.name, false);
+    this.hud.update(this.sim, this.locName(), false);
   }
 
   snapCamera(): void {
@@ -381,7 +437,7 @@ export class Game {
 
   render(_dt: number): void {
     const p = this.sim.p;
-    const frame = this.sim.moving ? [0, 1, 0, 2][Math.floor(this.walkT * 8) % 4] : 0;
+    const frame = this.ctl?.pose ? 3 : this.sim.moving ? [0, 1, 0, 2][Math.floor(this.walkT * 8) % 4] : 0;
     this.player.texture = this.playerAtlas.tex(`ch.player.${p.dir}.${frame}`);
     this.player.x = Math.round(p.x);
     this.player.y = Math.round(p.y) + 1;
@@ -407,6 +463,7 @@ export class Game {
     this.view.view.w = this.host.width / z;
     this.view.view.h = this.host.height / z;
     this.view.update();
+    if (this.mode === 'play') this.ctl.drawHighlights();
     this.host.app.render();
   }
 }

@@ -1,6 +1,8 @@
 /** Bakes every code-authored sprite into the atlas at startup. */
 import type { Atlas } from '../atlas';
 import { bakeBuildings } from './buildings';
+import { bakeCrops } from './crops';
+import { bakeResourceIcons } from './items';
 import { drawCharacter, FRAMES, shadowSprite, type Look } from './characters';
 import { bakeObjects } from './objects';
 import { bakeProps } from './props';
@@ -11,6 +13,8 @@ export function bakeAll(atlas: Atlas): void {
   bakeProps(atlas);
   bakeBuildings(atlas);
   bakeObjects(atlas);
+  bakeCrops(atlas);
+  bakeResourceIcons(atlas);
   atlas.add('shadow', shadowSprite(12));
   atlas.add('shadow.big', shadowSprite(16));
 }
