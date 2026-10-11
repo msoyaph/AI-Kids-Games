@@ -201,17 +201,17 @@ export function suggest(groups: Group[], baselines: Map<string, SimBaseline> = n
       const best = Math.min(...g.times);
       if (beat === 0 && best > staff * 1.08) {
         out.push({
-          field: `BALANCE.staff.pace['${g.track}']`,
-          current: (BALANCE.staff.pace[g.track] ?? 1).toFixed(3),
-          suggested: ((BALANCE.staff.pace[g.track] ?? 1) * 0.98).toFixed(3),
+          field: `BALANCE.staff.tracks['${g.track}'].pace`,
+          current: (BALANCE.staff.tracks[g.track]?.pace ?? BALANCE.staff.defaultPace).toFixed(3),
+          suggested: ((BALANCE.staff.tracks[g.track]?.pace ?? BALANCE.staff.defaultPace) * 0.98).toFixed(3),
           why: `Nobody beat the ${g.track} staff ghost (best ${best.toFixed(1)} s vs ${staff.toFixed(1)} s).`,
           confidence: g.times.length >= 20 ? 'medium' : 'low',
         });
       } else if (beat > 0.5) {
         out.push({
-          field: `BALANCE.staff.pace['${g.track}']`,
-          current: (BALANCE.staff.pace[g.track] ?? 1).toFixed(3),
-          suggested: ((BALANCE.staff.pace[g.track] ?? 1) * 1.02).toFixed(3),
+          field: `BALANCE.staff.tracks['${g.track}'].pace`,
+          current: (BALANCE.staff.tracks[g.track]?.pace ?? BALANCE.staff.defaultPace).toFixed(3),
+          suggested: ((BALANCE.staff.tracks[g.track]?.pace ?? BALANCE.staff.defaultPace) * 1.02).toFixed(3),
           why: `${(beat * 100).toFixed(0)} % of runs beat the ${g.track} staff ghost — it should be a real challenge.`,
           confidence: g.times.length >= 20 ? 'medium' : 'low',
         });

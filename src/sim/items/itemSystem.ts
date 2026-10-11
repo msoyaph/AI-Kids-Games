@@ -825,6 +825,7 @@ export class ItemSystem {
         break;
     }
     k.raceStats.timesHit++;
+    k.raceStats.hitsTakenBy[item] = (k.raceStats.hitsTakenBy[item] ?? 0) + 1;
     if (attacker >= 0 && attacker !== k.index) {
       const a = w.karts[attacker];
       a.raceStats.itemHits++;

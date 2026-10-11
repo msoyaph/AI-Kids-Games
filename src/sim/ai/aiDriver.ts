@@ -16,6 +16,22 @@ export interface HazardInfo {
   active: boolean;
 }
 
+/** Optional overrides that turn a normal AI into a scripted expert (staff ghost, "strong bot" in balance tests). */
+export interface DriverStyle {
+  /** Always press in the perfect rocket-start window. */
+  rocketStart?: boolean;
+  /** Spark tier to aim for when drifting (overrides the skill-based tier). */
+  targetTier?: number;
+  /** Shortcut probability override (1 = always take every shortcut). */
+  shortcutChance?: number;
+  /** Multiplies the straight-line pace (staff ghost calibration). */
+  paceMul?: number;
+  /** Ration turbo items: one per lap, used on an off-road shortcut when the track has one. */
+  turboPlan?: boolean;
+  /** Test-only: extra wandering steering noise (a simulated beginner). */
+  steerNoise?: number;
+}
+
 /**
  * One AI racer. Follows the racing line with personal variation, drifts through long corners,
  * takes shortcuts (by skill/personality), seeks item boxes, avoids hazards and karts, and unsticks itself.
@@ -35,6 +51,9 @@ export class AiDriver {
   private stuckTime = 0;
   private reverseTime = 0;
   private trickPressed = false;
+  /** False when the corner needs a yaw rate the current drift can't hold (→ release it). */
+  private driftRateOk = true;
+  private driftBadTime = 0;
   private shortcut = -1;
   private shortcutDecided = new Set<number>();
   private scIndex = 0;
@@ -57,12 +76,14 @@ export class AiDriver {
     readonly profile: AiProfile,
     readonly skill: number,
     private readonly rng: Rng,
+    readonly style: DriverStyle = {},
   ) {
     const B = BALANCE.ai;
-    this.pace = B.paceBase + B.pacePerSkill * clamp(skill, 0, 1);
-    this.targetTier = skill > B.tier3Skill ? 3 : skill > B.tier2Skill ? 2 : 1;
+    this.pace = (B.paceBase + B.pacePerSkill * clamp(skill, 0, 1)) * (style.paceMul ?? 1);
+    this.targetTier = style.targetTier ?? (skill > B.tier3Skill ? 3 : skill > B.tier2Skill ? 2 : 1);
     // Good drivers hit the rocket-start window more often.
     this.startPressAt = rng.chance(B.rocketStartBase + skill * B.rocketStartPerSkill) ? rng.range(0.25, 0.95) : rng.chance(0.5) ? rng.range(1.2, 1.5) : -1;
+    if (style.rocketStart) this.startPressAt = 0.5;
     this.wobblePhase = rng.range(0, 10);
     this.laneTarget = rng.range(-1, 1) * profile.lineNoise;
   }
@@ -136,10 +157,29 @@ export class AiDriver {
       tz = rb.pz[j] + rb.rz[j] * d;
     }
     const want = Math.atan2(tx - k.x, tz - k.z);
-    const err = wrapAngle(want - k.yaw);
+    // While drifting the nose points into the corner but the kart slides along its velocity: aim with that.
+    const head = k.drifting && speed > 4 ? Math.atan2(k.vx, k.vz) : k.yaw;
+    const err = wrapAngle(want - head);
     let wobble = (1 - this.skill) * BALANCE.ai.wobble * Math.sin(w.time * 1.7 + this.wobblePhase);
     if (k.cloudTime > 0) wobble += 0.35 * Math.sin(w.time * 3.1 + this.wobblePhase);
+    if (this.style.steerNoise) wobble += this.style.steerNoise * (Math.sin(w.time * 0.9 + this.wobblePhase) + 0.6 * Math.sin(w.time * 2.3 + 1.7 * this.wobblePhase));
     let steer = clamp(-err * (BALANCE.ai.steerGainBase + this.skill * BALANCE.ai.steerGainPerSkill) + wobble, -1, 1);
+    // Drifting: the stick sets the yaw rate (0.3× outward … 1.3× inward of the turn rate), so steer for the yaw
+    // rate pure pursuit asks for instead of the heading error (neutral stick would over-rotate into the inside).
+    if (!k.drifting) this.driftBadTime = 0;
+    this.driftRateOk = true;
+    if (k.drifting && k.grounded && speed > 4) {
+      const L = Math.max(5, Math.hypot(tx - k.x, tz - k.z));
+      const omega = (speed * 2 * Math.sin(err)) / L; // + = turn left (yaw increases)
+      const tr = k.params.turnRate * Math.min(1, speed / 10);
+      const span = TUNING.driftRateMax - TUNING.driftRateMin;
+      const t = ((-omega * k.driftDir) / tr - TUNING.driftRateMin) / span; // drift yaw rate = −dir·tr·(min + span·t)
+      // the corner needs a rate the drift can't hold for a while → let go (brief dips at turn-in are fine)
+      if (t < -0.35 || t > 1.2) this.driftBadTime += dt;
+      else this.driftBadTime = Math.max(0, this.driftBadTime - dt * 0.5);
+      this.driftRateOk = this.driftBadTime < 0.3;
+      steer = clamp(k.driftDir * (2 * clamp(t, 0, 1) - 1) + wobble, -1, 1);
+    }
 
     // --- speed control: slow for very tight bends we can't steer through
     let maxK = 0;
@@ -217,7 +257,28 @@ export class AiDriver {
     const n1 = Math.round(12 / rb.ds);
     for (let s = 0; s < n1; s++) near += Math.abs(curv[rb.idx(i + s)]);
     near /= Math.max(1, n1);
-    const isCorner = avg > 1 / BALANCE.ai.cornerRadius && Math.abs(turn) > BALANCE.ai.cornerTurn;
+    // Find the next bend (|κ| > 1/80) within 70 m: where it starts, how much it turns and over what length.
+    // A drift can only hold yaw rates inside TUNING.driftRateMin…Max × turn rate, so only drift bends whose
+    // radius fits at this speed, and hop so the landing coincides with turn-in.
+    const c1 = Math.round(70 / rb.ds);
+    let startDist = -1;
+    let kTurn = 0;
+    let kLen = 0;
+    for (let s = 0; s < c1; s++) {
+      const c = curv[rb.idx(i + s)];
+      if (startDist < 0) {
+        if (Math.abs(c) > 1 / 80) startDist = s * rb.ds;
+        else continue;
+      }
+      if (Math.abs(c) < 1 / 120 || (kTurn !== 0 && Math.sign(c) !== Math.sign(kTurn))) break;
+      kTurn += c * rb.ds;
+      kLen += rb.ds;
+    }
+    const need = kLen > 0 ? speed * (Math.abs(kTurn) / kLen) : 0; // yaw rate the bend needs (rad/s)
+    const tr = k.params.turnRate;
+    const driftable = need > tr * TUNING.driftRateMin * BALANCE.ai.driftMinRateMul && need < tr * TUNING.driftRateMax * BALANCE.ai.driftMaxRateMul;
+    const turnIn = startDist >= 0 && startDist < speed * BALANCE.ai.driftHopLead + 2;
+    const isCorner = turnIn && Math.abs(kTurn) > BALANCE.ai.cornerTurn && driftable;
     if (isCorner && !this.cornerActive) {
       this.cornerActive = true;
       const chance = (BALANCE.ai.driftChanceBase + this.skill * BALANCE.ai.driftChancePerSkill) * (this.profile.id === 'showoff' ? 1.15 : this.profile.id === 'careful' ? 0.8 : 1);
@@ -225,16 +286,27 @@ export class AiDriver {
         this.wantDrift = true;
         this.driftHold = 0;
       }
-    } else if (!isCorner && avg < 1 / 90) {
+    } else if (startDist < 0 || startDist > 20) {
       this.cornerActive = false;
     }
     if (this.wantDrift) {
       this.driftHold += dt;
-      const cornerEnding = near < 1 / 80 && avg < 1 / 70;
-      const tierReached = k.driftTier >= this.targetTier && near < 1 / 45;
-      const losing = Math.abs(err) > 0.9 || speed < 9;
+      // remaining turn (rad) in the drift's direction over the next 25 m (right turns have negative curvature)
+      let left = 0;
+      const r1 = Math.round(25 / rb.ds);
+      for (let s = 0; s < r1; s++) left += curv[rb.idx(i + s)] * rb.ds;
+      left *= -k.driftDir;
+      const settled = k.drifting && k.driftTime > 0.45;
+      const cornerEnding = settled && left < 0.1;
+      const tierReached = settled && k.driftTier >= this.targetTier && left < 0.3;
+      // bail out before sliding off the road (wide of the line, near the edge, or onto off-road)
+      const g = k.ground;
+      const latV = k.vx * rb.rx[i] + k.vz * rb.rz[i];
+      const wide = k.drifting && g.ribbon === 0 && Math.abs(g.d) > g.halfWidth - BALANCE.ai.driftEdgeMargin && latV * Math.sign(g.d) > 1.5;
+      const losing = Math.abs(err) > 0.9 || speed < 9 || wide || (k.drifting && (k.offroad || !this.driftRateOk));
       const hopFailed = !k.drifting && k.hopTime <= 0 && k.grounded && this.driftHold > 0.6;
       if ((k.drifting && (cornerEnding || tierReached || losing)) || hopFailed || this.driftHold > 6) {
+        (this as unknown as { dbg: string }).dbg = `end=${cornerEnding} tier=${tierReached} err=${err.toFixed(2)} spd=${speed.toFixed(1)} wide=${wide} off=${k.offroad} rate=${this.driftRateOk} hop=${hopFailed} left=${left.toFixed(2)}`;
         this.wantDrift = false;
       }
     }
@@ -253,7 +325,9 @@ export class AiDriver {
         this.shortcutDecided.add(lapKey);
         const aiUse = this.track.data.shortcuts[r].aiUse ?? 0.5;
         const needsBoost = sc.offroadSurface;
-        const p = clamp(this.skill * this.profile.shortcutBias * aiUse * (needsBoost && k.item !== 'turbo' && k.item !== 'turbo3' ? BALANCE.ai.shortcutNoBoostMul : 1), 0, BALANCE.ai.shortcutMaxChance);
+        const p =
+          this.style.shortcutChance ??
+          clamp(this.skill * this.profile.shortcutBias * aiUse * (needsBoost && k.item !== 'turbo' && k.item !== 'turbo3' ? BALANCE.ai.shortcutNoBoostMul : 1), 0, BALANCE.ai.shortcutMaxChance);
         if (this.rng.chance(p)) {
           this.shortcut = r;
           this.scIndex = 0;

@@ -49,6 +49,8 @@ export interface KartRaceStats {
   startResult: number;
   /** Hard wall bumps. */
   wallHits: number;
+  /** Hits taken, by item (incl. hazards placed by nobody: attacker −1). */
+  hitsTakenBy: Partial<Record<ItemId, number>>;
   /** Seconds driven on off-road surfaces. */
   offroadTime: number;
 }
@@ -74,6 +76,7 @@ export function makeRaceStats(): KartRaceStats {
     shortcutsById: [],
     startResult: 0,
     wallHits: 0,
+    hitsTakenBy: {},
     offroadTime: 0,
   };
 }

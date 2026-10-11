@@ -22,6 +22,7 @@ import { Hud } from '../ui/hud';
 import type { GameAudio } from '../audio/types';
 import type { Settings } from '../save/save';
 import { formatTime } from '../core/math';
+import { resolveAssist } from '../tuning/balance';
 
 export type GameMode = 'grandPrix' | 'timeTrial' | 'versus' | 'battle';
 
@@ -142,7 +143,9 @@ export class RaceSession {
     this.locals = cfg.players.map((_, i) => i);
     for (const i of this.locals) {
       const k = this.world.karts[i];
-      k.assistLevel = ctx.settings.steeringAssist ? 'light' : 'off';
+      const src = cfg.players[i].source;
+      const device = src.kind === 'touch' ? 'touch' : src.kind === 'keyboard' ? 'keyboard' : src.kind === 'any' ? ctx.input.lastDevice : 'gamepad';
+      k.assistLevel = resolveAssist(ctx.settings.assist, device);
       k.autoAccel = ctx.settings.autoAccel || cfg.players[i].source.kind === 'touch';
     }
     // --- subsystems

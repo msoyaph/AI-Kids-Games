@@ -6,9 +6,10 @@ import { ARENAS } from '../data/arenas';
 import type { QualitySetting } from '../render/quality';
 import type { KeyBindings, KeyScheme, PadBindings } from '../input/bindings';
 import { readKey, removeKey, writeKey } from './storage';
+import type { AssistSetting } from '../tuning/balance';
 
 export const SAVE_VERSION = 2;
-export const SETTINGS_VERSION = 1;
+export const SETTINGS_VERSION = 2;
 export const SLOT_COUNT = 3;
 const PREFIX = 'calexcart';
 
@@ -76,7 +77,8 @@ export interface Settings {
   sfx: number;
   quality: QualitySetting;
   showFps: boolean;
-  steeringAssist: boolean;
+  /** Steering assist: Auto = Light for touch, Off for keyboard/gamepad (BALANCE.assist.defaults). */
+  assist: AssistSetting;
   autoAccel: boolean;
   touchSteer: 'buttons' | 'tilt';
   cameraDistance: number;
@@ -144,7 +146,7 @@ export function defaultSettings(touch = false): Settings {
     sfx: 0.8,
     quality: 'auto',
     showFps: false,
-    steeringAssist: false,
+    assist: 'auto',
     autoAccel: touch,
     touchSteer: 'buttons',
     cameraDistance: 1,
@@ -204,8 +206,28 @@ export function migrate(raw: Raw): SaveData {
   return merged;
 }
 
+/** Settings migrations: each entry upgrades from version N to N+1. Never edit old entries; add new ones. */
+export const SETTINGS_MIGRATIONS: Record<number, (d: Raw) => Raw> = {
+  // v1 → v2: on/off steering assist became Auto/Off/Light/Full. "On" keeps today's behaviour (Light);
+  // "Off" was the old default for everyone, so it becomes Auto (Light on touch, Off on keyboard/gamepad).
+  1: (d) => {
+    const { steeringAssist, ...rest } = d as Raw & { steeringAssist?: unknown };
+    return { ...rest, v: 2, assist: steeringAssist === true ? 'light' : 'auto' };
+  },
+};
+
 export function migrateSettings(raw: Raw, touch = false): Settings {
-  return { ...defaultSettings(touch), ...(raw as Partial<Settings>), v: SETTINGS_VERSION };
+  let d: Raw = { ...raw };
+  let v = typeof d.v === 'number' ? d.v : 1;
+  while (v < SETTINGS_VERSION) {
+    const step = SETTINGS_MIGRATIONS[v];
+    if (!step) break;
+    d = step(d);
+    v = typeof d.v === 'number' ? d.v : v + 1;
+  }
+  const out = { ...defaultSettings(touch), ...(d as Partial<Settings>), v: SETTINGS_VERSION };
+  if (!['auto', 'off', 'light', 'full'].includes(out.assist)) out.assist = 'auto';
+  return out;
 }
 
 export interface SlotSummary {

@@ -15,10 +15,15 @@ export const TUNING = {
   /** Speed needed to start a drift. */
   driftMinSpeed: 9,
   driftHopVel: 4.2,
+  /** Drift yaw rate range as a fraction of the turn rate (stick fully outward … fully inward). */
+  driftRateMin: 0.15,
+  driftRateMax: 1.3,
+  /** Fraction of the sideways slide speed a drift turns back into forward speed (arcade: drifts keep their pace). */
+  driftSpeedKeep: 0.5,
   /** Seconds of charge for each spark tier (blue, orange, pink). */
-  driftTiers: [0.85, 1.75, 2.9] as const,
+  driftTiers: [0.7, 1.45, 2.4] as const,
   /** Mini-turbo seconds by tier. */
-  miniTurboTime: [0, 0.7, 1.15, 1.75] as const,
+  miniTurboTime: [0, 0.9, 1.4, 2.1] as const,
   boostSpeedMul: 1.3,
   boostAccel: 45,
   boostPadTime: 1.1,
@@ -49,13 +54,14 @@ export const TUNING = {
   hitInvulnTime: 1.4,
   wallRestitution: 0.35,
   kartRestitution: 0.55,
-} as const;
+};
 
-/** Speed classes (values live in `BALANCE.classes`). */
+/** Speed classes: the very same objects as `BALANCE.classes` (tagged with their id), so edits apply live. */
+const classOf = (id: SpeedClass): SpeedClassData => Object.assign(BALANCE.classes[id], { id });
 export const SPEED_CLASSES: Record<SpeedClass, SpeedClassData> = {
-  rookie: { id: 'rookie', ...BALANCE.classes.rookie },
-  pro: { id: 'pro', ...BALANCE.classes.pro },
-  champion: { id: 'champion', ...BALANCE.classes.champion },
+  rookie: classOf('rookie'),
+  pro: classOf('pro'),
+  champion: classOf('champion'),
 };
 
 export const WEIGHT_BASE: Record<WeightClass, Stats> = BALANCE.weightBase;

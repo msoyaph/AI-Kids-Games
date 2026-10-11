@@ -5,6 +5,14 @@ import type { QualitySetting } from '../../render/quality';
 import { button, h, type Screen } from '../ui';
 import { choice } from './setup';
 import { renderPlaytest } from './playtest';
+import type { AssistSetting } from '../../tuning/balance';
+
+const ASSIST_HINTS: Record<AssistSetting, string> = {
+  auto: 'Auto: Light on touch screens, Off on keyboard and gamepad.',
+  off: 'Off: you steer everything yourself.',
+  light: 'Light: gently keeps you on the road and away from edges. Great for new racers!',
+  full: 'Full: steers along the best line with you and stops most falls off the edge.',
+};
 
 /** A keyboard/gamepad-friendly slider (left/right nudges, tap/drag on touch). */
 export function slider(label: string, get: () => number, set: (v: number) => void, step = 0.1): HTMLElement {
@@ -76,8 +84,8 @@ export function settingsScreen(app: App, back: () => void, tab: Tab = 'audio'): 
       );
     } else if (t === 'gameplay') {
       body.append(
-        choice('Steering assist', [[false, 'Off'], [true, 'On']], () => s.steeringAssist, (v) => ((s.steeringAssist = v), save())),
-        h('div', { class: 'hint' }, 'Gently keeps you on the road and away from edges. Great for new racers!'),
+        choice<AssistSetting>('Steering assist', [['auto', 'Auto'], ['off', 'Off'], ['light', 'Light'], ['full', 'Full']], () => s.assist, (v) => ((s.assist = v), save(), render('gameplay'))),
+        h('div', { class: 'hint' }, ASSIST_HINTS[s.assist]),
         choice('Auto-accelerate', [[false, 'Off'], [true, 'On']], () => s.autoAccel, (v) => ((s.autoAccel = v), save())),
         choice('Camera distance', [[0.85, 'Close'], [1, 'Normal'], [1.18, 'Far']], () => s.cameraDistance, (v) => ((s.cameraDistance = v), save())),
         choice('Touch steering', [['buttons', 'Buttons'], ['tilt', 'Tilt']], () => s.touchSteer, (v) => {

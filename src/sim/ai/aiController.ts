@@ -5,8 +5,8 @@ import { clamp, wrapAngle } from '../../core/math';
 import { Rng } from '../../core/rng';
 import type { World } from '../world';
 import type { TrackModel } from '../track/trackModel';
-import { EDGE_DROP } from '../track/trackModel';
-import { AiDriver, type HazardInfo } from './aiDriver';
+import { EDGE_DROP, F_GAP } from '../track/trackModel';
+import { AiDriver, type DriverStyle, type HazardInfo } from './aiDriver';
 import { SPEED_CLASSES } from '../tuning';
 import { BALANCE } from '../../tuning/balance';
 import type { Kart } from '../kart';
@@ -20,6 +20,10 @@ export interface AiOptions {
   noRubberBand?: boolean;
   /** Override personality per kart index. */
   personality?: Record<number, Personality>;
+  /** Scripted expert overrides per kart index (staff ghost, strong bot). */
+  style?: Record<number, DriverStyle>;
+  /** Force an exact skill per kart index (no random spread). */
+  skill?: Record<number, number>;
 }
 
 /**
@@ -42,8 +46,9 @@ export class AiController {
     this.byKart = world.karts.map((k) => {
       if (k.isPlayer) return null;
       const personality = opts.personality?.[k.index] ?? findRacer(k.racerId).personality;
-      const skill = clamp(cls.aiSkill + (opts.skillBonus?.[k.index] ?? 0) + rng.range(-BALANCE.ai.skillSpread, BALANCE.ai.skillSpread), 0.05, 1);
-      const d = new AiDriver(k, world, track, AI_PROFILES[personality], skill, new Rng(rng.nextU32()));
+      let skill = clamp(cls.aiSkill + (opts.skillBonus?.[k.index] ?? 0) + rng.range(-BALANCE.ai.skillSpread, BALANCE.ai.skillSpread), 0.05, 1);
+      if (opts.skill?.[k.index] !== undefined) skill = opts.skill[k.index];
+      const d = new AiDriver(k, world, track, AI_PROFILES[personality], skill, new Rng(rng.nextU32()), opts.style?.[k.index]);
       d.hazards = this.hazards;
       this.drivers.push(d);
       return d;
@@ -56,16 +61,24 @@ export class AiController {
     const rng = new Rng(items.rng.nextU32());
     for (const d of this.drivers) {
       d.brain = new ItemBrain(d.kart, this.world, this.track, d.profile, d.skill, new Rng(rng.nextU32()));
+      d.brain.turboPlan = !!d.style.turboPlan;
       d.hazards = items.hazards;
     }
   }
 
-  /** Let the AI drive a player's kart (victory lap after finishing). */
-  takeOver(k: Kart): void {
-    if (this.byKart[k.index]) return;
-    const d = new AiDriver(k, this.world, this.track, AI_PROFILES.careful, BALANCE.ai.takeOverSkill, new Rng(1000 + k.index));
+  /** Let the AI drive a player's kart (victory lap after finishing, autopilot, simulated humans in balance tests). */
+  takeOver(k: Kart, skill = BALANCE.ai.takeOverSkill, personality: Personality = 'careful', style?: DriverStyle, items?: ItemSystem): AiDriver {
+    const had = this.byKart[k.index];
+    if (had) return had;
+    const d = new AiDriver(k, this.world, this.track, AI_PROFILES[personality], skill, new Rng(1000 + k.index), style);
+    d.hazards = this.drivers[0]?.hazards ?? this.hazards;
+    if (items) {
+      d.brain = new ItemBrain(k, this.world, this.track, d.profile, skill, new Rng(2000 + k.index));
+      d.brain.turboPlan = !!style?.turboPlan;
+    }
     this.byKart[k.index] = d;
     this.drivers.push(d);
+    return d;
   }
 
   driverFor(k: Kart): AiDriver | null {
@@ -87,7 +100,7 @@ export class AiController {
       for (let i = 0; i < w.karts.length; i++) w.speedMul[i] = 1;
       return;
     }
-    const cls = SPEED_CLASSES[w.speedClass];
+    const cls = BALANCE.classes[w.speedClass];
     const cu = BALANCE.catchUp;
     // ramp in after the start so the opening isn't affected
     const ramp = clamp(w.raceTime / cu.rampSeconds, 0, 1);
@@ -124,5 +137,17 @@ export class AiController {
     if (ad > hw - (drop ? A.dropMargin : A.wallMargin) && towardEdge) blend = drop ? A.dropBlend : A.wallBlend;
     if (k.drifting) blend *= A.driftMul;
     k.input.steer = clamp(k.input.steer * (1 - blend) + assistSteer * blend, -1, 1);
+    // Full assist: a soft invisible rail along drop edges (never over gaps, on shortcuts or in the air).
+    if (A.edgeGuard > 0 && drop && !(rb.flags[i] & F_GAP) && !(rb.flags[rb.idx(i + 4)] & F_GAP)) {
+      const room = hw - ad; // metres left before the edge
+      const side = Math.sign(g.d) || 1;
+      const out = lateralVel * side; // speed toward the edge
+      if (room < A.edgeGuard && out > 0) {
+        const keep = clamp(room / A.edgeGuard, 0, 1) * 0.5; // closer to the edge → cancel more of the slide
+        const cut = out * (1 - keep) + (room < 0.3 ? 1.5 : 0);
+        k.vx -= rb.rx[i] * side * cut;
+        k.vz -= rb.rz[i] * side * cut;
+      }
+    }
   }
 }

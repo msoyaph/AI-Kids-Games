@@ -76,7 +76,7 @@ export function stepKart(k: Kart, ground: GroundModel, env: StepEnv, dt: number)
     const aspd = Math.abs(vf);
     if (k.drifting) {
       const t = (steer * k.driftDir + 1) * 0.5; // 0 = steering outward, 1 = steering into the drift
-      k.yaw -= k.driftDir * p.turnRate * (0.3 + 1.0 * t) * Math.min(1, aspd / 10) * dt;
+      k.yaw -= k.driftDir * p.turnRate * (TUNING.driftRateMin + (TUNING.driftRateMax - TUNING.driftRateMin) * t) * Math.min(1, aspd / 10) * dt;
     } else {
       const lowSpeed = clamp(aspd / 7, 0, 1);
       const highSpeed = 1 - 0.18 * clamp((aspd - 0.6 * p.topSpeed) / (0.4 * p.topSpeed), 0, 1);
@@ -90,7 +90,9 @@ export function stepKart(k: Kart, ground: GroundModel, env: StepEnv, dt: number)
     if (k.offroad) grip *= 0.8;
     if (k.gooTime > 0) grip *= 0.65;
     if (k.spinTime > 0 || k.tumbleTime > 0) grip = 2.5;
+    const vlBefore = Math.abs(vl);
     vl *= Math.exp(-grip * dt);
+    if (k.drifting && TUNING.driftSpeedKeep > 0 && vf > 0 && vf < top) vf = Math.min(top, vf + (vlBefore - Math.abs(vl)) * TUNING.driftSpeedKeep);
 
     // ---- drift state machine
     if (driftPressed && k.hopTime <= 0 && !k.drifting) {

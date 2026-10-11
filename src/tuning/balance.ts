@@ -47,11 +47,14 @@ export const BALANCE = {
   } satisfies Record<SpeedClass, ClassBalance>,
 
   // ------------------------------------------------------------------ catch-up (rubber band vs best human)
+  // Targets (Pro, 8 racers, checked by tests/sim/catchup.test.ts and `npm run sim`): equal-skill median gap
+  // 1st→4th ≤ 4 s and 1st→8th ≤ 12 s; a skill-1.0 racer wins ≥ 45 % / top-3 ≥ 80 %; a skill-0.3 racer wins
+  // ≤ 8 %; a Pro-skill racer starting last reaches the top 4 in 30–50 % of races.
   catchUp: {
     /** Seconds after GO before catch-up fully applies (keeps the start fair). */
     rampSeconds: 10,
     /** Gap (m) behind the best human where help starts, and the extra gap where it reaches full strength. */
-    behindStart: 15,
+    behindStart: 25,
     behindRange: 140,
     /** Same for AI *ahead* of the best human (they ease off). */
     aheadStart: 20,
@@ -66,12 +69,12 @@ export const BALANCE = {
   } satisfies Record<WeightClass, Stats>,
   /** Each physics value = base + perStat × stat bar (0..10). Kept gentle so skill matters more than setup. */
   statMap: {
-    topSpeed: { base: 0.975, perStat: 0.005 }, // × TUNING.baseTopSpeed × speedScale
+    topSpeed: { base: 0.975, perStat: 0.003 }, // × TUNING.baseTopSpeed × speedScale
     accel: { base: 11, perStat: 1.25 }, // × √speedScale
     turnRate: { base: 1.78, perStat: 0.085 },
     mass: { base: 1, perStat: 0.08 },
     grip: { base: 7.5, perStat: 0.5 },
-    driftGrip: { base: 2.2, perStat: 0.12 },
+    driftGrip: { base: 3.6, perStat: 0.12 },
     offroadMul: { base: 0.5, perStat: 0.028 },
     /** Mini-turbo strength: 1 + perStat × (accel + handling − 10). */
     miniTurbo: { perStat: 0.03 },
@@ -103,8 +106,8 @@ export const BALANCE = {
     /** Per-kart random skill spread around the class mean. */
     skillSpread: 0.06,
     /** Fraction of top speed aimed for on straights: base + perSkill × skill. */
-    paceBase: 0.9,
-    pacePerSkill: 0.1,
+    paceBase: 0.82,
+    pacePerSkill: 0.18,
     /** Spark tier targeted when drifting: ≥ tier3Skill → pink, ≥ tier2Skill → orange, else blue. */
     tier3Skill: 0.85,
     tier2Skill: 0.5,
@@ -114,6 +117,13 @@ export const BALANCE = {
     /** A corner qualifies when its average curvature > 1/cornerRadius and it turns more than cornerTurn rad. */
     cornerRadius: 55,
     cornerTurn: 0.5,
+    /** Only drift corners whose needed yaw rate sits inside the drift's range (TUNING.driftRateMin/Max) with margin. */
+    driftMinRateMul: 1.2,
+    driftMaxRateMul: 0.88,
+    /** Release a drift when sliding toward an edge within this many metres of it. */
+    driftEdgeMargin: 0.9,
+    /** Hop this many seconds (× speed = metres) before a bend starts so the drift begins at turn-in. */
+    driftHopLead: 0.32,
     steerGainBase: 2.1,
     steerGainPerSkill: 0.8,
     /** Weaving amplitude for low-skill drivers: wobble × (1 − skill). */
@@ -136,7 +146,7 @@ export const BALANCE = {
     levels: {
       off: { lineBlend: 0, wallBlend: 0, dropBlend: 0, wallMargin: 0, dropMargin: 0, driftMul: 0, lineFollow: 0.6, edgeGuard: 0 },
       light: { lineBlend: 0.2, wallBlend: 0.55, dropBlend: 0.85, wallMargin: 1.2, dropMargin: 2.5, driftMul: 0.5, lineFollow: 0.6, edgeGuard: 0 },
-      full: { lineBlend: 0.2, wallBlend: 0.55, dropBlend: 0.85, wallMargin: 1.2, dropMargin: 2.5, driftMul: 0.5, lineFollow: 0.6, edgeGuard: 0 },
+      full: { lineBlend: 0.38, wallBlend: 0.75, dropBlend: 0.95, wallMargin: 1.8, dropMargin: 3.5, driftMul: 0.7, lineFollow: 0.8, edgeGuard: 1.2 },
     } satisfies Record<AssistLevel, AssistLevelBalance>,
     /** What "Auto" means for each input device. */
     defaults: { touch: 'light', keyboard: 'off', gamepad: 'off' } as Record<'touch' | 'keyboard' | 'gamepad', AssistLevel>,
@@ -144,12 +154,43 @@ export const BALANCE = {
 
   // ------------------------------------------------------------------ Time Trial staff ghosts
   staff: {
-    /** Skill bonus over the Pro class mean for the staff driver. */
-    skillBonus: 0.1,
+    /**
+     * Staff ghost = an expert bot (skill 1, perfect rocket start, pink drifts, every shortcut, one turbo per lap)
+     * slowed by a per-track pace so its time lands `gapFraction` of the way from the "strong bot" (same driver at
+     * full pace) toward the best of `proSeeds` Pro-AI runs. A sim test keeps Pro AI > staff > strong bot.
+     */
+    gapFraction: 0.35,
+    proSeeds: 5,
+    /** Used for tracks that haven't been calibrated yet. */
     seed: 4242,
-    /** Per-track pace override (filled by `npm run calibrate-staff`). */
-    pace: {} as Record<string, number>,
+    defaultPace: 0.95,
+    /** Per-track staff run: pace multiplier + seed — written by `npm run calibrate-staff` (between the markers). */
+    tracks: {
+      // <staff-pace>
+      'candy-factory': { pace: 0.987, seed: 152 },
+      'canyon-run': { pace: 0.9555, seed: 101 },
+      'cinder-summit': { pace: 0.9615, seed: 152 },
+      'coral-dome-dash': { pace: 0.9655, seed: 169 },
+      'crater-hop-base': { pace: 0.98, seed: 152 },
+      'frostpeak-pass': { pace: 0.986, seed: 169 },
+      'gearworks-factory': { pace: 0.97, seed: 152 },
+      'jadefall-temple': { pace: 0.9615, seed: 152 },
+      'neon-nightway': { pace: 0.96, seed: 118 },
+      'prism-parkway': { pace: 0.97, seed: 118 },
+      'rooftop-rally': { pace: 0.96, seed: 169 },
+      'seashell-boardwalk': { pace: 0.937, seed: 118 },
+      'sky-castle-soar': { pace: 0.983, seed: 169 },
+      'spooky-swirl-fair': { pace: 0.9415, seed: 169 },
+      'sunstone-ruins': { pace: 0.9785, seed: 135 },
+      'windmill-sky-isles': { pace: 0.9815, seed: 101 },
+      // </staff-pace>
+    } as Record<string, { pace: number; seed: number }>,
   },
 };
 
 export type Balance = typeof BALANCE;
+
+/** Resolve the player's assist setting for the input device they race with. */
+export function resolveAssist(setting: AssistSetting, device: 'touch' | 'keyboard' | 'gamepad'): AssistLevel {
+  return setting === 'auto' ? BALANCE.assist.defaults[device] : setting;
+}

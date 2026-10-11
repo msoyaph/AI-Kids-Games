@@ -15,6 +15,9 @@ export class ItemBrain {
   private holding = false;
   private delay = 0;
   private lastItem: string | null = null;
+  /** Expert mode: one turbo per lap, on an off-road shortcut when the track has one. */
+  turboPlan = false;
+  private turboLap = -1;
 
   constructor(
     readonly kart: Kart,
@@ -56,7 +59,13 @@ export class ItemBrain {
     switch (k.item) {
       case 'turbo':
       case 'turbo3':
-        if ((straight && k.speed > 12) || (k.offroad && k.speed > 6) || this.held > 7) this.press();
+        if (this.turboPlan && this.track?.shortcuts.some((sc) => sc.offroadSurface)) {
+          // expert: one can per lap, saved for the off-road shortcut
+          if (this.turboLap !== k.lapsDone && k.ground.ribbon > 0 && k.offroad && k.speed > 6) {
+            this.turboLap = k.lapsDone;
+            this.press();
+          }
+        } else if ((straight && k.speed > 12) || (k.offroad && k.speed > 6) || this.held > 7) this.press();
         break;
       case 'shield':
         if (k.threat > 0.45 || this.held > 4 + 10 * this.profile.defense) this.press();

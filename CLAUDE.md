@@ -9,6 +9,8 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - `npm test` — Vitest unit + headless sim tests
 - `npm run test:e2e` — Playwright smoke tests (desktop / tablet / phone) against the built file
 - `npm run sim` — headless AI-vs-AI balance report (tsx scripts/simulate.ts)
+- `npm run calibrate-staff [-- ids]` — re-place staff ghosts (writes BALANCE.staff.tracks); RUN AFTER ANY
+  physics/AI/track change (tests/sim/staff.test.ts enforces Pro AI > staff > strong bot)
 - `npm run analyze-playtests -- <folder>` — aggregates exported playtest JSON, compares with sim baselines,
   prints SUGGESTED `BALANCE` edits (never applies them) → `sim-report/playtests.md`
 
@@ -107,7 +109,10 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   or `?playtest=1`; Export = download standalone / copy box in iframes; Clear), badge `.playtest-badge`,
   `src/tuning/analyze.ts` + `scripts/analyzePlaytests.ts`. Kart `assist` boolean → `assistLevel`.
   New race stats: shortcutsById, startResult, wallHits, offroadTime. `__CALEX_VERSION__` define (package 0.2.0).
-- [ ] Phase 2 — tuning fixes (staff, catch-up, assist levels)
+- [x] Phase 2 — staff ghosts (`src/sim/timeTrialRun.ts`: runTimeTrial, expertStyle, staffReferences; AiDriver
+  `DriverStyle`), catch-up (`src/sim/catchup.ts` measureCatchUp; tests/sim/catchup.test.ts), assist Off/Light/Full
+  (+ Full edge guard on drop edges) with settings v2 migration (`steeringAssist` → `assist`), `resolveAssist`.
+  AI drift rewrite + drift physics retune (see decisions). Reports: `npm run sim` §5 catch-up, §6 staff.
 - [ ] Phase 3 — performance (benchmark, LOD, context loss, WebKit)
 - [ ] Phase 4 — game feel
 - [ ] Phase 5 — visuals
@@ -122,4 +127,13 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
 - `storage.ts`: `writeKeyStatus` → 'ok' | 'memory' (storage unavailable) | 'full' (quota); probe key is now
   `calexcart.__probe` (never touch other games' keys). e2e helpers live in `tests/e2e/helpers.ts`; new feature
   tests go in `tests/e2e/upgrade.spec.ts`.
+- Phase 2 finding: drifting was a net LOSS (AI 5–15 % slower when drifting — slid wide into walls/off-road).
+  Fixes: AI aims drifts by velocity heading and steers for the needed yaw rate, only drifts bends whose radius fits
+  the drift's yaw-rate band, hops so it lands at turn-in, bails near edges. Physics (pulled forward from Phase 4
+  "snappier drift / readable tiers"): driftGrip 2.2→3.6, driftRateMin 0.3→0.15, tiers 0.85/1.75/2.9→0.7/1.45/2.4 s,
+  mini-turbo 0.7/1.15/1.75→0.9/1.4/2.1 s, new `driftSpeedKeep` 0.5. Expert drifting now ≈ 2.7 s/race faster.
+- Balance changes: topSpeed perStat 0.005→0.003 (weight-class spread 0.28→0.25); AI pace 0.9+0.1·skill →
+  0.82+0.18·skill (skill matters: skill-1.0 racer wins 56 %/top-3 86 % vs Pro AI; Rookie AI gentler);
+  catchUp.behindStart 15→25 m. Catch-up metrics swing ±5 % with item luck — judge changes on ≥ 80 races.
+- `SPEED_CLASSES[c]` IS `BALANCE.classes[c]` (same object) so experiments that mutate BALANCE apply live.
 - Baseline storage: ghosts ≈ 180 chars/s (≈ 23 K chars per run); 16 tracks × 3 slots ≈ 2.4 MB UTF-16 → must compress.

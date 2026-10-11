@@ -13,6 +13,10 @@ import type { SpeedClass } from '../src/data/types';
 import { runHeadlessRace } from '../src/sim/headless';
 import { WEIGHT_BASE } from '../src/sim/tuning';
 import { kartStats } from '../src/sim/factory';
+import { measureCatchUp } from '../src/sim/catchup';
+import { staffReferences } from '../src/sim/timeTrialRun';
+import { staffGhost } from '../src/game/modes/timeTrial';
+import { BALANCE } from '../src/tuning/balance';
 
 const quick = process.argv.includes('--quick');
 const fairOnly = process.argv.includes('--fair-only');
@@ -113,6 +117,33 @@ for (const t of tracks) {
   races++;
 }
 log(`Per race: ${(used / races).toFixed(1)} items used, ${(hits / races).toFixed(1)} hits. Last-on-grid finished top-4 in ${lastToTop4}/${races} races.`);
+
+// ---------------------------------------------------------------- 5. catch-up targets (simulated human)
+if (!quick && !fairOnly) {
+  log('');
+  log('## 5. Catch-up targets (Pro, 8 racers, a simulated human vs Pro AI, every track × 5 seeds)');
+  const cu = measureCatchUp({ seeds: [11, 23, 37, 41, 53] });
+  const mark = (ok: boolean): string => (ok ? '✅' : '❌');
+  log('| Target | Result | |');
+  log('|---|---|---|');
+  log(`| Equal skill: median gap 1st→4th ≤ 4 s | ${cu.gap4.toFixed(2)} s | ${mark(cu.gap4 <= 4)} |`);
+  log(`| Equal skill: median gap 1st→8th ≤ 12 s | ${cu.gap8.toFixed(2)} s | ${mark(cu.gap8 <= 12)} |`);
+  log(`| Skill 1.0 wins ≥ 45 % | ${(cu.strongWin * 100).toFixed(0)} % | ${mark(cu.strongWin >= 0.45)} |`);
+  log(`| Skill 1.0 top-3 ≥ 80 % | ${(cu.strongTop3 * 100).toFixed(0)} % | ${mark(cu.strongTop3 >= 0.8)} |`);
+  log(`| Skill 0.3 wins ≤ 8 % | ${(cu.weakWin * 100).toFixed(0)} % (avg place ${cu.weakAvgPos.toFixed(1)}) | ${mark(cu.weakWin <= 0.08)} |`);
+  log(`| Pro skill from last on the grid → top 4 in 30–50 % | ${(cu.lastTop4 * 100).toFixed(0)} % (avg place ${cu.lastAvgPos.toFixed(1)}) | ${mark(cu.lastTop4 >= 0.3 && cu.lastTop4 <= 0.5)} |`);
+
+  // ---------------------------------------------------------------- 6. staff ghosts
+  log('');
+  log(`## 6. Staff ghosts (strong bot + ${BALANCE.staff.gapFraction * 100} % of the gap to the best of ${BALANCE.staff.proSeeds} Pro-AI runs)`);
+  log('| Track | Strong bot | Staff ghost | Pro AI best | Position in gap |');
+  log('|---|---|---|---|---|');
+  for (const t of TRACKS) {
+    const ref = staffReferences(t.id);
+    const st = staffGhost(t.id).time;
+    log(`| ${t.name} | ${ref.strong.toFixed(2)} | **${st.toFixed(2)}** | ${ref.proBest.toFixed(2)} | ${(((st - ref.strong) / (ref.proBest - ref.strong)) * 100).toFixed(0)} % |`);
+  }
+}
 
 log('');
 log(`_Generated in ${((Date.now() - t0) / 1000).toFixed(1)} s._`);
