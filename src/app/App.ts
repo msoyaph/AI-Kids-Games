@@ -44,7 +44,7 @@ export class App {
     this.quality = QUALITY_PROFILES[tier];
     this.governor = new FpsGovernor(tier);
     this.audio.setVolumes(save.data.settings.music, save.data.settings.sfx);
-    stage.app.ticker.add((t) => this.frame(t.deltaMS));
+    stage.app.ticker.add(() => this.frame());
     stage.onResize((w, h) => this.current?.resize?.(w, h));
     this.applyResolution();
 
@@ -87,11 +87,21 @@ export class App {
     if (!this.stage.app.ticker.started) this.stage.app.ticker.start();
   }
 
-  private frame(dtMs: number): void {
-    void this.lastFrame;
-    this.current?.frame?.(dtMs);
+  /**
+   * Runs on every rAF. Caps work at ~60 FPS on 90/120/144 Hz screens (saves
+   * battery) while tolerating normal 60 Hz timing jitter, and measures real
+   * elapsed time so skipped frames never slow the game down.
+   */
+  private frame(): void {
+    const now = performance.now();
+    const dtMs = now - this.lastFrame;
+    if (dtMs < 1000 / 60 - 6) return;
+    this.lastFrame = now;
+    const clamped = Math.min(dtMs, 250);
+    this.current?.frame?.(clamped);
+    this.stage.app.renderer.render(this.stage.app.stage);
     if (this.save.data.settings.quality === 'auto' && this.current?.usesCanvas) {
-      const change = this.governor.sample(dtMs, dtMs / 1000);
+      const change = this.governor.sample(clamped, clamped / 1000);
       if (change) this.applyQuality(this.governor.tier);
     }
   }

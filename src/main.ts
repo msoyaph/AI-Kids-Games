@@ -1,6 +1,7 @@
 import './ui/styles.css';
 import { App } from './app/App';
 import { createNav } from './app/flow';
+import { startStress } from './app/stress';
 import { BadgesScreen } from './app/screens/BadgesScreen';
 import { EncyclopediaScreen } from './app/screens/EncyclopediaScreen';
 import { SettingsScreen } from './app/screens/SettingsScreen';
@@ -23,6 +24,9 @@ function progress(p: number, text?: string): void {
 async function boot(): Promise<void> {
   const params = new URLSearchParams(location.search);
   const save = new SaveStore();
+  // Test hook: ?quality=low|medium|high|auto (used by the perf benchmark).
+  const q = params.get('quality');
+  if (q === 'low' || q === 'medium' || q === 'high' || q === 'auto') save.data.settings.quality = q;
   const tier = detectDeviceTier();
   const setting = save.data.settings.quality;
   const startTier = setting === 'auto' ? tier : setting;
@@ -57,6 +61,11 @@ async function boot(): Promise<void> {
   if (import.meta.env.DEV && params.has('editor')) {
     const { MapEditor } = await import('./dev/MapEditor');
     app.show(new MapEditor(app, nav));
+    return;
+  }
+  const stress = Number(params.get('stress') ?? 0);
+  if (stress > 0) {
+    startStress(app, nav, Math.min(1000, stress));
     return;
   }
   const play = params.get('map');

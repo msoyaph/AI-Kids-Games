@@ -58,6 +58,8 @@ export class GameScreen implements Screen, HudHost {
   private previewPaths: number[][] = [];
   private eventListeners: ((e: GameEvent) => void)[] = [];
   private frameListeners: ((dt: number) => void)[] = [];
+  /** Smoothed per-frame costs (ms) for the perf overlay. */
+  readonly profile = { simMs: 0, viewMs: 0 };
   private cleanup: (() => void)[] = [];
 
   constructor(
@@ -175,6 +177,7 @@ export class GameScreen implements Screen, HudHost {
   frame(dtMs: number): void {
     const dt = Math.min(dtMs / 1000, 0.1);
     const running = !this.paused && !this.modal && this.game.state === 'playing';
+    const t0 = performance.now();
     if (running) {
       this.acc += dt * this.speed;
       let steps = 0;
@@ -186,10 +189,14 @@ export class GameScreen implements Screen, HudHost {
       }
       if (steps >= maxSteps) this.acc = 0; // device can't keep up: drop time rather than spiral
     }
+    const t1 = performance.now();
     this.game.events.drain(this.dispatch);
     // effects keep playing after the run ends (victory confetti), but freeze while paused
     const fxDt = running ? dt * this.speed : this.game.state !== 'playing' ? dt : 0;
     this.view.render(this.acc / DT, dt, fxDt);
+    const t2 = performance.now();
+    this.profile.simMs += (t1 - t0 - this.profile.simMs) * 0.1;
+    this.profile.viewMs += (t2 - t1 - this.profile.viewMs) * 0.1;
     this.updateConfirm();
     this.hud.update();
     for (const fn of this.frameListeners) fn(dt);

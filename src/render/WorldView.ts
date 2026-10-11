@@ -1,6 +1,6 @@
 import { Container, Graphics, Sprite, Texture, CanvasSource } from 'pixi.js';
 import { easeOutBack, lerp, lerpAngle } from '../core/math';
-import { ELEMENTS, type ElementId } from '../data/elements';
+import { ELEMENT_ORDER, ELEMENTS, type ElementId } from '../data/elements';
 import { ENEMIES } from '../data/enemies';
 import { TOWERS, type TowerId } from '../data/towers';
 import type { Tower } from '../sim/entities';
@@ -23,7 +23,6 @@ interface EnemyView {
   shield: Sprite;
   extra: Sprite;
   stamp: number;
-  tex: string;
   numCooldown: number;
 }
 
@@ -56,6 +55,12 @@ export interface ViewSettings {
 }
 
 const WHITE = 0xffffff;
+
+// Small cached number strings for floating text (avoids building strings every hit).
+const NUM_CACHE: string[] = [];
+const PLUS_CACHE: string[] = [];
+const num = (n: number): string => (n < 1000 ? (NUM_CACHE[n] ??= String(n)) : String(n));
+const plus = (n: number): string => (n < 1000 ? (PLUS_CACHE[n] ??= `+${n}`) : `+${n}`);
 
 /**
  * Pixi presentation of a running Game. Reads sim state every frame (with
@@ -109,6 +114,12 @@ export class WorldView {
   private paths: number[][] = [];
   selected: Tower | null = null;
 
+  // texture lookups cached so the per-frame sync never builds strings
+  private etex: Record<string, Record<string, Texture[]>> = {};
+  private shieldTex = {} as Record<ElementId, Texture>;
+  private pelTex = {} as Record<ElementId, Texture>;
+  private stunTex: Texture;
+
   private shake = 0;
   private shakeRng = new Rng(7);
   private fxRng = new Rng(99);
@@ -123,9 +134,19 @@ export class WorldView {
     maxTexture: number,
   ) {
     const g = game.grid;
+    for (const el of ELEMENT_ORDER) {
+      this.shieldTex[el] = atlas.get(`shield_${el}`);
+      this.pelTex[el] = atlas.get(`pel_${el}`);
+    }
+    this.stunTex = atlas.get('stun');
     this.camera = new Camera(this.world, g.cols * TILE, g.rows * TILE);
     for (const layer of Object.values(this.L)) this.world.addChild(layer);
     this.L.glow.blendMode = 'add';
+    // Render groups: camera pan/zoom/shake becomes a single GPU transform, and the
+    // busy layers (sprites appearing/disappearing every frame) only rebuild their
+    // own draw lists instead of the whole scene.
+    this.world.isRenderGroup = true;
+    for (const layer of [this.L.shadow, this.L.enemy, this.L.air, this.L.hp, this.L.proj, this.L.glow, this.L.zone, this.L.path]) layer.isRenderGroup = true;
 
     // Terrain: one baked sprite
     const scale = Math.max(0.75, Math.min(bakeScale, (maxTexture - 16) / (Math.max(g.cols, g.rows) * TILE)));
@@ -140,6 +161,7 @@ export class WorldView {
     this.world.addChildAt(this.particles.container, this.world.getChildIndex(this.L.glow));
     this.world.addChildAt(this.particlesAdd.container, this.world.getChildIndex(this.L.glow) + 1);
     this.text = new FloatingText(quality.floatingText);
+    this.text.container.isRenderGroup = true;
     this.world.addChild(this.text.container);
 
     // Portals & castle
@@ -218,7 +240,8 @@ export class WorldView {
         this.ambientSprites.push({ s, phase: rng.range(0, 6.28), kind: 0, baseY: s.y });
       }
     }
-    const tuftTint = this.game.map.theme === 'snow' ? 0xffffff : this.game.map.theme === 'caves' ? 0xb8a0ff : this.game.map.theme === 'desert' ? 0xc8d070 : 0x9cff7a;
+    const tuftTint =
+      this.game.map.theme === 'snow' ? 0xffffff : this.game.map.theme === 'caves' ? 0xb8a0ff : this.game.map.theme === 'desert' ? 0xc8d070 : 0x9cff7a;
     for (const i of rng.shuffle(grass).slice(0, 26)) {
       const s = new Sprite(this.atlas.get('tuft'));
       s.anchor.set(0.5, 1);
@@ -279,9 +302,21 @@ export class WorldView {
     hpBg.alpha = 0.85;
     this.L.shadow.addChild(shadow);
     this.L.hp.addChild(hpBg, hpFill, extra);
-    v = { body, shadow, hpBg, hpFill, shield, extra, stamp: 0, tex: '', numCooldown: 0 };
+    v = { body, shadow, hpBg, hpFill, shield, extra, stamp: 0, numCooldown: 0 };
     this.enemyViews[slot] = v;
     return v;
+  }
+
+  private enemyTexture(defId: string, el: ElementId | null, frame: number): Texture {
+    const byEl = (this.etex[defId] ??= {});
+    const k = el ?? '_';
+    let arr = byEl[k];
+    if (!arr) {
+      const f0 = this.atlas.get(enemyTexName(defId, el, 0));
+      const f1 = this.atlas.tex[enemyTexName(defId, el, 1)] ?? f0;
+      arr = byEl[k] = [f0, f1];
+    }
+    return arr[frame]!;
   }
 
   private hideEnemyView(v: EnemyView): void {
@@ -298,12 +333,8 @@ export class WorldView {
       const def = e.def;
       // texture (element variants, bat flap frames)
       const frame = def.look === 'bat' && Math.floor(t * 8 + e.slot) % 2 === 1 ? 1 : 0;
-      const el = def.elemental ? e.element : null;
-      const key = enemyTexName(def.id, el, frame);
-      if (v.tex !== key) {
-        v.tex = key;
-        v.body.texture = this.atlas.get(key);
-      }
+      const tex = this.enemyTexture(def.id, def.elemental ? e.element : null, frame);
+      if (v.body.texture !== tex) v.body.texture = tex;
       const parent = e.flying ? this.L.air : this.L.enemy;
       if (v.body.parent !== parent) parent.addChild(v.body);
       if (v.shield.parent !== parent) parent.addChild(v.shield);
@@ -367,8 +398,7 @@ export class WorldView {
 
       if (e.shield) {
         v.shield.visible = true;
-        const tex = `shield_${e.shield}`;
-        v.shield.texture = this.atlas.get(tex);
+        v.shield.texture = this.shieldTex[e.shield];
         v.shield.position.set(x, y - lift - fly - R * 0.1);
         v.shield.scale.set(((R * 2.6) / 64) * pop);
       } else v.shield.visible = false;
@@ -389,13 +419,13 @@ export class WorldView {
       // extra: stun stars or the Grumble King's crown gem
       if (stunned) {
         v.extra.visible = true;
-        v.extra.texture = this.atlas.get('stun');
+        v.extra.texture = this.stunTex;
         v.extra.position.set(x + Math.cos(t * 8) * R * 0.6, y - fly - R * 1.2 + Math.sin(t * 8) * 3);
         v.extra.scale.set(1.1);
         v.extra.tint = WHITE;
       } else if (def.shiftElement && e.element) {
         v.extra.visible = true;
-        v.extra.texture = this.atlas.get(`pel_${e.element}`);
+        v.extra.texture = this.pelTex[e.element];
         v.extra.position.set(x, y - lift - R * 1.48);
         v.extra.scale.set(0.9 + Math.sin(t * 6) * 0.08);
       } else v.extra.visible = false;
@@ -415,17 +445,16 @@ export class WorldView {
 
   private emitStatus(x: number, y: number, R: number, tint: number, tex: string, add: boolean): void {
     const ps = add ? this.particlesAdd : this.particles;
-    ps.emit({
-      tex: this.atlas.get(tex),
-      x: x + this.fxRng.range(-R, R) * 0.6,
-      y: y + this.fxRng.range(-R, R) * 0.4,
-      vy: -30,
-      life: 0.5,
-      scale: 0.5,
-      scaleEnd: 0.15,
-      tint,
-      alpha: 0.9,
-    });
+    {
+      const o = ps.begin(this.atlas.get(tex), x + this.fxRng.range(-R, R) * 0.6, y + this.fxRng.range(-R, R) * 0.4);
+      o.vy = -30;
+      o.life = 0.5;
+      o.scale = 0.5;
+      o.scaleEnd = 0.15;
+      o.tint = tint;
+      o.alpha = 0.9;
+      ps.emit(o);
+    }
   }
 
   private syncTowers(a: number): void {
@@ -515,6 +544,9 @@ export class WorldView {
   }
 
   private syncProjectiles(a: number): void {
+    // Crowded screens: skip per-shot glow sprites and ration trail particles.
+    const crowded = this.game.projectiles.length > 160;
+    let trails = this.quality.tier === 'low' ? 0 : 24;
     for (const p of this.game.projectiles) {
       let v = this.projViews[p.slot];
       if (!v) {
@@ -544,8 +576,8 @@ export class WorldView {
       v.sprite.position.set(x, y - lift);
       v.sprite.rotation = p.style === 'bubble' || p.style === 'steamPuff' ? 0 : p.angle;
       v.sprite.scale.set(p.lob ? 1 + p.z * 0.25 : p.crit ? 1.3 : 1);
-      const glowy = p.elements.length > 0 || p.style === 'flare';
-      v.glow.visible = glowy;
+      const glowy = (p.elements.length > 0 && !crowded) || p.style === 'flare';
+      if (v.glow.visible !== glowy) v.glow.visible = glowy;
       if (glowy) {
         v.glow.position.set(x, y - lift);
         v.glow.scale.set(p.style === 'flare' ? 0.9 : 0.42);
@@ -557,17 +589,15 @@ export class WorldView {
         v.shadow.scale.set(0.5);
       }
       // little trails for elemental shots
-      if (glowy && this.fxRng.chance(0.35)) {
-        this.particlesAdd.emit({
-          tex: this.atlas.get('dot'),
-          x,
-          y: y - lift,
-          life: 0.25,
-          scale: 0.7,
-          scaleEnd: 0.1,
-          tint: v.glow.tint,
-          alpha: 0.7,
-        });
+      if (trails > 0 && p.elements.length > 0 && this.fxRng.chance(0.35)) {
+        trails--;
+        const o = this.particlesAdd.begin(this.atlas.get('dot'), x, y - lift);
+        o.life = 0.25;
+        o.scale = 0.7;
+        o.scaleEnd = 0.1;
+        o.tint = v.glow.tint;
+        o.alpha = 0.7;
+        this.particlesAdd.emit(o);
       }
     }
     for (const v of this.projViews) {
@@ -598,17 +628,16 @@ export class WorldView {
       if (gameDt > 0 && this.fxRng.chance(gameDt * 10)) {
         const ang = this.fxRng.range(0, Math.PI * 2);
         const rr = this.fxRng.range(0, z.r) * TILE;
-        this.particles.emit({
-          tex: this.atlas.get(lava ? 'dot' : 'puff'),
-          x: z.x * TILE + Math.cos(ang) * rr,
-          y: z.y * TILE + Math.sin(ang) * rr,
-          vy: lava ? -20 : -14,
-          life: 0.8,
-          scale: lava ? 0.6 : 0.35,
-          scaleEnd: lava ? 0.1 : 0.6,
-          tint: lava ? 0xffa040 : 0xffffff,
-          alpha: 0.7,
-        });
+        {
+          const o = this.particles.begin(this.atlas.get(lava ? 'dot' : 'puff'), z.x * TILE + Math.cos(ang) * rr, z.y * TILE + Math.sin(ang) * rr);
+          o.vy = lava ? -20 : -14;
+          o.life = 0.8;
+          o.scale = lava ? 0.6 : 0.35;
+          o.scaleEnd = lava ? 0.1 : 0.6;
+          o.tint = lava ? 0xffa040 : 0xffffff;
+          o.alpha = 0.7;
+          this.particles.emit(o);
+        }
       }
     }
     for (const v of this.zoneViews) if (v && v.stamp !== this.stamp) v.sprite.visible = false;
@@ -691,7 +720,7 @@ export class WorldView {
         const def = ENEMIES[e.kind as keyof typeof ENEMIES];
         const col = def ? def.color : 0xffffff;
         this.poof(X, Y - 6, col, (e.tag as ElementId) || null, def?.boss ? 2.2 : 1);
-        if (e.value > 0) this.text.spawn(`+${e.value}`, X, Y - 22, e.value2 ? 0xfff27a : 0xffd23f, e.value2 ? 0.7 : 0.55, 0.9);
+        if (e.value > 0) this.text.spawn(plus(e.value), X, Y - 22, e.value2 ? 0xfff27a : 0xffd23f, e.value2 ? 0.7 : 0.55, 0.9);
         if (def?.boss) this.addShake(10);
         break;
       }
@@ -699,17 +728,14 @@ export class WorldView {
         this.castleHurt = 1;
         this.addShake(6);
         for (let i = 0; i < 6; i++) {
-          this.particles.emit({
-            tex: this.atlas.get('heart'),
-            x: X,
-            y: Y - 20,
-            vx: this.fxRng.range(-80, 80),
-            vy: this.fxRng.range(-160, -60),
-            gravity: 260,
-            life: 0.9,
-            scale: 0.9,
-            scaleEnd: 0.4,
-          });
+          const o = this.particles.begin(this.atlas.get('heart'), X, Y - 20);
+          o.vx = this.fxRng.range(-80, 80);
+          o.vy = this.fxRng.range(-160, -60);
+          o.gravity = 260;
+          o.life = 0.9;
+          o.scale = 0.9;
+          o.scaleEnd = 0.4;
+          this.particles.emit(o);
         }
         this.text.spawn(`-${e.value}`, X, Y - 36, 0xff6b8a, 0.8, 1.1);
         break;
@@ -720,7 +746,7 @@ export class WorldView {
           const v = this.enemyViews[slot];
           if (!v || v.numCooldown <= 0) {
             if (v) v.numCooldown = 0.35;
-            this.text.spawn(String(Math.round(e.value)), X + this.fxRng.range(-8, 8), Y - 26, WHITE, 0.42, 0.6, -55);
+            this.text.spawn(num(Math.round(e.value)), X + this.fxRng.range(-8, 8), Y - 26, WHITE, 0.42, 0.6, -55);
           }
         }
         break;
@@ -729,12 +755,36 @@ export class WorldView {
         const el = (e.tag as ElementId) || null;
         const col = el ? ELEMENTS[el].color : 0xffe0a0;
         const r = e.value * TILE;
-        this.particlesAdd.emit({ tex: this.atlas.get('ring'), x: X, y: Y, life: 0.35, scale: (r * 0.5) / 64, scaleEnd: r / 64, tint: col, alpha: 0.9 });
-        this.particlesAdd.emit({ tex: this.atlas.get('glow'), x: X, y: Y, life: 0.3, scale: r / 48, scaleEnd: r / 40, tint: col, alpha: 0.8 });
+        {
+          const o = this.particlesAdd.begin(this.atlas.get('ring'), X, Y);
+          o.life = 0.35;
+          o.scale = (r * 0.5) / 64;
+          o.scaleEnd = r / 64;
+          o.tint = col;
+          o.alpha = 0.9;
+          this.particlesAdd.emit(o);
+        }
+        {
+          const o = this.particlesAdd.begin(this.atlas.get('glow'), X, Y);
+          o.life = 0.3;
+          o.scale = r / 48;
+          o.scaleEnd = r / 40;
+          o.tint = col;
+          o.alpha = 0.8;
+          this.particlesAdd.emit(o);
+        }
         this.sparks(X, Y, el, 8);
         if (e.kind === 'flare') {
           this.addShake(5);
-          this.particlesAdd.emit({ tex: this.atlas.get('glow'), x: X, y: Y, life: 0.45, scale: 2.2, scaleEnd: 3.4, tint: 0xfff6b0, alpha: 1 });
+          {
+            const o = this.particlesAdd.begin(this.atlas.get('glow'), X, Y);
+            o.life = 0.45;
+            o.scale = 2.2;
+            o.scaleEnd = 3.4;
+            o.tint = 0xfff6b0;
+            o.alpha = 1;
+            this.particlesAdd.emit(o);
+          }
         }
         break;
       }
@@ -747,18 +797,17 @@ export class WorldView {
         const col = e.kind === 'rainbow' ? [0xff8ad8, 0x8fd8ff, 0xfff27a, 0x9cff7a][e.value % 4]! : ELEMENTS[el].light;
         const bolt = this.atlas.get('bolt');
         // ParticleContainer uses centred anchors, so place the bolt at the segment midpoint
-        this.particlesAdd.emit({
-          tex: bolt,
-          x: X + dx / 2,
-          y: Y + dy / 2 - 8,
-          rotation: Math.atan2(dy, dx),
-          life: 0.18,
-          scale: Math.max(0.3, len / 96),
-          scaleEnd: Math.max(0.3, len / 96),
-          tint: col,
-          alpha: 1,
-          alphaEnd: 0.2,
-        });
+        {
+          const o = this.particlesAdd.begin(bolt, X + dx / 2, Y + dy / 2 - 8);
+          o.rotation = Math.atan2(dy, dx);
+          o.life = 0.18;
+          o.scale = Math.max(0.3, len / 96);
+          o.scaleEnd = Math.max(0.3, len / 96);
+          o.tint = col;
+          o.alpha = 1;
+          o.alphaEnd = 0.2;
+          this.particlesAdd.emit(o);
+        }
         this.sparks(e.x2 * TILE, e.y2 * TILE, el, 2);
         break;
       }
@@ -766,22 +815,37 @@ export class WorldView {
         const el = (e.tag as ElementId) || 'earth';
         const r = e.value * TILE;
         const col = e.kind === 'gravity' ? 0xc49bff : e.kind === 'whirlpool' ? 0x7fd8ff : e.kind === 'quicksand' ? 0xe8c070 : ELEMENTS[el].color;
-        this.particlesAdd.emit({ tex: this.atlas.get('ring'), x: X, y: Y, life: 0.45, scale: 0.2, scaleEnd: (r * 2) / 120, tint: col, alpha: 0.95 });
-        this.particles.emit({ tex: this.atlas.get('ring'), x: X, y: Y, life: 0.6, scale: 0.15, scaleEnd: (r * 2) / 128, tint: col, alpha: 0.5 });
+        {
+          const o = this.particlesAdd.begin(this.atlas.get('ring'), X, Y);
+          o.life = 0.45;
+          o.scale = 0.2;
+          o.scaleEnd = (r * 2) / 120;
+          o.tint = col;
+          o.alpha = 0.95;
+          this.particlesAdd.emit(o);
+        }
+        {
+          const o = this.particles.begin(this.atlas.get('ring'), X, Y);
+          o.life = 0.6;
+          o.scale = 0.15;
+          o.scaleEnd = (r * 2) / 128;
+          o.tint = col;
+          o.alpha = 0.5;
+          this.particles.emit(o);
+        }
         for (let i = 0; i < 6; i++) {
           const ang = (i / 6) * Math.PI * 2;
-          this.particles.emit({
-            tex: this.atlas.get('dot'),
-            x: X + Math.cos(ang) * 10,
-            y: Y + Math.sin(ang) * 10,
-            vx: Math.cos(ang) * r * 1.6,
-            vy: Math.sin(ang) * r * 1.6,
-            drag: 4,
-            life: 0.45,
-            scale: 0.9,
-            scaleEnd: 0.2,
-            tint: col,
-          });
+          {
+            const o = this.particles.begin(this.atlas.get('dot'), X + Math.cos(ang) * 10, Y + Math.sin(ang) * 10);
+            o.vx = Math.cos(ang) * r * 1.6;
+            o.vy = Math.sin(ang) * r * 1.6;
+            o.drag = 4;
+            o.life = 0.45;
+            o.scale = 0.9;
+            o.scaleEnd = 0.2;
+            o.tint = col;
+            this.particles.emit(o);
+          }
         }
         if (e.kind === 'rumble' || e.kind === 'gravity') this.addShake(1.5);
         break;
@@ -790,22 +854,61 @@ export class WorldView {
         if (this.quality.glow && e.tag !== 'arrow' && e.tag !== 'cannonball') {
           const t = TOWERS[e.kind as TowerId];
           const el = t?.elements[0];
-          this.particlesAdd.emit({ tex: this.atlas.get('glow'), x: X, y: Y - 10, life: 0.18, scale: 0.35, scaleEnd: 0.6, tint: el ? ELEMENTS[el].light : 0xffffff, alpha: 0.7 });
+          {
+            const o = this.particlesAdd.begin(this.atlas.get('glow'), X, Y - 10);
+            o.life = 0.18;
+            o.scale = 0.35;
+            o.scaleEnd = 0.6;
+            o.tint = el ? ELEMENTS[el].light : 0xffffff;
+            o.alpha = 0.7;
+            this.particlesAdd.emit(o);
+          }
         }
         break;
       }
       case Ev.Stun:
         for (let i = 0; i < 3; i++) {
-          this.particles.emit({ tex: this.atlas.get('stun'), x: X, y: Y - 20, vx: this.fxRng.range(-50, 50), vy: -60, gravity: 120, life: 0.5, scale: 1, scaleEnd: 0.5 });
+          const o = this.particles.begin(this.atlas.get('stun'), X, Y - 20);
+          o.vx = this.fxRng.range(-50, 50);
+          o.vy = -60;
+          o.gravity = 120;
+          o.life = 0.5;
+          o.scale = 1;
+          o.scaleEnd = 0.5;
+          this.particles.emit(o);
         }
         break;
       case Ev.Heal:
         if (e.kind === 'heal') {
-          this.particlesAdd.emit({ tex: this.atlas.get('ring'), x: X, y: Y, life: 0.6, scale: 0.2, scaleEnd: (e.value * TILE * 2) / 128, tint: 0x8cff9e, alpha: 0.7 });
-          for (let i = 0; i < 4; i++) this.particles.emit({ tex: this.atlas.get('heart'), x: X + this.fxRng.range(-20, 20), y: Y - 10, vy: -50, life: 0.7, scale: 0.6, scaleEnd: 0.3, tint: 0x9cffb0 });
+          {
+            const o = this.particlesAdd.begin(this.atlas.get('ring'), X, Y);
+            o.life = 0.6;
+            o.scale = 0.2;
+            o.scaleEnd = (e.value * TILE * 2) / 128;
+            o.tint = 0x8cff9e;
+            o.alpha = 0.7;
+            this.particlesAdd.emit(o);
+          }
+          for (let i = 0; i < 4; i++) {
+            const o = this.particles.begin(this.atlas.get('heart'), X + this.fxRng.range(-20, 20), Y - 10);
+            o.vy = -50;
+            o.life = 0.7;
+            o.scale = 0.6;
+            o.scaleEnd = 0.3;
+            o.tint = 0x9cffb0;
+            this.particles.emit(o);
+          }
         } else if (e.kind === 'shift') {
           const el = e.tag as ElementId;
-          this.particlesAdd.emit({ tex: this.atlas.get('glow'), x: X, y: Y - 30, life: 0.5, scale: 0.6, scaleEnd: 1.6, tint: ELEMENTS[el].color, alpha: 0.9 });
+          {
+            const o = this.particlesAdd.begin(this.atlas.get('glow'), X, Y - 30);
+            o.life = 0.5;
+            o.scale = 0.6;
+            o.scaleEnd = 1.6;
+            o.tint = ELEMENTS[el].color;
+            o.alpha = 0.9;
+            this.particlesAdd.emit(o);
+          }
         }
         break;
       case Ev.ShieldBlock:
@@ -813,28 +916,43 @@ export class WorldView {
         break;
       case Ev.Crit:
         this.text.spawn('WOW!', X, Y - 34, 0xfff27a, 0.75, 0.8, -50);
-        this.particlesAdd.emit({ tex: this.atlas.get('sparkle'), x: X, y: Y - 10, life: 0.4, scale: 1.4, scaleEnd: 2.2, spin: 4, tint: 0xfff6b0 });
+        {
+          const o = this.particlesAdd.begin(this.atlas.get('sparkle'), X, Y - 10);
+          o.life = 0.4;
+          o.scale = 1.4;
+          o.scaleEnd = 2.2;
+          o.spin = 4;
+          o.tint = 0xfff6b0;
+          this.particlesAdd.emit(o);
+        }
         break;
       case Ev.Build:
       case Ev.Upgrade: {
         const t = TOWERS[e.kind as TowerId];
         const el = t?.elements[0];
         const col = el ? ELEMENTS[el].color : 0xfff0c0;
-        this.particlesAdd.emit({ tex: this.atlas.get('ring'), x: X, y: Y, life: 0.5, scale: 0.2, scaleEnd: 0.8, tint: col, alpha: 0.9 });
+        {
+          const o = this.particlesAdd.begin(this.atlas.get('ring'), X, Y);
+          o.life = 0.5;
+          o.scale = 0.2;
+          o.scaleEnd = 0.8;
+          o.tint = col;
+          o.alpha = 0.9;
+          this.particlesAdd.emit(o);
+        }
         for (let i = 0; i < (e.type === Ev.Upgrade ? 14 : 9); i++) {
           const ang = this.fxRng.range(0, Math.PI * 2);
-          this.particlesAdd.emit({
-            tex: this.atlas.get(i % 3 === 0 ? 'sparkle' : 'dot'),
-            x: X,
-            y: Y,
-            vx: Math.cos(ang) * 110,
-            vy: Math.sin(ang) * 110 - 40,
-            drag: 3,
-            life: 0.6,
-            scale: 0.8,
-            scaleEnd: 0.1,
-            tint: i % 2 ? col : 0xffffff,
-          });
+          {
+            const o = this.particlesAdd.begin(this.atlas.get(i % 3 === 0 ? 'sparkle' : 'dot'), X, Y);
+            o.vx = Math.cos(ang) * 110;
+            o.vy = Math.sin(ang) * 110 - 40;
+            o.drag = 3;
+            o.life = 0.6;
+            o.scale = 0.8;
+            o.scaleEnd = 0.1;
+            o.tint = i % 2 ? col : 0xffffff;
+            this.particlesAdd.emit(o);
+          }
         }
         if (e.type === Ev.Upgrade) this.text.spawn('Level up!', X, Y - 36, 0x9cff7a, 0.55, 1);
         break;
@@ -842,16 +960,44 @@ export class WorldView {
       case Ev.Sell:
         this.text.spawn(`+${e.value}`, X, Y - 20, 0xffd23f, 0.6, 0.9);
         for (let i = 0; i < 6; i++) {
-          this.particles.emit({ tex: this.atlas.get('coin'), x: X, y: Y, vx: this.fxRng.range(-70, 70), vy: this.fxRng.range(-200, -100), gravity: 400, life: 0.7, scale: 0.9 });
+          const o = this.particles.begin(this.atlas.get('coin'), X, Y);
+          o.vx = this.fxRng.range(-70, 70);
+          o.vy = this.fxRng.range(-200, -100);
+          o.gravity = 400;
+          o.life = 0.7;
+          o.scale = 0.9;
+          this.particles.emit(o);
         }
-        this.particles.emit({ tex: this.atlas.get('puff'), x: X, y: Y, life: 0.5, scale: 0.6, scaleEnd: 1.3, alpha: 0.8 });
+        {
+          const o = this.particles.begin(this.atlas.get('puff'), X, Y);
+          o.life = 0.5;
+          o.scale = 0.6;
+          o.scaleEnd = 1.3;
+          o.alpha = 0.8;
+          this.particles.emit(o);
+        }
         break;
       case Ev.Split:
-        this.particles.emit({ tex: this.atlas.get('puff'), x: X, y: Y, life: 0.4, scale: 0.4, scaleEnd: 1, tint: 0xc8fff0 });
+        {
+          const o = this.particles.begin(this.atlas.get('puff'), X, Y);
+          o.life = 0.4;
+          o.scale = 0.4;
+          o.scaleEnd = 1;
+          o.tint = 0xc8fff0;
+          this.particles.emit(o);
+        }
         break;
       case Ev.BossSpawn:
         this.addShake(8);
-        this.particlesAdd.emit({ tex: this.atlas.get('glow'), x: X, y: Y, life: 0.8, scale: 1, scaleEnd: 3, tint: 0xff7ad9, alpha: 0.9 });
+        {
+          const o = this.particlesAdd.begin(this.atlas.get('glow'), X, Y);
+          o.life = 0.8;
+          o.scale = 1;
+          o.scaleEnd = 3;
+          o.tint = 0xff7ad9;
+          o.alpha = 0.9;
+          this.particlesAdd.emit(o);
+        }
         break;
       case Ev.Coins:
         if (e.value > 0) this.text.spawn(`+${e.value}`, X, Y - 70, 0xffd23f, 0.8, 1.3);
@@ -878,71 +1024,102 @@ export class WorldView {
       const ang = this.fxRng.range(-Math.PI, 0);
       const sp = this.fxRng.range(150, 420);
       const add = i % 3 === 0;
-      (add ? this.particlesAdd : this.particles).emit({
-        tex: this.atlas.get(add ? 'sparkle' : `pel_${els[i % 6]}`),
-        x: cx,
-        y: cy,
-        vx: Math.cos(ang) * sp,
-        vy: Math.sin(ang) * sp,
-        gravity: 380,
-        drag: 0.6,
-        life: this.fxRng.range(1.2, 2),
-        scale: this.fxRng.range(0.8, 1.4),
-        scaleEnd: 0.6,
-        alpha: 1,
-        alphaEnd: 0.2,
-        spin: this.fxRng.range(-6, 6),
-      });
+      {
+        const ps2 = add ? this.particlesAdd : this.particles;
+        const o = ps2.begin(this.atlas.get(add ? 'sparkle' : `pel_${els[i % 6]}`), cx, cy);
+        o.vx = Math.cos(ang) * sp;
+        o.vy = Math.sin(ang) * sp;
+        o.gravity = 380;
+        o.drag = 0.6;
+        o.life = this.fxRng.range(1.2, 2);
+        o.scale = this.fxRng.range(0.8, 1.4);
+        o.scaleEnd = 0.6;
+        o.alpha = 1;
+        o.alphaEnd = 0.2;
+        o.spin = this.fxRng.range(-6, 6);
+        ps2.emit(o);
+      }
     }
-    this.particlesAdd.emit({ tex: this.atlas.get('glow'), x: cx, y: cy, life: 1, scale: 1, scaleEnd: 5, tint: 0xfff6b0, alpha: 1 });
+    {
+      const o = this.particlesAdd.begin(this.atlas.get('glow'), cx, cy);
+      o.life = 1;
+      o.scale = 1;
+      o.scaleEnd = 5;
+      o.tint = 0xfff6b0;
+      o.alpha = 1;
+      this.particlesAdd.emit(o);
+    }
   }
 
   /** Creatures "poof" into sparkles, puffs, element shapes and coins. */
   private poof(x: number, y: number, color: number, el: ElementId | null, size: number): void {
     const rng = this.fxRng;
-    this.particles.emit({ tex: this.atlas.get('puff'), x, y, life: 0.45, scale: 0.5 * size, scaleEnd: 1.2 * size, tint: 0xffffff, alpha: 0.9 });
+    {
+      const o = this.particles.begin(this.atlas.get('puff'), x, y);
+      o.life = 0.45;
+      o.scale = 0.5 * size;
+      o.scaleEnd = 1.2 * size;
+      o.tint = 0xffffff;
+      o.alpha = 0.9;
+      this.particles.emit(o);
+    }
     const n = Math.round(9 * size);
     for (let i = 0; i < n; i++) {
       const ang = rng.range(0, Math.PI * 2);
       const sp = rng.range(70, 170) * Math.sqrt(size);
-      this.particlesAdd.emit({
-        tex: this.atlas.get(i % 3 === 0 ? 'sparkle' : 'dot'),
-        x,
-        y,
-        vx: Math.cos(ang) * sp,
-        vy: Math.sin(ang) * sp - 40,
-        drag: 3.5,
-        life: rng.range(0.35, 0.7),
-        scale: rng.range(0.6, 1.1),
-        scaleEnd: 0.05,
-        spin: rng.range(-6, 6),
-        tint: i % 2 ? color : 0xffffff,
-      });
+      {
+        const o = this.particlesAdd.begin(this.atlas.get(i % 3 === 0 ? 'sparkle' : 'dot'), x, y);
+        o.vx = Math.cos(ang) * sp;
+        o.vy = Math.sin(ang) * sp - 40;
+        o.drag = 3.5;
+        o.life = rng.range(0.35, 0.7);
+        o.scale = rng.range(0.6, 1.1);
+        o.scaleEnd = 0.05;
+        o.spin = rng.range(-6, 6);
+        o.tint = i % 2 ? color : 0xffffff;
+        this.particlesAdd.emit(o);
+      }
     }
     if (el) {
       for (let i = 0; i < 2; i++) {
-        this.particles.emit({ tex: this.atlas.get(`pel_${el}`), x, y, vx: rng.range(-60, 60), vy: rng.range(-140, -80), gravity: 280, life: 0.7, scale: 0.9, scaleEnd: 0.5 });
+        const o = this.particles.begin(this.atlas.get(`pel_${el}`), x, y);
+        o.vx = rng.range(-60, 60);
+        o.vy = rng.range(-140, -80);
+        o.gravity = 280;
+        o.life = 0.7;
+        o.scale = 0.9;
+        o.scaleEnd = 0.5;
+        this.particles.emit(o);
       }
     }
-    this.particles.emit({ tex: this.atlas.get('coin'), x, y: y - 6, vx: rng.range(-30, 30), vy: -150, gravity: 380, life: 0.6, scale: 0.9, scaleEnd: 0.7, spin: 5 });
+    {
+      const o = this.particles.begin(this.atlas.get('coin'), x, y - 6);
+      o.vx = rng.range(-30, 30);
+      o.vy = -150;
+      o.gravity = 380;
+      o.life = 0.6;
+      o.scale = 0.9;
+      o.scaleEnd = 0.7;
+      o.spin = 5;
+      this.particles.emit(o);
+    }
   }
 
   private sparks(x: number, y: number, el: ElementId | null, n: number): void {
     const col = el ? ELEMENTS[el].light : 0xfff0c0;
     for (let i = 0; i < n; i++) {
       const ang = this.fxRng.range(0, Math.PI * 2);
-      this.particlesAdd.emit({
-        tex: this.atlas.get('dot'),
-        x,
-        y: y - 8,
-        vx: Math.cos(ang) * 90,
-        vy: Math.sin(ang) * 90,
-        drag: 5,
-        life: 0.25,
-        scale: 0.6,
-        scaleEnd: 0.05,
-        tint: col,
-      });
+      {
+        const o = this.particlesAdd.begin(this.atlas.get('dot'), x, y - 8);
+        o.vx = Math.cos(ang) * 90;
+        o.vy = Math.sin(ang) * 90;
+        o.drag = 5;
+        o.life = 0.25;
+        o.scale = 0.6;
+        o.scaleEnd = 0.05;
+        o.tint = col;
+        this.particlesAdd.emit(o);
+      }
     }
   }
 
@@ -1005,9 +1182,8 @@ export class WorldView {
     // aura towers show their aura too
   }
 
-  /** Light up all cells you could build on right now (tutorial / build mode help). */
-  get towersCount(): number {
-    return this.towerViews.size;
+  get particleCount(): number {
+    return this.particles.count + this.particlesAdd.count;
   }
 
   destroy(): void {

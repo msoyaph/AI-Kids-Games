@@ -73,10 +73,12 @@ export function renderResolution(profile: QualityProfile, scaleDown = 1): number
  * Auto quality is enabled. Pure logic; the caller applies the result.
  */
 export class FpsGovernor {
-  private samples = new Float32Array(90);
+  private samples = new Float32Array(60);
   private idx = 0;
   private filled = 0;
+  private sampledTime = 0;
   private lowTime = 0;
+  private veryLowTime = 0;
   private highTime = 0;
   private cooldown = 0;
   /** Extra resolution multiplier applied inside a tier (1 → 0.7). */
@@ -87,10 +89,10 @@ export class FpsGovernor {
   reset(tier: QualityTier): void {
     this.tier = tier;
     this.resScale = 1;
-    this.lowTime = 0;
-    this.highTime = 0;
+    this.lowTime = this.veryLowTime = this.highTime = 0;
     this.filled = 0;
-    this.cooldown = 2;
+    this.sampledTime = 0;
+    this.cooldown = 1.5;
   }
 
   get averageFps(): number {
@@ -98,6 +100,21 @@ export class FpsGovernor {
     let sum = 0;
     for (let i = 0; i < this.filled; i++) sum += this.samples[i]!;
     return 1000 / (sum / this.filled);
+  }
+
+  private stepTierDown(): boolean {
+    const i = TIER_ORDER.indexOf(this.tier);
+    if (i <= 0) return false;
+    this.tier = TIER_ORDER[i - 1]!;
+    this.resScale = 1;
+    return true;
+  }
+
+  private settle(cool: number): void {
+    this.lowTime = this.veryLowTime = this.highTime = 0;
+    this.cooldown = cool;
+    this.filled = 0;
+    this.sampledTime = 0;
   }
 
   /**
@@ -110,12 +127,14 @@ export class FpsGovernor {
     this.samples[this.idx] = frameMs;
     this.idx = (this.idx + 1) % this.samples.length;
     if (this.filled < this.samples.length) this.filled++;
+    this.sampledTime += dtSeconds;
     if (this.cooldown > 0) {
       this.cooldown -= dtSeconds;
       return null;
     }
-    if (this.filled < 45) return null;
+    if (this.sampledTime < 0.75) return null;
     const fps = this.averageFps;
+    this.veryLowTime = fps < 30 ? this.veryLowTime + dtSeconds : 0;
     if (fps < 48) {
       this.lowTime += dtSeconds;
       this.highTime = 0;
@@ -126,25 +145,26 @@ export class FpsGovernor {
       this.lowTime = Math.max(0, this.lowTime - dtSeconds);
       this.highTime = Math.max(0, this.highTime - dtSeconds);
     }
-    if (this.lowTime > 2.5) {
-      this.lowTime = 0;
-      this.cooldown = 3;
-      this.filled = 0;
+    // Way too slow: drop a whole tier right away.
+    if (this.veryLowTime > 1) {
+      let changed = this.stepTierDown();
+      if (!changed && this.resScale > 0.7) {
+        this.resScale = Math.max(0.7, this.resScale - 0.15);
+        changed = true;
+      }
+      this.settle(1.5);
+      return changed ? 'down' : null;
+    }
+    if (this.lowTime > 1.5) {
+      this.settle(2);
       if (this.resScale > 0.75) {
         this.resScale = Math.max(0.7, this.resScale - 0.15);
         return 'down';
       }
-      const i = TIER_ORDER.indexOf(this.tier);
-      if (i > 0) {
-        this.tier = TIER_ORDER[i - 1]!;
-        this.resScale = 1;
-        return 'down';
-      }
-      return null;
+      return this.stepTierDown() ? 'down' : null;
     }
     if (this.highTime > 12) {
-      this.highTime = 0;
-      this.cooldown = 4;
+      this.settle(4);
       if (this.resScale < 1) {
         this.resScale = Math.min(1, this.resScale + 0.15);
         return 'up';

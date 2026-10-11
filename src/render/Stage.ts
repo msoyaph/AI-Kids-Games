@@ -36,7 +36,9 @@ export class Stage {
     canvas.setAttribute('aria-label', 'Game board');
     host.appendChild(canvas);
     this.app.stage.addChild(this.root);
-    this.app.ticker.maxFPS = 60;
+    // We render ourselves from App.frame (with our own 60 FPS cap) instead of
+    // Pixi's ticker render + maxFPS, whose integer truncation drops frames at 60 Hz.
+    this.app.ticker.remove(this.app.render, this.app);
 
     const r = this.app.renderer as unknown as { gl?: WebGLRenderingContext };
     if (r.gl) {
@@ -97,6 +99,7 @@ export class Stage {
    */
   requestRender(): void {
     if (this.renderQueued || this.app.ticker.started) return;
+    // (while the ticker runs, App.frame renders every processed frame)
     this.renderQueued = true;
     requestAnimationFrame(() => {
       this.renderQueued = false;

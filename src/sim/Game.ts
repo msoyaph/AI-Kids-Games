@@ -122,6 +122,8 @@ export class Game {
   private nextEnemyId = 1;
 
   readonly towers: Tower[] = [];
+  /** Sparse id → tower table (O(1) lookups from damage/kill code). */
+  private towerIndex: (Tower | undefined)[] = [];
   private nextTowerId = 1;
   /** Bumps on every build/sell so caches (paths, previews) can invalidate. */
   towerVersion = 0;
@@ -369,6 +371,8 @@ export class Game {
     this.tick++;
     this.time += DT;
     this.updateSpawns();
+    // fresh hash for healers / poison spread during the enemy update (indices go stale after compaction)
+    this.spatial.rebuild(this.enemies);
     this.updateEnemies();
     this.spatial.rebuild(this.enemies);
     this.updateTowers();
@@ -758,10 +762,7 @@ export class Game {
   // ================================================================ towers
 
   towerById(id: number): Tower | undefined {
-    if (id < 0) return undefined;
-    // towers stay small (≤ a few hundred); linear scan avoids Map churn
-    for (let i = 0; i < this.towers.length; i++) if (this.towers[i]!.id === id) return this.towers[i];
-    return undefined;
+    return id >= 0 ? this.towerIndex[id] : undefined;
   }
 
   towerAt(cx: number, cy: number): Tower | undefined {
@@ -859,6 +860,7 @@ export class Game {
     t.mode = def.behavior === 'pulse' ? 'close' : 'first';
     this.coins -= cost;
     this.towers.push(t);
+    this.towerIndex[t.id] = t;
     this.grid.tower[t.cell] = t.id;
     this.afterLayoutChange(t.cell);
     this.stats.towersBuilt++;
@@ -900,6 +902,7 @@ export class Game {
     const refund = sellValue(t.invested);
     this.coins += refund;
     this.towers.splice(idx, 1);
+    this.towerIndex[t.id] = undefined;
     this.grid.tower[t.cell] = -1;
     this.stats.sold++;
     this.afterLayoutChange(t.cell);

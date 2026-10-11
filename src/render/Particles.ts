@@ -1,21 +1,23 @@
 import { Particle, ParticleContainer, type Texture } from 'pixi.js';
 
-export interface EmitOpts {
-  tex: Texture;
-  x: number;
-  y: number;
-  vx?: number;
-  vy?: number;
-  life?: number;
-  scale?: number;
-  scaleEnd?: number;
-  alpha?: number;
-  alphaEnd?: number;
-  tint?: number;
-  gravity?: number;
-  drag?: number;
-  spin?: number;
-  rotation?: number;
+/** Reusable emit parameters (see Particles.begin) — no per-particle allocation. */
+export class EmitOpts {
+  tex!: Texture;
+  x = 0;
+  y = 0;
+  vx = 0;
+  vy = 0;
+  life = 0.6;
+  scale = 1;
+  /** < 0 means "same as scale". */
+  scaleEnd = -1;
+  alpha = 1;
+  alphaEnd = 0;
+  tint = 0xffffff;
+  gravity = 0;
+  drag = 0;
+  spin = 0;
+  rotation = 0;
 }
 
 class PData {
@@ -45,6 +47,24 @@ export class Particles {
   private active: PData[] = [];
   private free: PData[] = [];
   budget: number;
+  private scratch = new EmitOpts();
+
+  /** Reset and return the shared options object; fill it in, then call emit(). */
+  begin(tex: Texture, x: number, y: number): EmitOpts {
+    const o = this.scratch;
+    o.tex = tex;
+    o.x = x;
+    o.y = y;
+    o.vx = o.vy = 0;
+    o.life = 0.6;
+    o.scale = 1;
+    o.scaleEnd = -1;
+    o.alpha = 1;
+    o.alphaEnd = 0;
+    o.tint = 0xffffff;
+    o.gravity = o.drag = o.spin = o.rotation = 0;
+    return o;
+  }
 
   constructor(firstTex: Texture, budget: number, additive = false) {
     this.container = new ParticleContainer({
@@ -67,19 +87,19 @@ export class Particles {
     p.texture = o.tex;
     p.x = o.x;
     p.y = o.y;
-    p.rotation = o.rotation ?? 0;
-    d.vx = o.vx ?? 0;
-    d.vy = o.vy ?? 0;
-    d.life = d.max = o.life ?? 0.6;
-    d.s0 = o.scale ?? 1;
-    d.s1 = o.scaleEnd ?? d.s0;
-    d.a0 = o.alpha ?? 1;
-    d.a1 = o.alphaEnd ?? 0;
-    d.g = o.gravity ?? 0;
-    d.drag = o.drag ?? 0;
-    d.spin = o.spin ?? 0;
+    p.rotation = o.rotation;
+    d.vx = o.vx;
+    d.vy = o.vy;
+    d.life = d.max = o.life;
+    d.s0 = o.scale;
+    d.s1 = o.scaleEnd < 0 ? d.s0 : o.scaleEnd;
+    d.a0 = o.alpha;
+    d.a1 = o.alphaEnd;
+    d.g = o.gravity;
+    d.drag = o.drag;
+    d.spin = o.spin;
     p.scaleX = p.scaleY = d.s0;
-    p.tint = o.tint ?? 0xffffff;
+    p.tint = o.tint;
     p.alpha = d.a0;
     this.active.push(d);
     this.container.particleChildren.push(p);
