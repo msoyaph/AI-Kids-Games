@@ -1,9 +1,13 @@
 import { DT } from '../config/balance';
 import { updateDirector } from './director';
 import { enemyContacts, killDepleted, updateEnemies, updateEnemyShots } from './enemyAI';
+import { updateHazards } from './hazards';
 import { updateGems, updatePickups } from './pickups';
+import { updateProjectiles } from './projectiles';
 import { updatePlayer } from './player';
 import { recomputePlayerStats } from './stats';
+import { beginLevelUp, openChest } from './upgrades';
+import { updateWeapons } from './weapons';
 import type { SimInput, World } from './world';
 
 function savePrevious(w: World): void {
@@ -54,6 +58,8 @@ function updateTimers(w: World): void {
 
 function compact(w: World): void {
   w.enemies.compact();
+  w.projectiles.compact();
+  w.hazards.compact();
   w.enemyShots.compact();
   w.gems.compact();
   w.pickups.compact();
@@ -73,6 +79,10 @@ export function step(w: World, input: SimInput): void {
   w.grid.build(e.x, e.z, e.alive, e.count);
   updateEnemies(w);
 
+  updateWeapons(w);
+  updateProjectiles(w);
+  updateHazards(w);
+
   enemyContacts(w);
   updateEnemyShots(w);
   updateGems(w);
@@ -81,5 +91,20 @@ export function step(w: World, input: SimInput): void {
   killDepleted(w);
   compact(w);
 
-  if (w.state === 'playing' && w.pendingLevels > 0) w.state = 'levelup';
+  if (w.state === 'playing') {
+    if (w.pendingChests > 0) {
+      w.pendingChests--;
+      w.chestRewards = openChest(w);
+      w.state = 'chest';
+    } else if (w.pendingLevels > 0) {
+      beginLevelUp(w);
+      w.state = 'levelup';
+    }
+  }
+}
+
+/** UI closed the chest reward screen. */
+export function closeChest(w: World): void {
+  w.chestRewards = [];
+  if (w.state === 'chest') w.state = 'playing';
 }

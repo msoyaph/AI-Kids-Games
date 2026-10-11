@@ -9,6 +9,7 @@ import { Fx } from './Fx';
 import { Particles } from './Particles';
 import { PickupRenderer } from './PickupRenderer';
 import { PlayerView } from './PlayerView';
+import { ProjectileRenderer } from './ProjectileRenderer';
 import { buildWorldMesh } from './worldMesh';
 
 export type Quality = 'low' | 'medium' | 'high';
@@ -28,6 +29,7 @@ export class GameRenderer {
   readonly pickups = new PickupRenderer();
   readonly particles = new Particles();
   readonly fx: Fx;
+  readonly projectiles: ProjectileRenderer;
   private sun: THREE.DirectionalLight;
   private worldGroup: THREE.Group | null = null;
   private worldSeed = -1;
@@ -65,7 +67,8 @@ export class GameRenderer {
     this.scene.add(this.sun.target);
     this.scene.add(this.playerView.root);
     this.fx = new Fx(this.particles, overlay, this.rig);
-    this.scene.add(this.enemies.group, this.pickups.group, this.fx.group);
+    this.projectiles = new ProjectileRenderer(this.particles);
+    this.scene.add(this.enemies.group, this.pickups.group, this.projectiles.group, this.fx.group);
     this.setQuality(quality);
   }
 
@@ -161,6 +164,7 @@ export class GameRenderer {
     const time = w.time + alpha / 60;
     this.enemies.update(w, alpha, time);
     this.pickups.update(w, alpha, time);
+    this.projectiles.update(w, alpha, time, x, y, z);
     this.fx.update(dt, this.camera);
     this.renderer.render(this.scene, this.camera);
   }

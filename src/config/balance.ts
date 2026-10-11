@@ -81,11 +81,10 @@ export const MAX_COOLDOWN_REDUCTION = 0.6;
 
 /** XP needed to go from `level` to `level + 1`. */
 export function xpToNext(level: number): number {
-  if (level < 1) return 5;
-  if (level === 1) return 5;
-  if (level < 20) return 5 + (level - 1) * 9;
-  if (level < 40) return 176 + (level - 20) * 13;
-  return 436 + (level - 40) * 17;
+  if (level <= 1) return 5;
+  if (level < 20) return 6 + (level - 1) * 6;
+  if (level < 40) return 120 + (level - 20) * 10;
+  return 320 + (level - 40) * 14;
 }
 
 /** Enemy stat scaling over run time (minutes). */

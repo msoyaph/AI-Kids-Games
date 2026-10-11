@@ -14,6 +14,7 @@ export class CameraRig {
   private shakeT = 0;
   shakeEnabled = true;
   private fov = 62;
+  private lift = 0;
 
   addTrauma(amount: number): void {
     this.trauma = Math.min(1, this.trauma + amount);
@@ -47,10 +48,29 @@ export class CameraRig {
 
     const dist = this.distance + Math.min(4, speed * 0.12);
     const cp = Math.cos(this.pitch);
-    let cx = this.smoothTarget.x + Math.sin(this.yaw) * cp * dist;
-    let cy = this.smoothTarget.y + 1.4 + Math.sin(this.pitch) * dist;
-    let cz = this.smoothTarget.z + Math.cos(this.yaw) * cp * dist;
+    const ox = Math.sin(this.yaw) * cp;
+    const oy = Math.sin(this.pitch);
+    const oz = Math.cos(this.yaw) * cp;
+    const tx = this.smoothTarget.x;
+    const ty = this.smoothTarget.y + 1.6;
+    const tz = this.smoothTarget.z;
+    let cx = tx + ox * dist;
+    let cy = ty - 0.2 + oy * dist;
+    let cz = tz + oz * dist;
     if (terrain) {
+      // lift the camera so the line of sight clears hills and mesas between it and the player
+      let need = cy;
+      for (let k = 2; k <= 12; k++) {
+        const d = (k / 12) * dist;
+        if (d < 1.6) continue;
+        const hgt = terrain.height(tx + ox * d, tz + oz * d) + 0.6;
+        const req = ty + (hgt - ty) * (dist / d);
+        if (req > need) need = req;
+      }
+      need = Math.min(need, ty + dist * 1.15);
+      const lift = need - cy;
+      this.lift += (lift - this.lift) * damp(lift > this.lift ? 14 : 3, dt);
+      cy += Math.max(0, this.lift);
       const g = terrain.height(cx, cz) + 1.0;
       if (cy < g) cy = g;
     }
