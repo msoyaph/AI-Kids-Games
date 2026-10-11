@@ -15,7 +15,9 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
 2. COMPLETE: copied three provided banner/thumbnail pairs unchanged; created original
    16:9 and square SVG art for TheaBonk (glowing Bonk Ring at dusk) and
    Light Crossing (Driftlight Isle, lighthouse and floating lanterns).
-3. Pending: five-game registry, accurate controls/devices, categories and minimum-age filter.
+3. COMPLETE: reconciled all README entries with Game; added minAge and Strategy,
+   Racing, Learning; finished Light Crossing copy; exact device/control guidance,
+   Calex split-screen limitation and Browse player-age filter. Home features all five.
 4. Pending: embed permissions and interaction checks.
 5. Pre-import safety gate CLEAN: inspected compiled storage operations and original
    storage modules/callers. No colliding keys or global clears. Calex ghost deletion

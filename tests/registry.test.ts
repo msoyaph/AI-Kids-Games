@@ -8,6 +8,7 @@ describe('registry validation',() => {
   it('rejects duplicate slugs',() => expect(validateRegistry([games[0],games[0]],() => true)).toContain('light-crossing: duplicate slug.'));
   it('identifies missing game folders and images',() => { const errors = validateRegistry(games,() => false); expect(errors).toContain('theabonk: public/games/theabonk/index.html does not exist.'); expect(errors.some(error => error.includes('local image'))).toBe(true); });
   it('reports missing required fields',() => expect(validateRegistry([{ ...games[0], title: '' }],() => true)).toContain('light-crossing: required field "title" is missing.'));
+  it('requires a valid minimum age',() => expect(validateRegistry([{ ...games[0], minAge: NaN }],() => true)).toContain('light-crossing: minAge must be a whole number from 0 to 18.'));
   it('rejects unsafe slugs and remote artwork',() => { const errors = validateRegistry([{ ...games[0], slug: '../escape', thumbnail: 'https://example.com/image.svg' }],() => true); expect(errors.some(error => error.includes('lowercase slug'))).toBe(true); expect(errors.some(error => error.includes('local image'))).toBe(true); });
   it('rejects invalid dates, colors, or empty controls',() => { const errors = validateRegistry([{ ...games[0], releaseDate: 'not-a-date', accentColor: 'red', controls: { types: [], howToPlay: [] } }],() => true); expect(errors.length).toBe(3); });
 });
