@@ -76,7 +76,7 @@ export const BASE_STATS: PlayerStats = {
 };
 
 export const CRIT_MULT = 2;
-export const PLAYER_IFRAMES = 0.4;
+export const PLAYER_IFRAMES = 0.6;
 export const MAX_COOLDOWN_REDUCTION = 0.6;
 
 /** XP needed to go from `level` to `level + 1`. */
@@ -89,7 +89,7 @@ export function xpToNext(level: number): number {
 
 /** Enemy stat scaling over run time (minutes). */
 export function enemyHpScale(minutes: number): number {
-  return 1 + minutes * 0.2 + minutes * minutes * 0.012;
+  return 1 + minutes * 0.2 + minutes * minutes * 0.02;
 }
 
 export function enemyDamageScale(minutes: number): number {
@@ -112,7 +112,7 @@ export function gemTier(value: number): number {
 /** Drop chances (before luck). */
 export const DROPS = {
   coinChance: 0.025,
-  heartChance: 0.006,
+  heartChance: 0.009,
   magnetChance: 0.0015,
   heartHeal: 30,
   coinValue: 1,

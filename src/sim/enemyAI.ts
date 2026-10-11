@@ -34,7 +34,7 @@ export function fireEnemyShot(w: World, x: number, y: number, z: number, dirX: n
   s.z[i] = s.pz[i] = z;
   s.vx[i] = (dirX / l) * speed;
   s.vz[i] = (dirZ / l) * speed;
-  s.life[i] = 6;
+  s.life[i] = 4;
   s.damage[i] = damage;
   s.radius[i] = 0.45;
   s.visual[i] = visual;
@@ -287,7 +287,7 @@ export function enemyContacts(w: World): void {
     // jumping clean over a creature avoids it
     if (p.y > e.y[i] + def.height * e.scale[i] * 0.85) continue;
     // charging rams hit harder
-    const mult = TYPE_BEHAVIOR[e.type[i]] === 4 && e.state[i] === CH_DASH ? 1.5 : 1;
+    const mult = TYPE_BEHAVIOR[e.type[i]] === 4 && e.state[i] === CH_DASH ? 1.3 : 1;
     if (e.damage[i] * mult > best) best = e.damage[i] * mult;
   }
   if (best > 0) damagePlayer(w, best);

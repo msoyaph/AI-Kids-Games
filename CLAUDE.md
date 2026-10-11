@@ -54,6 +54,16 @@ Key rules:
 - Instanced attribute uploads use `uploadPrefix` (only the used prefix, no per-frame range
   object allocation).
 
+## Balance notes
+`npm run simulate -- 16 0.7` (16 seeds/hero, bot skill 0.7 ≈ "decent player", no meta):
+Thea ~12:20, Pip ~11:30, Brindle ~14:20 average survival; ~12% first-run wins. Deaths
+cluster at the boss gates (5:00 Grumblecap, 10:00 Clockjaw, 15:00+ Regent). Skill 0.45 →
+~11:10, 0.9 → ~13:10. Main knobs: `enemyHpScale`/`enemyDamageScale` (balance.ts), wave
+`rate/minAlive/maxAlive` (waves.ts), boss hp/projectileDamage (enemies.ts + bosses.ts),
+`PLAYER_IFRAMES`, `LEVEL_HEAL` (leveling.ts), heart drop chance.
+The bot (sim/bot.ts) kites, dodges shots predictively, sidesteps telegraphed charges,
+hops shockwave rings and un-sticks itself; it never slides, so humans can do better.
+
 ## Phase plan / status
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera
 2. [x] Enemies, spawning, collision, HP, death
@@ -64,4 +74,4 @@ Key rules:
 7. [x] Audio, juice, polish, settings
 8. [x] Performance pass (1000-enemy stress test)
 9. [x] Unit tests + Playwright smoke test
-10. [ ] Balance pass with simulated runs
+10. [x] Balance pass with simulated runs

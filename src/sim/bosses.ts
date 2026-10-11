@@ -106,16 +106,16 @@ function grumblecap(w: World, i: number, dist: number, hpFrac: number, out: Floa
   const c = e.stC[i]++;
   if (dist < 9) {
     // stomp: telegraphed slam around itself
-    slam(w, e.x[i], e.z[i], 7, def.damage, 0.9);
+    slam(w, e.x[i], e.z[i], 6, def.damage, 1.1);
     e.state[i] = SLAM;
-    e.stT[i] = 1.0;
+    e.stT[i] = 1.2;
   } else if (c % 3 === 2) {
     summon(w, i, enraged ? 'blobbin' : 'gnatlet', enraged ? 5 : 8, 4);
     e.stT[i] = 2.5;
   } else {
-    ring(w, i, enraged ? 20 : 14, def.projectileSpeed ?? 10, dmg, c * 0.3, 1);
-    if (enraged) ring(w, i, 20, (def.projectileSpeed ?? 10) * 0.7, dmg, c * 0.3 + 0.16, 1);
-    e.stT[i] = enraged ? 2.4 : 3.4;
+    ring(w, i, enraged ? 16 : 12, def.projectileSpeed ?? 9, dmg, c * 0.3, 1);
+    if (enraged) ring(w, i, 16, (def.projectileSpeed ?? 9) * 0.7, dmg, c * 0.3 + 0.2, 1);
+    e.stT[i] = enraged ? 3 : 4;
   }
 }
 
@@ -148,7 +148,7 @@ function clockjaw(w: World, i: number, dist: number, dx: number, dz: number, hpF
       out[0] = e.stA[i] * cs;
       out[1] = e.stB[i] * cs;
       if (e.stT[i] <= 0) {
-        shockwave(w, e.x[i], e.z[i], enraged ? 26 : 20, enraged ? 14 : 11, def.projectileDamage ?? 20);
+        shockwave(w, e.x[i], e.z[i], enraged ? 24 : 20, enraged ? 12 : 10, def.projectileDamage ?? 12);
         const c = e.stC[i]++;
         if (c % 2 === 1) summon(w, i, 'ramhorn', 3, 5);
         // enraged: chain a second charge immediately

@@ -16,6 +16,11 @@ export class Bot {
   private mx = 0;
   private mz = 0;
   private wantJump = false;
+  private stuckT = 0;
+  private unstickT = 0;
+  private lastX = 0;
+  private lastZ = 0;
+  private unstickA = 0;
 
   constructor(
     seed: number,
@@ -27,15 +32,44 @@ export class Bot {
   decide(w: World, out: SimInput): void {
     // re-plan at a human-ish cadence; worse players react slower
     this.decideT -= 1 / 60;
-    if (this.decideT <= 0) {
+    if (this.decideT <= 0 || this.ringNear(w)) {
       this.decideT = 0.05 + (1 - this.skill) * 0.25;
       this.plan(w);
     }
+    // stuck against a cliff or tree? pick a fresh direction for a moment (a person would)
+    const p = w.player;
+    if (this.unstickT > 0) {
+      this.unstickT -= 1 / 60;
+      this.mx = Math.sin(this.unstickA);
+      this.mz = Math.cos(this.unstickA);
+    } else {
+      const moved = Math.hypot(p.x - this.lastX, p.z - this.lastZ);
+      this.stuckT = moved < 0.04 ? this.stuckT + 1 / 60 : 0;
+      if (this.stuckT > 0.4) {
+        this.stuckT = 0;
+        this.unstickT = 0.8;
+        this.unstickA = Math.atan2(this.mx, this.mz) + (this.rng.next() < 0.5 ? 1 : -1) * (1.2 + this.rng.next());
+        this.wantJump = true;
+      }
+    }
+    this.lastX = p.x;
+    this.lastZ = p.z;
     out.moveX = this.mx;
     out.moveZ = this.mz;
     out.jump = this.wantJump;
     this.wantJump = false;
     out.slide = false;
+  }
+
+  private ringNear(w: World): boolean {
+    const hz = w.hazards;
+    const p = w.player;
+    for (let i = 0; i < hz.count; i++) {
+      if (hz.kind[i] !== HazardKind.EnemyRing) continue;
+      const d = Math.hypot(p.x - hz.x[i], p.z - hz.z[i]);
+      if (d > hz.a0[i] && d - hz.a0[i] < 4) return true;
+    }
+    return false;
   }
 
   private plan(w: World): void {
@@ -56,27 +90,51 @@ export class Bot {
       const edgeD = Math.max(0.3, d - e.radius[i]);
       if (edgeD < closest) closest = edgeD;
       const def = ENEMIES[e.type[i]];
+      const charging = (def.behavior === 'charger' || def.bossPattern === 'clockjaw') && (e.state[i] === 1 || e.state[i] === 2);
+      if (charging && edgeD < 18 && this.rng.next() < this.skill) {
+        // sidestep out of the telegraphed charge line
+        const lx = e.stA[i];
+        const lz = e.stB[i];
+        const side = dx * lz - dz * lx >= 0 ? 1 : -1;
+        const along = -(dx * lx + dz * lz) / d; // >0 when we are in front of it
+        if (along > 0.3) {
+          const k = 3 / Math.max(1, edgeD * 0.5);
+          rx += -lz * side * k;
+          rz += lx * side * k;
+          threat += k * 0.5;
+        }
+      }
       const danger = (def.behavior === 'boss' ? 6 : 1) * (e.state[i] === 2 && def.behavior === 'charger' ? 3 : 1);
       const wgt = danger / (edgeD * edgeD);
       rx += (dx / d) * wgt;
       rz += (dz / d) * wgt;
       threat += wgt;
     }
-    // hostile projectiles
+    // hostile projectiles: predict the closest approach and sidestep (or hop) incoming ones
     const s = w.enemyShots;
     for (let i = 0; i < s.count; i++) {
-      const dx = p.x - s.x[i];
-      const dz = p.z - s.z[i];
-      const d2 = dx * dx + dz * dz;
-      if (d2 > 36) continue;
-      const d = Math.sqrt(d2) || 0.01;
-      // sidestep perpendicular to the shot
+      const rx0 = p.x - s.x[i];
+      const rz0 = p.z - s.z[i];
+      const d2 = rx0 * rx0 + rz0 * rz0;
+      if (d2 > 225) continue;
       const vx = s.vx[i];
       const vz = s.vz[i];
-      const side = dx * vz - dz * vx > 0 ? 1 : -1;
-      const wgt = (this.skill * 2) / (d * d);
-      rx += -vz * side * 0.1 * wgt;
-      rz += vx * side * 0.1 * wgt;
+      const v2 = vx * vx + vz * vz || 1;
+      const tHit = (rx0 * vx + rz0 * vz) / v2; // time of closest approach
+      if (tHit < 0 || tHit > 1.4) continue;
+      const cx = rx0 - vx * tHit;
+      const cz = rz0 - vz * tHit;
+      const miss = Math.sqrt(cx * cx + cz * cz);
+      if (miss > 1.6) continue;
+      if (this.rng.next() > this.skill) continue; // worse players miss some
+      // step out of the line of fire, away from the predicted impact point
+      const side = cx * vz - cz * vx >= 0 ? 1 : -1;
+      const vl = Math.sqrt(v2);
+      const wgt = (2.5 * (1.6 - miss)) / (0.3 + tHit);
+      rx += (vz / vl) * side * wgt;
+      rz += (-vx / vl) * side * wgt;
+      threat += wgt * 0.3;
+      if (tHit < 0.25 && miss < 0.9) this.wantJump = true;
     }
     // shockwaves: jump them when they arrive
     const hz = w.hazards;
@@ -84,7 +142,11 @@ export class Bot {
       if (!hz.alive[i]) continue;
       const kind = hz.kind[i];
       const d = Math.hypot(p.x - hz.x[i], p.z - hz.z[i]);
-      if (kind === HazardKind.EnemyRing && hz.a0[i] < d && d - hz.a0[i] < 1.2 + this.skill && this.rng.next() < this.skill) this.wantJump = true;
+      if (kind === HazardKind.EnemyRing && hz.a0[i] < d) {
+        // jump just before the expanding band arrives (it only hurts grounded players)
+        const arrive = (d - hz.a0[i] - 1.2) / Math.max(1, hz.a1[i]);
+        if (arrive < 0.12 + (1 - this.skill) * 0.1 && arrive > -0.1 && w.player.onGround && this.rng.next() < 0.5 + this.skill * 0.5) this.wantJump = true;
+      }
       if ((kind === HazardKind.EnemySlam || kind === HazardKind.EnemyPuddle) && d < hz.radius[i] + 2) {
         const k = 4 / Math.max(0.5, d);
         rx += ((p.x - hz.x[i]) / (d || 1)) * k;
@@ -165,7 +227,7 @@ export class Bot {
     }
     if (goal) {
       const gl = Math.hypot(gx, gz) || 1;
-      const urge = threat < 0.4 ? 1.5 : 0.4;
+      const urge = threat < 0.15 ? 1.4 : threat < 0.5 ? 0.5 : 0.15;
       mx += (gx / gl) * urge;
       mz += (gz / gl) * urge;
     }
@@ -205,7 +267,7 @@ export class Bot {
           s = 3 + c.level * 0.1;
           break;
         case 'newWeapon':
-          s = w.weapons.length < 4 ? 3.2 : 1.5;
+          s = w.weapons.length < 3 ? 4 : w.weapons.length < 5 ? 3.1 : 1.5;
           break;
         case 'newPassive':
           s = catalysts.has(c.id) ? 2.9 : 1.4;

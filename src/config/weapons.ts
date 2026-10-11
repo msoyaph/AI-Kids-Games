@@ -35,7 +35,7 @@ export const WEAPONS: WeaponConfig[] = [
     name: 'Bonk Ring',
     description: 'A halo of phantom mallets thumps everything that gets too close.',
     behavior: 'aura',
-    base: s({ damage: 7, area: 3.2, hitInterval: 0.6, knockback: 4.5, cooldown: 0 }),
+    base: s({ damage: 8, area: 3.6, hitInterval: 0.6, knockback: 4.5, cooldown: 0 }),
     levels: [
       { text: '+2 damage, +12% radius', delta: { damage: 2, area: 0.4 } },
       { text: '+2 damage, thumps faster', delta: { damage: 2, hitInterval: -0.08 } },
@@ -51,7 +51,7 @@ export const WEAPONS: WeaponConfig[] = [
     name: 'Thistle Darts',
     description: 'Flicks barbed darts at the nearest foe.',
     behavior: 'projectile',
-    base: s({ damage: 11, cooldown: 1.05, area: 1, speed: 26, amount: 1, duration: 1.4, knockback: 1.2, range: 34 }),
+    base: s({ damage: 12, cooldown: 0.95, area: 1, speed: 26, amount: 1, duration: 1.4, knockback: 1.2, range: 34 }),
     levels: [
       { text: '+1 dart', delta: { amount: 1 } },
       { text: '+4 damage, -0.1s cooldown', delta: { damage: 4, cooldown: -0.1 } },
@@ -67,7 +67,7 @@ export const WEAPONS: WeaponConfig[] = [
     name: 'Firefly Lanterns',
     description: 'Glowing lanterns circle you, singeing whatever they touch.',
     behavior: 'orbit',
-    base: s({ damage: 9, cooldown: 3.2, area: 3.4, speed: 3.0, amount: 2, duration: 3.2, knockback: 2.5, hitInterval: 0.5 }),
+    base: s({ damage: 10, cooldown: 2.4, area: 3.2, speed: 3.2, amount: 2, duration: 4, knockback: 3, hitInterval: 0.5 }),
     levels: [
       { text: '+1 lantern', delta: { amount: 1 } },
       { text: '+4 damage, wider orbit', delta: { damage: 4, area: 0.5 } },

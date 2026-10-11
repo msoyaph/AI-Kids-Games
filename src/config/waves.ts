@@ -32,8 +32,8 @@ export const BANNER = {
  * `rate` = enemies per second; when below `minAlive` the director spawns 3× faster.
  */
 export const WAVES: WaveSegment[] = [
-  { start: 0, rate: 1.0, minAlive: 10, maxAlive: 50, mix: [['gloomling', 1]] },
-  { start: 40, rate: 1.4, minAlive: 16, maxAlive: 70, mix: [['gloomling', 3], ['gnatlet', 1]] },
+  { start: 0, rate: 0.8, minAlive: 8, maxAlive: 35, mix: [['gloomling', 1]] },
+  { start: 40, rate: 1.2, minAlive: 14, maxAlive: 60, mix: [['gloomling', 3], ['gnatlet', 1]] },
   { start: 90, rate: 1.8, minAlive: 22, maxAlive: 90, mix: [['gloomling', 3], ['gnatlet', 2], ['spitcap', 0.7]] },
   { start: 150, rate: 2.2, minAlive: 30, maxAlive: 110, mix: [['gloomling', 2], ['gnatlet', 2], ['spitcap', 1], ['blobbin', 1]] },
   { start: 210, rate: 2.6, minAlive: 40, maxAlive: 130, mix: [['gloomling', 2], ['gnatlet', 2], ['spitcap', 1], ['blobbin', 1], ['ramhorn', 1]] },
