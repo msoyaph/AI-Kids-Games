@@ -205,9 +205,12 @@ test('remapped keys work in a run; accessibility options apply', async ({ page }
   const problems = watchConsole(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  // larger text applies at once
+  // larger text applies at once — and really makes the interface 25% bigger
+  const rootPx = (): Promise<number> => page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
+  const before = await rootPx();
   await page.locator('.setting', { hasText: 'Larger text' }).getByRole('button').click();
   await expect(page.locator('html')).toHaveClass(/large-text/);
+  expect(await rootPx()).toBeCloseTo(before * 1.25, 1);
   // remap: add J to Jump
   await page.getByRole('button', { name: 'Remap…' }).click();
   await page.locator('.remap-row', { hasText: 'Jump' }).locator('.chip.add').click();

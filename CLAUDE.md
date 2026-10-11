@@ -164,8 +164,9 @@ Key rules:
   New SFX names are appended to SFX_NAMES (ids are indices). Songs: runA/B/C (Meadow, dusk →
   deep night → before dawn), rimeA/B/C (Rimewood, bells), boss / rimeBoss (mid-bosses),
   final / oldRime (final bosses), menu, collection — chosen per frame in bindAudio.
-- Interface scale: root font = `--ui-base` (16 / 13 / 11 px by screen height) × `--ui-scale`
-  (Larger text). Use rem everywhere.
+- Interface scale: root font = (8 px + 0.9 vmin) × `--ui-scale` (1.25 with Larger text; set
+  on :root in styles.css — an `html` rule would lose to :root). Use rem everywhere. Touch
+  screens add px floors: buttons / tabs / setting rows ≥ 48 px, small text ≥ 13 px.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
   Save v2 (`meta/save.ts`): older saves are migrated in sanitizeSave and copied once to
   `theabonk.save.bak` just before the first write in the new format. v2 adds maps, difficulty
@@ -286,6 +287,14 @@ quality governor) → accessibility → tests → handoff. `npx tsx scripts/glas
   blast within 6 m 35. Real-touch e2e (Chromium CDP): multi-touch, auto camera, slide-jump.
   CDP gotcha: only touchEnd lifts fingers and it lifts all of them — Fingers.up re-presses
   the rest (new pointers), so tests holding the stick across it use the fixed stick.
+- [x] 5. Touch-friendly screens: 48 px minimum targets (html.touch), 13 px text floor,
+  level-up on phones = one-line header + cards with Reroll / Skip beside them + full-width
+  Banish under equal-height cards, tap hints instead of key hints (.hint-keys / .hint-touch),
+  hero select keeps Back / Start run pinned at the bottom (.select-actions), How to play
+  explains touch. Fixed "Larger text" (it never applied). glassLayout: the default stick /
+  Slide rise above the bottom HUD band (bottomHudBand, uiRem) at big sizes; resolveLayout /
+  toLayoutItem / layoutProblems for the editor (unit-tested on phone + tablet sizes,
+  both hands, all three sizes).
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

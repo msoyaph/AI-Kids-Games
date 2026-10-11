@@ -297,7 +297,7 @@ export class Menus {
       diffNote,
       h('div', { class: 'char-row' }, ...cards),
       details,
-      h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: back }, 'Back'), startBtn),
+      h('div', { class: 'row select-actions' }, h('button', { class: 'btn ghost', onclick: back }, 'Back'), startBtn),
       h('div', { class: 'corner-tr' }, goldChip(d.gold)),
     );
     this.g.ui.show('select', el, back);
@@ -560,15 +560,27 @@ export class Menus {
       this.g.sound('back');
       this.title();
     };
-    const rows: Array<[string, string]> = [
-      ['Move', 'WASD / arrow keys · left stick'],
-      ['Look', 'Mouse (click to lock, or hold a button to drag) · right stick · Q / E'],
-      ['Jump', 'Space · A / Cross'],
-      ['Slide', 'Shift or C (hold) · B / RT'],
-      ['Pause', 'Esc or P · Start'],
-      ['Pick upgrade', '1–4 · click · d-pad + A'],
-      ['Debug overlay', 'F3'],
-    ];
+    // on a phone / tablet, explain the on-screen controls instead of keys
+    const touch = document.documentElement.classList.contains('touch');
+    const rows: Array<[string, string]> = touch
+      ? [
+          ['Move', 'Put your thumb down on the left — a stick appears under it'],
+          ['Look', 'Drag on the right side · the camera also follows you by itself'],
+          ['Jump', 'JUMP button'],
+          ['Slide', 'SLIDE button (hold, or tap to toggle in Settings)'],
+          ['Pause', 'The II button in the top corner'],
+          ['Pick upgrade', 'Tap a card'],
+          ['Your controls', 'Settings → Touch controls: size, left-handed, move the buttons'],
+        ]
+      : [
+          ['Move', 'WASD / arrow keys · left stick'],
+          ['Look', 'Mouse (click to lock, or hold a button to drag) · right stick · Q / E'],
+          ['Jump', 'Space · A / Cross'],
+          ['Slide', 'Shift or C (hold) · B / RT'],
+          ['Pause', 'Esc or P · Start'],
+          ['Pick upgrade', '1–4 · click · d-pad + A'],
+          ['Debug overlay', 'F3'],
+        ];
     const tips = [
       'Weapons fire on their own — your job is to move, dodge and choose upgrades.',
       'Slide to burst ahead. Slides speed up downhill; jumping out of a slide keeps your momentum.',

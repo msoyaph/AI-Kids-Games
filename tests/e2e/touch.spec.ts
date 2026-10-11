@@ -217,3 +217,51 @@ test('slide-jumping by touch keeps the slide speed, as on a keyboard', async ({ 
   expect(air.speed, 'the jump kept the slide speed').toBeGreaterThan(sliding.walk * 1.1);
   expect(problems, problems.join('\n')).toEqual([]);
 });
+
+test('menus and the level-up screen are easy to tap; the controls come back after a pick', async ({ page }) => {
+  const problems = watch(page);
+  await open(page, '/?seed=7');
+  const vp = page.viewportSize()!;
+  /** Every visible button on screen is at least 48 px tall and inside the viewport. */
+  const checkTargets = async (scope: string): Promise<void> => {
+    const boxes = await page.locator(`${scope} button:visible`).evaluateAll((els) => els.map((e) => {
+      const r = e.getBoundingClientRect();
+      return { text: (e.textContent ?? '').trim().slice(0, 20), h: r.height, top: r.top, bottom: r.bottom };
+    }));
+    expect(boxes.length).toBeGreaterThan(0);
+    for (const b of boxes) expect(b.h, `${scope}: "${b.text}" is tall enough`).toBeGreaterThanOrEqual(47.5);
+  };
+  await page.getByRole('button', { name: 'Settings', exact: true }).tap();
+  await checkTargets('.settings');
+  await page.getByRole('button', { name: 'Done' }).tap();
+  await page.getByRole('button', { name: 'Play', exact: true }).tap();
+  await checkTargets('.select-screen');
+  // Start run stays reachable (pinned at the bottom) even on a phone
+  const start = (await page.getByRole('button', { name: 'Start run' }).boundingBox())!;
+  expect(start.y + start.height).toBeLessThanOrEqual(vp.height + 1);
+  await page.getByRole('button', { name: 'Start run' }).tap();
+  await expect(page.locator('.touch-ui')).toBeVisible();
+  // a level-up with every option available
+  await page.evaluate(() => {
+    const g = (window as unknown as { __theabonk: { world: { player: { rerolls: number; skips: number; banishes: number; xp: number; xpNext: number } } } }).__theabonk;
+    const p = g.world.player;
+    // just enough for one level-up
+    Object.assign(p, { rerolls: 2, skips: 2, banishes: 2, xp: p.xpNext });
+  });
+  await expect(page.locator('.screen-levelup')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.touch-ui')).toBeHidden();
+  // no keyboard wording on a touch screen (phones hide the hint line to make room)
+  await expect(page.locator('.hint-keys')).toBeHidden();
+  await checkTargets('.screen-levelup');
+  for (const name of [/Reroll/, /Skip/]) {
+    const b = (await page.getByRole('button', { name }).boundingBox())!;
+    expect(b.y + b.height, 'level-up actions fit on screen').toBeLessThanOrEqual(vp.height + 1);
+  }
+  // pick cards until the run resumes
+  for (let k = 0; k < 12 && (await page.locator('.screen-levelup').isVisible()); k++) {
+    await page.locator('.screen-levelup .card').first().tap();
+    await page.waitForTimeout(250);
+  }
+  await expect(page.locator('.touch-ui')).toBeVisible();
+  expect(problems, problems.join('\n')).toEqual([]);
+});

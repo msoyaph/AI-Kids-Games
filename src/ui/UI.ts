@@ -111,17 +111,16 @@ export class UI {
     // no hotkey for skip: S is a movement key and may still be held when the picker opens
     const el = h(
       'div',
-      { class: 'modal' },
-      h('div', { class: 'title' }, 'Level up!'),
-      h('div', { class: 'subtitle' }, `Level ${p.level - w.pendingLevels + 1} · choose a boon`),
+      { class: 'modal levelup' },
+      h('div', { class: 'levelup-head' }, h('div', { class: 'title' }, 'Level up!'), h('div', { class: 'subtitle' }, `Level ${p.level - w.pendingLevels + 1} · choose a boon`)),
       h('div', { class: 'cards' }, ...cards),
       h(
         'div',
-        { class: 'row' },
+        { class: 'row levelup-actions' },
         h('button', { class: 'btn small', onclick: reroll, disabled: rr <= 0 }, img(iconUrl('reroll', 'misc'), 'mini-icon'), `Reroll (${rr})`),
         h('button', { class: 'btn small ghost', onclick: () => pick(null), disabled: sk <= 0 }, img(iconUrl('skip', 'misc'), 'mini-icon'), `Skip (${sk})`),
       ),
-      h('div', { class: 'hint' }, `Press 1–${w.choices.length} or click a card · R to reroll`),
+      h('div', { class: 'hint' }, h('span', { class: 'hint-keys' }, `Press 1–${w.choices.length} or click a card · R to reroll`), h('span', { class: 'hint-touch' }, 'Tap a card to choose it')),
     );
     this.show('levelup', el, null, hot, true);
   }

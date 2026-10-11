@@ -12,8 +12,10 @@
   --panel-2: rgba(52, 40, 84, 0.92);
   --edge: rgba(255, 248, 236, 0.16);
   --shadow: rgba(18, 12, 30, 0.55);
-  /* scales smoothly from 1280x720 to 4K */
-  font-size: calc(8px + 0.9vmin);
+  /* "Larger text" (accessibility) multiplies the interface size */
+  --ui-scale: 1;
+  /* scales smoothly with the screen (≈ 11.5 px on a phone in landscape, 17.7 px at 1080p) */
+  font-size: calc((8px + 0.9vmin) * var(--ui-scale));
 }
 
 * {
@@ -217,11 +219,16 @@ body {
   flex-wrap: wrap;
 }
 
+/* equal-height cards, so the Banish buttons under them line up */
 .card-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
+}
+
+.card-wrap > .card {
+  flex: 1;
 }
 
 .btn.tiny {
@@ -2241,33 +2248,14 @@ html.reduced-motion .boss-intro.pop {
 /* ───────────────────────── accessibility ───────────────────────── */
 
 /*
- * Interface size: everything is in rem. Short screens (phones in landscape) get a smaller
- * base; "Larger text" multiplies whatever the base is.
+ * Interface size: everything is in rem; the root size follows the screen (see :root) and
+ * "Larger text" multiplies it by 1.25.
  */
-:root {
-  --ui-base: 16px;
-  --ui-scale: 1;
-}
-
-html {
-  font-size: calc(var(--ui-base) * var(--ui-scale));
-}
-
 html.large-text {
   --ui-scale: 1.25;
 }
 
-@media (max-height: 640px) {
-  :root {
-    --ui-base: 13px;
-  }
-}
-
 @media (max-height: 440px) {
-  :root {
-    --ui-base: 11px;
-  }
-
   .title-screen {
     gap: 0.5rem;
   }
@@ -2376,8 +2364,8 @@ html.touch .hud-tl {
 }
 
 html.touch .hud-tr {
-  /* the glass Pause button owns the top-right corner (48 px + 10 px) */
-  right: calc(max(0.8rem, env(safe-area-inset-right)) + 58px);
+  /* the glass Pause button owns the top-right corner (10 px + 48 px + an 8 px gap) */
+  right: calc(max(0.8rem, env(safe-area-inset-right)) + 66px);
   top: max(0.8rem, env(safe-area-inset-top));
 }
 
@@ -2385,16 +2373,17 @@ html.touch .hud-bc {
   bottom: max(0.6rem, env(safe-area-inset-bottom));
 }
 
-/* touch-sized menus: bigger targets, no hover-only affordances */
+/* touch-sized menus: every button, tab and row is at least 48 px tall; no tiny text */
 html.touch .btn {
-  min-height: 3rem;
+  min-height: 48px;
 }
 
 html.touch .btn.small,
 html.touch .btn.tiny {
-  min-height: 2.6rem;
+  min-height: 48px;
   padding-left: 1rem;
   padding-right: 1rem;
+  font-size: max(1rem, 14px);
 }
 
 html.touch .card {
@@ -2406,7 +2395,123 @@ html.touch .diff-tab,
 html.touch .tier-tab,
 html.touch .col-tab,
 html.touch .chip {
-  min-height: 2.6rem;
+  min-height: 48px;
+}
+
+html.touch .setting {
+  min-height: 48px;
+}
+
+html.touch .setting input[type='range'] {
+  width: 11rem;
+  height: 36px;
+}
+
+html.touch .hint,
+html.touch .card-tag,
+html.touch .small-desc,
+html.touch .map-sub,
+html.touch .map-note,
+html.touch .tier-tab,
+html.touch .tier-lock,
+html.touch .char-passive,
+html.touch .daily-sub,
+html.touch .ach-reward,
+html.touch .settings-head,
+html.touch .chip,
+html.touch .wk,
+html.touch .playtest-row,
+html.touch .panel-title,
+html.touch .go-mode {
+  font-size: max(0.95rem, 13px);
+}
+
+/* keyboard hints on touch screens become tap hints */
+.hint-touch,
+html.touch .hint-keys {
+  display: none;
+}
+
+html.touch .hint-touch {
+  display: block;
+}
+
+.levelup-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+@media (max-height: 520px) {
+  html.touch .levelup-head {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 1rem;
+  }
+}
+
+/* level-up: Reroll / Skip / Banish are big, clear buttons */
+html.touch .levelup .banish {
+  width: 100%;
+}
+
+html.touch .levelup-actions .btn {
+  min-width: 10rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* phones in landscape: title on one line, the cards with the actions beside them */
+@media (max-height: 520px) {
+  html.touch .levelup {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas: 'head head' 'cards actions';
+    align-items: center;
+    column-gap: 1.2rem;
+    row-gap: 0.6rem;
+  }
+
+  html.touch .levelup-head {
+    grid-area: head;
+  }
+
+  html.touch .levelup-head .title {
+    font-size: 2.3rem;
+  }
+
+  html.touch .levelup > .cards {
+    grid-area: cards;
+  }
+
+  html.touch .levelup-actions {
+    grid-area: actions;
+    flex-direction: column;
+  }
+
+  html.touch .levelup > .hint {
+    display: none;
+  }
+
+  html.touch .card {
+    min-height: 0;
+  }
+}
+
+/* hero select: Back / Start run always reachable (the details can scroll under them) */
+html.touch .select-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  align-self: stretch;
+  justify-content: flex-start;
+  /* a dark strip across the screen, so the buttons never float over the hero cards */
+  margin: auto 0 -1rem calc(-1 * max(1rem, env(safe-area-inset-left)));
+  padding: 0.7rem 0 max(0.7rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: linear-gradient(to top, rgba(16, 10, 28, 0.92), rgba(16, 10, 28, 0.78) 70%, rgba(16, 10, 28, 0));
 }
 
 html.touch .select-screen,
