@@ -10,6 +10,7 @@ import { isWaterGround } from '../world/types';
 import { btn, clear, h, type Panel, type UIManager } from './dom';
 import { iconImg } from './icons';
 import { isHomeRoom } from '../sim/interior';
+import { sortPockets } from '../sim/inventory';
 
 export interface PickerOpts {
   title: string;
@@ -51,7 +52,17 @@ export class InventoryPanel implements Panel {
     this.el = h(
       'div',
       { class: 'panel inv center' },
-      h('h2', null, picker ? picker.title : 'Pockets', h('span', { class: 'spacer' }), btn('✕', () => ui.pop(this), 'small ghost')),
+      h(
+        'h2',
+        null,
+        picker ? picker.title : 'Pockets',
+        h('span', { class: 'spacer' }),
+        picker ? null : btn('↕ Tidy up', () => {
+          sortPockets(g);
+          this.render();
+        }, 'small', { title: 'Sort your pockets' }),
+        btn('✕', () => ui.pop(this), 'small ghost'),
+      ),
       this.grid,
       this.detail,
     );

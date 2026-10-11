@@ -7,109 +7,109 @@ export const FURNITURE: FurnitureDef[] = [
   // ---- Starter recipes ----
   {
     id: 'furn_plank_table', name: 'Sunbleached Plank Table', price: 230, buy: 0, tags: ['plain', 'nature'],
-    desc: 'A sturdy table of sun-faded planks. Perfect for suppers and jigsaw puzzles.',
+    desc: 'A strong table of faded wood planks. Great for meals and puzzles!',
     furn: { w: 2, d: 1, model: 'table', color: 0xe8cfa4, color2: 0xc9a477, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_twiggy_chair', name: 'Twiggy Chair', price: 140, buy: 0, tags: ['nature', 'plain'],
-    desc: 'Bent twigs lashed into a surprisingly comfy seat.',
+    desc: 'Bent twigs tied into a seat. It is comfier than it looks!',
     furn: { w: 1, d: 1, model: 'chair', color: 0xd9b48a, color2: 0xa9d18e, outdoor: false, decor: 1 },
   },
   {
     id: 'furn_strawdream_bed', name: 'Strawdream Bed', price: 380, buy: 0, tags: ['cozy', 'nature'],
-    desc: 'Stuffed with sweet-smelling straw. Sleep comes quickly here.',
+    desc: 'Stuffed with sweet-smelling straw. You will fall asleep fast!',
     furn: { w: 2, d: 2, model: 'bed', color: 0xf3e2b3, color2: 0xb8dff0, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_hearthstone_bonfire', name: 'Hearthstone Bonfire', price: 170, buy: 0, tags: ['cozy', 'nature'],
-    desc: 'A ring of warm stones around a crackling fire. Gather round!',
+    desc: 'A ring of warm stones around a crackling fire. Come sit close!',
     furn: { w: 1, d: 1, model: 'bonfire', color: 0xc8c2d4, color2: 0xffb37a, outdoor: true, decor: 4 },
   },
   {
     id: 'furn_pastel_picket', name: 'Pastel Picket Fence', price: 130, buy: 0, tags: ['cute', 'plain'],
-    desc: 'A little fence painted the color of a spring morning.',
+    desc: 'A little fence in soft spring colors.',
     furn: { w: 1, d: 1, model: 'fence', color: 0xfdf3f6, color2: 0xbfe3d0, outdoor: true, decor: 2 },
   },
   {
     id: 'furn_howdy_signpost', name: 'Howdy Signpost', price: 100, buy: 0, tags: ['cute', 'plain'],
-    desc: 'A cheerful wooden sign that greets everyone who wanders by.',
+    desc: 'A happy wooden sign. It says hi to everyone who walks by.',
     furn: { w: 1, d: 1, model: 'sign', color: 0xe6c9a0, color2: 0xfff1d6, outdoor: true, decor: 2 },
   },
   {
     id: 'furn_terracotta_planter', name: 'Terracotta Planter', price: 260, buy: 1040, tags: ['nature', 'cute'],
-    desc: 'A chubby clay pot with a sunny bloom poking out the top.',
+    desc: 'A chubby clay pot. A sunny flower pokes out the top.',
     furn: { w: 1, d: 1, model: 'planter', color: 0xe8a888, color2: 0xffe066, outdoor: true, decor: 3 },
   },
   {
     id: 'furn_mossback_bench', name: 'Mossback Bench', price: 220, buy: 0, tags: ['nature', 'cozy'],
-    desc: 'A fallen log smoothed into a bench. The moss grows on it for free.',
+    desc: 'A log made into a smooth bench. Moss grows on it for free!',
     furn: { w: 2, d: 1, model: 'bench', color: 0xc9a477, color2: 0xa8d69a, outdoor: true, decor: 3 },
   },
   {
     id: 'furn_pocket_fern', name: 'Pocket Fern', price: 140, buy: 0, tags: ['nature', 'plain'],
-    desc: 'A small, frilly fern in a clay cup. Loves a shady corner.',
+    desc: 'A small, frilly fern in a clay cup. It loves a shady corner.',
     furn: { w: 1, d: 1, model: 'plant', color: 0x9fd38a, color2: 0xe8a888, outdoor: false, decor: 1, layer: 'small' },
   },
   {
     id: 'furn_seaside_crate', name: 'Seaside Crate', price: 170, buy: 0, tags: ['plain', 'retro'],
-    desc: 'A salty old shipping crate. Good for sitting, stacking or storing.',
+    desc: 'A salty old crate from a ship. Sit on it, stack it or fill it!',
     furn: { w: 1, d: 1, model: 'box', color: 0xd9b48a, color2: 0x9fc9e0, outdoor: false, decor: 1 },
   },
 
   // ---- Story & errand rewards ----
   {
     id: 'furn_driftwood_stool', name: 'Driftwood Stool', price: 130, buy: 0, tags: ['nature', 'sea'],
-    desc: 'Carved from silvery driftwood. Smells faintly of the sea.',
+    desc: 'Made from silver driftwood. It smells a little like the sea.',
     furn: { w: 1, d: 1, model: 'stool', color: 0xd8cfc0, color2: 0xb8a68e, outdoor: false, decor: 1 },
   },
   {
     id: 'furn_wick_lantern', name: 'Wick Lantern', price: 160, buy: 0, tags: ['cozy', 'retro'],
-    desc: 'A homemade lantern with a fat wax wick. Glows gently all night.',
+    desc: 'A homemade lantern with a fat wick. It glows softly all night.',
     furn: { w: 1, d: 1, model: 'lantern', color: 0xf3d9a4, color2: 0xffe27a, outdoor: true, decor: 2, layer: 'small' },
   },
   {
     id: 'furn_woven_rug', name: 'Woven Rug', price: 170, buy: 0, tags: ['cozy', 'nature'],
-    desc: 'A round rug braided from weed fiber and dyed with river clay.',
+    desc: 'A round rug made of weed fiber. It is dyed with river clay.',
     furn: { w: 2, d: 2, model: 'rug', color: 0xe6c9a0, color2: 0xd99a7a, outdoor: false, rug: true, decor: 1 },
   },
   {
     id: 'furn_lantern_post', name: 'Lantern Post', price: 1300, buy: 0, tags: ['retro', 'shiny'],
-    desc: 'A tall post that holds a lantern high above the path.',
+    desc: 'A tall post that holds a lantern high over the path.',
     furn: { w: 1, d: 1, model: 'streetlamp', color: 0x9aa3b8, color2: 0xfff1a8, outdoor: true, decor: 5 },
   },
   {
     id: 'furn_tidecurl_fountain', name: 'Tidecurl Fountain', price: 1520, buy: 0, tags: ['sea', 'fancy'],
-    desc: 'Water spills from a curling scallop into a pebbled basin.',
+    desc: 'Water spills from a big curly shell into a pebble pool.',
     furn: { w: 2, d: 2, model: 'fountain', color: 0xd8ecf5, color2: 0xffc2b3, outdoor: true, decor: 8 },
   },
   {
     id: 'furn_wishing_well', name: 'Pebble Wishing Well', price: 940, buy: 0, tags: ['nature', 'retro'],
-    desc: 'Drop in a pebble and make a wish. The echo always sounds hopeful.',
+    desc: 'Drop in a pebble and make a wish. The echo always sounds happy.',
     furn: { w: 2, d: 2, model: 'well', color: 0xc8c2d4, color2: 0xd9b48a, outdoor: true, decor: 7 },
   },
   {
     id: 'furn_bellbloom_arbor', name: 'Bellbloom Arbor', price: 570, buy: 0, tags: ['nature', 'cute'],
-    desc: 'A leafy archway twined with bellblooms and puffcaps.',
+    desc: 'A leafy arch with bellblooms and puffcaps growing on it.',
     furn: { w: 2, d: 1, model: 'arch', color: 0xa8d69a, color2: 0xf7a8b8, outdoor: true, decor: 5 },
   },
   {
     id: 'furn_breeze_pennant', name: 'Breeze Pennant', price: 230, buy: 0, tags: ['sporty', 'cute'],
-    desc: 'A bright flag that flaps hello whenever the wind passes through.',
+    desc: 'A bright flag. It waves hello when the wind blows by.',
     furn: { w: 1, d: 1, model: 'flag', color: 0xffb3a7, color2: 0xfff1d6, outdoor: true, decor: 3 },
   },
   {
     id: 'furn_whistling_kettle', name: 'Whistling Kettle', price: 490, buy: 1960, tags: ['food', 'cozy'],
-    desc: 'Sings a little song the moment the tea is ready.',
+    desc: 'It sings a little song when the tea is ready.',
     furn: { w: 1, d: 1, model: 'kettle', color: 0xbfe3d0, color2: 0xfff6ea, outdoor: false, decor: 2, layer: 'small' },
   },
   {
     id: 'furn_snugglewarm_stove', name: 'Snugglewarm Stove', price: 820, buy: 0, tags: ['cozy', 'retro'],
-    desc: 'A round-bellied stove that keeps the whole room toasty.',
+    desc: 'A round, fat stove. It keeps the whole room nice and warm.',
     furn: { w: 1, d: 1, model: 'stove', color: 0xf2b8a0, color2: 0x9aa3b8, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_driftwood_shelf', name: 'Driftwood Shelf', price: 350, buy: 1400, tags: ['sea', 'nature'],
-    desc: 'Knobbly driftwood planks with room for books, jars and shells.',
+    desc: 'Bumpy driftwood planks with room for books, jars and shells.',
     furn: { w: 2, d: 1, model: 'shelf', color: 0xd8cfc0, color2: 0xffc2b3, outdoor: false, decor: 2 },
   },
   {
@@ -119,211 +119,211 @@ export const FURNITURE: FurnitureDef[] = [
   },
   {
     id: 'furn_sunpeek_sundial', name: 'Sunpeek Sundial', price: 390, buy: 0, tags: ['science', 'retro'],
-    desc: 'Tells the time, but only when the sun feels like peeking out.',
+    desc: 'It tells the time, but only when the sun peeks out.',
     furn: { w: 1, d: 1, model: 'sundial', color: 0xd6d2e0, color2: 0xffe27a, outdoor: true, decor: 4 },
   },
   {
     id: 'furn_scribbler_desk', name: 'Scribbler Desk', price: 430, buy: 1720, tags: ['plain', 'artsy'],
-    desc: 'A writing desk with one wobbly leg and a drawer full of doodles.',
+    desc: 'A desk with one wobbly leg. The drawer is full of doodles.',
     furn: { w: 2, d: 1, model: 'desk', color: 0xe0c49a, color2: 0xbfe3f2, outdoor: false, decor: 2 },
   },
 
   // ---- Message-bottle recipe cards ----
   {
     id: 'furn_moonbeam_lamp', name: 'Moonbeam Lamp', price: 790, buy: 3160, tags: ['shiny', 'cozy'],
-    desc: 'A frosted globe that glows like a captured sliver of moonlight.',
+    desc: 'A frosty glass ball that glows like a bit of moonlight.',
     furn: { w: 1, d: 1, model: 'lamp', color: 0xe8e4ff, color2: 0xfff6c9, outdoor: false, decor: 3 },
   },
   {
     id: 'furn_puffcloud_sofa', name: 'Puffcloud Sofa', price: 620, buy: 0, tags: ['cozy', 'cute'],
-    desc: 'So soft you might float away. Made from two very loyal cushions.',
+    desc: 'So soft you might float away! It is made of two cushions who are best friends.',
     furn: { w: 2, d: 1, model: 'sofa', color: 0xdcefff, color2: 0xfdfbf4, outdoor: false, decor: 3 },
   },
   {
     id: 'furn_tideside_bench', name: 'Tideside Bench', price: 660, buy: 0, tags: ['sea', 'nature'],
-    desc: 'A mossback bench dressed up in seashells for a day at the beach.',
+    desc: 'A mossy bench dressed up in seashells for a beach day.',
     furn: { w: 2, d: 1, model: 'bench', color: 0xd8cfc0, color2: 0xffc2b3, outdoor: true, decor: 4 },
   },
   {
     id: 'furn_shellsong_chime', name: 'Shellsong Chime', price: 470, buy: 0, tags: ['sea', 'music'],
-    desc: 'Spiral shells on fiber strings. Every breeze plays a new tune.',
+    desc: 'Spiral shells on strings. Every breeze plays a new tune.',
     furn: { w: 1, d: 1, model: 'windchime', color: 0xf7d9c4, color2: 0xb8dff0, outdoor: true, decor: 3 },
   },
   {
     id: 'furn_glowcap_lamp', name: 'Glowcap Lamp', price: 720, buy: 2880, tags: ['spooky', 'nature', 'cute'],
-    desc: 'A toadstool-shaped lamp that glimmers softly after dusk.',
+    desc: 'A lamp shaped like a mushroom. It glows softly at night.',
     furn: { w: 1, d: 1, model: 'mushroom', color: 0xffb3c6, color2: 0xfff6c9, outdoor: true, decor: 3, layer: 'small' },
   },
   {
     id: 'furn_picnic_spread', name: 'Sunny Picnic Spread', price: 390, buy: 0, tags: ['food', 'cute'],
-    desc: 'A checkered blanket, a basket and fruit for two. Ants not included.',
+    desc: 'A checked blanket with a basket and fruit for two. No ants allowed!',
     furn: { w: 2, d: 1, model: 'picnic', color: 0xffc2c2, color2: 0xfdfbf4, outdoor: true, decor: 4 },
   },
   {
     id: 'furn_wrenhaven_birdhouse', name: 'Wrenhaven Birdhouse', price: 230, buy: 920, tags: ['nature', 'cute'],
-    desc: 'A tiny house on a pole. The tenants pay their rent in songs.',
+    desc: 'A tiny house on a pole. The birds pay their rent with songs!',
     furn: { w: 1, d: 1, model: 'birdhouse', color: 0xbfe3d0, color2: 0xf7a8b8, outdoor: true, decor: 3 },
   },
   {
     id: 'furn_cider_barrel', name: 'Sunplum Cider Barrel', price: 690, buy: 2760, tags: ['food', 'retro'],
-    desc: 'Something fizzy and golden sloshes around inside.',
+    desc: 'A barrel full of fizzy, golden plum juice. Slosh, slosh!',
     furn: { w: 1, d: 1, model: 'barrel', color: 0xd9b48a, color2: 0xffd27a, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_seabreeze_hammock', name: 'Seabreeze Hammock', price: 550, buy: 0, tags: ['cozy', 'sea'],
-    desc: 'Strung between two posts, with a coconut cup holder for long, lazy afternoons.',
+    desc: 'A swinging bed between two posts. It even has a coconut cup holder!',
     furn: { w: 2, d: 1, model: 'hammock', color: 0xf3e2b3, color2: 0x9fd9cf, outdoor: true, decor: 4 },
   },
   {
     id: 'furn_daydream_easel', name: 'Daydream Easel', price: 400, buy: 1600, tags: ['artsy'],
-    desc: 'Holds a half-finished painting of somewhere you have never been.',
+    desc: 'A painting of a place you have never seen. It is not done yet!',
     furn: { w: 1, d: 1, model: 'easel', color: 0xe0c49a, color2: 0xffd6e0, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_hootwhistle_clock', name: 'Hootwhistle Clock', price: 370, buy: 1480, tags: ['retro', 'cute'],
-    desc: 'An owl pops out every hour to hoot the time, then goes back to napping.',
+    desc: 'An owl pops out each hour to hoot the time. Then it naps again.',
     furn: { w: 1, d: 1, model: 'clock', color: 0xc9a477, color2: 0xfff1d6, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_bubble_tv', name: 'Bubble-Screen TV', price: 1270, buy: 5080, tags: ['retro', 'science'],
-    desc: 'A rounded old set that only gets the weather channel. That is plenty.',
+    desc: 'A round old TV that only shows the weather. That is plenty!',
     furn: { w: 1, d: 1, model: 'tv', color: 0xbfe3f2, color2: 0xf7a8b8, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_starmap_globe', name: 'Starmap Globe', price: 790, buy: 3160, tags: ['science', 'retro'],
-    desc: 'Shows the islands below and the constellations above.',
+    desc: 'A globe with islands on the bottom and stars on top.',
     furn: { w: 1, d: 1, model: 'globe', color: 0x9fc9e0, color2: 0xffe27a, outdoor: false, decor: 2, layer: 'small' },
   },
   {
     id: 'furn_hollyhock_wardrobe', name: 'Hollyhock Wardrobe', price: 780, buy: 3120, tags: ['cozy', 'cute'],
-    desc: 'Painted with hollyhocks, so your clothes always smell like summer.',
+    desc: 'Painted with flowers, so your clothes always smell like summer.',
     furn: { w: 1, d: 1, model: 'wardrobe', color: 0xf7d6e0, color2: 0xa8d69a, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_bellbloom_vase', name: 'Bellbloom Vase', price: 310, buy: 1240, tags: ['cute', 'nature'],
-    desc: 'A glazed vase holding a bunch of fresh bellblooms.',
+    desc: 'A shiny vase with a bunch of fresh bellblooms.',
     furn: { w: 1, d: 1, model: 'vase', color: 0xbfe3f2, color2: 0xf7a8a8, outdoor: false, decor: 1, layer: 'small' },
   },
 
   // ---- Villager friendship gifts ----
   {
     id: 'furn_keepsake_frame', name: 'Keepsake Frame', price: 220, buy: 0, tags: ['artsy', 'cute'],
-    desc: 'Holds a photo of a dear friend. Made with love, given with more.',
+    desc: 'A frame for a photo of a good friend. It was made with love.',
     furn: { w: 1, d: 1, model: 'frame', color: 0xffd6e0, color2: 0xfff6ea, outdoor: false, decor: 2, layer: 'small' },
   },
   {
     id: 'furn_honeycomb_dresser', name: 'Honeycomb Dresser', price: 720, buy: 0, tags: ['cute', 'sweet'],
-    desc: 'Six little drawers, each shaped like a cell of honeycomb.',
+    desc: 'Six little drawers. Each one is shaped like a bit of honeycomb.',
     furn: { w: 2, d: 1, model: 'dresser', color: 0xffe8a3, color2: 0xf3c57a, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_lullaby_piano', name: 'Lullaby Piano', price: 2340, buy: 0, tags: ['music', 'fancy'],
-    desc: 'Its keys play softly, as if trying not to wake anyone.',
+    desc: 'Its keys play softly, so they will not wake anyone up.',
     furn: { w: 2, d: 1, model: 'piano', color: 0xfdfbf4, color2: 0xb9b0e8, outdoor: false, decor: 3 },
   },
   {
     id: 'furn_storyteller_bookcase', name: 'Storyteller Bookcase', price: 350, buy: 0, tags: ['retro', 'artsy'],
-    desc: 'Packed with tales your neighbors swear are mostly true.',
+    desc: 'Full of stories. Your neighbors say they are mostly true!',
     furn: { w: 2, d: 1, model: 'bookcase', color: 0xc9a477, color2: 0xb8dff0, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_teacup_table', name: 'Teacup Table', price: 490, buy: 0, tags: ['sweet', 'cute', 'food'],
-    desc: 'A little round table shaped like a giant teacup. Sip responsibly.',
+    desc: 'A little round table shaped like a big teacup. Sip with care!',
     furn: { w: 1, d: 1, model: 'table', color: 0xffd6e0, color2: 0xfdfbf4, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_stargazer_telescope', name: 'Stargazer Telescope', price: 1440, buy: 0, tags: ['science', 'shiny'],
-    desc: 'Point it skyward on a clear night and count the shooting stars.',
+    desc: 'Point it at the sky on a clear night. Count the shooting stars!',
     furn: { w: 1, d: 1, model: 'telescope', color: 0xb9b0e8, color2: 0xffe27a, outdoor: false, decor: 3 },
   },
 
   // ---- Lumen exchange exclusives ----
   {
     id: 'furn_beacon_statue', name: 'Beacon Keeper Statue', price: 4750, buy: 0, tags: ['fancy', 'shiny'],
-    desc: 'A stone keeper raising a glowing lamp to guide the boats home.',
+    desc: 'A stone keeper holding up a glowing lamp. It helps the boats find home.',
     furn: { w: 2, d: 2, model: 'statue', color: 0xe6e2f0, color2: 0xfff1a8, outdoor: true, decor: 8 },
   },
   {
     id: 'furn_prism_lamppost', name: 'Prism Lamppost', price: 4030, buy: 0, tags: ['shiny', 'fancy'],
-    desc: 'A lantern post crowned with a prism that scatters tiny rainbows.',
+    desc: 'A lamp post with a crystal on top. It makes tiny rainbows!',
     furn: { w: 1, d: 1, model: 'streetlamp', color: 0xe8e4ff, color2: 0xffd6f0, outdoor: true, decor: 6 },
   },
   {
     id: 'furn_starglimmer_rug', name: 'Starglimmer Rug', price: 1820, buy: 0, tags: ['shiny', 'cozy'],
-    desc: 'Woven with threads that twinkle faintly, like a night sky underfoot.',
+    desc: 'Its threads twinkle softly. It is like a night sky under your feet.',
     furn: { w: 3, d: 2, model: 'rug', color: 0xb9c4f2, color2: 0xfff6c9, outdoor: false, rug: true, decor: 3 },
   },
 
   // ---- Museum wing rewards ----
   {
     id: 'furn_tidepool_tank', name: 'Tidepool Tank', price: 1500, buy: 0, tags: ['sea', 'science'],
-    desc: 'A little slice of the shallows, complete with swaying coral.',
+    desc: 'A tank like a tiny tide pool. The coral sways inside.',
     furn: { w: 2, d: 1, model: 'tank', color: 0xbfe9f2, color2: 0xff9fb0, outdoor: false, decor: 3 },
   },
   {
     id: 'furn_critter_terrarium', name: 'Critter Terrarium', price: 690, buy: 0, tags: ['nature', 'science'],
-    desc: 'A glass home of leaves and twigs where tiny critters thrive.',
+    desc: 'A glass home of leaves and twigs. Tiny critters love it here.',
     furn: { w: 1, d: 1, model: 'tank', color: 0xd8f0d0, color2: 0xc9a477, outdoor: false, decor: 2, layer: 'small' },
   },
   {
     id: 'furn_wingbone_statue', name: 'Wingbone Fossil Statue', price: 880, buy: 0, tags: ['science', 'retro'],
-    desc: 'A stone tribute to a long-gone flyer, wings spread wide.',
+    desc: 'A stone statue of a flyer from long ago. Its wings are spread wide.',
     furn: { w: 1, d: 1, model: 'statue', color: 0xe6dccb, color2: 0xc8b89a, outdoor: true, decor: 7 },
   },
 
   // ---- Shop only (rotating stock) ----
   {
     id: 'furn_gumdrop_chair', name: 'Gumdrop Chair', price: 180, buy: 720, tags: ['sweet', 'cute'],
-    desc: 'Squishy, round and candy-colored. Please do not lick.',
+    desc: 'Squishy, round and candy colored. Please do not lick it!',
     furn: { w: 1, d: 1, model: 'chair', color: 0xffb3c6, color2: 0xb8f0d8, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_wavesong_painting', name: 'Wavesong Painting', price: 400, buy: 1600, tags: ['artsy', 'sea'],
-    desc: 'A painting of the sea so calm you can almost hear it.',
+    desc: 'A painting of a calm sea. You can almost hear the waves.',
     furn: { w: 1, d: 1, model: 'frame', color: 0x9fd9cf, color2: 0xfff6ea, outdoor: false, decor: 2 },
   },
   {
     id: 'furn_marshmallow_loveseat', name: 'Marshmallow Loveseat', price: 520, buy: 2080, tags: ['sweet', 'cozy'],
-    desc: 'Toasty-golden and puffy. Seats two very relaxed friends.',
+    desc: 'Puffy and golden, like a toasty treat. Two friends can sit here.',
     furn: { w: 2, d: 1, model: 'sofa', color: 0xfff6ea, color2: 0xf3d9a4, outdoor: false, decor: 3 },
   },
   {
     id: 'furn_clamshell_bed', name: 'Clamshell Bed', price: 950, buy: 3800, tags: ['sea', 'fancy'],
-    desc: 'Sleep tucked inside a giant pearly shell. Dreams of the deep guaranteed.',
+    desc: 'Sleep inside a giant, shiny shell. You will dream of the sea!',
     furn: { w: 2, d: 2, model: 'bed', color: 0xffe3ec, color2: 0xd8ecff, outdoor: false, decor: 3 },
   },
   {
     id: 'furn_berrypatch_rug', name: 'Berrypatch Rug', price: 300, buy: 1200, tags: ['sweet', 'cute'],
-    desc: 'A rug patterned with plump berries. Feels sweet underfoot.',
+    desc: 'A rug covered in plump berries. It feels sweet under your feet.',
     furn: { w: 3, d: 2, model: 'rug', color: 0xffc2d1, color2: 0xb8e0a8, outdoor: false, rug: true, decor: 2 },
   },
   {
     id: 'furn_pebble_owl_statue', name: 'Pebble Owl Statue', price: 650, buy: 2600, tags: ['cute', 'nature'],
-    desc: 'A round stone owl who keeps a watchful eye on the garden.',
+    desc: 'A round stone owl. It watches over the garden.',
     furn: { w: 1, d: 1, model: 'statue', color: 0xd6d2e0, color2: 0xffe27a, outdoor: true, decor: 5, layer: 'small' },
   },
 
   // ---- Event trophies (prizes only) ----
   {
     id: 'furn_trophy_gold', name: 'Golden Glimmer Cup', price: 2000, buy: 0, tags: ['shiny', 'sporty'],
-    desc: 'First prize! It shines almost as brightly as your grin.',
+    desc: 'First prize! It shines almost as bright as your smile.',
     furn: { w: 1, d: 1, model: 'trophy', color: 0xffd970, color2: 0xfff6c9, outdoor: false, decor: 3, layer: 'small' },
   },
   {
     id: 'furn_trophy_silver', name: 'Silver Ripple Cup', price: 1000, buy: 0, tags: ['shiny', 'sporty'],
-    desc: 'A gleaming second-place cup. So close you could taste it.',
+    desc: 'A shiny cup for second place. You were so close!',
     furn: { w: 1, d: 1, model: 'trophy', color: 0xdfe6f0, color2: 0xffffff, outdoor: false, decor: 3, layer: 'small' },
   },
   {
     id: 'furn_trophy_bronze', name: 'Bronze Sprout Cup', price: 500, buy: 0, tags: ['shiny', 'sporty'],
-    desc: 'A warm little cup for a fine third place. Every champion starts somewhere.',
+    desc: 'A warm little cup for third place. Every winner starts somewhere!',
     furn: { w: 1, d: 1, model: 'trophy', color: 0xe8b48a, color2: 0xfff1d6, outdoor: false, decor: 2, layer: 'small' },
   },
 
   // ---- Wall decorations (hang on the back or side walls of your home) ----
   {
     id: 'furn_plank_wallshelf', name: 'Plank Wall Shelf', price: 130, buy: 0, tags: ['plain', 'nature'],
-    desc: 'A little shelf for jars, shells and keepsakes.',
+    desc: 'A little shelf for jars, shells and treasures.',
     furn: { w: 1, d: 1, model: 'wallshelf', color: 0xd9b48a, color2: 0x9fd3f0, outdoor: false, decor: 1, layer: 'wall' },
   },
   {
@@ -333,7 +333,7 @@ export const FURNITURE: FurnitureDef[] = [
   },
   {
     id: 'furn_sunny_wallclock', name: 'Sunny Wall Clock', price: 260, buy: 0, tags: ['retro', 'cute'],
-    desc: 'Tick, tock, sunshine o\'clock.',
+    desc: 'Tick, tock, sunshine o\'clock!',
     furn: { w: 1, d: 1, model: 'wallclock', color: 0xffd36b, color2: 0xfffaf0, outdoor: false, decor: 2, layer: 'wall' },
   },
   {
@@ -348,12 +348,12 @@ export const FURNITURE: FurnitureDef[] = [
   },
   {
     id: 'furn_sunset_painting', name: 'Sunset Sail Painting', price: 380, buy: 0, tags: ['artsy', 'sea'],
-    desc: 'A tiny boat sailing into an orange evening.',
+    desc: 'A tiny boat sails off at sunset. The sky is orange.',
     furn: { w: 2, d: 1, model: 'painting', color: 0xffb37a, color2: 0x6f8fc8, outdoor: false, decor: 3, layer: 'wall' },
   },
   {
     id: 'furn_meadow_painting', name: 'Meadow Nap Painting', price: 400, buy: 1600, tags: ['artsy', 'nature'],
-    desc: 'Green hills, one cloud, and nowhere to be.',
+    desc: 'Green hills and one cloud. A great place for a nap!',
     furn: { w: 2, d: 1, model: 'painting', color: 0x9fd18a, color2: 0xbfe6f2, outdoor: false, decor: 3, layer: 'wall' },
   },
   {
@@ -368,7 +368,7 @@ export const FURNITURE: FurnitureDef[] = [
   },
   {
     id: 'furn_berry_wreath', name: 'Berry Wreath', price: 200, buy: 800, tags: ['sweet', 'cute'],
-    desc: 'Plump red berries on a ring of greens.',
+    desc: 'Plump red berries on a ring of leaves.',
     furn: { w: 1, d: 1, model: 'wreath', color: 0x6aa851, color2: 0xe0475b, outdoor: false, decor: 1, layer: 'wall' },
   },
   {
@@ -378,19 +378,19 @@ export const FURNITURE: FurnitureDef[] = [
   },
   {
     id: 'furn_cuckoo_clock', name: 'Chirpy Cuckoo Clock', price: 420, buy: 1680, tags: ['retro', 'nature'],
-    desc: 'A wooden clock with a little bird that pops out to say hi.',
+    desc: 'A wooden clock. A little bird pops out to say hi!',
     furn: { w: 1, d: 1, model: 'wallclock', color: 0x9b6a4a, color2: 0xf3dcb5, outdoor: false, decor: 2, layer: 'wall' },
   },
 
   // ---- Long-term rewards ----
   {
     id: 'furn_glow_banner', name: 'Glow Banner', price: 1000, buy: 0, tags: ['shiny', 'fancy'],
-    desc: 'Earned by keeping the island at five lanterns for two whole weeks.',
+    desc: 'Keep the island at five lanterns for two weeks to earn it.',
     furn: { w: 1, d: 1, model: 'flag', color: 0xffd27a, color2: 0x7cc7c2, outdoor: true, decor: 6 },
   },
   {
     id: 'furn_golden_lantern_statue', name: 'Golden Lantern Statue', price: 5000, buy: 0, tags: ['fancy', 'shiny'],
-    desc: 'A gift from Professor Vesper for completing the whole museum.',
+    desc: 'A gift from Professor Vesper. You filled the whole museum!',
     furn: { w: 1, d: 1, model: 'statue', color: 0xffd36b, color2: 0xfff1a8, outdoor: true, decor: 8 },
   },
   {
@@ -444,7 +444,7 @@ export const FURNITURE: FurnitureDef[] = [
   },
   {
     id: 'furn_maple_rug', name: 'Maple Leaf Rug', price: 380, buy: 0, tags: ['cozy', 'nature'],
-    desc: 'A crunchy-looking rug the colors of autumn.',
+    desc: 'A rug in red and gold, like autumn leaves.',
     furn: { w: 2, d: 2, model: 'rug', color: 0xe8875a, color2: 0xf5c45e, outdoor: false, decor: 2, rug: true },
   },
   {
@@ -454,7 +454,7 @@ export const FURNITURE: FurnitureDef[] = [
   },
   {
     id: 'furn_snow_globe', name: 'Snow Globe', price: 410, buy: 0, tags: ['shiny', 'cute'],
-    desc: 'Shake it and a tiny island gets a tiny snowstorm.',
+    desc: 'Shake it to make it snow on a tiny island!',
     furn: { w: 1, d: 1, model: 'globe', color: 0xe0f0ff, color2: 0x9fc8f0, outdoor: false, decor: 2, layer: 'small' },
   },
   {

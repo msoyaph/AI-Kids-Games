@@ -124,7 +124,12 @@ export class QuestTracker {
     if (key !== this.key) {
       this.key = key;
       clear(this.el);
-      this.el.append(h('div', { class: 'tr-title' }, m.title));
+      const say = h('button', { class: 'tr-say', 'aria-label': 'Read the mission', title: 'Read the mission' }, '🔊');
+      say.addEventListener('click', () => {
+        const todo = m.objectives.filter((_, i) => objectiveLive(g, m, i) && !objectiveValue(g, m, i).done).map((o) => o.label);
+        app.speech.speak(`${m.title}. ${todo.join('. ')}.`, 1, true);
+      });
+      this.el.append(h('div', { class: 'tr-title' }, m.title, say));
       m.objectives.forEach((o, i) => {
         const v = objs[i]!;
         if (!objectiveLive(g, m, i) && !v.done) return;

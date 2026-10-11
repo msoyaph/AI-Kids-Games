@@ -272,6 +272,8 @@ export interface GameState {
   season: SeasonState;
   /** clothes in the closet, what you're wearing, saved outfits */
   wardrobe: WardrobeState;
+  /** a recipe pinned to the HUD (its materials show live counts) */
+  trackedRecipe?: string;
 }
 
 export interface SeasonState {

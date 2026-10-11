@@ -208,3 +208,19 @@ export function money(g: Game, dGlints: number, dLumens = 0, reason = 'other'): 
 export function stat(g: Game, key: string, inc = 1): void {
   g.state.stats[key] = (g.state.stats[key] ?? 0) + inc;
 }
+
+const SORT_ORDER = ['tool', 'material', 'fruit', 'flower', 'seed', 'sapling', 'fish', 'bug', 'fossilUnknown', 'fossil', 'shell', 'furniture', 'wallpaper', 'flooring', 'clothing', 'recipe', 'misc', 'key'];
+
+/** Tidy the pockets: by kind, then name (empty slots go last). The equipped tool stays equipped. */
+export function sortPockets(g: Game): void {
+  const p = g.state.player;
+  const equipped = p.equipped >= 0 ? p.inv[p.equipped] : null;
+  const rank = (id: string) => {
+    const k = SORT_ORDER.indexOf(item(id).cat);
+    return k < 0 ? SORT_ORDER.length : k;
+  };
+  const filled = p.inv.filter((s): s is InvSlot => !!s).sort((a, b) => rank(a.id) - rank(b.id) || item(a.id).name.localeCompare(item(b.id).name));
+  p.inv = [...filled, ...Array.from({ length: p.invSize - filled.length }, () => null)];
+  p.equipped = equipped ? p.inv.indexOf(equipped) : -1;
+  g.emit('inventoryChanged', {});
+}

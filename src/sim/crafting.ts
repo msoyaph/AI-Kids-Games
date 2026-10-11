@@ -47,3 +47,20 @@ export function craft(g: Game, recipeId: string): boolean {
   g.emit('sfx', { name: 'craft' });
   return true;
 }
+
+/** How many times you could craft this right now (ingredients only). */
+export function maxCraftable(g: Game, r: RecipeDef): number {
+  let n = 99;
+  for (const ing of r.ingredients) n = Math.min(n, Math.floor(countItem(g, ing.id) / ing.qty));
+  return Math.max(0, n);
+}
+
+/** Craft up to `times` in a row; returns how many were made. */
+export function craftMany(g: Game, recipeId: string, times: number): number {
+  let made = 0;
+  for (let k = 0; k < times; k++) {
+    if (!craft(g, recipeId)) break;
+    made++;
+  }
+  return made;
+}

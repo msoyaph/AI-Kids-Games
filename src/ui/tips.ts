@@ -62,6 +62,7 @@ export class TipManager {
     this.el.innerHTML = '';
     this.el.append(h('div', { class: 'tip-title' }, `Tip · ${tip.title}`), h('div', null, tip.text));
     this.el.style.display = '';
+    this.app.speech.speak(`${tip.title}. ${tip.text}`);
     this.shownT = 9;
   }
 }

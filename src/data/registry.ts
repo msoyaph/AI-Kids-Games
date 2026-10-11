@@ -75,7 +75,7 @@ for (const s of SURFACES)
     cat: s.kind,
     price: s.price,
     stack: 1,
-    desc: s.kind === 'wallpaper' ? 'Wallpaper for your home.' : 'Flooring for your home.',
+    desc: s.kind === 'wallpaper' ? 'Paper for the walls of your home.' : 'A new floor for your home.',
     icon: { s: s.kind === 'wallpaper' ? 'wall' : 'floor', c: s.c, c2: s.c2 },
     surface: { c: s.c, c2: s.c2, pattern: s.pattern },
     tags: ['cozy'],

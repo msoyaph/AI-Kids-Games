@@ -91,7 +91,7 @@ export function structureResolver(g: Game, ctx: InteractCtx): Interaction | null
     case 'lighthouse':
       return { label: 'Inspect the lighthouse', priority: 85, run: () => inspectLighthouse(g) };
     case 'plazaLantern':
-      return { label: 'Admire the Great Lantern', priority: 60, run: () => g.ui.say('', [g.state.flags.lighthouseLit ? '[happy]The Great Lantern glows warmly. Its light reaches all the way to the lighthouse.' : '[neutral]The Great Lantern of the plaza. It has not been lit in years.']) };
+      return { label: 'Look at the Great Lantern', priority: 60, run: () => g.ui.say('', [g.state.flags.lighthouseLit ? '[happy]The Great Lantern glows. Its light shines all the way to the lighthouse.' : '[neutral]This is the Great Lantern. Nobody has lit it in years.']) };
     case 'noticeBoard':
       return { label: 'Read the notice board', priority: 85, run: () => g.ui.open('board') };
     case 'construction':
@@ -109,7 +109,7 @@ function tryEnter(g: Game, kind: RoomKind): void {
 
 export function inspectLighthouse(g: Game): void {
   if (g.state.flags.lighthouseLit) {
-    g.ui.say('', ['[happy]The Driftlight lighthouse sweeps its warm beam across the sea. Every lantern finds its way home.']);
+    g.ui.say('', ['[happy]The lighthouse shines its warm light over the sea. Now every boat can find its way home.']);
     return;
   }
   const first = !g.state.flags.lighthouseSeen;
@@ -118,9 +118,9 @@ export function inspectLighthouse(g: Game): void {
     g.state.flags.lensGiven = 1;
     give(g, 'lens', 1, 'lighthouse');
     g.ui.say('', [
-      '[neutral]The old lighthouse creaks in the wind. Its great lamp is dark and dusty.',
-      '[surprised]Wedged in the lamp frame is a heavy, cloudy lens. You carefully pry it loose.',
-      '[neutral]Got the Old Lighthouse Lens! Pemberly will want to hear about this.',
+      '[neutral]The old lighthouse creaks in the wind. Its big lamp is dark and dusty.',
+      '[surprised]A big, cloudy lens is stuck in the lamp. You pull it out with care.',
+      '[neutral]You got the Old Lighthouse Lens! Go and tell Pemberly.',
     ]);
-  } else g.ui.say('', ['[neutral]The lamp room is empty, waiting for its lens and a reason to shine.']);
+  } else g.ui.say('', ['[neutral]The lamp room is empty. It is waiting for its lens.']);
 }

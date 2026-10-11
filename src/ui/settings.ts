@@ -40,6 +40,13 @@ export function settingsBody(app: App, body: HTMLElement): void {
     slider('Effects', () => s.sfx, (v) => (s.sfx = v)),
     h('h3', null, 'Text'),
     choice('Text speed', [['slow', 'Slow'], ['normal', 'Normal'], ['fast', 'Fast'], ['instant', 'Instant']], () => s.textSpeed, (v) => (s.textSpeed = v)),
+    choice('Text size', [['1', 'Normal'], ['1.25', 'Big'], ['1.5', 'Bigger']], () => String(s.textSize || 1) as '1' | '1.25' | '1.5', (v) => (s.textSize = Number(v))),
+    app.speech.available
+      ? choice('Read aloud', [['on', 'On'], ['off', 'Off']], () => (s.readAloud ? 'on' : 'off'), (v) => {
+          s.readAloud = v === 'on';
+          if (s.readAloud) app.speech.speak('Hello! I will read the words for you.', 1, true);
+        })
+      : h('div', { class: 'opt-row' }, h('label', null, 'Read aloud'), h('span', { class: 'muted tiny' }, 'Not available on this device.')),
     h('h3', null, 'Camera'),
     slider('Zoom', () => s.camera.zoom, (v) => (s.camera.zoom = v), 0.7, 1.4, 0.05),
     slider('Tilt', () => s.camera.tilt, (v) => (s.camera.tilt = v), 28, 64, 1),

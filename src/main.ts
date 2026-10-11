@@ -19,8 +19,8 @@ app.onNewGame = (g) => {
   questRT(g).inbox.unshift({
     speaker: '',
     lines: [
-      '[neutral]After many quiet days at sea, your little boat bumps against a weathered dock.',
-      '[happy]Driftlight Isle! Somewhere past the plaza, a lantern is glowing in the window of Lantern Hall.',
+      '[neutral]Your little boat sails for many days. At last, it bumps into an old dock.',
+      '[happy]This is Driftlight Isle! Past the plaza, a lantern glows in the window of Lantern Hall.',
     ],
   });
 };
@@ -29,12 +29,12 @@ app.onNewGame = (g) => {
 
 // Notice board: tomorrow's weather, today's hot item, contests and a rotating tip.
 const BOARD_TIPS = [
-  'Rocks give stone, clay, iron — and sometimes Glow Pebbles, especially at night.',
-  'Trees share up to 3 pieces of timber each day. Spread the chopping around!',
-  'Message bottles wash up on the beach every day. Each one holds a recipe.',
-  'Watered flowers next to the same kind can sprout brand-new colors overnight.',
-  'Fish shadows come in sizes 1 to 6. The biggest ones put up a fight.',
-  'Villagers love gifts that match their taste. Check the Neighbors app on your Glowpad.',
+  'Hit rocks to get stone, clay and iron. At night you may find Glow Pebbles too!',
+  'Each tree gives 3 pieces of timber a day. Chop lots of different trees!',
+  'A bottle washes up on the beach every day. Each one has a recipe inside.',
+  'Water two flowers of the same kind side by side. A new color may grow!',
+  'Fish shadows come in sizes 1 to 6. Big fish pull hard!',
+  'Neighbors love gifts they like. Look in the Neighbors app on your Glowpad.',
 ];
 app.boardHooks.push(() => {
   const g = app.game!;

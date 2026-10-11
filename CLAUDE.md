@@ -198,6 +198,21 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
     housing function; `stairsDown`/`stairsUp` fixtures and `changeFloor` (keeps the way outside). Location 'basement'.
   - Glowpad Calendar app; notice board lists festivals, contest days, Wanda, birthdays and meteor nights.
 
+- Phase 7 done: young players.
+  - Read-aloud: `src/ui/speech.ts` `ReadAloud` (guarded `speechSynthesis`, injectable for tests; silent no-op when
+    unsupported). Dialogue lines/prompts are read in the speaker's voice pitch (`DialogueBox` `speak` callback),
+    tips too; 🔊 buttons replay a dialogue line or read the tracked mission. Settings → Read aloud (shows "Not
+    available on this device" when missing).
+  - Reading level: dialogue is split per personality (`src/data/dialogue/*.ts`); all player-facing data text was
+    rewritten for early readers. `src/core/readability.ts` (Flesch–Kincaid, names count as easy words) +
+    `npx tsx scripts/readability.ts [group]` report; tests/readability.test.ts: every line ≤ grade 6, each group
+    ≤ 3.5 average, dialogue keeps tags + allowed tokens (`{place}` already says "somewhere …").
+  - Bigger text: Settings → Text size (Normal / Big / Bigger) sets CSS `--ts` used by dialogue, toasts, tracker,
+    tips, cards and panels.
+  - QoL: craft ×1 / ×5 / All (`craftMany`, `maxCraftable`), sell a whole stack or just one (tap again), "Tidy up"
+    pockets (`sortPockets`, keeps the equipped tool), 📌 Track a recipe (`state.trackedRecipe`, HUD
+    `RecipeTracker` under the mission tracker with live counts).
+
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
 (202 unit tests incl. full new-game → festival playthroughs, one per season; 2 e2e tests.)

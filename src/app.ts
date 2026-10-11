@@ -21,6 +21,8 @@ import { registerPanels } from './ui/register';
 import { sharedUniforms } from './render/curve';
 import { installStory, pumpInbox, QuestTracker } from './ui/story';
 import { installEventsUI } from './ui/events';
+import { ReadAloud } from './ui/speech';
+import { RecipeTracker } from './ui/recipeTrack';
 import { questRT } from './sim/quests';
 import { Phone } from './ui/phone';
 import { settingsBody, settingsPanel } from './ui/settings';
@@ -52,6 +54,7 @@ export class App {
   readonly hud: Hud;
   private reel: ReelBar;
   private tracker: QuestTracker;
+  private recipeTrack: RecipeTracker;
   private contestHud: ContestHud;
   private tips: TipManager;
   private touch: TouchControls;
@@ -66,6 +69,8 @@ export class App {
   private fadeEl = h('div', { class: 'fade' });
   private last = performance.now();
   readonly audio = new AudioEngine();
+  /** read-aloud (browser speech; silently unavailable where unsupported) */
+  readonly speech = new ReadAloud();
   private stepOdo = 0;
   /** story layer hooks into conversations */
   talkHooks: TalkHooks = { intro: async () => false, options: () => [] };
@@ -104,6 +109,7 @@ export class App {
     this.hud = new Hud(root);
     this.reel = new ReelBar(root);
     this.tracker = new QuestTracker(root);
+    this.recipeTrack = new RecipeTracker(root);
     this.contestHud = new ContestHud(root);
     this.tips = new TipManager(this, root);
     this.touch = new TouchControls(this, root);
@@ -168,6 +174,9 @@ export class App {
 
   applySettings(): void {
     this.audio.setVolumes(this.settings.master, this.settings.music, this.settings.sfx);
+    this.speech.enabled = this.settings.readAloud;
+    if (!this.settings.readAloud) this.speech.stop();
+    document.documentElement.style.setProperty('--ts', String(this.settings.textSize || 1));
     this.view.rig.settings = { ...this.settings.camera };
     sharedUniforms.uCurveK.value = 0.0068 * this.settings.curve;
     this.view.sky.setShadows(this.settings.shadows);
@@ -526,6 +535,7 @@ export class App {
       this.hud.update(g);
       this.reel.update(g);
       this.tracker.update(this);
+      this.recipeTrack.update(this);
       this.contestHud.update(g);
       this.tips.update(dt, g);
       pumpInbox(this);

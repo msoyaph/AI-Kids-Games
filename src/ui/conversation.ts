@@ -34,7 +34,7 @@ export function speakerFor(id: string, playerName = ''): Speaker {
 }
 
 export function makeBox(app: App, id: string): DialogueBox {
-  return new DialogueBox(app.ui, speakerFor(id, app.game?.state.player.name), () => TEXT_CPS[app.settings.textSpeed], (v) => app.audio.blip(v));
+  return new DialogueBox(app.ui, speakerFor(id, app.game?.state.player.name), () => TEXT_CPS[app.settings.textSpeed], (v) => app.audio.blip(v), (t, v, force) => app.speech.speak(t, v, force));
 }
 
 function pickItem(app: App, g: Game, title: string, filter: (id: string) => boolean): Promise<number | null> {
@@ -188,9 +188,9 @@ export async function talkToNpc(app: App, g: Game, id: string): Promise<void> {
   try {
     if (await app.talkHooks.intro(id, box)) return;
     const greet: Record<string, string> = {
-      pemberly: "[happy]Oh, hello {player}! Lovely day for a wander, isn't it?",
-      fennimore: '[happy]Customer! My favorite kind of visitor. What can I do for you?',
-      vesper: '[surprised]Ah! A fellow enthusiast of the old and the wiggly!',
+      pemberly: '[happy]Oh, hello {player}! It is a lovely day for a walk.',
+      fennimore: '[happy]A customer! My favorite kind of visitor. What can I do for you?',
+      vesper: '[surprised]Ah, hello! Do you love old bones and wiggly bugs too?',
       wanda: "[happy]Hello, hello! I'm Wanda. I fly from island to island with treasures!",
     };
     let prompt = P(greet[id] ?? '[neutral]Hello!');

@@ -14,6 +14,10 @@ export interface Settings {
   reduceMotion: boolean;
   /** playtest recording (hidden toggle; also ?playtest=1) */
   playtest: boolean;
+  /** read dialogue, tips and missions out loud (browser speech) */
+  readAloud: boolean;
+  /** text size multiplier for reading surfaces */
+  textSize: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -28,6 +32,8 @@ export const DEFAULT_SETTINGS: Settings = {
   tips: true,
   reduceMotion: false,
   playtest: false,
+  readAloud: false,
+  textSize: 1,
 };
 
 export const TEXT_CPS: Record<Settings['textSpeed'], number> = { slow: 28, normal: 55, fast: 110, instant: 100000 };

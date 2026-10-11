@@ -325,3 +325,29 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6
 .cal-day { border: 2px solid var(--line); border-radius: 14px; background: #fff; padding: 6px 8px; min-height: 64px; display: flex; flex-direction: column; gap: 2px; }
 .cal-day.today { border-color: var(--teal); background: #eafaf6; }
 .cal-day.past { opacity: 0.55; }
+
+/* ---- read-aloud + bigger text (--ts = 1 / 1.25 / 1.5) ---- */
+:root { --ts: 1; }
+.dlg-say { position: absolute; right: 22px; top: -20px; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--line); background: #fff; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; pointer-events: auto; }
+.dlg-say:hover { box-shadow: 0 0 0 3px var(--gold); }
+.tr-title { display: flex; align-items: center; gap: 6px; }
+.tr-say { pointer-events: auto; border: none; background: transparent; cursor: pointer; font-size: calc(14px * var(--ts)); padding: 0 2px; }
+.dlg-text { font-size: calc(19px * var(--ts)); }
+.dlg-name { font-size: calc(17px * var(--ts)); }
+.dlg-choice { font-size: calc(16px * var(--ts)); }
+.toast { font-size: calc(15px * var(--ts)); }
+.tracker { font-size: calc(13px * var(--ts)); max-width: min(calc(300px * var(--ts)), 56vw); }
+.tr-title { font-size: calc(14px * var(--ts)); }
+.tip { font-size: calc(15px * var(--ts)); }
+.speech, .cat-detail, .quest-card, .craft-row, .editor-say { font-size: calc(15px * var(--ts)); }
+.panel .tiny { font-size: calc(12px * var(--ts)); }
+.sell-amt { position: absolute; left: 2px; right: 2px; bottom: 2px; font-size: 10px; font-weight: 900; background: var(--teal); color: #fff; border-radius: 8px; text-align: center; pointer-events: none; }
+.rtrack { position: absolute; left: 12px; top: calc(74px + 120px * var(--ts)); max-width: min(calc(260px * var(--ts)), 50vw); padding: 8px 12px; border-radius: 16px; background: rgba(255, 250, 240, 0.92); box-shadow: var(--shadow); font-size: calc(13px * var(--ts)); z-index: 3; display: flex; flex-direction: column; gap: 3px; }
+.rtrack-head { display: flex; align-items: center; gap: 6px; }
+.rtrack-head b { flex: 1; }
+.rtrack-x { border: none; background: transparent; cursor: pointer; font-size: 14px; color: var(--ink2); }
+.rtrack-ing { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.rtrack-ing span { flex: 1; }
+.rtrack-ing.ok { color: #3f9a6a; }
+.rtrack-ready { color: #3f9a6a; font-weight: 900; }
+.icon.xs { width: 20px; height: 20px; }
