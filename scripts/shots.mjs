@@ -64,6 +64,8 @@ async function skip(page) {
 const stats = (page) =>
   page.evaluate(() => {
     const S = window.__spacesky;
+    // The 2D build (main) has no 3D renderer stats.
+    if (!S.game.r3) return '2D build';
     const st = S.game.r3.stats();
     const mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : 0;
     return `${st.calls} calls · ${Math.round(st.triangles / 1000)}k tris · ${st.geometries} geo · ${st.textures} tex · ${mem} MB heap`;

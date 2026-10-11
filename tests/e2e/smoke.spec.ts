@@ -51,8 +51,11 @@ test('graphics quality can be switched in settings', async ({ page }) => {
   await boot(page);
   const tier = () => page.evaluate(() => (window as unknown as { __spacesky: { game: { r3: { tier: string } } } }).__spacesky.game.r3.tier);
   for (const q of ['low', 'medium', 'high']) {
-    await page.getByTestId('btn-settings').click({ force: true });
-    await expect(page.getByTestId('settings')).toBeVisible();
+    // The previous panel may still be fading out over the button: retry until the panel opens.
+    await expect(async () => {
+      if (!(await page.getByTestId('settings').isVisible())) await page.getByTestId('btn-settings').click({ force: true });
+      await expect(page.getByTestId('settings')).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
     await page.getByTestId(`set-quality-${q}`).click();
     await expect.poll(tier).toBe(q);
     await page.getByTestId('btn-settings-done').click();

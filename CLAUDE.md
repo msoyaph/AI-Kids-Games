@@ -175,7 +175,9 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 - [x] 3D Phase 9: perf harness (`npm run perf`), Low-tier coarse character merge + rocket part merge (Low hub
   95→63 calls, levels ~66), skeleton/bone-texture leak fixed (memory flat over two 11-scene laps), `?stress`,
   3 MB size guard, readable empty save slots.
-- [ ] 10 tests/review/handoff
+- [x] 3D Phase 10: 2D-save continuation e2e (`tests/fixtures/save-2d-chapter3.json`, made by the main build with
+  `scripts/make-2d-save.mjs`), flake-proofed flight/settings e2e (42 e2e pass), before/after screenshots, pacing
+  re-run (Easy 6.7 h, Normal 5.7 h), README for 3D (size, controls, settings, site art recapture).
 
 ## Current numbers
 - Pacing model: Easy ≈ 6.7 h with all side missions (≈ 5.5 h story + free play); Normal ≈ 5.7 h.
@@ -194,6 +196,11 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 ## Gotchas
 - Headless Chromium renders WebGL in software (~10 fps) unless launched with `--use-angle=metal --enable-gpu` (set in playwright.config.ts).
 - Bobbing/animated buttons never count as "stable" for Playwright: tests use `click({ force: true })` or `navTo()` in tests/e2e/helpers.ts.
+  A forced click still hits whatever is on top at that spot (a fading panel, a dialogue): poll for the result
+  (`expect.poll` / `toPass`) or call `el.click()` via `evaluate`. Never assume N seconds of input = N seconds of
+  game time; under parallel e2e load the frame rate drops.
+- The 2D-save fixture must come from the `main` build: `git worktree add <dir> main`, `npm ci --prefer-offline`,
+  `npx vite build && npx vite preview --port 4394`, then `node scripts/make-2d-save.mjs`.
 - Dialogue freezes gameplay; anything that can happen mid-flight/explore should use `radio` (non-blocking) or toasts, not `dialogue`.
 - `npm audit` flags `braces` via `vite-plugin-singlefile → micromatch` — build-time only, not shipped.
 - Port 5173 is used by another project on this machine; use 5391/4391/4392.

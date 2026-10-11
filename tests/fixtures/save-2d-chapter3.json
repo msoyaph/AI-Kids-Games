@@ -1,0 +1,31 @@
+{
+  "summary": {
+    "name": "Kai",
+    "chapter": 3,
+    "coins": 915,
+    "activeMission": "c3_signal",
+    "objective": "Find 3 signal chips",
+    "owned": 13,
+    "loadout": {
+      "nose": "nose_needle",
+      "body": "body_classic",
+      "engine": "eng_single",
+      "fins": "fins_basic",
+      "tank": "tank_mini",
+      "cargo": "cargo_hatch",
+      "lights": "lights_none",
+      "paint": "paint_classic",
+      "stickers": []
+    },
+    "codex": 15,
+    "badges": 6,
+    "stickers": 2,
+    "zibboJoined": false,
+    "bought": "nose_needle"
+  },
+  "storage": {
+    "spacesky.slot.0": "{\"version\":3,\"slot\":0,\"createdAt\":1791750173860,\"updatedAt\":1791750180662,\"playTime\":6.466666666666649,\"profile\":{\"name\":\"Kai\",\"suit\":\"#4a4e6e\",\"accent\":\"#4c7dff\",\"helmet\":\"round\",\"skin\":\"#c68a5e\",\"hair\":\"#2b1a12\",\"hairStyle\":\"short\",\"face\":\"smile\",\"outfit\":\"none\"},\"difficulty\":\"easy\",\"coins\":915,\"coinsEarned\":835,\"loadout\":{\"nose\":\"nose_needle\",\"body\":\"body_classic\",\"engine\":\"eng_single\",\"fins\":\"fins_basic\",\"tank\":\"tank_mini\",\"cargo\":\"cargo_hatch\",\"lights\":\"lights_none\",\"paint\":\"paint_classic\",\"stickers\":[]},\"owned\":[\"nose_cone\",\"body_classic\",\"eng_single\",\"fins_basic\",\"tank_mini\",\"cargo_hatch\",\"lights_none\",\"paint_classic\",\"nose_bubble\",\"eng_twin\",\"tank_belly\",\"cargo_magnet\",\"nose_needle\"],\"decorPlaced\":[],\"location\":\"earth\",\"missions\":{\"c1_welcome\":{\"status\":\"done\",\"step\":3,\"count\":0,\"seen\":[]},\"c1_first_flight\":{\"status\":\"done\",\"step\":3,\"count\":0,\"seen\":[]},\"c1_fuel\":{\"status\":\"done\",\"step\":3,\"count\":0,\"seen\":[]},\"c1_moon\":{\"status\":\"done\",\"step\":3,\"count\":0,\"seen\":[]},\"c1_moon_rocks\":{\"status\":\"done\",\"step\":3,\"count\":0,\"seen\":[]},\"c2_mercury\":{\"status\":\"done\",\"step\":3,\"count\":0,\"seen\":[]},\"c2_venus\":{\"status\":\"done\",\"step\":4,\"count\":0,\"seen\":[]},\"c2_rover\":{\"status\":\"done\",\"step\":5,\"count\":0,\"seen\":[]},\"c2_canyon\":{\"status\":\"done\",\"step\":2,\"count\":0,\"seen\":[]},\"c2_ice\":{\"status\":\"done\",\"step\":3,\"count\":0,\"seen\":[]},\"c2_report\":{\"status\":\"done\",\"step\":2,\"count\":0,\"seen\":[]},\"c3_belt\":{\"status\":\"done\",\"step\":4,\"count\":0,\"seen\":[]},\"c3_signal\":{\"status\":\"active\",\"step\":0,\"count\":0,\"seen\":[]}},\"activeMission\":\"c3_signal\",\"chapter\":3,\"flags\":{\"introSeen\":true,\"trigger:mars_land\":true,\"canyonOpen\":true,\"olympusOpen\":true,\"iceOpen\":true,\"trigger:belt_arrive\":true,\"hangarHello\":true},\"codex\":[\"c_boltzy\",\"c_pip\",\"c_rio\",\"earth\",\"moon\",\"gravity\",\"mercury\",\"sun\",\"venus\",\"mars\",\"valles\",\"c_stella\",\"belt\",\"ceres\",\"asteroid\"],\"badges\":[\"cadet_graduate\",\"planet_hopper\",\"codex_starter\",\"coin_collector\",\"inner_explorer\",\"moonwalker\"],\"stickers\":[\"st_rocket\",\"st_star\"],\"collected\":[],\"cargo\":{},\"visitedBodies\":[\"earth\",\"moon\"],\"visitedSystems\":[\"earth\"],\"stats\":{\"flights\":0,\"landings\":0,\"perfectLandings\":0,\"coinsCollected\":0,\"fuelCells\":0,\"bumps\":0,\"tows\":0,\"slingshots\":0,\"cometRides\":0,\"boosts\":0,\"samples\":0,\"puzzles\":0,\"scans\":0,\"races\":0,\"sideDone\":0,\"partsEquipped\":[\"nose_needle\"],\"talkedTo\":[],\"dailiesDone\":1,\"jumps\":0},\"daily\":{\"day\":\"2026-10-11\",\"list\":[{\"id\":\"boosts\",\"progress\":3,\"done\":false},{\"id\":\"coins_earth\",\"progress\":10,\"done\":false},{\"id\":\"talks\",\"progress\":2,\"done\":true}]},\"races\":{},\"tipsSeen\":[],\"creditsSeen\":false}",
+    "spacesky.settings": "{\"music\":0.6,\"sfx\":0.8,\"readAloud\":false,\"tips\":true,\"lastSlot\":0}"
+  },
+  "madeWith": "main (2D PixiJS) build via scripts/make-2d-save.mjs"
+}

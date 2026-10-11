@@ -112,7 +112,8 @@ test('3D flight: steering, boost, pause, and landing on the Moon', async ({ page
     await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.5);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width * 0.3 + 80, box.y + box.height * 0.5, { steps: 5 });
-    await page.waitForTimeout(1200);
+    // Hold the stick until the rocket has turned (machines under load run fewer frames per second).
+    await expect.poll(async () => (await ship()).yaw - s0.yaw, { timeout: 10_000 }).toBeGreaterThan(0.12);
     await expect(page.getByTestId('btn-boost')).toBeVisible();
     await page.getByTestId('btn-boost').dispatchEvent('pointerdown', { pointerId: 9 });
     await page.waitForTimeout(200);
@@ -120,14 +121,15 @@ test('3D flight: steering, boost, pause, and landing on the Moon', async ({ page
     await page.mouse.up();
   } else {
     await page.keyboard.down('ArrowRight');
-    await page.waitForTimeout(1200);
+    await expect.poll(async () => (await ship()).yaw - s0.yaw, { timeout: 10_000 }).toBeGreaterThan(0.12);
     await page.keyboard.press('Space');
     await page.keyboard.up('ArrowRight');
   }
   // The rocket flies forward by itself and the stick turned it right.
-  const s1 = await ship();
-  expect(Math.hypot(s1.x - s0.x, s1.y - s0.y)).toBeGreaterThan(150);
-  expect(s1.yaw).toBeGreaterThan(s0.yaw + 0.12);
+  await expect.poll(async () => {
+    const s1 = await ship();
+    return Math.hypot(s1.x - s0.x, s1.y - s0.y);
+  }, { timeout: 10_000 }).toBeGreaterThan(150);
   // Pause menu.
   await page.getByTestId('btn-pause').click();
   await expect(page.getByTestId('pause-menu')).toBeVisible();
