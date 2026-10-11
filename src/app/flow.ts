@@ -9,6 +9,8 @@ import { dailyFor, dailyScore, dateKey, MODIFIER_IDS, type ModifierId, type Muta
 import { TUNING } from '../data/tuning';
 import { buildWaves, type WaveDef } from '../data/waves';
 import { ResearchScreen } from './screens/ResearchScreen';
+import { WorkshopScreen } from './screens/WorkshopScreen';
+import { WorkshopEditor } from './screens/WorkshopEditor';
 import { DailyScreen } from './screens/DailyScreen';
 import type { RunResult } from './GameScreen';
 import { HERO_IDS, HEROES } from '../data/heroes';
@@ -34,6 +36,9 @@ export interface Nav {
   settings(): void;
   research(): void;
   daily(): void;
+  workshop(): void;
+  workshopEdit(slot: number): void;
+  playWorkshop(map: MapDef): void;
   playDaily(): void;
   dailyUnlocked(): boolean;
   briefing(map: MapDef, mode: GameMode): void;
@@ -78,7 +83,8 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
       app,
       { map, difficulty: diff, mode, seed, ...extra },
       {
-        quit: () => (mode === 'endless' ? nav.endless() : mode === 'tutorial' ? nav.title() : mode === 'daily' ? nav.daily() : nav.worlds()),
+        quit: () =>
+          mode === 'endless' ? nav.endless() : mode === 'tutorial' ? nav.title() : mode === 'daily' ? nav.daily() : mode === 'workshop' ? nav.workshop() : nav.worlds(),
         restart: () => (mode === 'daily' ? nav.playDaily() : startRun(map, diff, mode, modifiers, mutators, fixedSeed, waves)),
         next: next ? () => (nav.mapUnlocked(next.id) && nav.worldUnlocked(next.world) ? nav.briefing(next, 'campaign') : nav.worlds()) : undefined,
         onEnd: (game, won) => recordRun(app, game, won, mode, hooks),
@@ -139,6 +145,18 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
     research: () => {
       closeModal();
       app.show(new ResearchScreen(app, nav));
+    },
+    workshop: () => {
+      closeModal();
+      app.show(new WorkshopScreen(app, nav));
+    },
+    workshopEdit: (slot) => {
+      closeModal();
+      app.show(new WorkshopEditor(app, nav, slot));
+    },
+    playWorkshop: (map) => {
+      closeModal();
+      startRun(map, save.data.lastDifficulty, 'workshop', [], [], undefined, undefined);
     },
     daily: () => {
       closeModal();

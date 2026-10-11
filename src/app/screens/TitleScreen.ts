@@ -71,8 +71,9 @@ export class TitleScreen implements Screen {
         ),
         h('button.btn', { onClick: () => nav.research() }, t('title.research')),
       ),
-      h('div.row2', null, h('button.btn', { onClick: () => nav.encyclopedia() }, t('title.codex')), h('button.btn', { onClick: () => nav.badges() }, t('title.badges'))),
-      h('div.row2', null, h('button.btn', { onClick: () => nav.settings() }, t('title.settings')), fullscreenAvailable() ? h('button.btn.ghost', { onClick: () => toggleFullscreen() }, t('title.fullscreen')) : null),
+      h('div.row2', null, h('button.btn', { onClick: () => nav.workshop() }, t('title.workshop')), h('button.btn', { onClick: () => nav.encyclopedia() }, t('title.codex'))),
+      h('div.row2', null, h('button.btn', { onClick: () => nav.badges() }, t('title.badges')), h('button.btn', { onClick: () => nav.settings() }, t('title.settings'))),
+      fullscreenAvailable() ? h('div.row2', null, h('button.btn.ghost', { onClick: () => toggleFullscreen() }, t('title.fullscreen'))) : null,
     );
     this.el = h(
       'div.screen.menu',

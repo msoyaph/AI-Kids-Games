@@ -111,6 +111,13 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   `nearestCastle`). `grid.applyTerrain()` + `Game.afterTerrainChange()`; `wouldKeepPath` checks every future
   terrain state (`futureTerrain()`). Map tests validate all states. Bot: greedy mazing (no zig-zag plan) on
   gate maps and shifting ground; sky-lane flight cells. Overlay sprites for bridges/rubble/growth/gates.
+- Phase 9 done: Map Workshop (`src/data/workshop.ts`, `src/sim/workshopCheck.ts`, `WorkshopScreen`,
+  `WorkshopEditor`). 20×12 maps, tiles `. o = # T ~ B S C P Q`, theme + construct tier (= world mechanics),
+  generated names (two 32-word lists in `en.ts`, indices only). Share codes `VX1.` + Crockford base32 of a
+  bit-packed payload + 16-bit FNV checksum; `decodeWorkshop` never throws (format/version/checksum/size/tile/
+  theme errors). `checkWorkshop` rules (castle 2×2 ≤2, spawns ≤4, gate pair, path, ≥24 build, route ≥8);
+  `WorkshopBotRun` = time-sliced good-bot run on Normal (required before sharing). ≤10 slots in
+  `save.workshop` (code + validated). Game mode `workshop` (no records).
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

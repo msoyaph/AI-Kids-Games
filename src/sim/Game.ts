@@ -40,7 +40,7 @@ import { SpatialHash } from './spatial';
 export const TICK_RATE = 30;
 export const DT = 1 / TICK_RATE;
 
-export type GameMode = 'campaign' | 'endless' | 'tutorial' | 'daily';
+export type GameMode = 'campaign' | 'endless' | 'tutorial' | 'daily' | 'workshop';
 export type GameState = 'playing' | 'won' | 'lost';
 export type BuildFail = 'terrain' | 'occupied' | 'locked' | 'coins' | 'path' | 'outside' | 'modifier';
 

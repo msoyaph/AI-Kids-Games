@@ -2394,3 +2394,224 @@ p.medal-line {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+
+/* ------------------------------------------------------------------ map workshop */
+.row.left {
+  justify-content: flex-start;
+}
+.ws-card {
+  align-items: center;
+}
+.ws-card img.thumb {
+  width: 150px;
+  aspect-ratio: 5 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  flex: 0 0 150px;
+}
+.ws-main {
+  flex: 1;
+  min-width: 0;
+}
+.ws-main .row {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.ws-main .btn {
+  min-height: 40px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+textarea.share-code {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  word-break: break-all;
+  background: rgba(5, 8, 18, 0.9);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  resize: vertical;
+}
+.import-result {
+  margin-top: 8px;
+}
+.import-result img.thumb {
+  width: min(260px, 100%);
+  border-radius: 4px;
+}
+p.bad {
+  color: var(--danger) !important;
+}
+p.good {
+  color: var(--success) !important;
+}
+.ws-layout {
+  display: grid;
+  grid-template-columns: minmax(150px, 210px) minmax(0, 1fr) minmax(170px, 240px);
+  gap: 10px;
+  align-items: start;
+}
+.ws-side {
+  padding: 10px;
+}
+.ws-side h3.section {
+  margin-top: 6px;
+}
+.ws-tools {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+.ws-tool {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+  padding: 4px 6px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(12, 18, 32, 0.9);
+  cursor: pointer;
+}
+.ws-tool.on {
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px rgba(62, 230, 255, 0.35);
+}
+.ws-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  flex: 0 0 22px;
+}
+.ws-board {
+  min-width: 0;
+}
+.ws-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  aspect-ratio: 20 / 12;
+  width: 100%;
+  gap: 1px;
+  background: #0a0f1e;
+  border: 1px solid var(--line);
+  touch-action: none;
+  user-select: none;
+}
+.ws-cell {
+  position: relative;
+}
+/* tile looks (shared by the board and the tool swatches) */
+.open {
+  background: #355f48;
+}
+.plate {
+  background: #5a7a8a;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
+}
+.road {
+  background: #3a4356;
+}
+.rock {
+  background: #4f5872;
+  clip-path: polygon(20% 15%, 80% 10%, 92% 60%, 60% 90%, 12% 75%);
+}
+.ws-cell.rock {
+  background: linear-gradient(#355f48, #355f48);
+}
+.ws-cell.rock::after,
+.ws-cell.tree::after,
+.ws-cell.bush::after {
+  content: '';
+  position: absolute;
+  inset: 12%;
+}
+.ws-cell.rock::after {
+  background: #6a7490;
+  clip-path: polygon(20% 15%, 80% 10%, 92% 60%, 60% 90%, 12% 75%);
+}
+.tree {
+  background: #1f6a48;
+  clip-path: polygon(50% 5%, 90% 85%, 10% 85%);
+}
+.ws-cell.tree {
+  background: #2a4d3a;
+  clip-path: none;
+}
+.ws-cell.tree::after {
+  background: #2f9a68;
+  clip-path: polygon(50% 5%, 90% 85%, 10% 85%);
+}
+.water {
+  background: #175f92;
+}
+.bush {
+  background: #2c8a62;
+  border-radius: 40%;
+}
+.ws-cell.bush {
+  background: #355f48;
+  border-radius: 0;
+}
+.ws-cell.bush::after {
+  background: #3fae7e;
+  border-radius: 45%;
+}
+.spawn {
+  background: #8a4dff;
+  box-shadow: inset 0 0 0 3px #d6b8ff;
+}
+.castle {
+  background: #3ee6ff;
+  box-shadow: inset 0 0 0 2px #0b1020;
+}
+.gatein {
+  background: radial-gradient(circle, #fff3b0 0 25%, #ffc845 26% 55%, #3a4356 56%);
+}
+.gateout {
+  background: radial-gradient(circle, #e8fdff 0 25%, #3ee6ff 26% 55%, #3a4356 56%);
+}
+.ws-progress {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin: 4px 0;
+}
+.ws-progress i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--cyan), #7a6bff);
+  transition: width 0.15s linear;
+}
+.ws-side .row {
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-start;
+}
+.ws-side .row .btn {
+  min-height: 40px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+.ws-side .seg .btn {
+  min-height: 36px;
+  min-width: 36px;
+  padding: 2px 8px;
+}
+@media (max-width: 900px) {
+  .ws-layout {
+    grid-template-columns: 1fr;
+  }
+  .ws-tools {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
