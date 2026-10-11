@@ -34,6 +34,9 @@ import {
   drawResist,
   drawWarnIcon,
   drawOffline,
+  drawBridge,
+  drawRubble,
+  drawGrowth,
   PROJECTILE_SIZE,
 } from './drawFx';
 import { drawTowerBase, drawTowerHead, drawTowerIcon, TOWER_BASE_SIZE, TOWER_HEAD_SIZE } from './drawTowers';
@@ -134,6 +137,9 @@ export function registerParticleSprites(b: AtlasBuilder): void {
   b.add({ name: 'barrier', w: 72, h: 72, draw: (ctx, w) => drawBarrier(ctx, w) });
   b.add({ name: 'warn', w: 26, h: 26, draw: (ctx, w) => drawWarnIcon(ctx, w) });
   b.add({ name: 'offline', w: 22, h: 22, draw: (ctx, w) => drawOffline(ctx, w) });
+  b.add({ name: 'bridge', w: 64, h: 64, draw: (ctx, w) => drawBridge(ctx, w) });
+  b.add({ name: 'rubble', w: 64, h: 64, draw: (ctx, w) => drawRubble(ctx, w) });
+  b.add({ name: 'growth', w: 64, h: 64, draw: (ctx, w) => drawGrowth(ctx, w) });
 }
 
 export async function bakeAtlas(scale: number, maxTexture: number, onProgress?: (p: number) => void): Promise<Atlas> {

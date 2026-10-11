@@ -895,6 +895,26 @@ export const en = {
   'badge.command20.desc': 'Use commander abilities 20 times in one match.',
   'badge.phases.name': 'Phase Breaker',
   'badge.phases.desc': 'Defeat a boss in its third phase.',
+  // ---- worlds 5-6
+  'world.5.name': 'Skyforge Ruins',
+  'world.5.blurb': 'An ancient foundry floating above the clouds, crossed by gates and drawbridges.',
+  'world.6.name': 'Rift Citadel',
+  'world.6.blurb': 'The fortress at the heart of the rifts. Archon Null waits at its core.',
+  'map.w5m1.name': 'Gatefall Causeway',
+  'map.w5m1.story': 'Archon Null slipped out of the Hollow Deep and up into the Skyforge, a foundry the old builders left floating in the sky. These two platforms only connect through a gate. Constructs that walk into the near gate come out by the Citadel side. Maze both halves.',
+  'map.w5m2.name': 'Drawbridge Foundry',
+  'map.w5m2.story': 'Two drawbridges cross the void here, and only one is ever down. They flip every five waves, so the route switches sides. Dax warns you: the grid will not let you block a bridge you will need later.',
+  'map.w5m3.name': 'Sky Lane',
+  'map.w5m3.story': 'Walkers take the long road, but every flyer rides the sky lane along the top edge. Line that lane with anti-air and keep the road covered too.',
+  'map.w6m1.name': 'Twin Bastions',
+  'map.w6m1.story': 'We reached the Rift Citadel. Two of our bastions hold the gate, and every construct runs for the closer one. Lose either and the Citadel loses lives. Shape the maze so they all funnel the same way.',
+  'map.w6m2.name': 'Shifting Ground',
+  'map.w6m2.story': 'The rift is unstable. At wave 20 the crystal in the middle grows shut and the rubble on both sides gives way. Build for the route you have now and the route you will get.',
+  'map.w6m3.name': 'Rift Core',
+  'map.w6m3.story': 'This is the rift core, Commander. Archon Null is real this time, not an echo. Three platforms, two gates, and at wave 25 the rift itself collapses into new ground. Everything you have learned comes down to this.',
+  'terrain.bridge': 'The drawbridges flip',
+  'terrain.shift': 'The ground shifts',
+  'terrain.sub': 'New routes are open',
 } as const;
 
 export type MessageKey = keyof typeof en;

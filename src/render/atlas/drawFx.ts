@@ -710,3 +710,68 @@ export function drawOffline(ctx: Ctx, w: number): void {
   ctx.fillStyle = css(0xffd25a);
   ctx.fill();
 }
+
+/** Drawbridge segment (64×64, spans the tile left to right). */
+export function drawBridge(ctx: Ctx, w: number): void {
+  const k = w / 64;
+  ctx.save();
+  ctx.scale(k, k);
+  // side rails
+  for (const y of [10, 50]) {
+    chamferRect(ctx, 0, y, 64, 5, 1.5);
+    ctx.fillStyle = metalGradient(ctx, 0, y, 0, y + 5, 0x8a6a3a);
+    ctx.fill();
+    strokePath(ctx, 0x070b16, 1.2);
+  }
+  // planks
+  for (let i = 0; i < 5; i++) {
+    chamferRect(ctx, 2 + i * 12.4, 14, 10.5, 36, 2);
+    ctx.fillStyle = metalGradient(ctx, 0, 14, 0, 50, i % 2 ? 0x6a5a48 : 0x7a6852);
+    ctx.fill();
+    strokePath(ctx, 0x070b16, 1.2);
+  }
+  // glowing guide strip
+  ctx.fillStyle = 'rgba(255,200,69,0.55)';
+  ctx.fillRect(0, 31, 64, 2);
+  ctx.restore();
+}
+
+/** Rubble pile blocking a lane until the terrain shift. */
+export function drawRubble(ctx: Ctx, w: number): void {
+  const k = w / 64;
+  ctx.save();
+  ctx.scale(k, k);
+  contactShadow(ctx, 34, 46, 28, 9, 0.5);
+  const rocks: [number, number, number][] = [
+    [22, 36, 14],
+    [42, 38, 12],
+    [32, 24, 13],
+    [14, 22, 8],
+    [50, 24, 9],
+  ];
+  for (const [x, y, r] of rocks) {
+    const pts: [number, number][] = [];
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + x * 0.1;
+      pts.push([x + Math.cos(a) * r * (0.8 + (i % 2) * 0.2), y + Math.sin(a) * r * 0.85]);
+    }
+    chamferPoly(ctx, x, y, 6, r, 2, x * 0.1);
+    ctx.fillStyle = metalGradient(ctx, x - r, y - r, x + r, y + r, 0x4a4058);
+    ctx.fill();
+    strokePath(ctx, 0x070b16, 1.4);
+  }
+  ctx.restore();
+}
+
+/** Crystal growth that seals unstable ground after the shift (white-ish, tinted at runtime). */
+export function drawGrowth(ctx: Ctx, w: number): void {
+  const k = w / 64;
+  ctx.save();
+  ctx.scale(k, k);
+  contactShadow(ctx, 32, 50, 24, 8, 0.45);
+  crystal(ctx, 32, 34, 36, 13, -Math.PI / 2, 0xf0d8ff, 1.6);
+  crystal(ctx, 18, 42, 24, 9, -Math.PI / 2 - 0.5, 0xd9b8ff, 1.4);
+  crystal(ctx, 46, 42, 26, 9, -Math.PI / 2 + 0.45, 0xe8c8ff, 1.4);
+  glint(ctx, 28, 18, 3, 0.9);
+  ctx.restore();
+}

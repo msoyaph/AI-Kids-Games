@@ -76,14 +76,20 @@ export class AutoPlayer {
     this.scratchDist = new Float64Array(n);
     this.scratchNext = new Int32Array(n);
     const gr = g.grid;
-    if (g.map.style === 'maze' && this.skill === 'good') this.planSerpentine();
-    // straight flight line for flyers
-    for (const s of gr.spawns) {
-      const sx = gr.cellX(s) + 0.5;
-      const sy = gr.cellY(s) + 0.5;
-      for (let t = 0; t <= 1; t += 0.05) {
-        const c = gr.cellAt(sx + (gr.castleX - sx) * t, sy + (gr.castleY - sy) * t);
-        if (c >= 0 && !this.flightCells.includes(c)) this.flightCells.push(c);
+    // split platforms (gates) and changing terrain maze better greedily than with one field-wide zig-zag
+    if (g.map.style === 'maze' && this.skill === 'good' && gr.teleports.length === 0 && !gr.dynamic.some((d) => d.kind === 'unstable')) this.planSerpentine();
+    // flyers: the sky lane when the map has one, else a straight line to the nearest castle
+    if (gr.skyPath.length) {
+      for (const c of gr.skyPath) this.flightCells.push(c);
+    } else {
+      for (const s of gr.spawns) {
+        const sx = gr.cellX(s) + 0.5;
+        const sy = gr.cellY(s) + 0.5;
+        const goal = gr.nearestCastle(sx, sy);
+        for (let t = 0; t <= 1; t += 0.05) {
+          const c = gr.cellAt(sx + (goal.x - sx) * t, sy + (goal.y - sy) * t);
+          if (c >= 0 && !this.flightCells.includes(c)) this.flightCells.push(c);
+        }
       }
     }
   }

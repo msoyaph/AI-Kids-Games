@@ -123,6 +123,32 @@ export class WorldView {
   private terrainTex: Texture | null = null;
   private castle: Sprite;
   private castleGlow: Sprite;
+  private dynamicViews: { sprite: Sprite; kind: string }[] = [];
+  private gateViews: Sprite[] = [];
+  private terrainSeen = -1;
+
+  /** Show the current state of bridges, rubble and crystal growth. */
+  private syncTerrain(): void {
+    const g = this.game.grid;
+    if (this.terrainSeen === g.terrainVersion) return;
+    this.terrainSeen = g.terrainVersion;
+    for (const v of this.dynamicViews) {
+      switch (v.kind) {
+        case 'bridgeA':
+          v.sprite.visible = g.bridgePhase === 0;
+          break;
+        case 'bridgeB':
+          v.sprite.visible = g.bridgePhase === 1;
+          break;
+        case 'rubble':
+          v.sprite.visible = !g.shifted;
+          break;
+        case 'unstable':
+          v.sprite.visible = g.shifted;
+          break;
+      }
+    }
+  }
   private portals: Sprite[] = [];
   private ambientSprites: { s: Sprite; phase: number; kind: 0 | 1; baseY: number }[] = [];
 
@@ -218,8 +244,56 @@ export class WorldView {
     this.L.glow.addChild(this.castleGlow);
     this.castle = new Sprite(atlas.get('castle'));
     this.castle.position.set(g.castleX * TILE, (g.castleY + 0.75) * TILE);
-    this.castle.scale.set(Math.min(1.05, (Math.sqrt(g.goals.length) * TILE) / 120));
+    const castleScale = Math.min(1.05, (2 * TILE) / 120);
+    this.castle.scale.set(castleScale);
     this.L.head.addChild(this.castle);
+    // second citadel (Twin Bastions)
+    for (const c of g.castles.slice(1)) {
+      const glow2 = new Sprite(atlas.get('glow'));
+      glow2.anchor.set(0.5);
+      glow2.tint = 0x8ff3ff;
+      glow2.position.set(c.x * TILE, (c.y - 0.6) * TILE);
+      glow2.scale.set(2.2);
+      glow2.alpha = 0.45;
+      this.L.glow.addChild(glow2);
+      const c2 = new Sprite(atlas.get('castle'));
+      c2.position.set(c.x * TILE, (c.y + 0.75) * TILE);
+      c2.scale.set(castleScale);
+      this.L.head.addChild(c2);
+    }
+    // terrain that changes during the match: drawbridges, rubble, crystal growth; animated gates
+    for (const d of g.dynamic) {
+      const tex = d.kind === 'bridgeA' || d.kind === 'bridgeB' ? 'bridge' : d.kind === 'rubble' ? 'rubble' : 'growth';
+      const sp = new Sprite(atlas.get(tex));
+      sp.anchor.set(0.5);
+      sp.position.set((g.cellX(d.cell) + 0.5) * TILE, (g.cellY(d.cell) + 0.5) * TILE);
+      if (tex === 'growth') sp.tint = 0xff9be6;
+      (d.kind === 'bridgeA' || d.kind === 'bridgeB' ? this.L.ambient : this.L.base).addChild(sp);
+      this.dynamicViews.push({ sprite: sp, kind: d.kind });
+    }
+    for (const tp of g.teleports) {
+      for (const [cell, tint] of [
+        [tp.from, 0xffc845],
+        [tp.to, 0x3ee6ff],
+      ] as const) {
+        const sp = new Sprite(atlas.get('portal'));
+        sp.anchor.set(0.5);
+        sp.position.set((g.cellX(cell) + 0.5) * TILE, (g.cellY(cell) + 0.5) * TILE);
+        sp.scale.set(0.72);
+        sp.tint = tint;
+        this.L.ambient.addChild(sp);
+        this.gateViews.push(sp);
+      }
+    }
+    if (g.skyPath.length) {
+      const sp = new Sprite(atlas.get('portal'));
+      sp.anchor.set(0.5);
+      sp.position.set((g.cellX(g.skyPath[0]!) + 0.5) * TILE, (g.cellY(g.skyPath[0]!) + 0.5) * TILE);
+      sp.tint = 0xb07cff;
+      this.L.ambient.addChild(sp);
+      this.gateViews.push(sp);
+    }
+    this.syncTerrain();
 
     // Overlays
     this.cellMark = new Sprite(atlas.get('cell_ok'));
@@ -782,6 +856,7 @@ export class WorldView {
       for (let i = 0; i + 1 < path.length; i++) {
         const c0 = path[i]!;
         const c1 = path[i + 1]!;
+        if (Math.abs(g.cellX(c0) - g.cellX(c1)) > 1 || Math.abs(g.cellY(c0) - g.cellY(c1)) > 1) continue; // gate jump
         let s = this.pathDots[n];
         if (!s) {
           s = new Sprite(this.atlas.get('chevron'));
@@ -806,6 +881,8 @@ export class WorldView {
 
   private animateScene(dt: number): void {
     const t = this.time;
+    this.syncTerrain();
+    for (let i = 0; i < this.gateViews.length; i++) this.gateViews[i]!.rotation = t * (i % 2 ? -1.6 : 1.6);
     // marching chevrons
     for (const s of this.pathDots) {
       if (!s.visible) continue;
@@ -1121,6 +1198,27 @@ export class WorldView {
         break;
       case Ev.Warn:
         this.addWarn(X, Y, e.value * TILE, e.value2, e.id);
+        break;
+      case Ev.Teleport:
+        for (const [px, py, tint] of [
+          [X, Y, 0xffc845],
+          [e.x2 * TILE, e.y2 * TILE, 0x3ee6ff],
+        ] as const) {
+          const o = this.particlesAdd.begin(this.ringTex, px, py);
+          o.life = 0.35;
+          o.scale = 0.15;
+          o.scaleEnd = 0.6;
+          o.tint = tint;
+          o.alpha = 1;
+          this.particlesAdd.emit(o);
+        }
+        break;
+      case Ev.Terrain:
+        this.addShake(e.kind === 'shift' ? 8 : 4);
+        for (const d of this.game.grid.dynamic) {
+          if (!this.fxRng.chance(0.5)) continue;
+          this.shatter((this.game.grid.cellX(d.cell) + 0.5) * TILE, (this.game.grid.cellY(d.cell) + 0.5) * TILE, e.kind === 'shift' ? 0xff9be6 : 0xffc845, 0.6);
+        }
         break;
       case Ev.HeroFire: {
         const h = this.game.hero;

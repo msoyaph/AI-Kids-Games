@@ -53,6 +53,10 @@ export const enum Ev {
   Meteor,
   /** Endless mutator activated: kind = mutator id, value = how many are active. */
   Mutator,
+  /** A construct went through a gate: x,y → x2,y2. */
+  Teleport,
+  /** Terrain changed: kind = 'bridge' | 'shift'. */
+  Terrain,
 }
 
 export class GameEvent {

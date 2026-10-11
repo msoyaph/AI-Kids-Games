@@ -158,8 +158,11 @@ describe('every tower works', () => {
     e.y = e.py = 2.5;
     e.speed = 0;
     e.hp = e.maxHp = 1e6;
-    e.wx = e.x;
-    e.wy = e.y;
+    if (!e.flying) {
+      // pin walkers in place (a flyer's wx/wy is its flight target)
+      e.wx = e.x;
+      e.wy = e.y;
+    }
     run(g, 4);
     expect(e.hp, id).toBeLessThan(1e6);
     expect(t.damageDone, id).toBeGreaterThan(0);

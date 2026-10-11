@@ -6,6 +6,8 @@ const SQRT2 = Math.SQRT2;
 const DX = [1, -1, 0, 0, 1, 1, -1, -1];
 const DY = [0, 0, 1, -1, 1, -1, 1, -1];
 const COST = [1, 1, 1, 1, SQRT2, SQRT2, SQRT2, SQRT2];
+/** Walking into a gate and out of its partner costs this much (tiles). */
+export const TELEPORT_COST = 0.5;
 
 /**
  * Distance-to-castle field (octile Dijkstra, no corner cutting).
@@ -43,6 +45,7 @@ export class FlowField {
     next.fill(-1);
     this.heapSize = 0;
     const open = (i: number): boolean => i !== extraBlocked && g.isOpen(i);
+    const tele = g.teleports;
     for (const goal of g.goals) {
       if (!open(goal)) continue;
       dist[goal] = 0;
@@ -65,6 +68,16 @@ export class FlowField {
         if (nd < dist[ni]!) {
           dist[ni] = nd;
           this.push(ni, nd);
+        }
+      }
+      // teleporter: reaching a gate exit makes its entrance this close too
+      for (let t = 0; t < tele.length; t++) {
+        const tp = tele[t]!;
+        if (tp.to !== i || !open(tp.from)) continue;
+        const nd = key + TELEPORT_COST;
+        if (nd < dist[tp.from]!) {
+          dist[tp.from] = nd;
+          this.push(tp.from, nd);
         }
       }
     }
@@ -91,6 +104,9 @@ export class FlowField {
           best = ni;
         }
       }
+      // a gate entrance jumps to its exit when that's the way home
+      const exit = g.teleportTo[i]!;
+      if (isOpen && exit >= 0 && open(exit) && dist[exit]! + TELEPORT_COST < bestV - 1e-9) best = exit;
       next[i] = best;
     }
   }

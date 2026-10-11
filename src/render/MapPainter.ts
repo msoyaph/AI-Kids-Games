@@ -92,7 +92,44 @@ export const THEMES: Record<ThemeId, Theme> = {
     treeDark: 0x3a2a7a,
     bush: 0x6a52b8,
   },
+  // Skyforge Ruins: brass platforms floating over a starlit void
+  sky: {
+    ground: 0x5a5a6e,
+    groundAlt: 0x4a4a5e,
+    plate: 0x6e6a7a,
+    plateEdge: 0x2a2836,
+    rune: 0xffc845,
+    road: 0x3e3a4a,
+    roadEdge: 0x16141e,
+    water: 0x0c1838,
+    waterLight: 0x7fb8ff,
+    rock: 0x6a5a4a,
+    shard: 0xffd27a,
+    tree: 0xc9923a,
+    treeDark: 0x6a4a1e,
+    bush: 0x8a7a5a,
+  },
+  // Rift Citadel: obsidian ground cut by magenta rift energy
+  rift: {
+    ground: 0x2a2236,
+    groundAlt: 0x221b2e,
+    plate: 0x3a2f4c,
+    plateEdge: 0x120c1c,
+    rune: 0xff6bd6,
+    road: 0x1e1828,
+    roadEdge: 0x0a0610,
+    water: 0x5a1450,
+    waterLight: 0xff8ae6,
+    rock: 0x3a2e4a,
+    shard: 0xff7ad9,
+    tree: 0xc04ab8,
+    treeDark: 0x5a1a56,
+    bush: 0x6a3a7a,
+  },
 };
+
+/** Cells painted as water / void / rift (chasms that bridges and sky lanes cross). */
+const VOIDLIKE = '~HhYF';
 
 /**
  * Paint a whole map once into a canvas (terrain, plates, roads, water,
@@ -144,7 +181,7 @@ export function paintMap(map: MapDef, scale: number): HTMLCanvasElement {
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const ch = at(x, y);
-      if (ch !== '.' && ch !== 'o') continue;
+      if (ch !== '.' && ch !== 'o' && ch !== 'R') continue;
       const px = x * TILE;
       const py = y * TILE;
       chamferRect(ctx, px + 3, py + 3, TILE - 6, TILE - 6, 8);
@@ -251,11 +288,12 @@ export function paintMap(map: MapDef, scale: number): HTMLCanvasElement {
     ctx.fillStyle = css(color, alpha);
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
-        if (at(x, y) !== '~') continue;
-        const l = at(x - 1, y) === '~' ? 0 : pad;
-        const r = at(x + 1, y) === '~' ? 0 : pad;
-        const t = at(x, y - 1) === '~' ? 0 : pad;
-        const b = at(x, y + 1) === '~' ? 0 : pad;
+        if (!VOIDLIKE.includes(at(x, y))) continue;
+        const vl = (xx: number, yy: number): boolean => VOIDLIKE.includes(at(xx, yy));
+        const l = vl(x - 1, y) ? 0 : pad;
+        const r = vl(x + 1, y) ? 0 : pad;
+        const t = vl(x, y - 1) ? 0 : pad;
+        const b = vl(x, y + 1) ? 0 : pad;
         chamferRect(ctx, x * TILE + l, y * TILE + t, TILE - l - r, TILE - t - b, pad > 0 ? 10 : 0);
         ctx.fill();
       }
@@ -267,7 +305,15 @@ export function paintMap(map: MapDef, scale: number): HTMLCanvasElement {
   waterPass(darken(th.water, 0.45), 18, 0.55);
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
-      if (at(x, y) !== '~') continue;
+      if (!VOIDLIKE.includes(at(x, y))) continue;
+      if (map.theme === 'sky') {
+        // starlight in the void
+        for (let k = 0; k < 3; k++) {
+          ctx.fillStyle = css(0xffffff, rng.range(0.3, 0.8));
+          ctx.fillRect(x * TILE + rng.range(6, 58), y * TILE + rng.range(6, 58), 1.6, 1.6);
+        }
+        continue;
+      }
       ctx.strokeStyle = css(th.waterLight, 0.45);
       ctx.lineWidth = 1.4;
       for (let k = 0; k < 2; k++) {
@@ -289,6 +335,50 @@ export function paintMap(map: MapDef, scale: number): HTMLCanvasElement {
       ctx.fillStyle = css(mixColor(th.road, 0x2a3a5c, 0.5), 0.95);
       ctx.fill();
       strokePath(ctx, TECH.cyan, 1, 0.35);
+    }
+  }
+
+  // --- special tiles: gates, sky lane, unstable ground, bridge anchors ---
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const ch = at(x, y);
+      const cx = x * TILE + TILE / 2;
+      const cy = y * TILE + TILE / 2;
+      if ('PQpq'.includes(ch)) {
+        // gate pad: engraved hex ring (the swirl is animated by the renderer)
+        polygon(ctx, cx, cy, 6, 27, Math.PI / 6);
+        ctx.fillStyle = css(darken(th.road, 0.2), 0.95);
+        ctx.fill();
+        strokePath(ctx, ch === 'P' || ch === 'p' ? th.rune : TECH.cyan, 2.4, 0.9);
+      } else if (ch === 'F' || ch === 'Y') {
+        // sky lane: a ribbon of guide lights over the void
+        ctx.fillStyle = css(th.rune, 0.16);
+        ctx.fillRect(x * TILE + 4, y * TILE + 4, TILE - 8, TILE - 8);
+        for (let k = 0; k < 3; k++) {
+          ctx.beginPath();
+          ctx.arc(cx + (k - 1) * 16, cy, 2.6, 0, Math.PI * 2);
+          ctx.fillStyle = css(th.rune, 0.85);
+          ctx.fill();
+        }
+      } else if (ch === 'U') {
+        // unstable ground: crystal veins about to erupt
+        chamferRect(ctx, x * TILE + 3, y * TILE + 3, TILE - 6, TILE - 6, 8);
+        ctx.fillStyle = css(darken(th.ground, 0.15), 0.9);
+        ctx.fill();
+        ctx.strokeStyle = css(th.shard, 0.75);
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(x * TILE + 10, y * TILE + 20);
+        ctx.lineTo(cx, cy);
+        ctx.lineTo(x * TILE + 50, y * TILE + 14);
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx - 4, y * TILE + 54);
+        ctx.stroke();
+      } else if ((ch === 'H' || ch === 'h') && map.theme !== 'sky') {
+        // keep non-sky bridges readable over water
+        ctx.strokeStyle = css(th.waterLight, 0.3);
+        ctx.strokeRect(x * TILE + 6, y * TILE + 6, TILE - 12, TILE - 12);
+      }
     }
   }
 
@@ -337,7 +427,19 @@ function drawTree(ctx: Ctx, theme: ThemeId, cx: number, cy: number, th: Theme, r
   cx += rng.range(-5, 5);
   cy += rng.range(-4, 4);
   contactShadow(ctx, cx + 4, cy + 18, 24, 9, 0.55);
-  if (theme === 'caves') {
+  if (theme === 'sky') {
+    // brass pylon with a hovering crystal
+    chamferRect(ctx, cx - 7, cy - 14, 14, 32, 4);
+    const g = ctx.createLinearGradient(cx - 7, 0, cx + 7, 0);
+    g.addColorStop(0, css(lighten(th.tree, 0.3)));
+    g.addColorStop(1, css(th.treeDark));
+    ctx.fillStyle = g;
+    ctx.fill();
+    strokePath(ctx, TECH.ink, 1.5);
+    crystal(ctx, cx, cy - 24, 14, 6, -Math.PI / 2, th.shard, 1.2);
+    return;
+  }
+  if (theme === 'caves' || theme === 'rift') {
     // crystal formation
     energyCore(ctx, cx, cy - 4, 12, th.tree, 1.8);
     crystal(ctx, cx, cy - 8, 34, 12, -Math.PI / 2, th.tree, 1.6);

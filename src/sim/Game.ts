@@ -350,6 +350,18 @@ export class Game {
     const e = this.events.push(Ev.WaveStart);
     e.value = this.waveNum;
     e.kind = w.boss ?? '';
+    // scripted terrain: bridges flip, the ground shifts
+    const evs = this.map.events;
+    if (evs) {
+      const flip = !!evs.bridgeWaves?.includes(this.waveNum);
+      const shift = evs.shiftWave === this.waveNum && !this.grid.shifted;
+      if (flip || shift) {
+        this.grid.applyTerrain(flip ? 1 - this.grid.bridgePhase : this.grid.bridgePhase, this.grid.shifted || shift);
+        this.afterTerrainChange();
+        const te = this.events.push(Ev.Terrain, this.grid.castleX, this.grid.castleY);
+        te.kind = shift ? 'shift' : 'bridge';
+      }
+    }
     // endless: a new mutator every 10 waves
     const every = TUNING.mutators.every;
     if (this.mutatorPlan.length && this.waveNum > 1 && (this.waveNum - 1) % every === 0) {
@@ -417,8 +429,14 @@ export class Game {
     if (e.flying) {
       e.cell = -1;
       e.wcell = -1;
-      e.wx = this.grid.castleX;
-      e.wy = this.grid.castleY;
+      const sky = this.grid.skyPath;
+      if (sky.length && x === this.grid.cellX(cell) + 0.5 && y === this.grid.cellY(cell) + 0.5 && this.grid.spawns.includes(cell)) {
+        // flyers from a wave use the sky portal and follow the lane
+        e.x = e.px = this.grid.cellX(sky[0]!) + 0.5;
+        e.y = e.py = this.grid.cellY(sky[0]!) + 0.5;
+        e.lane = 1;
+      } else e.lane = sky.length; // summoned mid-field: straight to the castle
+      this.setFlightTarget(e);
     } else {
       e.cell = cell;
       this.setWaypoint(e, this.flow.next[cell]!);
@@ -447,7 +465,7 @@ export class Game {
     const dy = e.wy - e.y;
     const d = Math.sqrt(dx * dx + dy * dy);
     if (e.flying) {
-      e.remaining = d;
+      e.remaining = d + Math.max(0, this.grid.skyPath.length - e.lane);
       return;
     }
     let wd = this.flow.dist[e.wcell]!;
@@ -556,17 +574,28 @@ export class Game {
       }
       let move = e.currentSpeed * DT;
       if (e.flying) {
-        const dx = g.castleX - e.x;
-        const dy = g.castleY - e.y;
-        const d = Math.sqrt(dx * dx + dy * dy);
-        if (d <= move + 0.35) {
+        const sky = g.skyPath;
+        let dx = e.wx - e.x;
+        let dy = e.wy - e.y;
+        let d = Math.sqrt(dx * dx + dy * dy);
+        // follow the sky lane cell by cell, then head for the nearest castle
+        while (e.lane < sky.length && d <= move + 0.1) {
+          e.lane++;
+          this.setFlightTarget(e);
+          dx = e.wx - e.x;
+          dy = e.wy - e.y;
+          d = Math.sqrt(dx * dx + dy * dy);
+        }
+        if (e.lane >= sky.length && d <= move + 0.35) {
           this.leak(e);
           continue;
         }
-        e.x += (dx / d) * move;
-        e.y += (dy / d) * move;
+        if (d > 1e-6) {
+          e.x += (dx / d) * Math.min(move, d);
+          e.y += (dy / d) * Math.min(move, d);
+        }
         if (Math.abs(dx) > 0.01) e.facing = dx > 0 ? 1 : -1;
-        e.remaining = d - move;
+        e.remaining = d + Math.max(0, sky.length - e.lane);
         continue;
       }
       let guard = 4;
@@ -583,6 +612,17 @@ export class Game {
           if (this.flow.dist[e.cell] === 0) {
             this.leak(e);
             break;
+          }
+          const exit = g.teleportTo[e.cell]!;
+          if (exit >= 0 && this.flow.next[e.cell] === exit) {
+            // through the gate: appear at its partner
+            const ev = this.events.push(Ev.Teleport, e.x, e.y);
+            e.cell = exit;
+            e.x = e.px = g.cellX(exit) + 0.5;
+            e.y = e.py = g.cellY(exit) + 0.5;
+            ev.x2 = e.x;
+            ev.y2 = e.y;
+            ev.id = e.slot;
           }
           this.setWaypoint(e, this.flow.next[e.cell]!);
           if (e.wcell === e.cell) break; // nowhere to go (should not happen with the block check)
@@ -881,8 +921,8 @@ export class Game {
   private pushBack(e: Enemy, amount: number): void {
     if (amount <= 0) return;
     if (e.flying) {
-      const dx = e.x - this.grid.castleX;
-      const dy = e.y - this.grid.castleY;
+      const dx = e.x - e.wx;
+      const dy = e.y - e.wy;
       const d = Math.sqrt(dx * dx + dy * dy) || 1;
       e.x = Math.max(0.2, Math.min(this.grid.cols - 0.2, e.x + (dx / d) * amount));
       e.y = Math.max(0.2, Math.min(this.grid.rows - 0.2, e.y + (dy / d) * amount));
@@ -977,9 +1017,17 @@ export class Game {
     let spawnOk = this.buildCache.get(cell);
     let filled = false;
     if (spawnOk === undefined) {
-      this.flow.fill(this.scratchDist, this.scratchNext, cell);
-      filled = true;
-      spawnOk = this.flow.spawnsConnected(this.scratchDist);
+      // every terrain state still to come must keep a route (bridges flip, the ground shifts)
+      const states = this.futureTerrain();
+      spawnOk = true;
+      for (let k = states.length - 1; k >= 0 && spawnOk; k--) {
+        const [p, sh] = states[k]!;
+        if (k > 0) g.setTerrainFlags(p, sh);
+        this.flow.fill(this.scratchDist, this.scratchNext, cell);
+        spawnOk = this.flow.spawnsConnected(this.scratchDist);
+        if (k > 0) g.setTerrainFlags(g.bridgePhase, g.shifted);
+      }
+      filled = spawnOk; // the last fill was the current state
       this.buildCache.set(cell, spawnOk);
     }
     if (!spawnOk) return false;
@@ -1133,6 +1181,45 @@ export class Game {
 
   setTargetMode(t: Tower, mode: TargetMode): void {
     t.mode = mode;
+  }
+
+  /** Where a flyer heads now: its next sky-lane cell, or the nearest castle. */
+  private setFlightTarget(e: Enemy): void {
+    const sky = this.grid.skyPath;
+    if (e.lane < sky.length) {
+      e.wx = this.grid.cellX(sky[e.lane]!) + 0.5;
+      e.wy = this.grid.cellY(sky[e.lane]!) + 0.5;
+    } else {
+      const c = this.grid.nearestCastle(e.x, e.y);
+      e.wx = c.x;
+      e.wy = c.y;
+    }
+  }
+
+  /** Terrain states that can still happen this match (current first). */
+  private futureTerrain(): [number, boolean][] {
+    const g = this.grid;
+    const evs = this.map.events;
+    const phases = [g.bridgePhase];
+    if (evs?.bridgeWaves?.some((w) => w > this.waveNum)) phases.push(1 - g.bridgePhase);
+    const shifts = [g.shifted];
+    if (!g.shifted && evs?.shiftWave !== undefined && evs.shiftWave > this.waveNum) shifts.push(true);
+    const out: [number, boolean][] = [];
+    for (const s of shifts) for (const p of phases) out.push([p, s]);
+    return out;
+  }
+
+  private afterTerrainChange(): void {
+    this.towerVersion++;
+    this.flow.compute();
+    for (let i = 0; i < this.enemies.length; i++) {
+      const e = this.enemies[i]!;
+      if (!e.alive || e.flying || e.burrowed) continue;
+      if (!this.grid.isOpen(e.wcell) && e.cell >= 0 && this.grid.isOpen(e.cell) && e.cell !== e.wcell) this.setWaypoint(e, e.cell);
+      else if (!this.grid.isOpen(e.cell)) this.setWaypoint(e, this.flow.next[e.cell]!);
+      this.updateRemaining(e);
+    }
+    if (this.hero) this.heroAfterLayout();
   }
 
   private afterLayoutChange(cell: number): void {

@@ -18,6 +18,8 @@ const WORLD_BASE: Omit<WorldDef, 'name' | 'blurb'>[] = [
   { id: 2, theme: 'desert', starsToUnlock: 6, color: '#e8a64a' },
   { id: 3, theme: 'snow', starsToUnlock: 14, color: '#6ab8ee' },
   { id: 4, theme: 'caves', starsToUnlock: 22, color: '#9b7cff' },
+  { id: 5, theme: 'sky', starsToUnlock: 30, color: '#ffc845' },
+  { id: 6, theme: 'rift', starsToUnlock: 40, color: '#ff4dd2' },
 ];
 
 export const WORLDS: WorldDef[] = WORLD_BASE.map((w) => localized({ ...w } as WorldDef, `world.${w.id}`, ['name', 'blurb'] as const));

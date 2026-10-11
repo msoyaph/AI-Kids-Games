@@ -79,6 +79,8 @@ export class Enemy {
   /** Boss phase (0 = first). */
   phase = 0;
   speedMult = 1;
+  /** Flyers following a sky lane: index of the next lane cell (≥ lane length = head for the castle). */
+  lane = 0;
   /** Prism Mark: takes `markMult` damage while markTime > 0. */
   markTime = 0;
   markMult = 1;
@@ -158,6 +160,7 @@ export class Enemy {
     this.speedMult = 1;
     this.markTime = 0;
     this.markMult = 1;
+    this.lane = 0;
   }
 
   get effectiveArmor(): number {

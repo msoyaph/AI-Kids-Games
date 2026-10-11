@@ -104,6 +104,13 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   `Ev.Mutator`). Daily (`src/data/modes.ts` `dailyFor(date)`: seeded map + 1 modifier + 2 mutators, 30 waves,
   `dailyScore`, best in `save.daily`), `DailyScreen` (unlocks after the first secured sector). 10 new badges.
   Balance suites cover Story/Normal/Hard; Expert is report-only (`npm run sim -- expert`).
+- Phase 8 done: worlds 5 Skyforge Ruins (theme `sky`) and 6 Rift Citadel (`rift`), 18 campaign maps.
+  Legend (`maps/types.ts`): gate pairs P→Q / p→q (`grid.teleports`, flow-field teleport edges, `Ev.Teleport`),
+  bridges H/h (`MapDef.events.bridgeWaves` flip `grid.bridgePhase`), sky lane Y+F (`grid.skyPath`, flyers follow
+  it via `Enemy.lane`), U unstable / R rubble (`events.shiftWave`), up to two castles (`grid.castles`,
+  `nearestCastle`). `grid.applyTerrain()` + `Game.afterTerrainChange()`; `wouldKeepPath` checks every future
+  terrain state (`futureTerrain()`). Map tests validate all states. Bot: greedy mazing (no zig-zag plan) on
+  gate maps and shifting ground; sky-lane flight cells. Overlay sprites for bridges/rubble/growth/gates.
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

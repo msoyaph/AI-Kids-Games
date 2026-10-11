@@ -276,6 +276,9 @@ export class GameScreen implements Screen, HudHost {
         this.hud.banner(t('boss.phaseBanner', { n: e.value, name }), ENEMIES[e.tag as EnemyId]?.name);
         break;
       }
+      case Ev.Terrain:
+        this.hud.banner(t(e.kind === 'shift' ? 'terrain.shift' : 'terrain.bridge'), t('terrain.sub'));
+        break;
       case Ev.Mutator:
         this.hud.banner(t('mutator.banner', { name: t(`mutator.${e.kind}` as MessageKey) }), t(`mutator.${e.kind}.desc` as MessageKey));
         break;
