@@ -102,7 +102,7 @@ export class EditorPanel implements Panel {
         this.rotate();
         break;
       case 'store':
-      case 'cancel':
+      case 'inventory':
         this.store();
         break;
       case 'back':

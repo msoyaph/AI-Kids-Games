@@ -50,6 +50,7 @@ class GeoBuilder {
 export class TerrainRenderer {
   readonly group = new THREE.Group();
   private material = curved(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  readonly floor: THREE.Mesh;
   private N: number;
   private seaDist: Uint8Array;
 
@@ -61,15 +62,15 @@ export class TerrainRenderer {
         const mesh = new THREE.Mesh(this.buildChunk(cx, cz), this.material);
         mesh.receiveShadow = true;
         mesh.castShadow = true;
+        // the world curve moves geometry, so bounding-sphere culling can drop visible chunks
+        mesh.frustumCulled = false;
         this.group.add(mesh);
       }
-    // Deep sea floor beyond the grid.
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(600, 600, 60, 60).rotateX(-Math.PI / 2),
-      curved(new THREE.MeshLambertMaterial({ color: PAL.oceanDeep })),
-    );
-    floor.position.set(this.N / 2, OCEAN_FLOOR_Y - 0.02, this.N / 2);
-    this.group.add(floor);
+    // Deep sea floor beyond the grid (follows the camera).
+    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(220, 220, 24, 24).rotateX(-Math.PI / 2), curved(new THREE.MeshLambertMaterial({ color: PAL.oceanDeep })));
+    this.floor.position.set(this.N / 2, OCEAN_FLOOR_Y - 0.02, this.N / 2);
+    this.floor.frustumCulled = false;
+    this.group.add(this.floor);
   }
 
   private computeSeaDist(): Uint8Array {
@@ -270,7 +271,7 @@ export class TerrainRenderer {
 export class WaterRenderer {
   readonly mesh: THREE.Mesh;
   constructor(center: number) {
-    const geo = new THREE.PlaneGeometry(600, 600, 150, 150).rotateX(-Math.PI / 2);
+    const geo = new THREE.PlaneGeometry(200, 200, 64, 64).rotateX(-Math.PI / 2);
     const mat = curved(
       new THREE.MeshLambertMaterial({
         color: PAL.water,
@@ -285,5 +286,13 @@ export class WaterRenderer {
     this.mesh.position.set(center, WATER_Y, center);
     this.mesh.renderOrder = 2;
     this.mesh.receiveShadow = true;
+    this.mesh.frustumCulled = false;
+  }
+
+  /** Keep the (finite) water plane centered under the camera, snapped to the vertex grid. */
+  follow(x: number, z: number): void {
+    const step = 200 / 64;
+    this.mesh.position.x = Math.round(x / step) * step;
+    this.mesh.position.z = Math.round(z / step) * step;
   }
 }

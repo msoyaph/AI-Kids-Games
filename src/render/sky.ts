@@ -74,13 +74,13 @@ export class Sky {
     scene.background = this.bg;
     this.sun.castShadow = true;
     const sc = this.sun.shadow.camera;
-    sc.left = -26;
-    sc.right = 26;
-    sc.top = 26;
-    sc.bottom = -26;
+    sc.left = -24;
+    sc.right = 24;
+    sc.top = 22;
+    sc.bottom = -22;
     sc.near = 1;
     sc.far = 90;
-    this.sun.shadow.mapSize.set(2048, 2048);
+    this.sun.shadow.mapSize.set(1536, 1536);
     this.sun.shadow.bias = -0.0006;
     this.sun.shadow.normalBias = 0.03;
     this.sun.shadow.radius = 3;

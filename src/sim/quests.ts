@@ -258,14 +258,16 @@ export function tryStart(g: Game): void {
 /** Evaluate state objectives + auto-complete. Cheap; runs a few times per second. */
 export function evaluate(g: Game): void {
   for (const m of active(g)) {
-    const p = progressOf(g, m)!;
+    // a nested event may already have completed this mission
+    const p = progressOf(g, m);
+    if (!p) continue;
     m.objectives.forEach((o, i) => {
       if (o.kind === 'state' && objectiveLive(g, m, i)) {
         const v = STATE_FNS[o.fn]?.(g, o.arg) ?? 0;
         if (v >= o.n) p.counts[i] = o.n;
       }
     });
-    if (!m.turnIn && allDone(g, m)) completeMission(g, m);
+    if (!m.turnIn && progressOf(g, m) && allDone(g, m)) completeMission(g, m);
   }
 }
 
@@ -285,7 +287,8 @@ export function onEvent(g: Game, type: string, payload: unknown): void {
   const pl = (payload ?? {}) as Record<string, unknown>;
   let touched = false;
   for (const m of active(g)) {
-    const p = progressOf(g, m)!;
+    const p = progressOf(g, m);
+    if (!p) continue;
     m.objectives.forEach((o, i) => {
       if (o.kind !== 'event' || o.event !== type || !objectiveLive(g, m, i)) return;
       if (p.counts[i]! >= o.count) return;

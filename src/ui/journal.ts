@@ -11,6 +11,9 @@ import { iconImg } from './icons';
 import { registerPhoneApp } from './phone';
 import { formatPlaytime } from './screens/slots';
 import type { TalkOption } from './conversation';
+import { VILLAGERS } from '../data/villagers';
+import { hearts as heartsOf } from '../sim/villagers';
+import { portraitURL } from './portraits';
 
 type Tab = 'fish' | 'bugs' | 'fossils' | 'furniture' | 'recipes';
 let catalogTab: Tab = 'fish';
@@ -200,3 +203,49 @@ export class ContestHud {
     this.el.textContent = `${c.name} · ${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')} · ${a.score} pts${medal ? ` · ${['', 'Bronze', 'Silver', 'Gold'][medal]}!` : ''}`;
   }
 }
+
+// ---------------------------------------------------------------- friends
+
+
+const PERSONALITY_LABEL: Record<string, string> = {
+  sunny: 'Sunny',
+  gruff: 'Gruff',
+  bookish: 'Bookish',
+  sporty: 'Sporty',
+  dapper: 'Dapper',
+  spunky: 'Spunky',
+  dreamy: 'Dreamy',
+  mellow: 'Mellow',
+};
+
+registerPhoneApp({
+  id: 'friends',
+  name: 'Neighbors',
+  icon: '♥',
+  color: '#ff8fa8',
+  render: (_a, g, body) => {
+    const list = VILLAGERS.filter((v) => g.state.villagers[v.id]?.movedIn);
+    if (!list.length) body.append(h('div', { class: 'muted' }, 'No neighbors yet. Pemberly is expecting a few travelers soon!'));
+    for (const v of list) {
+      const st = g.state.villagers[v.id]!;
+      const n = heartsOf(st.friendship);
+      const likes = n >= 2 ? `Likes: ${v.likes.join(', ')}` : 'Become better friends to learn what they like.';
+      const req = st.request && !st.request.done ? (st.request.accepted ? `Waiting for: ${item(st.request.target).name}` : 'Might need some help today…') : '';
+      body.append(
+        h(
+          'div',
+          { class: 'ach-row' },
+          h('img', { src: portraitURL(v.id, v.look, n >= 3 ? 'happy' : 'neutral'), style: 'width:56px;height:56px;border-radius:50%;background:#fff6e8' }),
+          h(
+            'div',
+            { style: 'flex:1' },
+            h('div', null, h('b', null, v.name), h('span', { class: 'tiny muted' }, ` · ${PERSONALITY_LABEL[v.personality]}`)),
+            h('div', { class: 'hearts' }, '♥'.repeat(n) + '♡'.repeat(5 - n)),
+            h('div', { class: 'tiny muted' }, likes),
+            req ? h('div', { class: 'tiny', style: 'color:#c98a1a;font-weight:700' }, req) : null,
+          ),
+        ),
+      );
+    }
+  },
+});

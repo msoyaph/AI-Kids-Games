@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeGame } from './helpers';
 import { craftItem, deliverAll, donateSome, expectDone, nextDay, placePlot, setHour, talk } from './story';
-import { orderUpgrade } from '../src/sim/housing';
+import { orderUpgrade, payLoan } from '../src/sim/housing';
 import { buy, dailyStock } from '../src/sim/economy';
 import { give, money } from '../src/sim/inventory';
 import { FISH, BUGS, FOSSILS } from '../src/data/registry';
@@ -21,11 +21,13 @@ describe('story playthrough (chapters 1-2)', () => {
     expect(g.state.home.level).toBe(0);
     for (const r of ['r_net_flimsy', 'r_rod_flimsy', 'r_axe_flimsy', 'r_shovel_flimsy']) craftItem(g, r);
     expectDone(g, 'm1_tools');
-    g.emit('fishCaught', { id: FISH[0]!.id, size: 2, where: 'river', rarity: 1 });
-    g.emit('bugCaught', { id: BUGS[0]!.id, rarity: 1 });
+    for (let k = 0; k < 2; k++) {
+      g.emit('fishCaught', { id: FISH[0]!.id, size: 2, where: 'river', rarity: 1 });
+      g.emit('bugCaught', { id: BUGS[0]!.id, rarity: 1 });
+    }
     expectDone(g, 'm1_catch');
-    g.state.stats.digSpots = 1;
-    g.emit('woodChopped', { id: 'timber', qty: 3 });
+    g.state.stats.digSpots = 2;
+    g.emit('woodChopped', { id: 'timber', qty: 5 });
     // evaluate happens on events; force one more evaluation tick
     g.update(1, null);
     expectDone(g, 'm1_dig');
@@ -40,7 +42,7 @@ describe('story playthrough (chapters 1-2)', () => {
     // --- Chapter 2
     expect(g.state.world.structures.some((s) => s.type === 'shopCart')).toBe(true);
     talk(g, 'fennimore');
-    g.emit('itemSold', { id: 'timber', qty: 50, total: 1500, category: 'material' });
+    g.emit('itemSold', { id: 'timber', qty: 50, total: 2500, category: 'material' });
     expectDone(g, 'm2_cart');
     deliverAll(g, 'fennimore');
     expectDone(g, 'm2_shop');
@@ -48,6 +50,8 @@ describe('story playthrough (chapters 1-2)', () => {
     expect(orderUpgrade(g)).toBe(true);
     nextDay(g);
     expect(g.state.home.level).toBe(1);
+    money(g, 3000);
+    payLoan(g, 3000);
     expect(g.state.world.structures.some((s) => s.type === 'shop')).toBe(true);
     money(g, 5000);
     const e = dailyStock(g, 'shop')[0]!;

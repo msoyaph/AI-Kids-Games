@@ -48,7 +48,7 @@ const KEYMAP: Record<string, Command[]> = {
   KeyM: ['map'],
   KeyR: ['toolRing', 'rotate'],
   KeyQ: ['putAway', 'tabPrev'],
-  KeyX: ['store', 'cancel'],
+  KeyX: ['store'],
   KeyZ: ['tabNext'],
   BracketRight: ['toolNext', 'tabNext'],
   BracketLeft: ['toolPrev', 'tabPrev'],
@@ -71,7 +71,7 @@ const KEYMAP: Record<string, Command[]> = {
 // Standard gamepad mapping
 const PAD: Record<number, Command[]> = {
   0: ['action', 'confirm'],
-  1: ['back', 'cancel'],
+  1: ['back'],
   2: ['inventory'],
   3: ['toolRing'],
   4: ['toolPrev', 'tabPrev'],

@@ -25,8 +25,8 @@ export class GameView {
   readonly scene = new THREE.Scene();
   readonly rig: CameraRig;
   readonly sky: Sky;
-  private terrain!: TerrainRenderer;
-  private water!: WaterRenderer;
+  terrain!: TerrainRenderer;
+  water!: WaterRenderer;
   objects!: ObjectRenderer;
   critters!: CritterView;
   agents!: AgentView;
@@ -49,11 +49,11 @@ export class GameView {
 
   constructor(private canvas: HTMLCanvasElement, private itemVisual: ItemVisual) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    this.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.NoToneMapping;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.rig = new CameraRig(1);
     this.sky = new Sky(this.scene);
     this.scene.add(this.islandRoot);
@@ -257,6 +257,9 @@ export class GameView {
       this.rig.follow(p.x, Math.max(0, y), p.z, dt);
     }
     sharedUniforms.uCurveOrigin.value.copy(this.rig.target);
+    this.water.follow(this.rig.target.x, this.rig.target.z);
+    this.terrain.floor.position.x = this.rig.target.x;
+    this.terrain.floor.position.z = this.rig.target.z;
     this.critters.frame(dt, this.rig.target, this.sky.night);
     this.agents.frame(dt);
     this.beam.frame(g, this.time, this.sky.night);

@@ -395,7 +395,7 @@ export class App {
   }
 
   private slowT = 0;
-  private pixelRatio = Math.min(2, window.devicePixelRatio || 1);
+  private pixelRatio = Math.min(1.5, window.devicePixelRatio || 1);
 
   private loop(now: number): void {
     const raw = (now - this.last) / 1000;

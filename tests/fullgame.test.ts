@@ -78,10 +78,12 @@ describe('full game playthrough', () => {
     talk(g, 'pemberly');
     deliverAll(g, 'pemberly');
     for (const r of ['r_net_flimsy', 'r_rod_flimsy', 'r_axe_flimsy', 'r_shovel_flimsy']) craftItem(g, r);
-    g.emit('fishCaught', { id: FISH[0]!.id, size: 2, where: 'river', rarity: 1 });
-    g.emit('bugCaught', { id: BUGS[0]!.id, rarity: 1 });
-    g.state.stats.digSpots = 1;
-    g.emit('woodChopped', { id: 'timber', qty: 3 });
+    for (let k = 0; k < 2; k++) {
+      g.emit('fishCaught', { id: FISH[0]!.id, size: 2, where: 'river', rarity: 1 });
+      g.emit('bugCaught', { id: BUGS[0]!.id, rarity: 1 });
+    }
+    g.state.stats.digSpots = 2;
+    g.emit('woodChopped', { id: 'timber', qty: 5 });
     g.update(1, null);
     setHour(g, 18);
     talk(g, 'pemberly');
@@ -89,12 +91,14 @@ describe('full game playthrough', () => {
     expectDone(g, 'm1_evening');
     // ---------------- Chapter 2
     talk(g, 'fennimore');
-    g.emit('itemSold', { id: 'x', qty: 1, total: 1500, category: 'material' });
+    g.emit('itemSold', { id: 'x', qty: 1, total: 2500, category: 'material' });
     deliverAll(g, 'fennimore');
     talk(g, 'pemberly');
     money(g, 1000);
     orderUpgrade(g);
     nextDay(g);
+    money(g, 3000);
+    payLoan(g, 3000);
     buy(g, dailyStock(g, 'shop')[0]!);
     placePlot(g, 'tansy');
     placePlot(g, 'rusk');
@@ -227,7 +231,7 @@ describe('full game playthrough', () => {
     expectDone(g, 'm4_bugoff');
     // plaza makeover: 5 decorations + 6 flowers near the plaza
     const pcx = lots.plaza.x + Math.floor(lots.plaza.w / 2), pcz = lots.plaza.z + Math.floor(lots.plaza.d / 2);
-    for (let k = 0; k < 5; k++) {
+    for (let k = 0; k < 6; k++) {
       give(g, 'furn_wick_lantern');
       let ok = false;
       for (let tries = 0; tries < 40 && !ok; tries++) {
@@ -237,7 +241,7 @@ describe('full game playthrough', () => {
       }
       expect(ok).toBe(true);
     }
-    for (let k = 0; k < 6; k++) {
+    for (let k = 0; k < 8; k++) {
       give(g, 'flower_sun_yellow');
       freeGrassNear(g, pcx, pcz, 7, used);
       const slot = g.state.player.inv.findIndex((s) => s?.id === 'flower_sun_yellow');
