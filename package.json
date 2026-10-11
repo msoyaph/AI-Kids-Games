@@ -18,6 +18,7 @@
     "react-router-dom": "^7.9.4"
   },
   "devDependencies": {
+    "@fontsource-variable/nunito": "^5.3.0",
     "@fontsource/nunito": "^5.2.7",
     "@playwright/test": "^1.56.0",
     "@types/node": "^24.0.0",
