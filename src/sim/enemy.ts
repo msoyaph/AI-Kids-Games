@@ -79,6 +79,9 @@ export class Enemy {
   /** Boss phase (0 = first). */
   phase = 0;
   speedMult = 1;
+  /** Prism Mark: takes `markMult` damage while markTime > 0. */
+  markTime = 0;
+  markMult = 1;
 
   /** Can towers pick it as a target right now? */
   get targetable(): boolean {
@@ -153,6 +156,8 @@ export class Enemy {
     this.windup = 0;
     this.phase = 0;
     this.speedMult = 1;
+    this.markTime = 0;
+    this.markMult = 1;
   }
 
   get effectiveArmor(): number {

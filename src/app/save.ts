@@ -80,6 +80,8 @@ export interface SaveData {
   workshop: WorkshopSave[];
   /** Codex entries already opened (to mark new ones). */
   codexSeen: string[];
+  /** One-time tips already shown (e.g. 'hero'). */
+  hints: string[];
 }
 
 export function defaultSave(): SaveData {
@@ -110,6 +112,7 @@ export function defaultSave(): SaveData {
     daily: {},
     workshop: [],
     codexSeen: [],
+    hints: [],
   };
 }
 
@@ -153,6 +156,7 @@ export const MIGRATIONS: Record<number, (d: AnySave) => AnySave> = {
       daily: {},
       workshop: [],
       codexSeen: [],
+      hints: [],
     };
   },
 };
@@ -184,6 +188,7 @@ export function migrate(raw: unknown): SaveData {
     daily: obj(out.daily),
     workshop: Array.isArray(out.workshop) ? out.workshop.slice(0, WORKSHOP_SLOTS) : [],
     codexSeen: Array.isArray(out.codexSeen) ? out.codexSeen : [],
+    hints: Array.isArray(out.hints) ? out.hints : [],
     hero: typeof out.hero === 'string' ? out.hero : '',
   };
 }

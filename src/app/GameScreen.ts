@@ -4,6 +4,7 @@ import type { MapDef } from '../data/maps/types';
 import { waveIntel, type WaveDef } from '../data/waves';
 import { buildFailMsg, randomLine } from '../data/strings';
 import { ENEMIES, elementPrefix, type EnemyId } from '../data/enemies';
+import { ABILITIES, type AbilityId, type HeroId } from '../data/heroes';
 import { traitsOf } from '../data/traits';
 import { t, type MessageKey } from '../i18n';
 import { enemyStatGrid, towerLevelTable } from '../ui/statTables';
@@ -33,6 +34,8 @@ export interface GameScreenOpts {
   startCoins?: number;
   startCrystals?: number;
   autoWaves?: boolean;
+  hero?: HeroId | null;
+  abilities?: AbilityId[];
 }
 
 export interface GameNav {
@@ -85,6 +88,8 @@ export class GameScreen implements Screen, HudHost {
       startCoins: opts.startCoins,
       startCrystals: opts.startCrystals,
       autoWaves: opts.autoWaves,
+      hero: opts.hero ?? null,
+      abilities: opts.abilities ?? [],
     });
   }
 
@@ -130,6 +135,12 @@ export class GameScreen implements Screen, HudHost {
       screen.orientation?.removeEventListener?.('change', onRotate);
     });
     this.hud.update();
+    const hints = this.app.save.data.hints;
+    if (this.game.hero && !hints.includes('hero')) {
+      hints.push('hero');
+      this.app.save.save();
+      window.setTimeout(() => this.hud.tip(t('hero.firstHint')), 1500);
+    }
     this.app.achievements.onUnlock = (def) => {
       this.hud.banner(t('game.banner.badge'), def.name);
       this.app.audio.ui('star');
@@ -266,6 +277,37 @@ export class GameScreen implements Screen, HudHost {
   private onTap(sx: number, sy: number, touch: boolean): void {
     if (this.modal || this.game.state !== 'playing') return;
     const { cx, cy } = this.cellAt(sx, sy);
+    const wp = this.view.camera.screenToWorld(sx, sy);
+    const wx = wp.x / TILE;
+    const wy = wp.y / TILE;
+    // 1) an armed commander ability lands where you tap
+    if (this.armedAbility) {
+      const id = this.armedAbility;
+      if (this.game.castAbility(id, wx, wy)) this.app.audio.ui('pick');
+      else this.app.audio.ui('deny');
+      this.armAbility(null);
+      return;
+    }
+    // 2) tap the commander to select it
+    const hero = this.game.hero;
+    if (hero && hero.alive && !this.buildType && (hero.x - wx) ** 2 + (hero.y - wy - 0.2) ** 2 < 0.6 * 0.6) {
+      this.toggleHero();
+      return;
+    }
+    // 3) with the commander selected, taps move it (towers still select)
+    if (this.heroSelected && !this.buildType) {
+      const tower = this.game.towerAt(cx, cy);
+      if (tower) {
+        this.selectTower(tower);
+        return;
+      }
+      if (this.game.moveHero(cx, cy)) this.app.audio.ui('click');
+      else {
+        this.app.audio.ui('deny');
+        this.setHeroSelected(false);
+      }
+      return;
+    }
     if (this.buildType) {
       const tower = this.game.towerAt(cx, cy);
       if (tower) {
@@ -283,7 +325,66 @@ export class GameScreen implements Screen, HudHost {
     this.selectTower(t && t !== this.selected ? t : null);
   }
 
+  // ------------------------------------------------------------ commander
+
+  heroSelected = false;
+  armedAbility: AbilityId | null = null;
+
+  private setHeroSelected(on: boolean): void {
+    this.heroSelected = on && !!this.game.hero?.alive;
+    this.view.heroSelected = this.heroSelected;
+  }
+
+  toggleHero(): void {
+    const h = this.game.hero;
+    if (!h) return;
+    if (!h.alive) {
+      this.hud.toast(t('hero.down', { n: Math.ceil(h.respawn) }));
+      return;
+    }
+    const on = !this.heroSelected;
+    if (on) {
+      this.selectTower(null);
+      this.selectBuild(null);
+      this.armAbility(null);
+      this.hud.toast(t('hero.moveHint', { name: h.def.name }));
+    }
+    this.setHeroSelected(on);
+    this.app.audio.ui('click');
+  }
+
+  useHeroSpecial(): void {
+    if (this.game.useHeroSpecial()) this.app.audio.ui('pick');
+    else this.app.audio.ui('deny');
+  }
+
+  armAbility(id: AbilityId | null): void {
+    if (id && !this.game.abilityReady(id)) {
+      const left = Math.ceil(this.game.abilityCooldown[id]);
+      if (left > 0) this.hud.toast(t('ability.notReady', { name: ABILITIES[id].name, n: left }), true);
+      return;
+    }
+    if (id && !ABILITIES[id].targeted) {
+      if (this.game.castAbility(id)) this.app.audio.ui('pick');
+      this.armedAbility = null;
+      return;
+    }
+    this.armedAbility = id;
+    if (id) {
+      this.selectBuild(null);
+      this.selectTower(null);
+      this.setHeroSelected(false);
+    }
+    this.view.setAbilityPreview(null, 0, 0, 0, 0);
+  }
+
   private onHover(sx: number, sy: number): void {
+    if (this.armedAbility) {
+      const w = this.view.camera.screenToWorld(sx, sy);
+      const a = ABILITIES[this.armedAbility];
+      this.view.setAbilityPreview(this.armedAbility, w.x, w.y, (a.radius ?? 1) * TILE, a.color);
+      return;
+    }
     // A ghost placed by touch waits for ✓/✕: mouse moves (hybrid devices, or the
     // pointer leaving the canvas to press ✓) must not move or clear it.
     if (!this.buildType || this.modal || this.confirmEl) return;
@@ -395,6 +496,7 @@ export class GameScreen implements Screen, HudHost {
 
   selectTower(t: Tower | null): void {
     this.selected = t ?? null;
+    if (t) this.setHeroSelected(false);
     this.view.select(this.selected);
     if (t) {
       this.buildType = null;
@@ -650,7 +752,7 @@ export class GameScreen implements Screen, HudHost {
           h('h2', null, t('end.won')),
           starsHtml(stars, 3, true),
           pipSays(line, 'cheeky'),
-          resultsReport(g),
+          resultsReport(g, (id) => atlasIconUrl(this.atlas, `hero_${id}`, 64)),
           result.badges?.length ? h('p', null, t('end.newBadges', { count: result.badges.length, names: result.badges.join(', ') })) : null,
           h(
             'div.row',
@@ -668,7 +770,7 @@ export class GameScreen implements Screen, HudHost {
           h('h2', null, endless ? t('end.endlessTitle') : t('end.lost')),
           pipSays(line),
           endless && result.newBest ? h('p', null, t('end.newBest')) : null,
-          resultsReport(g),
+          resultsReport(g, (id) => atlasIconUrl(this.atlas, `hero_${id}`, 64)),
           result.badges?.length ? h('p', null, t('end.newBadges', { count: result.badges.length, names: result.badges.join(', ') })) : null,
           h('p', null, randomLine('tip')),
           h('div.row', null, h('button.btn.green.big', { onClick: () => this.nav.restart() }, t('end.retry')), h('button.btn.ghost', { onClick: () => this.nav.quit() }, t('nav.sectorMap'))),
@@ -712,7 +814,9 @@ export class GameScreen implements Screen, HudHost {
     }
     switch (k) {
       case 'escape':
-        if (this.buildType) this.selectBuild(null);
+        if (this.armedAbility) this.armAbility(null);
+        else if (this.heroSelected) this.setHeroSelected(false);
+        else if (this.buildType) this.selectBuild(null);
         else if (this.selected) this.selectTower(null);
         else this.openPause();
         break;
@@ -743,6 +847,19 @@ export class GameScreen implements Screen, HudHost {
       case 'i':
         this.openWaveIntel();
         break;
+      case 'h':
+        this.toggleHero();
+        break;
+      case 'q':
+        this.useHeroSpecial();
+        break;
+      case 'z':
+      case 'x':
+      case 'c': {
+        const id = this.game.abilities['zxc'.indexOf(k)];
+        if (id) this.armAbility(this.armedAbility === id ? null : id);
+        break;
+      }
     }
   }
 

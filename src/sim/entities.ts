@@ -21,6 +21,13 @@ export class Tower {
   /** Aura buffs recomputed when towers change. */
   rateMult = 1;
   dmgMult = 1;
+  /** Timed buffs from the commander (Rally Volley, Repair Pulse). */
+  buffRate = 1;
+  buffDmg = 1;
+  buffTime = 0;
+  /** Effective multipliers this tick (auras × buffs × hero aura). */
+  rateNow = 1;
+  dmgNow = 1;
   /** Beam state. */
   beamTarget: Enemy | null = null;
   beamTargetId = 0;

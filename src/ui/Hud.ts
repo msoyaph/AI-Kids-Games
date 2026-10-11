@@ -1,9 +1,12 @@
 import { ELEMENT_ORDER, ELEMENTS, type ElementId } from '../data/elements';
 import { formatNumber, t, type MessageKey } from '../i18n';
+import { ABILITIES, type AbilityId } from '../data/heroes';
+import { commandIconUrl } from './commandIcons';
+import { pipUrl } from './modals';
 import { ENEMIES } from '../data/enemies';
 import { BASIC_TOWERS, comboFor, ELEMENT_TOWERS, MAX_LEVEL, sellValue, targetModeLabel, TOWERS, type TowerId } from '../data/towers';
 import { wavePreview } from '../data/waves';
-import { atlasIconUrl, elementIconUrl, enemyTexName, towerIconUrl, type Atlas } from '../render/atlas/bake';
+import { atlasIconUrl, elementIconUrl, enemyTexName, heroTexName, towerIconUrl, type Atlas } from '../render/atlas/bake';
 import type { Tower } from '../sim/entities';
 import type { Game } from '../sim/Game';
 import { towerDps, statLines } from '../data/stats';
@@ -32,6 +35,12 @@ export interface HudHost {
   showTowerInfo(id: TowerId): void;
   /** Breakdown of the next wave (types, counts, health, abilities). */
   openWaveIntel(): void;
+  /** Commander hero + abilities. */
+  readonly heroSelected: boolean;
+  readonly armedAbility: AbilityId | null;
+  toggleHero(): void;
+  useHeroSpecial(): void;
+  armAbility(id: AbilityId | null): void;
   layoutChanged(): void;
 }
 
@@ -97,6 +106,7 @@ export class Hud {
     this.bossBar.append(h('div.bhead', null, this.bossName, this.bossPips), h('span.bbar', null, this.bossFill, this.bossBarrier));
     this.bossBar.style.display = 'none';
     this.el.append(top, this.crystalWrap, this.bossBar, this.drawer, this.fab, this.chip);
+    this.buildCommandBar();
     // Horizontal wheel scrolling on desktop for the tower row.
     this.cardsEl.addEventListener(
       'wheel',
@@ -139,7 +149,115 @@ export class Hud {
     // overlays positioned under the HUD (crystal button, boss bar, tutorial) follow its real height
     document.documentElement.style.setProperty('--hud-h', `${Math.max(40, top - 6)}px`);
     const bottom = this.pinned ? this.drawer.offsetHeight + 12 : 0;
+    document.documentElement.style.setProperty('--drawer-real', `${this.drawer.offsetHeight}px`);
+    this.el.classList.toggle('pinned', this.pinned);
     return { top: top + 4, bottom };
+  }
+
+  // ------------------------------------------------------------ command bar (hero + abilities)
+
+  private cmd: {
+    bar: HTMLElement;
+    hero?: { btn: HTMLButtonElement; lv: HTMLElement; hp: HTMLElement; special: HTMLButtonElement; cd: HTMLElement };
+    abilities: { id: AbilityId; btn: HTMLButtonElement; cd: HTMLElement }[];
+    targetChip: HTMLElement;
+  } | null = null;
+  private cmdLast = '';
+
+  private buildCommandBar(): void {
+    const g = this.host.game;
+    if (!g.hero && g.abilities.length === 0) return;
+    const bar = h('div.command-bar', { role: 'toolbar', 'aria-label': t('hero.stats') });
+    const keyHint = (k: string): HTMLElement | null => (this.host.touch ? null : h('span.key', null, k));
+    const cmd: NonNullable<Hud['cmd']> = { bar, abilities: [], targetChip: h('div.picked-chip.panel.target-chip') };
+    if (g.hero) {
+      const def = g.hero.def;
+      const accent = `#${def.accent.toString(16).padStart(6, '0')}`;
+      const lv = h('span.lv');
+      const hp = h('span.hpring');
+      const btn = h(
+        'button.cmd-btn.hero-btn',
+        { onClick: () => this.host.toggleHero(), 'aria-label': `${def.name}, ${def.role}`, title: `${def.name} · ${def.role}` },
+        img(atlasIconUrl(this.host.atlas, heroTexName(def.id), 96), def.name),
+        hp,
+        lv,
+        keyHint('H'),
+      );
+      const cd = h('span.cd');
+      const special = h(
+        'button.cmd-btn.special-btn',
+        { onClick: () => this.host.useHeroSpecial(), 'aria-label': `${def.special.name}: ${def.special.desc}`, title: `${def.special.name}: ${def.special.desc}` },
+        img(commandIconUrl(def.special.kind, accent), ''),
+        cd,
+        keyHint('Q'),
+      );
+      btn.style.setProperty('--accent', accent);
+      special.style.setProperty('--accent', accent);
+      cmd.hero = { btn, lv, hp, special, cd };
+      bar.append(btn, special);
+    }
+    if (g.abilities.length) {
+      if (g.hero) bar.append(h('span.sep'));
+      const keys = ['Z', 'X', 'C'];
+      g.abilities.forEach((id, i) => {
+        const a = ABILITIES[id];
+        const color = `#${a.color.toString(16).padStart(6, '0')}`;
+        const cd = h('span.cd');
+        const btn = h(
+          'button.cmd-btn.ability-btn',
+          { onClick: () => this.host.armAbility(this.host.armedAbility === id ? null : id), 'aria-label': `${a.name}: ${a.desc}`, title: `${a.name}: ${a.desc}` },
+          img(commandIconUrl(id, color), ''),
+          cd,
+          keyHint(keys[i] ?? ''),
+        );
+        btn.style.setProperty('--accent', color);
+        cmd.abilities.push({ id, btn, cd });
+        bar.append(btn);
+      });
+    }
+    cmd.targetChip.style.display = 'none';
+    this.cmd = cmd;
+    this.el.append(bar, cmd.targetChip);
+  }
+
+  private updateCommandBar(): void {
+    const c = this.cmd;
+    if (!c) return;
+    const g = this.host.game;
+    const hero = g.hero;
+    // cheap diff: rebuild text only when whole seconds / states change
+    let key = `${this.host.heroSelected}|${this.host.armedAbility}`;
+    if (hero) key += `|${hero.level}|${Math.ceil(hero.specialCooldown)}|${Math.ceil(hero.respawn)}|${Math.round((hero.hp / hero.maxHp) * 20)}|${hero.stunned > 0}`;
+    for (const a of c.abilities) key += `|${Math.ceil(g.abilityCooldown[a.id])}`;
+    if (key === this.cmdLast) return;
+    this.cmdLast = key;
+    if (hero && c.hero) {
+      setText(c.hero.lv, t('hero.level', { n: hero.level }));
+      c.hero.btn.classList.toggle('on', this.host.heroSelected);
+      c.hero.btn.classList.toggle('down', !hero.alive);
+      c.hero.hp.style.setProperty('--hp', String(hero.hp / hero.maxHp));
+      const cdLeft = !hero.alive ? hero.respawn : hero.specialCooldown;
+      const max = !hero.alive ? hero.def.respawn : hero.specialMax;
+      c.hero.special.style.setProperty('--cd', String(Math.max(0, Math.min(1, cdLeft / max))));
+      setText(c.hero.cd, cdLeft > 0 ? t('hero.cooldown', { n: Math.ceil(cdLeft) }) : '');
+      c.hero.special.disabled = !hero.alive || hero.specialCooldown > 0 || hero.stunned > 0;
+    }
+    for (const a of c.abilities) {
+      const left = g.abilityCooldown[a.id];
+      a.btn.style.setProperty('--cd', String(Math.max(0, Math.min(1, left / ABILITIES[a.id].cooldown))));
+      setText(a.cd, left > 0 ? t('hero.cooldown', { n: Math.ceil(left) }) : '');
+      a.btn.disabled = left > 0;
+      a.btn.classList.toggle('on', this.host.armedAbility === a.id);
+    }
+    const armed = this.host.armedAbility;
+    if (armed) {
+      c.targetChip.style.display = '';
+      c.targetChip.replaceChildren(
+        img(commandIconUrl(armed, `#${ABILITIES[armed].color.toString(16).padStart(6, '0')}`), ''),
+        h('span.hint', null, t('ability.target', { name: ABILITIES[armed].name })),
+        h('button.btn.round.red', { onClick: () => this.host.armAbility(null), 'aria-label': t('ability.cancel') }, '✕'),
+      );
+    } else c.targetChip.style.display = 'none';
   }
 
   // ------------------------------------------------------------ per frame
@@ -147,6 +265,7 @@ export class Hud {
   update(): void {
     const g = this.host.game;
     const L = this.last;
+    this.updateCommandBar();
     if (g.lives !== L.lives) {
       if (L.lives >= 0 && g.lives < L.lives) this.flash(this.livesStat, 'flash-bad');
       L.lives = g.lives;
@@ -529,6 +648,19 @@ export class Hud {
     this.el.append(el);
     this.toastEl = el;
     this.toastTimer = window.setTimeout(() => el.remove(), 1800);
+  }
+
+  /** A PIP tip card that stays a few seconds (dismissable). */
+  tip(text: string, ms = 7000): void {
+    const card = h(
+      'div.tip-card.panel',
+      { role: 'status' },
+      img(pipUrl('happy', 72), 'PIP', 'face'),
+      h('span', null, text),
+      h('button.btn.round.ghost', { onClick: () => card.remove(), 'aria-label': t('common.dismiss') }, '✕'),
+    );
+    this.el.append(card);
+    window.setTimeout(() => card.remove(), ms);
   }
 
   /** Banners queue so two announcements never overlap. */

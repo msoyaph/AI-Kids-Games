@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Texture, CanvasSource } from 'pixi.js';
+import { BitmapText, Container, Graphics, Sprite, Texture, CanvasSource } from 'pixi.js';
 import { t as tr } from '../i18n';
 import type { Enemy } from '../sim/enemy';
 import { easeOutBack, lerp, lerpAngle } from '../core/math';
@@ -9,9 +9,9 @@ import type { Tower } from '../sim/entities';
 import { Ev, type GameEvent } from '../sim/events';
 import type { Game } from '../sim/Game';
 import { F_WATER, F_BUILD } from '../sim/grid';
-import { enemyTexName, projectileName, towerBaseName, towerHeadName, type Atlas } from './atlas/bake';
+import { enemyTexName, heroTexName, projectileName, towerBaseName, towerHeadName, type Atlas } from './atlas/bake';
 import { Camera, type Insets } from './Camera';
-import { FloatingText } from './FloatingText';
+import { FloatingText, NUM_FONT } from './FloatingText';
 import { paintMap, TILE } from './MapPainter';
 import { Particles } from './Particles';
 import type { QualityProfile } from './quality';
@@ -28,6 +28,8 @@ interface EnemyView {
   barrier: Sprite;
   barFill: Sprite;
   resist: Sprite;
+  /** Prism Mark target reticle. */
+  mark: Sprite;
   stamp: number;
   numCooldown: number;
 }
@@ -301,6 +303,7 @@ export class WorldView {
     this.stamp++;
     const a = Math.max(0, Math.min(1, alpha));
     this.syncEnemies(a, gameDt);
+    this.syncHero(a, gameDt);
     this.syncTowers(a);
     this.syncProjectiles(a);
     this.syncZones(gameDt);
@@ -346,9 +349,13 @@ export class WorldView {
     barFill.tint = 0x3ee6ff;
     const resist = new Sprite(this.atlas.get('resist_fire'));
     resist.anchor.set(0.5);
-    barrier.visible = barFill.visible = resist.visible = false;
+    const mark = new Sprite(this.atlas.get('select'));
+    mark.anchor.set(0.5);
+    mark.tint = 0xff4d6a;
+    barrier.visible = barFill.visible = resist.visible = mark.visible = false;
     this.L.hp.addChild(barFill, resist);
-    v = { body, shadow, hpBg, hpFill, shield, extra, barrier, barFill, resist, stamp: 0, numCooldown: 0 };
+    this.L.mark.addChild(mark);
+    v = { body, shadow, hpBg, hpFill, shield, extra, barrier, barFill, resist, mark, stamp: 0, numCooldown: 0 };
     this.enemyViews[slot] = v;
     return v;
   }
@@ -367,7 +374,7 @@ export class WorldView {
 
   private hideEnemyView(v: EnemyView): void {
     v.body.visible = v.shadow.visible = v.hpBg.visible = v.hpFill.visible = v.shield.visible = v.extra.visible = false;
-    v.barrier.visible = v.barFill.visible = v.resist.visible = false;
+    v.barrier.visible = v.barFill.visible = v.resist.visible = v.mark.visible = false;
   }
 
   private syncEnemies(a: number, gameDt: number): void {
@@ -510,6 +517,12 @@ export class WorldView {
         v.resist.position.set(x + barW / 2 + 9, barY + 2);
       } else v.resist.visible = false;
       if (hidden) v.hpBg.visible = v.hpFill.visible = false;
+      if (e.markTime > 0 && !hidden) {
+        v.mark.visible = true;
+        v.mark.position.set(x, y - fly);
+        v.mark.rotation = t * 2;
+        v.mark.scale.set((R * 3.2) / 96);
+      } else v.mark.visible = false;
 
       // extra: stun stars or Archon Null's element core
       if (stunned) {
@@ -738,7 +751,7 @@ export class WorldView {
       v.sprite.position.set(z.x * TILE, z.y * TILE);
       const size = (z.r * 2 * TILE) / 88;
       v.sprite.scale.set(size * (1 + Math.sin(this.time * 4 + z.slot) * 0.03), size * 0.8);
-      v.sprite.tint = lava ? 0xff6a2a : 0x8fe8ff;
+      v.sprite.tint = lava ? 0xff6a2a : z.look === 'chrono' ? 0x9b8cff : 0x8fe8ff;
       v.sprite.alpha = (lava ? 0.8 : 0.6) * fade;
       if (gameDt > 0 && this.fxRng.chance(gameDt * 10)) {
         const ang = this.fxRng.range(0, Math.PI * 2);
@@ -1109,6 +1122,88 @@ export class WorldView {
       case Ev.Warn:
         this.addWarn(X, Y, e.value * TILE, e.value2, e.id);
         break;
+      case Ev.HeroFire: {
+        const h = this.game.hero;
+        const col = h ? h.def.accent : 0x3ee6ff;
+        const dx = (e.x2 - e.x) * TILE;
+        const dy = (e.y2 - e.y) * TILE;
+        const len = Math.hypot(dx, dy);
+        const o = this.particlesAdd.begin(this.atlas.get('bolt'), X + dx / 2, Y + dy / 2 - 8);
+        o.rotation = Math.atan2(dy, dx);
+        o.life = 0.12;
+        o.scale = Math.max(0.3, len / 96);
+        o.scaleEnd = Math.max(0.3, len / 96);
+        o.tint = col;
+        o.alpha = 1;
+        o.alphaEnd = 0;
+        this.particlesAdd.emit(o);
+        this.sparks(e.x2 * TILE, e.y2 * TILE, null, 3);
+        break;
+      }
+      case Ev.HeroSpecial: {
+        const h = this.game.hero;
+        const col = h ? h.def.accent : 0x3ee6ff;
+        const r = e.value * TILE;
+        for (let i = 0; i < 2; i++) {
+          const o = this.particlesAdd.begin(this.ringTex, X, Y);
+          o.life = 0.5 + i * 0.25;
+          o.scale = 0.2;
+          o.scaleEnd = (r * 2) / 120;
+          o.tint = col;
+          o.alpha = 1;
+          this.particlesAdd.emit(o);
+        }
+        if (e.kind === 'quake') this.addShake(6);
+        this.sparks(X, Y, null, 10);
+        break;
+      }
+      case Ev.HeroLevel:
+        this.text.spawn(tr('hero.levelUp', { n: e.value }), X, Y - 56, 0x3dffa0, 0.55, 1.2, -40);
+        this.sparks(X, Y - 20, null, 14);
+        break;
+      case Ev.HeroDown:
+        this.shatter(X, Y - 20, this.game.hero?.def.accent ?? 0x3ee6ff, 1);
+        break;
+      case Ev.HeroRespawn: {
+        const o = this.particlesAdd.begin(this.ringTex, X, Y);
+        o.life = 0.6;
+        o.scale = 0.1;
+        o.scaleEnd = 1;
+        o.tint = this.game.hero?.def.accent ?? 0x3ee6ff;
+        o.alpha = 1;
+        this.particlesAdd.emit(o);
+        break;
+      }
+      case Ev.Ability:
+        if (e.kind === 'meteor') this.addWarn(X, Y, e.value * TILE, e.value2, -1, 0xffb347);
+        else if (e.kind === 'chrono') {
+          const o = this.particlesAdd.begin(this.ringTex, X, Y);
+          o.life = 0.5;
+          o.scale = 0.2;
+          o.scaleEnd = (e.value * TILE * 2) / 120;
+          o.tint = 0x7fd8ff;
+          o.alpha = 1;
+          this.particlesAdd.emit(o);
+        }
+        break;
+      case Ev.Meteor: {
+        this.addShake(9);
+        this.shatter(X, Y, 0xff7a3d, 2.2);
+        const r = e.value * TILE;
+        for (const [life, tint] of [
+          [0.5, 0xffb347],
+          [0.8, 0xff7a3d],
+        ] as const) {
+          const o = this.particlesAdd.begin(this.ringTex, X, Y);
+          o.life = life;
+          o.scale = 0.2;
+          o.scaleEnd = (r * 2.2) / 120;
+          o.tint = tint;
+          o.alpha = 1;
+          this.particlesAdd.emit(o);
+        }
+        break;
+      }
       case Ev.Disable: {
         // static burst / stomp: a fast expanding ring and an OFFLINE call-out
         const r = e.value * TILE;
@@ -1222,11 +1317,124 @@ export class WorldView {
   }
 
   /** Constructs shatter into crystal shards inside a dissolving energy ring. */
+  // ------------------------------------------------------------ commander hero
+  private heroSprite: Sprite | null = null;
+  private heroShadow: Sprite | null = null;
+  private heroRing: Sprite | null = null;
+  private heroHp: Sprite | null = null;
+  private heroHpBg: Sprite | null = null;
+  private heroDest: Sprite | null = null;
+  private heroLabel: BitmapText | null = null;
+  /** Set by the game screen while the hero is selected. */
+  heroSelected = false;
+  private abilityRing: Sprite | null = null;
+
+  /** Targeting preview for an armed commander ability (pass null to hide). */
+  setAbilityPreview(id: string | null, x: number, y: number, r: number, tint: number): void {
+    if (!id) {
+      if (this.abilityRing) this.abilityRing.visible = false;
+      return;
+    }
+    if (!this.abilityRing) {
+      this.abilityRing = new Sprite(this.ringTex);
+      this.abilityRing.anchor.set(0.5);
+      this.L.ghost.addChild(this.abilityRing);
+    }
+    const ring = this.abilityRing;
+    ring.visible = true;
+    ring.position.set(x, y);
+    ring.scale.set((r * 2) / 120);
+    ring.tint = tint;
+    ring.alpha = 0.9;
+  }
+
+  private syncHero(a: number, gameDt: number): void {
+    const h = this.game.hero;
+    if (!h) return;
+    if (!this.heroSprite) {
+      this.heroShadow = new Sprite(this.atlas.get('shadow'));
+      this.heroShadow.anchor.set(0.5);
+      this.heroRing = new Sprite(this.atlas.get('select'));
+      this.heroRing.anchor.set(0.5);
+      this.heroRing.tint = h.def.accent;
+      this.heroSprite = new Sprite(this.atlas.get(heroTexName(h.def.id)));
+      this.heroHpBg = new Sprite(this.atlas.get('hpbar'));
+      this.heroHpBg.tint = 0x101828;
+      this.heroHp = new Sprite(this.atlas.get('hpbar'));
+      this.heroDest = new Sprite(this.atlas.get('cell_ok'));
+      this.heroDest.anchor.set(0.5);
+      this.heroDest.tint = h.def.accent;
+      this.heroLabel = new BitmapText({ text: '', style: { fontFamily: NUM_FONT, fontSize: 30 } });
+      this.heroLabel.anchor.set(0.5);
+      this.heroLabel.scale.set(0.5);
+      this.L.zone.addChild(this.heroRing, this.heroDest);
+      this.L.shadow.addChild(this.heroShadow);
+      this.L.enemy.addChild(this.heroSprite);
+      this.L.hp.addChild(this.heroHpBg, this.heroHp, this.heroLabel);
+    }
+    const sprite = this.heroSprite;
+    const ring = this.heroRing!;
+    const label = this.heroLabel!;
+    if (!h.alive) {
+      sprite.visible = this.heroShadow!.visible = ring.visible = this.heroHp!.visible = this.heroHpBg!.visible = this.heroDest!.visible = false;
+      label.visible = true;
+      const g = this.game.grid;
+      label.position.set((g.cellX(h.home) + 0.5) * TILE, (g.cellY(h.home) + 0.5) * TILE - 30);
+      label.text = `${Math.ceil(h.respawn)}`;
+      label.tint = h.def.accent;
+      return;
+    }
+    label.visible = false;
+    const x = lerp(h.px, h.x, a) * TILE;
+    const y = lerp(h.py, h.y, a) * TILE;
+    const moving = h.path.length > 0;
+    const bob = moving ? Math.abs(Math.sin(this.time * 12)) * 2.5 : Math.sin(this.time * 2.2) * 1;
+    sprite.visible = this.heroShadow!.visible = ring.visible = true;
+    sprite.position.set(x, y + 10 - bob);
+    const recoil = h.sinceFire < 0.1 ? 0.94 : 1;
+    sprite.scale.set(h.facing * recoil * 0.95, 0.95);
+    sprite.tint = h.stunned > 0 ? 0x8a90a8 : WHITE;
+    sprite.rotation = h.stunned > 0 ? Math.sin(this.time * 20) * 0.08 : 0;
+    this.heroShadow!.position.set(x, y + 12);
+    this.heroShadow!.scale.set(0.8, 0.9);
+    ring.position.set(x, y + 10);
+    ring.scale.set(this.heroSelected ? 0.62 + Math.sin(this.time * 6) * 0.03 : 0.5);
+    ring.alpha = this.heroSelected ? 1 : 0.45;
+    ring.rotation = this.time * 0.6;
+    // health bar
+    const frac = h.hp / h.maxHp;
+    const w = 30;
+    this.heroHpBg!.visible = this.heroHp!.visible = frac < 1 || this.heroSelected;
+    this.heroHpBg!.position.set(x - w / 2 - 1, y - 52);
+    this.heroHpBg!.scale.set((w + 2) / 32, 1.1);
+    this.heroHp!.position.set(x - w / 2, y - 52);
+    this.heroHp!.scale.set((w * frac) / 32, 0.8);
+    this.heroHp!.tint = frac > 0.5 ? h.def.accent : frac > 0.25 ? 0xffd23f : 0xff5a6a;
+    // destination marker
+    const dest = h.path.length ? h.path[h.path.length - 1]! : -1;
+    if (dest >= 0) {
+      const g = this.game.grid;
+      this.heroDest!.visible = true;
+      this.heroDest!.position.set((g.cellX(dest) + 0.5) * TILE, (g.cellY(dest) + 0.5) * TILE);
+      this.heroDest!.alpha = 0.55 + Math.sin(this.time * 8) * 0.25;
+    } else this.heroDest!.visible = false;
+    if (moving && gameDt > 0 && this.fxRng.chance(gameDt * 8)) {
+      const o = this.particles.begin(this.dotTex, x + this.fxRng.range(-6, 6), y + 14);
+      o.vy = -10;
+      o.life = 0.4;
+      o.scale = 0.5;
+      o.scaleEnd = 0.1;
+      o.tint = h.def.accent;
+      o.alpha = 0.6;
+      this.particles.emit(o);
+    }
+  }
+
   private warns: WarnView[] = [];
   private warnFree: WarnView[] = [];
 
   /** Show a telegraph: a red ring at the attack radius that fills up over the wind-up. */
-  private addWarn(x: number, y: number, r: number, dur: number, slot: number): void {
+  private addWarn(x: number, y: number, r: number, dur: number, slot: number, tint = 0xff4d6a): void {
     let w = this.warnFree.pop();
     if (!w) {
       const ring = new Sprite(this.ringTex);
@@ -1247,6 +1455,8 @@ export class WorldView {
     w.dur = Math.max(0.2, dur);
     w.slot = slot;
     w.ring.visible = w.fill.visible = w.icon.visible = true;
+    w.ring.tint = w.fill.tint = tint;
+    w.icon.visible = slot >= 0;
     this.warns.push(w);
   }
 
@@ -1277,7 +1487,8 @@ export class WorldView {
       w.fill.alpha = 0.35;
       w.icon.position.set(w.x, w.y - 46);
       w.icon.scale.set(1 + 0.15 * Math.sin(w.t * 10));
-      if (f >= 1 || !e) {
+      if (w.slot < 0) w.icon.visible = false;
+      if (f >= 1 || (!e && w.slot >= 0)) {
         w.ring.visible = w.fill.visible = w.icon.visible = false;
         this.warns.splice(i, 1);
         this.warnFree.push(w);

@@ -62,6 +62,7 @@ async function boot(): Promise<void> {
     badges: (a, n) => new BadgesScreen(a, n),
     settings: (a, _n, back) => new SettingsScreen(a, back),
   });
+  if (import.meta.env.DEV) Object.assign((window as unknown as Record<string, Record<string, unknown>>).__vanex!, { nav, mapById });
   if (import.meta.env.DEV && params.has('editor')) {
     const { MapEditor } = await import('./dev/MapEditor');
     app.show(new MapEditor(app, nav));

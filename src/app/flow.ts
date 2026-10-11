@@ -4,6 +4,9 @@ import type { MapDef } from '../data/maps/types';
 import { mapsOfWorld, WORLDS } from '../data/worlds';
 import { TOWERS } from '../data/towers';
 import { t } from '../i18n';
+import { HERO_IDS, HEROES } from '../data/heroes';
+import { atlasIconUrl, heroTexName } from '../render/atlas/bake';
+import { chosenHero, heroUnlocked, unlockedAbilities } from './unlocks';
 import type { Game, GameMode } from '../sim/Game';
 import { h, img } from '../ui/dom';
 import { pipSays, showModal, starsHtml, type ModalHandle } from '../ui/modals';
@@ -113,6 +116,37 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
       };
       const blurb = h('p', null, DIFFICULTIES[diff].blurb);
       render();
+      // commander picker (locked ones point to research)
+      const heroRow = h('div.hero-row', { role: 'radiogroup', 'aria-label': t('hero.pick') });
+      const renderHeroes = (): void => {
+        const cur = chosenHero(save.data);
+        heroRow.replaceChildren(
+          h('span.hero-row-label', null, t('hero.pick')),
+          ...HERO_IDS.map((id) => {
+            const def = HEROES[id];
+            const ok = heroUnlocked(save.data, id);
+            return h(
+              'button.hero-pick',
+              {
+                class: id === cur ? 'on' : ok ? '' : 'locked',
+                role: 'radio',
+                'aria-checked': String(id === cur),
+                disabled: !ok,
+                title: ok ? `${def.name} · ${def.role}: ${def.blurb}` : t('hero.locked'),
+                'aria-label': ok ? `${def.name}, ${def.role}` : `${def.name} (${t('hero.locked')})`,
+                onClick: () => {
+                  save.data.hero = id;
+                  save.save();
+                  renderHeroes();
+                },
+              },
+              img(atlasIconUrl(app.atlas, heroTexName(id), 96), def.name),
+              h('span', null, def.name),
+            );
+          }),
+        );
+      };
+      renderHeroes();
       const best = save.data.endlessBest[map.id];
       const actions = h(
         'div.row',
@@ -144,6 +178,7 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
               pipSays(mode === 'endless' ? t('brief.endlessStory') + (best ? ' ' + t('brief.endlessBest', { n: best }) : '') : map.story),
               diffRow,
               blurb,
+              mode === 'tutorial' ? null : heroRow,
               actions,
             ),
           ),
@@ -154,7 +189,10 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
     play: (map, diff, mode) => {
       closeModal();
       const next = mode === 'campaign' ? nextMap(map.id) : null;
-      const extra = mode === 'tutorial' ? { waves: TUTORIAL_WAVES, startCoins: 60, startCrystals: 0, autoWaves: false } : {};
+      const extra =
+        mode === 'tutorial'
+          ? { waves: TUTORIAL_WAVES, startCoins: 60, startCrystals: 0, autoWaves: false }
+          : { hero: chosenHero(save.data), abilities: unlockedAbilities(save.data) };
       // ?seed=N replays a run exactly (handy for bug reports)
       const seed = Number(new URLSearchParams(location.search).get('seed')) || undefined;
       const screen: GameScreen = new GameScreen(

@@ -17,6 +17,7 @@ import {
 import {
   buildWaves,
   CRYSTAL_WAVES,
+  hpScale,
   generateWave,
   waveClearBonus,
   waveSpawnDuration,
@@ -24,6 +25,8 @@ import {
   type WaveDef,
 } from '../data/waves';
 import { TUNING, type BossAttack } from '../data/tuning';
+import { ABILITIES, type AbilityId, type HeroId } from '../data/heroes';
+import { Hero, HERO_SOURCE, heroPassable, heroPath } from './hero';
 import { Enemy } from './enemy';
 import { Projectile, Tower, Zone } from './entities';
 import { Ev, EventQueue } from './events';
@@ -54,6 +57,21 @@ export interface GameOptions {
   crystalWaves?: readonly number[];
   /** When false, every wave waits for the player to press Go (tutorial). */
   autoWaves?: boolean;
+  /** Commander hero on the field (none in the tutorial and in bot runs unless asked). */
+  hero?: HeroId | null;
+  /** Commander abilities available this run. */
+  abilities?: AbilityId[];
+}
+
+/** Damage source for commander abilities. */
+export const ABILITY_SOURCE = -3;
+
+interface Strike {
+  x: number;
+  y: number;
+  t: number;
+  r: number;
+  dmg: number;
 }
 
 export interface RunStats {
@@ -76,6 +94,9 @@ export interface RunStats {
   longestPath: number;
   /** Gold paid for builds and upgrades. */
   coinsSpent: number;
+  /** Commander abilities and hero specials used. */
+  abilitiesUsed: number;
+  heroSpecials: number;
   /** Lives lost per wave (index = wave − 1). */
   leaksByWave: number[];
   /** Spec ids picked this run. */
@@ -162,6 +183,16 @@ export class Game {
   unlocked: ElementId[] = [];
   crystals: number;
 
+  /** Commander hero (null when the run has none). */
+  readonly hero: Hero | null;
+  readonly abilities: readonly AbilityId[];
+  /** Seconds until each ability is ready again. */
+  readonly abilityCooldown: Record<AbilityId, number> = { meteor: 0, chrono: 0, funds: 0 };
+  private strikes: Strike[] = [];
+  private heroXpDamage = 0;
+  private heroPrev: Int32Array;
+  private heroQueue: Int32Array;
+
   readonly stats: RunStats;
 
   // scratch buffers (no allocation in the hot loop)
@@ -195,6 +226,10 @@ export class Game {
     this.lives = this.maxLives;
     this.coins = Math.round((opts.startCoins ?? opts.map.startCoins ?? ECO.mapStartCoins[opts.map.id] ?? ECO.startCoins) * this.diff.startCoins);
     this.crystals = opts.startCrystals ?? ECO.startCrystals;
+    this.heroPrev = new Int32Array(n);
+    this.heroQueue = new Int32Array(n);
+    this.abilities = opts.abilities ?? [];
+    this.hero = opts.hero ? new Hero(opts.hero, this.heroHome(), this.grid) : null;
     this.crystalWaves = opts.crystalWaves ?? CRYSTAL_WAVES;
     const shortest = this.pathLength();
     this.stats = {
@@ -215,6 +250,8 @@ export class Game {
       shortestPath: shortest,
       longestPath: shortest,
       coinsSpent: 0,
+      abilitiesUsed: 0,
+      heroSpecials: 0,
       leaksByWave: [],
       specsChosen: [],
       soldTowers: [],
@@ -387,8 +424,10 @@ export class Game {
     this.spatial.rebuild(this.enemies);
     this.updateEnemies();
     this.spatial.rebuild(this.enemies);
-    if (this.cloakedCount > 0) this.updateDetection();
+    if (this.cloakedCount > 0 || this.hero?.def.detect) this.updateDetection();
     this.updateTowers();
+    if (this.hero) this.updateHero();
+    this.updateAbilities();
     this.updateProjectiles();
     this.updateZones();
     this.compactEnemies();
@@ -621,6 +660,7 @@ export class Game {
         }
       }
     }
+    if (e.markTime > 0) m *= e.markMult;
     if (e.resist) {
       for (let i = 0; i < elements.length; i++) {
         if (elements[i] === e.resist) {
@@ -653,7 +693,16 @@ export class Game {
     if (src) {
       e.lastHitBy = towerId;
       src.damageDone += dmg;
-    } else if (towerId >= 0) e.lastHitBy = towerId;
+    } else if (towerId === HERO_SOURCE && this.hero) {
+      e.lastHitBy = towerId;
+      this.hero.damageDone += dmg;
+      this.heroXpDamage += dmg;
+      if (this.heroXpDamage >= 100) {
+        const n = Math.floor(this.heroXpDamage / 100);
+        this.heroXpDamage -= n * 100;
+        this.heroGainXp(n * TUNING.hero.xpPer100Damage);
+      }
+    } else if (towerId >= 0 || towerId === ABILITY_SOURCE) e.lastHitBy = towerId;
     if (e.hp <= 0) this.kill(e);
     return dmg;
   }
@@ -679,6 +728,10 @@ export class Game {
     this.addCoins(gain);
     const killer = this.towerById(e.lastHitBy);
     if (killer) killer.kills++;
+    else if (e.lastHitBy === HERO_SOURCE && this.hero) {
+      this.hero.kills++;
+      this.heroGainXp(e.boss ? TUNING.hero.bossXp : TUNING.hero.xpPerKill * e.lives);
+    }
     const ev = this.events.push(Ev.Kill, e.x, e.y);
     ev.value = gain;
     ev.value2 = bonus > 0 ? 1 : 0;
@@ -1006,6 +1059,7 @@ export class Game {
 
   private afterLayoutChange(cell: number): void {
     this.towerVersion++;
+    if (this.hero) this.heroAfterLayout();
     if ((this.grid.flags[cell]! & F_WALK) !== 0) {
       this.flow.compute();
       // Creatures heading into a newly blocked cell turn back to their last cell centre.
@@ -1085,12 +1139,25 @@ export class Game {
   }
 
   private updateTowers(): void {
+    const h = this.hero;
+    const aura = h && h.alive && h.def.aura ? h.def.aura : null;
+    const hx = h ? h.x : 0;
+    const hy = h ? h.y : 0;
     for (let i = 0; i < this.towers.length; i++) {
       const t = this.towers[i]!;
       t.sinceFire += DT;
       t.sinceBuild += DT;
+      // commander buffs and the engineer's aura
+      if (t.buffTime > 0) {
+        t.buffTime -= DT;
+        if (t.buffTime <= 0) t.buffRate = t.buffDmg = 1;
+      }
+      let heroAura = 1;
+      if (aura && (t.x - hx) * (t.x - hx) + (t.y - hy) * (t.y - hy) <= aura.radius * aura.radius) heroAura = 1 + aura.damage;
+      t.rateNow = t.rateMult * t.buffRate;
+      t.dmgNow = t.dmgMult * t.buffDmg * heroAura;
       if (t.disabled > 0) {
-        t.disabled -= DT;
+        t.disabled -= DT * (heroAura > 1 ? 2 : 1);
         t.beamTarget = null;
         continue;
       }
@@ -1099,7 +1166,7 @@ export class Game {
         this.updateBeam(t, st);
         continue;
       }
-      if (t.cooldown > 0) t.cooldown -= DT * t.rateMult;
+      if (t.cooldown > 0) t.cooldown -= DT * t.rateNow;
       if (t.cooldown > 0) continue;
       let fired = false;
       switch (t.def.behavior) {
@@ -1160,7 +1227,7 @@ export class Game {
     p.towerId = t.id;
     p.hitsAir = t.def.targets === 'both';
     p.crit = !!st.critChance && this.rng.chance(st.critChance);
-    p.damage = st.damage * t.dmgMult * (p.crit ? (st.critMult ?? D.critMult) : 1);
+    p.damage = st.damage * t.dmgNow * (p.crit ? (st.critMult ?? D.critMult) : 1);
     p.angle = Math.atan2(e.y - p.y, e.x - p.x);
     p.z = 0;
     if (t.def.behavior === 'mortar') {
@@ -1192,7 +1259,7 @@ export class Game {
     t.angle = Math.atan2(cur.y - t.y, cur.x - t.x);
     let fromX = t.x;
     let fromY = t.y - 0.3;
-    let dmg = st.damage * t.dmgMult;
+    let dmg = st.damage * t.dmgNow;
     const bounces = (st.chain ?? 0) + 1;
     const hit = this.picked;
     let hitCount = 0;
@@ -1239,7 +1306,7 @@ export class Game {
     const air: 0 | 1 = t.def.targets === 'both' ? 1 : 0;
     const n = this.spatial.query(t.x, t.y, st.range, air, this.q);
     if (n === 0) return false;
-    const dmg = st.damage * t.dmgMult;
+    const dmg = st.damage * t.dmgNow;
     for (let i = 0; i < n; i++) {
       const e = this.q[i]!;
       this.damage(e, dmg, t.def.elements, t.id);
@@ -1271,7 +1338,7 @@ export class Game {
     t.sinceFire = 0;
     const ramp = 1 + ((st.beamRamp ?? D.beamRamp) - 1) * Math.min(1, t.beamTime / (st.beamRampTime ?? D.beamRampTime));
     t.angle = Math.atan2(e.y - t.y, e.x - t.x);
-    this.damage(e, st.damage * ramp * t.dmgMult * t.rateMult * DT, t.def.elements, t.id);
+    this.damage(e, st.damage * ramp * t.dmgNow * t.rateNow * DT, t.def.elements, t.id);
   }
 
   // ---------------------------------------------------------------- projectiles
@@ -1388,7 +1455,7 @@ export class Game {
         const n = this.spatial.query(z.x, z.y, z.r, z.hitsAir ? 1 : 0, this.q2);
         for (let k = 0; k < n; k++) {
           const e = this.q2[k]!;
-          this.damage(e, z.dps * C.zoneTick, z.elements, z.towerId, true);
+          if (z.dps > 0) this.damage(e, z.dps * C.zoneTick, z.elements, z.towerId, true);
           if (z.slow > 0 && e.alive) {
             if (z.slow >= e.slowAmt || e.slowTime <= 0) e.slowAmt = z.slow * (e.boss ? C.bossSlowMult : 1);
             e.slowTime = Math.max(e.slowTime, 0.4);
@@ -1407,6 +1474,11 @@ export class Game {
 
   /** Detector towers reveal cloaked constructs in range. */
   private updateDetection(): void {
+    const h = this.hero;
+    if (h && h.alive && h.def.detect) {
+      const n = this.spatial.query(h.x, h.y, h.range, 1, this.q2);
+      for (let k = 0; k < n; k++) if (this.q2[k]!.cloaked) this.q2[k]!.revealed = C.revealLinger;
+    }
     for (let i = 0; i < this.towers.length; i++) {
       const t = this.towers[i]!;
       const st = t.stats;
@@ -1519,6 +1591,11 @@ export class Game {
       const dy = t.y - e.y;
       if (dx * dx + dy * dy <= r2) t.disabled = Math.max(t.disabled, dur);
     }
+    const h = this.hero;
+    if (h && h.alive && (h.x - e.x) * (h.x - e.x) + (h.y - e.y) * (h.y - e.y) <= r2) {
+      if (e.def.emp) h.stunned = TUNING.hero.stun;
+      else this.hurtHero(h.maxHp * TUNING.hero.bossHit);
+    }
     const ev = this.events.push(Ev.Disable, e.x, e.y);
     ev.value = atk.radius;
     ev.value2 = dur;
@@ -1587,6 +1664,287 @@ export class Game {
     const ev = this.events.push(Ev.Burrow, e.x, e.y);
     ev.value = 0;
     ev.id = e.slot;
+  }
+
+  // ================================================================ commander hero
+
+  /** Respawn point: the hero-passable cell nearest the Citadel that isn't the Citadel itself. */
+  private heroHome(): number {
+    const g = this.grid;
+    let best = g.goals[0]!;
+    let bestD = Infinity;
+    for (let i = 0; i < g.cols * g.rows; i++) {
+      if (!heroPassable(g, i) || g.goals.includes(i)) continue;
+      const dx = g.cellX(i) + 0.5 - g.castleX;
+      const dy = g.cellY(i) + 0.5 - g.castleY;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  /** Order the hero to walk to a cell. Returns false if it can't get there. */
+  moveHero(cx: number, cy: number): boolean {
+    const h = this.hero;
+    if (!h || !h.alive || this.state !== 'playing' || !this.grid.inBounds(cx, cy)) return false;
+    const g = this.grid;
+    const from = g.cellAt(h.x, h.y);
+    const to = g.idx(cx, cy);
+    const path = from >= 0 ? heroPath(g, from, to, this.heroPrev, this.heroQueue) : null;
+    if (!path) return false;
+    h.path = path;
+    return true;
+  }
+
+  private heroGainXp(n: number): void {
+    const h = this.hero;
+    if (!h || !h.gainXp(n)) return;
+    const ev = this.events.push(Ev.HeroLevel, h.x, h.y);
+    ev.value = h.level;
+  }
+
+  private hurtHero(dmg: number): void {
+    const h = this.hero!;
+    h.hp -= dmg;
+    h.sinceContact = 0;
+    if (h.hp > 0) return;
+    h.hp = 0;
+    h.path.length = 0;
+    h.target = null;
+    h.respawn = Math.max(4, h.def.respawn - (h.level - 1));
+    const ev = this.events.push(Ev.HeroDown, h.x, h.y);
+    ev.value = h.respawn;
+  }
+
+  /** A tower was built where the hero stood: step to the nearest free cell. */
+  private heroAfterLayout(): void {
+    const h = this.hero!;
+    const g = this.grid;
+    const c = g.cellAt(h.x, h.y);
+    if (c >= 0 && heroPassable(g, c)) {
+      // drop path cells that are now blocked
+      if (h.path.some((p) => !heroPassable(g, p))) h.path.length = 0;
+      return;
+    }
+    let best = h.home;
+    let bestD = Infinity;
+    const cx = Math.floor(h.x);
+    const cy = Math.floor(h.y);
+    for (let y = cy - 2; y <= cy + 2; y++) {
+      for (let x = cx - 2; x <= cx + 2; x++) {
+        if (!g.inBounds(x, y) || !heroPassable(g, g.idx(x, y))) continue;
+        const d = (x - cx) * (x - cx) + (y - cy) * (y - cy);
+        if (d < bestD) {
+          bestD = d;
+          best = g.idx(x, y);
+        }
+      }
+    }
+    h.path = [best];
+  }
+
+  private updateHero(): void {
+    const h = this.hero!;
+    const g = this.grid;
+    const H = TUNING.hero;
+    h.px = h.x;
+    h.py = h.y;
+    h.sinceFire += DT;
+    if (h.specialCooldown > 0) h.specialCooldown -= DT;
+    if (!h.alive) {
+      h.respawn -= DT;
+      if (h.respawn <= 0) {
+        h.respawn = 0;
+        h.hp = h.maxHp;
+        h.x = h.px = g.cellX(h.home) + 0.5;
+        h.y = h.py = g.cellY(h.home) + 0.5;
+        h.path.length = 0;
+        this.events.push(Ev.HeroRespawn, h.x, h.y);
+      }
+      return;
+    }
+    // constructs that touch the hero wear it down; it heals after a quiet moment
+    let contact = 0;
+    const n = this.spatial.query(h.x, h.y, H.contactRadius, 0, this.q2);
+    for (let i = 0; i < n; i++) contact += this.q2[i]!.lives;
+    if (contact > 0) this.hurtHero(contact * H.contactDps * DT * (1 + 0.04 * Math.max(0, this.waveNum - 1)));
+    else {
+      h.sinceContact += DT;
+      if (h.sinceContact > 3 && h.hp < h.maxHp) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * H.regen * DT);
+    }
+    if (!h.alive) return;
+    if (h.stunned > 0) {
+      h.stunned -= DT;
+      return;
+    }
+    // walk
+    let move = h.def.speed * DT;
+    while (move > 0 && h.path.length) {
+      const c = h.path[0]!;
+      const tx = g.cellX(c) + 0.5;
+      const ty = g.cellY(c) + 0.5;
+      const dx = tx - h.x;
+      const dy = ty - h.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (Math.abs(dx) > 0.02) h.facing = dx > 0 ? 1 : -1;
+      if (d <= move) {
+        h.x = tx;
+        h.y = ty;
+        move -= d;
+        h.path.shift();
+      } else {
+        h.x += (dx / d) * move;
+        h.y += (dy / d) * move;
+        move = 0;
+      }
+    }
+    // shoot
+    h.cooldown -= DT;
+    if (h.cooldown > 0) return;
+    const air: 0 | 1 = h.def.splash ? 0 : 1;
+    const m = this.spatial.query(h.x, h.y, h.range, air, this.q2);
+    let best: Enemy | null = null;
+    for (let i = 0; i < m; i++) {
+      const e = this.q2[i]!;
+      if (e.targetable && (!best || e.remaining < best.remaining)) best = e;
+    }
+    if (!best) {
+      h.cooldown = 0;
+      return;
+    }
+    h.cooldown = 1 / h.def.rate;
+    h.sinceFire = 0;
+    h.angle = Math.atan2(best.y - h.y, best.x - h.x);
+    if (Math.abs(best.x - h.x) > 0.05) h.facing = best.x > h.x ? 1 : -1;
+    const dmg = h.damageAt(this.waveNum);
+    if (h.def.splash) {
+      const k = this.spatial.query(best.x, best.y, h.def.splash, 0, this.q);
+      for (let i = 0; i < k; i++) this.damage(this.q[i]!, this.q[i] === best ? dmg : dmg * C.splashFalloff, NEUTRAL, HERO_SOURCE);
+    } else this.damage(best, dmg, NEUTRAL, HERO_SOURCE);
+    const ev = this.events.push(Ev.HeroFire, h.x, h.y);
+    ev.x2 = best.x;
+    ev.y2 = best.y;
+    ev.kind = h.def.id;
+  }
+
+  /** Trigger the hero's special. Returns false if it isn't ready. */
+  useHeroSpecial(): boolean {
+    const h = this.hero;
+    if (!h || !h.alive || h.stunned > 0 || h.specialCooldown > 0 || this.state !== 'playing') return false;
+    const sp = h.def.special;
+    const r = sp.radius ?? h.range;
+    const r2 = r * r;
+    switch (sp.kind) {
+      case 'rally':
+      case 'repair':
+        for (const t of this.towers) {
+          if ((t.x - h.x) * (t.x - h.x) + (t.y - h.y) * (t.y - h.y) > r2) continue;
+          if (sp.kind === 'rally') t.buffRate = 1 + (sp.amount ?? 0.4);
+          else {
+            t.disabled = 0;
+            t.buffDmg = 1 + (sp.amount ?? 0.3);
+          }
+          t.buffTime = sp.duration ?? 6;
+        }
+        break;
+      case 'quake': {
+        const n = this.spatial.query(h.x, h.y, r, 0, this.q2);
+        for (let i = 0; i < n; i++) {
+          const e = this.q2[i]!;
+          const st = (sp.stun ?? 2) * (e.def.ccResist ?? 1);
+          e.stunTime = Math.max(e.stunTime, st);
+          e.ccImmune = Math.max(e.ccImmune, st + 0.5);
+        }
+        break;
+      }
+      case 'mark': {
+        const n = this.spatial.query(h.x, h.y, h.range, 1, this.q2);
+        let best: Enemy | null = null;
+        for (let i = 0; i < n; i++) {
+          const e = this.q2[i]!;
+          if (e.targetable && (!best || e.hp > best.hp)) best = e;
+        }
+        if (!best) return false;
+        best.markTime = sp.duration ?? 8;
+        best.markMult = sp.amount ?? 1.5;
+        break;
+      }
+    }
+    h.specialCooldown = h.specialMax;
+    this.stats.heroSpecials++;
+    const ev = this.events.push(Ev.HeroSpecial, h.x, h.y);
+    ev.kind = sp.kind;
+    ev.value = r;
+    return true;
+  }
+
+  // ================================================================ commander abilities
+
+  abilityReady(id: AbilityId): boolean {
+    return this.abilities.includes(id) && this.abilityCooldown[id] <= 0;
+  }
+
+  /** Use a commander ability; targeted ones land at (x, y) in tile space. */
+  castAbility(id: AbilityId, x = 0, y = 0): boolean {
+    if (this.state !== 'playing' || !this.abilityReady(id)) return false;
+    const a = ABILITIES[id];
+    const wave = Math.max(1, this.waveNum);
+    switch (id) {
+      case 'meteor':
+        this.strikes.push({ x, y, t: a.delay ?? 1, r: a.radius ?? 1.5, dmg: (a.damage ?? 100) * hpScale(wave) });
+        break;
+      case 'chrono': {
+        if (this.zones.length >= MAX_ZONES) return false;
+        let z = this.zoneFree.pop();
+        if (!z) z = new Zone(this.zoneSlots++);
+        z.active = true;
+        z.x = x;
+        z.y = y;
+        z.r = a.radius ?? 2.5;
+        z.dps = 0;
+        z.slow = a.slow ?? 0.6;
+        z.time = z.maxTime = a.duration ?? 6;
+        z.tick = 0;
+        z.hitsAir = true;
+        z.elements = NEUTRAL;
+        z.towerId = ABILITY_SOURCE;
+        z.look = 'chrono';
+        this.zones.push(z);
+        break;
+      }
+      case 'funds': {
+        const gold = Math.round((a.base ?? 40) + (a.perWave ?? 8) * wave);
+        this.addCoins(gold);
+        const ev = this.events.push(Ev.Coins, this.grid.castleX, this.grid.castleY);
+        ev.value = gold;
+        ev.kind = 'funds';
+        break;
+      }
+    }
+    this.abilityCooldown[id] = a.cooldown;
+    this.stats.abilitiesUsed++;
+    const ev = this.events.push(Ev.Ability, x, y);
+    ev.kind = id;
+    ev.value = a.radius ?? 0;
+    ev.value2 = a.delay ?? 0;
+    return true;
+  }
+
+  private updateAbilities(): void {
+    for (const id of this.abilities) if (this.abilityCooldown[id] > 0) this.abilityCooldown[id] -= DT;
+    for (let i = this.strikes.length - 1; i >= 0; i--) {
+      const s = this.strikes[i]!;
+      s.t -= DT;
+      if (s.t > 0) continue;
+      const n = this.spatial.query(s.x, s.y, s.r, 1, this.q2);
+      for (let k = 0; k < n; k++) this.damage(this.q2[k]!, s.dmg, NEUTRAL, ABILITY_SOURCE);
+      const ev = this.events.push(Ev.Meteor, s.x, s.y);
+      ev.value = s.r;
+      swapRemove(this.strikes, i);
+    }
   }
 
   // ================================================================ elements

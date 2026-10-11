@@ -460,6 +460,67 @@ const ENEMY_STATS: Record<EnemyId, EnemyTuning> = {
   hulk: { hp: 70, speed: 1.0, armor: 0.1, coins: 9, lives: 2, radius: 0.38, regen: { pct: 0.08, delay: 1.5 } },
 };
 
+// ------------------------------------------------------------------ heroes & abilities
+
+export type HeroId = 'vanguard' | 'warden' | 'seer' | 'engineer';
+export type HeroSpecialKind = 'rally' | 'quake' | 'mark' | 'repair';
+export type AbilityId = 'meteor' | 'chrono' | 'funds';
+
+export interface HeroTuning {
+  hp: number;
+  /** Damage per shot at level 1, wave 1. */
+  damage: number;
+  rate: number;
+  range: number;
+  /** Walking speed, tiles per second. */
+  speed: number;
+  splash?: number;
+  /** Reveals cloaked constructs in range. */
+  detect?: boolean;
+  /** Passive: nearby towers deal this much more damage. */
+  aura?: { radius: number; damage: number };
+  /** Seconds to respawn at the Citadel after being knocked out (minus 1 per level). */
+  respawn: number;
+  special: {
+    kind: HeroSpecialKind;
+    cooldown: number;
+    radius?: number;
+    duration?: number;
+    /** rally: tower attack-speed bonus; repair: tower damage bonus; mark: damage taken multiplier. */
+    amount?: number;
+    /** quake: stun seconds. */
+    stun?: number;
+  };
+}
+
+const HERO_STATS: Record<HeroId, HeroTuning> = {
+  vanguard: { hp: 220, damage: 14, rate: 1.6, range: 2.8, speed: 2.4, respawn: 12, special: { kind: 'rally', cooldown: 30, radius: 3, duration: 6, amount: 0.4 } },
+  warden: { hp: 420, damage: 24, rate: 0.9, range: 1.5, speed: 1.8, splash: 1, respawn: 14, special: { kind: 'quake', cooldown: 25, radius: 2.2, stun: 2 } },
+  seer: { hp: 160, damage: 32, rate: 0.7, range: 3.8, speed: 2.2, detect: true, respawn: 12, special: { kind: 'mark', cooldown: 22, duration: 8, amount: 1.5 } },
+  engineer: { hp: 200, damage: 10, rate: 1.4, range: 2.6, speed: 2.2, aura: { radius: 2.5, damage: 0.1 }, respawn: 10, special: { kind: 'repair', cooldown: 24, radius: 3, duration: 6, amount: 0.3 } },
+};
+
+export interface AbilityTuning {
+  cooldown: number;
+  /** Targeted abilities: delay before impact and radius (tiles). */
+  delay?: number;
+  radius?: number;
+  /** meteor: damage × the wave health curve. */
+  damage?: number;
+  /** chrono: slow amount and duration. */
+  slow?: number;
+  duration?: number;
+  /** funds: gold = base + wave × perWave. */
+  base?: number;
+  perWave?: number;
+}
+
+const ABILITY_STATS: Record<AbilityId, AbilityTuning> = {
+  meteor: { cooldown: 45, delay: 1, radius: 1.6, damage: 110 },
+  chrono: { cooldown: 40, radius: 2.5, slow: 0.6, duration: 6 },
+  funds: { cooldown: 90, base: 40, perWave: 8 },
+};
+
 // ------------------------------------------------------------------ the table
 
 export const TUNING = {
@@ -579,6 +640,29 @@ export const TUNING = {
   /** Stars from the share of lives kept. */
   stars: { three: 0.8, two: 0.4 },
 
+  heroes: HERO_STATS,
+  hero: {
+    /** XP needed to reach levels 2–5 (cumulative). */
+    xp: [0, 40, 110, 220, 380] as readonly number[],
+    /** XP per construct destroyed by the hero (× its lives value); bosses give `bossXp`. */
+    xpPerKill: 2,
+    bossXp: 40,
+    /** XP for every 100 damage the hero deals. */
+    xpPer100Damage: 1,
+    /** Per level above 1. */
+    perLevel: { damage: 0.15, hp: 0.15, range: 0.1, cooldown: 0.05 },
+    /** Hero damage also grows with the wave: × (1 + perWave × (wave − 1)). */
+    damagePerWave: 0.05,
+    /** Constructs touching the hero hurt it: damage per second per life they carry. */
+    contactRadius: 0.55,
+    contactDps: 7,
+    /** Boss stomp / null field damage (share of max HP) and jammer stun on the hero. */
+    bossHit: 0.35,
+    stun: 2,
+    /** Out-of-combat healing (share of max HP per second) after 3 s without contact. */
+    regen: 0.04,
+  },
+  abilities: ABILITY_STATS,
   towers: TOWER_LEVELS,
   /** Two level-3 paths for every element and combo tower. */
   specs: SPEC_MODS,

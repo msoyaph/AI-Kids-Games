@@ -39,6 +39,18 @@ export const enum Ev {
   BarrierBreak,
   /** Tunneler goes under (value 1) or surfaces (value 0). */
   Burrow,
+  /** Hero shot: x,y → x2,y2; kind = hero id. */
+  HeroFire,
+  /** Hero special used: kind = special kind, value = radius. */
+  HeroSpecial,
+  /** Hero knocked out (value = respawn seconds) / back (value 0). */
+  HeroDown,
+  HeroRespawn,
+  HeroLevel,
+  /** Commander ability cast: kind = ability id, value = radius, value2 = delay. */
+  Ability,
+  /** Meteor impact: value = radius. */
+  Meteor,
 }
 
 export class GameEvent {

@@ -19,10 +19,10 @@ function mmss(seconds: number): string {
 }
 
 /**
- * After-match report: key numbers, damage per tower and lives lost per wave.
- * (Hero contribution joins this once commanders arrive.)
+ * After-match report: key numbers, the commander's contribution, damage per
+ * tower and lives lost per wave.
  */
-export function resultsReport(g: Game): HTMLElement {
+export function resultsReport(g: Game, heroIcon: (id: string) => string = () => ''): HTMLElement {
   const st = g.stats;
   const cleared = g.state === 'won' ? g.waveNum : Math.max(0, g.waveNum - 1);
   const totalWaves = g.totalWaves === Infinity ? null : g.totalWaves;
@@ -84,10 +84,27 @@ export function resultsReport(g: Game): HTMLElement {
       )
     : h('p.dim', null, t('results.noLeaks'));
 
+  const hero = g.hero
+    ? h(
+        'div.results-hero',
+        null,
+        img(heroIcon(g.hero.def.id), g.hero.def.name, 'icon'),
+        h('span', null, t('results.heroLine', { name: g.hero.def.name, level: g.hero.level, dmg: Math.round(g.hero.damageDone), kills: g.hero.kills })),
+      )
+    : null;
   return h(
     'div.results',
     null,
-    h('div.results-col', null, h('h3.section', null, t('results.summaryTitle')), summary, h('h3.section', null, t('results.leaksTitle')), leaks),
+    h(
+      'div.results-col',
+      null,
+      h('h3.section', null, t('results.summaryTitle')),
+      summary,
+      hero ? h('h3.section', null, t('results.hero')) : null,
+      hero,
+      h('h3.section', null, t('results.leaksTitle')),
+      leaks,
+    ),
     h('div.results-col', null, h('h3.section', null, t('results.damageTitle')), dmgTable),
   );
 }

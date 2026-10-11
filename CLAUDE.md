@@ -86,6 +86,15 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   telegraphed attacks (`Ev.Warn` → red ring + windup, boss stands still; brood/swarm/stomp/nullfield),
   `Ev.BossPhase` banner, boss bar pips. Summons never start within 5 tiles of the Citadel.
   Balance: w4m3 Hard is the tight spot (bot wins with 1 life; `TUNING.economy.mapStartCoins.w4m3 = 200`).
+- Phase 6 done: commander heroes (`src/data/heroes.ts`, `src/sim/hero.ts`): Kestrel (starter), Brakka, Vela
+  (detects cloaked), Ivo (tower aura); walk on walkable/plate cells via `heroPath` (BFS, no corner cutting),
+  never touch the flow field, step aside if a tower is built under them, level 1–5 from kills/damage, take
+  contact damage, knocked out → respawn at `heroHome()`. Specials: rally/quake/mark/repair (`useHeroSpecial`).
+  Commander abilities (`castAbility`): Crystal Meteor (delayed strike), Chrono Field (slow zone, look 'chrono'),
+  Emergency Funds. Unlocks in `src/app/unlocks.ts` (meteor after the first secured sector; other heroes and
+  abilities via research ids `hero.*` / `ability.*`). HUD command bar (keys H, Q, Z/X/C) with cooldown sweeps,
+  targeting chip + preview ring, commander picker in the briefing, hero line in the report, one-time tip
+  (`save.hints`). Bot runs have no hero unless `GameOptions.hero` is set. Dev: `__vanex.nav` / `mapById`.
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

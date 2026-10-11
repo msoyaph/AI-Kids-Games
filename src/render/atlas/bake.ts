@@ -4,6 +4,8 @@ import { ENEMIES, ENEMY_IDS, type EnemyDef } from '../../data/enemies';
 import { SPEC_LEVEL, TOWER_IDS, TOWERS, type ProjectileStyle, type TowerId } from '../../data/towers';
 import { AtlasBuilder, frameToCanvas, type BakedAtlas } from './packer';
 import { drawEnemy, drawShield, enemyBox } from './drawEnemies';
+import { drawHero, HERO_H, HERO_W } from './drawHeroes';
+import { HERO_IDS, HEROES, type HeroId } from '../../data/heroes';
 import {
   drawBeam,
   drawBolt,
@@ -52,6 +54,7 @@ export const towerBaseName = (id: string, lv: number): string => `tb_${id}_${lv}
 export const towerHeadName = (id: TowerId, lv: number, spec = -1): string =>
   lv >= SPEC_LEVEL && TOWERS[id].specs ? `th_${id}_${lv}_s${spec === 1 ? 1 : 0}` : `th_${id}_${lv}`;
 export const projectileName = (s: ProjectileStyle): string => `p_${s}`;
+export const heroTexName = (id: HeroId): string => `hero_${id}`;
 
 function addEnemy(b: AtlasBuilder, def: EnemyDef, el: ElementId | null): void {
   const { w, h } = enemyBox(def);
@@ -79,6 +82,8 @@ export function registerSprites(b: AtlasBuilder): void {
       } else b.add({ name: towerHeadName(id, lv), w: TOWER_HEAD_SIZE, h: TOWER_HEAD_SIZE, draw: (ctx) => drawTowerHead(ctx, def, lv) });
     }
   }
+  // Commander heroes
+  for (const id of HERO_IDS) b.add({ name: heroTexName(id), w: HERO_W, h: HERO_H, ax: 0.47, ay: 0.82, draw: (ctx, w, h) => drawHero(ctx, HEROES[id], w, h) });
   // Enemies (+ element variants)
   for (const id of ENEMY_IDS) {
     const def = ENEMIES[id];

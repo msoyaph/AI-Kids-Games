@@ -2012,3 +2012,231 @@ p.intel-boss {
 .boss-row b {
   color: #ffb0bc;
 }
+
+/* ------------------------------------------------------------------ command bar (hero + abilities) */
+.command-bar {
+  position: absolute;
+  right: calc(var(--safe-right) + 80px);
+  bottom: calc(var(--safe-bottom) + 10px);
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  z-index: 11;
+}
+.pinned .command-bar {
+  right: calc(var(--safe-right) + 10px);
+  bottom: calc(var(--safe-bottom) + var(--drawer-real, 108px) + 14px);
+}
+.panel-open .command-bar {
+  display: none;
+}
+.command-bar .sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--line);
+  margin: 0 2px;
+}
+.cmd-btn {
+  --accent: var(--cyan);
+  --cd: 0;
+  position: relative;
+  appearance: none;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(30, 42, 70, 0.95), rgba(10, 15, 28, 0.95));
+  color: var(--text);
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+.cmd-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 7px;
+  box-sizing: border-box;
+}
+.cmd-btn.hero-btn img {
+  padding: 2px;
+}
+.cmd-btn:hover:not(:disabled),
+.cmd-btn:focus-visible {
+  border-color: var(--accent);
+}
+.cmd-btn.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+/* cooldown sweep */
+.cmd-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(rgba(5, 8, 18, 0.72) calc(var(--cd) * 1turn), transparent 0);
+  pointer-events: none;
+}
+.cmd-btn .cd {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 17px;
+  z-index: 1;
+  text-shadow: 0 1px 3px #000;
+}
+.cmd-btn .key {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-family: var(--font-head);
+  font-size: 10px;
+  color: var(--text-dim);
+  z-index: 1;
+}
+.cmd-btn .lv {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--gold);
+  z-index: 1;
+  text-shadow: 0 1px 2px #000;
+}
+.cmd-btn .hpring {
+  --hp: 1;
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: 1px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent) calc(var(--hp) * 100%), rgba(255, 255, 255, 0.12) 0);
+  z-index: 1;
+}
+.cmd-btn.hero-btn.down img {
+  filter: grayscale(1) brightness(0.6);
+}
+.cmd-btn:disabled {
+  cursor: default;
+}
+.target-chip {
+  border-left: 3px solid var(--gold);
+}
+.target-chip img {
+  width: 28px;
+  height: 28px;
+}
+/* commander picker in the briefing */
+.hero-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0 10px;
+}
+.hero-row-label {
+  font-family: var(--font-head);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-right: 4px;
+}
+.hero-pick {
+  appearance: none;
+  font: inherit;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 2px 8px 4px;
+  min-width: 64px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(12, 18, 32, 0.9);
+  cursor: pointer;
+}
+.hero-pick img {
+  width: 40px;
+  height: 40px;
+}
+.hero-pick span {
+  font-family: var(--font-head);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.hero-pick.on {
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(255, 200, 69, 0.35);
+}
+.hero-pick.locked,
+.hero-pick:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.results-hero {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.results-hero img.icon {
+  width: 40px;
+  height: 40px;
+}
+/* PIP tip card */
+.tip-card {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--safe-top) + var(--hud-h) + 70px);
+  transform: translateX(-50%);
+  width: min(520px, calc(100% - 24px));
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  z-index: 30;
+  animation: slidedown 0.2s ease-out;
+  border-left: 3px solid var(--cyan);
+}
+.tip-card img.face {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+}
+.tip-card span {
+  flex: 1;
+  font-size: 14px;
+}
+@keyframes slidedown {
+  from {
+    transform: translate(-50%, -12px);
+    opacity: 0;
+  }
+}
+@media (max-height: 520px) {
+  .cmd-btn {
+    width: 48px;
+    height: 48px;
+  }
+}
+.pinned .target-chip {
+  bottom: calc(var(--safe-bottom) + var(--drawer-real, 108px) + 14px);
+}
+/* tips never block the battlefield underneath; only the close button takes input */
+#ui .tip-card {
+  pointer-events: none;
+}
+#ui .tip-card button {
+  pointer-events: auto;
+}
