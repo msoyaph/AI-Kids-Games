@@ -114,6 +114,8 @@ export interface MapDef {
     fog: [number, number];
     /** Ambient snowfall density (0 = none). */
     snow: number;
+    /** Tone-mapped brightness where bloom starts (bright ground needs a higher one). */
+    bloomThreshold: number;
   };
   waves: WaveSegment[];
   events: WaveEvent[];
@@ -182,6 +184,7 @@ const MEADOW: MapDef = {
     menu: { top: 0x5aa8e8, horizon: 0xffe0b6, fog: 0xe4dccf, hemiSky: 0xeaf4ff, hemiGround: 0x6a5a4a, hemiI: 1.3, key: 0xfff0d8, keyI: 2.6, elev: 0.6, stars: 0, aurora: 0 },
     fog: [55, 150],
     snow: 0,
+    bloomThreshold: 0.78,
   },
   waves: WAVES,
   events: WAVE_EVENTS,
@@ -253,6 +256,7 @@ const RIMEWOOD: MapDef = {
     menu: { top: 0x6aa8e0, horizon: 0xf4e8f0, fog: 0xe0e8f4, hemiSky: 0xf0f6ff, hemiGround: 0x646a7a, hemiI: 1.1, key: 0xfff4e8, keyI: 2.1, elev: 0.55, stars: 0, aurora: 0 },
     fog: [45, 135],
     snow: 1,
+    bloomThreshold: 0.93,
   },
   waves: withVariants(WAVES, RIME_VARIANTS),
   events: WAVE_EVENTS.map((ev) => ({ ...ev, enemy: RIME_VARIANTS[ev.enemy] ?? ev.enemy })),

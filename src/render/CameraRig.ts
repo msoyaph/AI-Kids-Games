@@ -22,6 +22,21 @@ export class CameraRig {
   private fov = this.tuning.fov;
   private lift = 0;
 
+  /** Cinematic orbit (evolution moment): seconds left and yaw speed. */
+  private orbitT = 0;
+  private orbitSpeed = 0;
+
+  /** Swing slowly around the player for `seconds` (skipped with reduced motion). */
+  orbit(seconds: number, radians: number): void {
+    if (this.reducedMotion) return;
+    this.orbitT = seconds;
+    this.orbitSpeed = radians / seconds;
+  }
+
+  get orbiting(): boolean {
+    return this.orbitT > 0;
+  }
+
   addTrauma(amount: number): void {
     this.trauma = Math.min(1, this.trauma + amount);
   }
@@ -45,6 +60,12 @@ export class CameraRig {
   update(cam: THREE.PerspectiveCamera, x: number, y: number, z: number, speed: number, dt: number, terrain: Terrain | null): void {
     this.target.set(x, y, z);
     if (!this.initialized) this.snap(x, y, z);
+    if (this.orbitT > 0) {
+      // ease in / out across the swing
+      const k = Math.min(1, this.orbitT * 2, 1);
+      this.yaw += this.orbitSpeed * dt * k;
+      this.orbitT -= dt;
+    }
     // follow tightly horizontally, a bit softer vertically (smooths jumps/steps)
     const T = this.tuning;
     const kh = damp(T.followSharpness, dt);

@@ -53,7 +53,8 @@ src/
   render/    three.js only reads sim state: instanced meshes per enemy/projectile kind, gems,
              particles, terrain/props, camera rig, damage numbers (2D canvas overlay),
              occlusion.ts (GPU dithered fade of props between camera and player),
-             Sky.ts (per-map moods + aurora), Snowfall.ts
+             Sky.ts (per-map moods + aurora), Snowfall.ts, Bloom.ts (Medium / High),
+             flash.ts (≤ 3 Hz blink helper), Particles (chunks, stretched sparks, puffs)
   audio/     Web Audio synth SFX + procedural music
   input/     InputManager (the ONE keyboard listener: routes keys to the open menu via
              ui.handleKey, else to gameplay through remappable bindings), actions.ts
@@ -123,6 +124,15 @@ Key rules:
   lighter (DPR 1, no shadows, thinned decoration) and its runs field ~65% of the Gloom with
   HP / XP / coins ×1/0.65 (`mods.crowd / crowdHp / enemyXp / coinValue`; bosses untouched).
 - The last BOSS_RESERVE enemy-pool slots are bosses-only (a packed field never blocks one).
+- Bloom (Medium / High only): the scene renders to the screen as usual (native MSAA, tone
+  mapping, in-material hit flashes), then the frame is copied (`copyFramebufferToTexture`),
+  bright parts are blurred at 1/4 and 1/8 res and added back. Threshold is per map
+  (`sky.bloomThreshold`, higher on snow). ≈2 ms at 2.5 MP on an M-series GPU. Renderer
+  resets `renderer.info` once per frame so draw-call counts include every pass.
+- Feel: level-up has a short hit-stop before the picker (`levelUpAt`), evolution swings the
+  camera (`rig.orbit`, sim held while it plays; skipped with reduced motion), bosses get an
+  intro card + phase ticks / enrage cue on the bar (EnemyDef `epithet`, `phases`, `enrageAt`),
+  enemies squash on hit and burst per `deathFx`, damage numbers merge per target.
 - Interface scale: root font = `--ui-base` (16 / 13 / 11 px by screen height) × `--ui-scale`
   (Larger text). Use rem everywhere.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
@@ -204,6 +214,9 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
   quick setup, rumble, raw-input pointer lock + fallback, 125%/150% scaling e2e, Firefox e2e
 - [x] 8. Touch twin-stick controls, touch-sized menus, rotate hint, safe areas, Relaxed
   preselected on touch, Tablet tier (render + crowd), boss slots reserved, WebKit e2e
+- [x] 9. Feel + visuals: hit squash, per-enemy defeat bursts, sparks / puffs, merged damage
+  numbers, level-up hit-stop + light pillar, evolution card (A + B → C) + camera swing,
+  stronger-looking weapons, gem trails, boss intro cards + phase ticks + enrage, bloom
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

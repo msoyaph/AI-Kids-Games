@@ -18,6 +18,7 @@ import { ShrineRenderer } from './ShrineRenderer';
 import { Sky } from './Sky';
 import { Snowfall } from './Snowfall';
 import { setFlashSteady } from './flash';
+import { Bloom } from './Bloom';
 import { buildWorldMesh } from './worldMesh';
 import { ENEMIES } from '../config/enemies';
 import { lowPolyMaterial } from './geo';
@@ -94,6 +95,7 @@ export class GameRenderer {
     this.scene.add(this.playerView.root);
     this.fx = new Fx(this.particles, overlay, this.rig);
     this.projectiles = new ProjectileRenderer(this.particles);
+    this.pickups.particles = this.particles;
     this.scene.add(this.enemies.group, this.pickups.group, this.projectiles.group, this.shrines.group, this.fx.group, this.snow.points);
     this.setQuality(quality);
   }
@@ -103,6 +105,15 @@ export class GameRenderer {
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
     const ratio = q === 'low' ? Math.min(dpr, 1) * 0.75 : q === 'tablet' ? Math.min(dpr, 1) : q === 'medium' ? Math.min(dpr, 1.5) : Math.min(dpr, 2);
     this.renderer.setPixelRatio(ratio);
+    const wantBloom = q === 'medium' || q === 'high';
+    if (wantBloom && !this.bloom) {
+      this.bloom = new Bloom();
+      this.bloom.threshold = this.map.sky.bloomThreshold;
+    } else if (!wantBloom && this.bloom) {
+      this.bloom.dispose();
+      this.bloom = null;
+    }
+    this.sizeBloom();
     const shadows = q === 'high';
     this.renderer.shadowMap.enabled = shadows;
     this.sun.castShadow = shadows;
@@ -131,6 +142,7 @@ export class GameRenderer {
     fog.far = map.sky.fog[1];
     this.snow.density = map.sky.snow;
     this.projectiles.setTelegraphStyle(map.palette.telegraphs === 'solid');
+    if (this.bloom) this.bloom.threshold = map.sky.bloomThreshold;
     const key = `${map.id}:${t.seed}`;
     if (this.worldKey === key && this.worldGroup) return;
     if (this.worldGroup) {
@@ -186,8 +198,28 @@ export class GameRenderer {
     this.playerView.setCharacter(def, this.quality === 'high');
   }
 
+  /** Bloom post-process on Medium / High (null on Low / Tablet). */
+  private bloom: Bloom | null = null;
+  private size = { w: 1, h: 1 };
+
+  private draw(): void {
+    // count draw calls / triangles across all passes of the frame (bloom renders several)
+    this.renderer.info.autoReset = false;
+    this.renderer.info.reset();
+    if (this.bloom) this.bloom.render(this.renderer, this.scene, this.camera);
+    else this.renderer.render(this.scene, this.camera);
+  }
+
+  private sizeBloom(): void {
+    const pr = this.renderer.getPixelRatio();
+    this.bloom?.setSize(this.size.w * pr, this.size.h * pr);
+  }
+
   resize(w: number, h: number): void {
+    this.size.w = w;
+    this.size.h = h;
     this.renderer.setSize(w, h, false);
+    this.sizeBloom();
     this.fx.numbers.resize(w, h, typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.updateProjectionMatrix();
@@ -250,7 +282,7 @@ export class GameRenderer {
     this.projectiles.update(w, alpha, time, x, y, z);
     this.shrines.update(w, time);
     this.fx.update(dt, this.camera);
-    this.renderer.render(this.scene, this.camera);
+    this.draw();
   }
 
   /** Snowfall + blizzard haze follow the sim's weather. */
@@ -304,6 +336,6 @@ export class GameRenderer {
     fog.far = this.map.sky.fog[1];
     this.snow.density = this.map.sky.snow * 0.6;
     this.snow.update(dt, this.camera.position, 0, 0);
-    this.renderer.render(this.scene, this.camera);
+    this.draw();
   }
 }

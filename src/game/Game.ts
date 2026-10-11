@@ -26,6 +26,8 @@ import { emptyInput, type UpgradeChoice, type World } from '../sim/world';
 import { h } from '../ui/dom';
 import { Menus, rewardText, type GameApi } from '../ui/menus';
 import { UI } from '../ui/UI';
+import { ENEMIES } from '../config/enemies';
+import { enemyIconUrl } from '../ui/icons';
 import { isTouchDevice, TouchControls } from '../input/touch';
 import type { Quality as RenderQuality } from '../render/Renderer';
 import { applyAccessClasses, reducedMotionOn, watchReducedMotion } from '../ui/access';
@@ -88,6 +90,10 @@ export class Game implements GameApi {
   playtest: PlaytestStore | null = null;
   private padFrames = 0;
   private kbFrames = 0;
+  /** The boss banner line waiting for its intro card. */
+  private bossLine = '';
+  /** When the level-up picker opens (after the hit-stop); 0 = none pending. */
+  private levelUpAt = 0;
   private touch: TouchControls;
   private touchDevice: boolean;
   private store: KeyValueStore;
@@ -350,6 +356,7 @@ export class Game implements GameApi {
     this.renderer.resetTransient();
     this.acc = 0;
     this.achT = 1;
+    this.levelUpAt = 0;
     this.padFrames = this.kbFrames = 0;
     this.paused = false;
     this.lastWorldState = 'playing';
@@ -392,6 +399,7 @@ export class Game implements GameApi {
 
   clearRun(): void {
     this.world = null;
+    this.levelUpAt = 0;
     this.paused = false;
     this.setGameplayInput(false);
     this.ui.hud.show(false);
@@ -447,7 +455,8 @@ export class Game implements GameApi {
     this.lastWorldState = w.state;
     switch (w.state) {
       case 'levelup':
-        this.showLevelUp(w);
+        // a beat of hit-stop: the burst and light pillar play before the picker opens
+        this.levelUpAt = performance.now() + (this.renderer.reducedMotion ? 120 : 380);
         break;
       case 'chest':
         this.setGameplayInput(false);
@@ -556,7 +565,13 @@ export class Game implements GameApi {
       const t = ev.type[n];
       if (t === Ev.Banner) {
         const id = ev.i[n];
-        this.ui.hud.showBanner(bannerText(w.map, id), id >= 1 && id <= 3);
+        // boss banners become the boss's intro card (shown on its spawn event)
+        if (id >= 1 && id <= 3) this.bossLine = bannerText(w.map, id);
+        else this.ui.hud.showBanner(bannerText(w.map, id), false);
+      } else if (t === Ev.BossSpawn) {
+        const def = ENEMIES[ev.i[n]];
+        if (def) this.ui.hud.bossIntro(enemyIconUrl(def.id, def.color, true, true), def.name, def.epithet ?? '', this.bossLine);
+        this.bossLine = '';
 
       } else if (t === Ev.PlayerHurt) {
         this.ui.hud.hurt();
@@ -572,6 +587,7 @@ export class Game implements GameApi {
         this.renderer.playerView.land(ev.get(n, 3));
       } else if (t === Ev.Evolve) {
         this.ui.hud.showBanner('Evolution!');
+        this.renderer.rig.orbit(1.4, 1.1);
         this.input.rumble(0.8, 0.8, 450);
       }
     }
@@ -589,7 +605,12 @@ export class Game implements GameApi {
     const w = this.world;
     if (w) {
       let simT = 0;
-      const running = !this.paused && w.state === 'playing';
+      if (this.levelUpAt > 0 && performance.now() >= this.levelUpAt) {
+        this.levelUpAt = 0;
+        if (w.state === 'levelup') this.showLevelUp(w);
+      }
+      // the evolution camera swing holds the action
+      const running = !this.paused && w.state === 'playing' && !this.renderer.rig.orbiting;
       if (running) {
         this.input.consumeLook(dt, this.look);
         this.renderer.rig.look(this.look.x, this.look.y);

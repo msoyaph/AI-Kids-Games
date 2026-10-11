@@ -10,6 +10,8 @@ export interface CardInfo {
   tag: string;
   desc: string;
   evolve: boolean;
+  /** Evolutions: [base weapon, catalyst item, result] icons — "A + B → C". */
+  recipe?: [string, string, string];
 }
 
 export function describeChoice(c: UpgradeChoice): CardInfo {
@@ -36,7 +38,14 @@ export function describeChoice(c: UpgradeChoice): CardInfo {
       const into = weaponDef(evo.into);
       const base = weaponDef(evo.weapon);
       const cat = passiveDef(evo.passive);
-      return { icon: iconUrl(into.id, 'weapon'), name: into.name, tag: 'Evolution!', desc: `${base.name} + ${cat.name}: ${into.description}`, evolve: true };
+      return {
+        icon: iconUrl(into.id, 'weapon'),
+        name: into.name,
+        tag: 'Evolution!',
+        desc: `${base.name} + ${cat.name}: ${into.description}`,
+        evolve: true,
+        recipe: [iconUrl(base.id, 'weapon'), iconUrl(cat.id, 'passive'), iconUrl(into.id, 'weapon')],
+      };
     }
     case 'heal':
       return { icon: iconUrl('heal', 'misc'), name: 'Warm Supper', tag: 'Snack', desc: 'Restore 30% of your HP.', evolve: false };
@@ -51,7 +60,9 @@ export function choiceCard(c: UpgradeChoice, index: number, onPick: () => void):
     'button',
     { class: `card${info.evolve ? ' evolve' : ''}`, onclick: onPick, 'data-autofocus': index === 0 ? true : undefined },
     h('div', { class: 'card-key' }, String(index + 1)),
-    img(info.icon, 'card-icon'),
+    info.recipe
+      ? h('div', { class: 'card-recipe' }, img(info.recipe[0], 'recipe-icon'), h('span', null, '+'), img(info.recipe[1], 'recipe-icon'), h('span', null, '→'), img(info.recipe[2], 'recipe-icon big'))
+      : img(info.icon, 'card-icon'),
     h('div', { class: 'card-tag' }, info.tag),
     h('div', { class: 'card-name' }, info.name),
     h('div', { class: 'card-desc' }, info.desc),

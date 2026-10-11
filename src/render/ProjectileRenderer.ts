@@ -174,7 +174,11 @@ export class ProjectileRenderer {
       const x = pr.px[i] + (pr.x[i] - pr.px[i]) * alpha;
       const y = pr.py[i] + (pr.y[i] - pr.py[i]) * alpha;
       const z = pr.pz[i] + (pr.z[i] - pr.pz[i]) * alpha;
-      const s = pr.radius[i] / (pr.motion[i] === 1 || pr.motion[i] === 2 ? 0.6 : 0.4);
+      // stronger weapons look it: bigger, and high levels / evolutions leave glowing trails
+      const wi = w.weapons[pr.slot[i]];
+      const lvl = wi ? (wi.def.evolved ? 8 : wi.level) : 1;
+      const s = (pr.radius[i] / (pr.motion[i] === 1 || pr.motion[i] === 2 ? 0.6 : 0.4)) * (1 + (lvl - 1) * 0.03);
+      if (lvl >= 5 && wi && Math.random() < 0.18 * this.particles.density) this.particles.emit(x, y, z, 0, 0.4, 0, 0.3, 0.16 + (lvl - 5) * 0.03, wi.def.visual.color, 0);
       let yaw = Math.atan2(pr.vx[i], pr.vz[i]);
       let roll = 0;
       switch (VISUALS[v]) {
@@ -372,7 +376,9 @@ export class ProjectileRenderer {
       rc[nr * 3 + 1] = tmpC.g * ri;
       rc[nr * 3 + 2] = tmpC.b * ri;
       nr++;
-      const heads = wi.def.evolved ? 8 : 5;
+      // more (and bigger) mallet heads as the ring levels up
+      const heads = wi.def.evolved ? 8 : Math.min(7, 3 + wi.level);
+      const headS = wi.def.evolved ? 1.7 : 1.2 + wi.level * 0.06;
       for (let k = 0; k < heads && nh < 64; k++) {
         const a = time * 2.2 + (k / heads) * Math.PI * 2;
         const hy = py + 0.9 + Math.sin(time * 6 + k) * 0.15 - pulse * pulse * 0.5;
@@ -381,9 +387,9 @@ export class ProjectileRenderer {
         TRS[2] = pz + Math.cos(a) * r * 0.92;
         TRS[3] = a;
         TRS[4] = 0.4;
-        TRS[5] = 1.4;
-        TRS[6] = 1.4;
-        TRS[7] = 1.4;
+        TRS[5] = headS;
+        TRS[6] = headS;
+        TRS[7] = headS;
         writeTRSFrom(ha, nh * 16);
         hc[nh * 3] = tmpC.r;
         hc[nh * 3 + 1] = tmpC.g;

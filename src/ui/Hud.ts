@@ -33,6 +33,10 @@ export class Hud {
   private bossWrap: HTMLElement;
   private bossName: HTMLElement;
   private bossFill: HTMLElement;
+  private bossTicks: HTMLElement;
+  private bossType = -1;
+  private intro: HTMLElement;
+  private introT = 0;
   private buffs: HTMLElement;
   private banner: HTMLElement;
   private bannerT = 0;
@@ -73,7 +77,9 @@ export class Hud {
     this.speed = h('div', { class: 'speedo' }, '0');
     this.bossName = h('div', { class: 'boss-name' });
     this.bossFill = h('div', { class: 'bar-fill boss' });
-    this.bossWrap = h('div', { class: 'boss-bar hidden' }, this.bossName, h('div', { class: 'bar' }, this.bossFill));
+    this.bossTicks = h('div', { class: 'boss-ticks' });
+    this.bossWrap = h('div', { class: 'boss-bar hidden' }, this.bossName, h('div', { class: 'bar' }, this.bossFill, this.bossTicks));
+    this.intro = h('div', { class: 'boss-intro hidden' });
     this.buffs = h('div', { class: 'buffs' });
     this.banner = h('div', { class: 'banner hidden' });
     this.toasts = h('div', { class: 'toasts' });
@@ -104,6 +110,7 @@ export class Hud {
       ),
       h('div', { class: 'hud-br' }, this.speed, h('div', { class: 'speedo-label' }, 'speed')),
       this.banner,
+      this.intro,
       this.prompt,
     );
   }
@@ -146,6 +153,17 @@ export class Hud {
     const fwd = wt.dirX * f.x + wt.dirZ * f.z;
     const right = wt.dirX * -f.z + wt.dirZ * f.x;
     this.gustArrow.style.transform = `rotate(${Math.round((Math.atan2(right, fwd) * 180) / Math.PI)}deg)`;
+  }
+
+  /** Boss intro card: portrait, name, epithet and the boss's line, for a couple of seconds. */
+  bossIntro(icon: string, name: string, epithet: string, line: string): void {
+    this.intro.innerHTML = '';
+    this.intro.append(img(icon, 'boss-intro-icon'), h('div', null, h('div', { class: 'boss-intro-tag' }, 'Boss'), h('div', { class: 'boss-intro-name' }, name), epithet ? h('div', { class: 'boss-intro-epithet' }, epithet) : null, line ? h('div', { class: 'boss-intro-line' }, line) : null));
+    this.intro.classList.remove('hidden', 'pop');
+    void this.intro.offsetWidth;
+    this.intro.classList.add('pop');
+    this.introT = 3.4;
+    this.bossType = -1;
   }
 
   toast(title: string, body: string): void {
@@ -253,8 +271,18 @@ export class Hud {
       this.bossHint = bi;
       if (bi >= 0) {
         this.bossWrap.classList.remove('hidden');
-        setText(this.bossName, ENEMIES[w.enemies.type[bi]].name);
-        setWidth(this.bossFill, w.enemies.hp[bi] / w.enemies.maxHp[bi]);
+        const type = w.enemies.type[bi];
+        const def = ENEMIES[type];
+        if (type !== this.bossType) {
+          this.bossType = type;
+          setText(this.bossName, def.name);
+          // phase ticks where the fight changes
+          this.bossTicks.innerHTML = '';
+          for (const f of def.phases ?? (def.enrageAt ? [def.enrageAt] : [])) this.bossTicks.append(h('div', { class: 'boss-tick', style: `left:${f * 100}%` }));
+        }
+        const frac = w.enemies.hp[bi] / w.enemies.maxHp[bi];
+        setWidth(this.bossFill, frac);
+        this.bossWrap.classList.toggle('enraged', w.mods.bossEnraged || (def.enrageAt !== undefined && frac < def.enrageAt));
       } else this.bossWrap.classList.add('hidden');
     } else this.bossWrap.classList.add('hidden');
 
@@ -286,6 +314,10 @@ export class Hud {
       this.prompt.classList.remove('hidden');
     } else this.prompt.classList.add('hidden');
 
+    if (this.introT > 0) {
+      this.introT -= dt;
+      if (this.introT <= 0) this.intro.classList.add('hidden');
+    }
     if (this.bannerT > 0) {
       this.bannerT -= dt;
       if (this.bannerT <= 0) this.banner.classList.add('hidden');

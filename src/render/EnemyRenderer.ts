@@ -75,6 +75,12 @@ export class EnemyRenderer {
       let roll = this.isBoss[t] ? Math.sin(phase * 0.4) * 0.04 : Math.sin(phase) * 0.1;
       let sy = s * (1 + Math.sin(phase * 2) * 0.05);
       let flash = e.flash[i] > 0 ? 1 : 0;
+      if (flash && !this.isBoss[t]) {
+        // hit squash: wider and shorter for the 0.1 s flash
+        const k = e.flash[i] * 10;
+        s *= 1 + 0.12 * k;
+        sy *= 1 - 0.18 * k;
+      }
       let cr = 1;
       let cg = 1;
       let cb = 1;

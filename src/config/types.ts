@@ -159,6 +159,8 @@ export interface EnemyDef {
   fuse?: number;
   explodeRadius?: number;
   explodeDamage?: number;
+  /** How it bursts when defeated (render only): pop, shards, puff, splat. */
+  deathFx?: 'pop' | 'shards' | 'puff' | 'splat';
   /** Flies: ignores walls, pathing and ground effects (ice, snow). */
   flying?: boolean;
   /** Hover bob amplitude (render only). */
@@ -169,6 +171,12 @@ export interface EnemyDef {
   roll?: number;
   /** Shot look (ShotVisual); defaults to Orb. */
   shotVisual?: number;
+  /** Boss only: intro-card subtitle. */
+  epithet?: string;
+  /** Boss only: health fractions where its fight changes (ticks on the boss bar). */
+  phases?: number[];
+  /** Boss only: health fraction below which it is enraged (bar turns red). */
+  enrageAt?: number;
   /** Boss only: which attack pattern drives it. */
   bossPattern?: 'grumblecap' | 'clockjaw' | 'regent' | 'oldRime';
   /** Render capacity hint. */

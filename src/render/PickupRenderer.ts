@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CAPS, GEM_TIERS } from '../config/balance';
 import { PickupKind } from '../sim/pools';
 import type { World } from '../sim/world';
+import type { Particles } from './Particles';
 import { lowPolyMaterial } from './geo';
 import { commitInstances, makeInstanced, TRS, writeTRSFrom } from './instancing';
 import { chestGeometry, coinGeometry, gemGeometry, heartGeometry, magnetGeometry, projectileGeometry, shardGeometry } from './models';
@@ -28,6 +29,9 @@ export class PickupRenderer {
       this.tierColors[k].setHex(on ? cb[k] : GEM_TIERS[k].color);
     });
   }
+
+  /** For gem trails (set by the renderer). */
+  particles: Particles | null = null;
 
   constructor() {
     this.group.name = 'pickups';
@@ -75,6 +79,8 @@ export class PickupRenderer {
       const z = g.pz[i] + (g.z[i] - g.pz[i]) * alpha;
       const tier = g.tier[i];
       const mesh = this.gems[tier];
+      // gems being pulled in zip with a little trail
+      if (g.magnet[i] && this.particles && Math.random() < 0.35 * this.particles.density) this.particles.emit(x, y, z, 0, 0.3, 0, 0.22, 0.13, this.tierColors[tier].getHex(), 0);
       const n = gn[tier]++;
       const ga = mesh.instanceMatrix.array as Float32Array;
       const gc = mesh.instanceColor!.array as Float32Array;
