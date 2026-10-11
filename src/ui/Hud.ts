@@ -2,6 +2,7 @@ import { BOSS_TIMES, PASSIVE_SLOTS, RUN_LENGTH, WEAPON_SLOTS } from '../config/b
 import { ENEMIES } from '../config/enemies';
 import { SHRINES } from '../config/meta';
 import { formatTime } from '../core/math';
+import { nearbyShrine } from '../sim/shrines';
 import type { World } from '../sim/world';
 import { h, img, setText, setWidth } from './dom';
 import { iconUrl } from './icons';
@@ -38,6 +39,7 @@ export class Hud {
   private ghostHp = 1;
   private lastBuffKey = '';
   private hurtVignette: HTMLElement;
+  private prompt: HTMLElement;
 
   constructor() {
     const slot = (): Slot => {
@@ -67,6 +69,7 @@ export class Hud {
     this.banner = h('div', { class: 'banner hidden' });
     this.toasts = h('div', { class: 'toasts' });
     this.hurtVignette = h('div', { class: 'hurt-vignette' });
+    this.prompt = h('div', { class: 'prompt hidden' });
 
     this.root = h(
       'div',
@@ -89,6 +92,7 @@ export class Hud {
       ),
       h('div', { class: 'hud-br' }, this.speed, h('div', { class: 'speedo-label' }, 'speed')),
       this.banner,
+      this.prompt,
     );
   }
 
@@ -187,6 +191,15 @@ export class Hud {
         this.buffs.append(h('div', { class: 'buff', style: `--c:${color}` }, h('b', null, def?.name.replace('Shrine of ', '') ?? kind), h('span', null, `${secs}s`)));
       }
     }
+
+    // shrine hint
+    const sh = nearbyShrine(w, 7);
+    if (sh) {
+      const def = SHRINES.find((d) => d.kind === sh.kind)!;
+      setText(this.prompt, `${def.name} — bonk it! · ${def.description}`);
+      this.prompt.style.setProperty('--c', `#${def.color.toString(16).padStart(6, '0')}`);
+      this.prompt.classList.remove('hidden');
+    } else this.prompt.classList.add('hidden');
 
     if (this.bannerT > 0) {
       this.bannerT -= dt;

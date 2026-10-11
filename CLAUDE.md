@@ -47,7 +47,7 @@ Key rules:
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera
 2. [x] Enemies, spawning, collision, HP, death
 3. [x] Weapons, XP, leveling, upgrade picker
-4. [ ] Full weapon/item roster, evolutions, chests, shrines
+4. [x] Full weapon/item roster, evolutions, chests, shrines
 5. [ ] Bosses, 20-minute waves, win/lose flow
 6. [ ] Menus, characters, meta-progression, save system
 7. [ ] Audio, juice, polish, settings

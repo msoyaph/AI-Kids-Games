@@ -10,6 +10,7 @@ import { Particles } from './Particles';
 import { PickupRenderer } from './PickupRenderer';
 import { PlayerView } from './PlayerView';
 import { ProjectileRenderer } from './ProjectileRenderer';
+import { ShrineRenderer } from './ShrineRenderer';
 import { buildWorldMesh } from './worldMesh';
 
 export type Quality = 'low' | 'medium' | 'high';
@@ -30,6 +31,7 @@ export class GameRenderer {
   readonly particles = new Particles();
   readonly fx: Fx;
   readonly projectiles: ProjectileRenderer;
+  readonly shrines = new ShrineRenderer();
   private sun: THREE.DirectionalLight;
   private worldGroup: THREE.Group | null = null;
   private worldSeed = -1;
@@ -68,7 +70,7 @@ export class GameRenderer {
     this.scene.add(this.playerView.root);
     this.fx = new Fx(this.particles, overlay, this.rig);
     this.projectiles = new ProjectileRenderer(this.particles);
-    this.scene.add(this.enemies.group, this.pickups.group, this.projectiles.group, this.fx.group);
+    this.scene.add(this.enemies.group, this.pickups.group, this.projectiles.group, this.shrines.group, this.fx.group);
     this.setQuality(quality);
   }
 
@@ -104,6 +106,7 @@ export class GameRenderer {
     this.sun.castShadow = shadows;
     this.playerView.setShadows(shadows);
     this.enemies.setCastShadows(shadows);
+    this.shrines.setShadows(shadows);
     this.enemies.shadowsEnabled = q !== 'low';
     this.particles.density = q === 'low' ? 0.4 : q === 'medium' ? 0.7 : 1;
     if (this.terrain) {
@@ -165,6 +168,7 @@ export class GameRenderer {
     this.enemies.update(w, alpha, time);
     this.pickups.update(w, alpha, time);
     this.projectiles.update(w, alpha, time, x, y, z);
+    this.shrines.update(w, time);
     this.fx.update(dt, this.camera);
     this.renderer.render(this.scene, this.camera);
   }

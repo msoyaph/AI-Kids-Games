@@ -4,6 +4,7 @@ import { enemyContacts, killDepleted, updateEnemies, updateEnemyShots } from './
 import { updateHazards } from './hazards';
 import { updateGems, updatePickups } from './pickups';
 import { updateProjectiles } from './projectiles';
+import { updateShrines } from './shrines';
 import { updatePlayer } from './player';
 import { recomputePlayerStats } from './stats';
 import { beginLevelUp, openChest } from './upgrades';
@@ -87,6 +88,7 @@ export function step(w: World, input: SimInput): void {
   updateEnemyShots(w);
   updateGems(w);
   updatePickups(w);
+  updateShrines(w);
   updateTimers(w);
   killDepleted(w);
   compact(w);

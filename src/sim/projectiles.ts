@@ -59,7 +59,8 @@ export function updateProjectiles(w: World): void {
         break;
       }
       case Motion.Orbit: {
-        const age = pr.maxLife[i] - pr.life[i];
+        // a3 = age (life may be "infinite" for permanent orbits, so it can't be derived)
+        const age = (pr.a3[i] += DT);
         const a = pr.a0[i] + pr.a2[i] * age;
         // ease the radius in on spawn
         const r = pr.a1[i] * Math.min(1, age * 5);

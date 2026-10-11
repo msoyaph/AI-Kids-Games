@@ -31,9 +31,9 @@ export function orbit(w: World, wi: WeaponInstance): void {
     pr.a0[i] = offset + (k / n) * Math.PI * 2;
     pr.a1[i] = s.area;
     pr.a2[i] = s.speed;
-    if (permanent) pr.life[i] = pr.maxLife[i] = 1e9;
+    if (permanent) pr.life[i] = pr.maxLife[i] = 1e6;
   }
-  wi.active = permanent ? 1e9 : s.duration;
+  wi.active = permanent ? 1e6 : s.duration;
   wi.timer = s.cooldown;
   w.events.push(Ev.Sfx, p.x, p.y, p.z, 1, 0, 0, sfxId(wi.def.sfx));
 }

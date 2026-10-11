@@ -1,3 +1,4 @@
+import { placeShrines } from './shrines';
 import { recomputePlayerStats } from './stats';
 import { addWeapon } from './weapons';
 import { createWorld, type World, type WorldOptions } from './world';
@@ -8,5 +9,6 @@ export function newRun(opts: WorldOptions): World {
   recomputePlayerStats(w);
   w.player.hp = w.player.stats.maxHp;
   addWeapon(w, w.player.character.startWeapon);
+  placeShrines(w);
   return w;
 }

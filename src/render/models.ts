@@ -215,7 +215,8 @@ export function projectileGeometry(kind: ProjectileVisual): THREE.BufferGeometry
       b.add(P.box(0.24, 0.02, 0.12), 0x6fc24a, [0, 0, -0.3]);
       break;
     case 'lantern':
-      b.add(P.octa(0.34), 0xfff3a0, [0, 0, 0], [0, 0, 0], [1, 1.25, 1]);
+      b.add(P.octa(0.34), 0xffc93d, [0, 0, 0], [0, 0, 0], [1, 1.25, 1]);
+      b.add(P.octa(0.2), 0xfff6c8, [0, 0, 0], [0, 0, 0], [1, 1.3, 1]);
       b.add(P.box(0.5, 0.06, 0.5), 0xb07a3a, [0, 0.36, 0]);
       b.add(P.box(0.5, 0.06, 0.5), 0xb07a3a, [0, -0.36, 0]);
       break;
