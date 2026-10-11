@@ -12,10 +12,15 @@ asset files, CDN links or web fonts.
 - `npm run build` — typecheck + single-file build → `dist/index.html` (works from file:// and in a
   sandboxed iframe).
 - `npm test` — Vitest unit tests (`tests/unit`).
-- `npm run test:e2e` — Playwright smoke tests (`tests/e2e`), builds first via webServer config.
+- `npm run test:e2e` — Playwright smoke tests (`tests/e2e`), builds + serves on a dedicated port
+  (47413, `E2E_PORT` overrides; never reuses a foreign server).
 - `npm run simulate -- [seeds] [skill]` — headless balance simulation (bot plays full runs
   per character). `VERBOSE=1` prints every run.
 - `npm run bench -- [enemies] [seconds]` — headless sim performance benchmark.
+- `npm run check-size` — after build: single file, ≤1.5 MB, no external references.
+- `?tune=1` — live tuning panel (F2 hides). Export → `npm run apply-tuning -- file.json`
+  (validates + rewrites the generated block in src/config/tuning.ts);
+  `npm run simulate -- 8 0.7 --tuning file.json` tests an export headlessly.
 - E2E needs `npx playwright install chromium` once. On macOS it uses the real GPU via
   ANGLE/Metal; elsewhere SwiftShader (see tests/e2e/smoke.spec.ts for the one tolerated
   browser-internal compositor message).
@@ -24,8 +29,9 @@ asset files, CDN links or web fonts.
 ```
 src/
   core/      rng (seeded), math helpers, event ring buffer, safe storage
-  config/    ALL tuning data (typed): weapons, passives, enemies, waves, characters, evolutions,
-             shop, achievements, balance constants
+  config/    ALL tuning data (typed): tuning.ts (every feel/balance knob, ranges, defaults
+             block), weapons, passives, enemies, waves, characters, evolutions, shop,
+             achievements; balance.ts keeps structural constants only
   sim/       Pure game logic — NO three.js / DOM imports. Deterministic given seed + inputs.
              world.ts (state), pools.ts (SoA typed-array pools), spatialHash.ts, terrain.ts,
              player.ts (momentum movement), enemyAI.ts, director.ts (waves/bosses), combat.ts,
@@ -55,6 +61,10 @@ Key rules:
 - Adding a weapon = add a `WeaponDef` in `config/weapons.ts` (+ optional evolution) and, if it
   needs new behavior, one function in `sim/weapons/` registered in `sim/weapons/index.ts`.
 - Use `world.rng` (seeded) for anything gameplay-affecting; `Math.random` only for cosmetic FX.
+- Feel/balance numbers live in `config/tuning.ts`. Sim code reads the run's copy `w.tuning`
+  (never `TUNING_DEFAULTS` directly) and applies it at use time so live panel edits take
+  effect immediately; the camera reads `rig.tuning`. Runs with changed tuning are flagged
+  `w.options.tuned` and never touch the save.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
 
 ## Performance notes
@@ -73,9 +83,9 @@ Key rules:
 Thea ~12:35, Pip ~11:30, Brindle ~15:00 average survival (overall ~13:00); ~25% first-run
 wins. Deaths
 cluster at the boss gates (5:00 Grumblecap, 10:00 Clockjaw, 15:00+ Regent). Skill 0.45 →
-~11:10, 0.9 → ~13:10. Main knobs: `enemyHpScale`/`enemyDamageScale` (balance.ts), wave
+~11:10, 0.9 → ~13:10. Main knobs: wave
 `rate/minAlive/maxAlive` (waves.ts), boss hp/projectileDamage (enemies.ts + bosses.ts),
-`PLAYER_IFRAMES`, `LEVEL_HEAL` (leveling.ts), heart drop chance.
+`tuning.combat.*` (i-frames, level heal, drops, HP/damage scaling) and `tuning.spawns.*`.
 The bot (sim/bot.ts) kites, dodges shots predictively, sidesteps telegraphed charges,
 hops shockwave rings and un-sticks itself; it never slides, so humans can do better.
 
@@ -94,6 +104,7 @@ balance → screenshots/handoff). Baselines in docs/BASELINES.md. Guards: `npm r
 intentional sim changes), storage budget test (<100 KB across all `theabonk.*` keys).
 Benchmarks are load-sensitive: compare A/B against a `main` worktree.
 - [x] 0. Safety nets
+- [x] 1. Tuning file + live panel + apply-tuning
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

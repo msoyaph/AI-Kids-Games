@@ -1,4 +1,5 @@
-import { BASE_STATS, CAPS, MAP_HALF, xpToNext } from '../config/balance';
+import { BASE_STATS, CAPS, MAP_HALF } from '../config/balance';
+import { mergeTuning, TUNING_DEFAULTS, xpToNextWith, type Tuning, type TuningOverrides } from '../config/tuning';
 import { characterDef } from '../config/characters';
 import type { WeaponConfig } from '../config/weapons';
 import type { CharacterDef, PassiveDef, PlayerStats, ShrineKind, WeaponStats } from '../config/types';
@@ -148,6 +149,10 @@ export interface WorldOptions {
   /** Stress-test mode: keep N enemies alive, player invulnerable. */
   stress?: number;
   god?: boolean;
+  /** Tuning overrides for this run (live panel / experiments). Defaults when omitted. */
+  tuning?: TuningOverrides;
+  /** Run played with non-default tuning: never counts for records or achievements. */
+  tuned?: boolean;
 }
 
 export interface World {
@@ -176,7 +181,9 @@ export interface World {
   director: DirectorState;
   stats: RunStats;
   unlockedWeapons: Set<string>;
-  options: { stress: number; god: boolean };
+  options: { stress: number; god: boolean; tuned: boolean };
+  /** This run's tuning (a private copy — the live panel edits it in place). */
+  tuning: Tuning;
   /** Shared query scratch buffers (never hold across calls). */
   scratch: Int32Array;
   scratch2: Int32Array;
@@ -192,6 +199,7 @@ export function makeStats(): PlayerStats {
 
 export function createWorld(opts: WorldOptions): World {
   const rng = new Rng(opts.seed);
+  const tuning = mergeTuning(TUNING_DEFAULTS, opts.tuning);
   const terrain = new Terrain(opts.seed);
   const character = characterDef(opts.characterId);
 
@@ -221,7 +229,7 @@ export function createWorld(opts: WorldOptions): World {
     iframes: 0,
     level: 1,
     xp: 0,
-    xpNext: xpToNext(1),
+    xpNext: xpToNextWith(1, tuning.xp),
     alive: true,
     revivals: baseStats.revival,
     rerolls: baseStats.reroll,
@@ -260,7 +268,8 @@ export function createWorld(opts: WorldOptions): World {
     director: { spawnAcc: 0, eventIndex: 0, bossUid: 0, bossType: -1, bossMaxHp: 0, finalBossDefeated: false, lastSegment: -1, victoryT: 0, dawn: false },
     stats: { kills: 0, damageTaken: 0, coins: 0, bossKills: {}, evolutions: 0, shrinesBroken: 0, chestsOpened: 0, topSpeed: 0, elitesKilled: 0 },
     unlockedWeapons: new Set(opts.unlockedWeapons ?? []),
-    options: { stress, god: !!opts.god || stress > 0 },
+    options: { stress, god: !!opts.god || stress > 0, tuned: !!opts.tuned },
+    tuning,
     scratch: new Int32Array(2048),
     scratch2: new Int32Array(512),
     areaScratch: new Int32Array(2048),

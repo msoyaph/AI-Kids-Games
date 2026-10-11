@@ -1,4 +1,4 @@
-import { DT, SPAWN } from '../config/balance';
+import { DT } from '../config/balance';
 import { ENEMIES, enemyIndex } from '../config/enemies';
 import { WAVES, WAVE_EVENTS } from '../config/waves';
 import type { WaveEvent } from '../config/types';
@@ -46,14 +46,16 @@ function ringPoint(w: World, minD: number, maxD: number, biasX: number, biasZ: n
 }
 
 export function spawnOffscreen(w: World, type: number, elite = false): number {
-  ringPoint(w, SPAWN.minDist, SPAWN.maxDist, 0, 0, tmp);
+  const sp = w.tuning.spawns;
+  ringPoint(w, sp.minDist, sp.maxDist, 0, 0, tmp);
   return spawnEnemy(w, type, tmp[0], tmp[1], elite);
 }
 
 /** Recycle a straggler: move it back onto the ring, ahead of where the player is heading. */
 export function placeOffscreen(w: World, i: number): void {
   const e = w.enemies;
-  ringPoint(w, SPAWN.minDist, SPAWN.maxDist, w.player.vx * 3, w.player.vz * 3, tmp);
+  const sp = w.tuning.spawns;
+  ringPoint(w, sp.minDist, sp.maxDist, w.player.vx * 3, w.player.vz * 3, tmp);
   const y = w.terrain.height(tmp[0], tmp[1]);
   e.x[i] = e.px[i] = tmp[0];
   e.z[i] = e.pz[i] = tmp[1];
@@ -80,7 +82,7 @@ function runEvent(w: World, ev: WaveEvent): void {
       break;
     }
     case 'swarm': {
-      ringPoint(w, SPAWN.minDist - 6, SPAWN.minDist, 0, 0, tmp);
+      ringPoint(w, w.tuning.spawns.minDist - 6, w.tuning.spawns.minDist, 0, 0, tmp);
       for (let k = 0; k < ev.count; k++) {
         spawnEnemy(w, type, tmp[0] + (w.rng.next() - 0.5) * 8, tmp[1] + (w.rng.next() - 0.5) * 8);
       }
@@ -128,8 +130,10 @@ export function updateDirector(w: World): void {
   d.lastSegment = segIdx;
 
   const alive = aliveRegular(w);
-  if (alive < seg.maxAlive) {
-    const rate = alive < seg.minAlive ? seg.rate * 3 : seg.rate;
+  const sp = w.tuning.spawns;
+  if (alive < seg.maxAlive * sp.maxAliveMult) {
+    const base = seg.rate * sp.rateMult;
+    const rate = alive < seg.minAlive * sp.minAliveMult ? base * 3 : base;
     d.spawnAcc += rate * DT;
     let budget = 20;
     while (d.spawnAcc >= 1 && budget-- > 0) {

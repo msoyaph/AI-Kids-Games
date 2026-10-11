@@ -1,3 +1,4 @@
+import type { TuningOverrides } from '../config/tuning';
 import type { PlayerStats } from '../config/types';
 import { Bot } from './bot';
 import { newRun } from './run';
@@ -28,9 +29,10 @@ export function simulateRun(opts: {
   maxSeconds?: number;
   meta?: Partial<PlayerStats>;
   unlockedWeapons?: string[];
+  tuning?: TuningOverrides;
   onWorld?: (w: World) => void;
 }): HeadlessResult {
-  const w = newRun({ seed: opts.seed, characterId: opts.characterId, meta: opts.meta, unlockedWeapons: opts.unlockedWeapons });
+  const w = newRun({ seed: opts.seed, characterId: opts.characterId, meta: opts.meta, unlockedWeapons: opts.unlockedWeapons, tuning: opts.tuning });
   opts.onWorld?.(w);
   const bot = new Bot(opts.seed, opts.skill ?? 0.7);
   const input = emptyInput();

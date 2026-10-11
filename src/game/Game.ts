@@ -2,9 +2,12 @@ import { DT } from '../config/balance';
 import { BANNERS, BANNER } from '../config/waves';
 import { Ev } from '../core/events';
 import { randomSeed } from '../core/rng';
-import { SafeLocalStore } from '../core/storage';
+import { urlParam } from '../core/env';
+import { SafeLocalStore, type KeyValueStore } from '../core/storage';
+import { mergeTuning, TUNING_DEFAULTS, xpToNextWith, type TuningGroup } from '../config/tuning';
+import { TuningPanel } from '../ui/TuningPanel';
 import { InputManager, type UiAction } from '../input/InputManager';
-import { applyRunResult, checkAchievements, metaBonuses, summarize } from '../meta/progression';
+import { applyRunResult, checkAchievements, metaBonuses, summarize, type RunOutcome } from '../meta/progression';
 import { SaveManager } from '../meta/save';
 import { GameRenderer } from '../render/Renderer';
 import { characterDef } from '../config/characters';
@@ -18,6 +21,11 @@ import { Menus, rewardText, type GameApi } from '../ui/menus';
 import { UI } from '../ui/UI';
 
 const MAX_STEPS_PER_FRAME = 5;
+const TUNING_KEY = 'theabonk.tuning';
+
+function unrecordedOutcome(): RunOutcome {
+  return { gold: { coins: 0, kills: 0, time: 0, bosses: 0, victory: 0, total: 0 }, achievements: [], newBest: false };
+}
 const MENU_SEED = 1337;
 
 export type SoundName = 'click' | 'buy' | 'error' | 'back' | 'open' | 'achievement';
@@ -63,12 +71,18 @@ export class Game implements GameApi {
   private frameMs = 0;
   private debugT = 0;
 
+  /** Live tuning panel (only with ?tune=1). */
+  tuningPanel: TuningPanel | null = null;
+  private store: KeyValueStore;
+  private tuneSaveT = 0;
+
   constructor(
     private canvas: HTMLCanvasElement,
     overlay: HTMLCanvasElement,
     uiRoot: HTMLElement,
   ) {
-    this.save = new SaveManager(new SafeLocalStore());
+    this.store = new SafeLocalStore();
+    this.save = new SaveManager(this.store);
     this.renderer = new GameRenderer(canvas, overlay, this.save.data.settings.quality);
     this.input = new InputManager(canvas);
     this.ui = new UI(uiRoot);
@@ -97,6 +111,36 @@ export class Game implements GameApi {
       }
     });
     this.ui.escapeAllowed = () => performance.now() - this.lockLostAt > 300;
+    if (urlParam('tune') === '1') this.initTuning(uiRoot);
+  }
+
+  /** ?tune=1: developer tuning panel. Overrides persist under `theabonk.tuning` (tune mode only). */
+  private initTuning(uiRoot: HTMLElement): void {
+    let saved: unknown = null;
+    try {
+      saved = JSON.parse(this.store.get(TUNING_KEY) ?? 'null');
+    } catch {
+      saved = null;
+    }
+    const initial = mergeTuning(TUNING_DEFAULTS, saved);
+    this.tuningPanel = new TuningPanel(uiRoot, {
+      live: () => this.world?.tuning ?? null,
+      camera: () => this.renderer.rig.tuning,
+      changed: (g: TuningGroup) => this.onTuningChanged(g),
+    }, initial);
+    // sliders need a free cursor: drag-to-look while tuning
+    this.input.setMouseMode('drag');
+  }
+
+  private onTuningChanged(g: TuningGroup): void {
+    const w = this.world;
+    if (w && this.tuningPanel?.isTuned) w.options.tuned = true;
+    if (w && g === 'xp') w.player.xpNext = xpToNextWith(w.player.level, w.tuning.xp);
+    // debounce persistence
+    clearTimeout(this.tuneSaveT);
+    this.tuneSaveT = window.setTimeout(() => {
+      if (this.tuningPanel) this.store.set(TUNING_KEY, JSON.stringify(this.tuningPanel.overrides));
+    }, 300);
   }
 
   resize(): void {
@@ -127,7 +171,7 @@ export class Game implements GameApi {
     if (this.renderer.quality !== s.quality) this.renderer.setQuality(s.quality);
     this.input.sensitivity = s.sensitivity;
     this.input.invertY = s.invertY;
-    this.input.setMouseMode(s.mouseMode);
+    this.input.setMouseMode(this.tuningPanel ? 'drag' : s.mouseMode);
     this.renderer.rig.shakeEnabled = s.screenShake;
     this.renderer.fx.numbers.enabled = s.damageNumbers;
     this.fpsEl.classList.toggle('hidden', !s.showFps);
@@ -142,18 +186,21 @@ export class Game implements GameApi {
     const stress = Number(params.get('stress') || 0);
     const fixedSeed = params.get('seed');
     const d = this.save.data;
+    const overrides = this.tuningPanel?.overrides;
     this.world = newRun({
       seed: fixedSeed ? Number(fixedSeed) : seed,
       characterId,
       stress,
       meta: metaBonuses(d),
       unlockedWeapons: d.unlockedWeapons,
+      tuning: overrides,
+      tuned: !!this.tuningPanel?.isTuned,
     });
     const w = this.world;
     this.renderer.setTerrain(w.terrain);
     this.renderer.setCharacter(w.player.character);
     this.renderer.rig.yaw = 0;
-    this.renderer.rig.pitch = 0.5;
+    this.renderer.rig.pitch = this.renderer.rig.tuning.pitch;
     this.renderer.rig.snap(w.player.x, w.player.y, w.player.z);
     this.renderer.resetTransient();
     this.acc = 0;
@@ -181,8 +228,10 @@ export class Game implements GameApi {
       // abandoning still banks what was earned (and quitting during the dawn
       // countdown still counts as the victory it is)
       w.state = w.director.victoryT > 0 ? 'won' : 'dead';
-      applyRunResult(this.save.data, summarize(w));
-      this.save.save();
+      if (!w.options.tuned) {
+        applyRunResult(this.save.data, summarize(w));
+        this.save.save();
+      }
     }
     this.clearRun();
     this.menus.title();
@@ -269,10 +318,11 @@ export class Game implements GameApi {
     this.setGameplayInput(false);
     this.ui.hud.show(false);
     const summary = summarize(w);
-    const outcome = applyRunResult(this.save.data, summary);
-    this.save.save();
+    // tuned runs (?tune=1 with changed values) never touch the save
+    const outcome = w.options.tuned ? unrecordedOutcome() : applyRunResult(this.save.data, summary);
+    if (!w.options.tuned) this.save.save();
     this.onMode?.('end', w);
-    this.menus.gameOver(summary, outcome, () => this.startRun(summary.characterId));
+    this.menus.gameOver(summary, outcome, () => this.startRun(summary.characterId), w.options.tuned ? 'Tuned run — not recorded (gold, records and achievements unchanged).' : undefined);
   }
 
   private showLevelUp(w: World): void {
@@ -297,6 +347,7 @@ export class Game implements GameApi {
 
   /** Achievements can pop mid-run (e.g. kill counts); rewards apply immediately. */
   private liveAchievements(w: World): void {
+    if (w.options.tuned) return;
     const earned = checkAchievements(this.save.data, summarize(w));
     if (earned.length === 0) return;
     this.sound('achievement');
@@ -364,7 +415,8 @@ export class Game implements GameApi {
         this.input.consumeLook(dt, this.look);
         this.renderer.rig.look(this.look.x, this.look.y);
         if (this.input.wheel !== 0) {
-          this.renderer.rig.distance = Math.max(6, Math.min(20, this.renderer.rig.distance + this.input.wheel * 0.8));
+          const rig = this.renderer.rig;
+          rig.zoom = Math.max(6 - rig.tuning.distance, Math.min(20 - rig.tuning.distance, rig.zoom + this.input.wheel * 0.8));
           this.input.wheel = 0;
         }
         this.acc += dt;

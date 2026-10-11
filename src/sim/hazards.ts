@@ -1,4 +1,4 @@
-import { DT, MOVE } from '../config/balance';
+import { DT, PLAYER_RADIUS } from '../config/balance';
 import { sfxId } from '../config/sfx';
 import { Ev } from '../core/events';
 import { damageArea, damagePlayer } from './combat';
@@ -56,7 +56,7 @@ export function updateHazards(w: World): void {
         hz.a0[i] += hz.a1[i] * DT;
         const d = Math.hypot(p.x - x, p.z - z);
         const grounded = p.y - w.terrain.height(p.x, p.z) < 0.7;
-        if (grounded && Math.abs(d - hz.a0[i]) < 0.9 + MOVE.radius) damagePlayer(w, hz.damage[i]);
+        if (grounded && Math.abs(d - hz.a0[i]) < 0.9 + PLAYER_RADIUS) damagePlayer(w, hz.damage[i]);
         if (hz.a0[i] >= hz.radius[i]) hz.alive[i] = 0;
         break;
       }
@@ -64,7 +64,7 @@ export function updateHazards(w: World): void {
         hz.a0[i] -= DT;
         if (hz.a0[i] <= 0) {
           const d = Math.hypot(p.x - x, p.z - z);
-          if (d < hz.radius[i] + MOVE.radius) damagePlayer(w, hz.damage[i]);
+          if (d < hz.radius[i] + PLAYER_RADIUS) damagePlayer(w, hz.damage[i]);
           w.events.push(Ev.Explosion, x, hz.y[i] + 0.3, z, hz.radius[i], 0, 0, hz.color[i]);
           w.events.push(Ev.Sfx, x, hz.y[i], z, 1, 0, 0, sfxId('slam'));
           hz.alive[i] = 0;

@@ -6,6 +6,9 @@ import { defineConfig, devices } from '@playwright/test';
  * falls back to SwiftShader software WebGL, which is slow — these tests check correctness
  * (loads, runs, no console errors), not performance.
  */
+// A dedicated port (overridable) — never reuse a server we didn't start, or the suite could
+// silently test some other app that happens to be on a common port.
+const PORT = Number(process.env.E2E_PORT || 47413);
 const gpuArgs = process.platform === 'darwin' ? ['--use-angle=metal', '--ignore-gpu-blocklist'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -14,7 +17,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${PORT}`,
     viewport: { width: 1280, height: 720 },
     launchOptions: {
       args: gpuArgs,
@@ -22,9 +25,9 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 } } }],
   webServer: {
-    command: 'npm run build && npx vite preview --port 4173 --strictPort',
-    url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
+    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+    url: `http://localhost:${PORT}`,
+    reuseExistingServer: false,
     timeout: 180_000,
   },
 });

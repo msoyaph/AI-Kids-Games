@@ -1,4 +1,4 @@
-import { DT, MOVE } from '../config/balance';
+import { DT, PLAYER_RADIUS } from '../config/balance';
 import { Ev } from '../core/events';
 import { clamp } from '../core/math';
 import { moveSpeedMult } from './stats';
@@ -9,7 +9,7 @@ const push = new Float32Array(2);
 
 export function walkSpeed(w: World): number {
   const p = w.player;
-  return MOVE.walkSpeed * p.character.move.speed * moveSpeedMult(p.stats);
+  return w.tuning.movement.walkSpeed * p.character.move.speed * moveSpeedMult(p.stats);
 }
 
 /**
@@ -23,6 +23,7 @@ export function updatePlayer(w: World, input: SimInput): void {
   const p = w.player;
   const t = w.terrain;
   const mv = p.character.move;
+  const MOVE = w.tuning.movement;
   const walk = walkSpeed(w);
 
   p.coyote = p.onGround ? MOVE.coyoteTime : Math.max(0, p.coyote - DT);
@@ -180,7 +181,7 @@ export function updatePlayer(w: World, input: SimInput): void {
       p.vz = 0;
     }
   }
-  if (t.resolveColliders(nx, nz, MOVE.radius, push)) {
+  if (t.resolveColliders(nx, nz, PLAYER_RADIUS, push)) {
     // remove the velocity component pointing into the obstacle
     const cx = push[0] - nx;
     const cz = push[1] - nz;

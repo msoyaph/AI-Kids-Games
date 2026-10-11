@@ -1,6 +1,7 @@
 import type { UiAction } from '../input/InputManager';
 import type { UpgradeChoice, World } from '../sim/world';
 import { choiceCard, describeChoice } from './cards';
+import { isTypingTarget } from '../core/env';
 import { h, img } from './dom';
 import { FocusNav } from './focus';
 import { Hud } from './Hud';
@@ -23,7 +24,7 @@ export class UI {
     this.debug = h('pre', { class: 'debug hidden' });
     root.append(this.hud.root, this.debug);
     window.addEventListener('keydown', (e) => {
-      if (!this.screen || e.defaultPrevented) return;
+      if (!this.screen || e.defaultPrevented || isTypingTarget(e.target)) return;
       // a key held from gameplay (jump, 1–4, Enter) must not instantly pick something
       const settling = performance.now() < this.graceUntil;
       if (settling && (e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter')) {

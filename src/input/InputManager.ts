@@ -1,3 +1,5 @@
+import { inIframe, isTypingTarget } from '../core/env';
+
 export type UiAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'debug';
 
 const MOVE_KEYS: Record<string, [number, number]> = {
@@ -12,14 +14,6 @@ const MOVE_KEYS: Record<string, [number, number]> = {
 };
 
 const GAMEPAD_DEADZONE = 0.18;
-
-function inIframe(): boolean {
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
-}
 
 /**
  * Collects keyboard, mouse and gamepad input. Gameplay reads continuous state
@@ -97,6 +91,10 @@ export class InputManager {
 
   private onKeyDown = (e: KeyboardEvent): void => {
     this.usingGamepad = false;
+    // typing into a text box (tuning panel number fields, copy/import boxes)
+    if (isTypingTarget(e.target) && e.code !== 'F3') return;
+    // a focused slider keeps its own arrow keys
+    if (e.target instanceof HTMLInputElement && e.target.type === 'range' && e.code.startsWith('Arrow')) return;
     if (e.code === 'F3') {
       e.preventDefault();
       if (!e.repeat) this.onAction?.('debug');

@@ -1421,3 +1421,140 @@ body {
     min-width: 0;
   }
 }
+
+/* ───────────────────────── developer tools (?tune=1, playtest export) ───────────────────────── */
+
+.tune-panel {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  width: 25rem;
+  max-width: 45vw;
+  display: flex;
+  flex-direction: column;
+  background: rgba(18, 12, 32, 0.92);
+  border-radius: 0.8rem;
+  box-shadow: inset 0 0 0 0.1rem var(--edge), 0 0.6rem 1.6rem var(--shadow);
+  font-size: 0.8rem;
+  pointer-events: auto;
+  z-index: 50;
+}
+
+.tune-head {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 0.08rem solid var(--edge);
+}
+
+.tune-head b {
+  font-size: 1rem;
+  flex: 1;
+}
+
+.tune-hint {
+  opacity: 0.6;
+}
+
+.tune-head .btn.small {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+}
+
+.tune-body {
+  overflow-y: auto;
+  padding: 0.3rem 0.6rem 0.8rem;
+}
+
+.tune-group summary {
+  cursor: pointer;
+  font-weight: 900;
+  color: var(--gold);
+  padding: 0.4rem 0 0.2rem;
+}
+
+.tune-row {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr 4.2rem;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.12rem 0;
+}
+
+.tune-row.changed span {
+  color: #ffd56b;
+}
+
+.tune-row input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.tune-num {
+  width: 100%;
+  font: inherit;
+  color: var(--paper);
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.3rem;
+}
+
+.tune-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 0.4rem;
+  transform: translateX(-50%);
+  padding: 0.2rem 0.7rem;
+  border-radius: 0.6rem;
+  background: #b4541c;
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  z-index: 49;
+}
+
+.copy-box {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(44rem, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(18, 12, 32, 0.97);
+  box-shadow: inset 0 0 0 0.12rem var(--edge), 0 1rem 3rem var(--shadow);
+  pointer-events: auto;
+  z-index: 60;
+}
+
+.copy-title {
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+.copy-text {
+  height: 18rem;
+  font: 0.8rem/1.4 ui-monospace, Menlo, Consolas, monospace;
+  color: var(--paper);
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem;
+  resize: vertical;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.copy-status {
+  align-self: center;
+  font-weight: 800;
+  color: #a8ecff;
+}

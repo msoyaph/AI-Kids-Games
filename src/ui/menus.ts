@@ -451,7 +451,7 @@ export class Menus {
     this.g.ui.show('pause', el, resume);
   }
 
-  gameOver(r: RunSummary, out: RunOutcome, retry: () => void): void {
+  gameOver(r: RunSummary, out: RunOutcome, retry: () => void, note?: string): void {
     const won = r.won;
     const rows = r.weapons
       .slice()
@@ -474,6 +474,7 @@ export class Menus {
       { class: 'modal panel gameover' },
       h('div', { class: `title${won ? ' win' : ''}` }, won ? 'Dawn breaks!' : 'Bonked!'),
       h('div', { class: 'subtitle' }, won ? 'The Gloom retreats. Thea’s meadow is safe… for now.' : `You held out for ${formatTime(r.time)}.${out.newBest ? ' A new personal best!' : ''}`),
+      note ? h('div', { class: 'subtitle warn' }, note) : null,
       h(
         'div',
         { class: 'go-cols' },

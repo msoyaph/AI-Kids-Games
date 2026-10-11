@@ -1,19 +1,23 @@
 import * as THREE from 'three';
+import { cloneTuning, type Tuning } from '../config/tuning';
 import { clamp, damp } from '../core/math';
 import type { Terrain } from '../sim/terrain';
 
 /** Third-person orbit camera with smoothing, terrain avoidance, speed FOV kick and shake. */
 export class CameraRig {
+  /** Render-side tuning copy (edited live by the ?tune=1 panel). */
+  readonly tuning: Tuning['camera'] = cloneTuning().camera;
   yaw = 0;
-  pitch = 0.5;
-  distance = 11.5;
+  pitch = this.tuning.pitch;
+  /** Mouse-wheel zoom offset added to tuning.distance. */
+  zoom = 0;
   readonly target = new THREE.Vector3();
   private smoothTarget = new THREE.Vector3();
   private initialized = false;
   private trauma = 0;
   private shakeT = 0;
   shakeEnabled = true;
-  private fov = 62;
+  private fov = this.tuning.fov;
   private lift = 0;
 
   addTrauma(amount: number): void {
@@ -40,13 +44,14 @@ export class CameraRig {
     this.target.set(x, y, z);
     if (!this.initialized) this.snap(x, y, z);
     // follow tightly horizontally, a bit softer vertically (smooths jumps/steps)
-    const kh = damp(18, dt);
+    const T = this.tuning;
+    const kh = damp(T.followSharpness, dt);
     const kv = damp(8, dt);
     this.smoothTarget.x += (x - this.smoothTarget.x) * kh;
     this.smoothTarget.z += (z - this.smoothTarget.z) * kh;
     this.smoothTarget.y += (y - this.smoothTarget.y) * kv;
 
-    const dist = this.distance + Math.min(4, speed * 0.12);
+    const dist = Math.max(3, T.distance + this.zoom) + Math.min(4, speed * T.speedPullback);
     const cp = Math.cos(this.pitch);
     const ox = Math.sin(this.yaw) * cp;
     const oy = Math.sin(this.pitch);
@@ -55,7 +60,7 @@ export class CameraRig {
     const ty = this.smoothTarget.y + 1.6;
     const tz = this.smoothTarget.z;
     let cx = tx + ox * dist;
-    let cy = ty - 0.2 + oy * dist;
+    let cy = ty - 1.6 + T.height + oy * dist;
     let cz = tz + oz * dist;
     if (terrain) {
       // lift the camera so the line of sight clears hills and mesas between it and the player
@@ -86,7 +91,7 @@ export class CameraRig {
     cam.position.set(cx, cy, cz);
     cam.lookAt(this.smoothTarget.x, this.smoothTarget.y + 1.6, this.smoothTarget.z);
 
-    const wantFov = 62 + Math.min(14, Math.max(0, speed - 8) * 0.7);
+    const wantFov = T.fov + Math.min(T.fovKickMax, Math.max(0, speed - T.fovKickStart) * T.fovKickPerSpeed);
     this.fov += (wantFov - this.fov) * damp(4, dt);
     if (Math.abs(cam.fov - this.fov) > 0.01) {
       cam.fov = this.fov;

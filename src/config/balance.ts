@@ -1,6 +1,7 @@
+import { TUNING_DEFAULTS, xpToNextWith } from './tuning';
 import type { PlayerStats } from './types';
 
-/** Global tuning constants. */
+/** Structural constants. Feel / balance values live in config/tuning.ts. */
 export const TICK_RATE = 60;
 export const DT = 1 / TICK_RATE;
 
@@ -22,37 +23,9 @@ export const CAPS = {
   hazards: 192,
 } as const;
 
-/** Spawning geometry. */
-export const SPAWN = {
-  minDist: 46,
-  maxDist: 58,
-  /** Enemies further than this from the player are recycled in front of them. */
-  recycleDist: 88,
-} as const;
-
-/** Player movement (base values, modified per character). */
-export const MOVE = {
-  walkSpeed: 7.2,
-  groundAccel: 70,
-  groundFriction: 55,
-  overspeedFriction: 9,
-  airAccel: 14,
-  gravity: 26,
-  jumpSpeed: 9.5,
-  coyoteTime: 0.12,
-  jumpBuffer: 0.12,
-  slideMinSpeed: 3,
-  slideBoost: 3.5,
-  slideFriction: 2.2,
-  slideSlopeAccel: 34,
-  slideSteer: 2.2,
-  slideBoostCooldown: 0.6,
-  bhopBoost: 0.6,
-  maxSpeed: 34,
-  stepHeight: 0.65,
-  radius: 0.6,
-  height: 1.7,
-} as const;
+/** Player body (collision), not a feel value. Movement tuning lives in config/tuning.ts. */
+export const PLAYER_RADIUS = 0.6;
+export const PLAYER_HEIGHT = 1.7;
 
 /** Base player stats before character / shop / passive modifiers. */
 export const BASE_STATS: PlayerStats = {
@@ -76,24 +49,11 @@ export const BASE_STATS: PlayerStats = {
 };
 
 export const CRIT_MULT = 2;
-export const PLAYER_IFRAMES = 0.6;
 export const MAX_COOLDOWN_REDUCTION = 0.6;
 
-/** XP needed to go from `level` to `level + 1`. */
+/** XP needed to go from `level` to `level + 1` with the shipping tuning (see tuning.ts). */
 export function xpToNext(level: number): number {
-  if (level <= 1) return 5;
-  if (level < 20) return 6 + (level - 1) * 6;
-  if (level < 40) return 120 + (level - 20) * 10;
-  return 320 + (level - 40) * 14;
-}
-
-/** Enemy stat scaling over run time (minutes). */
-export function enemyHpScale(minutes: number): number {
-  return 1 + minutes * 0.2 + minutes * minutes * 0.02;
-}
-
-export function enemyDamageScale(minutes: number): number {
-  return 1 + minutes * 0.06;
+  return xpToNextWith(level, TUNING_DEFAULTS.xp);
 }
 
 export const GEM_TIERS = [
@@ -109,12 +69,8 @@ export function gemTier(value: number): number {
   return t;
 }
 
-/** Drop chances (before luck). */
+/** Gold drop values (drop *chances* are tuning: tuning.combat). */
 export const DROPS = {
-  coinChance: 0.025,
-  heartChance: 0.009,
-  magnetChance: 0.0015,
-  heartHeal: 30,
   coinValue: 1,
   eliteGold: 10,
   bossGold: 60,

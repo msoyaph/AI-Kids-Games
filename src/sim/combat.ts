@@ -1,4 +1,5 @@
-import { DROPS, PLAYER_IFRAMES, enemyDamageScale, enemyHpScale, gemTier } from '../config/balance';
+import { DROPS, gemTier } from '../config/balance';
+import { enemyDamageScaleWith, enemyHpScaleWith } from '../config/tuning';
 import { ELITE, ENEMIES, enemyIndex } from '../config/enemies';
 import { Ev } from '../core/events';
 import { damageAfterArmor, hitDamage, isCrit, knockbackImpulse } from './damage';
@@ -16,7 +17,7 @@ export function spawnEnemy(w: World, type: number, x: number, z: number, elite =
   const def = ENEMIES[type];
   const minutes = w.time / 60;
   const boss = def.behavior === 'boss';
-  const hpScale = boss ? 1 + w.player.level * 0.03 : enemyHpScale(minutes);
+  const hpScale = boss ? 1 + w.player.level * 0.03 : enemyHpScaleWith(minutes, w.tuning.combat);
   const hp = def.hp * hpScale * (elite ? ELITE.hpMult : 1);
   const t = w.terrain;
   x = t.clampToMap(x);
@@ -28,7 +29,7 @@ export function spawnEnemy(w: World, type: number, x: number, z: number, elite =
   e.z[i] = e.pz[i] = z;
   e.hp[i] = e.maxHp[i] = hp;
   e.speed[i] = def.speed * (elite ? ELITE.speedMult : 1) * (0.92 + w.rng.next() * 0.16);
-  e.damage[i] = def.damage * (boss ? 1 : enemyDamageScale(minutes)) * (elite ? ELITE.damageMult : 1);
+  e.damage[i] = def.damage * (boss ? 1 : enemyDamageScaleWith(minutes, w.tuning.combat)) * (elite ? ELITE.damageMult : 1);
   e.scale[i] = elite ? ELITE.scale : 1;
   e.radius[i] = def.radius * e.scale[i];
   e.xp[i] = def.xp * (elite ? ELITE.xpMult : 1);
@@ -162,9 +163,10 @@ export function killEnemy(w: World, i: number, slot: number): void {
     for (let k = 0; k < 4; k++) spawnPickup(w, PickupKind.Coin, x + (w.rng.next() - 0.5) * 2, y, z + (w.rng.next() - 0.5) * 2, Math.round((DROPS.eliteGold / 4) * goldMult(w.player.stats)));
   } else {
     const r = w.rng.next();
-    if (r < DROPS.magnetChance * luck) spawnPickup(w, PickupKind.Magnet, x, y, z);
-    else if (r < (DROPS.magnetChance + DROPS.heartChance) * luck) spawnPickup(w, PickupKind.Heart, x, y, z, DROPS.heartHeal);
-    else if (r < (DROPS.magnetChance + DROPS.heartChance + DROPS.coinChance) * luck) spawnPickup(w, PickupKind.Coin, x, y, z, Math.max(1, Math.round(DROPS.coinValue * goldMult(w.player.stats))));
+    const c = w.tuning.combat;
+    if (r < c.magnetChance * luck) spawnPickup(w, PickupKind.Magnet, x, y, z);
+    else if (r < (c.magnetChance + c.heartChance) * luck) spawnPickup(w, PickupKind.Heart, x, y, z, c.heartHeal);
+    else if (r < (c.magnetChance + c.heartChance + c.coinChance) * luck) spawnPickup(w, PickupKind.Coin, x, y, z, Math.max(1, Math.round(DROPS.coinValue * goldMult(w.player.stats))));
   }
 
   if (def.splitInto) {
@@ -194,7 +196,7 @@ export function damagePlayer(w: World, raw: number): boolean {
   if (!p.alive || p.iframes > 0 || p.buffs.ward > 0 || w.options.god) return false;
   const dmg = damageAfterArmor(raw, p.stats.armor);
   p.hp -= dmg;
-  p.iframes = PLAYER_IFRAMES;
+  p.iframes = w.tuning.combat.playerIframes;
   p.hurtFlash = 1;
   w.stats.damageTaken += dmg;
   w.events.push(Ev.PlayerHurt, dmg);

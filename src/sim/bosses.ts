@@ -106,7 +106,7 @@ function grumblecap(w: World, i: number, dist: number, hpFrac: number, out: Floa
   const c = e.stC[i]++;
   if (dist < 9) {
     // stomp: telegraphed slam around itself
-    slam(w, e.x[i], e.z[i], 6, def.damage, 1.1);
+    slam(w, e.x[i], e.z[i], 6, def.damage, w.tuning.telegraphs.grumblecapStompFuse);
     e.state[i] = SLAM;
     e.stT[i] = 1.2;
   } else if (c % 3 === 2) {
@@ -127,7 +127,7 @@ function clockjaw(w: World, i: number, dist: number, dx: number, dz: number, hpF
     case IDLE:
       if (e.stT[i] <= 0 && dist < 34) {
         e.state[i] = WINDUP;
-        e.stT[i] = def.windup ?? 1;
+        e.stT[i] = (def.windup ?? 1) * w.tuning.telegraphs.bossWindupMult;
         e.stA[i] = dx;
         e.stB[i] = dz;
       }
@@ -148,7 +148,7 @@ function clockjaw(w: World, i: number, dist: number, dx: number, dz: number, hpF
       out[0] = e.stA[i] * cs;
       out[1] = e.stB[i] * cs;
       if (e.stT[i] <= 0) {
-        shockwave(w, e.x[i], e.z[i], enraged ? 24 : 20, enraged ? 12 : 10, def.projectileDamage ?? 12);
+        shockwave(w, e.x[i], e.z[i], enraged ? 24 : 20, (enraged ? 12 : 10) * w.tuning.telegraphs.shockwaveSpeedMult, def.projectileDamage ?? 12);
         const c = e.stC[i]++;
         if (c % 2 === 1) summon(w, i, 'ramhorn', 3, 5);
         // enraged: chain a second charge immediately
@@ -230,16 +230,17 @@ function regent(w: World, i: number, dist: number, dx: number, dz: number, hpFra
     const n = 3 + phase;
     for (let k = 0; k < n; k++) {
       const aa = (k / n) * Math.PI * 2 + w.rng.next();
-      slam(w, p.x + Math.sin(aa) * 4, p.z + Math.cos(aa) * 4, 3.4, dmg * 1.3, 1.1);
+      slam(w, p.x + Math.sin(aa) * 4, p.z + Math.cos(aa) * 4, 3.4, dmg * 1.3, w.tuning.telegraphs.regentSlamFuse);
     }
-    slam(w, p.x, p.z, 3, dmg * 1.3, 1.3);
+    slam(w, p.x, p.z, 3, dmg * 1.3, w.tuning.telegraphs.regentSlamFuse + 0.2);
     e.state[i] = SLAM;
     e.stT[i] = 1.4;
   } else if (c === 2) {
     const n = 1 + phase;
     for (let k = 0; k < n; k++) {
       // staggered rings: jump each one
-      spawnEnemyHazard(w, HazardKind.EnemyRing, e.x[i], e.z[i], 24, dmg, (24 + k * 6) / 12 + 0.2, -k * 6, 12, 0xb48cff);
+      const rs = 12 * w.tuning.telegraphs.shockwaveSpeedMult;
+      spawnEnemyHazard(w, HazardKind.EnemyRing, e.x[i], e.z[i], 24, dmg, (24 + k * 6) / rs + 0.2, -k * 6, rs, 0xb48cff);
     }
     w.events.push(Ev.Sfx, e.x[i], e.y[i], e.z[i], 1, 0, 0, sfxId('slam'));
     e.stT[i] = 2.6;

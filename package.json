@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "simulate": "tsx scripts/simulate.ts",
     "bench": "tsx scripts/bench.ts",
-    "check-size": "tsx scripts/check-size.ts"
+    "check-size": "tsx scripts/check-size.ts",
+    "apply-tuning": "tsx scripts/apply-tuning.ts"
   },
   "dependencies": {
     "three": "^0.186.1"

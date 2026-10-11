@@ -1,4 +1,4 @@
-import { DT, MOVE, SPAWN } from '../config/balance';
+import { DT, PLAYER_RADIUS } from '../config/balance';
 import { ENEMIES } from '../config/enemies';
 import { Ev } from '../core/events';
 import { updateBoss } from './bosses';
@@ -17,6 +17,8 @@ const EX_FUSE = 1;
 
 const push = new Float32Array(2);
 const bossMove = new Float32Array(2);
+/** Per-type speed multipliers from tuning, refreshed each tick (live panel friendly). */
+const speedMul = new Float32Array(ENEMIES.length);
 const MAX_NEIGHBORS = 10;
 
 // Behaviour ids resolved once (avoid string compares in the hot loop)
@@ -51,6 +53,11 @@ export function updateEnemies(w: World): void {
   const gHalf = grid.half;
   const gDim = grid.dim;
   const decay = Math.exp(-7 * DT);
+  const tel = w.tuning.telegraphs;
+  const recycleDist = w.tuning.spawns.recycleDist;
+  const per = w.tuning.enemies.perType;
+  const global = w.tuning.enemies.speedMult;
+  for (let t = 0; t < ENEMIES.length; t++) speedMul[t] = global * (per[ENEMIES[t].id] ?? 1);
   const px = p.x;
   const pz = p.z;
 
@@ -73,12 +80,12 @@ export function updateEnemies(w: World): void {
     dx /= dist;
     dz /= dist;
 
-    if (beh !== 7 && dist > SPAWN.recycleDist) {
+    if (beh !== 7 && dist > recycleDist) {
       placeOffscreen(w, i);
       continue;
     }
 
-    const speed = e.speed[i] * (1 - e.slowAmt[i]);
+    const speed = e.speed[i] * speedMul[type] * (1 - e.slowAmt[i]);
     let mvx = dx * speed;
     let mvz = dz * speed;
 
@@ -124,14 +131,14 @@ export function updateEnemies(w: World): void {
         if (st === CH_APPROACH) {
           if (dist < (def.range ?? 15)) {
             e.state[i] = CH_WINDUP;
-            e.stT[i] = def.windup ?? 0.7;
+            e.stT[i] = (def.windup ?? 0.7) * tel.chargerWindupMult;
             e.stA[i] = dx;
             e.stB[i] = dz;
           }
         } else if (st === CH_WINDUP) {
           mvx = mvz = 0;
           // keep tracking during the first half of windup
-          if (e.stT[i] > (def.windup ?? 0.7) * 0.5) {
+          if (e.stT[i] > (def.windup ?? 0.7) * tel.chargerWindupMult * 0.5) {
             e.stA[i] = dx;
             e.stB[i] = dz;
           }
@@ -162,7 +169,7 @@ export function updateEnemies(w: World): void {
         if (e.state[i] === EX_APPROACH) {
           if (dist < (def.range ?? 2.5)) {
             e.state[i] = EX_FUSE;
-            e.stT[i] = def.fuse ?? 0.6;
+            e.stT[i] = (def.fuse ?? 0.6) * tel.fuseMult;
           }
         } else {
           mvx *= 0.25;
@@ -261,7 +268,7 @@ function explode(w: World, i: number): void {
   const radius = (def.explodeRadius ?? 3) * e.scale[i];
   const p = w.player;
   const dist = Math.hypot(p.x - x, p.z - z);
-  if (dist < radius + MOVE.radius && p.y - e.y[i] < 2.5) damagePlayer(w, (def.explodeDamage ?? 15) * (e.damage[i] > 0 ? 1 : 1));
+  if (dist < radius + PLAYER_RADIUS && p.y - e.y[i] < 2.5) damagePlayer(w, (def.explodeDamage ?? 15) * (e.damage[i] > 0 ? 1 : 1));
   w.events.push(Ev.Explosion, x, e.y[i] + 0.6, z, radius, 0, 0xff8a3d);
   e.alive[i] = 0; // blows itself up: no XP
   // the blast hurts other Gloom too
@@ -282,7 +289,7 @@ export function enemyContacts(w: World): void {
     const def = ENEMIES[e.type[i]];
     const dx = e.x[i] - p.x;
     const dz = e.z[i] - p.z;
-    const rr = e.radius[i] + MOVE.radius;
+    const rr = e.radius[i] + PLAYER_RADIUS;
     if (dx * dx + dz * dz > rr * rr) continue;
     // jumping clean over a creature avoids it
     if (p.y > e.y[i] + def.height * e.scale[i] * 0.85) continue;
@@ -315,7 +322,7 @@ export function updateEnemyShots(w: World): void {
     }
     const dx = x - p.x;
     const dz = z - p.z;
-    const rr = s.radius[i] + MOVE.radius;
+    const rr = s.radius[i] + PLAYER_RADIUS;
     if (dx * dx + dz * dz < rr * rr && Math.abs(s.y[i] - (p.y + 0.9)) < 1.1) {
       if (damagePlayer(w, s.damage[i]) || w.options.god) s.alive[i] = 0;
     }

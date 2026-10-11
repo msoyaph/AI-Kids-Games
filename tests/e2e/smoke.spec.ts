@@ -80,6 +80,21 @@ test('Escape pauses and stays paused; Escape again resumes', async ({ page }) =>
   expect(problems, problems.join('\n')).toEqual([]);
 });
 
+test('the tuning panel only exists with ?tune=1', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/');
+  await expect(page.locator('.logo')).toBeVisible();
+  await expect(page.locator('.tune-panel')).toHaveCount(0);
+  await page.goto('/?tune=1');
+  await expect(page.locator('.tune-panel')).toBeVisible();
+  // F2 hides and shows it
+  await page.keyboard.press('F2');
+  await expect(page.locator('.tune-panel')).toBeHidden();
+  await page.keyboard.press('F2');
+  await expect(page.locator('.tune-panel')).toBeVisible();
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
 test('menus open and close without errors', async ({ page }) => {
   const problems = watchConsole(page);
   await page.goto('/');
