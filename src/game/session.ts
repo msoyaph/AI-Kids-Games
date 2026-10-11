@@ -40,6 +40,8 @@ export interface AiSlot {
 export interface SessionConfig {
   mode: GameMode;
   trackId?: string;
+  /** Dev: race on an in-memory track (track editor test laps). */
+  trackData?: import('../data/types').TrackData;
   arenaId?: string;
   speedClass: SpeedClass;
   mirror: boolean;
@@ -117,7 +119,7 @@ export class RaceSession {
     readonly cfg: SessionConfig,
   ) {
     const isBattle = cfg.mode === 'battle';
-    this.track = isBattle ? null : new TrackModel(findTrack(cfg.trackId ?? ''), cfg.mirror);
+    this.track = isBattle ? null : new TrackModel(cfg.trackData ?? findTrack(cfg.trackId ?? ''), cfg.mirror);
     this.arena = isBattle ? new ArenaModel(findArena(cfg.arenaId ?? '')) : null;
     const ground = this.track ?? this.arena!;
     const racers = [

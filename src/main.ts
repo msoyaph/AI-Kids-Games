@@ -49,7 +49,10 @@ async function boot(): Promise<void> {
   app.start();
   // Dev shortcut: ?track=<id>[&autodrive][&mirror] or ?arena=<id> jumps straight into a race.
   const quick = params.get('track') ?? params.get('arena');
-  if (import.meta.env.DEV && quick) {
+  if (import.meta.env.DEV && params.has('editor')) {
+    const { openEditor } = await import('./dev/trackEditor');
+    openEditor(app);
+  } else if (import.meta.env.DEV && quick) {
     if (!app.saves.data) app.saves.create(3, 'Dev');
     const battle = params.has('arena');
     app.flow.racers[0] = app.save.racer;
