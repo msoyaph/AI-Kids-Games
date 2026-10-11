@@ -58,10 +58,14 @@ function showPanel(g: Game, f: FestivalDef): void {
   panel.append(h('b', null, `🎉 ${f.name}`), h('small', null, done ? 'You already played today. Enjoy the fair!' : f.activity));
   if (!done) panel.append(h('button', { class: 'btn small green', onclick: () => startActivity(g, f) }, 'Play!'));
   panel.style.display = '';
+  g.uiRoot.classList.add('has-fest'); // toasts move below the banner
 }
 
 function hidePanel(): void {
-  if (panel) panel.style.display = 'none';
+  if (panel) {
+    panel.style.display = 'none';
+    panel.parentElement?.classList.remove('has-fest');
+  }
 }
 
 function startActivity(g: Game, f: FestivalDef): void {
@@ -267,6 +271,12 @@ export function installFestivals(_g: Game): void {
   style.textContent = `
 .fest { position: absolute; top: calc(max(8px, env(safe-area-inset-top)) + 58px * var(--ui)); left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; padding: 6px 12px; pointer-events: auto; max-width: 92vw; }
 .fest small { color: var(--ink2); }
+.has-fest .toasts { top: calc(max(8px, env(safe-area-inset-top)) + 58px * var(--ui) + 72px); }
+@media (max-width: 520px) {
+  .fest { top: calc(max(8px, env(safe-area-inset-top)) + 124px * var(--ui)); white-space: nowrap; }
+  .fest small { display: none; }
+  .has-fest .toasts { top: calc(max(8px, env(safe-area-inset-top)) + 124px * var(--ui) + 64px); }
+}
 .race-time { font-weight: 900; font-size: 1.2em; text-align: center; margin: 4px 0; }
 .race-grid, .berry-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 6px 0; }
 .race-tile, .berry-bush { aspect-ratio: 1; min-height: 56px; border-radius: 10px; border: 3px solid var(--wood-d); cursor: pointer; touch-action: manipulation; }

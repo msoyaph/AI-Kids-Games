@@ -15,7 +15,9 @@
     "test:all": "vitest run",
     "test:e2e": "playwright test",
     "pacing": "vitest run tests/sim/pacing.test.ts",
-    "analyze-playtests": "node scripts/analyze-playtests.mjs"
+    "analyze-playtests": "node scripts/analyze-playtests.mjs",
+    "capture": "node scripts/capture.mjs",
+    "bench": "node scripts/perf.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.22.0"

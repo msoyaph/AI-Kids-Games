@@ -38,12 +38,14 @@ export function skyTint(min: number, outdoor: boolean, weatherDim: number): { co
     color = 0x30406a;
     alpha = 0.25 * (7 - h);
   } else if (h >= 17 && h < 19) {
-    color = 0xff9a50;
-    alpha = 0.12 * ((h - 17) / 2);
+    // golden hour
+    const t = (h - 17) / 2;
+    color = mixC(0xffb060, 0xf08050, t);
+    alpha = 0.22 * t;
   } else if (h >= 19 && h < 21) {
     const t = (h - 19) / 2;
-    color = mixC(0xc07a80, 0x24306a, t);
-    alpha = 0.18 + t * 0.27;
+    color = mixC(0xd07a78, 0x24306a, t);
+    alpha = 0.22 + t * 0.23;
   } else if (h >= 21) {
     color = 0x24306a;
     alpha = Math.min(0.55, 0.45 + (h - 21) * 0.02);

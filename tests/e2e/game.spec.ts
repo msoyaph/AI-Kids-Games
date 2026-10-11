@@ -167,9 +167,16 @@ test.describe('Cliff Valley', () => {
     expect(w.errors).toEqual([]);
   });
 
-  test('the HUD fits on screen', async ({ page }) => {
+  test('the HUD and dialogs fit on screen', async ({ page }) => {
     await page.goto('/?lowq=1');
     await ready(page);
+    await page.getByRole('button', { name: 'Settings' }).click();
+    const modal = await page.locator('.modal').first().boundingBox();
+    const vw = page.viewportSize()!.width;
+    expect(modal!.x).toBeGreaterThanOrEqual(0);
+    expect(modal!.x + modal!.width).toBeLessThanOrEqual(vw);
+    expect(await page.locator('.modal').first().evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    await page.getByRole('button', { name: 'Done' }).click();
     await page.evaluate(() => {
       window.__cliffvalley.newGame({ seed: 5, slot: 3 });
       window.__cliffvalley.closeModals();
@@ -184,6 +191,36 @@ test.describe('Cliff Valley', () => {
         .map(([sel]) => sel),
     );
     expect(out).toEqual([]);
+  });
+
+  test('playtest mode records locally and exports', async ({ page }, info) => {
+    test.skip(info.project.name === 'tablet', 'desktop + phone are enough');
+    const w = watch(page);
+    await page.goto('/?lowq=1&playtest=1');
+    await ready(page);
+    await page.evaluate(() => {
+      window.__cliffvalley.newGame({ name: 'Secret', farm: 'Hidden', petName: 'Private', seed: 8, slot: 3 });
+      window.__cliffvalley.closeModals();
+    });
+    await waitFree(page);
+    await page.waitForTimeout(3000);
+    await page.evaluate(() => window.__cliffvalley.sleep());
+    await page.waitForFunction(() => window.__cliffvalley.info?.day === 1, null, { timeout: 60_000 });
+    await page.evaluate(() => window.__cliffvalley.closeModals());
+    await page.getByRole('button', { name: 'Playtest data' }).click();
+    const box = page.getByLabel('Playtest data (JSON)');
+    await expect(box).toBeVisible();
+    const json = await box.inputValue();
+    const log = JSON.parse(json);
+    expect(log.game).toBe('cliff-valley');
+    expect(log.days.length).toBe(1);
+    expect(log.days[0].day).toBe(0);
+    expect(log.sessions[0].playSec + log.sessions[0].pausedSec).toBeGreaterThan(0);
+    expect(json).not.toMatch(/Secret|Hidden|Private/);
+    await expect(page.getByRole('button', { name: 'Download file' })).toBeVisible();
+    expect(await page.evaluate(() => Object.keys(localStorage).includes('cliffvalley.playtest'))).toBe(true);
+    expect(w.errors).toEqual([]);
+    expect(w.outside).toEqual([]);
   });
 
   test('every capture scene renders without errors', async ({ page }, info) => {

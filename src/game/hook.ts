@@ -95,7 +95,7 @@ export function buildCapture(name: CaptureScene): Sim {
     case 'fishingSunset':
       sim = freshSim(205);
       sim.state.day = 13;
-      sim.state.min = 18 * 60 + 40;
+      sim.state.min = 19 * 60 + 20;
       sim.state.weather = 'sun';
       sim.state.story.done.push('fish');
       sim.p.tools.rod = 1;
@@ -158,6 +158,7 @@ export function installHook(g: Game): void {
       }
       const sim = buildCapture(name);
       sim.state.flags.introSeen = 1;
+      for (const b of sim.state.story.done) sim.state.flags[`repairSeen.${b}`] = 1; // no story scenes in previews
       sim.state.tips = ['move', 'tools', 'till', 'plant', 'water', 'harvest', 'energy', 'night', 'town', 'hall', 'mine', 'mineFloor', 'rod', 'animal', 'machine', 'kitchen', 'craft'];
       g.attachSimForBench(sim);
       g.mode = 'play';
