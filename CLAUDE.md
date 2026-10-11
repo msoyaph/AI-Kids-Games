@@ -18,7 +18,9 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
 3. COMPLETE: reconciled all README entries with Game; added minAge and Strategy,
    Racing, Learning; finished Light Crossing copy; exact device/control guidance,
    Calex split-screen limitation and Browse player-age filter. Home features all five.
-4. Pending: embed permissions and interaction checks.
+4. COMPLETE implementation: iframe sandbox is exactly allow-scripts allow-same-origin
+   allow-pointer-lock, with fullscreen; gamepad permission. Browser interaction
+   and save checks run against the complete integration in step 8.
 5. Pre-import safety gate CLEAN: inspected compiled storage operations and original
    storage modules/callers. No colliding keys or global clears. Calex ghost deletion
    enumerates keys but filters to its own slot prefix. Formal audit and site migration pending.
