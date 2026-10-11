@@ -28,6 +28,14 @@ export const SONGS: SongData[] = [
   { id: 'legend2', name: 'Temple Drums', bpm: 146, root: 57, scale: 'blues', chords: [0, 0, 3, 0, 4, 3, 0, 4], lead: 'pluck', bass: 'pluck', drums: 'breakbeat', seed: 402, arp: 'none', bright: 0.65 },
   { id: 'legend3', name: 'Castle in the Clouds', bpm: 134, root: 65, scale: 'major', chords: [0, 4, 5, 3, 0, 4, 3, 4], lead: 'organ', bass: 'triangle', pad: 'organ', drums: 'march', seed: 403, arp: 'updown', bright: 0.8 },
   { id: 'legend4', name: 'Prism Finale', bpm: 164, root: 62, scale: 'lydian', chords: [0, 1, 5, 4, 0, 1, 3, 4], lead: 'saw', bass: 'square', pad: 'saw', drums: 'pop', seed: 404, arp: 'updown', bright: 1 },
+  // Frost Cup (v0.2)
+  { id: 'frost1', name: 'Skating Sparkles', bpm: 136, root: 67, scale: 'major', chords: [0, 4, 5, 3, 0, 4, 1, 4], lead: 'bell', bass: 'pluck', pad: 'sine', drums: 'pop', seed: 601, arp: 'updown', bright: 0.95 },
+  { id: 'frost2', name: 'Crystal Echoes', bpm: 126, root: 62, scale: 'dorian', chords: [0, 3, 0, 6, 0, 3, 4, 4], lead: 'triangle', bass: 'sine', pad: 'sine', drums: 'halftime', seed: 602, arp: 'random', bright: 0.6 },
+  { id: 'frost3', name: 'Lantern Lights', bpm: 140, root: 64, scale: 'mixolydian', chords: [0, 3, 6, 0, 0, 3, 4, 0], lead: 'bell', bass: 'pluck', pad: 'organ', drums: 'shuffle', seed: 603, swing: 0.55, arp: 'up', bright: 0.75 },
+  { id: 'frost4', name: 'Avalanche Anthem', bpm: 158, root: 60, scale: 'lydian', chords: [0, 1, 5, 4, 0, 1, 3, 4], lead: 'saw', bass: 'square', pad: 'saw', drums: 'rock', seed: 604, arp: 'updown', bright: 0.95 },
+  // Driving School + Coin Rush (v0.2)
+  { id: 'school', name: 'Practice Lap', bpm: 118, root: 65, scale: 'major', chords: [0, 3, 4, 0, 5, 3, 4, 4], lead: 'square', bass: 'pluck', drums: 'pop', seed: 701, arp: 'none', bright: 0.8 },
+  { id: 'battle5', name: 'Coin Carnival', bpm: 150, root: 65, scale: 'major', chords: [0, 4, 5, 4, 3, 4, 0, 4], lead: 'square', bass: 'pluck', pad: 'organ', drums: 'latin', seed: 505, arp: 'updown', bright: 1 },
   // Battle
   { id: 'battle1', name: 'Gumdrop Scramble', bpm: 152, root: 64, scale: 'major', chords: [0, 4, 0, 4, 3, 4, 0, 4], lead: 'square', bass: 'pluck', drums: 'breakbeat', seed: 501, arp: 'up', bright: 0.9 },
   { id: 'battle2', name: 'Crater Clash', bpm: 128, root: 59, scale: 'lydian', chords: [0, 1, 0, 1, 4, 1, 0, 4], lead: 'sine', bass: 'square', drums: 'electro', seed: 502, arp: 'random', bright: 0.7 },

@@ -1,5 +1,5 @@
 import type { CupId, KartConfig, SpeedClass, UnlockRef } from '../data/types';
-import { CUPS } from '../data/cups';
+import { ORIGINAL_CUPS } from '../data/cups';
 import type { ClassKey, Medal, SaveData } from '../save/save';
 import { medalRank } from '../sim/rules';
 import type { KartRaceStats } from '../sim/kart';
@@ -78,8 +78,9 @@ export function awardTrophy(save: SaveData, cup: CupId, speedClass: SpeedClass, 
   return false;
 }
 
+/** Gold in every ORIGINAL cup on a class (the Frost Cup never moves the Champion / Mirror goalposts). */
 export function allGold(save: SaveData, cls: ClassKey): boolean {
-  return CUPS.every((c) => save.trophies[`${c.id}:${cls}`] === 'gold');
+  return ORIGINAL_CUPS.every((c) => save.trophies[`${c}:${cls}`] === 'gold');
 }
 
 export function anyTrophy(save: SaveData, cup: CupId): boolean {
@@ -90,8 +91,9 @@ export function anyTrophy(save: SaveData, cup: CupId): boolean {
  * Progression unlocks driven by trophies:
  *  - Galaxy Cup: a trophy in both Sunrise and Thunder (any class)
  *  - Legend Cup: a trophy in Galaxy
- *  - Champion class: gold in every cup on Pro
- *  - Mirror mode: gold in every cup on Champion
+ *  - Frost Cup: a trophy in Legend (any class)
+ *  - Champion class: gold in every original cup on Pro
+ *  - Mirror mode: gold in every original cup on Champion
  */
 export function checkProgressUnlocks(save: SaveData): UnlockRef[] {
   const out: UnlockRef[] = [];
@@ -100,6 +102,7 @@ export function checkProgressUnlocks(save: SaveData): UnlockRef[] {
   };
   if (anyTrophy(save, 'sunrise') && anyTrophy(save, 'thunder')) add({ kind: 'cup', id: 'galaxy' });
   if (anyTrophy(save, 'galaxy')) add({ kind: 'cup', id: 'legend' });
+  if (anyTrophy(save, 'legend')) add({ kind: 'cup', id: 'frost' });
   if (allGold(save, 'pro')) add({ kind: 'class', id: 'champion' });
   if (allGold(save, 'champion')) add({ kind: 'class', id: 'mirror' });
   return out;

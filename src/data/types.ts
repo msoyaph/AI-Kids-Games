@@ -175,7 +175,7 @@ export interface ItemData {
 // Tracks
 // ---------------------------------------------------------------------------
 
-export type CupId = 'sunrise' | 'thunder' | 'galaxy' | 'legend';
+export type CupId = 'sunrise' | 'thunder' | 'galaxy' | 'legend' | 'frost';
 
 export type Theme =
   | 'beach'
@@ -194,6 +194,10 @@ export type Theme =
   | 'jungle'
   | 'cloudcastle'
   | 'rainbow'
+  | 'icelake'
+  | 'icecave'
+  | 'snowvillage'
+  | 'summit'
   | 'test';
 
 export type EdgeType = 'wall' | 'drop' | 'open';

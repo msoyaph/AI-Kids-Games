@@ -4,6 +4,7 @@ import { SUNRISE_PROPS } from './sunrise';
 import { THUNDER_PROPS } from './thunder';
 import { GALAXY_PROPS } from './galaxy';
 import { LEGEND_PROPS } from './legend';
+import { FROST_PROPS } from './frost';
 
 /**
  * All scenery/hazard recipes by name (origin at the base, +Y up). Drawn with InstancedMesh,
@@ -15,4 +16,5 @@ export const PROPS: Record<string, ModelPart[]> = {
   ...THUNDER_PROPS,
   ...GALAXY_PROPS,
   ...LEGEND_PROPS,
+  ...FROST_PROPS,
 };

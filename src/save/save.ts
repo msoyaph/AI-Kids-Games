@@ -9,7 +9,7 @@ import { readKey, removeKey, writeKeyStatus, ourKeys, type WriteStatus } from '.
 import { GhostData } from '../sim/ghost';
 import type { AssistSetting } from '../tuning/balance';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const SETTINGS_VERSION = 2;
 export const SLOT_COUNT = 3;
 const PREFIX = 'calexcart';
@@ -186,6 +186,22 @@ export const MIGRATIONS: Record<number, (d: Raw) => Raw> = {
       if (cup && cls && (medal === 'gold' || medal === 'silver' || medal === 'bronze')) trophies[`${cup}:${cls}`] = medal;
     }
     return { ...d, v: 2, trophies, challenges: d.challenges ?? {}, stats: { ...emptyStats(), ...((d.stats as object) ?? {}) }, newUnlocks: [] };
+  },
+  // v2 → v3 (v0.2): the Frost Cup arrives. Racers who already hold a Legend Cup trophy get it straight away
+  // (with a celebration). Nothing else changes: unlocks, trophies, records and ghosts carry over as they are.
+  2: (d) => {
+    const trophies = (d.trophies as Record<string, string>) ?? {};
+    const unlocks = { ...((d.unlocks as Record<string, string[]>) ?? {}) };
+    const newUnlocks = [...((d.newUnlocks as UnlockRef[]) ?? [])];
+    if (Object.keys(trophies).some((k) => k.startsWith('legend:'))) {
+      const cups = [...(unlocks.cups ?? [])];
+      if (!cups.includes('frost')) {
+        cups.push('frost');
+        newUnlocks.push({ kind: 'cup', id: 'frost' });
+      }
+      unlocks.cups = cups;
+    }
+    return { ...d, v: 3, unlocks, newUnlocks };
   },
 };
 

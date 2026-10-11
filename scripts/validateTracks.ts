@@ -3,11 +3,12 @@
  *   npx tsx scripts/validateTracks.ts            # all tracks
  *   npx tsx scripts/validateTracks.ts beach-*    # filter by id glob
  *   npx tsx scripts/validateTracks.ts --no-sim   # geometry checks only
+ *   npx tsx scripts/validateTracks.ts --all-classes frost-*   # AI races in Rookie, Pro and Champion, normal + mirror
  * Writes sim-report/tracks/<id>.svg and prints a summary. Exit code 1 on errors.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { TRACKS } from '../src/data/tracks/index';
-import type { TrackData } from '../src/data/types';
+import type { SpeedClass, TrackData } from '../src/data/types';
 import { TrackModel, EDGE_DROP, EDGE_WALL, F_GAP, type Ribbon, F_ICE } from '../src/sim/track/trackModel';
 import { World } from '../src/sim/world';
 import { RaceTracker } from '../src/sim/race';
@@ -19,6 +20,7 @@ import { RACERS } from '../src/data/racers';
 
 const args = process.argv.slice(2);
 const noSim = args.includes('--no-sim');
+const allClasses = args.includes('--all-classes');
 const filters = args.filter((a) => !a.startsWith('--'));
 const match = (id: string): boolean => filters.length === 0 || filters.some((f) => new RegExp('^' + f.replace(/\*/g, '.*') + '$').test(id));
 
@@ -114,12 +116,12 @@ function geometryChecks(t: TrackModel, r: Report): void {
   });
 }
 
-function simCheck(data: TrackData, mirror: boolean, r: Report): void {
+function simCheck(data: TrackData, mirror: boolean, r: Report, speedClass: SpeedClass = 'pro'): void {
   const t = new TrackModel(data, mirror);
   const racers = RACERS.slice(0, 8);
   const world = new World({
     ground: t,
-    speedClass: 'pro',
+    speedClass,
     seed: 7,
     racers: Array.from({ length: 8 }, (_, i) => ({ racerId: racers[i % racers.length].id, kart: { body: 'zoomster', wheels: 'standard', glider: 'kite', paint: 'cherry', decal: 'none' }, player: -1 })),
     countdownTime: 3,
@@ -142,11 +144,11 @@ function simCheck(data: TrackData, mirror: boolean, r: Report): void {
   const mt = world.karts.reduce((s, k) => s + k.raceStats.miniTurbos[0] + k.raceStats.miniTurbos[1] + k.raceStats.miniTurbos[2], 0);
   const best = Math.min(...world.karts.map((k) => k.bestLap));
   const winner = Math.min(...world.karts.map((k) => k.finishTime));
-  const tag = mirror ? 'mirror' : 'normal';
+  const tag = `${speedClass === 'pro' ? '' : speedClass + ' '}${mirror ? 'mirror' : 'normal'}`;
   r.info.push(`[${tag}] AI: ${real.length}/8 finished, winner ${winner.toFixed(1)} s, best lap ${best.toFixed(1)} s, falls ${falls}, shortcuts ${sc}, mini-turbos ${mt}`);
   if (real.length < 7) r.errors.push(`[${tag}] only ${real.length}/8 AI finished`);
   if (falls > 8) r.warnings.push(`[${tag}] AI fell ${falls} times`);
-  if (best < 25 || best > 70) r.warnings.push(`[${tag}] best lap ${best.toFixed(1)} s outside 25-70 s`);
+  if (speedClass === 'pro' && (best < 25 || best > 70)) r.warnings.push(`[${tag}] best lap ${best.toFixed(1)} s outside 25-70 s`);
 }
 
 function svg(t: TrackModel): string {
@@ -240,8 +242,10 @@ for (const data of TRACKS) {
     geometryChecks(t, r);
     writeFileSync(`sim-report/tracks/${data.id}.svg`, svg(t));
     if (!noSim) {
-      simCheck(data, false, r);
-      simCheck(data, true, r);
+      for (const cls of allClasses ? (['rookie', 'pro', 'champion'] as const) : (['pro'] as const)) {
+        simCheck(data, false, r, cls);
+        simCheck(data, true, r, cls);
+      }
     }
   } catch (e) {
     r.errors.push(`crashed: ${(e as Error).stack}`);
