@@ -1256,6 +1256,7 @@ export class Game {
       ev.kind = p.style;
       ev.tag = p.elements[0] ?? '';
       ev.value = dealt;
+      ev.value2 = p.crit ? 1 : 0;
       ev.id = target.slot;
     }
     if (p.crit) {

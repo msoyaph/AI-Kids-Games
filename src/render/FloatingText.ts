@@ -2,7 +2,7 @@ import { BitmapFont, BitmapText, Container } from 'pixi.js';
 import { swapRemove } from '../core/pool';
 
 export const NUM_FONT = 'VanexNum';
-const FONT_STACK = "ui-rounded, 'SF Pro Rounded', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif";
+const FONT_STACK = "'Avenir Next Condensed', 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif";
 
 let installed = false;
 
@@ -15,9 +15,10 @@ export function installFonts(resolution: number): void {
     style: {
       fontFamily: FONT_STACK,
       fontSize: 30,
-      fontWeight: '900',
+      fontWeight: '800',
       fill: '#ffffff',
-      stroke: { color: '#2a1446', width: 6, join: 'round' },
+      stroke: { color: '#070b16', width: 6, join: 'round' },
+      letterSpacing: 1,
     },
     chars: [['0', '9'], ['A', 'Z'], ['a', 'z'], '+-!?.,%x :'],
     resolution: Math.min(2, Math.max(1, resolution)),

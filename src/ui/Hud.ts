@@ -5,6 +5,7 @@ import { wavePreview } from '../data/waves';
 import { atlasIconUrl, elementIconUrl, enemyTexName, towerIconUrl, type Atlas } from '../render/atlas/bake';
 import type { Tower } from '../sim/entities';
 import type { Game } from '../sim/Game';
+import { towerDps, statLines } from '../data/stats';
 import { h, img, setText } from './dom';
 
 export interface HudHost {
@@ -24,6 +25,8 @@ export interface HudHost {
   sellSelected(): void;
   cycleTargeting(): void;
   deselect(): void;
+  /** Screen x (CSS px) of a tower's centre, used to keep the panel off it on short screens. */
+  towerScreenX(t: Tower): number;
   showTowerInfo(id: TowerId): void;
   layoutChanged(): void;
 }
@@ -39,10 +42,10 @@ interface CardRef {
 export class Hud {
   readonly el = h('div.hud');
   private livesStat: HTMLElement;
-  private livesNum = h('span');
+  private livesNum = h('span.val');
   private coinsStat: HTMLElement;
-  private coinsNum = h('span');
-  private waveNum = h('span');
+  private coinsNum = h('span.val');
+  private waveNum = h('span.val');
   private nextWrap: HTMLElement;
   private nextIcons = h('span.icons');
   private nextTimer = h('span.timer');
@@ -70,10 +73,10 @@ export class Hud {
 
   constructor(private readonly host: HudHost) {
     const a = host.atlas;
-    this.livesStat = h('div.stat.lives', { title: 'Lives' }, img(atlasIconUrl(a, 'heart', 64), 'Lives'), this.livesNum);
-    this.coinsStat = h('div.stat.coins', { title: 'Coins' }, img(atlasIconUrl(a, 'coin', 64), 'Coins'), this.coinsNum);
-    const waveStat = h('div.stat.wave', { title: 'Wave' }, h('span.lbl', null, 'Wave'), this.waveNum);
-    this.goBtn = h('button.btn.green', { onClick: () => host.sendWave(), 'aria-label': 'Send next wave' }, 'GO!');
+    this.livesStat = h('div.stat.lives', { title: 'Lives' }, img(atlasIconUrl(a, 'heart', 64), ''), h('div.sv', null, h('span.lbl', null, 'Lives'), this.livesNum));
+    this.coinsStat = h('div.stat.coins', { title: 'Gold' }, img(atlasIconUrl(a, 'coin', 64), ''), h('div.sv', null, h('span.lbl', null, 'Gold'), this.coinsNum));
+    const waveStat = h('div.stat.wave', { title: 'Wave' }, h('div.sv', null, h('span.lbl', null, 'Wave'), this.waveNum));
+    this.goBtn = h('button.btn.green', { onClick: () => host.sendWave(), 'aria-label': 'Send next wave' }, 'Deploy');
     this.nextWrap = h('div.next-wave', { title: 'Next wave' }, this.nextIcons, this.nextTimer, this.goBtn);
     this.speedBtn = h('button.btn.round', { onClick: () => host.cycleSpeed(), 'aria-label': 'Game speed' }, '1x');
     this.pauseBtn = h('button.btn.round', { onClick: () => host.togglePause(), 'aria-label': 'Pause' }, '❚❚');
@@ -179,11 +182,11 @@ export class Hud {
     if (early !== L.early || (g.waveNum === 0) !== (L.early === -5)) {
       L.early = g.waveNum === 0 ? -5 : early;
       if (g.waveNum === 0) {
-        setText(this.goBtn, 'GO!');
+        setText(this.goBtn, 'Start');
         this.goBtn.classList.add('pulse');
       } else {
         this.goBtn.classList.remove('pulse');
-        setText(this.goBtn, early > 0 ? `Next +${early}` : 'Next');
+        setText(this.goBtn, early > 0 ? `Call +${early}` : 'Call wave');
       }
     }
     if (g.crystals !== L.crystals) {
@@ -195,7 +198,7 @@ export class Hud {
             'button.btn.gold.pulse',
             { onClick: () => this.host.openElementPick(), 'aria-label': 'Pick an element' },
             img(atlasIconUrl(this.host.atlas, 'gem', 64)),
-            g.crystals > 1 ? `Pick ${g.crystals} elements!` : 'Pick an element!',
+            g.crystals > 1 ? `${g.crystals} element cores ready` : 'Element core ready',
           ),
         );
       }
@@ -267,6 +270,7 @@ export class Hud {
         els,
         img(towerIconUrl(id, 1, 104), def.name, 'icon'),
         h('span.nm', null, def.name),
+        h('span.dps', null, `DPS ${Math.round(towerDps(def, def.levels[0]!))}`),
         h('span.cost', null, img(atlasIconUrl(a, 'coin', 32)), String(cost)),
       );
       key++;
@@ -292,7 +296,7 @@ export class Hud {
       );
       el.addEventListener('click', () => {
         if (g.crystals > 0) this.host.openElementPick();
-        else this.toast('Find an Element Crystal to unlock this!');
+        else this.toast('Locked: earn an element core to unlock it.');
       });
       this.cards.push({ el, cost: 0, id: null, el2: e });
       this.cardsEl.append(el);
@@ -363,7 +367,7 @@ export class Hud {
     const def = TOWERS[id];
     this.chip.append(
       img(towerIconUrl(id, 1, 88), def.name),
-      h('span.hint', null, this.host.touch ? `Tap a spot to build ${def.name}` : `Click to build ${def.name}`),
+      h('span.hint', null, this.host.touch ? `Tap a plate to place ${def.name}` : `Click a plate to place ${def.name}`),
       h('button.btn.round.red', { onClick: () => this.host.selectBuild(null), 'aria-label': 'Cancel building' }, '✕'),
     );
   }
@@ -374,6 +378,7 @@ export class Hud {
     this.tpanel?.remove();
     this.tpanel = null;
     this.tpanelRefs = {};
+    this.el.classList.toggle('panel-open', !!t);
     if (!t) {
       this.drawer.style.visibility = '';
       return;
@@ -381,22 +386,15 @@ export class Hud {
     // On phones the panel replaces the drawer; on big screens it floats above it.
     if (!this.pinned) this.drawer.style.visibility = 'hidden';
     const def = t.def;
-    const st = t.stats;
     const pips = h('span.pips', { 'aria-label': `Level ${t.level} of ${MAX_LEVEL}` });
     for (let i = 1; i <= MAX_LEVEL; i++) pips.append(h('span.pip-dot', { class: i <= t.level ? 'on' : '' }));
-    const kills = h('span', null, `Poofs: ${t.kills}`);
-    const info = h(
-      'div.tinfo',
-      null,
-      h('span.chip', null, def.ability),
-      h('span', null, `Range ${st.range.toFixed(1)}`),
-      def.behavior === 'beam' ? h('span', null, `Power ${Math.round(st.damage)}/s`) : h('span', null, `Power ${Math.round(st.damage)}`),
-      kills,
-    );
+    const kills = h('span', null);
+    const info = h('div.tinfo', null, h('span.chip', null, def.ability), def.targets === 'ground' ? h('span', null, 'Ground only') : h('span', null, 'Ground + air'), kills);
+    const table = this.statsTable(t);
     const target =
       def.behavior === 'pulse'
         ? undefined
-        : h('button.btn.ghost', { onClick: () => this.host.cycleTargeting(), 'aria-label': 'Change target' }, `🎯 ${TARGET_MODE_LABEL[t.mode]}`);
+        : h('button.btn.ghost', { onClick: () => this.host.cycleTargeting(), 'aria-label': 'Change target' }, `Target: ${TARGET_MODE_LABEL[t.mode]}`);
     const upgrade = h('button.btn.green', { onClick: () => this.host.upgradeSelected(), 'aria-label': 'Upgrade' });
     const sell = h('button.btn.red', { onClick: () => this.host.sellSelected(), 'aria-label': 'Sell' }, `Sell +${sellValue(t.invested)}`);
     const close = h('button.btn.round.ghost.close', { onClick: () => this.host.deselect(), 'aria-label': 'Close' }, '✕');
@@ -404,16 +402,40 @@ export class Hud {
       'div.tpanel.panel',
       null,
       img(towerIconUrl(def.id, t.level, 128), def.name, 'icon'),
-      h('div.tname', null, def.name, pips, ...def.elements.map((e) => img(elementIconUrl(this.host.atlas, e, 40), ELEMENTS[e].name))),
+      h('div', null, h('div.tname', null, def.name, pips, ...def.elements.map((e) => img(elementIconUrl(this.host.atlas, e, 40), ELEMENTS[e].name))), info),
       close,
-      info,
+      table,
       h('div.actions', null, target ?? null, sell, upgrade),
     );
-    panel.querySelectorAll('.tname img').forEach((i) => ((i as HTMLElement).style.width = (i as HTMLElement).style.height = '22px'));
+    // Short (landscape phone) screens: a side sheet on the half away from the tower.
+    if (window.innerHeight <= 520) {
+      panel.classList.add('side');
+      if (this.host.towerScreenX(t) > window.innerWidth / 2) panel.classList.add('left');
+    }
+    panel.querySelectorAll('.tname img').forEach((i) => ((i as HTMLElement).style.width = (i as HTMLElement).style.height = '20px'));
     this.tpanel = panel;
     this.tpanelRefs = { upgrade, sell, target, kills };
     this.el.append(panel);
     this.refreshPanelButtons();
+  }
+
+  /** Current vs next-level numbers, with the change highlighted. */
+  private statsTable(t: Tower): HTMLElement {
+    const now = statLines(t.def, t.stats);
+    const nextStats = t.level < MAX_LEVEL ? t.def.levels[t.level]! : null;
+    const next = nextStats ? statLines(t.def, nextStats) : null;
+    const rows = now.slice(0, 6).map((line) => {
+      const n = next?.find((x) => x.key === line.key);
+      const delta = n ? n.value - line.value : 0;
+      const better = delta === 0 ? '' : (delta > 0) === (line.better === 'higher') ? 'up' : 'down';
+      return h('tr', null, h('td', null, line.label), h('td', null, line.text), next ? h('td', { class: better }, n ? n.text : '—') : null);
+    });
+    return h(
+      'table.stats-table',
+      { 'aria-label': 'Tower stats' },
+      h('thead', null, h('tr', null, h('th', null, 'Stat'), h('th', null, 'Now'), next ? h('th', null, `Level ${t.level + 1}`) : null)),
+      h('tbody', null, ...rows),
+    );
   }
 
   refreshPanelButtons(): void {
@@ -422,16 +444,16 @@ export class Hud {
     if (!t || !r.upgrade) return;
     const g = this.host.game;
     if (t.level >= MAX_LEVEL) {
-      setText(r.upgrade, '★ Max level');
+      setText(r.upgrade, 'Max level');
       r.upgrade.disabled = true;
     } else {
       const cost = g.upgradeCost(t);
-      setText(r.upgrade, `⬆ Upgrade ${cost}`);
+      setText(r.upgrade, `Upgrade · ${cost}`);
       r.upgrade.disabled = g.coins < cost;
     }
     if (r.sell) setText(r.sell, `Sell +${sellValue(t.invested)}`);
-    if (r.target) setText(r.target, `🎯 ${TARGET_MODE_LABEL[t.mode]}`);
-    if (r.kills) setText(r.kills, `Poofs: ${t.kills}`);
+    if (r.target) setText(r.target, `Target: ${TARGET_MODE_LABEL[t.mode]}`);
+    if (r.kills) setText(r.kills, `${t.kills} destroyed · ${Math.round(t.damageDone).toLocaleString()} dmg`);
   }
 
   // ------------------------------------------------------------ messages
@@ -445,9 +467,28 @@ export class Hud {
     this.toastTimer = window.setTimeout(() => el.remove(), 1800);
   }
 
+  /** Banners queue so two announcements never overlap. */
   banner(text: string, sub?: string): void {
-    const el = h('div.banner', { role: 'status' }, text, sub ? h('span.small', null, sub) : null);
-    this.el.append(el);
-    window.setTimeout(() => el.remove(), 1900);
+    this.bannerQueue.push([text, sub]);
+    if (!this.bannerBusy) this.nextBanner();
   }
+
+  private bannerQueue: [string, string | undefined][] = [];
+  private bannerBusy = false;
+
+  private nextBanner(): void {
+    const item = this.bannerQueue.shift();
+    if (!item) {
+      this.bannerBusy = false;
+      return;
+    }
+    this.bannerBusy = true;
+    const el = h('div.banner', { role: 'status' }, item[0], item[1] ? h('span.small', null, item[1]) : null);
+    this.el.append(el);
+    window.setTimeout(() => {
+      el.remove();
+      this.nextBanner();
+    }, 1850);
+  }
+
 }

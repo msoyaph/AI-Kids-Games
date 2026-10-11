@@ -1,35 +1,35 @@
 import type { BuildFail } from '../sim/Game';
 
-/** Short, simple messages for young players. */
+/** Short, clear messages (middle-school reading level). */
 export const BUILD_FAIL_MSG: Record<BuildFail, string> = {
-  path: 'That would block the path!',
-  coins: 'Not enough coins yet!',
-  terrain: "You can't build there.",
-  occupied: 'A tower is already there.',
-  locked: 'Unlock that element first!',
-  outside: "You can't build there.",
+  path: 'Blocked: that would seal the only route.',
+  coins: 'Not enough gold.',
+  terrain: 'Nothing can be built there.',
+  occupied: 'That plate is already taken.',
+  locked: 'Unlock that element first.',
+  outside: 'Nothing can be built there.',
 };
 
 export const WIN_LINES = [
-  'You saved the crystals!',
-  'Hooray! The castle is safe!',
-  'Super job, hero!',
-  'The Grumblewumps went home!',
+  'Grid holding at full strength. Nicely done, Commander.',
+  'The breach is sealed. For now.',
+  'Shardbound signal lost. That one was textbook.',
+  'Citadel secure. I logged that as a "flawless-ish" defense.',
 ];
 
 export const LOSE_LINES = [
-  'Oh no! The Grumblewumps borrowed the crystals.',
-  'So close! Let’s try again.',
-  'Those cheeky creatures! Try a longer maze.',
+  'The Citadel core is drained. Regroup and try a new layout.',
+  'They found a gap. Longer routes buy your towers more time.',
+  'Defense collapsed. Check which wave broke through and plan for it.',
 ];
 
 export const TIPS = [
-  'Tip: Make the path long and wiggly!',
-  'Tip: Water beats Fire. Fire beats Nature. Nature beats Water.',
-  'Tip: Light beats Shadow. Shadow beats Earth. Earth beats Light.',
-  'Tip: Flyers ignore your maze. Make sure towers can hit them!',
-  'Tip: Saved coins earn a little extra each wave.',
-  'Tip: Upgrade towers to make them super strong.',
-  'Tip: Two elements make a COMBO tower!',
-  'Tip: Press and hold a tower to learn about it.',
+  'Tip: Longer routes mean more time under fire. Shape the maze.',
+  'Tip: Water beats Fire, Fire beats Nature, Nature beats Water.',
+  'Tip: Light beats Shadow, Shadow beats Earth, Earth beats Light.',
+  'Tip: Flyers ignore the maze. Keep some towers that can hit air.',
+  'Tip: Unspent gold earns interest at the end of each wave.',
+  'Tip: Upgrades usually beat new towers once your maze is built.',
+  'Tip: Two elements unlock a combo tower.',
+  'Tip: Press and hold any tower or enemy for its full stats.',
 ];

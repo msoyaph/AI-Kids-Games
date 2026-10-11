@@ -31,9 +31,9 @@ async function boot(): Promise<void> {
   const setting = save.data.settings.quality;
   const startTier = setting === 'auto' ? tier : setting;
   const stage = new Stage();
-  progress(0.05, 'Waking up the crystals…');
+  progress(0.05, 'Powering up the Citadel…');
   await stage.init(document.getElementById('game')!, renderResolution(QUALITY_PROFILES[startTier]));
-  progress(0.12, 'Painting towers and creatures…');
+  progress(0.12, 'Forging towers and constructs…');
   const bakeScale = detectBakeScale(startTier);
   const atlas = await bakeAtlas(bakeScale, stage.maxTextureSize, (p) => progress(0.12 + p * 0.83));
   installFonts(stage.resolution);
@@ -76,5 +76,5 @@ async function boot(): Promise<void> {
 
 boot().catch((err: unknown) => {
   console.error(err);
-  progress(1, 'Oh no! Something went wrong. Please reload the page.');
+  progress(1, 'Something went wrong. Please reload the page.');
 });

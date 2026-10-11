@@ -21,8 +21,8 @@ describe('achievements', () => {
   it('awards a win badge and "perfect" at the end of a flawless run', () => {
     const { tracker, game } = setup();
     const names = tracker.checkEnd(game, true, 'campaign');
-    expect(names).toContain('Crystal Keeper');
-    expect(names).toContain('Perfect Guard');
+    expect(names).toContain('First Contact');
+    expect(names).toContain('Flawless Grid');
     expect(tracker.checkEnd(game, true, 'campaign')).toHaveLength(0); // only once
   });
 
@@ -43,16 +43,16 @@ describe('achievements', () => {
     const a = setup();
     a.game.chooseElement('water');
     a.game.build('bubble', 3, 3);
-    expect(a.tracker.checkEnd(a.game, true, 'campaign')).toContain('Just Add Water');
+    expect(a.tracker.checkEnd(a.game, true, 'campaign')).toContain('Tidebound');
     const b = setup();
     b.game.chooseElement('water');
     b.game.build('bubble', 3, 3);
     b.game.build('arrow', 4, 3);
-    expect(b.tracker.checkEnd(b.game, true, 'campaign')).not.toContain('Just Add Water');
+    expect(b.tracker.checkEnd(b.game, true, 'campaign')).not.toContain('Tidebound');
   });
 
   it('losing never gives win badges', () => {
     const { tracker, game } = setup();
-    expect(tracker.checkEnd(game, false, 'campaign')).not.toContain('Crystal Keeper');
+    expect(tracker.checkEnd(game, false, 'campaign')).not.toContain('First Contact');
   });
 });

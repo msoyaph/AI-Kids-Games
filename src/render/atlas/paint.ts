@@ -205,85 +205,101 @@ export function cuteFace(ctx: Ctx, cx: number, cy: number, o: FaceOpts): void {
  * a unique silhouette so colour is never the only cue.
  */
 export function elementIcon(ctx: Ctx, icon: ElementIcon, cx: number, cy: number, r: number, color: number, outline = true): void {
-  const dark = darken(color, 0.55);
-  const lw = outline ? Math.max(1.2, r * 0.16) : 0;
+  const dark = darken(color, 0.72);
+  const lw = outline ? Math.max(1.1, r * 0.15) : 0;
+  // crisp two-tone "cut crystal" fill: lit upper-left, shaded lower-right
+  const fill = (): CanvasGradient => {
+    const g = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+    g.addColorStop(0, css(lighten(color, 0.55)));
+    g.addColorStop(0.48, css(lighten(color, 0.1)));
+    g.addColorStop(0.52, css(color));
+    g.addColorStop(1, css(darken(color, 0.38)));
+    return g;
+  };
+  const edge = (x0: number, y0: number, x1: number, y1: number): void => {
+    ctx.strokeStyle = css(lighten(color, 0.75), 0.85);
+    ctx.lineWidth = Math.max(0.8, r * 0.09);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+  };
   ctx.save();
   switch (icon) {
     case 'flame': {
+      // angular three-tongue flame
       ctx.beginPath();
-      ctx.moveTo(cx, cy - r);
-      ctx.bezierCurveTo(cx + r * 0.35, cy - r * 0.45, cx + r * 0.95, cy - r * 0.1, cx + r * 0.75, cy + r * 0.45);
-      ctx.bezierCurveTo(cx + r * 0.6, cy + r * 0.95, cx - r * 0.6, cy + r * 0.95, cx - r * 0.75, cy + r * 0.45);
-      ctx.bezierCurveTo(cx - r * 0.9, cy, cx - r * 0.45, cy - r * 0.25, cx - r * 0.25, cy - r * 0.55);
-      ctx.bezierCurveTo(cx - r * 0.1, cy - r * 0.3, cx - r * 0.05, cy - r * 0.6, cx, cy - r);
+      ctx.moveTo(cx + r * 0.05, cy - r);
+      ctx.lineTo(cx + r * 0.42, cy - r * 0.28);
+      ctx.lineTo(cx + r * 0.62, cy - r * 0.62);
+      ctx.lineTo(cx + r * 0.82, cy + r * 0.2);
+      ctx.lineTo(cx + r * 0.45, cy + r * 0.9);
+      ctx.lineTo(cx - r * 0.45, cy + r * 0.9);
+      ctx.lineTo(cx - r * 0.82, cy + r * 0.15);
+      ctx.lineTo(cx - r * 0.52, cy - r * 0.42);
+      ctx.lineTo(cx - r * 0.3, cy - r * 0.08);
       ctx.closePath();
-      fillStroke(ctx, ballGradient(ctx, cx, cy + r * 0.2, r, color), dark, lw);
+      fillStroke(ctx, fill(), dark, lw);
       ctx.beginPath();
-      ctx.moveTo(cx, cy - r * 0.15);
-      ctx.bezierCurveTo(cx + r * 0.35, cy + r * 0.15, cx + r * 0.35, cy + r * 0.7, cx, cy + r * 0.7);
-      ctx.bezierCurveTo(cx - r * 0.35, cy + r * 0.7, cx - r * 0.35, cy + r * 0.2, cx, cy - r * 0.15);
-      ctx.fillStyle = css(lighten(color, 0.65));
+      ctx.moveTo(cx, cy - r * 0.2);
+      ctx.lineTo(cx + r * 0.32, cy + r * 0.38);
+      ctx.lineTo(cx + r * 0.18, cy + r * 0.72);
+      ctx.lineTo(cx - r * 0.18, cy + r * 0.72);
+      ctx.lineTo(cx - r * 0.32, cy + r * 0.38);
+      ctx.closePath();
+      ctx.fillStyle = css(lighten(color, 0.7));
       ctx.fill();
       break;
     }
     case 'drop': {
       ctx.beginPath();
       ctx.moveTo(cx, cy - r);
-      ctx.bezierCurveTo(cx + r * 0.25, cy - r * 0.55, cx + r * 0.8, cy - r * 0.05, cx + r * 0.8, cy + r * 0.32);
-      ctx.arc(cx, cy + r * 0.32, r * 0.8, 0, Math.PI);
-      ctx.bezierCurveTo(cx - r * 0.8, cy - r * 0.05, cx - r * 0.25, cy - r * 0.55, cx, cy - r);
+      ctx.lineTo(cx + r * 0.7, cy + r * 0.12);
+      ctx.arc(cx, cy + r * 0.32, r * 0.72, -0.28, Math.PI + 0.28);
       ctx.closePath();
-      fillStroke(ctx, ballGradient(ctx, cx, cy + r * 0.2, r, color), dark, lw);
-      shine(ctx, cx - r * 0.3, cy + r * 0.15, r * 0.28, r * 0.42, 0.85, 0.3);
+      fillStroke(ctx, fill(), dark, lw);
+      edge(cx - r * 0.12, cy - r * 0.62, cx - r * 0.45, cy + r * 0.05);
       break;
     }
     case 'leaf': {
       ctx.beginPath();
-      ctx.moveTo(cx - r * 0.85, cy + r * 0.85);
-      ctx.bezierCurveTo(cx - r * 1.0, cy - r * 0.4, cx - r * 0.1, cy - r * 1.0, cx + r * 0.9, cy - r * 0.9);
-      ctx.bezierCurveTo(cx + r * 0.95, cy + r * 0.1, cx + r * 0.35, cy + r * 0.95, cx - r * 0.85, cy + r * 0.85);
+      ctx.moveTo(cx - r * 0.9, cy + r * 0.9);
+      ctx.lineTo(cx - r * 0.78, cy - r * 0.12);
+      ctx.lineTo(cx - r * 0.2, cy - r * 0.78);
+      ctx.lineTo(cx + r * 0.92, cy - r * 0.92);
+      ctx.lineTo(cx + r * 0.78, cy + r * 0.2);
+      ctx.lineTo(cx + r * 0.12, cy + r * 0.8);
       ctx.closePath();
-      fillStroke(ctx, ballGradient(ctx, cx, cy, r, color), dark, lw);
-      ctx.strokeStyle = css(lighten(color, 0.55));
-      ctx.lineWidth = Math.max(1, r * 0.12);
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(cx - r * 0.65, cy + r * 0.65);
-      ctx.quadraticCurveTo(cx + r * 0.05, cy - r * 0.05, cx + r * 0.6, cy - r * 0.6);
-      ctx.stroke();
+      fillStroke(ctx, fill(), dark, lw);
+      edge(cx - r * 0.7, cy + r * 0.7, cx + r * 0.6, cy - r * 0.6);
       break;
     }
     case 'star': {
-      starPath(ctx, cx, cy + r * 0.05, 5, r * 1.02, r * 0.46);
-      fillStroke(ctx, ballGradient(ctx, cx, cy, r, color), dark, lw);
-      shine(ctx, cx - r * 0.15, cy - r * 0.25, r * 0.3, r * 0.2, 0.8);
+      starPath(ctx, cx, cy + r * 0.06, 5, r * 1.04, r * 0.44);
+      fillStroke(ctx, fill(), dark, lw);
+      edge(cx, cy - r * 0.55, cx, cy + r * 0.05);
       break;
     }
     case 'moon': {
       ctx.beginPath();
-      ctx.arc(cx, cy, r * 0.92, Math.PI * 0.3, Math.PI * 1.7, false);
-      ctx.bezierCurveTo(cx - r * 0.05, cy - r * 0.75, cx - r * 0.25, cy + r * 0.55, cx + r * 0.53, cy + r * 0.74);
+      ctx.arc(cx, cy, r * 0.94, Math.PI * 0.32, Math.PI * 1.68, false);
+      ctx.arc(cx + r * 0.42, cy - r * 0.08, r * 0.72, Math.PI * 1.42, Math.PI * 0.62, true);
       ctx.closePath();
-      fillStroke(ctx, ballGradient(ctx, cx - r * 0.2, cy, r, color), dark, lw);
-      // tiny star
-      starPath(ctx, cx + r * 0.45, cy - r * 0.15, 4, r * 0.28, r * 0.1);
-      ctx.fillStyle = css(lighten(color, 0.7));
+      fillStroke(ctx, fill(), dark, lw);
+      starPath(ctx, cx + r * 0.5, cy - r * 0.18, 4, r * 0.3, r * 0.09);
+      ctx.fillStyle = css(lighten(color, 0.75));
       ctx.fill();
       break;
     }
     case 'hex': {
-      polygon(ctx, cx, cy, 6, r * 0.95, Math.PI / 6);
-      fillStroke(ctx, ballGradient(ctx, cx, cy, r, color), dark, lw);
-      ctx.strokeStyle = css(darken(color, 0.3));
-      ctx.lineWidth = Math.max(1, r * 0.1);
-      ctx.beginPath();
-      ctx.moveTo(cx - r * 0.3, cy - r * 0.55);
-      ctx.lineTo(cx - r * 0.05, cy - r * 0.1);
-      ctx.lineTo(cx - r * 0.35, cy + r * 0.3);
-      ctx.moveTo(cx - r * 0.05, cy - r * 0.1);
-      ctx.lineTo(cx + r * 0.4, cy + r * 0.05);
+      polygon(ctx, cx, cy, 6, r * 0.96, Math.PI / 6);
+      fillStroke(ctx, fill(), dark, lw);
+      polygon(ctx, cx, cy, 6, r * 0.52, Math.PI / 6);
+      ctx.strokeStyle = css(darken(color, 0.35), 0.9);
+      ctx.lineWidth = Math.max(0.8, r * 0.1);
       ctx.stroke();
-      shine(ctx, cx - r * 0.35, cy - r * 0.4, r * 0.3, r * 0.18, 0.7);
+      edge(cx - r * 0.78, cy - r * 0.45, cx - r * 0.05, cy - r * 0.86);
       break;
     }
   }

@@ -20,7 +20,7 @@ export class Stage {
       resolution,
       autoDensity: true,
       antialias: false,
-      backgroundColor: 0x1b1446,
+      backgroundColor: 0x0b1020,
       width: Math.max(1, host.clientWidth || innerWidth),
       height: Math.max(1, host.clientHeight || innerHeight),
       preserveDrawingBuffer: false,

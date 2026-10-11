@@ -28,36 +28,37 @@ export class TitleScreen implements Screen {
     const a = app.atlas;
     const save = app.save.data;
     const endlessOpen = nav.endlessUnlocked();
-    const parade = h(
-      'div.parade',
+    const showcase = h(
+      'div.showcase',
       { 'aria-hidden': 'true' },
-      img(atlasIconUrl(a, enemyTexName('gloop', 'water'), 96)),
-      img(towerIconUrl('flame', 3, 112)),
-      img(atlasIconUrl(a, enemyTexName('zoomkin', null), 96)),
-      img(pipUrl('cheeky', 128)),
-      img(atlasIconUrl(a, enemyTexName('puffbat', 'light'), 96)),
-      img(towerIconUrl('eclipse', 4, 112)),
-      img(atlasIconUrl(a, enemyTexName('clankbot', null), 96)),
+      img(towerIconUrl('eclipse', 4, 128)),
+      img(towerIconUrl('flame', 3, 128)),
+      img(towerIconUrl('crystal', 4, 128)),
+      img(pipUrl('happy', 128)),
+      img(atlasIconUrl(a, enemyTexName('clankbot', null), 112)),
+      img(atlasIconUrl(a, enemyTexName('gloop', 'fire'), 112)),
+      img(atlasIconUrl(a, enemyTexName('puffbat', null), 112)),
     );
-    const play = h('button.btn.green.big', { onClick: () => nav.worlds() }, '▶ Play');
     const buttons = h(
       'div.menu-buttons',
       null,
-      play,
-      h('button.btn', { onClick: () => nav.tutorial() }, save.tutorialDone ? '🦊 Tutorial' : '🦊 How to play'),
+      h('button.btn.green.big', { onClick: () => nav.worlds() }, 'Campaign'),
       h(
-        'button.btn',
-        {
-          onClick: () => (endlessOpen ? nav.endless() : nav.toast('Finish Sunny Meadow to unlock Endless!')),
-          class: endlessOpen ? '' : 'disabled',
-          'aria-label': endlessOpen ? 'Endless mode' : 'Endless mode (locked)',
-        },
-        endlessOpen ? '♾ Endless' : '🔒 Endless',
+        'div.row2',
+        null,
+        h('button.btn', { onClick: () => nav.tutorial() }, save.tutorialDone ? 'Training' : 'Start training'),
+        h(
+          'button.btn',
+          {
+            onClick: () => (endlessOpen ? nav.endless() : nav.toast('Clear the Verdant Reach to unlock Endless.')),
+            class: endlessOpen ? '' : 'disabled',
+            'aria-label': endlessOpen ? 'Endless' : 'Endless (locked)',
+          },
+          endlessOpen ? 'Endless' : 'Endless · locked',
+        ),
       ),
-      h('button.btn', { onClick: () => nav.encyclopedia() }, '📖 Book'),
-      h('button.btn', { onClick: () => nav.badges() }, '🏅 Badges'),
-      h('button.btn', { onClick: () => nav.settings() }, '⚙ Settings'),
-      fullscreenAvailable() ? h('button.btn.ghost', { onClick: () => toggleFullscreen() }, '⛶ Full screen') : null,
+      h('div.row2', null, h('button.btn', { onClick: () => nav.encyclopedia() }, 'Codex'), h('button.btn', { onClick: () => nav.badges() }, 'Badges')),
+      h('div.row2', null, h('button.btn', { onClick: () => nav.settings() }, 'Settings'), fullscreenAvailable() ? h('button.btn.ghost', { onClick: () => toggleFullscreen() }, 'Full screen') : null),
     );
     this.el = h(
       'div.screen.menu',
@@ -65,12 +66,16 @@ export class TitleScreen implements Screen {
       h(
         'div.title',
         null,
-        parade,
-        h('div.logo', { role: 'heading', 'aria-level': '1' }, 'Vanex Defense'),
-        h('div.tag', null, 'The Grumblewumps want to borrow the shiny crystals of Vanex! Build elemental towers to keep them safe.'),
+        h(
+          'div.hero-art',
+          null,
+          h('div.logo', { role: 'heading', 'aria-level': '1' }, h('small', null, 'Crystal Defense Grid'), 'Vanex Defense'),
+          h('div.tag', null, 'The Shardbound are pouring through the rifts. Build the grid, master six elements and hold the line, Commander.'),
+          showcase,
+        ),
         buttons,
       ),
-      h('div.version', null, `v1.0 · ${app.save.totalStars()}★`),
+      h('div.version', null, `v2.0 · ${app.save.totalStars()} STARS`),
     );
   }
 }

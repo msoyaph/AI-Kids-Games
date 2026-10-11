@@ -18,7 +18,7 @@ test('runs inside a sandboxed iframe (touch, storage, fullscreen permission)', a
   await f.goto(`${baseURL}/?map=w1m1`);
   await waitForGame(f);
   await frame.getByRole('button', { name: 'Light', exact: true }).click();
-  await pickTower(frame, /Arrow Post/);
+  await pickTower(frame, /Bolt Turret/);
   const c = await cellCenter(f, 6, 4);
   const box = await page.locator('#host-frame').boundingBox();
   const x = box!.x + c.x;
@@ -38,7 +38,7 @@ test('dist/index.html works when opened from disk (file://)', async ({ page }, i
   const g = guard(page, 'file://');
   await page.goto('file://' + process.cwd() + '/dist/index.html');
   await expect(page.locator('.logo')).toBeVisible();
-  await page.getByRole('button', { name: /Book/ }).click();
-  await expect(page.getByText('Arrow Post')).toBeVisible();
+  await page.getByRole('button', { name: /Codex/ }).click();
+  await expect(page.getByText('Bolt Turret')).toBeVisible();
   expectClean(g);
 });

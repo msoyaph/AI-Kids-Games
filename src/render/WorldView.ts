@@ -55,6 +55,8 @@ export interface ViewSettings {
 }
 
 const WHITE = 0xffffff;
+/** Constructs are drawn a little larger than their hit radius so they read well on phones. */
+const ENEMY_DRAW_SCALE = 1.22;
 
 // Small cached number strings for floating text (avoids building strings every hit).
 const NUM_CACHE: string[] = [];
@@ -119,6 +121,15 @@ export class WorldView {
   private shieldTex = {} as Record<ElementId, Texture>;
   private pelTex = {} as Record<ElementId, Texture>;
   private stunTex: Texture;
+  private shardTex: Texture;
+  private ringTex: Texture;
+  private dotTex: Texture;
+  private coinTex: Texture;
+  private killStreak = 0;
+  private killWindow = -1;
+  private killX = 0;
+  private killY = 0;
+  private lastStreakText = -1;
 
   private shake = 0;
   private shakeRng = new Rng(7);
@@ -139,6 +150,10 @@ export class WorldView {
       this.pelTex[el] = atlas.get(`pel_${el}`);
     }
     this.stunTex = atlas.get('stun');
+    this.shardTex = atlas.get('shard');
+    this.ringTex = atlas.get('ring');
+    this.dotTex = atlas.get('dot');
+    this.coinTex = atlas.get('coin');
     this.camera = new Camera(this.world, g.cols * TILE, g.rows * TILE);
     for (const layer of Object.values(this.L)) this.world.addChild(layer);
     this.L.glow.blendMode = 'add';
@@ -241,7 +256,7 @@ export class WorldView {
       }
     }
     const tuftTint =
-      this.game.map.theme === 'snow' ? 0xffffff : this.game.map.theme === 'caves' ? 0xb8a0ff : this.game.map.theme === 'desert' ? 0xc8d070 : 0x9cff7a;
+      this.game.map.theme === 'snow' ? 0xdfeaf6 : this.game.map.theme === 'caves' ? 0x9a86e0 : this.game.map.theme === 'desert' ? 0xb8a060 : 0x5fbf8a;
     for (const i of rng.shuffle(grass).slice(0, 26)) {
       const s = new Sprite(this.atlas.get('tuft'));
       s.anchor.set(0.5, 1);
@@ -332,7 +347,7 @@ export class WorldView {
       if (v.numCooldown > 0) v.numCooldown -= gameDt;
       const def = e.def;
       // texture (element variants, bat flap frames)
-      const frame = def.look === 'bat' && Math.floor(t * 8 + e.slot) % 2 === 1 ? 1 : 0;
+      const frame = (def.look === 'wisp' || def.look === 'drone') && Math.floor(t * (def.look === 'drone' ? 14 : 6) + e.slot) % 2 === 1 ? 1 : 0;
       const tex = this.enemyTexture(def.id, def.elemental ? e.element : null, frame);
       if (v.body.texture !== tex) v.body.texture = tex;
       const parent = e.flying ? this.L.air : this.L.enemy;
@@ -350,28 +365,30 @@ export class WorldView {
       const stunned = e.stunTime > 0;
       if (!stunned) {
         switch (def.look) {
-          case 'slime':
-          case 'mushroom': {
-            const s = Math.sin(phase);
-            sy = 1 + 0.08 * s;
-            sx = 1 - 0.06 * s;
-            lift = Math.max(0, s) * R * 0.18;
+          case 'beetle':
+            // quick scuttle
+            rot = Math.sin(phase * 2.4) * 0.035;
+            lift = Math.abs(Math.sin(phase * 2.4)) * 1.2;
+            break;
+          case 'geode':
+          case 'golem': {
+            // heavy stomp
+            const s = Math.abs(Math.sin(phase * 0.9));
+            lift = s * 2.2;
+            rot = Math.sin(phase * 0.9) * 0.03;
             break;
           }
-          case 'gremlin':
-            rot = Math.sin(phase * 1.4) * 0.1;
-            lift = Math.abs(Math.sin(phase * 1.4)) * 2;
+          case 'drone':
+            lift = 3 + Math.sin(phase * 0.8) * 2;
+            rot = Math.sin(phase * 0.5) * 0.05;
             break;
-          case 'robot':
-            rot = Math.sin(phase * 2.2) * 0.05;
-            lift = Math.abs(Math.sin(phase * 1.1)) * 2.5;
+          case 'wisp':
+          case 'mender':
+          case 'sentinel':
+            lift = Math.sin(phase * 0.6) * 3.5;
             break;
-          case 'bat':
-          case 'imp':
-            lift = Math.sin(phase * 0.6) * 4;
-            break;
-          case 'king':
-            sy = 1 + 0.04 * Math.sin(phase * 0.5);
+          case 'archon':
+            lift = Math.sin(phase * 0.35) * 3;
             break;
         }
       } else rot = Math.sin(t * 20) * 0.12;
@@ -379,11 +396,11 @@ export class WorldView {
       const fly = e.flying ? 22 : 0;
       v.body.visible = true;
       v.body.position.set(x, y - lift - fly);
-      v.body.scale.set(sx * pop * e.facing, sy * pop);
+      v.body.scale.set(sx * pop * e.facing * ENEMY_DRAW_SCALE, sy * pop * ENEMY_DRAW_SCALE);
       v.body.rotation = rot;
       // status tint (colour + particles; shapes come from icons/particles too)
       let tint = WHITE;
-      if (e.hitFlash > 0) tint = 0xffc4c4;
+      if (e.hitFlash > 0) tint = 0xfff2f2;
       else if (stunned) tint = 0xfff0a0;
       else if (e.slowTime > 0) tint = 0xa8dcff;
       else if (e.poisonTime > 0) tint = 0xc8ff9e;
@@ -416,7 +433,7 @@ export class WorldView {
         v.hpFill.tint = frac > 0.6 ? 0x6cf06a : frac > 0.3 ? 0xffd23f : 0xff5a6a;
       } else v.hpBg.visible = v.hpFill.visible = false;
 
-      // extra: stun stars or the Grumble King's crown gem
+      // extra: stun stars or Archon Null's element core
       if (stunned) {
         v.extra.visible = true;
         v.extra.texture = this.stunTex;
@@ -426,8 +443,9 @@ export class WorldView {
       } else if (def.shiftElement && e.element) {
         v.extra.visible = true;
         v.extra.texture = this.pelTex[e.element];
-        v.extra.position.set(x, y - lift - R * 1.48);
-        v.extra.scale.set(0.9 + Math.sin(t * 6) * 0.08);
+        // the live element core sits in Archon Null's chest slot
+        v.extra.position.set(x, y - lift - fly);
+        v.extra.scale.set(1.2 + Math.sin(t * 6) * 0.06);
       } else v.extra.visible = false;
 
       // trailing status particles (cheap, budgeted)
@@ -580,8 +598,8 @@ export class WorldView {
       if (v.glow.visible !== glowy) v.glow.visible = glowy;
       if (glowy) {
         v.glow.position.set(x, y - lift);
-        v.glow.scale.set(p.style === 'flare' ? 0.9 : 0.42);
-        v.glow.alpha = 0.75;
+        v.glow.scale.set(p.style === 'flare' ? 0.6 : 0.36);
+        v.glow.alpha = 0.6;
       }
       v.shadow.visible = p.lob;
       if (p.lob) {
@@ -619,23 +637,23 @@ export class WorldView {
       const lava = z.look === 'lava';
       const fade = Math.min(1, z.time / 0.5, (z.maxTime - z.time) / 0.25 + 0.2);
       v.sprite.visible = true;
-      v.sprite.texture = this.atlas.get('puff');
+      v.sprite.texture = this.atlas.get('field');
       v.sprite.position.set(z.x * TILE, z.y * TILE);
-      const size = (z.r * 2 * TILE) / 56;
-      v.sprite.scale.set(size * (1 + Math.sin(this.time * 4 + z.slot) * 0.04), size * 0.8);
-      v.sprite.tint = lava ? 0xff6a2a : 0xeaf4ff;
-      v.sprite.alpha = (lava ? 0.75 : 0.5) * fade;
+      const size = (z.r * 2 * TILE) / 88;
+      v.sprite.scale.set(size * (1 + Math.sin(this.time * 4 + z.slot) * 0.03), size * 0.8);
+      v.sprite.tint = lava ? 0xff6a2a : 0x8fe8ff;
+      v.sprite.alpha = (lava ? 0.8 : 0.6) * fade;
       if (gameDt > 0 && this.fxRng.chance(gameDt * 10)) {
         const ang = this.fxRng.range(0, Math.PI * 2);
         const rr = this.fxRng.range(0, z.r) * TILE;
         {
           const o = this.particles.begin(this.atlas.get(lava ? 'dot' : 'puff'), z.x * TILE + Math.cos(ang) * rr, z.y * TILE + Math.sin(ang) * rr);
-          o.vy = lava ? -20 : -14;
+          o.vy = lava ? -20 : -16;
           o.life = 0.8;
-          o.scale = lava ? 0.6 : 0.35;
-          o.scaleEnd = lava ? 0.1 : 0.6;
-          o.tint = lava ? 0xffa040 : 0xffffff;
-          o.alpha = 0.7;
+          o.scale = lava ? 0.6 : 0.3;
+          o.scaleEnd = lava ? 0.1 : 0.5;
+          o.tint = lava ? 0xffa040 : 0xbff4ff;
+          o.alpha = lava ? 0.7 : 0.45;
           this.particles.emit(o);
         }
       }
@@ -669,7 +687,7 @@ export class WorldView {
         s.visible = true;
         s.position.set(((x0 + x1) / 2) * TILE, ((y0 + y1) / 2) * TILE);
         s.rotation = Math.atan2(y1 - y0, x1 - x0);
-        s.tint = preview ? 0xfff27a : WHITE;
+        s.tint = preview ? 0xffc845 : 0x9ff3ff;
         (s as Sprite & { pathIndex?: number }).pathIndex = i;
       }
     }
@@ -718,30 +736,34 @@ export class WorldView {
     switch (e.type) {
       case Ev.Kill: {
         const def = ENEMIES[e.kind as keyof typeof ENEMIES];
-        const col = def ? def.color : 0xffffff;
-        this.poof(X, Y - 6, col, (e.tag as ElementId) || null, def?.boss ? 2.2 : 1);
-        if (e.value > 0) this.text.spawn(plus(e.value), X, Y - 22, e.value2 ? 0xfff27a : 0xffd23f, e.value2 ? 0.7 : 0.55, 0.9);
+        const el = (e.tag as ElementId) || null;
+        const col = el ? ELEMENTS[el].light : def ? def.color : 0xffffff;
+        this.shatter(X, Y - 6, col, def?.boss ? 2.2 : def ? 0.7 + def.radius : 1);
+        if (e.value > 0) this.text.spawn(plus(e.value), X, Y - 22, e.value2 ? 0xffe27a : 0xffc845, e.value2 ? 0.62 : 0.5, 0.85);
         if (def?.boss) this.addShake(10);
+        this.countKill(X, Y);
         break;
       }
       case Ev.Leak:
         this.castleHurt = 1;
         this.addShake(6);
-        for (let i = 0; i < 6; i++) {
-          const o = this.particles.begin(this.atlas.get('heart'), X, Y - 20);
-          o.vx = this.fxRng.range(-80, 80);
-          o.vy = this.fxRng.range(-160, -60);
-          o.gravity = 260;
-          o.life = 0.9;
-          o.scale = 0.9;
+        for (let i = 0; i < 8; i++) {
+          const o = this.particles.begin(this.shardTex, X, Y - 20);
+          o.vx = this.fxRng.range(-110, 110);
+          o.vy = this.fxRng.range(-170, -50);
+          o.gravity = 300;
+          o.life = 0.8;
+          o.scale = 1;
           o.scaleEnd = 0.4;
+          o.spin = this.fxRng.range(-8, 8);
+          o.tint = 0xff4d6a;
           this.particles.emit(o);
         }
-        this.text.spawn(`-${e.value}`, X, Y - 36, 0xff6b8a, 0.8, 1.1);
+        this.text.spawn(`-${e.value}`, X, Y - 36, 0xff4d6a, 0.75, 1.1);
         break;
       case Ev.Hit: {
         this.sparks(X, Y, (e.tag as ElementId) || null, 3);
-        if (this.settings.damageNumbers && e.value >= 1) {
+        if (this.settings.damageNumbers && e.value >= 1 && !e.value2) {
           const slot = e.id;
           const v = this.enemyViews[slot];
           if (!v || v.numCooldown <= 0) {
@@ -766,22 +788,22 @@ export class WorldView {
         }
         {
           const o = this.particlesAdd.begin(this.atlas.get('glow'), X, Y);
-          o.life = 0.3;
-          o.scale = r / 48;
-          o.scaleEnd = r / 40;
+          o.life = 0.25;
+          o.scale = r / 64;
+          o.scaleEnd = r / 52;
           o.tint = col;
-          o.alpha = 0.8;
+          o.alpha = 0.55;
           this.particlesAdd.emit(o);
         }
         this.sparks(X, Y, el, 8);
         if (e.kind === 'flare') {
           this.addShake(5);
           {
-            const o = this.particlesAdd.begin(this.atlas.get('glow'), X, Y);
+            const o = this.particlesAdd.begin(this.atlas.get('ring'), X, Y);
             o.life = 0.45;
-            o.scale = 2.2;
-            o.scaleEnd = 3.4;
-            o.tint = 0xfff6b0;
+            o.scale = 0.4;
+            o.scaleEnd = 1.6;
+            o.tint = 0xffd84a;
             o.alpha = 1;
             this.particlesAdd.emit(o);
           }
@@ -912,10 +934,10 @@ export class WorldView {
         }
         break;
       case Ev.ShieldBlock:
-        if (this.fxRng.chance(0.5)) this.text.spawn('Bonk', X, Y - 30, ELEMENTS[e.tag as ElementId]?.light ?? WHITE, 0.4, 0.5, -30);
+        if (this.fxRng.chance(0.35)) this.text.spawn('WARD', X, Y - 30, ELEMENTS[e.tag as ElementId]?.light ?? WHITE, 0.36, 0.5, -30);
         break;
       case Ev.Crit:
-        this.text.spawn('WOW!', X, Y - 34, 0xfff27a, 0.75, 0.8, -50);
+        this.text.spawn(`CRIT ${num(e.value)}`, X, Y - 34, 0xffb347, 0.62, 0.8, -50);
         {
           const o = this.particlesAdd.begin(this.atlas.get('sparkle'), X, Y - 10);
           o.life = 0.4;
@@ -954,7 +976,7 @@ export class WorldView {
             this.particlesAdd.emit(o);
           }
         }
-        if (e.type === Ev.Upgrade) this.text.spawn('Level up!', X, Y - 36, 0x9cff7a, 0.55, 1);
+        if (e.type === Ev.Upgrade) this.text.spawn(`LEVEL ${e.value}`, X, Y - 36, 0x3dffa0, 0.5, 1);
         break;
       }
       case Ev.Sell:
@@ -1051,57 +1073,75 @@ export class WorldView {
     }
   }
 
-  /** Creatures "poof" into sparkles, puffs, element shapes and coins. */
-  private poof(x: number, y: number, color: number, el: ElementId | null, size: number): void {
+  /** Constructs shatter into crystal shards inside a dissolving energy ring. */
+  private shatter(x: number, y: number, color: number, size: number): void {
     const rng = this.fxRng;
+    const big = this.quality.particles > 200;
     {
-      const o = this.particles.begin(this.atlas.get('puff'), x, y);
-      o.life = 0.45;
-      o.scale = 0.5 * size;
-      o.scaleEnd = 1.2 * size;
-      o.tint = 0xffffff;
+      const o = this.particlesAdd.begin(this.ringTex, x, y);
+      o.life = 0.32;
+      o.scale = 0.12 * size;
+      o.scaleEnd = 0.55 * size;
+      o.tint = color;
       o.alpha = 0.9;
-      this.particles.emit(o);
+      this.particlesAdd.emit(o);
     }
-    const n = Math.round(9 * size);
+    const n = Math.round((big ? 10 : 6) * size);
     for (let i = 0; i < n; i++) {
       const ang = rng.range(0, Math.PI * 2);
-      const sp = rng.range(70, 170) * Math.sqrt(size);
-      {
-        const o = this.particlesAdd.begin(this.atlas.get(i % 3 === 0 ? 'sparkle' : 'dot'), x, y);
-        o.vx = Math.cos(ang) * sp;
-        o.vy = Math.sin(ang) * sp - 40;
-        o.drag = 3.5;
-        o.life = rng.range(0.35, 0.7);
-        o.scale = rng.range(0.6, 1.1);
-        o.scaleEnd = 0.05;
-        o.spin = rng.range(-6, 6);
-        o.tint = i % 2 ? color : 0xffffff;
-        this.particlesAdd.emit(o);
-      }
+      const sp = rng.range(90, 210) * Math.sqrt(size);
+      const o = this.particles.begin(this.shardTex, x, y);
+      o.vx = Math.cos(ang) * sp;
+      o.vy = Math.sin(ang) * sp - 50;
+      o.gravity = 320;
+      o.drag = 1.5;
+      o.life = rng.range(0.4, 0.7);
+      o.scale = rng.range(0.55, 1.05) * Math.min(1.6, size);
+      o.scaleEnd = 0.2;
+      o.rotation = ang;
+      o.spin = rng.range(-9, 9);
+      o.tint = i % 3 === 0 ? 0xffffff : color;
+      o.alphaEnd = 0.2;
+      this.particles.emit(o);
     }
-    if (el) {
-      for (let i = 0; i < 2; i++) {
-        const o = this.particles.begin(this.atlas.get(`pel_${el}`), x, y);
-        o.vx = rng.range(-60, 60);
-        o.vy = rng.range(-140, -80);
-        o.gravity = 280;
-        o.life = 0.7;
-        o.scale = 0.9;
-        o.scaleEnd = 0.5;
-        this.particles.emit(o);
-      }
+    for (let i = 0; i < (big ? 5 : 2); i++) {
+      const ang = rng.range(0, Math.PI * 2);
+      const o = this.particlesAdd.begin(this.dotTex, x, y);
+      o.vx = Math.cos(ang) * 60;
+      o.vy = Math.sin(ang) * 60 - 30;
+      o.drag = 3;
+      o.life = 0.45;
+      o.scale = 0.9;
+      o.scaleEnd = 0.05;
+      o.tint = color;
+      this.particlesAdd.emit(o);
     }
     {
-      const o = this.particles.begin(this.atlas.get('coin'), x, y - 6);
+      const o = this.particles.begin(this.coinTex, x, y - 6);
       o.vx = rng.range(-30, 30);
-      o.vy = -150;
+      o.vy = -140;
       o.gravity = 380;
-      o.life = 0.6;
-      o.scale = 0.9;
-      o.scaleEnd = 0.7;
-      o.spin = 5;
+      o.life = 0.55;
+      o.scale = 0.75;
+      o.scaleEnd = 0.6;
       this.particles.emit(o);
+    }
+  }
+
+  /** "SHATTER ×N" when several constructs break at once. */
+  private countKill(x: number, y: number): void {
+    if (this.time - this.killWindow > 0.45) {
+      this.killStreak = 0;
+      this.killX = 0;
+      this.killY = 0;
+    }
+    this.killWindow = this.time;
+    this.killStreak++;
+    this.killX += x;
+    this.killY += y;
+    if (this.killStreak >= 4 && this.time - this.lastStreakText > 0.6) {
+      this.lastStreakText = this.time;
+      this.text.spawn(`SHATTER x${this.killStreak}`, this.killX / this.killStreak, this.killY / this.killStreak - 50, 0x9ff3ff, 0.62, 1.1, -30);
     }
   }
 

@@ -18,6 +18,7 @@ import {
   drawPortal,
   drawProjectile,
   drawPuff,
+  drawField,
   drawRect,
   drawRing,
   drawSelectRing,
@@ -26,6 +27,7 @@ import {
   drawSparkle,
   drawStunStar,
   drawTuft,
+  drawShard,
   PROJECTILE_SIZE,
 } from './drawFx';
 import { drawTowerBase, drawTowerHead, drawTowerIcon, TOWER_BASE_SIZE, TOWER_HEAD_SIZE } from './drawTowers';
@@ -47,7 +49,7 @@ export const projectileName = (s: ProjectileStyle): string => `p_${s}`;
 
 function addEnemy(b: AtlasBuilder, def: EnemyDef, el: ElementId | null): void {
   const { w, h } = enemyBox(def);
-  const frames = def.look === 'bat' ? 2 : 1;
+  const frames = def.look === 'wisp' || def.look === 'drone' ? 2 : 1;
   for (let f = 0; f < frames; f++) {
     b.add({
       name: enemyTexName(def.id, el, f),
@@ -106,12 +108,14 @@ export function registerParticleSprites(b: AtlasBuilder): void {
   b.add({ name: 'dot', w: 16, h: 16, draw: (ctx, w) => drawSoftDot(ctx, w) });
   b.add({ name: 'sparkle', w: 28, h: 28, draw: (ctx, w) => drawSparkle(ctx, w) });
   b.add({ name: 'puff', w: 56, h: 56, draw: (ctx, w) => drawPuff(ctx, w) });
+  b.add({ name: 'field', w: 96, h: 96, draw: (ctx, w) => drawField(ctx, w) });
   b.add({ name: 'ring', w: 128, h: 128, draw: (ctx, w) => drawRing(ctx, w, 3) });
   b.add({ name: 'coin', w: 22, h: 22, draw: (ctx, w) => drawCoin(ctx, w) });
   b.add({ name: 'heart', w: 24, h: 24, draw: (ctx, w) => drawHeart(ctx, w) });
   b.add({ name: 'gem', w: 30, h: 30, draw: (ctx, w) => drawGem(ctx, w) });
   b.add({ name: 'stun', w: 14, h: 14, draw: (ctx, w) => drawStunStar(ctx, w) });
   b.add({ name: 'white', w: 8, h: 8, draw: (ctx, w, h) => drawRect(ctx, w, h, 0) });
+  b.add({ name: 'shard', w: 22, h: 9, draw: (ctx, w, h) => drawShard(ctx, w, h) });
   for (const el of ELEMENT_ORDER) b.add({ name: `pel_${el}`, w: 20, h: 20, draw: (ctx, w) => drawElementToken(ctx, w, el) });
 }
 

@@ -12,10 +12,10 @@ export interface WorldDef {
 }
 
 export const WORLDS: WorldDef[] = [
-  { id: 1, name: 'Sunny Meadow', theme: 'meadow', blurb: 'Flowers, bees and bouncy slimes.', starsToUnlock: 0, color: '#4fbf55' },
-  { id: 2, name: 'Dune Desert', theme: 'desert', blurb: 'Hot sand, cactus and fiery creatures.', starsToUnlock: 6, color: '#e8a64a' },
-  { id: 3, name: 'Frosty Peaks', theme: 'snow', blurb: 'Snowy hills and slippery ice.', starsToUnlock: 14, color: '#6ab8ee' },
-  { id: 4, name: 'Crystal Caves', theme: 'caves', blurb: 'Glowing gems deep underground.', starsToUnlock: 22, color: '#9b7cff' },
+  { id: 1, name: 'Verdant Reach', theme: 'meadow', blurb: 'Highland forests where the first rifts opened.', starsToUnlock: 0, color: '#4fbf55' },
+  { id: 2, name: 'Ember Wastes', theme: 'desert', blurb: 'Scorched canyons where the rift engines run hot.', starsToUnlock: 6, color: '#e8a64a' },
+  { id: 3, name: 'Frostspire Peaks', theme: 'snow', blurb: 'Frozen relay stations high above the clouds.', starsToUnlock: 14, color: '#6ab8ee' },
+  { id: 4, name: 'Hollow Deep', theme: 'caves', blurb: 'The crystal mines where the Shardbound are forged.', starsToUnlock: 22, color: '#9b7cff' },
 ];
 
 export function mapsOfWorld(id: number): MapDef[] {

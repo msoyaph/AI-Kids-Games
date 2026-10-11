@@ -1,6 +1,6 @@
 # Vanex Defense — notes for Claude
 
-Kid-friendly (7+) elemental tower defense. Vite 8 + TypeScript (strict) + PixiJS 8. Ships as ONE self-contained
+Elemental tower defense, being retargeted to ages 10–14 ("Crystal-Tech Fantasy", branch `vanex-upgrade`). Vite 8 + TypeScript (strict) + PixiJS 8. Ships as ONE self-contained
 `dist/index.html` (vite-plugin-singlefile) for the Ai Kids Games site (sandboxed iframe, zero network requests).
 Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlases; all audio is Web Audio synthesis.
 
@@ -56,7 +56,16 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
 - After balance changes run `npm run sim` (and `-- --casual`): good bot must win all 36 runs; casual bot must get
   3★ on every Easy map (enforced by tests).
 
-## Status
+## Upgrade (branch `vanex-upgrade`, plan in the approved plan; `main` = v1 for ages 7+)
+- Step 1 (style slice on `w1m1` Breach Point) done → `docs/style-guide.md`, `docs/screenshots/{before,slice}/`.
+  WAITING FOR USER APPROVAL before Phase 2. Battle map, towers, constructs, FX, HUD, tower panel and title are
+  restyled; other screens/text (briefing, codex, tutorial, world maps 2–4, badges screen) are still v1 copy.
+- New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
+  Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
+- Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the
+  `vanex-defense-` prefix, total save < 200 KB; v3 save fixture in `tests/fixtures/save-v3.json` must migrate.
+
+## Status (v1 on main)
 All 10 phases done: scaffold, grid/pathing, towers/economy, elements/combos, waves/bosses, campaign/endless,
 tutorial/book/badges/settings/editor, audio/polish, perf pass, tests/balance/docs. 157 unit tests + 33 E2E pass.
 Perf (`npm run perf`): 60 fps on 4×-throttled phone profile with 300 creatures / ~440 shots.
