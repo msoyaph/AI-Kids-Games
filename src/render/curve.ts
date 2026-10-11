@@ -28,6 +28,12 @@ vec4 lcW = modelMatrix * mvPosition;
   lcW.x += lcS;
   lcW.z += lcS * 0.4;
 #endif
+#ifdef LC_SWAY_TREE
+  // canopies: a slow, gentle sway that grows toward the top (trunks stay put)
+  float lcT = sin(uTime * 1.05 + lcW.x * 0.35 + lcW.z * 0.27) * 0.032 * max(transformed.y - 0.9, 0.0);
+  lcW.x += lcT;
+  lcW.z += lcT * 0.45;
+#endif
 #ifdef LC_WAVES
   lcW.y += sin(uTime * 1.1 + lcW.x * 0.55) * 0.035 + cos(uTime * 0.9 + lcW.z * 0.7) * 0.035;
 #endif
@@ -39,6 +45,8 @@ gl_Position = projectionMatrix * mvPosition;
 
 export interface CurveOpts {
   sway?: boolean;
+  /** softer sway for tree canopies */
+  swayTree?: boolean;
   waves?: boolean;
 }
 
@@ -46,6 +54,7 @@ export interface CurveOpts {
 export function curved<T extends THREE.Material>(mat: T, opts: CurveOpts = {}): T {
   const defines: string[] = [];
   if (opts.sway) defines.push('#define LC_SWAY');
+  if (opts.swayTree) defines.push('#define LC_SWAY_TREE');
   if (opts.waves) defines.push('#define LC_WAVES');
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uCurveOrigin = sharedUniforms.uCurveOrigin;
@@ -54,7 +63,7 @@ export function curved<T extends THREE.Material>(mat: T, opts: CurveOpts = {}): 
     shader.vertexShader =
       defines.join('\n') + '\n' + HEADER + shader.vertexShader.replace('#include <project_vertex>', PROJECT);
   };
-  mat.customProgramCacheKey = () => 'lc' + (opts.sway ? 's' : '') + (opts.waves ? 'w' : '');
+  mat.customProgramCacheKey = () => 'lc' + (opts.sway ? 's' : '') + (opts.swayTree ? 't' : '') + (opts.waves ? 'w' : '');
   return mat;
 }
 

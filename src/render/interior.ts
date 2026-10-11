@@ -62,7 +62,26 @@ function textPlaque(text: string, w = 2.4, h = 0.6, bg = '#fff6e6', fg = '#5b4a6
   ctx.fillText(text, cv.width / 2, cv.height / 2 + 2);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
-  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+  m.userData.ownMaterial = true;
+  return m;
+}
+
+/**
+ * Free GPU memory used by a room's contents (geometry buffers, canvas textures and one-off
+ * materials). Shared materials stay; three.js re-uploads any geometry that is drawn again later.
+ */
+function disposeTree(root: THREE.Object3D): void {
+  root.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    m.geometry?.dispose();
+    if (m.userData.ownMaterial) {
+      const mat = m.material as THREE.MeshBasicMaterial;
+      mat.map?.dispose();
+      mat.dispose();
+    }
+  });
 }
 
 export class InteriorView {
@@ -104,6 +123,12 @@ export class InteriorView {
     this.scene.add(this.cursor, this.preview);
   }
 
+  setShadows(on: boolean): void {
+    this.scene.traverse((o) => {
+      if ((o as THREE.DirectionalLight).isDirectionalLight) (o as THREE.DirectionalLight).castShadow = on;
+    });
+  }
+
   resize(aspect: number): void {
     this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
@@ -132,7 +157,18 @@ export class InteriorView {
     this.key = '';
   }
 
+  /** Leaving the room: drop its GPU resources now rather than on the next visit. */
+  release(): void {
+    disposeTree(this.room);
+    this.room.clear();
+    this.people = [];
+    this.bugs = [];
+    this.fish = [];
+    this.key = '';
+  }
+
   private build(g: Game, room: Room): void {
+    disposeTree(this.room);
     this.room.clear();
     this.bugs = [];
     this.fish = [];

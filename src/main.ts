@@ -27,6 +27,14 @@ app.onNewGame = (g) => {
 
 (window as unknown as { __lc: unknown }).__lc = app;
 
+// ?bench=1 runs the performance test at the current tier, ?bench=all runs Low, Medium and High
+try {
+  const bench = new URLSearchParams(location.search).get('bench');
+  if (bench) setTimeout(() => void app.runBench(bench === 'all' ? ['low', 'medium', 'high'] : [app.tier]), 800);
+} catch {
+  /* no URL access (sandbox) */
+}
+
 // Notice board: tomorrow's weather, today's hot item, contests and a rotating tip.
 const BOARD_TIPS = [
   'Hit rocks to get stone, clay and iron. At night you may find Glow Pebbles too!',

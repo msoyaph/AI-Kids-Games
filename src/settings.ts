@@ -18,6 +18,8 @@ export interface Settings {
   readAloud: boolean;
   /** text size multiplier for reading surfaces */
   textSize: number;
+  /** graphics quality; 'auto' adapts to the device */
+  quality: 'auto' | 'low' | 'medium' | 'high';
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -34,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   playtest: false,
   readAloud: false,
   textSize: 1,
+  quality: 'auto',
 };
 
 export const TEXT_CPS: Record<Settings['textSpeed'], number> = { slow: 28, normal: 55, fast: 110, instant: 100000 };

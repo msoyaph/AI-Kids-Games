@@ -57,6 +57,9 @@ export interface Rig {
   phase: number;
   bob: number;
   spec: CharSpec;
+  /** eye groups (for blinking) and the time until the next blink */
+  eyes: THREE.Object3D[];
+  blink: number;
 }
 
 const mesh = (geo: THREE.BufferGeometry, color: number, cast = true) => {
@@ -154,7 +157,8 @@ export function buildCharacter(spec: CharSpec): Rig {
 
   const sc = spec.scale ?? 1;
   root.scale.setScalar(sc);
-  return { root, body, head, armL, armR, legL, legR, hand, tail, phase: 0, bob: 0, spec };
+  const eyes = head.children.filter((c) => c.name === 'eye');
+  return { root, body, head, armL, armR, legL, legR, hand, tail, phase: 0, bob: 0, spec, eyes, blink: 1 + Math.random() * 3 };
 }
 
 /** Little front-of-shirt details for a pattern. */
@@ -377,6 +381,7 @@ function addEyes(head: THREE.Group, style: number, y: number, z: number, spread:
       }
     }
     eyeG.add(eye);
+    eyeG.name = 'eye';
     at(eyeG, s * spread, y, z);
     head.add(eyeG);
   }
@@ -791,7 +796,15 @@ export function animateRig(r: Rig, dt: number, a: AnimState): void {
   r.body.rotation.x = a.sneaking ? 0.25 : moving ? Math.min(0.12, a.speed * 0.02) : 0;
   r.head.rotation.z = a.talking ? Math.sin(r.bob * 6) * 0.06 : 0;
   r.head.rotation.x = a.sneaking ? -0.15 : 0;
+  // blink every few seconds
+  r.blink -= dt;
+  const shut = r.blink < 0.11 && r.blink > 0;
+  for (const e of r.eyes) e.scale.y = shut ? 0.15 : 1;
+  if (r.blink <= 0) r.blink = 2.5 + Math.random() * 3.5;
   if (r.tail) r.tail.rotation.y = Math.sin(r.bob * (moving ? 8 : 2.5)) * 0.25;
+  // arms back to their resting roll (waves and watering tilt them)
+  r.armL.rotation.z = 0.18;
+  r.armR.rotation.z = -0.18;
   if (a.action >= 0) {
     const t = a.action;
     switch (a.actionKind) {
@@ -830,6 +843,17 @@ export function animateRig(r: Rig, dt: number, a: AnimState): void {
         r.armR.rotation.x = -2.8;
         r.armL.rotation.x = -2.8;
         r.body.position.y = Math.abs(Math.sin(t * Math.PI * 2)) * 0.15;
+        break;
+      case 'wave':
+        // a friendly wave hello
+        r.armR.rotation.x = 0;
+        r.armR.rotation.z = -2.5 + Math.sin(t * Math.PI * 6) * 0.35;
+        break;
+      case 'hop':
+        // a happy little hop
+        r.body.position.y = Math.abs(Math.sin(t * Math.PI * 2)) * 0.2;
+        r.armR.rotation.x = -1.4;
+        r.armL.rotation.x = -1.4;
         break;
       case 'climb':
         r.armR.rotation.x = -2.5 + Math.sin(t * 20) * 0.4;

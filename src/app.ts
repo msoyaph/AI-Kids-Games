@@ -22,7 +22,9 @@ import { sharedUniforms } from './render/curve';
 import { installStory, pumpInbox, QuestTracker } from './ui/story';
 import { installEventsUI } from './ui/events';
 import { ReadAloud } from './ui/speech';
+import { Governor, guessTier, QUALITY, urlTier, type QualityTier } from './render/quality';
 import { RecipeTracker } from './ui/recipeTrack';
+import { benchPanel, runBenchmark, type BenchResult } from './ui/bench';
 import { questRT } from './sim/quests';
 import { Phone } from './ui/phone';
 import { settingsBody, settingsPanel } from './ui/settings';
@@ -69,6 +71,12 @@ export class App {
   private fadeEl = h('div', { class: 'fade' });
   private last = performance.now();
   readonly audio = new AudioEngine();
+  /** WebGL context lost (glLost) and waiting for a tap to carry on (glPaused) */
+  private glLost = false;
+  private glPaused = false;
+  private glCard = h('div', { class: 'gl-card', role: 'button' });
+  /** benchmark: steers the player instead of the controls (see ui/bench.ts) */
+  benchDriver: ((dt: number) => { x: number; z: number }) | null = null;
   /** read-aloud (browser speech; silently unavailable where unsupported) */
   readonly speech = new ReadAloud();
   private stepOdo = 0;
@@ -115,6 +123,7 @@ export class App {
     this.touch = new TouchControls(this, root);
     document.body.appendChild(this.fadeEl);
     this.applySettings();
+    this.setupQuality();
     this.demo = createGame(newGameState(TITLE_SEED, 'Demo'));
     this.demo.state.clock.minute = 17.5 * 60;
     this.demo.mode = 'cutscene';
@@ -158,6 +167,29 @@ export class App {
       return out;
     });
     root.appendChild(this.ptBadge);
+    // the graphics can be lost (low memory, a GPU reset): pause, then continue on a tap
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      this.glLost = true;
+      this.glPaused = true;
+      this.audio.setVolumes(0, 0, 0);
+      this.glCard.textContent = 'Taking a little break… one moment!';
+      this.glCard.style.display = 'flex';
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.glLost = false;
+      this.view.applyQuality(this.view.quality);
+      this.view.interior.invalidate();
+      this.glCard.textContent = 'Tap to continue';
+    });
+    this.glCard.addEventListener('pointerdown', () => {
+      if (this.glLost) return;
+      this.glPaused = false;
+      this.glCard.style.display = 'none';
+      this.applySettings();
+      this.last = performance.now();
+    });
+    document.body.appendChild(this.glCard);
     const activity = () => {
       if (this.game) this.game.idleSec = 0;
     };
@@ -179,8 +211,6 @@ export class App {
     document.documentElement.style.setProperty('--ts', String(this.settings.textSize || 1));
     this.view.rig.settings = { ...this.settings.camera };
     sharedUniforms.uCurveK.value = 0.0068 * this.settings.curve;
-    this.view.sky.setShadows(this.settings.shadows);
-    this.view.renderer.shadowMap.enabled = this.settings.shadows;
     this.saves.saveSettings(this.settings);
   }
 
@@ -359,6 +389,34 @@ export class App {
     this.onEnterGame?.(g);
   }
 
+  /** Play a throwaway island for the benchmark (slot -1: nothing is ever saved). */
+  enterBench(g: Game, tier: QualityTier): void {
+    this.ui.closeAll();
+    this.enterGame(g, -1);
+    questRT(g).inbox.length = 0;
+    this.applyTier(tier);
+  }
+
+  private benchRunning = false;
+
+  /** Run the performance test on the given tiers, then show the results. */
+  async runBench(tiers: QualityTier[]): Promise<BenchResult[]> {
+    if (this.benchRunning) return [];
+    this.benchRunning = true;
+    if (this.game && this.slot >= 0) this.saveNow(true);
+    const results: BenchResult[] = [];
+    for (const t of tiers) results.push(await runBenchmark(this, t));
+    this.benchRunning = false;
+    (window as unknown as { __benchResults?: BenchResult[] }).__benchResults = results;
+    this.ui.push(
+      benchPanel(this, results, () => {
+        this.setupQuality();
+        this.showTitle();
+      }),
+    );
+    return results;
+  }
+
   /** Last non-ok save result we already told the player about (so autosaves don't nag). */
   private saveWarned: WriteResult | '' = '';
 
@@ -495,27 +553,42 @@ export class App {
     for (let k = 0; k < frames; k++) this.tick(dt, k === frames - 1);
   }
 
-  private slowT = 0;
-  private pixelRatio = Math.min(1.5, window.devicePixelRatio || 1);
+  /** graphics tier in use (Auto moves it with the governor) */
+  tier: QualityTier = 'medium';
+  private governor = new Governor('medium');
+  private forcedTier = urlTier();
+
+  /** Pick the starting tier from the setting (or ?quality=), and apply it. */
+  setupQuality(): void {
+    const q = this.settings.quality ?? 'auto';
+    const start = this.forcedTier ?? (q === 'auto' ? guessTier() : q);
+    this.governor = new Governor(start);
+    this.applyTier(start);
+  }
+
+  applyTier(t: QualityTier): void {
+    this.tier = t;
+    const spec = { ...QUALITY[t] };
+    // older settings could turn shadows off on their own
+    if (this.settings.shadows === false) spec.shadows = false;
+    this.view.applyQuality(spec);
+  }
 
   private loop(now: number): void {
     const raw = (now - this.last) / 1000;
     const dt = Math.min(0.05, raw);
     this.last = now;
-    // adaptive resolution: drop pixel ratio if frames stay slow
-    if (raw > 0.024 && raw < 0.25) this.slowT += raw;
-    else this.slowT = Math.max(0, this.slowT - raw * 0.5);
-    if (this.slowT > 3 && this.pixelRatio > 1) {
-      this.pixelRatio = Math.max(1, this.pixelRatio - 0.25);
-      this.view.renderer.setPixelRatio(this.pixelRatio);
-      this.view.resize();
-      this.slowT = 0;
+    // Auto quality: step tiers down when frames stay slow, back up when they stay fast
+    if ((this.settings.quality ?? 'auto') === 'auto' && !this.forcedTier && !this.benchDriver) {
+      const t = this.governor.sample(raw);
+      if (t) this.applyTier(t);
     }
     this.tick(dt, true);
     requestAnimationFrame((t) => this.loop(t));
   }
 
   private tick(dt: number, render: boolean): void {
+    if (this.glPaused) return;
     const f = this.input.poll(dt);
     this.hud.device = this.input.lastDevice;
     const g = this.game;
@@ -525,7 +598,11 @@ export class App {
     this.ui.update(dt);
     if (g && this.mode === 'game') {
       const free = !this.ui.modalOpen;
-      g.update(dt, free ? { move: { x: f.moveX, z: f.moveZ, run: f.run }, actionHeld: f.actionHeld } : null);
+      const drive = this.benchDriver?.(dt);
+      if (drive) {
+        g.idleSec = 0;
+        g.update(dt, { move: { x: drive.x, z: drive.z, run: false }, actionHeld: false });
+      } else g.update(dt, free ? { move: { x: f.moveX, z: f.moveZ, run: f.run }, actionHeld: f.actionHeld } : null);
       this.playtest?.tick(dt, this.ui.topName);
       this.autosaveT += dt;
       if (this.autosaveT > (g.state.events.active ? 15 : AUTOSAVE_SEC)) {

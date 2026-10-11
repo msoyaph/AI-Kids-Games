@@ -22,6 +22,7 @@ import { agents as agentsOf } from '../sim/agents';
 import { Particles } from './particles';
 import { setThumbProvider } from '../ui/icons';
 import { LEVEL_HEIGHT } from '../world/types';
+import { QUALITY, type QualitySpec } from './quality';
 
 export class GameView {
   readonly renderer: THREE.WebGLRenderer;
@@ -66,25 +67,32 @@ export class GameView {
     setThumbProvider((id) => this.thumbnail(id));
   }
 
-  private thumbRenderer: THREE.WebGLRenderer | null = null;
+  private thumbTarget: THREE.WebGLRenderTarget | null = null;
   private thumbScene: THREE.Scene | null = null;
   private thumbCam: THREE.PerspectiveCamera | null = null;
+  private thumbPixels = new Uint8Array(96 * 96 * 4);
+  private thumbCanvas: HTMLCanvasElement | null = null;
 
-  /** Render a furniture item to a small PNG data URL (inventory icons). */
+  /**
+   * Render a furniture item to a small PNG data URL (inventory icons). Uses the main renderer and a
+   * tiny render target — a second WebGL context costs a lot of memory on iPads.
+   */
   thumbnail(id: string): string | null {
     const obj = furnitureObject(id);
     if (!obj) return null;
+    const S = 96;
     try {
-      if (!this.thumbRenderer) {
-        this.thumbRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-        this.thumbRenderer.setSize(96, 96, false);
-        this.thumbRenderer.outputColorSpace = THREE.SRGBColorSpace;
+      if (!this.thumbTarget) {
+        this.thumbTarget = new THREE.WebGLRenderTarget(S, S, { samples: 4 });
+        this.thumbTarget.texture.colorSpace = THREE.SRGBColorSpace;
         this.thumbScene = new THREE.Scene();
         this.thumbScene.add(new THREE.HemisphereLight(0xffffff, 0x9a8aa0, 2.2));
         const d = new THREE.DirectionalLight(0xffffff, 1.4);
         d.position.set(3, 5, 4);
         this.thumbScene.add(d);
         this.thumbCam = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+        this.thumbCanvas = document.createElement('canvas');
+        this.thumbCanvas.width = this.thumbCanvas.height = S;
       }
       const box = new THREE.Box3().setFromObject(obj);
       const size = box.getSize(new THREE.Vector3());
@@ -93,12 +101,30 @@ export class GameView {
       this.thumbCam!.position.set(center.x + r * 1.3, center.y + r * 1.1, center.z + r * 2.0);
       this.thumbCam!.lookAt(center);
       this.thumbScene!.add(obj);
+      const R = this.renderer;
       const k = sharedUniforms.uCurveK.value;
       sharedUniforms.uCurveK.value = 0;
-      this.thumbRenderer.render(this.thumbScene!, this.thumbCam!);
+      const prevTarget = R.getRenderTarget();
+      const prevColor = R.getClearColor(new THREE.Color());
+      const prevAlpha = R.getClearAlpha();
+      const prevShadow = R.shadowMap.enabled;
+      R.shadowMap.enabled = false;
+      R.setRenderTarget(this.thumbTarget);
+      R.setClearColor(0x000000, 0);
+      R.clear();
+      R.render(this.thumbScene!, this.thumbCam!);
+      R.readRenderTargetPixels(this.thumbTarget, 0, 0, S, S, this.thumbPixels);
+      R.setRenderTarget(prevTarget);
+      R.setClearColor(prevColor, prevAlpha);
+      R.shadowMap.enabled = prevShadow;
       sharedUniforms.uCurveK.value = k;
       this.thumbScene!.remove(obj);
-      return this.thumbRenderer.domElement.toDataURL('image/png');
+      // pixels come bottom-up: flip into a 2D canvas
+      const ctx = this.thumbCanvas!.getContext('2d')!;
+      const img = ctx.createImageData(S, S);
+      for (let y = 0; y < S; y++) img.data.set(this.thumbPixels.subarray((S - 1 - y) * S * 4, (S - y) * S * 4), y * S * 4);
+      ctx.putImageData(img, 0, 0);
+      return this.thumbCanvas!.toDataURL('image/png');
     } catch {
       return null;
     }
@@ -119,15 +145,16 @@ export class GameView {
     this.structMeshes.clear();
     this.structGroup = new THREE.Group();
     this.terrain = new TerrainRenderer(game.world.gen, SEASONS[game.state.season?.index ?? 0]);
-    this.water = new WaterRenderer(game.world.size / 2);
+    this.water = new WaterRenderer(game.world.size / 2, game.world.gen);
     this.objects = new ObjectRenderer(game.world, this.itemVisual);
     this.critters = new CritterView(game);
     this.agents = new AgentView(game);
     this.placement = new PlacementView(game);
     this.particles = new Particles(game);
     this.events = new EventsView(game);
-    this.islandRoot.add(this.terrain.group, this.water.mesh, this.objects.group, this.structGroup, this.critters.group, this.agents.group, this.placement.group, this.festival.group, this.beam.pivot, this.particles.group, this.events.group);
+    this.islandRoot.add(this.terrain.group, this.water.mesh, this.water.extras, this.objects.group, this.structGroup, this.critters.group, this.agents.group, this.placement.group, this.festival.group, this.beam.pivot, this.particles.group, this.events.group);
     this.objects.setSeason(SEASONS[game.state.season?.index ?? 0]!);
+    this.applyQuality(this.quality);
     this.objects.rebuild();
     this.syncStructures();
     this.rebuildPlayer();
@@ -150,6 +177,23 @@ export class GameView {
   stopFestival(): void {
     this.festival.stop();
     for (const a of agentsOf(this.game).values()) a.talking = false;
+  }
+
+  /** current quality tier settings */
+  quality: QualitySpec = QUALITY.medium;
+
+  /** Apply a quality tier (pixel ratio, shadows, grass, foam, sway, particles, fog). */
+  applyQuality(spec: QualitySpec): void {
+    this.quality = spec;
+    this.renderer.setPixelRatio(Math.min(spec.pixelRatio, window.devicePixelRatio || 1));
+    this.renderer.shadowMap.enabled = spec.shadows;
+    this.sky.setShadows(spec.shadows);
+    this.sky.setQuality(spec.shadowMap, spec.shadowRadius, spec.fogFar);
+    this.interior.setShadows(spec.shadows);
+    if (this.objects) this.objects.setQuality(spec.grass, spec.treeSway);
+    if (this.water) this.water.extras.visible = spec.foam;
+    if (this.particles) this.particles.amount = spec.particles;
+    this.resize();
   }
 
   /** Recolor the island when the season changes. */
@@ -238,7 +282,7 @@ export class GameView {
     }
     if (this.player.root.parent !== this.islandRoot) {
       this.islandRoot.add(this.player.root);
-      this.interior.invalidate();
+      this.interior.release();
     }
     if (this.objects.dirty) this.objects.rebuild();
     this.syncHeld();
@@ -290,6 +334,7 @@ export class GameView {
     this.placement.frame();
     this.sky.season = g.state.season?.index ?? 1;
     this.sky.update(g.state.clock.minute, g.state.weather.today, this.rig.target);
+    this.water.frame(dt, g.state.clock.minute / 60, this.sky.night, this.rig.target, g.state.season?.index === 3);
     this.renderer.render(this.scene, this.rig.camera);
   }
 }

@@ -3,6 +3,7 @@ import type { App } from '../app';
 import { sharedUniforms } from '../render/curve';
 import { btn, h, type Panel } from './dom';
 import { playtestSettings } from './playtest';
+import { confirmPanel } from './screens/slots';
 import { SEASONS, SEASON_NAME, setSeasonsPaused } from '../sim/seasons';
 
 export function settingsBody(app: App, body: HTMLElement): void {
@@ -53,7 +54,16 @@ export function settingsBody(app: App, body: HTMLElement): void {
     slider('Smoothing', () => s.camera.smoothing, (v) => (s.camera.smoothing = v), 2, 14, 0.5),
     slider('World curve', () => s.curve, (v) => (s.curve = v), 0, 2, 0.1),
     h('h3', null, 'Visuals & controls'),
-    choice('Shadows', [['on', 'On'], ['off', 'Off']], () => (s.shadows ? 'on' : 'off'), (v) => (s.shadows = v === 'on')),
+    choice(
+      'Quality',
+      [['auto', `Auto (${app.tier})`], ['low', 'Low'], ['medium', 'Medium'], ['high', 'High']],
+      () => s.quality ?? 'auto',
+      (v) => {
+        s.quality = v;
+        s.shadows = true;
+        app.setupQuality();
+      },
+    ),
     choice('Reduce motion', [['off', 'Off'], ['on', 'On']], () => (s.reduceMotion ? 'on' : 'off'), (v) => (s.reduceMotion = v === 'on')),
     choice('Touch controls', [['auto', 'Auto'], ['on', 'Always'], ['off', 'Hidden']], () => s.touch, (v) => (s.touch = v)),
     choice('Tutorial tips', [['on', 'On'], ['off', 'Off']], () => (s.tips ? 'on' : 'off'), (v) => (s.tips = v === 'on')),
@@ -70,7 +80,14 @@ export function settingsBody(app: App, body: HTMLElement): void {
           ),
         ]
       : []),
-    h('div', { class: 'row', style: 'margin-top:8px' }, btn('Show tips again', () => {
+    h('div', { class: 'row wrap', style: 'margin-top:8px' }, btn('Test performance', () => {
+      const go = () => {
+        app.ui.closeAll();
+        void app.runBench([app.tier]);
+      };
+      if (app.game) confirmPanel(app.ui, 'This runs a 30-second test on a sample island. Your game is saved first, then you go back to the title screen.', go, undefined, ['Start test', 'Cancel']);
+      else go();
+    }, 'small'), btn('Show tips again', () => {
       if (app.game) app.game.state.tips = {};
       app.hud.toast('Tutorial tips will show again.');
     }, 'small')),

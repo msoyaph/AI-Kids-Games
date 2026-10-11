@@ -351,3 +351,7 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6
 .rtrack-ing.ok { color: #3f9a6a; }
 .rtrack-ready { color: #3f9a6a; font-weight: 900; }
 .icon.xs { width: 20px; height: 20px; }
+.bench-table { border-collapse: collapse; width: 100%; font-size: 15px; }
+.bench-table th, .bench-table td { padding: 6px 8px; border-bottom: 2px solid var(--line); text-align: left; }
+.bench-table th { color: var(--ink2); font-size: 13px; }
+.gl-card { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center; background: rgba(42, 36, 56, 0.86); color: #fff; font-size: calc(26px * var(--ts)); font-weight: 900; cursor: pointer; font-family: var(--font); }

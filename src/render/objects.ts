@@ -22,10 +22,16 @@ export class ObjectRenderer {
   dirty = true;
   private P: SeasonPalette = SEASON_PALETTES.summer;
   private season = 'summer';
+  /** quality: share of grass tufts drawn, and whether canopies sway */
+  private grassDensity = 1;
+  private plainMat: THREE.Material;
+  private treeMat: THREE.Material;
 
   constructor(private world: World, private itemVisual: ItemVisual) {
     const mat = vcolMat();
     const sway = vcolMat({ sway: true });
+    this.plainMat = mat;
+    this.treeMat = vcolMat({ swayTree: true });
     const L = (name: string, geo: THREE.BufferGeometry, m: THREE.Material, cap: number, shadow = true) => {
       const layer = new InstancedLayer(geo, m, cap, { shadow });
       this.layers[name] = layer;
@@ -55,6 +61,15 @@ export class ObjectRenderer {
     this.buildGrass();
   }
 
+  /** Quality tier: grass density and canopy sway. */
+  setQuality(grass: number, treeSway: boolean): void {
+    for (const n of ['canopy', 'pineCanopy', 'palm']) this.layers[n]!.setMaterial(treeSway ? this.treeMat : this.plainMat);
+    if (grass !== this.grassDensity) {
+      this.grassDensity = grass;
+      this.buildGrass();
+    }
+  }
+
   /** Recolor canopies and grass for a season. */
   setSeason(season: string): void {
     if (season === this.season) return;
@@ -79,7 +94,7 @@ export class ObjectRenderer {
         const i = z * g.size + x;
         if (g.ground[i] !== Ground.Grass) continue;
         const h = hash01(x, z, 401);
-        if (h > 0.4) continue;
+        if (h > 0.4 * this.grassDensity) continue;
         const n = h < 0.12 ? 2 : 1;
         for (let k = 0; k < n; k++) {
           const ox = hash01(x, z, 402 + k) * 0.8 + 0.1, oz = hash01(x, z, 403 + k) * 0.8 + 0.1;

@@ -213,9 +213,24 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
     pockets (`sortPockets`, keeps the equipped tool), 📌 Track a recipe (`state.trackedRecipe`, HUD
     `RecipeTracker` under the mission tracker with live counts).
 
+- Phase 8 done: visuals + performance.
+  - `src/render/quality.ts`: `QUALITY` low/medium/high (pixel ratio cap, shadows + map size + PCF radius — soft on
+    High, grass density, foam/ripples, canopy sway, ambient particles, fog distance), `guessTier`, `urlTier`
+    (`?quality=low`), `Governor` (Auto: 2.5 s under 42 fps → down, 10 s over 57 fps → up, never above its start).
+    `App.setupQuality/applyTier` → `GameView.applyQuality`. Settings → Quality (Auto/Low/Medium/High).
+  - Looks: per-season sun/hemisphere light (sky.ts); canopies sway (`LC_SWAY_TREE` in curve.ts); water tinted by
+    time of day + shoreline foam bands + ripple rings (`WaterRenderer.frame`); blinking eyes, villagers wave when
+    you walk up and hop when happy (agents.ts; `animateRig` 'wave'/'hop').
+  - Benchmark: `src/ui/bench.ts` + `src/sim/benchIsland.ts` (in-memory busy island, Harvest Feast at 6 PM, slot -1 so
+    nothing is saved); Settings → Test performance, `?bench=1` (current tier) or `?bench=all`; results panel +
+    `window.__benchResults`. App `benchDriver` steers the player.
+  - Robustness: WebGL context loss pauses the game ("Tap to continue" card, `glPaused`); furniture thumbnails render
+    through the main renderer into a render target (no second WebGL context); interior rooms dispose their GPU
+    resources on rebuild/exit (`InteriorView.release`).
+
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
-(212 unit tests incl. full new-game → festival playthroughs, one per season, and the readability check; 2 e2e tests.)
+(217 unit tests incl. full new-game → festival playthroughs, one per season, and the readability check; 2 e2e tests.)
 
 ## Known issues / limitations
 - Pacing is a model estimate (scripts/pacing.ts), not measured with real players.

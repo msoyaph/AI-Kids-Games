@@ -34,6 +34,12 @@ export class InstancedLayer {
     this.n = 0;
   }
 
+  /** Swap the material (e.g. tree sway on/off with the quality tier). */
+  setMaterial(m: THREE.Material): void {
+    this.mat = m;
+    this.mesh.material = m;
+  }
+
   push(x: number, y: number, z: number, rotY = 0, scale = 1, color?: number, sy?: number, rotX = 0, rotZ = 0): void {
     if (this.n >= this.capacity) this.grow();
     tmpE.set(rotX, rotY, rotZ);

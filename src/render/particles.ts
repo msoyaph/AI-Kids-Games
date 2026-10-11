@@ -30,6 +30,8 @@ export class Particles {
   private col = new THREE.Color();
   private drift = 0;
   enabled = true;
+  /** quality: ambient particle amount (petals, leaves, fireflies) */
+  amount = 1;
 
   constructor(private game: Game) {
     this.mesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.06, 0), curved(new THREE.MeshLambertMaterial({ color: 0xffffff })), MAX);
@@ -86,7 +88,7 @@ export class Particles {
     // seasonal drifters: petals in spring, leaves in autumn
     const season = g.state.season?.index ?? 0;
     if (this.enabled && this.group.visible && (season === 0 || season === 2) && g.state.weather.today !== 'rain') {
-      this.drift += dt * 5;
+      this.drift += dt * 5 * this.amount;
       const R = () => Math.random() - 0.5;
       while (this.drift >= 1) {
         this.drift -= 1;
@@ -121,7 +123,7 @@ export class Particles {
     this.mesh.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
     // ambient fireflies at night around the camera focus
-    const want = night > 0.5 && g.state.weather.today !== 'rain' ? 26 : 0;
+    const want = night > 0.5 && g.state.weather.today !== 'rain' ? Math.round(26 * this.amount) : 0;
     while (this.flies.length < want) this.flies.push({ x: camTarget.x + (Math.random() - 0.5) * 30, y: 0.6 + Math.random() * 1.5, z: camTarget.z + (Math.random() - 0.5) * 22, ph: Math.random() * 10 });
     if (this.flies.length > want) this.flies.length = want;
     let f = 0;
