@@ -86,7 +86,16 @@ hops shockwave rings and un-sticks itself; it never slides, so humans can do bet
 - AudioContext is created only inside a user-gesture handler (no autoplay warnings).
 - Icon canvases use `willReadFrequently` so `toDataURL` doesn't trigger GPU readbacks.
 
-## Phase plan / status
+## Upgrade branch (`theabonk-upgrade`)
+Plan: phases 0–14 (safety nets → tuning → playtest/bot → pathing/camera → maps/Rimewood →
+content → input/accessibility → gamepads → touch → visuals → audio → bench/low tier → CI →
+balance → screenshots/handoff). Baselines in docs/BASELINES.md. Guards: `npm run check-size`
+(≤1.5 MB, single file, no external refs), golden determinism test (update hashes only for
+intentional sim changes), storage budget test (<100 KB across all `theabonk.*` keys).
+Benchmarks are load-sensitive: compare A/B against a `main` worktree.
+- [x] 0. Safety nets
+
+## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera
 2. [x] Enemies, spawning, collision, HP, death
 3. [x] Weapons, XP, leveling, upgrade picker
