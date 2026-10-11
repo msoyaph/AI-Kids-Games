@@ -1,5 +1,5 @@
 /** Draws farm animals and the pet in the current location. */
-import { Sprite } from 'pixi.js';
+import { Sprite, type Texture } from 'pixi.js';
 import { ANIMAL } from '../data/animals';
 import { petRt, wanderState } from '../sim/animals';
 import type { Sim } from '../sim/sim';
@@ -49,20 +49,39 @@ export class AnimalView {
     s.emoteUntil = time + 1.8;
   }
 
-  private place(s: Spr, x: number, y: number, tex: string, flip: boolean, time: number, big: boolean): void {
+  private texCache = new Map<string, Texture>();
+  private t(name: string): Texture {
+    let t = this.texCache.get(name);
+    if (!t) {
+      t = this.atlas.tex(name);
+      this.texCache.set(name, t);
+    }
+    return t;
+  }
+  private animTex = new Map<string, Texture[]>();
+  private frameTex(prefix: string, frame: number): Texture {
+    let arr = this.animTex.get(prefix);
+    if (!arr) {
+      arr = [0, 1, 2, 3, 4].map((f) => this.atlas.tryTex(`${prefix}.${f}`) ?? this.atlas.tex(`${prefix}.0`));
+      this.animTex.set(prefix, arr);
+    }
+    return arr[frame];
+  }
+
+  private place(s: Spr, x: number, y: number, tex: Texture, flip: boolean, time: number, big: boolean): void {
     if (!s.body.parent) this.view.sorted.addChild(s.shadow, s.body, s.emote);
-    s.body.texture = this.atlas.tex(tex);
+    s.body.texture = tex;
     s.body.x = Math.round(x);
     s.body.y = Math.round(y) + 1;
     s.body.scale.x = flip ? -1 : 1;
     s.body.zIndex = s.body.y;
-    s.shadow.texture = this.atlas.tex(big ? 'shadow.big' : 'shadow');
+    s.shadow.texture = this.t(big ? 'shadow.big' : 'shadow');
     s.shadow.x = s.body.x;
     s.shadow.y = s.body.y - 1;
     s.shadow.zIndex = s.body.y - 2;
     if (s.emoteUntil > time) {
       s.emote.visible = true;
-      s.emote.texture = this.atlas.tex(`emote.${s.emoteKind}`);
+      s.emote.texture = this.t('emote.' + s.emoteKind);
       s.emote.x = s.body.x;
       s.emote.y = s.body.y - (big ? 30 : 16) - Math.round(Math.abs(Math.sin(time * 4)) * 2);
       s.emote.zIndex = 100000;
@@ -93,10 +112,10 @@ export class AnimalView {
       if (w && w.dx) s.face = w.dx < 0 ? 1 : 2;
       const night = sim.state.min >= 20 * 60 || sim.state.min < 6 * 60 + 30;
       const frame = night && !moving ? 3 : moving ? 1 + (Math.floor(time * 6) % 2) : 0;
-      this.place(s, a.x, a.y, `an.${a.kind}.${frame}`, s.face === 1, time, !!ANIMAL[a.kind]?.big);
+      this.place(s, a.x, a.y, this.frameTex('an.' + a.kind, frame), s.face === 1, time, !!ANIMAL[a.kind]?.big);
       if (a.prod && !s.emote.visible) {
         s.emote.visible = true;
-        s.emote.texture = this.atlas.tex('emote.gift');
+        s.emote.texture = this.t('emote.gift');
         s.emote.x = s.body.x;
         s.emote.y = s.body.y - (ANIMAL[a.kind]?.big ? 30 : 16);
         s.emote.zIndex = 100000;
@@ -109,7 +128,7 @@ export class AnimalView {
       const pet = sim.state.pet;
       const moving = p.dx !== 0 || p.dy !== 0;
       const frame = p.sleep ? 3 : p.sit ? 4 : moving ? 1 + (Math.floor(time * 8) % 2) : 0;
-      this.place(this.petS, p.x, p.y, `pet.${pet.kind}.${pet.color % 3}.${frame}`, p.dir === 1, time, false);
+      this.place(this.petS, p.x, p.y, this.frameTex(pet.kind === 'dog' ? (pet.color % 3 === 0 ? 'pet.dog.0' : pet.color % 3 === 1 ? 'pet.dog.1' : 'pet.dog.2') : pet.color % 3 === 0 ? 'pet.cat.0' : pet.color % 3 === 1 ? 'pet.cat.1' : 'pet.cat.2', frame), p.dir === 1, time, false);
     } else this.hide(this.petS);
   }
 

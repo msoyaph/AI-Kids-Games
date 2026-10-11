@@ -93,7 +93,7 @@ export class Lighting {
     this.glows.blendMode = 'add';
   }
 
-  update(r: { width: number; height: number; zoom: number }, loc: Loc, min: number, playerScreen: { x: number; y: number }, weatherDim: number, darkness: number): void {
+  update(r: { width: number; height: number; zoom: number }, loc: Loc, min: number, psx: number, psy: number, weatherDim: number, darkness: number): void {
     const W = r.width, H = r.height;
     if (!this.enabled) {
       this.screen.visible = false;
@@ -116,8 +116,8 @@ export class Lighting {
       const size = Math.round(Math.max(W, H) * 0.9 + r.zoom * 40);
       this.hole.width = this.hole.height = size;
       this.hole.alpha = dark;
-      this.hole.x = Math.round(playerScreen.x);
-      this.hole.y = Math.round(playerScreen.y);
+      this.hole.x = Math.round(psx);
+      this.hole.y = Math.round(psy);
       const x0 = this.hole.x - size / 2, y0 = this.hole.y - size / 2, x1 = x0 + size, y1 = y0 + size;
       const [a, b, c, d] = this.edges;
       a.x = 0; a.y = 0; a.width = W; a.height = Math.max(0, y0);

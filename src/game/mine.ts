@@ -1,5 +1,5 @@
 /** Client glue for the mine: critters, bonk stick, slingshot, ladders, elevator, fainting, smithy services. */
-import { Container, Sprite } from 'pixi.js';
+import { Container, Sprite, type Texture } from 'pixi.js';
 import { DIR_DX, DIR_DY, TILE } from '../core/math';
 import { GEODES, MINERALS } from '../data/minerals';
 import { TOOLS, tryItem } from '../data/items';
@@ -25,6 +25,15 @@ const SIGNS: Record<string, string> = {
 
 class CritterView {
   layer: Container;
+  private tex = new Map<string, Texture>();
+  private t(g: Game, name: string): Texture {
+    let t = this.tex.get(name);
+    if (!t) {
+      t = g.atlas.tex(name);
+      this.tex.set(name, t);
+    }
+    return t;
+  }
   private spr = new Map<number, Sprite>();
   private shots: Sprite[] = [];
   constructor(layer: Container) {
@@ -52,7 +61,7 @@ class CritterView {
         }
         s.visible = true;
         const f = c.kind === 'slime' ? (c.hopT > 0 ? 1 : Math.floor(g.time * 3 + c.id) % 3 === 0 ? 2 : 0) : Math.floor(g.time * 8 + c.id) % 2;
-        s.texture = g.atlas.tex(c.hidden ? `cr.crab.${c.layer}.hidden` : `cr.${c.kind}.${c.layer}.${f}`);
+        s.texture = this.t(g, c.hidden ? 'cr.crab.' + c.layer + '.hidden' : 'cr.' + c.kind + '.' + c.layer + '.' + f);
         s.x = Math.round(c.x);
         s.y = Math.round(c.y) + (c.kind === 'bat' ? -6 - Math.round(Math.sin(g.time * 5 + c.id) * 2) : 2);
         s.zIndex = Math.round(c.y) + 2;

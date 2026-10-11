@@ -14,6 +14,8 @@ export interface RenderHost {
   onContextRestored: (() => void)[];
   /** user zoom preference: -1 smaller, 0 auto, +1 bigger */
   zoomBias: number;
+  /** cap on device pixel ratio (adaptive quality) */
+  maxDpr: number;
   resize(): void;
 }
 
@@ -50,11 +52,11 @@ export async function createRenderer(parent: HTMLElement, lowQuality: boolean): 
     onContextLost: [],
     onContextRestored: [],
     zoomBias: 0,
+    maxDpr: lowQuality ? 1 : 2,
     resize() {
       const cssW = Math.max(1, parent.clientWidth || window.innerWidth);
       const cssH = Math.max(1, parent.clientHeight || window.innerHeight);
-      const maxDpr = lowQuality ? 1 : 2;
-      const dpr = Math.min(maxDpr, window.devicePixelRatio || 1);
+      const dpr = Math.min(host.maxDpr, window.devicePixelRatio || 1);
       const w = Math.floor(cssW * dpr), h = Math.floor(cssH * dpr);
       host.dpr = dpr;
       host.width = w;

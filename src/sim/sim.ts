@@ -180,14 +180,21 @@ export class Sim {
     return moved;
   }
 
+  private _pt = { x: 0, y: 0 };
+  private _ft = { x: 0, y: 0 };
+  /** Player's tile. Returns a shared scratch object — copy it if you keep it. */
   playerTile(): { x: number; y: number } {
-    return { x: Math.floor(this.p.x / TILE), y: Math.floor((this.p.y - 1) / TILE) };
+    this._pt.x = Math.floor(this.p.x / TILE);
+    this._pt.y = Math.floor((this.p.y - 1) / TILE);
+    return this._pt;
   }
 
-  /** Tile in front of the player. */
+  /** Tile in front of the player (shared scratch object — copy it if you keep it). */
   facingTile(): { x: number; y: number } {
     const t = this.playerTile();
-    return { x: t.x + DIR_DX[this.p.dir], y: t.y + DIR_DY[this.p.dir] };
+    this._ft.x = t.x + DIR_DX[this.p.dir];
+    this._ft.y = t.y + DIR_DY[this.p.dir];
+    return this._ft;
   }
 
   /** Guards that can block a warp with a friendly message (closed shops, locked homes…). */

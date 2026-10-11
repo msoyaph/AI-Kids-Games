@@ -1,5 +1,5 @@
 /** Game client: owns sim, renderer, input and UI; runs the main loop and mode flow. */
-import { Container, Sprite } from 'pixi.js';
+import { Container, Sprite, type Texture } from 'pixi.js';
 import { TILE, clamp } from '../core/math';
 import { storageMode, usage } from '../core/storage';
 import type { ToolKind } from '../data/items';
@@ -59,7 +59,9 @@ export interface GameOptions {
   seed?: number;
 }
 
-export type Mode = 'boot' | 'title' | 'play' | 'sleeping';
+const WALK = [0, 1, 0, 2];
+
+export type Mode = 'boot' | 'title' | 'play' | 'sleeping' | 'bench';
 
 /** Hooks later systems plug into without editing the core loop. */
 export interface GameHooks {
@@ -159,6 +161,7 @@ export class Game implements MenuHost {
     this.input.attachCanvas(this.host.app.canvas as HTMLCanvasElement);
     this.initUI();
     this.applyAudioSettings();
+    this.applyQuality();
     installVillagers(this);
     installAnimals(this);
     installMine(this);
@@ -222,6 +225,14 @@ export class Game implements MenuHost {
     this.player.visible = false;
     this.playerShadow.visible = false;
   }
+
+  /** Swap in a sim for the benchmark without touching saves. */
+  attachSimForBench(sim: Sim): void {
+    this.attachSim(sim);
+    sim.paused = false;
+  }
+
+  lastBench: import('./bench').BenchResult | null = null;
 
   private attachSim(sim: Sim): void {
     for (const u of this.unsub) u();
@@ -287,6 +298,7 @@ export class Game implements MenuHost {
   /** Save to the current slot; returns false and shows a friendly note on failure. */
   save(suspended: boolean): boolean {
     if (this.mode !== 'play' && this.mode !== 'sleeping') return false;
+    if (this.slot <= 0) return false; // capture/bench scenes never save
     const r = saveToSlot(this.sim, this.slot, suspended);
     if (!r.ok) {
       const msg =
@@ -344,11 +356,14 @@ export class Game implements MenuHost {
     for (const f of HOOKS.onEnter) f(this);
   }
 
+  /** player textures [dir][frame], resolved once (no per-frame string building) */
+  private playerTex: Texture[][] = [];
   bakePlayer(): void {
     const l = this.sim.p.look;
     this.playerAtlas = new Atlas();
     bakeCharacter(this.playerAtlas, 'player', { ...l, hairStyle: l.hairStyle as Look['hairStyle'] });
     this.playerAtlas.bake();
+    this.playerTex = [0, 1, 2, 3].map((d) => [0, 1, 2, 3, 4].map((f) => this.playerAtlas.tex(`ch.player.${d}.${f}`)));
   }
 
   enterLocation(): void {
@@ -476,6 +491,7 @@ export class Game implements MenuHost {
           this.snapCamera();
         }
         this.applyAudioSettings();
+        this.applyQuality();
         onChange();
       },
       save: (s) => saveSettings(s),
@@ -496,9 +512,39 @@ export class Game implements MenuHost {
     this.audio.setVolumes(this.settings.music, this.settings.sfx);
   }
 
-  /** Benchmark system replaces this. */
   testPerformance(): void {
-    this.toasts.show('Performance test is getting ready...');
+    void import('./bench').then((b) => b.runBenchmark(this));
+  }
+
+  // ── Adaptive quality ─────────────────────────────────────
+  qualityLevel = 0;
+  private perfAcc = 0;
+  private perfN = 0;
+  private applyQuality(): void {
+    const lvl = this.settings.quality === 'low' ? 2 : this.settings.quality === 'high' ? 0 : this.qualityLevel;
+    this.weather.density = lvl >= 1 ? 0.5 : 1;
+    this.fx.enabled = true;
+    this.lighting.glows.renderable = lvl < 2;
+    const maxDpr = lvl >= 2 || this.opts.lowq ? 1 : 2;
+    if (this.host.maxDpr !== maxDpr) {
+      this.host.maxDpr = maxDpr;
+      this.host.resize();
+      this.view.invalidate();
+    }
+  }
+  private watchPerf(dt: number): void {
+    if (this.settings.quality !== 'auto' || this.mode !== 'play' || document.visibilityState === 'hidden') return;
+    this.perfAcc += dt;
+    this.perfN++;
+    if (this.perfAcc >= 5) {
+      const fps = this.perfN / this.perfAcc;
+      this.perfAcc = 0;
+      this.perfN = 0;
+      if (fps < 45 && this.qualityLevel < 2) {
+        this.qualityLevel++;
+        this.applyQuality();
+      }
+    }
   }
 
   openSettings(): void {
@@ -600,6 +646,13 @@ export class Game implements MenuHost {
     const input = this.input;
     input.frame();
     this.time += dt;
+    if (this.mode === 'bench') {
+      input.drain();
+      this.sim.update(dt);
+      for (const f of HOOKS.onUpdate) f(this, dt);
+      this.fx.update(dt);
+      return;
+    }
     if (this.mode === 'title') {
       input.drain();
       this.titleT += dt;
@@ -629,8 +682,24 @@ export class Game implements MenuHost {
     for (const f of HOOKS.onUpdate) f(this, dt);
     this.fx.update(dt);
     this.walkT = this.sim.moving ? this.walkT + dt : 0;
-    this.hud.update(this.sim, this.locName(), this.sim.p.loc === 'mine');
+    this.watchPerf(dt);
+    if (++this.hudTick >= 6 || this.modals.open) {
+      this.hudTick = 0;
+      this.hud.update(this.sim, this.locName(), this.sim.p.loc === 'mine');
+    }
+    if (this.settings.showFps && this.fpsShown !== Math.round(this.fps)) {
+      this.fpsShown = Math.round(this.fps);
+      const ov = this.fpsEl ?? (this.fpsEl = h('div', { class: 'fps panel dark' }));
+      if (!ov.parentNode) this.uiRoot.appendChild(ov);
+      ov.style.display = '';
+      ov.textContent = `${this.fpsShown} fps · ${this.host.kind}`;
+    } else if (!this.settings.showFps && this.fpsEl) this.fpsEl.style.display = 'none';
   }
+
+  private hudTick = 0;
+  private fpsShown = -1;
+  private fpsEl: HTMLElement | null = null;
+  private songTick = 0;
 
   /** Set by cutscenes/minigames to stop walking. */
   inputBlocked = false;
@@ -666,8 +735,9 @@ export class Game implements MenuHost {
 
   render(dt: number): void {
     const p = this.sim.p;
-    const frame = this.ctl.pose ? 3 : this.sim.moving ? [0, 1, 0, 2][Math.floor(this.walkT * 8) % 4] : 0;
-    this.player.texture = this.playerAtlas.tex(`ch.player.${p.dir}.${frame}`);
+    const frame = this.ctl.pose ? 3 : this.sim.moving ? WALK[Math.floor(this.walkT * 8) % 4] : 0;
+    const pt = this.playerTex[p.dir];
+    if (pt) this.player.texture = pt[frame];
     this.player.x = Math.round(p.x);
     this.player.y = Math.round(p.y) + 1;
     this.player.zIndex = this.player.y;
@@ -706,11 +776,14 @@ export class Game implements MenuHost {
     const st = this.sim.state;
     const season = seasonOf(st.day);
     const dim = st.weather === 'storm' ? 0.28 : st.weather === 'rain' ? 0.16 : st.weather === 'snow' ? 0.08 : 0;
-    this.lighting.update(this.host, loc, this.mode === 'title' ? 12 * 60 : st.min, { x: this.player.x * z + this.view.root.x, y: (this.player.y - 10) * z + this.view.root.y }, dim, 0.78);
+    this.lighting.update(this.host, loc, this.mode === 'title' ? 12 * 60 : st.min, this.player.x * z + this.view.root.x, (this.player.y - 10) * z + this.view.root.y, dim, 0.78);
     this.weather.reduced = this.settings.reducedMotion;
     this.weather.update(dt, this.host.width, this.host.height, st.weather, season, loc.def.outdoor && this.mode !== 'title', z);
     if (this.weather.flashed()) this.sfx('thunder');
-    this.music.play(songFor({ mode: this.mode, music: loc.def.music, season, min: st.min, outdoor: loc.def.outdoor, weather: st.weather, festival: this.atFestival, dark: !!loc.def.dark }));
+    if (++this.songTick >= 30) {
+      this.songTick = 0;
+      this.music.play(songFor({ mode: this.mode, music: loc.def.music, season, min: st.min, outdoor: loc.def.outdoor, weather: st.weather, festival: this.atFestival, dark: !!loc.def.dark }));
+    }
     this.view.update();
     if (this.mode === 'play') this.ctl.drawHighlights();
     this.host.app.render();

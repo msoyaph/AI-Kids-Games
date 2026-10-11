@@ -1,5 +1,5 @@
 /** Draws villagers that are in the current location (pooled sprites + shadows + emotes). */
-import { Sprite } from 'pixi.js';
+import { Sprite, type Texture } from 'pixi.js';
 import { npcs } from '../sim/npcs';
 import type { Sim } from '../sim/sim';
 import type { Atlas } from './atlas';
@@ -11,8 +11,29 @@ interface NpcSprites {
   emote: Sprite;
 }
 
+const WALK = [0, 1, 0, 2];
+
 export class NpcView {
   private sprites = new Map<string, NpcSprites>();
+  private tex = new Map<string, Texture[][]>();
+  private emoteTex = new Map<string, Texture>();
+
+  private frames(id: string): Texture[][] {
+    let t = this.tex.get(id);
+    if (!t) {
+      t = [0, 1, 2, 3].map((d) => [0, 1, 2].map((f) => this.atlas.tex(`ch.${id}.${d}.${f}`)));
+      this.tex.set(id, t);
+    }
+    return t;
+  }
+  private emote(kind: string): Texture {
+    let t = this.emoteTex.get(kind);
+    if (!t) {
+      t = this.atlas.tex(`emote.${kind}`);
+      this.emoteTex.set(kind, t);
+    }
+    return t;
+  }
   private atlas: Atlas;
   private view: WorldView;
 
@@ -55,8 +76,8 @@ export class NpcView {
         continue;
       }
       if (!s.body.parent) this.view.sorted.addChild(s.shadow, s.body, s.emote);
-      const frame = rt.moving ? [0, 1, 0, 2][Math.floor(time * 7) % 4] : 0;
-      s.body.texture = this.atlas.tex(`ch.${rt.id}.${rt.dir}.${frame}`);
+      const frame = rt.moving ? WALK[Math.floor(time * 7) % 4] : 0;
+      s.body.texture = this.frames(rt.id)[rt.dir][frame];
       s.body.x = Math.round(rt.x);
       s.body.y = Math.round(rt.y) + 1;
       s.body.zIndex = s.body.y;
@@ -65,7 +86,7 @@ export class NpcView {
       s.shadow.zIndex = s.body.y - 2;
       if (rt.emote && rt.emote.until > time) {
         s.emote.visible = true;
-        s.emote.texture = this.atlas.tex(`emote.${rt.emote.kind}`);
+        s.emote.texture = this.emote(rt.emote.kind);
         s.emote.x = s.body.x;
         s.emote.y = s.body.y - 30 - Math.round(Math.abs(Math.sin(time * 4)) * 2);
         s.emote.zIndex = 100000;

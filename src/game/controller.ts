@@ -36,20 +36,35 @@ export class Controller {
     return this.busy > 0;
   }
 
-  /** Recompute the target tile from pointer / facing. */
+  private tgt = { x: 0, y: 0 };
+  /** Recompute the target tile from pointer / facing (allocation-free). */
   updateTarget(): void {
     const g = this.g, sim = g.sim;
     const pt = sim.playerTile();
-    let t: { x: number; y: number } | null = null;
+    const px = pt.x, py = pt.y;
     const ptr = g.input.pointer;
-    if (this.chosen && chebyshev(this.chosen.x, this.chosen.y, pt.x, pt.y) <= 1) t = this.chosen;
-    else if (ptr.active && ptr.kind === 'mouse' && g.input.lastDevice === 'mouse') {
-      const w = g.screenToWorld(ptr.x, ptr.y);
-      const tx = Math.floor(w.x / TILE), ty = Math.floor(w.y / TILE);
-      if (chebyshev(tx, ty, pt.x, pt.y) <= 1 && !(tx === pt.x && ty === pt.y && this.usesFacing())) t = { x: tx, y: ty };
+    let tx = 0, ty = 0, ok = false;
+    if (this.chosen && chebyshev(this.chosen.x, this.chosen.y, px, py) <= 1) {
+      tx = this.chosen.x;
+      ty = this.chosen.y;
+      ok = true;
+    } else if (ptr.active && ptr.kind === 'mouse' && g.input.lastDevice === 'mouse') {
+      const z = g.host.zoom, dpr = g.host.dpr;
+      const mx = Math.floor((ptr.x * dpr - g.view.root.x) / z / TILE), my = Math.floor((ptr.y * dpr - g.view.root.y) / z / TILE);
+      if (chebyshev(mx, my, px, py) <= 1 && !(mx === px && my === py && this.usesFacing())) {
+        tx = mx;
+        ty = my;
+        ok = true;
+      }
     }
-    if (!t) t = sim.facingTile();
-    this.target = t;
+    if (!ok) {
+      const f = sim.facingTile();
+      tx = f.x;
+      ty = f.y;
+    }
+    this.tgt.x = tx;
+    this.tgt.y = ty;
+    this.target = this.tgt;
   }
 
   /** Items like seeds can target the tile you stand on; tools always face outward. */
@@ -215,18 +230,21 @@ export class Controller {
     const g = this.g, sim = g.sim;
     if (this.locked) return;
     this.updateTarget();
-    const tries: { x: number; y: number }[] = [];
-    if (this.target) tries.push(this.target);
-    tries.push(sim.facingTile(), sim.playerTile());
-    for (const t of tries) {
-      const r = interactAt(sim, t.x, t.y);
+    const f = sim.facingTile(), p = sim.playerTile();
+    const tries: [number, number][] = [];
+    if (this.target) tries.push([this.target.x, this.target.y]);
+    tries.push([f.x, f.y], [p.x, p.y]);
+    for (const [tx, ty] of tries) {
+      const r = interactAt(sim, tx, ty);
       if (r.type !== 'none') {
         if (r.type !== 'object') {
-          this.target = t;
+          this.tgt.x = tx;
+          this.tgt.y = ty;
+          this.target = this.tgt;
           this.faceTarget();
         }
         this.busy = 0.18;
-        this.handleInteract(r, t.x, t.y);
+        this.handleInteract(r, tx, ty);
         return;
       }
     }

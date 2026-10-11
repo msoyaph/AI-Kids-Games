@@ -1,4 +1,5 @@
 import { Game } from './game/game';
+import { installHook } from './game/hook';
 
 const params = new URLSearchParams(location.search);
 const game = new Game({
@@ -12,7 +13,9 @@ game
   .init(document.getElementById('game')!)
   .then(() => {
     document.getElementById('boot')?.remove();
+    installHook(game);
     game.showTitle();
+    if (params.get('bench') === '1') setTimeout(() => game.testPerformance(), 600);
     if (import.meta.env.DEV) {
       (window as unknown as { __cvdev: Game }).__cvdev = game;
       void Promise.all([import('./sim/mine'), import('./sim/actions'), import('./sim/npcs'), import('./sim/animals'), import('./sim/story')]).then(([mine, actions, npcs, animals, story]) => {
