@@ -70,6 +70,10 @@ async function boot(): Promise<void> {
     app.show(new MapEditor(app, nav));
     return;
   }
+  if (params.has('flashaudit')) {
+    const { installFlashProbe } = await import('./app/flashProbe');
+    installFlashProbe(app, params.has('storm'));
+  }
   const stress = Number(params.get('stress') ?? 0);
   if (stress > 0) {
     startStress(app, nav, Math.min(1000, stress));

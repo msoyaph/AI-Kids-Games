@@ -25,7 +25,41 @@
   --cut: 10px;
   --hud-h: 56px;
   --drawer-h: 108px;
+  /* Settings → Text size multiplies every UI font size */
+  --ts: 1;
 }
+
+/* ------------------------------------------------------------------ high contrast (Settings) */
+.hc {
+  --line: rgba(200, 222, 255, 0.8);
+  --line-strong: #9ff6ff;
+  --text: #ffffff;
+  --text-dim: #e1e8f6;
+  --panel: linear-gradient(180deg, #111a2f, #070b16);
+  --panel-flat: #070b16;
+}
+.hc .btn,
+.hc .panel,
+.hc .card,
+.hc .stat {
+  border-width: 2px;
+}
+.hc :focus-visible {
+  outline: 3px solid #ffe14d !important;
+  outline-offset: 2px;
+}
+.hc .card.poor {
+  opacity: 0.8;
+}
+.hc .card.locked,
+.hc .el-btn:disabled {
+  opacity: 0.7;
+}
+.hc .note,
+.hc .chip.dim {
+  opacity: 1;
+}
+
 
 * {
   box-sizing: border-box;
@@ -45,7 +79,7 @@
   pointer-events: none;
   font-family: var(--font-ui);
   color: var(--text);
-  font-size: 16px;
+  font-size: calc(16px * var(--ts));
   line-height: 1.3;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -87,7 +121,7 @@
   border: 1px solid rgba(130, 170, 255, 0.3);
   font-family: var(--font-head);
   font-weight: 700;
-  font-size: 16px;
+  font-size: calc(16px * var(--ts));
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text);
@@ -150,7 +184,7 @@
   border-color: rgba(130, 170, 255, 0.3);
 }
 .btn.big {
-  font-size: 21px;
+  font-size: calc(21px * var(--ts));
   min-height: 58px;
   padding: 10px 30px;
 }
@@ -165,7 +199,7 @@
   pointer-events: none;
 }
 .btn .sub {
-  font-size: 12px;
+  font-size: calc(12px * var(--ts));
   opacity: 0.9;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -187,12 +221,19 @@
       0 2px 0 rgba(0, 0, 0, 0.45);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .pulse,
-  .float,
-  .bob {
-    animation: none !important;
-  }
+/* reduced motion (Settings; 'auto' follows the system): no decorative animation */
+.rm .pulse,
+.rm .float,
+.rm .bob {
+  animation: none !important;
+}
+.rm *,
+.rm *::before,
+.rm *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* ------------------------------------------------------------------ screens */
@@ -271,7 +312,7 @@
   margin-bottom: 6px;
 }
 .title .tag {
-  font-size: clamp(15px, 2vw, 18px);
+  font-size: calc(clamp(15px, 2vw, 18px) * var(--ts));
   color: var(--text-dim);
   max-width: 520px;
   border-left: 3px solid var(--cyan);
@@ -309,7 +350,7 @@
   position: absolute;
   bottom: calc(var(--safe-bottom) + 8px);
   right: calc(var(--safe-right) + 12px);
-  font-size: 12px;
+  font-size: calc(12px * var(--ts));
   color: var(--text-dim);
   font-family: var(--font-head);
   letter-spacing: 0.1em;
@@ -362,10 +403,10 @@
 }
 .world h3 {
   margin: 0 0 4px;
-  font-size: 21px;
+  font-size: calc(21px * var(--ts));
 }
 .world .wdesc {
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
   color: var(--text-dim);
   margin-bottom: 10px;
 }
@@ -389,7 +430,7 @@
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-size: 17px;
+  font-size: calc(17px * var(--ts));
   background: rgba(7, 11, 22, 0.6);
   text-align: center;
   padding: 12px;
@@ -425,7 +466,7 @@
 }
 .mapbtn .mname {
   font-family: var(--font-head);
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -438,13 +479,13 @@
   color: var(--text-dim);
 }
 .world .lock-note .have {
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
   color: var(--text-dim);
 }
 .stars {
   display: inline-flex;
   gap: 2px;
-  font-size: 15px;
+  font-size: calc(15px * var(--ts));
   letter-spacing: 1px;
 }
 .star {
@@ -482,7 +523,7 @@
 }
 .modal p {
   margin: 6px 0 12px;
-  font-size: 16px;
+  font-size: calc(16px * var(--ts));
   color: var(--text-dim);
 }
 .modal .row {
@@ -523,14 +564,14 @@
   border-left: 3px solid var(--cyan);
   border-radius: 4px;
   padding: 10px 14px;
-  font-size: 16px;
+  font-size: calc(16px * var(--ts));
   position: relative;
 }
 .pip .bubble::before {
   content: 'PIP';
   display: block;
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--ts));
   font-weight: 800;
   letter-spacing: 0.25em;
   color: var(--cyan);
@@ -586,7 +627,7 @@
 }
 .stat .lbl {
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--ts));
   font-weight: 700;
   letter-spacing: 0.18em;
   color: var(--text-dim);
@@ -595,7 +636,7 @@
 .stat .val {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 21px;
+  font-size: calc(21px * var(--ts));
   letter-spacing: 0.02em;
 }
 .stat.lives .val {
@@ -642,7 +683,7 @@
 }
 .next-wave .icons .cnt {
   font-family: var(--font-head);
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
   font-weight: 800;
   margin-left: -4px;
   margin-right: 4px;
@@ -651,7 +692,7 @@
 .next-wave .timer {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 15px;
+  font-size: calc(15px * var(--ts));
   min-width: 34px;
   text-align: center;
   color: var(--text-dim);
@@ -662,7 +703,7 @@
 }
 .boss-tag {
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--ts));
   font-weight: 800;
   letter-spacing: 0.12em;
   background: var(--danger);
@@ -688,7 +729,7 @@
   border: 1px solid var(--line);
   border-left: 4px solid var(--cyan);
   font-weight: 600;
-  font-size: 16px;
+  font-size: calc(16px * var(--ts));
   padding: 10px 16px;
   border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -772,7 +813,7 @@
   width: 52px;
   height: 52px;
   padding: 0;
-  font-size: 22px;
+  font-size: calc(22px * var(--ts));
 }
 
 /* ------------------------------------------------------------------ drawer */
@@ -836,7 +877,7 @@
 .card .cost {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 15px;
+  font-size: calc(15px * var(--ts));
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -848,7 +889,7 @@
 }
 .card .dps {
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--ts));
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--text-dim);
@@ -870,7 +911,7 @@
   top: 3px;
   left: 5px;
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--ts));
   font-weight: 800;
   color: var(--text-dim);
 }
@@ -889,7 +930,7 @@
 }
 .card .nm {
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--ts));
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1.1;
@@ -918,7 +959,7 @@
 .build-fab .btn {
   min-height: 58px;
   min-width: 58px;
-  font-size: 18px;
+  font-size: calc(18px * var(--ts));
 }
 .picked-chip {
   position: absolute;
@@ -935,7 +976,7 @@
   height: 44px;
 }
 .picked-chip .hint {
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
   font-weight: 600;
   max-width: 190px;
 }
@@ -968,7 +1009,7 @@
 .tpanel .tname {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 19px;
+  font-size: calc(19px * var(--ts));
   letter-spacing: 0.04em;
   text-transform: uppercase;
   display: flex;
@@ -991,7 +1032,7 @@
   box-shadow: 0 0 6px rgba(255, 200, 69, 0.8);
 }
 .tpanel .tinfo {
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
   color: var(--text-dim);
   display: flex;
   gap: 10px;
@@ -1000,7 +1041,7 @@
 }
 .tpanel .chip {
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--ts));
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1014,11 +1055,11 @@
   grid-column: 1 / -1;
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
 }
 .stats-table th {
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--ts));
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1051,7 +1092,7 @@
 .tpanel .actions .btn {
   min-height: 48px;
   padding: 6px 12px;
-  font-size: 15px;
+  font-size: calc(15px * var(--ts));
 }
 .tpanel .close {
   grid-row: 1;
@@ -1082,23 +1123,23 @@
     left: calc(var(--safe-left) + 6px);
   }
   .tpanel.side .tname {
-    font-size: 16px;
+    font-size: calc(16px * var(--ts));
   }
   .tpanel.side .tinfo {
-    font-size: 12px;
+    font-size: calc(12px * var(--ts));
     gap: 6px;
   }
   .tpanel.side .actions .btn {
     flex: 1 1 auto;
     min-height: 44px;
-    font-size: 14px;
+    font-size: calc(14px * var(--ts));
   }
   .tpanel img.icon {
     width: 46px;
     height: 46px;
   }
   .stats-table {
-    font-size: 12px;
+    font-size: calc(12px * var(--ts));
   }
   .stats-table td,
   .stats-table th {
@@ -1147,12 +1188,12 @@
 .el-btn .en {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 18px;
+  font-size: calc(18px * var(--ts));
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .el-btn .eb {
-  font-size: 12px;
+  font-size: calc(12px * var(--ts));
   color: var(--text-dim);
 }
 .el-btn:disabled {
@@ -1181,13 +1222,13 @@
 .info-card h4 {
   margin: 0 0 4px;
   font-family: var(--font-head);
-  font-size: 17px;
+  font-size: calc(17px * var(--ts));
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 .info-card p {
   margin: 2px 0;
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
   color: var(--text-dim);
 }
 .info-card h4 img.inline-icon {
@@ -1229,13 +1270,13 @@ img.big-el {
 .badge-card h4 {
   margin: 0 0 4px;
   font-family: var(--font-head);
-  font-size: 16px;
+  font-size: calc(16px * var(--ts));
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 .badge-card p {
   margin: 0;
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
   color: var(--text-dim);
 }
 
@@ -1258,7 +1299,7 @@ img.big-el {
 .setting label {
   font-family: var(--font-head);
   font-weight: 700;
-  font-size: 16px;
+  font-size: calc(16px * var(--ts));
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -1275,7 +1316,7 @@ img.big-el {
 .seg .btn {
   min-height: 44px;
   padding: 4px 12px;
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
 }
 
 .rotate-hint {
@@ -1288,7 +1329,7 @@ img.big-el {
   align-items: center;
   padding: 8px 8px 8px 14px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: calc(15px * var(--ts));
   z-index: 25;
   max-width: calc(100% - 20px);
 }
@@ -1345,7 +1386,7 @@ img.big-el {
     width: 100%;
   }
   .modal h2 {
-    font-size: 24px;
+    font-size: calc(24px * var(--ts));
     margin-bottom: 4px;
   }
   .pip .face {
@@ -1354,7 +1395,7 @@ img.big-el {
     flex-basis: 50px;
   }
   .pip .bubble {
-    font-size: 14px;
+    font-size: calc(14px * var(--ts));
     padding: 8px 12px;
   }
   .diff-row .btn {
@@ -1362,7 +1403,7 @@ img.big-el {
   }
   .btn.big {
     min-height: 52px;
-    font-size: 19px;
+    font-size: calc(19px * var(--ts));
   }
 }
 
@@ -1396,7 +1437,7 @@ img.big-el {
   color: var(--text);
   border-left: 3px solid var(--cyan);
   padding: 2px 0 2px 10px;
-  font-size: 15px;
+  font-size: calc(15px * var(--ts));
   line-height: 1.35;
 }
 .tutorial .tut-actions {
@@ -1407,11 +1448,11 @@ img.big-el {
 .tutorial .tut-actions .btn {
   min-height: 44px;
   padding: 4px 14px;
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
 }
 .tutorial .tut-actions .btn.ghost {
   min-height: 36px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ts));
   padding: 2px 10px;
 }
 .tut-glow {
@@ -1447,7 +1488,7 @@ img.big-el {
 .bossbar .bname {
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #ffd0d8;
@@ -1523,7 +1564,7 @@ img.big-el {
     padding: 2px 10px 2px 6px;
   }
   .stat .val {
-    font-size: 18px;
+    font-size: calc(18px * var(--ts));
   }
   .stat img {
     width: 22px;
@@ -1536,7 +1577,7 @@ img.big-el {
     padding: 12px;
   }
   .modal p {
-    font-size: 14px;
+    font-size: calc(14px * var(--ts));
   }
 }
 @media (max-width: 560px) {
@@ -1544,10 +1585,10 @@ img.big-el {
     padding: 2px 8px 2px 4px;
   }
   .stat .val {
-    font-size: 17px;
+    font-size: calc(17px * var(--ts));
   }
   .stat .lbl {
-    font-size: 9px;
+    font-size: calc(9px * var(--ts));
   }
   .stat img {
     width: 22px;
@@ -1561,7 +1602,7 @@ img.big-el {
 /* ------------------------------------------------------------------ section headings, codex */
 h3.section {
   margin: 16px 2px 8px;
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
   color: var(--cyan);
   letter-spacing: 0.16em;
   display: flex;
@@ -1600,7 +1641,7 @@ h3.section::after {
 }
 .chip {
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--ts));
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1616,7 +1657,7 @@ h3.section::after {
   border-color: var(--line);
 }
 .codex-table {
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
 }
 .codex-table th {
   text-align: right;
@@ -1632,7 +1673,7 @@ h3.section::after {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 2px 14px;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
 }
 .kv {
   display: flex;
@@ -1655,7 +1696,7 @@ p.note,
 .info-card p.dim,
 .panel p.dim {
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
 }
 .wheel {
   padding: 14px;
@@ -1682,10 +1723,10 @@ p.note,
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
 }
 .el-arrow {
-  font-size: 24px;
+  font-size: calc(24px * var(--ts));
   color: var(--cyan);
 }
 .badge-card p.earned {
@@ -1694,7 +1735,7 @@ p.note,
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  font-size: 12px;
+  font-size: calc(12px * var(--ts));
 }
 
 /* ------------------------------------------------------------------ specializations */
@@ -1708,7 +1749,7 @@ p.note,
 }
 .spec-help {
   margin: 0 0 6px;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
   color: var(--text-dim);
 }
 .spec-cards {
@@ -1751,26 +1792,26 @@ p.note,
 .spec-head small {
   display: block;
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--ts));
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--cyan);
 }
 .spec-head b {
   font-family: var(--font-head);
-  font-size: 16px;
+  font-size: calc(16px * var(--ts));
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 .spec-desc {
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--ts));
   color: var(--text-dim);
   line-height: 1.3;
 }
 .spec-stats {
   display: flex;
   flex-direction: column;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--ts));
 }
 .spec-stats .kv {
   padding: 2px 0;
@@ -1800,7 +1841,7 @@ p.note,
 .spec-summary h5 {
   margin: 8px 0 4px;
   font-family: var(--font-head);
-  font-size: 12px;
+  font-size: calc(12px * var(--ts));
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--cyan);
@@ -1815,11 +1856,11 @@ p.note,
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--gold);
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
 }
 .spec-row p {
   margin: 2px 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
 }
 
 /* ------------------------------------------------------------------ after-match report */
@@ -1838,7 +1879,7 @@ p.note,
 }
 .results-summary {
   grid-template-columns: 1fr;
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
 }
 .dmg-table {
   display: flex;
@@ -1857,7 +1898,7 @@ p.note,
 }
 .dmg-name {
   font-family: var(--font-head);
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1868,7 +1909,7 @@ p.note,
   overflow: hidden;
 }
 .dmg-name .chip {
-  font-size: 9px;
+  font-size: calc(9px * var(--ts));
   padding: 1px 5px;
 }
 .dmg-bar {
@@ -1888,7 +1929,7 @@ p.note,
 }
 .dmg-num small {
   display: block;
-  font-size: 11px;
+  font-size: calc(11px * var(--ts));
   color: var(--text-dim);
 }
 .leak-chart {
@@ -1915,7 +1956,7 @@ p.note,
   background: var(--danger);
 }
 .leak span {
-  font-size: 10px;
+  font-size: calc(10px * var(--ts));
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -2001,7 +2042,7 @@ p.note,
   display: flex;
   flex-wrap: wrap;
   gap: 4px 14px;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
   color: var(--text-dim);
   align-items: center;
 }
@@ -2089,7 +2130,7 @@ p.intel-boss {
   justify-content: center;
   font-family: var(--font-head);
   font-weight: 800;
-  font-size: 17px;
+  font-size: calc(17px * var(--ts));
   z-index: 1;
   text-shadow: 0 1px 3px #000;
 }
@@ -2098,7 +2139,7 @@ p.intel-boss {
   top: 2px;
   left: 4px;
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--ts));
   color: var(--text-dim);
   z-index: 1;
 }
@@ -2107,7 +2148,7 @@ p.intel-boss {
   right: 3px;
   bottom: 2px;
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--ts));
   font-weight: 800;
   color: var(--gold);
   z-index: 1;
@@ -2147,7 +2188,7 @@ p.intel-boss {
 }
 .hero-row-label {
   font-family: var(--font-head);
-  font-size: 12px;
+  font-size: calc(12px * var(--ts));
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-dim);
@@ -2174,7 +2215,7 @@ p.intel-boss {
 }
 .hero-pick span {
   font-family: var(--font-head);
-  font-size: 12px;
+  font-size: calc(12px * var(--ts));
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -2191,7 +2232,7 @@ p.intel-boss {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
 }
 .results-hero img.icon {
   width: 40px;
@@ -2219,7 +2260,7 @@ p.intel-boss {
 }
 .tip-card span {
   flex: 1;
-  font-size: 14px;
+  font-size: calc(14px * var(--ts));
 }
 @keyframes slidedown {
   from {
@@ -2280,7 +2321,7 @@ p.intel-boss {
 }
 .research-node p {
   margin: 2px 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
   color: var(--text-dim);
 }
 .research-node.done b {
@@ -2290,7 +2331,7 @@ p.intel-boss {
   display: flex;
   gap: 8px;
   align-items: center;
-  font-size: 12px;
+  font-size: calc(12px * var(--ts));
   color: var(--text-dim);
 }
 .rn-meta .pips {
@@ -2312,7 +2353,7 @@ p.intel-boss {
 .research-node .btn {
   min-height: 40px;
   padding: 4px 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
   white-space: nowrap;
 }
 /* ------------------------------------------------------------------ challenges & daily */
@@ -2333,7 +2374,7 @@ p.intel-boss {
   appearance: none;
   font: inherit;
   font-family: var(--font-head);
-  font-size: 12px;
+  font-size: calc(12px * var(--ts));
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text);
@@ -2377,7 +2418,7 @@ p.intel-boss {
   color: var(--cyan);
 }
 .daily-main h3 {
-  font-size: 24px;
+  font-size: calc(24px * var(--ts));
   margin: 2px 0 4px;
 }
 .daily-best {
@@ -2424,13 +2465,13 @@ p.medal-line {
 .ws-main .btn {
   min-height: 40px;
   padding: 4px 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
 }
 textarea.share-code {
   width: 100%;
   box-sizing: border-box;
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
   word-break: break-all;
   background: rgba(5, 8, 18, 0.9);
   color: var(--text);
@@ -2475,7 +2516,7 @@ p.good {
   align-items: center;
   gap: 8px;
   font: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
   color: var(--text);
   text-align: left;
   padding: 4px 6px;
@@ -2603,7 +2644,7 @@ p.good {
 .ws-side .row .btn {
   min-height: 40px;
   padding: 4px 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--ts));
 }
 .ws-side .seg .btn {
   min-height: 36px;
@@ -2617,4 +2658,30 @@ p.good {
   .ws-tools {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
+}
+
+/* ------------------------------------------------------------------ settings: keyboard */
+.keys-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 6px 14px;
+}
+.keys-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 4px 4px 12px;
+  background: var(--panel-flat);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.keys-row span {
+  font-size: calc(14px * var(--ts));
+}
+.btn.keycap {
+  min-width: 72px;
+  font-family: var(--font-head);
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }

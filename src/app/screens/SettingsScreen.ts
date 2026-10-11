@@ -5,6 +5,24 @@ import { h } from '../../ui/dom';
 import { pipSays, showModal } from '../../ui/modals';
 import type { App, Screen } from '../App';
 import { fullscreenAvailable, toggleFullscreen } from './TitleScreen';
+import { applyA11y, motionReduced, TEXT_SCALES } from '../a11y';
+import { bindable, HOTKEY_ACTIONS, keyLabel, rebind, resolveHotkeys, type HotkeyAction } from '../hotkeys';
+
+/** Translated name of a key action. */
+export function actionLabel(a: HotkeyAction): string {
+  if (a.startsWith('build')) return t('keys.build', { n: Number(a.slice(5)) });
+  if (a.startsWith('ability')) return t('keys.ability', { n: Number(a.slice(7)) });
+  return t(`keys.${a as 'pause'}`);
+}
+
+/** Only devices with a real pointer/keyboard get the key list (pure touch phones don't need it). */
+function hasKeyboard(): boolean {
+  try {
+    return matchMedia('(any-pointer: fine)').matches;
+  } catch {
+    return true;
+  }
+}
 
 /** `langOf` marks options written in another language (language names are shown in their own language). */
 function seg<T extends string | number>(options: [T, string][], value: T, onPick: (v: T) => void, langOf?: (v: T) => string | undefined): HTMLElement {
@@ -127,6 +145,57 @@ export class SettingsScreen implements Screen {
           },
         ),
       ),
+      h('h3.section', null, t('settings.section.access')),
+      h(
+        'div.setting.panel',
+        null,
+        h('label', null, t('settings.textSize')),
+        seg<number>(
+          TEXT_SCALES.map((v): [number, string] => [v, t('fmt.pct', { n: Math.round(v * 100) })]),
+          s.textScale,
+          (v) => {
+            s.textScale = v;
+            applyA11y(s);
+            save();
+          },
+        ),
+      ),
+      h(
+        'div.setting.panel',
+        null,
+        h('label', null, t('settings.contrast')),
+        seg<'on' | 'off'>(
+          [
+            ['on', t('settings.on')],
+            ['off', t('settings.off')],
+          ],
+          s.highContrast ? 'on' : 'off',
+          (v) => {
+            s.highContrast = v === 'on';
+            applyA11y(s);
+            save();
+          },
+        ),
+      ),
+      h(
+        'div.setting.panel',
+        null,
+        h('label', null, t('settings.motion')),
+        seg<'auto' | 'on' | 'off'>(
+          [
+            ['auto', t('settings.motion.auto', { state: motionReduced({ reducedMotion: 'auto' }) ? t('settings.on') : t('settings.off') })],
+            ['on', t('settings.on')],
+            ['off', t('settings.off')],
+          ],
+          s.reducedMotion,
+          (v) => {
+            s.reducedMotion = v;
+            applyA11y(s);
+            save();
+          },
+        ),
+      ),
+      h('p.note', null, t('settings.motion.help'), ' ', t('settings.flashNote')),
       h('h3.section', null, t('settings.section.gameplay')),
       h(
         'div.setting.panel',
@@ -146,6 +215,7 @@ export class SettingsScreen implements Screen {
         ),
       ),
       fullscreenAvailable() ? h('div.setting.panel', null, h('label', null, t('settings.fullscreen')), h('button.btn', { onClick: () => toggleFullscreen() }, t('settings.toggle'))) : null,
+      hasKeyboard() ? this.keysSection() : null,
       h('h3.section', null, t('settings.section.data')),
       h(
         'div.setting.panel',
@@ -161,6 +231,83 @@ export class SettingsScreen implements Screen {
       h('div.topbar', null, h('button.btn.round', { onClick: () => onBack(), 'aria-label': t('common.back') }, '←'), h('h2', null, t('settings.title'))),
       rows,
     );
+  }
+
+  /** Keyboard section: every action with its key; select one, press the new key. */
+  private keysSection(): HTMLElement {
+    const s = this.app.save.data.settings;
+    const list = h('div.keys-grid', { role: 'list' });
+    const status = h('p.note', { role: 'status' });
+    let listening: ((e: KeyboardEvent) => void) | null = null;
+    const stop = (): void => {
+      if (listening) removeEventListener('keydown', listening, true);
+      listening = null;
+    };
+    const render = (): void => {
+      const map = resolveHotkeys(s.hotkeys);
+      list.replaceChildren(
+        ...HOTKEY_ACTIONS.map((a) => {
+          const btn = h('button.btn.keycap', { 'aria-label': `${actionLabel(a)}: ${keyLabel(map[a])}` }, keyLabel(map[a]));
+          btn.addEventListener('click', () => {
+            stop();
+            btn.textContent = t('settings.keys.press');
+            btn.classList.add('on');
+            listening = (e: KeyboardEvent): void => {
+              e.preventDefault();
+              e.stopPropagation();
+              stop();
+              if (e.code === 'Escape') {
+                status.textContent = '';
+              } else if (!bindable(e.code)) {
+                status.textContent = t('settings.keys.bad');
+              } else {
+                const before = resolveHotkeys(s.hotkeys);
+                const other = HOTKEY_ACTIONS.find((x) => x !== a && before[x] === e.code);
+                s.hotkeys = rebind(s.hotkeys, a, e.code);
+                this.app.save.save();
+                status.textContent = other ? t('settings.keys.swapped', { action: actionLabel(other) }) : '';
+              }
+              render();
+            };
+            addEventListener('keydown', listening, true);
+          });
+          return h('div.keys-row', { role: 'listitem' }, h('span', null, actionLabel(a)), btn);
+        }),
+      );
+    };
+    render();
+    this.cleanupKeys = stop;
+    return h(
+      'div',
+      null,
+      h('h3.section', null, t('settings.section.controls')),
+      h('p.note', null, t('settings.keys.help')),
+      list,
+      status,
+      h(
+        'div.row',
+        null,
+        h(
+          'button.btn',
+          {
+            onClick: () => {
+              stop();
+              s.hotkeys = {};
+              this.app.save.save();
+              status.textContent = '';
+              render();
+            },
+          },
+          t('settings.keys.reset'),
+        ),
+      ),
+    );
+  }
+
+  private cleanupKeys: () => void = () => {};
+
+  exit(): void {
+    this.cleanupKeys();
   }
 
   private confirmReset(): void {

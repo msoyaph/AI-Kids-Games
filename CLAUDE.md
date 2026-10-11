@@ -13,7 +13,8 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
 - `npm run sim [-- w2m1 hard] [-- --casual]` — autoplay bot over maps × difficulties (vite-node).
 - `npm run perf` — `scripts/perf.mjs`: boot + `?stress=300` frame times on throttled profiles → `perf-results/`.
   Uses `channel: 'chromium'` for the REAL GPU; Playwright's default headless shell is SwiftShader (software GL).
-- `npm run check:dist` — file:// smoke check (no console errors / external requests).
+- `npm run check:dist` — smoke check of dist via file:// AND a tiny http server, in full Chromium (catches
+  browser-initiated requests like /favicon.ico — index.html has an inline data-URI icon for that reason).
 - `npm run audio:levels [-- --write]` — mixing pass (~2 min): Vite dev server + Chromium render every track /
   stinger / SFX offline, print peak + LUFS, `--write` regenerates `src/audio/mix.ts`. Re-run after audio changes.
 - Dev tools: `scripts/shot.mjs <url> <out.png> [w h setup.js waitMs --touch]` (screenshots; the in-app browser pane
@@ -21,7 +22,7 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   functions on the built game), `scripts/simdebug.ts` (per-wave bot trace), `scripts/simmap.ts` (ASCII of bot maze),
   `scripts/render-svg.mjs <dir>` (marketing SVG → PNG).
 - URL flags: `?map=<id>&diff=<d>[&endless]`, `?seed=N`, `?stress=N`, `?quality=low|medium|high|auto`,
-  `?lang=en|fil|pseudo`, test hooks `?screen=worlds|encyclopedia|badges|settings|research|daily|workshop`, `?brief=<mapId>`;
+  `?lang=en|fil|pseudo`, `?flashaudit=1[&storm=1]` (per-frame luminance probe, `src/app/flashProbe.ts`), test hooks `?screen=worlds|encyclopedia|badges|settings|research|daily|workshop`, `?brief=<mapId>`;
   DEV only: `?editor=1`, `?gallery=1`. Dev exposes `window.__vanex` ({stage, atlas, app}) and `window.__game`.
   All builds expose read-only `window.__vanexTest` (state + cellCenter) while a game screen is active.
 
@@ -147,6 +148,19 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   (by small controls) or untranslated (pseudo) text. Fixes it drove: bottom-right `.br-dock` (Build FAB + command
   bar flex together), wrapping toasts and build-card names, hero tip waits for the rotate hint, saves flush on
   `pagehide`/hidden (debounced saves were lost on quick close). New English keys need a `fil.ts` entry too.
+- Phase 12 done: accessibility. `src/app/a11y.ts` `applyA11y()` → `--ts` (text size 100/115/130 %, every CSS
+  `font-size` ≤ 24px is `calc(Npx * var(--ts))` — keep that for new rules), `.hc` high-contrast palette, `.rm`
+  reduced motion (`motionReduced()`: setting on/off, 'auto' = system; Playwright runs with reduce → `.rm`).
+  WorldView `ViewSettings.reducedMotion`: no shake/wobble/hit tint, dimmer bursts. Flash safety
+  (`src/render/flash.ts`): `FlashLimiter` (≤3 full bursts/s, extras dimmed via `burstAlpha()`), `pulse()` capped
+  at 2 Hz + `mixColor()` for telegraphs/beams (old 3.5 Hz wind-up and 5 Hz eclipse flicker gone), per-construct
+  hit flash ≥ 0.34 s apart, HUD stat flashes ≥ 0.7 s apart. Unit "audit" scans src/render for on/off toggles and
+  alpha/tint sines > 2 Hz; `tests/e2e/flash.spec.ts` measures real frames (full Chromium GPU) — WCAG flash
+  count per 4×3 screen block ≤ 3/s, incl. a meteor storm. Hotkeys `src/app/hotkeys.ts` (KeyboardEvent.code,
+  swap on conflict, only changes saved in `settings.hotkeys`, Esc/Space/Enter fixed); Settings → Keyboard
+  (hidden on pure-touch devices); HUD key hints follow bindings (`HudHost.keyFor`). Layout helpers shared in
+  `tests/e2e/layout.ts`; `a11y.spec.ts` = 130 % text + high contrast overflow sweep (en/fil, phones + desktop),
+  remap test, reduced-motion test.
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

@@ -385,7 +385,7 @@ class EndlessScreen implements Screen {
           { disabled: !ok, onClick: () => nav.briefing(m, 'endless'), 'aria-label': ok ? m.name : t('endless.locked', { name: m.name }) },
           img(mapThumbUrl(m), '', 'thumb'),
           h('span.mname', null, ok ? m.name : t('endless.winFirst')),
-          h('span', { style: 'font-size:13px;font-weight:800' }, best ? t('endless.best', { n: best }) : ok ? t('endless.noRecord') : ''),
+          h('span', { style: 'font-size:calc(13px * var(--ts));font-weight:800' }, best ? t('endless.best', { n: best }) : ok ? t('endless.noRecord') : ''),
         ),
       );
     }
@@ -393,7 +393,7 @@ class EndlessScreen implements Screen {
       'div.screen.menu',
       null,
       h('div.topbar', null, h('button.btn.round', { onClick: () => nav.title(), 'aria-label': t('common.back') }, '←'), h('h2', null, t('endless.title'))),
-      h('p', { style: 'margin:0 0 12px;font-size:16px' }, t('endless.intro')),
+      h('p', { style: 'margin:0 0 12px;font-size:calc(16px * var(--ts))' }, t('endless.intro')),
       grid,
     );
   }

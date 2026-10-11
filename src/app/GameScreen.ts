@@ -1,3 +1,5 @@
+import { motionReduced } from './a11y';
+import { actionsByCode, keyLabel, resolveHotkeys, type HotkeyAction } from './hotkeys';
 import { DIFFICULTIES, difficultyHp, starsFor, type Difficulty } from '../data/difficulty';
 import { ELEMENT_ORDER, ELEMENTS, counterOf } from '../data/elements';
 import type { MapDef } from '../data/maps/types';
@@ -124,7 +126,9 @@ export class GameScreen implements Screen, HudHost {
 
   enter(): void {
     const s = this.app.save.data.settings;
-    this.view = new WorldView(this.atlas, this.game, this.app.quality, { shake: s.shake, damageNumbers: s.damageNumbers }, this.app.bakeScale, this.app.stage.maxTextureSize);
+    this.keys = resolveHotkeys(s.hotkeys);
+    this.keyActions = actionsByCode(this.keys);
+    this.view = new WorldView(this.atlas, this.game, this.app.quality, { shake: s.shake, damageNumbers: s.damageNumbers, reducedMotion: motionReduced(s) }, this.app.bakeScale, this.app.stage.maxTextureSize);
     this.app.stage.root.addChild(this.view.world);
     this.hud = new Hud(this);
     this.el.append(this.hud.el);
@@ -837,71 +841,83 @@ export class GameScreen implements Screen, HudHost {
 
   // ============================================================== keyboard
 
+  /** Current key bindings (Settings → Controls), resolved once per game. */
+  private keys = resolveHotkeys(undefined);
+  private keyActions = actionsByCode(this.keys);
+
+  /** Label for an action's key ('' when unbound) — shown on HUD buttons. */
+  keyFor(action: HotkeyAction): string {
+    return this.keys[action] ? keyLabel(this.keys[action]) : '';
+  }
+
   private onKey(e: KeyboardEvent): void {
-    if (e.target instanceof HTMLInputElement) return;
-    const k = e.key.toLowerCase();
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const code = e.code;
+    // fixed keys: Escape = back/cancel, Space = pause, Enter = send wave
     if (this.modal) {
-      if (k === 'escape' || (k === ' ' && this.paused)) {
+      if (code === 'Escape' || (code === 'Space' && this.paused) || this.keyActions.get(code) === 'pause') {
         e.preventDefault();
         this.closeModal();
       }
       return;
     }
-    if (this.hud.specOpen && this.selected && (k === '1' || k === '2')) {
-      this.upgradeSelected(k === '1' ? 0 : 1);
+    if (code === 'Escape') {
+      if (this.armedAbility) this.armAbility(null);
+      else if (this.heroSelected) this.setHeroSelected(false);
+      else if (this.buildType) this.selectBuild(null);
+      else if (this.selected) this.selectTower(null);
+      else this.openPause();
       return;
     }
-    if (k >= '0' && k <= '9') {
-      const n = k === '0' ? 10 : Number(k);
-      const id = this.hud.hotkeyTower(n);
+    const action = code === 'Space' ? 'pause' : code === 'Enter' || code === 'NumpadEnter' ? 'sendWave' : this.keyActions.get(code);
+    if (!action) return;
+    // specialization chooser: the first two build keys pick a path
+    if (this.hud.specOpen && this.selected && (action === 'build1' || action === 'build2')) {
+      this.upgradeSelected(action === 'build1' ? 0 : 1);
+      return;
+    }
+    if (action.startsWith('build')) {
+      const id = this.hud.hotkeyTower(Number(action.slice(5)));
       if (id) this.selectBuild(this.buildType === id ? null : id);
       return;
     }
-    switch (k) {
-      case 'escape':
-        if (this.armedAbility) this.armAbility(null);
-        else if (this.heroSelected) this.setHeroSelected(false);
-        else if (this.buildType) this.selectBuild(null);
-        else if (this.selected) this.selectTower(null);
-        else this.openPause();
-        break;
-      case ' ':
-      case 'p':
+    switch (action) {
+      case 'pause':
         e.preventDefault();
         this.openPause();
         break;
-      case 'f':
+      case 'speed':
         this.cycleSpeed();
         break;
-      case 'n':
-      case 'enter':
+      case 'sendWave':
         this.sendWave();
         break;
-      case 'u':
+      case 'upgrade':
         this.upgradeSelected();
         break;
-      case 's':
+      case 'sell':
         this.sellSelected();
         break;
-      case 't':
+      case 'target':
         this.cycleTargeting();
         break;
-      case 'e':
+      case 'element':
         this.openElementPick();
         break;
-      case 'i':
+      case 'intel':
         this.openWaveIntel();
         break;
-      case 'h':
+      case 'hero':
         this.toggleHero();
         break;
-      case 'q':
+      case 'heroSpecial':
         this.useHeroSpecial();
         break;
-      case 'z':
-      case 'x':
-      case 'c': {
-        const id = this.game.abilities['zxc'.indexOf(k)];
+      case 'ability1':
+      case 'ability2':
+      case 'ability3': {
+        const id = this.game.abilities[Number(action.slice(7)) - 1];
         if (id) this.armAbility(this.armedAbility === id ? null : id);
         break;
       }

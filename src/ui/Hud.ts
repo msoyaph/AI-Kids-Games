@@ -1,3 +1,4 @@
+import type { HotkeyAction } from '../app/hotkeys';
 import { ELEMENT_ORDER, ELEMENTS, type ElementId } from '../data/elements';
 import { formatNumber, t, type MessageKey } from '../i18n';
 import { ABILITIES, type AbilityId } from '../data/heroes';
@@ -42,6 +43,8 @@ export interface HudHost {
   useHeroSpecial(): void;
   armAbility(id: AbilityId | null): void;
   layoutChanged(): void;
+  /** Label of the key bound to an action ('' if none). */
+  keyFor(action: HotkeyAction): string;
 }
 
 interface CardRef {
@@ -171,7 +174,7 @@ export class Hud {
     const g = this.host.game;
     if (!g.hero && g.abilities.length === 0) return;
     const bar = h('div.command-bar', { role: 'toolbar', 'aria-label': t('hero.stats') });
-    const keyHint = (k: string): HTMLElement | null => (this.host.touch ? null : h('span.key', null, k));
+    const keyHint = (a: HotkeyAction): HTMLElement | null => (this.host.touch || !this.host.keyFor(a) ? null : h('span.key', null, this.host.keyFor(a)));
     const cmd: NonNullable<Hud['cmd']> = { bar, abilities: [], targetChip: h('div.picked-chip.panel.target-chip') };
     if (g.hero) {
       const def = g.hero.def;
@@ -184,7 +187,7 @@ export class Hud {
         img(atlasIconUrl(this.host.atlas, heroTexName(def.id), 96), def.name),
         hp,
         lv,
-        keyHint('H'),
+        keyHint('hero'),
       );
       const cd = h('span.cd');
       const special = h(
@@ -192,7 +195,7 @@ export class Hud {
         { onClick: () => this.host.useHeroSpecial(), 'aria-label': `${def.special.name}: ${def.special.desc}`, title: `${def.special.name}: ${def.special.desc}` },
         img(commandIconUrl(def.special.kind, accent), ''),
         cd,
-        keyHint('Q'),
+        keyHint('heroSpecial'),
       );
       btn.style.setProperty('--accent', accent);
       special.style.setProperty('--accent', accent);
@@ -201,7 +204,7 @@ export class Hud {
     }
     if (g.abilities.length) {
       if (g.hero) bar.append(h('span.sep'));
-      const keys = ['Z', 'X', 'C'];
+      const keys: HotkeyAction[] = ['ability1', 'ability2', 'ability3'];
       g.abilities.forEach((id, i) => {
         const a = ABILITIES[id];
         const color = `#${a.color.toString(16).padStart(6, '0')}`;
@@ -211,7 +214,7 @@ export class Hud {
           { onClick: () => this.host.armAbility(this.host.armedAbility === id ? null : id), 'aria-label': `${a.name}: ${a.desc}`, title: `${a.name}: ${a.desc}` },
           img(commandIconUrl(id, color), ''),
           cd,
-          keyHint(keys[i] ?? ''),
+          keys[i] ? keyHint(keys[i]) : null,
         );
         btn.style.setProperty('--accent', color);
         cmd.abilities.push({ id, btn, cd });
@@ -387,7 +390,13 @@ export class Hud {
     this.bossBarrier.style.width = boss.barrier > 0 ? `${Math.min(100, (boss.barrier / boss.maxHp) * 100).toFixed(1)}%` : '0';
   }
 
+  private flashAt = new WeakMap<HTMLElement, number>();
+
+  /** Highlight a stat; spaced out so rapid changes never flicker (flash safety). */
   private flash(el: HTMLElement, cls: string): void {
+    const now = performance.now();
+    if (now - (this.flashAt.get(el) ?? -1e9) < 700) return;
+    this.flashAt.set(el, now);
     el.classList.remove(cls);
     void el.offsetWidth;
     el.classList.add(cls);
@@ -408,7 +417,7 @@ export class Hud {
       const el = h(
         'button.card',
         { 'aria-label': t('hud.cardLabel', { name: def.name, cost }), title: t('hud.cardTitle', { name: def.name, blurb: def.blurb }) },
-        key <= 10 && !this.host.touch ? h('span.key', null, String(key % 10)) : null,
+        key <= 10 && !this.host.touch && this.host.keyFor(`build${key}` as HotkeyAction) ? h('span.key', null, this.host.keyFor(`build${key}` as HotkeyAction)) : null,
         els,
         img(towerIconUrl(id, 1, 104), def.name, 'icon'),
         h('span.nm', null, def.name),

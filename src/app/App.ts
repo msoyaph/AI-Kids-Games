@@ -1,3 +1,4 @@
+import { applyA11y, watchSystemMotion } from './a11y';
 import { AudioEngine } from '../audio/Audio';
 import type { Atlas } from '../render/atlas/bake';
 import { FpsGovernor, QUALITY_PROFILES, renderResolution, type QualityProfile, type QualityTier } from '../render/quality';
@@ -44,6 +45,8 @@ export class App {
     this.quality = QUALITY_PROFILES[tier];
     this.governor = new FpsGovernor(tier);
     this.audio.setVolumes(save.data.settings.music, save.data.settings.sfx);
+    applyA11y(save.data.settings);
+    watchSystemMotion(() => applyA11y(save.data.settings));
     stage.app.ticker.add(() => this.frame());
     stage.onResize((w, h) => this.current?.resize?.(w, h));
     this.applyResolution();
@@ -95,6 +98,9 @@ export class App {
    * battery) while tolerating normal 60 Hz timing jitter, and measures real
    * elapsed time so skipped frames never slow the game down.
    */
+  /** Test hook (flash audit): runs right after each render, while the frame is still readable. */
+  afterRender: ((canvas: HTMLCanvasElement) => void) | null = null;
+
   private frame(): void {
     const now = performance.now();
     const dtMs = now - this.lastFrame;
@@ -103,6 +109,7 @@ export class App {
     const clamped = Math.min(dtMs, 250);
     this.current?.frame?.(clamped);
     this.stage.app.renderer.render(this.stage.app.stage);
+    this.afterRender?.(this.stage.app.canvas);
     if (this.save.data.settings.quality === 'auto' && this.current?.usesCanvas) {
       const change = this.governor.sample(clamped, clamped / 1000);
       if (change) this.applyQuality(this.governor.tier);

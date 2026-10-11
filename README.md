@@ -228,8 +228,14 @@ lowers resolution, then particles/glow, on slow devices. Low / Medium / High / A
 ## Kid-safety & accessibility
 
 No ads, purchases, accounts, links, tracking or network requests. Gentle, short text; creatures “poof” into
-sparkles and coins. Colour + shape for every element, 48 px+ touch targets, safe-area aware layout, reduced-motion
-support, separate music and sound volumes, optional screen shake and damage numbers.
+sparkles and coins. Colour + shape for every element, 48 px+ touch targets, safe-area aware layout, separate music
+and sound volumes, optional screen shake and damage numbers.
+
+Settings → Accessibility: **text size** (100 / 115 / 130 %), **high contrast**, and **reduced motion** (defaults to
+the device's setting; turns off shake, wobble and hit flashes and softens big bursts). Settings → Keyboard:
+**remappable keys** (conflicts swap; Esc, Space and Enter always work). **Flash safety** is always on: nothing on
+screen flashes more than 3 times a second (WCAG 2.3.1) — enforced in code and measured on real rendered frames by
+`tests/e2e/flash.spec.ts`.
 
 ## Languages
 

@@ -1,3 +1,4 @@
+import { FlashLimiter, MAX_PULSE_HZ, MIN_FLASH_GAP, mixColor, pulse } from './flash';
 import { BitmapText, Container, Graphics, Sprite, Texture, CanvasSource } from 'pixi.js';
 import { t as tr } from '../i18n';
 import type { Enemy } from '../sim/enemy';
@@ -32,6 +33,9 @@ interface EnemyView {
   mark: Sprite;
   stamp: number;
   numCooldown: number;
+  /** Hit-flash timing (flash safety: at most ~3 per second per construct). */
+  flashUntil: number;
+  nextFlash: number;
 }
 
 /** A telegraphed attack: danger ring that fills over the wind-up. */
@@ -75,6 +79,8 @@ interface ZoneView {
 export interface ViewSettings {
   shake: boolean;
   damageNumbers: boolean;
+  /** No shake, wobble or hit flashes; dimmer, fewer bursts. */
+  reducedMotion: boolean;
 }
 
 const WHITE = 0xffffff;
@@ -184,6 +190,8 @@ export class WorldView {
   private shakeRng = new Rng(7);
   private fxRng = new Rng(99);
   private castleHurt = 0;
+  /** Shared budget for big bright bursts (≤ 3 full-brightness flashes per second). */
+  readonly flashes = new FlashLimiter();
 
   constructor(
     private readonly atlas: Atlas,
@@ -388,7 +396,7 @@ export class WorldView {
     this.particlesAdd.update(gameDt > 0 ? gameDt : 0);
     this.text.update(dt);
     // shake
-    if (this.shake > 0 && this.settings.shake) {
+    if (this.shake > 0 && this.settings.shake && !this.settings.reducedMotion) {
       this.shake = Math.max(0, this.shake - dt * 18);
       this.camera.shakeX = (this.shakeRng.next() - 0.5) * this.shake * 2;
       this.camera.shakeY = (this.shakeRng.next() - 0.5) * this.shake * 2;
@@ -429,7 +437,7 @@ export class WorldView {
     barrier.visible = barFill.visible = resist.visible = mark.visible = false;
     this.L.hp.addChild(barFill, resist);
     this.L.mark.addChild(mark);
-    v = { body, shadow, hpBg, hpFill, shield, extra, barrier, barFill, resist, mark, stamp: 0, numCooldown: 0 };
+    v = { body, shadow, hpBg, hpFill, shield, extra, barrier, barFill, resist, mark, stamp: 0, numCooldown: 0, flashUntil: 0, nextFlash: 0 };
     this.enemyViews[slot] = v;
     return v;
   }
@@ -526,7 +534,7 @@ export class WorldView {
             lift = Math.sin(phase * 0.35) * 3;
             break;
         }
-      } else rot = Math.sin(t * 20) * 0.12;
+      } else if (!this.settings.reducedMotion) rot = Math.sin(t * 20) * 0.12;
       const pop = e.spawnAge < 0.25 ? easeOutBack(e.spawnAge / 0.25) : 1;
       const fly = e.flying ? 22 : 0;
       v.body.visible = true;
@@ -535,12 +543,18 @@ export class WorldView {
       v.body.rotation = rot;
       // status tint (colour + particles; shapes come from icons/particles too)
       let tint = WHITE;
-      if (e.hitFlash > 0) tint = 0xfff2f2;
+      // hit flash: spaced out per construct, off with reduced motion
+      if (e.hitFlash > 0 && t >= v.nextFlash && !this.settings.reducedMotion) {
+        v.flashUntil = t + 0.08;
+        v.nextFlash = t + MIN_FLASH_GAP;
+      }
+      if (t < v.flashUntil) tint = 0xfff2f2;
       else if (stunned) tint = 0xfff0a0;
       else if (e.slowTime > 0) tint = 0xa8dcff;
       else if (e.poisonTime > 0) tint = 0xc8ff9e;
       else if (e.burnTime > 0) tint = 0xffc49e;
-      if (e.windup > 0) tint = Math.sin(t * 22) > 0 ? 0xffb0bc : WHITE;
+      // wind-up telegraph: a smooth glow (never an on/off flicker)
+      if (e.windup > 0) tint = this.settings.reducedMotion ? 0xffb0bc : mixColor(WHITE, 0xffb0bc, pulse(t, MAX_PULSE_HZ));
       v.body.tint = tint;
       // cloaked: a faint shimmer unless a detector reveals it
       const hidden = e.cloaked && e.revealed <= 0;
@@ -724,8 +738,9 @@ export class WorldView {
           v.beam.visible = v.beamGlow.visible = true;
           v.beam.position.set(sx, sy);
           v.beam.rotation = Math.atan2(dy, dx);
-          v.beam.scale.set(len / 32, 0.55 + ramp * 0.9 + Math.sin(this.time * 30) * 0.08);
-          v.beam.tint = Math.floor(this.time * 10) % 2 ? 0xffe66b : 0xc49bff;
+          v.beam.scale.set(len / 32, 0.55 + ramp * 0.9 + (this.settings.reducedMotion ? 0 : Math.sin(this.time * 9) * 0.06));
+          // gold ↔ violet as a slow blend (was a 5 Hz flicker)
+          v.beam.tint = mixColor(0xc49bff, 0xffe66b, pulse(this.time + t.id * 0.37, 1.2));
           v.beamGlow.position.set(tx, ty);
           v.beamGlow.scale.set(0.45 + ramp * 0.5);
           v.beamGlow.tint = 0xfff3b0;
@@ -894,7 +909,7 @@ export class WorldView {
     this.castleGlow.tint = this.castleHurt > 0.05 ? 0xff7a9a : 0x8ff3ff;
     if (this.castleHurt > 0) {
       this.castleHurt = Math.max(0, this.castleHurt - dt * 2);
-      this.castle.x = this.game.grid.castleX * TILE + Math.sin(t * 60) * this.castleHurt * 4;
+      this.castle.x = this.game.grid.castleX * TILE + (this.settings.reducedMotion ? 0 : Math.sin(t * 60) * this.castleHurt * 4);
     }
     if (this.quality.ambient) {
       for (const a of this.ambientSprites) {
@@ -1242,13 +1257,14 @@ export class WorldView {
         const h = this.game.hero;
         const col = h ? h.def.accent : 0x3ee6ff;
         const r = e.value * TILE;
+        const bright = this.burstAlpha();
         for (let i = 0; i < 2; i++) {
           const o = this.particlesAdd.begin(this.ringTex, X, Y);
           o.life = 0.5 + i * 0.25;
           o.scale = 0.2;
           o.scaleEnd = (r * 2) / 120;
           o.tint = col;
-          o.alpha = 1;
+          o.alpha = bright;
           this.particlesAdd.emit(o);
         }
         if (e.kind === 'quake') this.addShake(6);
@@ -1288,6 +1304,7 @@ export class WorldView {
         this.addShake(9);
         this.shatter(X, Y, 0xff7a3d, 2.2);
         const r = e.value * TILE;
+        const bright = this.burstAlpha();
         for (const [life, tint] of [
           [0.5, 0xffb347],
           [0.8, 0xff7a3d],
@@ -1297,7 +1314,7 @@ export class WorldView {
           o.scale = 0.2;
           o.scaleEnd = (r * 2.2) / 120;
           o.tint = tint;
-          o.alpha = 1;
+          o.alpha = bright;
           this.particlesAdd.emit(o);
         }
         break;
@@ -1311,7 +1328,7 @@ export class WorldView {
           o.scale = 0.2;
           o.scaleEnd = (r * 2) / 120;
           o.tint = e.kind === 'stomp' ? 0xffb347 : 0x9ff3ff;
-          o.alpha = 1;
+          o.alpha = this.burstAlpha();
           this.particlesAdd.emit(o);
         }
         if (e.kind === 'stomp') this.addShake(6);
@@ -1327,7 +1344,7 @@ export class WorldView {
           o.scale = 0.3;
           o.scaleEnd = 2.6;
           o.tint = 0xff4d6a;
-          o.alpha = 1;
+          o.alpha = this.burstAlpha();
           this.particlesAdd.emit(o);
         }
         break;
@@ -1594,16 +1611,26 @@ export class WorldView {
     }
   }
 
+  /**
+   * Alpha for a big bright burst: full while the flash budget allows (≤ 3 per
+   * second), dimmed after that; always softer with reduced motion.
+   */
+  private burstAlpha(): number {
+    const a = this.flashes.allow(this.time) ? 1 : 0.35;
+    return this.settings.reducedMotion ? a * 0.6 : a;
+  }
+
   private shatter(x: number, y: number, color: number, size: number): void {
     const rng = this.fxRng;
-    const big = this.quality.particles > 200;
+    const calm = this.settings.reducedMotion;
+    const big = this.quality.particles > 200 && !calm;
     {
       const o = this.particlesAdd.begin(this.ringTex, x, y);
       o.life = 0.32;
       o.scale = 0.12 * size;
       o.scaleEnd = 0.55 * size;
       o.tint = color;
-      o.alpha = 0.9;
+      o.alpha = size >= 1.4 ? 0.9 * this.burstAlpha() : calm ? 0.55 : 0.9;
       this.particlesAdd.emit(o);
     }
     const n = Math.round((big ? 10 : 6) * size);
@@ -1684,7 +1711,7 @@ export class WorldView {
   }
 
   addShake(amount: number): void {
-    if (!this.settings.shake) return;
+    if (!this.settings.shake || this.settings.reducedMotion) return;
     this.shake = Math.min(14, this.shake + amount);
   }
 
