@@ -149,7 +149,16 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   AI: one drift decision per bend (linked bends work), extra lane room when drifting; drift kick is now a 0.15 s
   yaw-rate boost (`driftKickIn`) the AI accounts for (an instant yaw kick had halved AI drifting).
   Full assist also steers in the air (`airBlend`) → no falls for the simulated beginner.
-- [ ] Phase 7 — Frost Cup, Driving School, replay, Coin Rush
+- [x] Phase 7 — Frost Cup (`src/data/tracks/frost/*` built by worktree agents, one props file each in
+  `src/data/props/frost/`, cup `frost` unlocks with any Legend trophy; `ORIGINAL_CUPS` keep Champion/Mirror rules;
+  save v3 migration grants Frost to v2 saves holding a Legend trophy), Yuki (racer 13; staff racer pool pinned to
+  the first 12 racers), parts snowcat/spikes/snowflake/aurora/snowflakes + `learner` (Driving School reward),
+  6 Frost challenges (new goal filters `cup` on shortcut/staffGhosts, `iceDriftSeconds`), Coin Rush
+  (`src/sim/coinRush.ts` ArenaRules, `src/render/coinVisuals.ts`, battle setup "Game" choice, arena
+  `coin-carnival`), instant replay (`src/game/replay.ts` ReplayRecorder/ReplayPlayer, `src/ui/screens/replay.ts`,
+  "Replay 🎬" on every results screen; memory only), Driving School (`src/data/school.ts` lessons + medals,
+  `src/sim/school.ts` LessonSim, `src/sim/schoolRun.ts`, `src/render/schoolVisuals.ts`, `src/ui/screens/school.ts`,
+  courses `school-ring`/`school-park` in `SCHOOL_TRACKS`, save field `school`, main-menu prompt for new players).
 - [ ] Phase 8 — accessibility
 - [ ] Phase 9 — CI
 - [ ] Phase 10 — testing, balance, screenshot review, final report

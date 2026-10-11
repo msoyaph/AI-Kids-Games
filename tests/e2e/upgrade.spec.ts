@@ -240,3 +240,40 @@ test('Driving School: new-player prompt, lesson intro, a lesson to the medal scr
   await expect(page.locator('.lesson-card').first()).toBeVisible();
   expect(w.errors).toEqual([]);
 });
+
+test('Coin Rush in Coin Carnival: pick the rule, coins on the HUD, coin results', async ({ page }, info) => {
+  test.skip(!info.project.name.endsWith('desktop') && !info.project.name.endsWith('tablet'), 'one desktop + one tablet per engine');
+  const touch = info.project.name.endsWith('tablet');
+  const tap = async (text: string | RegExp): Promise<void> => {
+    const b = page.locator('.ui-root [data-nav]').filter({ hasText: text }).first();
+    await expect(b).toBeVisible();
+    if (touch) await b.tap();
+    else await b.click();
+  };
+  const w = watch(page);
+  await boot(page);
+  await page.evaluate(() => {
+    const a = window.__calex.app;
+    a.saves.create(1, 'Coins');
+    a.flow.mode = 'battle';
+    a.flow.players = 1;
+    a.flow.racers = ['calex'];
+    a.flow.battle.aiCount = 3;
+    a.screens.battleSetup();
+  });
+  await tap(/Coin Rush/);
+  await expect(page.locator('.title-h').filter({ hasText: 'Coin Rush' })).toBeVisible();
+  await tap(/Coin Carnival/);
+  await tap(/^2 min$/);
+  await tap(/Start!/);
+  await page.waitForFunction(() => window.__calex.app.session?.coinRush && window.__calex.app.session.world.phase === 'race', null, { timeout: 30_000 });
+  await expect(page.locator('.hud-battle.coins')).toBeVisible();
+  // the player's kart just sits there; the AI racers play the match at 8× speed
+  await page.evaluate(() => (window.__calex.app.loop.timeScale = 8));
+  await expect(page.locator('.ui-root [data-nav]').filter({ hasText: 'Rematch' }).first()).toBeVisible({ timeout: 90_000 });
+  await page.evaluate(() => (window.__calex.app.loop.timeScale = 1));
+  await expect(page.locator('.screen .table').first()).toContainText('🪙');
+  const total = await page.evaluate(() => window.__calex.app.session.world.karts.reduce((s: number, k: { raceStats: { coins: number } }) => s + k.raceStats.coins, 0));
+  expect(total).toBeGreaterThan(5);
+  expect(w.errors).toEqual([]);
+});

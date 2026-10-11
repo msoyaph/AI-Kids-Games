@@ -185,6 +185,7 @@ export const BALANCE = {
       'prism-parkway': { pace: 0.9575, seed: 118 },
       'rooftop-rally': { pace: 0.956, seed: 118 },
       'seashell-boardwalk': { pace: 0.9385, seed: 118 },
+      'shiver-lake': { pace: 0.864, seed: 169 },
       'sky-castle-soar': { pace: 0.9725, seed: 101 },
       'spooky-swirl-fair': { pace: 0.97, seed: 118 },
       'sunstone-ruins': { pace: 0.9785, seed: 101 },
