@@ -2,9 +2,10 @@
 import * as THREE from 'three';
 import { BUG_BY_ID, FISH_BY_ID, FOSSIL_BY_ID, item } from '../data/registry';
 import type { Game } from '../sim/game';
-import { footprint, slotTile, surfaceTop } from '../sim/housing';
-import { interiorRT, MUSEUM_WING_W, roomVillager, type Room } from '../sim/interior';
+import { footprint, homeData, slotTile, surfaceTop } from '../sim/housing';
+import { interiorRT, isHomeRoom, MUSEUM_WING_W, roomVillager, type Room } from '../sim/interior';
 import { agents } from '../sim/agents';
+import { isBirthday } from '../sim/happenings';
 import { NPC_BY_ID, VILLAGER_BY_ID } from '../data/villagers';
 import { approachAngle } from '../core/math';
 import { mixHex } from '../core/math';
@@ -115,12 +116,13 @@ export class InteriorView {
     const h = g.state.home;
     const room = rt.room;
     const kind = room.kind;
+    const hd = isHomeRoom(kind) ? homeData(g, kind) : h;
     const key =
-      kind === 'home'
-        ? `home|${h.level}|${h.wallpaper}|${h.flooring}|${h.furniture.map((f) => `${f.uid}:${f.x},${f.z},${f.rot},${f.on ?? ''}.${f.slot ?? ''}`).join(';')}|${(h.walls ?? []).map((w) => `${w.uid}:${w.wall},${w.pos}`).join(';')}|${[...this.hidden].join(',')}`
+      isHomeRoom(kind)
+        ? `${kind}|${h.level}|${hd.wallpaper}|${hd.flooring}|${hd.furniture.map((f) => `${f.uid}:${f.x},${f.z},${f.rot},${f.on ?? ''}.${f.slot ?? ''}`).join(';')}|${(hd.walls ?? []).map((w) => `${w.uid}:${w.wall},${w.pos}`).join(';')}|${[...this.hidden].join(',')}`
         : kind === 'museum'
           ? `museum|${g.state.museum.donated.length}`
-          : `${kind}|${g.state.clock.day}|${room.shelves.map((sh) => `${sh.stock?.id ?? ''}${sh.sold ? '!' : ''}`).join(',')}|${room.decor.map((d) => d.id).join(',')}`;
+          : `${kind}|${g.state.clock.day}|${roomVillager(kind) && isBirthday(g, roomVillager(kind)!) ? 'bday' : ''}|${room.shelves.map((sh) => `${sh.stock?.id ?? ''}${sh.sold ? '!' : ''}`).join(',')}|${room.decor.map((d) => d.id).join(',')}`;
     if (key === this.key) return;
     this.key = key;
     this.build(g, rt.room);
@@ -136,15 +138,16 @@ export class InteriorView {
     this.fish = [];
     this.people = [];
     const { w, d } = room;
-    const isHome = room.kind === 'home';
+    const isHome = isHomeRoom(room.kind);
+    const hd = homeData(g, room.kind);
     const isMuseum = room.kind === 'museum';
     const [fc, fc2, fp] = isHome
-      ? surface(g.state.home.flooring, [0xb9d99a, 0xa9cf8a, 'plain'])
+      ? surface(hd.flooring, [0xb9d99a, 0xa9cf8a, 'plain'])
       : room.floor
         ? surface(room.floor, [0xe9dcc6, 0xdccdb2, 'tiles'])
         : [0xe9dcc6, 0xdccdb2, 'tiles'];
     const [wc, wc2, wp] = isHome
-      ? surface(g.state.home.wallpaper, [0xf3e3c3, 0xe9d4ae, 'plain'])
+      ? surface(hd.wallpaper, [0xf3e3c3, 0xe9d4ae, 'plain'])
       : room.wall
         ? surface(room.wall, [0xf2ece0, 0xe4dccb, 'stripe'])
         : [0xf2ece0, 0xe4dccb, 'stripe'];
@@ -169,7 +172,7 @@ export class InteriorView {
     this.room.add(shell);
     // a window on the back wall (unless a wall decoration hangs there)
     const winX = w * 0.62;
-    const covered = isHome && (g.state.home.walls ?? []).some((wi) => wi.wall === 0 && winX + 0.6 > wi.pos && winX - 0.6 < wi.pos + (item(wi.id).furn?.w ?? 1));
+    const covered = isHome && (hd.walls ?? []).some((wi) => wi.wall === 0 && winX + 0.6 > wi.pos && winX - 0.6 < wi.pos + (item(wi.id).furn?.w ?? 1));
     if (!covered) {
       const win = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.05), glowMat);
       win.position.set(winX, 1.55, 0.02);
@@ -254,6 +257,15 @@ export class InteriorView {
     if (G.length) this.room.add(new THREE.Mesh(merge(G), glowMat));
     // a sign over the back wall
     const vid = roomVillager(room.kind);
+    if (vid && isBirthday(_g, vid)) {
+      // party balloons for the birthday
+      const B: THREE.BufferGeometry[] = [];
+      [0xff7f9f, 0xffd966, 0x7fb2ff, 0x9be38a].forEach((c, k) => {
+        const x = 1.2 + k * 1.6, z = 0.6 + (k % 2) * 0.3;
+        B.push(part(sphere(0.22, 8, 6), c, { pos: [x, 2.0 + (k % 2) * 0.2, z], scale: [1, 1.15, 1] }), part(cyl(0.006, 0.006, 1.2, 3), 0xffffff, { pos: [x, 1.3 + (k % 2) * 0.2, z] }));
+      });
+      this.room.add(new THREE.Mesh(merge(B), mat));
+    }
     const title = room.kind === 'shop' ? 'The Curled Leaf' : room.kind === 'hall' ? 'Lantern Hall' : vid ? `${VILLAGER_BY_ID[vid]?.name ?? ''}'s Home` : '';
     if (title) {
       const plaque = textPlaque(title, 2.6, 0.55);
@@ -329,6 +341,15 @@ export class InteriorView {
         P.push(part(box(f.w - 0.1, 0.25, f.d - 0.1), 0xd9ad7c, { pos: [f.x + f.w / 2, 0.13, f.z + f.d / 2] }));
         P.push(part(box(f.w - 0.2, 0.12, f.d * 0.65), 0x9fd3f0, { pos: [f.x + f.w / 2, 0.3, f.z + f.d * 0.6] }));
         P.push(part(box(0.7, 0.12, 0.35), 0xffffff, { pos: [f.x + f.w / 2, 0.32, f.z + 0.25] }));
+      } else if (f.id === 'stairsDown') {
+        // a railed opening with steps going down
+        P.push(part(box(0.9, 0.04, 0.9), 0x5b4a3e, { pos: [f.x + 0.5, 0.01, f.z + 0.5] }));
+        for (let k = 0; k < 3; k++) P.push(part(box(0.8, 0.05, 0.22), 0xc9945f, { pos: [f.x + 0.5, 0.02 - k * 0.04, f.z + 0.2 + k * 0.25] }));
+        for (const sx of [0.08, 0.92]) P.push(part(box(0.05, 0.6, 0.05), 0x9b6a4a, { pos: [f.x + sx, 0.3, f.z + 0.1] }), part(box(0.05, 0.05, 0.9), 0x9b6a4a, { pos: [f.x + sx, 0.6, f.z + 0.5] }));
+      } else if (f.id === 'stairsUp') {
+        // steps rising to a hatch in the ceiling
+        for (let k = 0; k < 6; k++) P.push(part(box(f.w - 0.2, 0.2, 0.9), 0xc9945f, { pos: [f.x + 0.3 + k * 0.28, 0.1 + k * 0.2, f.z + 0.45] }));
+        P.push(part(box(0.06, 1.4, 0.06), 0x9b6a4a, { pos: [f.x + 0.1, 0.7, f.z + 0.9] }));
       } else {
         P.push(part(box(0.8, 0.55, 0.6), 0xb98a5e, { pos: [f.x + 0.5, 0.28, f.z + 0.4] }), part(box(0.84, 0.1, 0.64), 0x9b6a4a, { pos: [f.x + 0.5, 0.58, f.z + 0.4] }), part(box(0.12, 0.12, 0.05), 0xf5d36b, { pos: [f.x + 0.5, 0.45, f.z + 0.72] }));
       }
@@ -336,8 +357,9 @@ export class InteriorView {
       m.castShadow = true;
       this.room.add(m);
     }
-    const byUid = new Map(g.state.home.furniture.map((f) => [f.uid, f]));
-    for (const pf of g.state.home.furniture) {
+    const hd = homeData(g, room.kind);
+    const byUid = new Map(hd.furniture.map((f) => [f.uid, f]));
+    for (const pf of hd.furniture) {
       if (this.hidden.has(pf.uid) || (pf.on !== undefined && this.hidden.has(pf.on))) continue;
       const obj = furnitureObject(pf.id);
       if (!obj) continue;
@@ -358,7 +380,7 @@ export class InteriorView {
       }
       this.room.add(obj);
     }
-    for (const wi of g.state.home.walls ?? []) {
+    for (const wi of hd.walls ?? []) {
       if (this.hidden.has(wi.uid)) continue;
       const obj = furnitureObject(wi.id);
       if (!obj) continue;

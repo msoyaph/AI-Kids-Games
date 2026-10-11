@@ -6,6 +6,9 @@ import { SEASONS, SEASON_DAYS, SEASON_ICON, SEASON_NAME } from './sim/seasons';
 import { hotItem } from './sim/economy';
 import { item } from './data/registry';
 import { CHALLENGES } from './data/challenges';
+import { CONTEST_DAYS, FESTIVALS } from './data/festivals';
+import { VILLAGER_BY_ID } from './data/villagers';
+import { birthdayToday, contestDay, festivalToday, happeningsOpen, meteorNight, merchantHere } from './sim/happenings';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLDivElement;
@@ -42,8 +45,18 @@ app.boardHooks.push(() => {
     `The Curled Leaf's hot item today: ${item(hotItem(g)).name} — sells for double!`,
     `Today's challenges: ${s.challenges.list.map((c) => CHALLENGES.find((d) => d.id === c.id)?.label).filter(Boolean).join(' · ')}`,
   ];
-  if (s.quests.done.includes('m4_tourney')) notes.push('Juno hosts a fishing tournament once a day — ask her for a rematch!');
-  if (s.quests.done.includes('m4_bugoff')) notes.push('Kip is always up for another bug-off.');
+  const fest = festivalToday(g);
+  if (fest) notes.push(`🎉 Today: the ${fest.name}! ${fest.goal}`);
+  else {
+    const next = FESTIVALS.find((f) => f.season === SEASONS[s.season.index] && f.day > s.season.day);
+    if (next && happeningsOpen(g)) notes.push(`🎉 Coming up: the ${next.name} on day ${next.day} of ${SEASON_NAME[next.season]}.`);
+  }
+  if (s.quests.done.includes('m4_tourney')) notes.push(`🎣 Juno's Fishing Tournament: day ${CONTEST_DAYS.tournament} of every season${contestDay(g, 'tournament') ? ' — that is today!' : '.'}`);
+  if (s.quests.done.includes('m4_bugoff')) notes.push(`🦋 Kip's Bug-Off: day ${CONTEST_DAYS.bugoff} of every season${contestDay(g, 'bugoff') ? ' — that is today!' : '.'}`);
+  if (merchantHere(g)) notes.push('🪶 Wanda the traveling merchant is on the beach by the dock today!');
+  const bday = birthdayToday(g);
+  if (bday) notes.push(`🎂 Happy birthday, ${VILLAGER_BY_ID[bday]?.name}! Visit with a gift.`);
+  if (meteorNight(g)) notes.push('🌠 Stargazers say: shooting stars tonight after 8 PM!');
   notes.push(`Tip: ${BOARD_TIPS[s.clock.day % BOARD_TIPS.length]}`);
   return notes;
 });

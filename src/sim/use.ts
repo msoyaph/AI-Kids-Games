@@ -10,6 +10,7 @@ import { dayRng } from '../core/rng';
 import { placeOutdoor } from './decor';
 import { applySurface } from './housing';
 import { wear } from './wardrobe';
+import { isHomeRoom } from './interior';
 
 export type UseVerb = 'Equip' | 'Plant' | 'Open' | 'Read' | 'Place' | 'Apply' | 'Wear' | null;
 
@@ -23,7 +24,7 @@ export function useVerb(g: Game, slot: number): UseVerb {
   if (s.id === 'bottle') return 'Read';
   if (def.cat === 'furniture') return 'Place';
   if (def.cat === 'clothing') return 'Wear';
-  if ((def.cat === 'wallpaper' || def.cat === 'flooring') && g.state.player.location === 'home') return 'Apply';
+  if ((def.cat === 'wallpaper' || def.cat === 'flooring') && isHomeRoom(g.state.player.location)) return 'Apply';
   return null;
 }
 
@@ -32,7 +33,7 @@ export function canUseNow(g: Game, slot: number): boolean {
   if (!s) return false;
   const v = useVerb(g, slot);
   if (v === 'Plant') return g.state.player.location === 'island' && canPlantAt(g, frontTile(g.world, g.state.player), s.id);
-  if (v === 'Place') return g.state.player.location === 'island' || g.state.player.location === 'home';
+  if (v === 'Place') return g.state.player.location === 'island' || isHomeRoom(g.state.player.location);
   return v !== null;
 }
 
@@ -67,7 +68,7 @@ export function useSlot(g: Game, slot: number): boolean {
     }
     case 'Place':
       if (g.state.player.location === 'island') return placeOutdoor(g, slot);
-      if (g.state.player.location === 'home') {
+      if (isHomeRoom(g.state.player.location)) {
         g.ui.open('editor');
         return true;
       }

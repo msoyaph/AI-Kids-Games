@@ -5,7 +5,7 @@ import { HALL_ROOM, SHOP_ROOM, VILLAGER_ROOMS, GIFT_SLOTS, type PlacedDecor } fr
 import { FISH, BUGS, FOSSILS, item } from '../data/registry';
 import { NPC_BY_ID, VILLAGER_BY_ID } from '../data/villagers';
 import type { Game, Interaction } from './game';
-import { doorTile, footprint, furnitureAt, homeFixtures, roomSize, sleep } from './housing';
+import { doorTile, footprint, furnitureAt, homeData, homeFixtures, roomSize, sleep } from './housing';
 import { facingVec, RUN_SPEED, WALK_SPEED } from './player';
 import { isDonated } from './museum';
 import { buy, dailyStock, type StockEntry } from './economy';
@@ -112,12 +112,12 @@ function addPerson(room: Room, id: string, x: number, z: number, facing = 0): vo
   fill(room, Math.floor(x), Math.floor(z), 1, 1);
 }
 
-export function buildHomeRoom(g: Game): Room {
-  const { w, d } = roomSize(g);
-  const room = emptyRoom('home', w, d, doorTile(g));
-  room.fixtures = homeFixtures(g).map((f) => ({ ...f }));
+export function buildHomeRoom(g: Game, kind: 'home' | 'basement' = 'home'): Room {
+  const { w, d } = roomSize(g, kind);
+  const room = emptyRoom(kind, w, d, doorTile(g, kind));
+  room.fixtures = homeFixtures(g, kind).map((f) => ({ ...f }));
   for (const f of room.fixtures) fill(room, f.x, f.z, f.w, f.d);
-  for (const pf of g.state.home.furniture) {
+  for (const pf of homeData(g, kind).furniture) {
     const def = item(pf.id).furn;
     if (!def || def.rug || pf.on !== undefined) continue;
     const fp = footprint(pf.id, pf.rot);
@@ -226,9 +226,26 @@ export function buildRoom(g: Game, kind: RoomKind): Room {
       return buildShopRoom(g);
     case 'hall':
       return buildHallRoom(g);
+    case 'basement':
+      return buildHomeRoom(g, 'basement');
     default:
       return buildHomeRoom(g);
   }
+}
+
+/** Your home or its basement (the rooms you can decorate). */
+export function isHomeRoom(kind: string): boolean {
+  return kind === 'home' || kind === 'basement';
+}
+
+/** Take the stairs between the home and the basement (the way back outside is kept). */
+export function changeFloor(g: Game, kind: 'home' | 'basement'): void {
+  const rt = interiorRT(g);
+  const ret = rt?.ret ?? { x: g.state.player.x, z: g.state.player.z, facing: 0 };
+  const st = homeFixtures(g, kind).find((f) => f.id === (kind === 'basement' ? 'stairsUp' : 'stairsDown'));
+  const x = st ? st.x + 0.5 + (kind === 'basement' ? 0.5 : -1) : 1.5;
+  const z = st ? (kind === 'basement' ? st.z + 1.6 : st.z + 0.5) : 1.5;
+  enterInterior(g, kind, { x, z, facing: kind === 'basement' ? 0 : -Math.PI / 2, ret });
 }
 
 /** Rebuild the current room after its contents changed (furniture, donations, purchases). */
@@ -245,7 +262,7 @@ export function shopOpen(g: Game): boolean {
 
 /** Is `id` at home right now (inside their house)? */
 export function villagerIsHome(g: Game, id: string): boolean {
-  return !!g.state.villagers[id]?.movedIn && !!homeOf(g, id) && activityOf(id, Math.floor(g.state.clock.minute / 60)) === 'home';
+  return !!g.state.villagers[id]?.movedIn && !!homeOf(g, id) && activityOf(id, Math.floor(g.state.clock.minute / 60), g) === 'home';
 }
 
 /** Can the player go into this room now? `resume` skips opening hours (loading a save made inside). */
@@ -267,6 +284,8 @@ export function canEnter(g: Game, kind: RoomKind, resume = false): { ok: boolean
       return { ok: true };
     case 'hall':
       return findStructure(g, 'hall') ? { ok: true } : { ok: false, reason: 'Lantern Hall is closed.' };
+    case 'basement':
+      return g.state.home.level >= 3 ? { ok: true } : { ok: false, reason: 'Your home has no basement yet.' };
   }
   return { ok: false };
 }
@@ -431,6 +450,10 @@ export function interiorResolve(g: Game): Interaction | null {
         return { label: 'Sleep', priority: 80, run: () => g.ui.confirm('Sleep until morning?', () => g.ui.open('sleep')) };
       case 'chest':
         return { label: 'Open storage', priority: 80, run: () => g.ui.open('storage') };
+      case 'stairsDown':
+        return { label: 'Go down to the basement', priority: 80, run: () => changeFloor(g, 'basement') };
+      case 'stairsUp':
+        return { label: 'Go upstairs', priority: 80, run: () => changeFloor(g, 'home') };
       case 'desk':
         if (room.kind === 'museum') return { label: 'Talk to Professor Vesper', priority: 80, run: () => g.ui.open('museumDesk') };
         return { label: 'Talk to Pemberly', priority: 80, run: () => g.ui.open('talk', 'pemberly') };
@@ -473,7 +496,7 @@ export function interiorResolve(g: Game): Interaction | null {
     const owner = roomVillager(room.kind) ?? '';
     return { label: `Look at the ${item(gift.id).name}`, priority: 40, run: () => g.toast(`${personName(owner)} kept the ${item(gift.id).name} you gave them!`, 'good', gift.id) };
   }
-  if (room.kind === 'home') {
+  if (isHomeRoom(room.kind)) {
     // dressing up: closets and mirrors open the wardrobe, the dye station opens dyeing
     const pf = furnitureAt(g, f.x, f.z);
     const model = pf ? item(pf.id).furn?.model : undefined;

@@ -83,6 +83,10 @@ function drawEars(ctx: Ctx, look: CharacterLook, F: string, A: string, O: string
 
 function drawMuzzle(ctx: Ctx, look: CharacterLook, F: string, A: string, O: string): void {
   switch (look.species) {
+    case 'heron':
+      tri(ctx, [[66, 104], [94, 104], [80, 152]], '#f5c45e', '#c9952f');
+      for (const s of [-1, 0, 1]) tri(ctx, [[80 + s * 10, 46], [80 + s * 10 + 8, 46], [80 + s * 22, 10]], A, O);
+      break;
     case 'platypus':
       ell(ctx, 80, 112, 30, 14, '#6b6070', '#4a4058');
       break;

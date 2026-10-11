@@ -24,7 +24,8 @@ export type Species =
   | 'armadillo'
   | 'lemur'
   | 'axolotl'
-  | 'opossum';
+  | 'opossum'
+  | 'heron';
 
 export interface CharSpec {
   species: Species;
@@ -643,6 +644,17 @@ const SNOUTS: Partial<Record<Species, HeadBuilder>> = {
     const bill = mesh(box(0.3, 0.07, 0.24), 0x6b6070);
     at(bill, 0, -0.1, 0.36);
     h.add(bill);
+  },
+  heron: (h, _s, a) => {
+    // a long friendly beak and a little feather crest
+    const beak = mesh(cone(0.07, 0.36, 6), 0xf5c45e);
+    at(beak, 0, -0.06, 0.46, Math.PI / 2, 0, 0);
+    h.add(beak);
+    for (const [x, r] of [[-0.05, 0.4], [0.05, -0.4], [0, 0]] as const) {
+      const f = mesh(cone(0.04, 0.24, 4), a);
+      at(f, x, 0.36, -0.08, -0.5, 0, r);
+      h.add(f);
+    }
   },
   quokka: (h, _s, a) => {
     const sn = mesh(sphere(0.11, 7, 5), a);

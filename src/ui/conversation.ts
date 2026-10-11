@@ -191,6 +191,7 @@ export async function talkToNpc(app: App, g: Game, id: string): Promise<void> {
       pemberly: "[happy]Oh, hello {player}! Lovely day for a wander, isn't it?",
       fennimore: '[happy]Customer! My favorite kind of visitor. What can I do for you?',
       vesper: '[surprised]Ah! A fellow enthusiast of the old and the wiggly!',
+      wanda: "[happy]Hello, hello! I'm Wanda. I fly from island to island with treasures!",
     };
     let prompt = P(greet[id] ?? '[neutral]Hello!');
     for (;;) {
@@ -198,6 +199,7 @@ export async function talkToNpc(app: App, g: Game, id: string): Promise<void> {
       if (id === 'pemberly') base.push({ label: 'Lantern Hall services', run: async () => (app.panels.hall?.(), 'end') });
       if (id === 'fennimore') base.push({ label: "Let's trade!", run: async () => (app.panels.shop?.(), 'end') });
       if (id === 'vesper') base.push({ label: 'Museum business', run: async () => (app.panels.museumDesk?.(), 'end') });
+      if (id === 'wanda') base.push({ label: "Let's see your treasures!", run: async () => (app.panels.merchant?.(), 'end') });
       const opts = [...app.talkHooks.options(id), ...base, { label: 'Just saying hi!', run: async (b: DialogueBox) => (await b.say([P('[happy]Always nice to see you. Take care out there!')]), 'end' as const) }];
       const i = await box.ask(prompt, opts.map((o) => o.label));
       const res = await opts[i]!.run(box);

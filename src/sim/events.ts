@@ -65,6 +65,7 @@ export interface GameEvents {
   finale: Record<string, never>;
   seasonChanged: { season: string };
   outfitChanged: { hash: string };
+  festivalDone: { id: string };
   itemDyed: { id: string };
   catalogNew: { id: string };
   recipeLearned: { id: string; source: string };

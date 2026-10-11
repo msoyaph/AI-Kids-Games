@@ -382,6 +382,23 @@ export const FURNITURE: FurnitureDef[] = [
     furn: { w: 1, d: 1, model: 'wallclock', color: 0x9b6a4a, color2: 0xf3dcb5, outdoor: false, decor: 2, layer: 'wall' },
   },
 
+  // ---- Long-term rewards ----
+  {
+    id: 'furn_glow_banner', name: 'Glow Banner', price: 1000, buy: 0, tags: ['shiny', 'fancy'],
+    desc: 'Earned by keeping the island at five lanterns for two whole weeks.',
+    furn: { w: 1, d: 1, model: 'flag', color: 0xffd27a, color2: 0x7cc7c2, outdoor: true, decor: 6 },
+  },
+  {
+    id: 'furn_golden_lantern_statue', name: 'Golden Lantern Statue', price: 5000, buy: 0, tags: ['fancy', 'shiny'],
+    desc: 'A gift from Professor Vesper for completing the whole museum.',
+    furn: { w: 1, d: 1, model: 'statue', color: 0xffd36b, color2: 0xfff1a8, outdoor: true, decor: 8 },
+  },
+  {
+    id: 'furn_stardust_lamp', name: 'Stardust Lamp', price: 900, buy: 0, tags: ['shiny', 'cozy'],
+    desc: 'A lamp filled with stardust. It glows like a sky full of shooting stars.',
+    furn: { w: 1, d: 1, model: 'lamp', color: 0xd8c8ff, color2: 0xfff1a8, outdoor: true, decor: 4, layer: 'small' },
+  },
+
   // ---- Dressing up ----
   {
     id: 'furn_dye_station', name: 'Dye Station', price: 200, buy: 0, tags: ['artsy', 'plain'],

@@ -10,6 +10,7 @@ import { museumPercent } from './museum';
 import { matchFilter } from './quests';
 import { islandStars } from './rating';
 import { hearts, residents } from './villagers';
+import { contestDay } from './happenings';
 
 // ---------------------------------------------------------------- daily challenges
 
@@ -177,12 +178,12 @@ export function contestOpen(g: Game, kind: ContestKind): boolean {
   const missionActive = !!g.state.quests.active[kind === 'tournament' ? 'm4_tourney' : 'm4_bugoff'];
   if (missionActive) return true;
   const unlocked = g.state.quests.done.includes(kind === 'tournament' ? 'm4_tourney' : 'm4_bugoff');
-  return unlocked && g.state.flags[`contest_${kind}_day`] !== g.state.clock.day;
+  // after the story mission, contests come back on their own day each season
+  return unlocked && contestDay(g, kind) && g.state.flags[`contest_${kind}_day`] !== g.state.clock.day;
 }
 
 export function installChallenges(g: Game): void {
-  // a contest can't survive a reload
-  g.state.events.active = null;
+  // a contest saved mid-way simply carries on (its time left is in the save)
   g.onDay(dailyChallenges);
   let t = 0;
   g.bus.onAny((type, payload) => {

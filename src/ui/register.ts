@@ -1,6 +1,6 @@
 // Maps panel names (opened from the simulation via game.ui.open) to UI panels.
 import type { App } from '../app';
-import type { Display } from '../sim/interior';
+import { isHomeRoom, type Display } from '../sim/interior';
 import { sleep } from '../sim/housing';
 import { boardPanel, CraftPanel, exhibitPanel, HallPanel, MuseumPanel, ShopPanel, StoragePanel } from './panels';
 import { EditorPanel } from './editor';
@@ -27,7 +27,7 @@ export function registerPanels(app: App): void {
   P.exhibit = (d) => app.ui.push(exhibitPanel(app.ui, d as Display));
   P.board = () => app.ui.push(boardPanel(app.ui, app.boardNotes()));
   P.editor = () => {
-    if (g().state.player.location !== 'home') return;
+    if (!isHomeRoom(g().state.player.location)) return;
     app.ui.closeAll();
     app.ui.push(new EditorPanel(app.ui, g(), app.view.interior, app.canvas));
   };

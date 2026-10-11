@@ -10,6 +10,7 @@ import { reachableComponents, residents, vstate } from './villagers';
 import { findStructure } from './structures';
 import { enterInterior } from './interior';
 import type { Structure } from './state';
+import { festivalHost, festivalNow, festivalToday, isBirthday, merchantHere } from './happenings';
 
 export interface Agent {
   id: string;
@@ -39,10 +40,18 @@ export function agents(g: Game): Map<string, Agent> {
   return m;
 }
 
-/** A villager's scheduled activity at `hour`. */
-export function activityOf(id: string, hour: number): Activity {
+/**
+ * A villager's activity at `hour`. With the game passed in, special days win: on their birthday
+ * they stay home for their party, and on festival days everyone gathers in the plaza.
+ */
+export function activityOf(id: string, hour: number, g?: Game): Activity {
   const def = VILLAGER_BY_ID[id];
   if (!def) return 'home';
+  if (g) {
+    if (isBirthday(g, id) && hour >= 10 && hour < 20) return 'home';
+    const f = festivalToday(g);
+    if (f && hour >= f.hours[0] && hour < f.hours[1]) return 'plaza';
+  }
   let act: Activity = 'home';
   for (const e of def.schedule) if (hour >= e.from) act = e.act;
   return act;
@@ -66,7 +75,38 @@ export function roomDoorOf(g: Game, kind: string): { x: number; z: number } | nu
 
 /** Pemberly waits in the plaza for the festival (all of its last mission, and festival night). */
 export function pemberlyOutdoors(g: Game): boolean {
-  return !!g.state.quests.active.m5_finale || g.state.flags.finaleDay === g.state.clock.day;
+  if (g.state.quests.active.m5_finale || g.state.flags.finaleDay === g.state.clock.day) return true;
+  const f = festivalNow(g);
+  return !!f && festivalHost(g, f) === 'pemberly';
+}
+
+/** Where a festival host stands (a fixed spot by the Great Lantern, easy to find). */
+export function festivalSpot(g: Game): { x: number; z: number } {
+  const pl = g.world.gen.lots.plaza;
+  return { x: pl.x + pl.w / 2 - 1.3, z: pl.z + pl.d / 2 + 1.1 };
+}
+
+/** Wanda sets up on the beach by the dock (first open sand tile found, cached). */
+export function merchantSpot(g: Game): { x: number; z: number } {
+  const cached = g.runtime.wandaSpot as { x: number; z: number } | undefined;
+  if (cached) return cached;
+  const w = g.world;
+  const d = w.gen.lots.dock;
+  let best = { x: d.x + 0.5, z: d.z - 1.5 };
+  let bestD = 1e9;
+  for (let z = d.z - 8; z <= d.z + 2; z++)
+    for (let x = d.x - 8; x <= d.x + d.w + 8; x++) {
+      if (!w.inb(x, z)) continue;
+      const i = w.idx(x, z);
+      if (w.ground(i) !== Ground.Sand || !w.standable(i) || w.obj(i) || w.structure(i)) continue;
+      const dist = Math.hypot(x - (d.x - 2), z - (d.z - 1));
+      if (dist < bestD) {
+        bestD = dist;
+        best = { x: x + 0.5, z: z + 0.5 };
+      }
+    }
+  g.runtime.wandaSpot = best;
+  return best;
 }
 
 /** Which room someone is inside right now (null = outdoors / not on the island). */
@@ -78,7 +118,7 @@ export function personRoom(g: Game, id: string): string | null {
   const a = agents(g).get(id);
   // walking home still counts as outdoors until they're through the door
   if (a && a.visible) return null;
-  return activityOf(id, Math.floor(g.state.clock.minute / 60)) === 'home' ? `villager:${id}` : null;
+  return activityOf(id, Math.floor(g.state.clock.minute / 60), g) === 'home' ? `villager:${id}` : null;
 }
 
 /** NPC post positions. */
@@ -89,7 +129,15 @@ function npcPost(g: Game, id: string): { x: number; z: number; facing: number; v
   if (id === 'pemberly') {
     if (!pemberlyOutdoors(g)) return null;
     const pl = lots.plaza;
+    if (!g.state.quests.active.m5_finale && g.state.flags.finaleDay !== g.state.clock.day) {
+      const spot = festivalSpot(g);
+      return { ...spot, facing: 0, visible: true };
+    }
     return { x: pl.x + pl.w / 2 + 1.3, z: pl.z + pl.d / 2 + 1.1, facing: 0, visible: true };
+  }
+  if (id === 'wanda') {
+    if (!merchantHere(g)) return null;
+    return { ...merchantSpot(g), facing: 0, visible: true };
   }
   // Fennimore minds his cart outdoors; once the shop is built he works behind its counter
   if (id === 'fennimore') {
@@ -236,7 +284,19 @@ export function updateAgents(g: Game, dt: number): void {
       a.facing = approachAngle(a.facing, Math.atan2(p.x - a.x, p.z - a.z), dt * 8);
       continue;
     }
-    const act = activityOf(a.id, hour);
+    // the festival host waits by the Great Lantern
+    const fest = festivalNow(g);
+    if (fest && festivalHost(g, fest) === a.id) {
+      const spot = festivalSpot(g);
+      a.x = spot.x;
+      a.z = spot.z;
+      a.path = [];
+      a.visible = true;
+      a.speed = 0;
+      a.facing = approachAngle(a.facing, 0, dt * 4);
+      continue;
+    }
+    const act = activityOf(a.id, hour, g);
     if (act !== a.activity) {
       a.activity = act;
       a.path = [];
@@ -372,12 +432,12 @@ export function homeResolver(g: Game, ctx: InteractCtx): Interaction | null {
     run: () => {
       g.emit('sfx', { name: 'knock' });
       const a = agents(g).get(id);
-      if (a && !a.visible && activityOf(id, Math.floor(g.state.clock.minute / 60)) === 'home') {
+      if (a && !a.visible && activityOf(id, Math.floor(g.state.clock.minute / 60), g) === 'home') {
         a.path = [];
         g.emit('knocked', { npc: id });
         enterInterior(g, `villager:${id}`);
       } else {
-        const act = activityOf(id, Math.floor(g.state.clock.minute / 60));
+        const act = activityOf(id, Math.floor(g.state.clock.minute / 60), g);
         g.toast(`${name} isn't home right now.${AWAY[act] ? ` Maybe ${AWAY[act]}?` : ''}`);
       }
     },

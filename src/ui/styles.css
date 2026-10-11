@@ -318,3 +318,10 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6
 @media (max-width: 720px) { .wd-body { flex-direction: column; } .wd-left { width: auto; flex-direction: row; flex-wrap: wrap; } .wd-portrait { width: 110px; height: 110px; } }
 .slot-portrait { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(#e8f6ff, #fff6e6); border: 2px solid var(--line); }
 .phone-me { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(#e8f6ff, #fff6e6); border: 2px solid var(--line); margin-right: 6px; }
+
+/* ---- calendar ---- */
+.cal-head { font-weight: 900; font-size: 18px; display: flex; gap: 8px; align-items: center; }
+.cal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
+.cal-day { border: 2px solid var(--line); border-radius: 14px; background: #fff; padding: 6px 8px; min-height: 64px; display: flex; flex-direction: column; gap: 2px; }
+.cal-day.today { border-color: var(--teal); background: #eafaf6; }
+.cal-day.past { opacity: 0.55; }

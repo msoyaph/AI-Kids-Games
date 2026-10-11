@@ -179,16 +179,34 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
     bags, pattern bits); `playerPortraitURL` (ui/portraits.ts) on save cards (`SaveMeta.worn`), the Glowpad
     header and the closet. `GameView.rebuildPlayer` runs on `outfitChanged` (removes the old rig from any scene).
 
+- Phase 6 done: repeating events + long-term goals (`src/data/festivals.ts`, `src/sim/happenings.ts`).
+  All optional and only from Chapter 3 on (`happeningsOpen`); nothing here is needed for the story.
+  - Festivals on day 5 of each season (`festivalToday`/`festivalNow`, host or Pemberly if the host hasn't moved in):
+    Flower Fair (3 flower colors → Rusk), Star Night (5 `falling_star` near the plaza → Marlowe), Harvest Feast
+    (3 fruit + 2 fish → Tansy), Lantern Skate (frozen pond: `world.frozenPond` makes pond tiles walkable; 5
+    `skateRings`). Progress in `events.festival`; exclusive clothes + Lumens. Villagers gather in the plaza
+    (`activityOf(id, hour, g)` overrides), the host stands at `festivalSpot`. Talk option via `ui/events.ts`.
+  - Contests repeat on `CONTEST_DAYS` (tournament day 3, bug-off day 6) after their missions and resume after a
+    reload (no reset in `installChallenges`; autosave every 15 s while one runs).
+  - Wanda the heron merchant (new `heron` species): every 6 days from day 9 by the dock (`merchantSpot`), rare
+    furniture + an out-of-season seed + a style piece (`merchantStock`, `buyFromMerchant`, `events.merchant`).
+  - Meteor nights (`meteorNight`, ~1 in 8 clear nights) → streaks in render/events.ts, stardust on the beach next
+    morning (teaches `r_furn_stardust_lamp`). Birthdays (`BIRTHDAYS`, never on days 3/5/6): they stay home 10–20,
+    balloons in their room, gifts count double. The player is never asked for personal info.
+  - Glow streak (`flags.glowStreak`, rewards at 3/7/14 days of 5 lanterns), full museum → Golden Lantern Statue.
+  - Basement (home level 3, after the story, 80,000 loan): `homeData(g, kind)` picks the active floor for every
+    housing function; `stairsDown`/`stairsUp` fixtures and `changeFloor` (keeps the way outside). Location 'basement'.
+  - Glowpad Calendar app; notice board lists festivals, contest days, Wanda, birthdays and meteor nights.
+
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
-(188 unit tests incl. full new-game → festival playthroughs, one per season; 2 e2e tests.)
+(202 unit tests incl. full new-game → festival playthroughs, one per season; 2 e2e tests.)
 
 ## Known issues / limitations
 - Pacing is a model estimate (scripts/pacing.ts), not measured with real players.
 - Off macOS, headless e2e falls back to SwiftShader (very slow but functional).
 - `npm audit` flags `braces` via vite-plugin-singlefile → micromatch (dev-only build dependency).
 - Audio starts after the first user gesture (browser autoplay policy).
-- Reloading mid-contest cancels the contest.
 
 ## Story / quest notes
 - Missions auto-start when `requires` are done and `minDay` reached, unless `startTalk` (then the giver

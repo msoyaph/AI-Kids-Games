@@ -274,6 +274,7 @@ export const NPCS: NpcDef[] = [
   { id: 'pemberly', name: 'Pemberly', title: 'Lantern Hall', look: { species: 'capybara', fur: 0xb98a5e, accent: 0xe8c9a0, outfit: 0x7cc7c2, eyes: 2, blush: true }, voice: 0.95 },
   { id: 'fennimore', name: 'Fennimore', title: 'Shopkeeper', look: { species: 'pangolin', fur: 0xc9a27a, accent: 0xf2d6be, outfit: 0xf28f7c, eyes: 0, blush: false }, voice: 1.1 },
   { id: 'vesper', name: 'Professor Vesper', title: 'Curator', look: { species: 'bat', fur: 0x8a7a9a, accent: 0xf3d6c8, outfit: 0xb9a6e0, eyes: 1, blush: false }, voice: 1.05 },
+  { id: 'wanda', name: 'Wanda', title: 'Traveling Merchant', look: { species: 'heron', fur: 0xe8eef4, accent: 0x9fb4c8, outfit: 0x7cc7c2, eyes: 2, blush: true }, voice: 1.2 },
 ];
 
 export const VILLAGER_BY_ID: Record<string, VillagerDef> = Object.fromEntries(VILLAGERS.map((v) => [v.id, v]));

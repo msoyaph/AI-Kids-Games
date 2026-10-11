@@ -13,6 +13,7 @@ import {
   canPlaceWall,
   footprint,
   furnitureAt,
+  homeData,
   homeSnapshot,
   isSmall,
   itemOnSlot,
@@ -414,7 +415,7 @@ export class EditorPanel implements Panel {
       v.cursor.position.set(this.wall === 0 ? mid : this.wall === 1 ? 0.06 : room.w - 0.06, 1.0, this.wall === 0 ? 0.06 : mid);
       v.cursor.scale.y = 28;
     } else if (t.kind === 'surface' && held) {
-      const parent = g.state.home.furniture.find((f) => f.uid === t.parent)!;
+      const parent = homeData(g).furniture.find((f) => f.uid === t.parent)!;
       const tile = slotTile(parent, t.slot);
       v.cursor.scale.set(1, 1, 1);
       v.cursor.position.set(tile.x + 0.5, surfaceTop(parent.id)!.y, tile.z + 0.5);
@@ -440,7 +441,7 @@ export class EditorPanel implements Panel {
     if (held) {
       if (t.kind === 'wall') this.view.placeOnWall(v.preview, room, this.wall, this.wpos, width);
       else if (t.kind === 'surface') {
-        const parent = g.state.home.furniture.find((f) => f.uid === t.parent)!;
+        const parent = homeData(g).furniture.find((f) => f.uid === t.parent)!;
         const tile = slotTile(parent, t.slot);
         const top = surfaceTop(parent.id)!;
         const th = -parent.rot * (Math.PI / 2);

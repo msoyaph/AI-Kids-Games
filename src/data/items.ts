@@ -126,6 +126,12 @@ export const SEED_ITEMS: ItemDef[] = FLOWER_SPECIES.flatMap((sp, si) =>
   })),
 );
 
+/** Event finds: festival stars and meteor stardust. */
+export const EVENT_ITEMS: ItemDef[] = [
+  { id: 'falling_star', name: 'Falling Star', cat: 'misc', price: 20, stack: 10, desc: 'A tiny warm star that fell during Star Night. Bring it to the festival host!', icon: { s: 'gem', c: 0xffe27a, c2: 0xfff6d0 }, tags: ['shiny', 'cute'] },
+  { id: 'stardust', name: 'Stardust', cat: 'material', price: 300, stack: 30, desc: 'Sparkly dust left by shooting stars. It glows a little in the dark.', icon: { s: 'gem', c: 0xd8c8ff, c2: 0xfff1a8 }, tags: ['shiny', 'science'] },
+];
+
 /** Seasonal treasures: forage that only appears in its season (and teaches that season's recipes). */
 export const SEASONAL_ITEMS: ItemDef[] = [
   { id: 'blossom_petals', name: 'Blossom Petals', cat: 'material', price: 40, stack: 30, desc: 'Soft pink petals from the spring trees.', icon: { s: 'flower', c: 0xffc2d4, c2: 0xf28fae }, tags: ['nature', 'cute'], seasons: ['spring'] },

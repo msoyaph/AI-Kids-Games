@@ -20,6 +20,7 @@ import { TitleScreen } from './ui/screens/title';
 import { registerPanels } from './ui/register';
 import { sharedUniforms } from './render/curve';
 import { installStory, pumpInbox, QuestTracker } from './ui/story';
+import { installEventsUI } from './ui/events';
 import { questRT } from './sim/quests';
 import { Phone } from './ui/phone';
 import { settingsBody, settingsPanel } from './ui/settings';
@@ -95,6 +96,7 @@ export class App {
       if (def.cat === 'shell') return { shape: 'shell', color: def.icon.c };
       if (def.cat === 'fruit') return { shape: 'fruit', color: def.icon.c };
       if (id === 'bottle') return { shape: 'bottle', color: 0x9fd9cf };
+      if (id === 'falling_star' || id === 'stardust') return { shape: 'stone', color: id === 'stardust' ? 0xd8c8ff : 0xffe27a };
       if (def.cat === 'material') return { shape: 'stone', color: def.icon.c };
       return { shape: 'bundle', color: def.icon.c };
     });
@@ -118,6 +120,7 @@ export class App {
     window.addEventListener('touchstart', unlock);
     registerPanels(this);
     installStory(this);
+    installEventsUI(this);
     this.panels.phone = (start) => this.game && this.ui.push(new Phone(this.ui, this, start as string | undefined));
     this.panels.settings = () => this.ui.push(settingsPanel(this));
     this.panels.settingsInline = (body) => settingsBody(this, body as HTMLElement);
@@ -516,7 +519,7 @@ export class App {
       g.update(dt, free ? { move: { x: f.moveX, z: f.moveZ, run: f.run }, actionHeld: f.actionHeld } : null);
       this.playtest?.tick(dt, this.ui.topName);
       this.autosaveT += dt;
-      if (this.autosaveT > AUTOSAVE_SEC) {
+      if (this.autosaveT > (g.state.events.active ? 15 : AUTOSAVE_SEC)) {
         this.autosaveT = 0;
         this.saveNow(true);
       }

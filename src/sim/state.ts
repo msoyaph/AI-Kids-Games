@@ -104,7 +104,7 @@ export interface InvSlot {
 }
 
 /** Where the player is: the island, or inside a room ('home', 'museum', 'shop', 'hall', 'villager:<id>'). */
-export type Location = 'island' | 'home' | 'museum' | 'shop' | 'hall' | `villager:${string}`;
+export type Location = 'island' | 'home' | 'basement' | 'museum' | 'shop' | 'hall' | `villager:${string}`;
 
 /** Position inside a room (saved so a save made indoors resumes indoors). */
 export interface IndoorPos {
@@ -152,6 +152,14 @@ export interface WallItem {
   pos: number;
 }
 
+/** One decoratable floor of your home. */
+export interface HomeRoomData {
+  furniture: PlacedFurniture[];
+  walls: WallItem[];
+  wallpaper: string;
+  flooring: string;
+}
+
 export interface HomeState {
   /** -1 = no home yet, 0 tent, 1 small house, 2 big house */
   level: number;
@@ -165,6 +173,8 @@ export interface HomeState {
   wallpaper: string;
   flooring: string;
   storage: InvSlot[];
+  /** level 3 adds a basement with its own furniture, walls and floor */
+  basement?: HomeRoomData;
 }
 
 export type WeatherT = 'sunny' | 'cloudy' | 'rain' | 'rainbow';
@@ -246,7 +256,15 @@ export interface GameState {
   challenges: { day: number; list: ChallengeProgress[]; completedTotal: number };
   achievements: Record<string, number>;
   stats: Record<string, number>;
-  events: { best: Record<string, number>; medals: Record<string, number>; active: TimedEventState | null };
+  events: {
+    best: Record<string, number>;
+    medals: Record<string, number>;
+    active: TimedEventState | null;
+    /** today's festival progress */
+    festival?: { id: 'flowerFair' | 'starNight' | 'harvestFeast' | 'lanternSkate'; day: number; progress: number; got: string[]; done: boolean };
+    /** Wanda's sold-out items today */
+    merchant?: { day: number; sold: string[] };
+  };
   shop: { day: number; sold: string[] };
   flags: Record<string, number>;
   tips: Record<string, number>;

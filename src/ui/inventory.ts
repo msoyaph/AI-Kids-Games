@@ -9,6 +9,7 @@ import { canUseNow, useSlot, useVerb } from '../sim/use';
 import { isWaterGround } from '../world/types';
 import { btn, clear, h, type Panel, type UIManager } from './dom';
 import { iconImg } from './icons';
+import { isHomeRoom } from '../sim/interior';
 
 export interface PickerOpts {
   title: string;
@@ -161,7 +162,7 @@ export class InventoryPanel implements Panel {
         this.render();
       }, 'small'),
     );
-    if (g.state.player.location === 'home' && !def.key)
+    if (isHomeRoom(g.state.player.location) && !def.key)
       actions.append(
         btn('Store', () => {
           this.menuFor = -1;

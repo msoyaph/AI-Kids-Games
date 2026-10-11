@@ -16,6 +16,7 @@ import { confirmPlacement, placementRT, updatePlacement } from './placement';
 import { installQuests, tryStart } from './quests';
 import { stepHints } from './hints';
 import { dailySeason, installSeasons, seasonalSpawns } from './seasons';
+import { installHappenings } from './happenings';
 import { dailyChallenges, installChallenges } from './challenges';
 import { tileOf } from './player';
 import { Game } from './game';
@@ -54,6 +55,7 @@ export function installSystems(g: Game): void {
     return true;
   });
   installSeasons(g);
+  installHappenings(g);
   installQuests(g);
   installChallenges(g);
   g.onUpdate(stepHints);

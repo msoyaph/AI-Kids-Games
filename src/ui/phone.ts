@@ -56,7 +56,7 @@ export class Phone implements Panel {
     this.title.textContent = 'Glowpad';
     clear(this.body);
     const grid = h('div', { class: 'phone-grid' });
-    const order = ['quests', 'map', 'friends', 'glow', 'catalog', 'journal', 'challenges', 'settings'];
+    const order = ['quests', 'map', 'calendar', 'friends', 'glow', 'catalog', 'journal', 'challenges', 'settings'];
     const apps = [...PHONE_APPS].sort((a, b) => (order.indexOf(a.id) + 99) % 99 - (order.indexOf(b.id) + 99) % 99);
     for (const a of apps) {
       const b = h('button', { class: 'phone-app', 'data-nav': '' }, h('div', { class: 'pa-icon', style: `background:${a.color}` }, a.icon), h('div', { class: 'pa-name' }, a.name));
@@ -155,6 +155,8 @@ registerPhoneApp({
     ];
     for (const [n, v, tip] of rows) body.append(h('div', { class: 'glow-row' }, h('b', null, n), h('span', { class: 'muted tiny' }, tip), h('span', { class: `pts ${v < 0 ? 'neg' : ''}` }, v >= 0 ? `+${v}` : String(v))));
     body.append(h('div', { class: 'tiny muted' }, 'Lantern steps: 20 / 40 / 60 / 80 points.'));
+    const streak = g.state.flags.glowStreak ?? 0;
+    body.append(h('div', { class: 'glow-row' }, h('b', null, '✨ Glow streak'), h('span', { class: 'muted tiny' }, 'Days in a row with 5 lanterns. Rewards at 3, 7 and 14 days!'), h('span', { class: 'pts' }, `${streak}`)));
   },
 });
 

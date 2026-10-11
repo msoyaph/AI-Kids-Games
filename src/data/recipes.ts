@@ -68,6 +68,9 @@ const BASE_RECIPES: RecipeDef[] = [
   { id: 'r_furn_snowpal', result: 'furn_snowpal', ingredients: [{ id: 'snow_crystal', qty: 6 }, { id: 'branch', qty: 2 }], unlock: 'season', season: 'winter' },
   { id: 'r_furn_snowberry_wreath', result: 'furn_snowberry_wreath', ingredients: [{ id: 'snowberry', qty: 3 }, { id: 'fiber', qty: 6 }], unlock: 'season', season: 'winter' },
 
+  // ---- Event (learned when you first find stardust) ----
+  { id: 'r_furn_stardust_lamp', result: 'furn_stardust_lamp', ingredients: [{ id: 'stardust', qty: 2 }, { id: 'clay', qty: 2 }, { id: 'iron', qty: 1 }], unlock: 'card' },
+
   // ---- Furniture: Message-bottle recipe cards ----
   { id: 'r_furn_moonbeam_lamp', result: 'furn_moonbeam_lamp', ingredients: [{ id: 'glowstone', qty: 1 }, { id: 'clay', qty: 2 }, { id: 'flower_moon_white', qty: 2 }], unlock: 'card' },
   { id: 'r_furn_puffcloud_sofa', result: 'furn_puffcloud_sofa', ingredients: [{ id: 'furn_puffmoss_cushion', qty: 2 }, { id: 'timber', qty: 6 }, { id: 'fiber', qty: 4 }], unlock: 'card' },

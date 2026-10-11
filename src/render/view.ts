@@ -13,6 +13,7 @@ import { toolMesh } from './models/tools';
 import { CritterView } from './critters';
 import { InteriorView, furnitureObject } from './interior';
 import { SEASONS } from '../sim/seasons';
+import { EventsView } from './events';
 import { wornVisuals } from '../sim/wardrobe';
 import { AgentView } from './agents';
 import { PlacementView } from './placement';
@@ -34,6 +35,7 @@ export class GameView {
   agents!: AgentView;
   placement!: PlacementView;
   particles!: Particles;
+  events!: EventsView;
   festival = new FestivalScene();
   beam = new LighthouseBeam();
   onFestivalEnd: (() => void) | null = null;
@@ -123,7 +125,8 @@ export class GameView {
     this.agents = new AgentView(game);
     this.placement = new PlacementView(game);
     this.particles = new Particles(game);
-    this.islandRoot.add(this.terrain.group, this.water.mesh, this.objects.group, this.structGroup, this.critters.group, this.agents.group, this.placement.group, this.festival.group, this.beam.pivot, this.particles.group);
+    this.events = new EventsView(game);
+    this.islandRoot.add(this.terrain.group, this.water.mesh, this.objects.group, this.structGroup, this.critters.group, this.agents.group, this.placement.group, this.festival.group, this.beam.pivot, this.particles.group, this.events.group);
     this.objects.setSeason(SEASONS[game.state.season?.index ?? 0]!);
     this.objects.rebuild();
     this.syncStructures();
@@ -283,6 +286,7 @@ export class GameView {
     this.agents.frame(dt);
     this.beam.frame(g, this.time, this.sky.night);
     this.particles.frame(dt, this.sky.night, this.rig.target);
+    this.events.frame(dt, this.rig.target);
     this.placement.frame();
     this.sky.season = g.state.season?.index ?? 1;
     this.sky.update(g.state.clock.minute, g.state.weather.today, this.rig.target);

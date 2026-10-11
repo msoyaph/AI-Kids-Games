@@ -13,6 +13,7 @@ import type { Game } from './game';
 import { countItem, give, money, removeItem, stat } from './inventory';
 import { computeComponents } from './pathfind';
 import type { VillagerRequest, VillagerState } from './state';
+import { isBirthday } from './happenings';
 
 export const FRIEND = {
   talk: 3,
@@ -97,7 +98,7 @@ export function giveGift(g: Game, id: string, slot: number): Reaction | null {
   // furniture gifts show up in their home (most recent first)
   if (item(itemId).furn) v.gifts = [itemId, ...(v.gifts ?? [])].slice(0, GIFT_SLOTS);
   const r = reactionTo(id, itemId);
-  if (v.giftsToday < FRIEND.giftsPerDay) addFriendship(g, id, FRIEND[r]);
+  if (v.giftsToday < FRIEND.giftsPerDay) addFriendship(g, id, FRIEND[r] * (isBirthday(g, id) && FRIEND[r] > 0 ? 2 : 1));
   v.giftsToday++;
   stat(g, 'gifts');
   g.emit('gifted', { npc: id, item: itemId, reaction: r });

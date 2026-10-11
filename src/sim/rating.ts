@@ -61,8 +61,11 @@ export const HOME_DECOR_MAX = 6;
 export function homeDecorPoints(g: Game): number {
   const h = g.state.home;
   let pts = 0;
-  for (const pf of h.furniture) pts += item(pf.id).furn?.decor ?? 1;
-  for (const wi of h.walls ?? []) pts += item(wi.id).furn?.decor ?? 1;
+  for (const floor of [h, h.basement]) {
+    if (!floor) continue;
+    for (const pf of floor.furniture) pts += item(pf.id).furn?.decor ?? 1;
+    for (const wi of floor.walls ?? []) pts += item(wi.id).furn?.decor ?? 1;
+  }
   return pts;
 }
 
