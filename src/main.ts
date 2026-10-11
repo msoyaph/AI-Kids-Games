@@ -1,5 +1,6 @@
 import './ui/styles.css';
 import { App } from './app';
+import { devTools } from './dev';
 import { questRT } from './sim/quests';
 import { rollWeather, weatherName } from './sim/weather';
 import { SEASONS, SEASON_DAYS, SEASON_ICON, SEASON_NAME } from './sim/seasons';
@@ -26,6 +27,8 @@ app.onNewGame = (g) => {
 };
 
 (window as unknown as { __lc: unknown }).__lc = app;
+// scene helpers for tests and screenshots (see src/dev.ts)
+(app as unknown as { dev: unknown }).dev = devTools(app);
 
 // ?bench=1 runs the performance test at the current tier, ?bench=all runs Low, Medium and High
 try {

@@ -276,3 +276,11 @@ check; 3 e2e tests. Build 1,207 kB (1.15 MiB); pacing 5.86 h.)
 ## Testing tips
 - The Claude browser pane may be hidden → rAF paused. Use `window.__lc.debugStep(frames)` to advance the
   game synchronously, and dispatch `KeyboardEvent`s on window for input. `window.__lc` is the App.
+
+## Touch + release pass (branch `lightcrossing-upgrade`, then merged to `main` as v2.0.0)
+- Step 1 done: touch audit (`docs/touch/AUDIT.md`). `src/dev.ts` puts scene helpers on `window.__lc.dev`
+  (`start`, `town`, `tools`, `equip`, `face`, `inside`, `panel`, `reel`, `plot`, `contest`, `festival`, `loseGL`...) so
+  tests can stage a situation in the built single file; input still goes through the real controls.
+  `e2e/lib/screens.ts`: every screen + `checkLayout()` (off screen, inside simulated safe areas `--sat/--sar/--sab/--sal`,
+  tap targets < 48 px, overlapping tap targets, HUD covering menus, text < 12 px). `npx tsx scripts/touch-audit.ts
+  --out <dir> [--engines chromium,webkit] [--viewports …] [--screens …]` screenshots + `report.md`.
