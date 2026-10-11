@@ -66,3 +66,39 @@ describe('flower breeding', () => {
     expect(bred).toBeGreaterThan(0);
   });
 });
+
+describe('ramps and bridges are walkable', () => {
+  it('the player can walk up a ramp onto the plateau and cross a bridge', async () => {
+    const { addStructure } = await import('../src/sim/structures');
+    const { stepPlayer, newMotion } = await import('../src/sim/player');
+    for (const seed of [7, 42, 2024]) {
+      const g = makeGame(seed);
+      const w = g.world;
+      const pl: Placement = { kind: 'ramp', rect: null, extra: null, valid: false, reason: '', compute: computeRamp };
+      let facing = 0;
+      for (let i = 0; i < w.size * w.size && !pl.valid; i++) {
+        if (w.region(i) !== Region.West || !w.standable(i)) continue;
+        for (const f of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+          g.state.player.x = (i % w.size) + 0.5;
+          g.state.player.z = ((i / w.size) | 0) + 0.5;
+          g.state.player.level = 0;
+          g.state.player.facing = f;
+          computeRamp(g, pl);
+          if (pl.valid) {
+            facing = f;
+            break;
+          }
+        }
+      }
+      expect(pl.valid).toBe(true);
+      addStructure(g, { type: 'ramp', ...pl.rect!, level: 0, dir: pl.dir });
+      const m = newMotion();
+      const dx = Math.round(Math.sin(facing)), dz = Math.round(Math.cos(facing));
+      for (let k = 0; k < 180; k++) stepPlayer(w, g.state.player, m, { x: dx, z: dz, run: false }, 1 / 60);
+      expect(g.state.player.level, `seed ${seed}`).toBe(1);
+      // and back down
+      for (let k = 0; k < 240; k++) stepPlayer(w, g.state.player, m, { x: -dx, z: -dz, run: false }, 1 / 60);
+      expect(g.state.player.level, `seed ${seed} down`).toBe(0);
+    }
+  });
+});

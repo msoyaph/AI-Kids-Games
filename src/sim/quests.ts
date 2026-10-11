@@ -361,7 +361,7 @@ export function questOptions(g: Game, npc: string): QuestOption[] {
       const giveN = Math.min(need, have);
       const name = deliverItemId(g, d) ? item(deliverItemId(g, d)!).name : d.cat === 'foreignFruit' ? 'foreign fruit' : d.cat ?? 'items';
       out.push({
-        label: `Hand over ${giveN} ${name}`,
+        label: `Hand over ${name}${giveN > 1 ? ` ×${giveN}` : ''}`,
         run: () => {
           let left = giveN;
           const inv = g.state.player.inv;
@@ -373,11 +373,12 @@ export function questOptions(g: Game, npc: string): QuestOption[] {
             left -= n;
           }
           p.counts[i] = Math.min(d.qty, p.counts[i]! + giveN);
+          const finished = p.counts[i]! >= d.qty;
           g.emit('sfx', { name: 'deliver' });
-          evaluate(g);
           // the pie chain: Tansy bakes once both fruits are in
-          if (m.id === 'm4_tansy' && i === 1 && p.counts[i]! >= d.qty) give(g, 'pie', 1, 'quest');
-          return objectiveValue(g, m, i).done ? (d.thanks ?? ['[happy]Thank you! That is exactly what I needed.']) : ['[happy]Thanks! Bring the rest when you can.'];
+          if (m.id === 'm4_tansy' && i === 1 && finished) give(g, 'pie', 1, 'quest');
+          evaluate(g);
+          return finished ? (d.thanks ?? ['[happy]Thank you! That is exactly what I needed.']) : ['[happy]Thanks! Bring the rest when you can.'];
         },
       });
     });

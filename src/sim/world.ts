@@ -108,6 +108,20 @@ export class World {
     return !(o && SOLID_OBJ.has(o.k));
   }
 
+  /** Is (x,z) on the upper level just past the top of ramp `s` (anywhere across its width)? */
+  inLanding(s: Structure, x: number, z: number): boolean {
+    switch (s.dir ?? 0) {
+      case 0:
+        return z === s.z - 1 && x >= s.x && x < s.x + s.w;
+      case 2:
+        return z === s.z + s.d && x >= s.x && x < s.x + s.w;
+      case 1:
+        return x === s.x + s.w && z >= s.z && z < s.z + s.d;
+      default:
+        return x === s.x - 1 && z >= s.z && z < s.z + s.d;
+    }
+  }
+
   /** Whether moving from tile `from` into neighbouring tile `to` is blocked. */
   blocked(from: number, to: number): boolean {
     const tx = to % this.size, tz = (to / this.size) | 0;
@@ -128,14 +142,8 @@ export class World {
       if (rt && !rf && this.rampRow(rt, tx, tz) === 1) return true;
       return false;
     }
-    if (rf && this.rampRow(rf, fx, fz) === 1 && lt === rf.level + 1) {
-      const [dx, dz] = DIR_VEC[rf.dir ?? 0]!;
-      if (fx + dx === tx && fz + dz === tz) return false;
-    }
-    if (rt && this.rampRow(rt, tx, tz) === 1 && lf === rt.level + 1) {
-      const [dx, dz] = DIR_VEC[rt.dir ?? 0]!;
-      if (tx + dx === fx && tz + dz === fz) return false;
-    }
+    if (rf && this.rampRow(rf, fx, fz) === 1 && lt === rf.level + 1 && this.inLanding(rf, tx, tz)) return false;
+    if (rt && this.rampRow(rt, tx, tz) === 1 && lf === rt.level + 1 && this.inLanding(rt, fx, fz)) return false;
     return true;
   }
 
