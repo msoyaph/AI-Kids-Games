@@ -131,3 +131,31 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6
 .reel-cursor { position: absolute; top: -2px; width: 6px; height: 30px; margin-left: -3px; background: #f27c7c; border-radius: 3px; box-shadow: 0 0 0 2px #fff; }
 .reel-progress { margin-top: 8px; height: 8px; border-radius: 4px; background: #eadfd0; overflow: hidden; }
 .reel-prog { height: 100%; background: linear-gradient(90deg, #ffd166, #f6a5b5); }
+/* ---------- service panels ---------- */
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.craft-body { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; min-height: 0; flex: 1; }
+.craft-list { display: flex; flex-direction: column; gap: 6px; max-height: 56vh; padding: 4px; }
+.craft-row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 14px; border: 2px solid var(--line); background: #fff; cursor: pointer; font-family: var(--font); font-size: 15px; color: var(--ink); text-align: left; outline: none; }
+.craft-row .nm { flex: 1; font-weight: 700; }
+.craft-row.missing { opacity: 0.65; }
+.craft-row.sel, .craft-row.focus, .craft-row:hover { border-color: var(--teal); background: #f0fbf9; }
+.craft-detail { padding: 12px; border-radius: 16px; background: #fff6e8; }
+.ing { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 10px; background: #fff; }
+.ing.no b { color: #d9604a; }
+.ing.ok b { color: #3f9a6a; }
+.speech { padding: 10px 14px; border-radius: 16px; background: #fff6e8; font-size: 15px; margin-bottom: 6px; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.shop-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; border-radius: 16px; border: 2px solid var(--line); background: #fff; cursor: pointer; font-family: var(--font); color: var(--ink); outline: none; }
+.shop-card .nm { font-weight: 700; font-size: 13px; text-align: center; }
+.shop-card .price { font-weight: 800; color: #c98a1a; }
+.shop-card.focus, .shop-card:hover { border-color: var(--teal); }
+.shop-card.sold { opacity: 0.45; }
+.prog { display: grid; grid-template-columns: 130px 1fr; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; }
+.prog .bar { height: 12px; border-radius: 6px; background: #eadfd0; overflow: hidden; }
+.prog .bar > div { height: 100%; background: linear-gradient(90deg, var(--teal), #9be3a1); }
+.note { padding: 10px 12px; border-radius: 12px; background: #fffdf5; border: 2px dashed #ecdcc4; }
+.editor { position: absolute; right: 12px; top: 12px; bottom: 12px; width: min(300px, 44vw); pointer-events: none; }
+.editor-panel { position: relative; pointer-events: auto; padding: 14px; height: 100%; display: flex; flex-direction: column; }
+.editor-side { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; }
+.editor-status { font-size: 13px; padding: 8px; border-radius: 12px; background: #fff6e8; margin-bottom: 8px; line-height: 1.8; }
+@media (max-width: 640px) { .craft-body { grid-template-columns: 1fr; } }

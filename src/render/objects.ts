@@ -8,6 +8,7 @@ import { InstancedLayer } from './instanced';
 import { natureGeo } from './models/nature';
 import { PAL, FLOWER_COLORS } from './palette';
 import { vcolMat } from './curve';
+import { furnitureObject } from './interior';
 
 export const FLOWER_COLOR_ORDER = ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'];
 
@@ -16,6 +17,8 @@ export type ItemVisual = (id: string) => { shape: 'branch' | 'shell' | 'bundle' 
 export class ObjectRenderer {
   readonly group = new THREE.Group();
   private layers: Record<string, InstancedLayer> = {};
+  private decor = new THREE.Group();
+  private decorMap = new Map<number, { key: string; obj: THREE.Object3D }>();
   dirty = true;
 
   constructor(private world: World, private itemVisual: ItemVisual) {
@@ -41,6 +44,7 @@ export class ObjectRenderer {
     L('hole', natureGeo.hole(), mat, 32, false);
     L('stone', natureGeo.stoneChunk(), mat, 64);
     L('grass', natureGeo.grass(), sway, 2048, false);
+    this.group.add(this.decor);
     this.buildGrass();
   }
 
@@ -72,6 +76,7 @@ export class ObjectRenderer {
     const names = Object.keys(this.layers).filter((n) => n !== 'grass');
     for (const n of names) this.layers[n]!.begin();
     const Ls = this.layers;
+    const seenDecor = new Set<number>();
     for (const key in w.state.world.objects) {
       const i = +key;
       const o = w.state.world.objects[i]!;
@@ -141,6 +146,31 @@ export class ObjectRenderer {
         case 'hole':
           Ls.hole!.push(x, y, z, rot, 1, 0xffffff);
           break;
+        case 'deco': {
+          if (o.tag === 'fill') break;
+          seenDecor.add(i);
+          const dk = `${o.item}|${o.r ?? 0}`;
+          const cur = this.decorMap.get(i);
+          if (cur && cur.key === dk) break;
+          if (cur) this.decor.remove(cur.obj);
+          const obj = furnitureObject(o.item ?? '');
+          if (!obj) break;
+          const f = obj;
+          // anchor is the min tile of the footprint; center the model on its footprint
+          let maxX = tx, maxZ = tz;
+          for (const k2 in w.state.world.objects) {
+            const o2 = w.state.world.objects[+k2]!;
+            if (o2.k === 'deco' && o2.tag === 'fill' && o2.v === i) {
+              maxX = Math.max(maxX, +k2 % N);
+              maxZ = Math.max(maxZ, Math.floor(+k2 / N));
+            }
+          }
+          f.position.set((tx + maxX + 1) / 2, y, (tz + maxZ + 1) / 2);
+          f.rotation.y = -(o.r ?? 0) * (Math.PI / 2);
+          this.decor.add(f);
+          this.decorMap.set(i, { key: dk, obj: f });
+          break;
+        }
         case 'item': {
           const vis = this.itemVisual(o.item ?? '');
           if (vis.shape === 'stone') Ls.stone!.push(x, y, z, rot, 1.4, vis.color);
@@ -152,5 +182,10 @@ export class ObjectRenderer {
       }
     }
     for (const n of names) this.layers[n]!.end();
+    for (const [i, v] of this.decorMap)
+      if (!seenDecor.has(i)) {
+        this.decor.remove(v.obj);
+        this.decorMap.delete(i);
+      }
   }
 }

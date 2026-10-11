@@ -7,8 +7,10 @@ import { frontTile } from './player';
 import { equipSlot } from './tools';
 import { learnRecipe } from './crafting';
 import { dayRng } from '../core/rng';
+import { placeOutdoor } from './decor';
+import { applySurface } from './housing';
 
-export type UseVerb = 'Equip' | 'Plant' | 'Open' | 'Read' | 'Place' | null;
+export type UseVerb = 'Equip' | 'Plant' | 'Open' | 'Read' | 'Place' | 'Apply' | null;
 
 export function useVerb(g: Game, slot: number): UseVerb {
   const s = g.state.player.inv[slot];
@@ -18,7 +20,8 @@ export function useVerb(g: Game, slot: number): UseVerb {
   if (plantObjFor(s.id)) return 'Plant';
   if (s.id === 'pouch') return 'Open';
   if (s.id === 'bottle') return 'Read';
-  if (def.cat === 'furniture' && def.furn?.outdoor !== undefined) return 'Place';
+  if (def.cat === 'furniture') return 'Place';
+  if ((def.cat === 'wallpaper' || def.cat === 'flooring') && g.state.player.location === 'home') return 'Apply';
   return null;
 }
 
@@ -27,6 +30,7 @@ export function canUseNow(g: Game, slot: number): boolean {
   if (!s) return false;
   const v = useVerb(g, slot);
   if (v === 'Plant') return g.state.player.location === 'island' && canPlantAt(g, frontTile(g.world, g.state.player), s.id);
+  if (v === 'Place') return g.state.player.location !== 'museum';
   return v !== null;
 }
 
@@ -60,8 +64,14 @@ export function useSlot(g: Game, slot: number): boolean {
       return true;
     }
     case 'Place':
-      g.ui.open('placeFurniture', slot);
-      return true;
+      if (g.state.player.location === 'island') return placeOutdoor(g, slot);
+      if (g.state.player.location === 'home') {
+        g.ui.open('editor');
+        return true;
+      }
+      return false;
+    case 'Apply':
+      return applySurface(g, slot);
     default:
       return false;
   }

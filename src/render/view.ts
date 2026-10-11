@@ -11,6 +11,8 @@ import { TerrainRenderer, WaterRenderer } from './terrain';
 import { equippedTool } from '../sim/tools';
 import { toolMesh } from './models/tools';
 import { CritterView } from './critters';
+import { InteriorView, furnitureObject } from './interior';
+import { setThumbProvider } from '../ui/icons';
 import { LEVEL_HEIGHT } from '../world/types';
 
 export class GameView {
@@ -22,6 +24,7 @@ export class GameView {
   private water!: WaterRenderer;
   objects!: ObjectRenderer;
   critters!: CritterView;
+  readonly interior = new InteriorView();
   private structGroup = new THREE.Group();
   private structMeshes = new Map<number, { obj: THREE.Group; key: string }>();
   player!: Rig;
@@ -45,6 +48,45 @@ export class GameView {
     this.scene.add(this.islandRoot);
     this.resize();
     window.addEventListener('resize', () => this.resize());
+    setThumbProvider((id) => this.thumbnail(id));
+  }
+
+  private thumbRenderer: THREE.WebGLRenderer | null = null;
+  private thumbScene: THREE.Scene | null = null;
+  private thumbCam: THREE.PerspectiveCamera | null = null;
+
+  /** Render a furniture item to a small PNG data URL (inventory icons). */
+  thumbnail(id: string): string | null {
+    const obj = furnitureObject(id);
+    if (!obj) return null;
+    try {
+      if (!this.thumbRenderer) {
+        this.thumbRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        this.thumbRenderer.setSize(96, 96, false);
+        this.thumbRenderer.outputColorSpace = THREE.SRGBColorSpace;
+        this.thumbScene = new THREE.Scene();
+        this.thumbScene.add(new THREE.HemisphereLight(0xffffff, 0x9a8aa0, 2.2));
+        const d = new THREE.DirectionalLight(0xffffff, 1.4);
+        d.position.set(3, 5, 4);
+        this.thumbScene.add(d);
+        this.thumbCam = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+      }
+      const box = new THREE.Box3().setFromObject(obj);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const r = Math.max(size.x, size.y, size.z) * 0.95 + 0.15;
+      this.thumbCam!.position.set(center.x + r * 1.3, center.y + r * 1.1, center.z + r * 2.0);
+      this.thumbCam!.lookAt(center);
+      this.thumbScene!.add(obj);
+      const k = sharedUniforms.uCurveK.value;
+      sharedUniforms.uCurveK.value = 0;
+      this.thumbRenderer.render(this.thumbScene!, this.thumbCam!);
+      sharedUniforms.uCurveK.value = k;
+      this.thumbScene!.remove(obj);
+      return this.thumbRenderer.domElement.toDataURL('image/png');
+    } catch {
+      return null;
+    }
   }
 
   resize(): void {
@@ -52,6 +94,7 @@ export class GameView {
     const h = this.canvas.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h, false);
     this.rig.resize(w / Math.max(1, h));
+    this.interior.resize(w / Math.max(1, h));
   }
 
   /** (Re)build everything for a game. */
@@ -139,6 +182,18 @@ export class GameView {
     this.time += dt;
     sharedUniforms.uTime.value = this.time;
     const p = g.state.player;
+    if (p.location !== 'island' && this.preview === null) {
+      this.syncHeld();
+      const k = sharedUniforms.uCurveK.value;
+      sharedUniforms.uCurveK.value = 0;
+      this.interior.frame(dt, g, this.player, this.renderer);
+      sharedUniforms.uCurveK.value = k;
+      return;
+    }
+    if (this.player.root.parent !== this.islandRoot) {
+      this.islandRoot.add(this.player.root);
+      this.interior.invalidate();
+    }
     if (this.objects.dirty) this.objects.rebuild();
     this.syncHeld();
     const y = g.world.surfaceY(p.x, p.z);

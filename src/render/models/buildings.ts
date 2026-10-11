@@ -39,7 +39,7 @@ function roof(w: number, d: number, h: number, color: number, x: number, y: numb
 /** Gable roof: triangular prism along x. */
 function gable(w: number, d: number, h: number, color: number, x: number, y: number, z: number): P {
   const g = new THREE.CylinderGeometry(1, 1, 1, 3, 1);
-  return part(g, color, { pos: [x, y + h * 0.25, z], rot: [Math.PI / 2, 0, Math.PI / 2], scale: [d * 0.62, w, h] });
+  return part(g, color, { pos: [x, y + h * 0.3, z], rot: [-Math.PI / 2, 0, Math.PI / 2], scale: [d * 0.56, w, h * 1.2] });
 }
 
 function door(x: number, z: number, color = PAL.woodDark, h = 0.9): P[] {
@@ -137,7 +137,7 @@ export function buildStructure(s: Structure, extra: { homeLevel?: number; lit?: 
       const lvl = extra.homeLevel ?? 0;
       if (lvl <= 0) {
         // canvas tent
-        P.push(part(new THREE.CylinderGeometry(1, 1, 1, 3, 1), 0xf3c57a, { pos: [cx, 0.62, 1.4], rot: [Math.PI / 2, 0, 0], scale: [1.25, 2.2, 1.6] }));
+        P.push(part(new THREE.CylinderGeometry(1, 1, 1, 3, 1), 0xf3c57a, { pos: [cx, 0.55, 1.4], rot: [-Math.PI / 2, 0, 0], scale: [1.3, 2.3, 1.1] }));
         P.push(part(box(0.7, 0.9, 0.05), 0xd58c5c, { pos: [cx, 0.45, 2.48] }));
         P.push(part(cyl(0.04, 0.04, 1.6, 4), PAL.woodDark, { pos: [cx, 0.8, 2.55] }));
         P.push(part(box(0.5, 0.06, 0.3), 0x8a6a4a, { pos: [cx + 1.3, 0.05, 2.8] }));

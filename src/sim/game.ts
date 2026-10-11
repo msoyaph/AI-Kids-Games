@@ -62,6 +62,10 @@ export class Game {
   moveMag = 0;
   /** player is sneaking (net raised) */
   sneaking = false;
+  /** last movement intent (interiors use it) */
+  moveIntent = { x: 0, z: 0, run: false };
+  /** interaction resolver used while inside a building */
+  interiorResolver: ((g: Game) => Interaction | null) | null = null;
   private pressHandlers: ((g: Game) => boolean)[] = [];
   /** UI hook: request a confirmation/dialog from the presentation layer */
   ui: {
@@ -138,7 +142,7 @@ export class Game {
 
   /** Best available interaction right now (for the HUD prompt and the action button). */
   resolve(): Interaction | null {
-    if (this.state.player.location !== 'island') return null;
+    if (this.state.player.location !== 'island') return this.interiorResolver?.(this) ?? null;
     const ctx = this.interactCtx();
     let best: Interaction | null = null;
     for (const r of this.resolvers) {
@@ -180,6 +184,7 @@ export class Game {
     }
     this.held = !!input?.actionHeld;
     this.moveMag = input ? Math.hypot(input.move.x, input.move.z) : 0;
+    this.moveIntent = input ? { x: input.move.x, z: input.move.z, run: input.move.run } : { x: 0, z: 0, run: false };
     const canMove = this.mode === 'play' && !this.action && input && this.state.player.location === 'island';
     if (canMove) {
       stepPlayer(this.world, this.state.player, this.motion, { ...input.move, sneak: this.sneaking, run: input.move.run && !this.sneaking }, dt);

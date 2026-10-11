@@ -17,6 +17,7 @@ import { CreatorScreen } from './ui/screens/creator';
 import { controlsPanel, PauseMenu } from './ui/screens/pause';
 import { confirmPanel, SlotScreen } from './ui/screens/slots';
 import { TitleScreen } from './ui/screens/title';
+import { registerPanels } from './ui/register';
 
 const AUTOSAVE_SEC = 60;
 const TITLE_SEED = 20261011;
@@ -40,7 +41,7 @@ export class App {
   /** panel factories other modules can open via game.ui.open */
   panels: Record<string, (arg?: unknown) => void> = {};
 
-  constructor(canvas: HTMLCanvasElement, private root: HTMLElement) {
+  constructor(readonly canvas: HTMLCanvasElement, private root: HTMLElement) {
     this.settings = this.saves.loadSettings(DEFAULT_SETTINGS);
     this.input = new Input(canvas);
     this.view = new GameView(canvas, (id) => {
@@ -61,6 +62,7 @@ export class App {
     this.demo.state.clock.minute = 17.5 * 60;
     this.demo.mode = 'cutscene';
     this.ui.onChange = () => this.syncMode();
+    registerPanels(this);
     this.showTitle();
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') this.saveNow(true);
@@ -153,6 +155,18 @@ export class App {
     }
     void this.fade(() => this.enterGame(createGame(res.state), slot));
   }
+
+  /** extra Lantern Hall services (story/permits add to this) */
+  hallExtras(): { label: string; run: () => void }[] {
+    return this.hallHooks.flatMap((f) => f());
+  }
+  hallHooks: (() => { label: string; run: () => void }[])[] = [];
+
+  boardNotes(): string[] {
+    const notes = this.boardHooks.flatMap((f) => f());
+    return notes.length ? notes : ['Welcome to Driftlight Isle! Lantern Hall is open every day.'];
+  }
+  boardHooks: (() => string[])[] = [];
 
   /** hook for the story layer (set by main.ts) */
   onNewGame?: (g: Game) => void;

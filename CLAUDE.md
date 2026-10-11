@@ -63,6 +63,11 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   reel minigame for size>=4, ReelBar UI), bugs (habitat spawning, stealth alert model, sneak/swing net),
   museum logic (assess fossils, donate, wing rewards), creature 3D models, rain/rainbow FX.
 
+- Phase 4 done: economy (sell prices, foreign fruit, hot item, daily stock cart/shop), crafting UI,
+  home tiers + loans + overnight construction, sleeping, interiors (home + 3-wing museum) with their own
+  scene/camera (curve disabled indoors), furniture editor (place/move/rotate/store, walls/floors),
+  storage, outdoor decorations (multi-tile 'deco' objects: anchor + 'fill' tiles), 3D furniture thumbnails.
+
 ## Testing tips
 - The Claude browser pane may be hidden → rAF paused. Use `window.__lc.debugStep(frames)` to advance the
   game synchronously, and dispatch `KeyboardEvent`s on window for input. `window.__lc` is the App.
