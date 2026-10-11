@@ -34,6 +34,8 @@ import { CSS } from '../ui/style';
 import { TitleScreen } from '../ui/title';
 import { Fader, Modals, Toasts } from '../ui/widgets';
 import { Controller } from './controller';
+import { installVillagers, npcAtPointer, talkTo } from './villagers';
+import { installAnimals } from './animals';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
 
 export interface GameOptions {
@@ -55,9 +57,12 @@ export interface GameHooks {
   interactNearby: ((g: Game) => boolean)[];
   special: Partial<Record<ToolKind, (g: Game) => void>>;
   inspect: ((g: Game, o: WorldObject, x: number, y: number) => boolean)[];
+  shopKeeper?: (g: Game, shop: string) => boolean;
+  /** click on something under the mouse (villager, animal…) before using a tool */
+  pointerInteract: ((g: Game) => boolean)[];
 }
 
-export const HOOKS: GameHooks = { trigger: {}, onEnter: [], onUpdate: [], onRender: [], onAttach: [], interactNearby: [], special: {}, inspect: [] };
+export const HOOKS: GameHooks = { trigger: {}, onEnter: [], onUpdate: [], onRender: [], onAttach: [], interactNearby: [], special: {}, inspect: [], pointerInteract: [] };
 
 export class Game implements MenuHost {
   host!: RenderHost;
@@ -121,6 +126,8 @@ export class Game implements MenuHost {
     this.view.top.addChild(this.ctl.layer);
     this.input.attachCanvas(this.host.app.canvas as HTMLCanvasElement);
     this.initUI();
+    installVillagers(this);
+    installAnimals(this);
     this.input.onAction = (a) => this.onRawAction(a);
     window.addEventListener('pagehide', () => this.suspend());
     document.addEventListener('visibilitychange', () => {
@@ -320,6 +327,15 @@ export class Game implements MenuHost {
     else this.toasts.show('Nothing to do with that here.');
   }
 
+  /** Click on a villager under the mouse. */
+  pointerTalk(): boolean {
+    const rt = npcAtPointer(this);
+    if (!rt) return false;
+    if (Math.hypot(rt.x - this.sim.p.x, rt.y - this.sim.p.y) > 40) return false;
+    talkTo(this, rt);
+    return true;
+  }
+
   /** Talk to villagers / pet animals nearby. */
   interactNearby(): void {
     for (const f of HOOKS.interactNearby) if (f(this)) return;
@@ -409,6 +425,9 @@ export class Game implements MenuHost {
       case 'ship':
         openShipping(this.sim, this.modals, (id) => this.sfx(id));
         return;
+      case 'petBowl':
+        this.toasts.show(this.sim.state.pet.bowl ? `${this.sim.state.pet.name}'s bowl is full.` : `Fill ${this.sim.state.pet.name}'s water bowl with your watering can!`);
+        return;
       case 'lostfound':
         openLostAndFound(this.sim, this.modals, (id) => this.sfx(id));
         return;
@@ -438,8 +457,8 @@ export class Game implements MenuHost {
   }
 
   /** Villager system replaces this to require the keeper at the counter. */
-  shopKeeperHere(_shop: string): boolean {
-    return true;
+  shopKeeperHere(shop: string): boolean {
+    return HOOKS.shopKeeper ? HOOKS.shopKeeper(this, shop) : true;
   }
 
   private handleActions(): void {

@@ -74,6 +74,8 @@ export function objSprite(o: WorldObject, season: number, loc: Loc, x: number, y
     }
     case 'path':
       return { name: `floor.${o.id}`, fw: 1, fh: 1, flat: true };
+    case 'grass':
+      return one(`obj.grass.${(o.n ?? 0) % 2}.s${season}`);
     case 'part':
       return null;
     default:

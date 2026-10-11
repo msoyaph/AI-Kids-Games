@@ -4,6 +4,9 @@ import { bakeBuildings } from './buildings';
 import { bakeCrops } from './crops';
 import { bakeResourceIcons } from './items';
 import { bakePlaceables } from './placeables';
+import { bakeEmotes } from './emotes';
+import { bakeAnimals } from './animals';
+import { VILLAGERS } from '../../data/villagers';
 import { drawCharacter, FRAMES, shadowSprite, type Look } from './characters';
 import { bakeObjects } from './objects';
 import { bakeProps } from './props';
@@ -17,6 +20,9 @@ export function bakeAll(atlas: Atlas): void {
   bakeCrops(atlas);
   bakeResourceIcons(atlas);
   bakePlaceables(atlas);
+  bakeEmotes(atlas);
+  bakeAnimals(atlas);
+  for (const v of VILLAGERS) bakeCharacter(atlas, v.id, v.look as Look);
   atlas.add('shadow', shadowSprite(12));
   atlas.add('shadow.big', shadowSprite(16));
 }

@@ -1,12 +1,16 @@
 /** Map registry: every location id → builder. Builders run once and are cached. */
 import { buildFarm, buildFarmhouse } from './farm';
 import { ROOMS, buildHall } from './interiors';
+import { buildBarn, buildCoop, buildGreenhouse, buildShed } from './farmbuildings';
+import { buildMineLobby, buildMountain, buildQuarry } from './mountain';
 import { buildTown } from './town';
 import type { MapDef } from './types';
 import { buildRoom } from './interiors';
 
 export interface MapContext {
   houseLevel: number;
+  /** story repairs done (board ids) */
+  done: string[];
 }
 
 type Builder = (ctx: MapContext) => MapDef;
@@ -16,6 +20,13 @@ const BUILDERS: Record<string, Builder> = {
   farmhouse: (ctx) => buildFarmhouse(ctx.houseLevel),
   town: () => buildTown(),
   hall: () => buildHall(),
+  coop: () => buildCoop(),
+  barn: () => buildBarn(),
+  shed: () => buildShed(),
+  greenhouse: () => buildGreenhouse(),
+  mountain: (ctx) => buildMountain(ctx),
+  quarry: () => buildQuarry(),
+  minelobby: () => buildMineLobby(),
 };
 for (const r of ROOMS) BUILDERS[r.id] = () => roomDef(r.id);
 
@@ -29,8 +40,19 @@ export function hasMap(id: string): boolean {
   return id in BUILDERS;
 }
 
+/** Maps whose layout depends on story repairs. */
+const STORY_MAPS: Record<string, string[]> = { mountain: ['forage'], beach: ['fish'], town: ['animal'], hall: ['crafted'] };
+
 export function mapKey(id: string, ctx: MapContext): string {
-  return id === 'farmhouse' ? `${id}:${ctx.houseLevel}` : id;
+  if (id === 'farmhouse') return `${id}:${ctx.houseLevel}`;
+  const deps = STORY_MAPS[id];
+  if (deps) return `${id}:${deps.map((d) => (ctx.done.includes(d) ? 1 : 0)).join('')}`;
+  return id;
+}
+
+/** Drop cached defs for a map id (procedural maps like the mine). */
+export function forgetMap(id: string): void {
+  for (const k of [...cache.keys()]) if (k === id || k.startsWith(id + ':')) cache.delete(k);
 }
 
 export function getMapDef(id: string, ctx: MapContext): MapDef {

@@ -5,6 +5,7 @@ import { tryItem, type ToolKind } from '../data/items';
 import { TOOL_TIERS, TREE_BALANCE, TUNING } from '../tuning';
 import { chopGiant, harvest, isMature, till, waterTile } from './farming';
 import { gainXp, hasPerk, level } from './skills';
+import { addHay } from './animals';
 import type { Sim } from './sim';
 import { SOIL_TILLED } from './types';
 import type { Loc } from './world';
@@ -315,6 +316,12 @@ function useScythe(sim: Sim, loc: Loc, tiles: [number, number][]): ToolResult {
       const rng = sim.rng(0x5c7, x, y);
       if (rng.chance(0.6)) sim.give('fiber', 1);
       if (rng.chance(0.05)) sim.give('mixedSeeds', 1);
+      any = true;
+    } else if (o.k === 'grass') {
+      loc.removeObj(x, y);
+      const rng = sim.rng(0x9a5, x, y);
+      if (rng.chance(0.75) && addHay(sim, 1) > 0) sim.ev.emit('fx', { kind: 'hay', x, y });
+      else if (rng.chance(0.3)) sim.give('fiber', 1);
       any = true;
     } else if (o.k === 'crop') {
       if (o.dead) {

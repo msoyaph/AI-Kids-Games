@@ -129,7 +129,7 @@ export const ROOMS: RoomSpec[] = [
     rows: [
       '############',
       '#WWwWWWWnWW#',
-      '#A.F.k..S..#',
+      '#A.F.k....S#',
       '#.....CCC..#',
       '#..........#',
       '#b.x.......#',

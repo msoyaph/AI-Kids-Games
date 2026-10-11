@@ -67,12 +67,15 @@ function simpleToken(i: number, o: WorldObject): string | null {
     case 'part':
       if (o.ref !== undefined && keys <= 3) return `${idx}P${o.ref.toString(36)}.${o.id}`;
       return null;
+    case 'grass':
+      if (o.id === 'grass' && keys <= 3) return `${idx}G${o.n ?? 0}`;
+      return null;
   }
   return null;
 }
 
 function parseToken(tok: string): [number, WorldObject] | null {
-  const m = /^([0-9a-z]+)([WSXUTP])(.*)$/.exec(tok);
+  const m = /^([0-9a-z]+)([WSXUTPG])(.*)$/.exec(tok);
   if (!m) return null;
   const i = parseInt(m[1], 36);
   const rest = m[3];
@@ -81,6 +84,7 @@ function parseToken(tok: string): [number, WorldObject] | null {
     case 'S': return [i, { k: 'stone', id: 'stone', hp: 1, n: Number(rest) || 0 }];
     case 'X': return [i, { k: 'twig', id: 'twig', hp: 1, n: Number(rest) || 0 }];
     case 'U': return [i, { k: 'stump', id: 'stump', hp: 4 }];
+    case 'G': return [i, { k: 'grass', id: 'grass', n: Number(rest) || 0 }];
     case 'T': return [i, { k: 'tree', id: TREE_BACK[rest[0]] ?? 'oak', g: Number(rest.slice(1)) || 0, hp: 10 }];
     case 'P': {
       const dot = rest.indexOf('.');

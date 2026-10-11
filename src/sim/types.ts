@@ -40,7 +40,8 @@ export type ObjKind =
   | 'mineChest'
   | 'heartstone'
   | 'torch'
-  | 'beehouse';
+  | 'beehouse'
+  | 'grass';
 
 export interface Tapper {
   id: string;

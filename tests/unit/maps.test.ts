@@ -4,7 +4,7 @@ import { Sim } from '../../src/sim';
 import { TER_INFO } from '../../src/sim/terrain';
 
 describe('maps', () => {
-  const ctx = { houseLevel: 0 };
+  const ctx = { houseLevel: 0, done: [] as string[] };
   it('every map builds and every warp leads somewhere walkable', () => {
     const sim = Sim.newGame({ name: 'a', farm: 'b', pet: 'dog', petName: 'c', seed: 1 });
     for (const lvl of [0, 1, 2]) sim.state.buildings.houseLevel = lvl;

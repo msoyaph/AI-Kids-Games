@@ -137,6 +137,7 @@ export class Loc {
           this.setSolid(sp.x + i, sp.y + j);
         }
       if (sd.door && sp.door) {
+        this.solid[this.idx(sp.x + sd.door.dx, sp.y + sd.door.dy)] = 0;
         this.warps.push({ x: sp.x + sd.door.dx, y: sp.y + sd.door.dy, to: sp.door.to, tx: sp.door.tx, ty: sp.door.ty, dir: 3, need: sp.door.need, msg: sp.door.msg });
       }
     }

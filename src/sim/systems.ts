@@ -20,8 +20,8 @@ export interface System {
   endDay?(sim: Sim, r: DayReport): void;
   /** morning setup of the new day */
   startDay?(sim: Sim): void;
-  /** every 10 game minutes */
-  tick?(sim: Sim): void;
+  /** every 10 game minutes; `min` is the tick's minute of the day */
+  tick?(sim: Sim, min: number): void;
 }
 
 export const SYSTEMS: System[] = [];

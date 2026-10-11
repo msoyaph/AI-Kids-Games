@@ -53,6 +53,12 @@ export function buildFarm(): MapDef {
   b.structure('plot', 24, 12, 2, 2, 'well');
   b.reserve(38, 2, 9, 6).reserve(4, 9, 7, 7).reserve(5, 3, 4, 5).reserve(24, 11, 2, 3);
 
+  // keep building doorsteps clear
+  b.clear(38, 8, 5, 2);
+  b.clear(4, 16, 7, 2);
+  b.clear(5, 8, 4, 2);
+  b.clear(14, 9, 7, 2);
+
   // Keep the yard near the house tidy at the start
   b.clear(23, 9, 16, 7);
   b.clear(44, 12, 18, 10);
@@ -77,6 +83,7 @@ export function buildFarm(): MapDef {
   b.point('fromForest', 10, 46, 3);
   b.point('fromGreenhouse', 17, 9, 0);
   b.point('petBowl', 33, 10);
+  b.trigger(33, 10, 'petBowl');
 
   return b.build({ id: 'farm', name: 'Cliffside Farm', outdoor: true, farmable: true, music: 'farm', water: 'pond', forage: true });
 }

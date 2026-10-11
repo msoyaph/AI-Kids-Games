@@ -134,6 +134,7 @@ export interface QuestState {
 
 export interface Mail {
   id: string;
+  read?: boolean;
   /** item or recipe attached (claimed once) */
   claimed?: boolean;
 }

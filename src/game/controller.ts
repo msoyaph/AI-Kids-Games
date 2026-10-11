@@ -7,7 +7,7 @@ import { DIR_DX, DIR_DY, TILE, chebyshev, dirFromVec, type Dir } from '../core/m
 import { isTool, toolKind, tryItem, type ToolKind } from '../data/items';
 import { eat, interactAt, useSelected, type InteractOutcome, type UseOutcome } from '../sim/actions';
 import { toolArea } from '../sim/tools';
-import type { Game } from './game';
+import { HOOKS, type Game } from './game';
 
 export class Controller {
   private g: Game;
@@ -102,7 +102,7 @@ export class Controller {
   use(atPointer = false): void {
     const g = this.g, sim = g.sim;
     if (this.locked) return;
-    void atPointer;
+    if (atPointer && g.input.lastDevice === 'mouse' && (g.pointerTalk() || HOOKS.pointerInteract.some((f) => f(g)))) return;
     this.updateTarget();
     if (!this.target) return;
     const s = sim.p.inv[sim.p.sel];

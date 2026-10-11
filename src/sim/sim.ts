@@ -5,7 +5,7 @@
 import { Emitter } from '../core/events';
 import { Rng, hash32 } from '../core/rng';
 import { DIR_DX, DIR_DY, TILE, dirFromVec, type Dir } from '../core/math';
-import { getMapDef, hasMap, type MapContext } from '../data/maps';
+import { forgetMap, getMapDef, hasMap, type MapContext } from '../data/maps';
 import type { StructurePlacement } from '../data/maps/types';
 import { TUNING } from '../tuning';
 import { addItem } from './inventory';
@@ -35,12 +35,18 @@ export interface SimEvents extends Record<string, unknown> {
   newDay: { day: number };
   tired: { energy: number };
   levelUp: { skill: string; level: number };
+  mineFloor: { floor: number };
+  faint: { where: string };
+  hurt: { dmg: number };
   pickup: { id: string; n: number; q: number };
   anim: { kind: string; x: number; y: number };
+  hearts: { id: string; hearts: number };
 }
 
 /** Systems that need per-Sim setup (warp guards etc.) register here. */
 export const simInitHooks: ((sim: Sim) => void)[] = [];
+/** Run once when a brand-new game is created (welcome mail, starting objects…). */
+export const newGameHooks: ((sim: Sim) => void)[] = [];
 
 /** Festival-day check is provided by the festival system (set at startup). */
 export const calendarHooks = {
@@ -63,6 +69,10 @@ export class Sim {
   pendingLevelUps: { skill: string; level: number }[] = [];
   /** messages produced by morning systems (shown in the day summary) */
   morningNotes: string[] = [];
+  /** runtime data owned by systems (not saved), e.g. villager positions */
+  ext: Record<string, unknown> = {};
+  /** per-frame hooks run while the clock is running */
+  frameHooks: ((sim: Sim, dt: number) => void)[] = [];
 
   constructor(state: GameState, savedLocs: Record<string, SavedLoc> = {}) {
     this.state = state;
@@ -73,6 +83,7 @@ export class Sim {
   static newGame(opts: NewGameOptions): Sim {
     const sim = new Sim(createState(opts));
     generateFarmClutter(sim.loc('farm'), sim.state.seed);
+    for (const f of newGameHooks) f(sim);
     return sim;
   }
 
@@ -81,7 +92,11 @@ export class Sim {
   }
 
   mapCtx(): MapContext {
-    return { houseLevel: this.state.buildings.houseLevel };
+    return { houseLevel: this.state.buildings.houseLevel, done: this.state.story.done };
+  }
+
+  forgetMapCache(id: string): void {
+    forgetMap(id);
   }
 
   /** Which structure sprite/footprint exists at a placement given current state. */
@@ -237,6 +252,7 @@ export class Sim {
     const st = this.state;
     st.playSec += dt;
     this.advanceMinutes(dt * this.minutesPerSecond());
+    for (let i = 0; i < this.frameHooks.length; i++) this.frameHooks[i](this, dt);
   }
 
   /** Advance the clock, running 10-minute ticks and bedtime events. */
@@ -247,7 +263,7 @@ export class Sim {
     const tick = Math.floor(st.min / 10);
     while (this.lastTick < tick) {
       this.lastTick++;
-      for (const s of SYSTEMS) s.tick?.(this);
+      for (const s of SYSTEMS) s.tick?.(this, this.lastTick * 10);
       this.ev.emit('clock', { min: this.lastTick * 10 });
     }
     if (st.min >= TUNING.sleepyMin && this.sleepyShown !== st.day) {

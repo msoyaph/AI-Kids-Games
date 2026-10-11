@@ -110,6 +110,8 @@ export function generateFarmClutter(farm: Loc, seed: number): void {
         farm.setObj(x, y, { k: 'twig', id: 'twig', hp: 1, n: rng.int(2) });
       } else if (r < 0.255) {
         farm.setObj(x, y, { k: 'stump', id: 'stump', hp: 4 });
+      } else if (r < 0.31) {
+        farm.setObj(x, y, { k: 'grass', id: 'grass', n: rng.int(2) });
       }
     }
   }
