@@ -40,7 +40,7 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
    landscape on touch devices; registry guidance now says so. Native Safari and
    physical controller checks remain on the real-device checklist.
 9. COMPLETE: Vercel preview READY at
-   https://ai-kids-games-icf8wmqhh-real-tours.vercel.app. All 13 hosted browser
+   https://ai-kids-games-m7zdjkpiq-real-tours.vercel.app. All 13 original hosted browser
    checks pass; hosted game hashes, revalidation/304 and immutable asset cache
    verified. Production was not published: a guard stopped Vercel's first-attempt
    production classification; the second attempt is preview. Temporary QA access
@@ -52,7 +52,8 @@ and be fixed in the original game's source project. Original game folders are re
 for this task. The obsolete game-sources adaptations have been removed.
 Favorites/recently played use aikg:; legacy migration preserves existing device data.
 
-Existing Sites production remains unchanged. This launch targets Vercel preview first.
+The five-game release targets Vercel preview first. Existing Sites only received
+the later requested homepage cosmetic update; its two-game catalog is retained.
 
 ## Homepage review changes
 
@@ -61,3 +62,8 @@ Played/New Games/category subtitles. Kept headings, game content and controls.
 Added a small top gap after removing the strip. Apply the same cosmetic changes
 to the existing two-game Sites version and the five-game Vercel preview; the
 five-game production launch still requires owner approval.
+
+Homepage review verification: 15 catalog browser checks pass across desktop,
+tablet and phone. All selected phrases are absent at 855 and 390 pixel widths
+in both versions, without overflow or page errors. Sites version 2 is published
+at the existing URL; five-game Vercel production is still not approved.

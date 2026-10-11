@@ -83,10 +83,10 @@ separate saves; lists on the old Sites domain cannot automatically transfer.
 
 ## Deployment
 
-Preview: https://ai-kids-games-icf8wmqhh-real-tours.vercel.app
+Current preview: https://ai-kids-games-m7zdjkpiq-real-tours.vercel.app
 
 Vercel project: real-tours/ai-kids-games. Deployment
-`dpl_4BNtZP4u56eeQuqHo8EDSkvAqXUh` is READY and is a preview (API target=null,
+`dpl_Djvq2uCxFAQ1mSPapjikTQUUhD5R` is READY and is a preview (API target=null,
 CLI Preview, build VERCEL_ENV=preview). DEPLOYMENT.json records this identity.
 Vercel authentication is still enabled; sign in with the owner/team account on
 real devices. The site itself makes no other-origin runtime requests. The host
@@ -111,5 +111,15 @@ other-origin runtime requests. Temporary authenticated automation access was
 revoked after QA; access cookies are never shipped.
 
 Production is not authorized and has not been published. The existing Sites
-production is unchanged. After real-device checks, request owner approval before
+version received only the separately requested homepage copy removal; its
+two-game catalog remains. After real-device checks, request owner approval before
 any production deployment or promotion.
+
+## Homepage review follow-up
+
+Removed the welcome strip, hero badge and selected section subtitles in both
+the older Sites page and the five-game Vercel preview. Build and 15 catalog
+browser checks pass across desktop, tablet and phone. Both versions pass
+phrase-removal and layout checks at 855 and 390 pixels. The full 13 hosted
+integration checks above apply to the original launch preview; game builds
+and embedding/storage behavior are unchanged by this presentation edit.
