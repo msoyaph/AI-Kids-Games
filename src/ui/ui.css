@@ -478,3 +478,8 @@ body.kbd-nav #ui button:focus, body.kbd-nav #ui [role=button]:focus, body.kbd-na
 .codex-right .codex-detail { flex: 1; min-height: 0; }
 /* Panels on Academy screens are a little see-through so the room shows around them. */
 .on-stage .panel { background: linear-gradient(180deg, rgba(58,42,154,.9), rgba(43,29,120,.9)); }
+/* Cutscenes: a soft white flash (jumping into the wormhole). */
+.cs-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.cs-flash.on { animation: cs-flash .9s ease-out; }
+@keyframes cs-flash { 0% { opacity: 0; } 15% { opacity: .85; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cs-flash.on { animation-duration: 1.4s; } }

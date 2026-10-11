@@ -36,9 +36,9 @@ export function dialogueOpen(): boolean {
 
 /**
  * Show a conversation, one line at a time. Tap, click, Space, E or gamepad A to continue.
- * Resolves when the last line is dismissed.
+ * Resolves when the last line is dismissed. `onLine` hears each line as it appears (cutscene shots).
  */
-export function showDialogue(lines: Line[]): Promise<void> {
+export function showDialogue(lines: Line[], opts: { onLine?: (index: number, line: Line) => void } = {}): Promise<void> {
   if (!lines.length) return Promise.resolve();
   return new Promise((resolve) => {
     let i = -1;
@@ -101,6 +101,7 @@ export function showDialogue(lines: Line[]): Promise<void> {
       }
       if (i > 0) sfx('click');
       show();
+      opts.onLine?.(i, lines[i]);
     };
 
     const close = () => {

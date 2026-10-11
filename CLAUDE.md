@@ -107,8 +107,14 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 - Characters are rigid-skinned after building (`bakeRig`): joints are Bones, static parts merge into one
   SkinnedMesh per material kind with plain colors as vertex colors (~7 draws per character instead of ~18).
   Hide a limb by scaling its bone (not `.visible`). Portraits pass `merge: false`.
-- Cutscenes (`scenes/CutsceneScene.ts`) are 3D sets (Academy stage for Zibbo, Neptune + wormhole, wormhole
-  tunnel, Zephyra beacon); Phase 8 re-stages them with camera timelines.
+- Cutscenes: `scenes/CutsceneScene.ts` runs a `Staging` from `scenes/cutscenes.ts` (Zibbo at the Academy stage,
+  star path by Neptune, wormhole dive + tunnel, Star Beacon relight on Zephyra): an intro camera path, a shot +
+  acting per dialogue line (`showDialogue(lines, {onLine})`), timed cues, fireworks, an outro. Camera paths are
+  `systems/timeline.ts` (Catmull-Rom keys, eased ends, `fromHere`, `dueCues`; unit-tested). Everything runs in
+  `render()` because dialogue freezes `update()`. Framing rule: the dialogue box covers the bottom ~35%, so close-ups
+  look at a point below the face. Credits = a fly-past of every world (planets stream in/out) with your rocket;
+  the completion screen shows your cadet on a podium beside your rocket. `node scripts/shots.mjs` (+
+  `scripts/montage.mjs`) screenshots every scene per tier for review.
 - Measure tiers with `?q=low|medium|high`: Auto picks High on this Mac (shadows add ~80 draw calls in levels).
 
 ## Architecture (shared)
@@ -155,7 +161,9 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 - [x] 3D Phase 7: the Academy diorama (7 rooms, exterior, launch pad, dusk sky, 10 decorations) shared by hub,
   board, hangar, lounge, codex, badges and shop with camera glides; 3D Codex hologram, shop try-on stage,
   hangar turntable; 3D cutscene sets; character rigid skinning; Pixi removed (1.49 MB build).
-- [ ] 8 cutscenes · [ ] 9 perf (Low: hub ~95 calls, levels ~75 vs a 60 target — the rocket model is the next
+- [x] 3D Phase 8: timeline-staged cutscenes synced to dialogue lines, credits fly-past, 3D completion screen,
+  screenshot tooling (scripts/shots.mjs, scripts/montage.mjs).
+- [ ] 9 perf (Low: hub ~95 calls, levels ~75 vs a 60 target — the rocket model is the next
   merge candidate) · [ ] 10 tests/review/handoff
 
 ## Current numbers
