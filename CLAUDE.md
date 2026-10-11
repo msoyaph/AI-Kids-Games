@@ -84,6 +84,20 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
   frees the playtest log first when full, never touches non-`calexcart.` keys). Ghost strings use 15-bit chars.
 - Playwright: projects ending in `desktop` run the "once" tests; WebKit needs `npx playwright install webkit`.
 
+## Glass touch controller (in progress on `calex-upgrade` — do NOT merge into main without user approval)
+Plan: `/Users/cliffsumalpong/.claude/plans/modular-herding-pancake.md` (approved). Design: `docs/touch/design.md`.
+Steps 1–7, commit per step. Must not change keyboard / gamepad / tilt behaviour; new settings live inside
+`calexcart.settings` (no new keys); single-file build < 2 MB; 60 fps on the throttled tablet profile.
+Decisions: tablets may race in portrait, phones keep the rotate screen; vibration on/off = existing
+`settings.rumble`; old `touchSteer: 'buttons'` (the old default) migrates to `'joystick'`, `'tilt'` stays.
+- [x] Step 1 — design + mockups (`docs/touch/mockups/`, prototype CSS in `mockups/prototype.mjs`)
+- [ ] Step 2 — joystick (PointerRouter, stickResponse, floating/fixed)
+- [ ] Step 3 — glass buttons, feel, haptics
+- [ ] Step 4 — Touch settings tab, layout editor, tablet portrait
+- [ ] Step 5 — performance (blur measurement, fake/real policy, crossfade)
+- [ ] Step 6 — accessibility
+- [ ] Step 7 — tests, visual review, playtest fields, report
+
 ## Upgrade in progress (branch `calex-upgrade` — do NOT merge into main without user approval)
 Plan: `/Users/cliffsumalpong/.claude/plans/modular-herding-pancake.md` (approved). Work Phase 0→10, commit per phase.
 Stop and ask ONLY if a change would break existing saves, push the build over 2 MB, make a definition-of-done
