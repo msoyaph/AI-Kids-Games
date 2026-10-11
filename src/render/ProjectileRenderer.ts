@@ -3,7 +3,7 @@ import { CAPS } from '../config/balance';
 import { HazardKind } from '../sim/pools';
 import { VISUALS } from '../sim/weapons/common';
 import type { World } from '../sim/world';
-import { commitInstances, makeInstanced, writeTRS } from './instancing';
+import { commitInstances, makeInstanced, TRS, writeTRSFrom } from './instancing';
 import { projectileGeometry } from './models';
 import type { Particles } from './Particles';
 
@@ -88,7 +88,15 @@ export class ProjectileRenderer {
           roll = Math.sin(time * 30 + i) * 0.3;
           break;
       }
-      writeTRS(mesh.instanceMatrix.array as Float32Array, k * 16, x, y, z, yaw, roll, s, s, s);
+      TRS[0] = x;
+      TRS[1] = y;
+      TRS[2] = z;
+      TRS[3] = yaw;
+      TRS[4] = roll;
+      TRS[5] = s;
+      TRS[6] = s;
+      TRS[7] = s;
+      writeTRSFrom(mesh.instanceMatrix.array as Float32Array, k * 16);
     }
     for (let v = 0; v < this.meshes.length; v++) {
       const m = this.meshes[v];
@@ -129,7 +137,15 @@ export class ProjectileRenderer {
       } else if (kind === HazardKind.EnemyRing) {
         const rr = hz.a0[i];
         if (rr <= 0.05) continue;
-        writeTRS(wa, nw * 16, hz.x[i], hz.y[i] - 0.1, hz.z[i], 0, 0, rr, 1, rr);
+        TRS[0] = hz.x[i];
+        TRS[1] = hz.y[i] - 0.1;
+        TRS[2] = hz.z[i];
+        TRS[3] = 0;
+        TRS[4] = 0;
+        TRS[5] = rr;
+        TRS[6] = 1;
+        TRS[7] = rr;
+        writeTRSFrom(wa, nw * 16);
         const f = 0.9 * Math.min(1, (hz.radius[i] - rr) / 4);
         wc[nw * 3] = tmpC.r * f;
         wc[nw * 3 + 1] = tmpC.g * f;
@@ -137,7 +153,15 @@ export class ProjectileRenderer {
         nw++;
         continue;
       }
-      writeTRS(da, nd * 16, hz.x[i], hz.y[i] + 0.08, hz.z[i], i, 0, r, 1, r);
+      TRS[0] = hz.x[i];
+      TRS[1] = hz.y[i] + 0.08;
+      TRS[2] = hz.z[i];
+      TRS[3] = i;
+      TRS[4] = 0;
+      TRS[5] = r;
+      TRS[6] = 1;
+      TRS[7] = r;
+      writeTRSFrom(da, nd * 16);
       dc[nd * 3] = tmpC.r * intensity;
       dc[nd * 3 + 1] = tmpC.g * intensity;
       dc[nd * 3 + 2] = tmpC.b * intensity;
@@ -159,7 +183,15 @@ export class ProjectileRenderer {
       const r = wi.stats.area;
       tmpC.setHex(wi.def.visual.color);
       const pulse = 1 - Math.min(1, Math.max(0, wi.pulse) / Math.max(0.1, wi.stats.hitInterval));
-      writeTRS(ra, nr * 16, px, Math.max(gy, py) + 0.12, pz, 0, 0, r, 1, r);
+      TRS[0] = px;
+      TRS[1] = Math.max(gy, py) + 0.12;
+      TRS[2] = pz;
+      TRS[3] = 0;
+      TRS[4] = 0;
+      TRS[5] = r;
+      TRS[6] = 1;
+      TRS[7] = r;
+      writeTRSFrom(ra, nr * 16);
       const ri = 0.25 + pulse * 0.25;
       rc[nr * 3] = tmpC.r * ri;
       rc[nr * 3 + 1] = tmpC.g * ri;
@@ -169,7 +201,15 @@ export class ProjectileRenderer {
       for (let k = 0; k < heads && nh < 64; k++) {
         const a = time * 2.2 + (k / heads) * Math.PI * 2;
         const hy = py + 0.9 + Math.sin(time * 6 + k) * 0.15 - pulse * pulse * 0.5;
-        writeTRS(ha, nh * 16, px + Math.sin(a) * r * 0.92, hy, pz + Math.cos(a) * r * 0.92, a, 0.4, 1.4, 1.4, 1.4);
+        TRS[0] = px + Math.sin(a) * r * 0.92;
+        TRS[1] = hy;
+        TRS[2] = pz + Math.cos(a) * r * 0.92;
+        TRS[3] = a;
+        TRS[4] = 0.4;
+        TRS[5] = 1.4;
+        TRS[6] = 1.4;
+        TRS[7] = 1.4;
+        writeTRSFrom(ha, nh * 16);
         hc[nh * 3] = tmpC.r;
         hc[nh * 3 + 1] = tmpC.g;
         hc[nh * 3 + 2] = tmpC.b;

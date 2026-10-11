@@ -13,27 +13,28 @@ import { beginLevelUp, openChest } from './upgrades';
 import { updateWeapons } from './weapons';
 import type { SimInput, World } from './world';
 
+function copyPrev(n: number, x: Float32Array, y: Float32Array, z: Float32Array, px: Float32Array, py: Float32Array, pz: Float32Array): void {
+  for (let i = 0; i < n; i++) {
+    px[i] = x[i];
+    py[i] = y[i];
+    pz[i] = z[i];
+  }
+}
+
+/** Snapshot positions for render interpolation (projectiles do this in their own update). */
 function savePrevious(w: World): void {
   const p = w.player;
   p.px = p.x;
   p.py = p.y;
   p.pz = p.z;
   const e = w.enemies;
-  e.px.set(e.x.subarray(0, e.count));
-  e.py.set(e.y.subarray(0, e.count));
-  e.pz.set(e.z.subarray(0, e.count));
+  copyPrev(e.count, e.x, e.y, e.z, e.px, e.py, e.pz);
   const s = w.enemyShots;
-  s.px.set(s.x.subarray(0, s.count));
-  s.py.set(s.y.subarray(0, s.count));
-  s.pz.set(s.z.subarray(0, s.count));
+  copyPrev(s.count, s.x, s.y, s.z, s.px, s.py, s.pz);
   const g = w.gems;
-  g.px.set(g.x.subarray(0, g.count));
-  g.py.set(g.y.subarray(0, g.count));
-  g.pz.set(g.z.subarray(0, g.count));
+  copyPrev(g.count, g.x, g.y, g.z, g.px, g.py, g.pz);
   const pk = w.pickups;
-  pk.px.set(pk.x.subarray(0, pk.count));
-  pk.py.set(pk.y.subarray(0, pk.count));
-  pk.pz.set(pk.z.subarray(0, pk.count));
+  copyPrev(pk.count, pk.x, pk.y, pk.z, pk.px, pk.py, pk.pz);
 }
 
 function updateTimers(w: World): void {

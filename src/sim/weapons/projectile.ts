@@ -5,6 +5,8 @@ import { Motion } from '../pools';
 import type { WeaponInstance, World } from '../world';
 import { nearestEnemy, spawnProjectile } from './common';
 
+const NO_PARAMS: { spread?: number; nova?: number } = {};
+
 /**
  * Straight projectiles. Variants via params:
  *  - default: a staggered volley aimed at the nearest enemy
@@ -14,7 +16,7 @@ import { nearestEnemy, spawnProjectile } from './common';
 export function projectile(w: World, wi: WeaponInstance): void {
   const s = wi.stats;
   const p = w.player;
-  const params = wi.def.params ?? {};
+  const params = wi.def.params ?? NO_PARAMS;
   const y = p.y + 1.0;
 
   // staggered volley in progress

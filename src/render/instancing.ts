@@ -42,6 +42,17 @@ export function writeTRS(a: Float32Array, o: number, x: number, y: number, z: nu
   a[o + 15] = 1;
 }
 
+/**
+ * Transform scratch: hot loops write x, y, z, yaw, roll, sx, sy, sz into TRS[0..7] and call
+ * writeTRSFrom(array, offset). Only an object and an integer cross the call boundary, so V8
+ * never has to box doubles (writeTRS with 10 double args is too big to always inline).
+ */
+export const TRS = new Float64Array(8);
+
+export function writeTRSFrom(a: Float32Array, o: number): void {
+  writeTRS(a, o, TRS[0], TRS[1], TRS[2], TRS[3], TRS[4], TRS[5], TRS[6], TRS[7]);
+}
+
 /** T · Ry(yaw) · Rx(pitch) · S — for projectiles pointing along a 3D direction. */
 export function writeTRSPitch(a: Float32Array, o: number, x: number, y: number, z: number, yaw: number, pitch: number, sx: number, sy: number, sz: number): void {
   const c = Math.cos(yaw);
@@ -67,26 +78,32 @@ export function writeTRSPitch(a: Float32Array, o: number, x: number, y: number, 
   a[o + 15] = 1;
 }
 
+type Range = { start: number; count: number };
+const ranges = new WeakMap<THREE.BufferAttribute, Range>();
+
+/**
+ * Upload only [0, count) of an attribute, reusing one range object per attribute
+ * (three's addUpdateRange would allocate a new object every frame).
+ */
+export function uploadPrefix(attr: THREE.BufferAttribute, count: number): void {
+  let r = ranges.get(attr);
+  if (!r) {
+    r = { start: 0, count: 0 };
+    ranges.set(attr, r);
+  }
+  r.count = count * attr.itemSize;
+  attr.updateRanges.length = 0;
+  attr.updateRanges.push(r);
+  attr.needsUpdate = true;
+}
+
 /** Marks only the used part of instanced attributes for upload. */
 export function commitInstances(mesh: THREE.InstancedMesh, count: number, extra?: THREE.InstancedBufferAttribute[]): void {
   mesh.count = count;
   if (count === 0) return;
-  const m = mesh.instanceMatrix;
-  m.clearUpdateRanges();
-  m.addUpdateRange(0, count * 16);
-  m.needsUpdate = true;
-  if (mesh.instanceColor) {
-    mesh.instanceColor.clearUpdateRanges();
-    mesh.instanceColor.addUpdateRange(0, count * 3);
-    mesh.instanceColor.needsUpdate = true;
-  }
-  if (extra) {
-    for (const a of extra) {
-      a.clearUpdateRanges();
-      a.addUpdateRange(0, count * a.itemSize);
-      a.needsUpdate = true;
-    }
-  }
+  uploadPrefix(mesh.instanceMatrix, count);
+  if (mesh.instanceColor) uploadPrefix(mesh.instanceColor, count);
+  if (extra) for (let k = 0; k < extra.length; k++) uploadPrefix(extra[k], count);
 }
 
 export function makeInstanced(geo: THREE.BufferGeometry, mat: THREE.Material, cap: number, withColor: boolean): THREE.InstancedMesh {

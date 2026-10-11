@@ -3,7 +3,7 @@ import { CAPS, GEM_TIERS } from '../config/balance';
 import { PickupKind } from '../sim/pools';
 import type { World } from '../sim/world';
 import { lowPolyMaterial } from './geo';
-import { commitInstances, makeInstanced, writeTRS } from './instancing';
+import { commitInstances, makeInstanced, TRS, writeTRSFrom } from './instancing';
 import { chestGeometry, coinGeometry, gemGeometry, heartGeometry, magnetGeometry, projectileGeometry } from './models';
 
 /** Gems, coins, hearts, magnets, chests and hostile projectiles. */
@@ -14,10 +14,12 @@ export class PickupRenderer {
   private shots: THREE.InstancedMesh[];
   private beams: THREE.InstancedMesh;
   private tierColors: THREE.Color[];
+  private kindCounts = new Int32Array(4);
+  private shotCounts = new Int32Array(2);
 
   constructor() {
     this.group.name = 'pickups';
-    this.gems = makeInstanced(gemGeometry(), new THREE.MeshBasicMaterial({ color: 0xffffff }), CAPS.gems, true);
+    this.gems = makeInstanced(gemGeometry(), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a2a2a, flatShading: true }), CAPS.gems, true);
     this.gems.name = 'gems';
     this.group.add(this.gems);
     this.tierColors = GEM_TIERS.map((t) => new THREE.Color(t.color));
@@ -58,7 +60,15 @@ export class PickupRenderer {
       const tier = g.tier[i];
       const s = GEM_TIERS[tier].scale;
       const bob = g.grounded[i] && !g.magnet[i] ? Math.sin(time * 3 + i) * 0.08 : 0;
-      writeTRS(ga, n * 16, x, y + bob, z, time * 2 + i, 0, s, s, s);
+      TRS[0] = x;
+      TRS[1] = y + bob;
+      TRS[2] = z;
+      TRS[3] = time * 2 + i;
+      TRS[4] = 0;
+      TRS[5] = s;
+      TRS[6] = s;
+      TRS[7] = s;
+      writeTRSFrom(ga, n * 16);
       const c = this.tierColors[tier];
       gc[n * 3] = c.r;
       gc[n * 3 + 1] = c.g;
@@ -69,7 +79,8 @@ export class PickupRenderer {
 
     // pickups
     const pk = w.pickups;
-    const counts = [0, 0, 0, 0];
+    const counts = this.kindCounts;
+    counts.fill(0);
     let nb = 0;
     const ba = this.beams.instanceMatrix.array as Float32Array;
     for (let i = 0; i < pk.count; i++) {
@@ -83,9 +94,25 @@ export class PickupRenderer {
       const spin = kind === PickupKind.Chest ? Math.sin(time * 2 + i) * 0.3 : time * 3 + i;
       const s = kind === PickupKind.Chest ? 1.1 : kind === PickupKind.Coin ? 1 : 1.25;
       const bob = kind === PickupKind.Chest ? 0 : Math.sin(time * 4 + i) * 0.12;
-      writeTRS(mesh.instanceMatrix.array as Float32Array, k * 16, x, y + bob - (kind === PickupKind.Chest ? 0.5 : 0), z, spin, 0, s, s, s);
+      TRS[0] = x;
+      TRS[1] = y + bob - (kind === PickupKind.Chest ? 0.5 : 0);
+      TRS[2] = z;
+      TRS[3] = spin;
+      TRS[4] = 0;
+      TRS[5] = s;
+      TRS[6] = s;
+      TRS[7] = s;
+      writeTRSFrom(mesh.instanceMatrix.array as Float32Array, k * 16);
       if (kind === PickupKind.Chest && nb < 32) {
-        writeTRS(ba, nb * 16, x, y - 0.5, z, time * 0.5, 0, 1, 1, 1);
+        TRS[0] = x;
+        TRS[1] = y - 0.5;
+        TRS[2] = z;
+        TRS[3] = time * 0.5;
+        TRS[4] = 0;
+        TRS[5] = 1;
+        TRS[6] = 1;
+        TRS[7] = 1;
+        writeTRSFrom(ba, nb * 16);
         nb++;
       }
     }
@@ -94,7 +121,8 @@ export class PickupRenderer {
 
     // hostile projectiles
     const s = w.enemyShots;
-    const sc = [0, 0];
+    const sc = this.shotCounts;
+    sc.fill(0);
     for (let i = 0; i < s.count; i++) {
       if (!s.alive[i]) continue;
       const v = s.visual[i] > 0 ? 1 : 0;
@@ -104,7 +132,15 @@ export class PickupRenderer {
       const y = s.py[i] + (s.y[i] - s.py[i]) * alpha;
       const z = s.pz[i] + (s.z[i] - s.pz[i]) * alpha;
       const pulse = 1 + Math.sin(time * 18 + i) * 0.15;
-      writeTRS(mesh.instanceMatrix.array as Float32Array, k * 16, x, y, z, time * 5, 0, pulse, pulse, pulse);
+      TRS[0] = x;
+      TRS[1] = y;
+      TRS[2] = z;
+      TRS[3] = time * 5;
+      TRS[4] = 0;
+      TRS[5] = pulse;
+      TRS[6] = pulse;
+      TRS[7] = pulse;
+      writeTRSFrom(mesh.instanceMatrix.array as Float32Array, k * 16);
     }
     commitInstances(this.shots[0], sc[0]);
     commitInstances(this.shots[1], sc[1]);

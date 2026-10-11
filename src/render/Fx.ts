@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ENEMIES } from '../config/enemies';
 import { Ev, type EventBuffer } from '../core/events';
 import type { CameraRig } from './CameraRig';
-import { commitInstances, makeInstanced, writeTRS } from './instancing';
+import { commitInstances, makeInstanced, uploadPrefix, TRS, writeTRSFrom } from './instancing';
 import type { Particles } from './Particles';
 
 const tmpC = new THREE.Color();
@@ -78,14 +78,30 @@ class Shockwaves {
       const fade = 1 - f;
       if (this.data[o + 6] === 0) {
         const r = this.data[o + 3] * (0.3 + 0.7 * ease);
-        writeTRS(ra, nr * 16, this.data[o], this.data[o + 1] + 0.15, this.data[o + 2], 0, 0, r, 1, r);
+        TRS[0] = this.data[o];
+        TRS[1] = this.data[o + 1] + 0.15;
+        TRS[2] = this.data[o + 2];
+        TRS[3] = 0;
+        TRS[4] = 0;
+        TRS[5] = r;
+        TRS[6] = 1;
+        TRS[7] = r;
+        writeTRSFrom(ra, nr * 16);
         rc[nr * 3] = this.col[k * 3] * fade;
         rc[nr * 3 + 1] = this.col[k * 3 + 1] * fade;
         rc[nr * 3 + 2] = this.col[k * 3 + 2] * fade;
         nr++;
       } else {
         const r = this.data[o + 3] * (0.4 + 0.6 * ease);
-        writeTRS(sa, ns * 16, this.data[o], this.data[o + 1], this.data[o + 2], 0, 0, r, r * 0.8, r);
+        TRS[0] = this.data[o];
+        TRS[1] = this.data[o + 1];
+        TRS[2] = this.data[o + 2];
+        TRS[3] = 0;
+        TRS[4] = 0;
+        TRS[5] = r;
+        TRS[6] = r * 0.8;
+        TRS[7] = r;
+        writeTRSFrom(sa, ns * 16);
         const ff = fade * fade * 0.8;
         sc[ns * 3] = this.col[k * 3] * ff;
         sc[ns * 3 + 1] = this.col[k * 3 + 1] * ff;
@@ -126,7 +142,14 @@ class Lightning {
   add(x1: number, y1: number, z1: number, x2: number, y2: number, z2: number): void {
     if (this.n >= this.maxBolts) return;
     const o = this.n++ * 7;
-    this.bolts.set([x1, y1, z1, x2, y2, z2, 0.18], o);
+    const b = this.bolts;
+    b[o] = x1;
+    b[o + 1] = y1;
+    b[o + 2] = z1;
+    b[o + 3] = x2;
+    b[o + 4] = y2;
+    b[o + 5] = z2;
+    b[o + 6] = 0.18;
   }
 
   clear(): void {
@@ -158,8 +181,18 @@ class Lightning {
         const nx = this.bolts[o] + (this.bolts[o + 3] - this.bolts[o]) * t + (Math.random() - 0.5) * j;
         const ny = this.bolts[o + 1] + (this.bolts[o + 4] - this.bolts[o + 1]) * t + (Math.random() - 0.5) * j;
         const nz = this.bolts[o + 2] + (this.bolts[o + 5] - this.bolts[o + 2]) * t + (Math.random() - 0.5) * j;
-        this.pos.set([lx, ly, lz, nx, ny, nz], v * 3);
-        this.col.set([0.75 * f, 0.92 * f, f, 0.75 * f, 0.92 * f, f], v * 3);
+        const pp = this.pos;
+        const cc = this.col;
+        const o3 = v * 3;
+        pp[o3] = lx;
+        pp[o3 + 1] = ly;
+        pp[o3 + 2] = lz;
+        pp[o3 + 3] = nx;
+        pp[o3 + 4] = ny;
+        pp[o3 + 5] = nz;
+        cc[o3] = cc[o3 + 3] = 0.75 * f;
+        cc[o3 + 1] = cc[o3 + 4] = 0.92 * f;
+        cc[o3 + 2] = cc[o3 + 5] = f;
         v += 2;
         lx = nx;
         ly = ny;
@@ -167,14 +200,10 @@ class Lightning {
       }
     }
     this.geo.setDrawRange(0, v);
-    const pa = this.geo.getAttribute('position') as THREE.BufferAttribute;
-    const ca = this.geo.getAttribute('color') as THREE.BufferAttribute;
-    pa.clearUpdateRanges();
-    pa.addUpdateRange(0, v * 3);
-    pa.needsUpdate = true;
-    ca.clearUpdateRanges();
-    ca.addUpdateRange(0, v * 3);
-    ca.needsUpdate = true;
+    if (v > 0) {
+      uploadPrefix(this.geo.getAttribute('position') as THREE.BufferAttribute, v);
+      uploadPrefix(this.geo.getAttribute('color') as THREE.BufferAttribute, v);
+    }
   }
 }
 
@@ -189,6 +218,23 @@ export class DamageNumbers {
   private w = 0;
   private h = 0;
   private dpr = 1;
+  private fonts: string[] = [];
+  private texts = new Map<number, string>();
+
+  private font(px: number): string {
+    const k = Math.round(px);
+    return (this.fonts[k] ??= `900 ${k}px "Trebuchet MS", system-ui, sans-serif`);
+  }
+
+  private text(v: number): string {
+    const k = Math.round(v);
+    let t = this.texts.get(k);
+    if (t === undefined) {
+      t = String(k);
+      if (this.texts.size < 4000) this.texts.set(k, t);
+    }
+    return t;
+  }
 
   constructor(private canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d');
@@ -259,8 +305,8 @@ export class DamageNumbers {
         const pop = crit ? 1.45 + Math.max(0, life - 0.7) * 2 : 1;
         const size = base * pop;
         ctx.globalAlpha = Math.min(1, life * 4);
-        ctx.font = `900 ${size.toFixed(0)}px "Trebuchet MS", system-ui, sans-serif`;
-        const txt = kind === 1 ? `+${Math.round(this.d[o + 3])}` : `${Math.round(this.d[o + 3])}`;
+        ctx.font = this.font(size);
+        const txt = kind === 1 ? `+${this.text(this.d[o + 3])}` : this.text(this.d[o + 3]);
         ctx.lineWidth = Math.max(2, size * 0.18);
         ctx.strokeStyle = 'rgba(30, 20, 45, 0.9)';
         ctx.strokeText(txt, sx, sy);

@@ -101,6 +101,7 @@ export class Hud {
     this.root.classList.toggle('hidden', !on);
     if (on) {
       this.lastLevel = 0;
+      this.last = { hp: -1, maxHp: -1, time: -1, kills: -1, gold: -1, speed: -1, xp: -1, ghost: -1 };
       this.ghostHp = 1;
       this.banner.classList.add('hidden');
       this.toasts.innerHTML = '';
@@ -142,13 +143,26 @@ export class Hud {
     if (icon && max === 1) s.pips.append(h('i', { class: 'evo' }));
   }
 
+  private last = { hp: -1, maxHp: -1, time: -1, kills: -1, gold: -1, speed: -1, xp: -1, ghost: -1 };
+  private bossHint = -1;
+
   update(w: World, dt: number, gold: number): void {
     const p = w.player;
+    const L = this.last;
     const hpFrac = p.hp / p.stats.maxHp;
-    setWidth(this.hpFill, hpFrac);
     this.ghostHp = Math.max(hpFrac, this.ghostHp - dt * 0.6);
-    setWidth(this.hpGhost, this.ghostHp);
-    setText(this.hpText, `${Math.ceil(p.hp)} / ${Math.round(p.stats.maxHp)}`);
+    // only touch the DOM when a displayed value actually changes
+    const hpShown = Math.ceil(p.hp);
+    if (hpShown !== L.hp || p.stats.maxHp !== L.maxHp) {
+      L.hp = hpShown;
+      L.maxHp = p.stats.maxHp;
+      setWidth(this.hpFill, hpFrac);
+      setText(this.hpText, `${hpShown} / ${Math.round(p.stats.maxHp)}`);
+    }
+    if (Math.abs(this.ghostHp - L.ghost) > 0.002) {
+      L.ghost = this.ghostHp;
+      setWidth(this.hpGhost, this.ghostHp);
+    }
     this.hpFill.classList.toggle('low', hpFrac < 0.3);
     this.hurtVignette.classList.toggle('low', hpFrac < 0.25 && p.alive);
     if (p.level !== this.lastLevel) {
@@ -159,13 +173,31 @@ export class Hud {
       }
       this.lastLevel = p.level;
     }
-    setWidth(this.xpFill, p.xp / p.xpNext);
-    setText(this.level, String(p.level));
-    setText(this.timer, formatTime(w.time));
-    setWidth(this.dawn, w.time / RUN_LENGTH);
-    setText(this.kills, String(w.stats.kills));
-    setText(this.gold, String(gold));
-    setText(this.speed, Math.hypot(p.vx, p.vz).toFixed(1));
+    const xpk = Math.round((p.xp / p.xpNext) * 500);
+    if (xpk !== L.xp) {
+      L.xp = xpk;
+      setWidth(this.xpFill, p.xp / p.xpNext);
+      setText(this.level, String(p.level));
+    }
+    const sec = Math.floor(w.time);
+    if (sec !== L.time) {
+      L.time = sec;
+      setText(this.timer, formatTime(w.time));
+      setWidth(this.dawn, w.time / RUN_LENGTH);
+    }
+    if (w.stats.kills !== L.kills) {
+      L.kills = w.stats.kills;
+      setText(this.kills, String(w.stats.kills));
+    }
+    if (gold !== L.gold) {
+      L.gold = gold;
+      setText(this.gold, String(gold));
+    }
+    const spd = Math.round(Math.hypot(p.vx, p.vz) * 10);
+    if (spd !== L.speed) {
+      L.speed = spd;
+      setText(this.speed, (spd / 10).toFixed(1));
+    }
 
     for (let i = 0; i < WEAPON_SLOTS; i++) {
       const wi = w.weapons[i];
@@ -181,7 +213,8 @@ export class Hud {
     // boss bar
     const d = w.director;
     if (d.bossUid) {
-      const bi = w.enemies.findUid(d.bossUid);
+      const bi = w.enemies.findUid(d.bossUid, this.bossHint);
+      this.bossHint = bi;
       if (bi >= 0) {
         this.bossWrap.classList.remove('hidden');
         setText(this.bossName, ENEMIES[w.enemies.type[bi]].name);

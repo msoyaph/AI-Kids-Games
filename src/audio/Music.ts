@@ -61,6 +61,7 @@ const SONGS: Record<Exclude<MusicMood, 'off'>, Song> = {
 };
 
 const freq = (m: number): number => 440 * Math.pow(2, (m - 69) / 12);
+const LEAD_STEPS = [0, 3, 6, 10, 12];
 
 /** Lookahead step sequencer producing layered, intensity-driven music. */
 export class Music {
@@ -152,7 +153,7 @@ export class Music {
       }
     }
     // lead melody on phrase bars 2-3 at higher intensity
-    if ((I > 0.8 || this.mood === 'boss') && this.bar % 4 >= 2 && [0, 3, 6, 10, 12].includes(s)) {
+    if ((I > 0.8 || this.mood === 'boss') && this.bar % 4 >= 2 && LEAD_STEPS.includes(s)) {
       const k = Math.floor(this.rand(this.bar * 16 + s) * song.scale.length);
       this.pluck(freq(song.scale[k]), t, stepDur * 2.5, 0.04, song.leadWave);
     }

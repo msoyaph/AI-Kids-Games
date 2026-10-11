@@ -7,9 +7,10 @@ export class SpatialHash {
   readonly inv: number;
   readonly dim: number;
   readonly half: number;
-  private cellStart: Int32Array;
+  /** Exposed for inlined neighbour iteration in hot loops (read-only by convention). */
+  readonly cellStart: Int32Array;
   private cellCount: Int32Array;
-  private items: Int32Array;
+  readonly items: Int32Array;
   private cellOf: Int32Array;
   count = 0;
 
@@ -62,6 +63,35 @@ export class SpatialHash {
       this.items[start[c] + counts[c]++] = i;
     }
     this.count = total;
+  }
+
+  /** Integer cell coordinate for a world coordinate (clamped). */
+  cell(v: number): number {
+    let c = ((v + this.half) * this.inv) | 0;
+    if (c < 0) c = 0;
+    else if (c >= this.dim) c = this.dim - 1;
+    return c;
+  }
+
+  /** Collect indices in the inclusive cell rectangle (all-integer args: no double boxing). */
+  queryCells(cx0: number, cz0: number, cx1: number, cz1: number, out: Int32Array): number {
+    const dim = this.dim;
+    const start = this.cellStart;
+    const items = this.items;
+    const max = out.length;
+    let n = 0;
+    for (let cz = cz0; cz <= cz1; cz++) {
+      const row = cz * dim;
+      for (let cx = cx0; cx <= cx1; cx++) {
+        const c = row + cx;
+        const e = start[c + 1];
+        for (let k = start[c]; k < e; k++) {
+          if (n >= max) return n;
+          out[n++] = items[k];
+        }
+      }
+    }
+    return n;
   }
 
   /**

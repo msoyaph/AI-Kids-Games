@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { CAPS } from '../config/balance';
 import { ENEMIES } from '../config/enemies';
 import type { World } from '../sim/world';
-import { addFlashAttribute, commitInstances, flashLambert, makeInstanced, writeTRS } from './instancing';
+import { addFlashAttribute, commitInstances, flashLambert, makeInstanced, TRS, writeTRSFrom } from './instancing';
 import { enemyGeometry } from './models';
 
 const BEHAVIOR_CHARGER = 'charger';
@@ -104,7 +104,15 @@ export class EnemyRenderer {
         cb *= 1.5;
       }
       const bob = this.bobAmp[t] > 0 ? Math.sin(time * 6 + e.uid[i]) * this.bobAmp[t] : 0;
-      writeTRS(mesh.instanceMatrix.array as Float32Array, k * 16, x, y + bob, z, e.yaw[i], roll, s, sy, s);
+      TRS[0] = x;
+      TRS[1] = y + bob;
+      TRS[2] = z;
+      TRS[3] = e.yaw[i];
+      TRS[4] = roll;
+      TRS[5] = s;
+      TRS[6] = sy;
+      TRS[7] = s;
+      writeTRSFrom(mesh.instanceMatrix.array as Float32Array, k * 16);
       const col = mesh.instanceColor!.array as Float32Array;
       col[k * 3] = cr;
       col[k * 3 + 1] = cg;
@@ -112,7 +120,15 @@ export class EnemyRenderer {
       (this.flash[t].array as Float32Array)[k] = flash;
       if (doShadows) {
         const r = e.radius[i] * 1.25 * spawnK;
-        writeTRS(shadowArr, ns * 16, x, y + 0.06, z, 0, 0, r, 1, r);
+        TRS[0] = x;
+        TRS[1] = y + 0.06;
+        TRS[2] = z;
+        TRS[3] = 0;
+        TRS[4] = 0;
+        TRS[5] = r;
+        TRS[6] = 1;
+        TRS[7] = r;
+        writeTRSFrom(shadowArr, ns * 16);
         ns++;
       }
     }

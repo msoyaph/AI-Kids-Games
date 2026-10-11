@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { commitInstances, makeInstanced, writeTRS } from './instancing';
+import { commitInstances, makeInstanced, TRS, writeTRSFrom } from './instancing';
 
 /**
  * Render-only particle pool (cosmetic, uses Math.random). Typed arrays, swap-remove,
@@ -127,7 +127,15 @@ export class Particles {
     for (let k = 0; k < this.n; k++) {
       const f = this.life[k] / this.max[k];
       const s = this.size[k] * (f < 0.5 ? f * 2 : 1);
-      writeTRS(a, k * 16, this.x[k], this.y[k], this.z[k], this.spin[k] + f * 4, f * 2, s, s, s);
+      TRS[0] = this.x[k];
+      TRS[1] = this.y[k];
+      TRS[2] = this.z[k];
+      TRS[3] = this.spin[k] + f * 4;
+      TRS[4] = f * 2;
+      TRS[5] = s;
+      TRS[6] = s;
+      TRS[7] = s;
+      writeTRSFrom(a, k * 16);
       c[k * 3] = this.col[k * 3];
       c[k * 3 + 1] = this.col[k * 3 + 1];
       c[k * 3 + 2] = this.col[k * 3 + 2];

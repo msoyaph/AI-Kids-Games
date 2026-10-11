@@ -25,6 +25,7 @@ export function updateGems(w: World): void {
   const tx = p.x;
   const ty = p.y + 0.8;
   const tz = p.z;
+  const pspeed = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
   for (let i = 0; i < g.count; i++) {
     if (!g.alive[i]) continue;
     let x = g.x[i];
@@ -38,7 +39,7 @@ export function updateGems(w: World): void {
       g.pull[i] += DT;
       const dy = ty - y;
       const d = Math.sqrt(d2 + dy * dy) || 0.001;
-      const sp = Math.min(60, 9 + g.pull[i] * 45 + Math.hypot(p.vx, p.vz));
+      const sp = Math.min(60, 9 + g.pull[i] * 45 + pspeed);
       const stepLen = Math.min(d, sp * DT);
       x += (dx / d) * stepLen;
       y += (dy / d) * stepLen;
@@ -52,7 +53,7 @@ export function updateGems(w: World): void {
     } else if (!g.grounded[i]) {
       g.vy[i] -= GRAVITY * DT;
       y += g.vy[i] * DT;
-      const gy = t.height(x, z) + 0.45;
+      const gy = t.heightAt(x, z) + 0.45;
       if (y <= gy) {
         y = gy;
         g.grounded[i] = 1;
@@ -69,6 +70,7 @@ export function updatePickups(w: World): void {
   const p = w.player;
   const t = w.terrain;
   const magnet = p.stats.magnet;
+  const pspeed = Math.sqrt(p.vx * p.vx + p.vz * p.vz);
   for (let i = 0; i < pk.count; i++) {
     if (!pk.alive[i]) continue;
     pk.age[i] += DT;
@@ -85,7 +87,7 @@ export function updatePickups(w: World): void {
     if (!pk.magnet[i] && d < reach) pk.magnet[i] = 1;
     if (pk.magnet[i]) {
       pk.pull[i] += DT;
-      const sp = Math.min(50, 8 + pk.pull[i] * 40 + Math.hypot(p.vx, p.vz));
+      const sp = Math.min(50, 8 + pk.pull[i] * 40 + pspeed);
       const s = Math.min(d, sp * DT);
       x += (dx / d) * s;
       y += (dy / d) * s;
@@ -93,7 +95,7 @@ export function updatePickups(w: World): void {
     } else {
       pk.vy[i] -= GRAVITY * DT;
       y += pk.vy[i] * DT;
-      const gy = t.height(x, z) + 0.5;
+      const gy = t.heightAt(x, z) + 0.5;
       if (y < gy) {
         y = gy;
         pk.vy[i] = 0;

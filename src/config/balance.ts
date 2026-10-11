@@ -97,10 +97,10 @@ export function enemyDamageScale(minutes: number): number {
 }
 
 export const GEM_TIERS = [
-  { min: 0, color: 0x5ee6ff, scale: 0.85 },
-  { min: 5, color: 0x6dff8a, scale: 1.0 },
-  { min: 20, color: 0xff6bd6, scale: 1.2 },
-  { min: 80, color: 0xffd34d, scale: 1.45 },
+  { min: 0, color: 0x5ee6ff, scale: 0.75 },
+  { min: 5, color: 0x6dff8a, scale: 0.9 },
+  { min: 20, color: 0xff6bd6, scale: 1.05 },
+  { min: 80, color: 0xffd34d, scale: 1.25 },
 ] as const;
 
 export function gemTier(value: number): number {

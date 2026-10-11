@@ -67,6 +67,13 @@ export class Terrain {
   readonly colX: Float32Array;
   readonly colZ: Float32Array;
   readonly colR: Float32Array;
+  /** Per collider-grid cell: 1 if this or a neighbouring cell holds a collider. */
+  readonly colNear: Uint8Array;
+  readonly colCells: number;
+
+  /** Precomputed height samples (1 unit spacing) for cheap, inlinable lookups. */
+  readonly hcache: Float32Array;
+  readonly hdim: number;
 
   constructor(seed: number) {
     this.seed = seed;
@@ -83,7 +90,62 @@ export class Terrain {
     this.colZ = new Float32Array(cols.map((p) => p.z));
     this.colR = new Float32Array(cols.map((p) => p.radius));
     this.cCells = Math.ceil((this.half * 2) / GRID_CELL);
+    this.colCells = this.cCells;
     [this.cCellStart, this.cCellItems] = this.buildColliderGrid();
+    this.colNear = new Uint8Array(this.cCells * this.cCells);
+    for (let cz = 0; cz < this.cCells; cz++) {
+      for (let cx = 0; cx < this.cCells; cx++) {
+        let any = 0;
+        for (let oz = -1; oz <= 1 && !any; oz++) {
+          for (let ox = -1; ox <= 1 && !any; ox++) {
+            const xx = cx + ox;
+            const zz = cz + oz;
+            if (xx < 0 || zz < 0 || xx >= this.cCells || zz >= this.cCells) continue;
+            const c = zz * this.cCells + xx;
+            if (this.cCellStart[c + 1] > this.cCellStart[c]) any = 1;
+          }
+        }
+        this.colNear[cz * this.cCells + cx] = any;
+      }
+    }
+
+    this.hdim = this.half * 2 + 1;
+    this.hcache = new Float32Array(this.hdim * this.hdim);
+    for (let j = 0; j < this.hdim; j++) {
+      for (let i = 0; i < this.hdim; i++) this.hcache[j * this.hdim + i] = this.height(i - this.half, j - this.half);
+    }
+  }
+
+  /**
+   * Fast approximate ground height (bilinear over the 1-unit cache). Small enough for
+   * V8 to inline, so hot loops (enemies, projectiles, pickups) avoid boxing doubles.
+   * The player uses the exact height().
+   */
+  heightAt(x: number, z: number): number {
+    const d = this.hdim;
+    let fx = x + this.half;
+    let fz = z + this.half;
+    if (fx < 0) fx = 0;
+    else if (fx > d - 1.001) fx = d - 1.001;
+    if (fz < 0) fz = 0;
+    else if (fz > d - 1.001) fz = d - 1.001;
+    const ix = fx | 0;
+    const iz = fz | 0;
+    const tx = fx - ix;
+    const tz = fz - iz;
+    const o = iz * d + ix;
+    const c = this.hcache;
+    const a = c[o] + (c[o + 1] - c[o]) * tx;
+    const b = c[o + d] + (c[o + d + 1] - c[o + d]) * tx;
+    return a + (b - a) * tz;
+  }
+
+  /** Collider-grid cell index of a coordinate (integer math; callers inline it). */
+  colliderCellNear(x: number, z: number): boolean {
+    const cx = ((x + this.half) / GRID_CELL) | 0;
+    const cz = ((z + this.half) / GRID_CELL) | 0;
+    if (cx < 0 || cz < 0 || cx >= this.colCells || cz >= this.colCells) return false;
+    return this.colNear[cz * this.colCells + cx] === 1;
   }
 
   /** Rolling hills only (no structures). */

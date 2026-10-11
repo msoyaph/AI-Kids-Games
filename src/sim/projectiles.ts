@@ -53,7 +53,7 @@ export function updateProjectiles(w: World): void {
       case Motion.Linear: {
         pr.x[i] += pr.vx[i] * DT;
         pr.z[i] += pr.vz[i] * DT;
-        const gy = t.height(pr.x[i], pr.z[i]) + 0.9;
+        const gy = t.heightAt(pr.x[i], pr.z[i]) + 0.9;
         if (pr.y[i] < gy) pr.y[i] += (gy - pr.y[i]) * 0.5;
         else pr.y[i] += (gy - pr.y[i]) * 0.05;
         break;
@@ -97,7 +97,7 @@ export function updateProjectiles(w: World): void {
             continue;
           }
         }
-        pr.y[i] += (t.height(pr.x[i], pr.z[i]) + 1.0 - pr.y[i]) * 0.3;
+        pr.y[i] += (t.heightAt(pr.x[i], pr.z[i]) + 1.0 - pr.y[i]) * 0.3;
         break;
       }
       case Motion.Homing: {
@@ -141,7 +141,7 @@ export function updateProjectiles(w: World): void {
         }
         pr.x[i] += pr.vx[i] * DT;
         pr.z[i] += pr.vz[i] * DT;
-        pr.y[i] += (t.height(pr.x[i], pr.z[i]) + 1.2 - pr.y[i]) * 0.15;
+        pr.y[i] += (t.heightAt(pr.x[i], pr.z[i]) + 1.2 - pr.y[i]) * 0.15;
         break;
       }
       case Motion.Arc: {
@@ -160,7 +160,17 @@ export function updateProjectiles(w: World): void {
     }
     // ── collisions ──
     const r = pr.radius[i];
-    const n = w.grid.query(x, z, r + 3.2, buf);
+    const reach = r + 3.2;
+    const grid = w.grid;
+    let cx0 = ((x - reach + grid.half) * grid.inv) | 0;
+    let cx1 = ((x + reach + grid.half) * grid.inv) | 0;
+    let cz0 = ((z - reach + grid.half) * grid.inv) | 0;
+    let cz1 = ((z + reach + grid.half) * grid.inv) | 0;
+    if (cx0 < 0) cx0 = 0;
+    if (cz0 < 0) cz0 = 0;
+    if (cx1 >= grid.dim) cx1 = grid.dim - 1;
+    if (cz1 >= grid.dim) cz1 = grid.dim - 1;
+    const n = grid.queryCells(cx0, cz0, cx1, cz1, buf);
     const slot = pr.slot[i];
     const immunity = pr.useImmunity[i] === 1;
     const y = pr.y[i];

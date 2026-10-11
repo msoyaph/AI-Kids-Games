@@ -43,6 +43,17 @@ Key rules:
 - Use `world.rng` (seeded) for anything gameplay-affecting; `Math.random` only for cosmetic FX.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
 
+## Performance notes
+- `npx tsx scripts/bench.ts 1000 20` — headless sim benchmark (stress mode keeps N enemies +
+  0.4·N piercing projectiles alive). Baseline: ~0.3 ms/tick at 1000 enemies + ~450 projectiles.
+- In-browser: `?stress=1000` then F3. ~50 draw calls, ~1.3 ms/frame CPU+GPU on an M-series Mac.
+- Hot loops avoid calls with double arguments (V8 boxes them when not inlined): use
+  `terrain.heightAt` (cached bilinear) not `height()` for non-player entities, walk
+  `grid.cellStart/items` inline or use `queryCells` (integer args), and write instance
+  transforms via the `TRS` scratch + `writeTRSFrom(array, offset)`.
+- Instanced attribute uploads use `uploadPrefix` (only the used prefix, no per-frame range
+  object allocation).
+
 ## Phase plan / status
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera
 2. [x] Enemies, spawning, collision, HP, death
@@ -51,6 +62,6 @@ Key rules:
 5. [x] Bosses, 20-minute waves, win/lose flow
 6. [x] Menus, characters, meta-progression, save system
 7. [x] Audio, juice, polish, settings
-8. [ ] Performance pass (1000-enemy stress test)
+8. [x] Performance pass (1000-enemy stress test)
 9. [ ] Unit tests + Playwright smoke test
 10. [ ] Balance pass with simulated runs

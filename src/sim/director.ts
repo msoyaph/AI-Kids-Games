@@ -5,6 +5,8 @@ import type { WaveEvent } from '../config/types';
 import { Ev } from '../core/events';
 import { spawnBoss } from './bosses';
 import { spawnEnemy } from './combat';
+import { Motion } from './pools';
+import { spawnProjectile } from './weapons/common';
 import type { World } from './world';
 
 /** Pre-resolved spawn tables per wave segment. */
@@ -16,6 +18,9 @@ const MIX = WAVES.map((seg) => ({
 const NON_BOSS_TYPES = Int32Array.from(ENEMIES.map((d, i) => (d.behavior === 'boss' || d.id === 'blobbit' ? -1 : i)).filter((i) => i >= 0));
 
 const tmp = new Float32Array(2);
+
+/** Stress-test projectile: slow, piercing, long-lived. */
+const STRESS_SHOT = { damage: 1, cooldown: 1, area: 1, speed: 9, amount: 1, pierce: 9999, duration: 5, knockback: 0, hitInterval: 0.5, range: 30, chain: 0, slow: 0, explode: 0, crit: 0 };
 
 /** Pick a point on the spawn ring around the player, inside the map. */
 function ringPoint(w: World, minD: number, maxD: number, biasX: number, biasZ: number, out: Float32Array): void {
@@ -102,6 +107,16 @@ export function updateDirector(w: World): void {
     let budget = 60;
     while (w.enemies.count < w.options.stress && budget-- > 0) {
       spawnOffscreen(w, NON_BOSS_TYPES[w.rng.int(NON_BOSS_TYPES.length)]);
+    }
+    // keep a large projectile population alive too (piercing, long-lived)
+    const wi = w.weapons[0];
+    const want = Math.floor(w.options.stress * 0.4);
+    budget = 40;
+    while (wi && w.projectiles.count < want && budget-- > 0) {
+      const a = w.rng.next() * Math.PI * 2;
+      const p = w.player;
+      const i = spawnProjectile(w, wi, STRESS_SHOT, p.x, p.y + 1, p.z, Math.sin(a), Math.cos(a), Motion.Linear);
+      if (i >= 0) w.projectiles.visual[i] = 1;
     }
     return;
   }

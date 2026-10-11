@@ -45,7 +45,11 @@ export function updateEnemies(w: World): void {
   const p = w.player;
   const t = w.terrain;
   const grid = w.grid;
-  const buf = w.scratch2;
+  const cellStart = grid.cellStart;
+  const cellItems = grid.items;
+  const gInv = grid.inv;
+  const gHalf = grid.half;
+  const gDim = grid.dim;
   const decay = Math.exp(-7 * DT);
   const px = p.x;
   const pz = p.z;
@@ -180,27 +184,41 @@ export function updateEnemies(w: World): void {
         break;
     }
 
-    // separation from neighbours (soft, capped work per enemy)
+    // separation from neighbours (soft, capped work per enemy). Grid cells are walked
+    // inline with integer math: no calls with double arguments in this hot loop.
     let sx = 0;
     let sz = 0;
     const r = e.radius[i];
-    const n = grid.query(x, z, r + 1.4, buf);
+    const reach = r + 1.4;
+    let cx0 = ((x - reach + gHalf) * gInv) | 0;
+    let cx1 = ((x + reach + gHalf) * gInv) | 0;
+    let cz0 = ((z - reach + gHalf) * gInv) | 0;
+    let cz1 = ((z + reach + gHalf) * gInv) | 0;
+    if (cx0 < 0) cx0 = 0;
+    if (cz0 < 0) cz0 = 0;
+    if (cx1 >= gDim) cx1 = gDim - 1;
+    if (cz1 >= gDim) cz1 = gDim - 1;
     let checked = 0;
-    for (let k = 0; k < n && checked < MAX_NEIGHBORS; k++) {
-      const j = buf[k];
-      if (j === i) continue;
-      checked++;
-      const ox = x - e.x[j];
-      const oz = z - e.z[j];
-      const rr = r + e.radius[j];
-      const d2 = ox * ox + oz * oz;
-      if (d2 < rr * rr && d2 > 1e-6) {
-        const d = Math.sqrt(d2);
-        const f = (rr - d) / d;
-        // heavier enemies get pushed less
-        const wgt = beh === 7 ? 0.05 : beh === 2 ? 0.5 : 1;
-        sx += ox * f * wgt;
-        sz += oz * f * wgt;
+    const wgt = beh === 7 ? 0.05 : beh === 2 ? 0.5 : 1; // heavier enemies get pushed less
+    scan: for (let cz = cz0; cz <= cz1; cz++) {
+      for (let cx = cx0; cx <= cx1; cx++) {
+        const c = cz * gDim + cx;
+        const end = cellStart[c + 1];
+        for (let k = cellStart[c]; k < end; k++) {
+          const j = cellItems[k];
+          if (j === i) continue;
+          if (++checked > MAX_NEIGHBORS) break scan;
+          const ox = x - e.x[j];
+          const oz = z - e.z[j];
+          const rr = r + e.radius[j];
+          const d2 = ox * ox + oz * oz;
+          if (d2 < rr * rr && d2 > 1e-6) {
+            const d = Math.sqrt(d2);
+            const f = ((rr - d) / d) * wgt;
+            sx += ox * f;
+            sz += oz * f;
+          }
+        }
       }
     }
 
@@ -209,7 +227,7 @@ export function updateEnemies(w: World): void {
     e.kx[i] *= decay;
     e.kz[i] *= decay;
 
-    if (beh !== 7 && !TYPE_FLYING[type] && t.resolveColliders(x, z, r * 0.8, push)) {
+    if (beh !== 7 && !TYPE_FLYING[type] && t.colliderCellNear(x, z) && t.resolveColliders(x, z, r * 0.8, push)) {
       x = push[0];
       z = push[1];
     }
@@ -221,7 +239,7 @@ export function updateEnemies(w: World): void {
     e.x[i] = x;
     e.z[i] = z;
 
-    const gy = t.height(x, z);
+    const gy = t.heightAt(x, z);
     const y = e.y[i];
     e.y[i] = gy > y ? y + (gy - y) * 0.35 : y + (gy - y) * 0.25;
 
@@ -289,7 +307,7 @@ export function updateEnemyShots(w: World): void {
     const x = (s.x[i] += s.vx[i] * DT);
     const z = (s.z[i] += s.vz[i] * DT);
     // shots skim the terrain at a fixed height (so you can hop over them)
-    const gy = t.height(x, z);
+    const gy = t.heightAt(x, z);
     s.y[i] += (gy + 1.0 - s.y[i]) * 0.2;
     if (Math.abs(x) > t.half || Math.abs(z) > t.half) {
       s.alive[i] = 0;
