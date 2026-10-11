@@ -175,6 +175,7 @@ export class WorldView {
   private etex: Record<string, Record<string, Texture[]>> = {};
   private shieldTex = {} as Record<ElementId, Texture>;
   private pelTex = {} as Record<ElementId, Texture>;
+  private resistTex = {} as Record<ElementId, Texture>;
   private stunTex: Texture;
   private shardTex: Texture;
   private ringTex: Texture;
@@ -205,6 +206,7 @@ export class WorldView {
     for (const el of ELEMENT_ORDER) {
       this.shieldTex[el] = atlas.get(`shield_${el}`);
       this.pelTex[el] = atlas.get(`pel_${el}`);
+      this.resistTex[el] = atlas.get(`resist_${el}`);
     }
     this.stunTex = atlas.get('stun');
     this.shardTex = atlas.get('shard');
@@ -601,7 +603,7 @@ export class WorldView {
       } else v.barFill.visible = false;
       if (e.resist && !hidden) {
         v.resist.visible = true;
-        v.resist.texture = this.atlas.get(`resist_${e.resist}`);
+        v.resist.texture = this.resistTex[e.resist];
         v.resist.position.set(x + barW / 2 + 9, barY + 2);
       } else v.resist.visible = false;
       if (hidden) v.hpBg.visible = v.hpFill.visible = false;
@@ -1440,6 +1442,7 @@ export class WorldView {
   private heroHpBg: Sprite | null = null;
   private heroDest: Sprite | null = null;
   private heroLabel: BitmapText | null = null;
+  private heroLabelSecs = -1;
   /** Set by the game screen while the hero is selected. */
   heroSelected = false;
   private abilityRing: Sprite | null = null;
@@ -1495,7 +1498,11 @@ export class WorldView {
       label.visible = true;
       const g = this.game.grid;
       label.position.set((g.cellX(h.home) + 0.5) * TILE, (g.cellY(h.home) + 0.5) * TILE - 30);
-      label.text = `${Math.ceil(h.respawn)}`;
+      const secs = Math.ceil(h.respawn);
+      if (secs !== this.heroLabelSecs) {
+        this.heroLabelSecs = secs;
+        label.text = num(secs);
+      }
       label.tint = h.def.accent;
       return;
     }

@@ -2,111 +2,127 @@
 
 ![Vanex Defense banner](marketing/banner-16x9.svg)
 
-A bright, kid-friendly (ages 7+) **elemental tower defense** game for phones, tablets and computers.
-The cheeky Grumblewumps want to borrow the shiny crystals of Vanex! Build towers, shape the creatures' path
-into a long, wiggly maze, unlock six elements, and mix them into fifteen combo towers.
+An **elemental tower-defense strategy game for ages 10–14**, for phones, tablets and computers. You are the
+Commander of the Vanex Defense Grid. The Shardbound — crystal constructs driven by a rogue rift engine and led by
+Archon Null — are breaking through. Build and maze your towers, read each wave's intel, counter its elements,
+specialize your best towers, field a commander hero and call down abilities. PIP, the grid's tactical AI, keeps
+you briefed (and occasionally sarcastic).
 
-- 12 hand-made maps in 4 worlds (Sunny Meadow, Dune Desert, Frosty Peaks, Crystal Caves), 40 waves each
-- Easy / Normal / Hard, 1–3 stars per map, Endless mode, 28 badges, a Creature & Tower Book
-- Interactive tutorial with Pip the crystal fox
-- 100% original: every picture is drawn by code and every sound is synthesized — no asset files, no fonts,
-  no ads, no tracking, no network requests
-- Ships as **one self-contained `dist/index.html`**
+- **6 worlds, 18 hand-made sectors** (Verdant Reach, Ember Wastes, Frostspire Peaks, Hollow Deep, Skyforge Ruins,
+  Rift Citadel) with gates, drawbridges, sky lanes, twin citadels and shifting ground; 40 waves each
+- **23 towers** (2 basic, 6 element, 15 combo), **42 specializations** at level 3, real stats everywhere (damage,
+  attack speed, range, DPS)
+- **17 constructs** with shields, barriers, stealth, tunnelling, tower jamming, regeneration and element wards;
+  **4 multi-phase bosses** with telegraphed attacks
+- **4 commander heroes** and **3 abilities**, a **research lab** paid with stars, **Story / Normal / Hard /
+  Expert**, 5 **challenge medals** per sector, a **Daily challenge**, **Endless** with mutators, **38 badges**
+- **Map Workshop:** build your own sector, bot-test it, share it as a code
+- Adaptive soundtrack (per world + boss themes), English and Filipino, accessibility options
+- 100% original and self-contained: every picture is drawn by code and every sound is synthesized — no asset
+  files, no fonts, no ads, no purchases, no tracking, no network requests. Ships as **one `dist/index.html`**.
 
 ---
 
 ## How to play
 
-1. **Pick an element.** You get an Element Crystal at the start and more at waves 5, 10, 15, 20 and 25.
-2. **Build towers** from the tower bar. Arrow Posts and Pop Cannons are always available; each element
-   unlocks its own tower, and any two elements unlock a **combo tower**.
-3. **Make a maze.** On open maps, creatures walk *around* towers. Use towers to make their path long and
-   wiggly — the arrows on the ground show the path. You can never fully block it (Pip will tell you
-   “That would block the path!”).
-4. **Press GO.** Waves come by themselves after a short break. Press **Next** early for bonus coins.
-5. **Upgrade** towers (up to level 4) and **sell** them for 75% of what you spent.
-6. **Save coins:** every cleared wave pays a small bonus on the coins you saved.
+1. **Choose an element.** You start with one element core; more arrive at waves 5, 10, 15, 20 and 25.
+2. **Build towers** from the build bar. Bolt Turrets and Impact Cannons are always available; each element unlocks
+   its tower, and any two elements unlock a **combo tower**.
+3. **Maze.** On open sectors constructs walk *around* towers — make their route long (the arrows show it). You
+   can't seal it completely; PIP will stop you.
+4. **Read the intel.** The next-wave strip shows what is coming (counts, flyers, shields, bosses); tap it for the
+   full breakdown. Call a wave early for bonus gold.
+5. **Upgrade** to level 4. At level 3 every element and combo tower **specializes** into one of two paths.
+   Selling refunds 75%.
+6. **Command.** Move your hero, trigger its special, and use abilities (Crystal Meteor, Chrono Field, Emergency
+   Funds) — research unlocks more heroes and abilities.
+7. **Bank gold:** every cleared wave pays interest on unspent gold.
 
 **The element wheel** — strong hits do 1.6× damage, weak hits 0.6×:
 
 | | beats | because |
 |---|---|---|
-| 💧 Water | 🔥 Fire | Water puts out fire |
-| 🔥 Fire | 🍃 Nature | Fire burns leaves |
-| 🍃 Nature | 💧 Water | Plants drink water |
-| ⭐ Light | 🌙 Shadow | Light chases away shadows |
-| 🌙 Shadow | ⬢ Earth | Shadows sneak through rock cracks |
-| ⬢ Earth | ⭐ Light | Rocks block the light |
+| 💧 Water | 🔥 Fire | Water quenches fire |
+| 🔥 Fire | 🍃 Nature | Fire scorches nature |
+| 🍃 Nature | 💧 Water | Nature drains water |
+| ⭐ Light | 🌙 Shadow | Light pierces shadow |
+| 🌙 Shadow | ⬢ Earth | Shadow erodes earth |
+| ⬢ Earth | ⭐ Light | Earth blots out light |
 
-Every element has its own **colour and shape**, so the game is colour-blind friendly. Creatures can be
-fast, armored, flying (they ignore your maze!), healers, splitters or wrapped in an element bubble that only
-the right element can pop. A boss arrives every 10 waves.
-
-**Stars:** keep 80% of your lives for ★★★, 40% for ★★. Stars open new worlds.
+Every element has its own **colour and shape**, so the game works for colour-blind players.
+**Stars:** keep 80% of your lives for ★★★, 40% for ★★ — per difficulty. Stars open worlds and fund research.
 
 ## Controls
 
-| Action | Touch | Mouse | Keyboard |
+| Action | Touch | Mouse | Keyboard (default, remappable) |
 |---|---|---|---|
-| Choose a tower | tap a card in the tower bar (tap **Build** first on small screens) | click a card | `1`–`9`, `0` |
-| Build | tap a square, then **✓** (or tap the square again) | click a square | — |
-| Select / upgrade / sell | tap a tower → **Upgrade** / **Sell** | click a tower | `U` upgrade, `S` sell, `T` targeting |
-| Learn about something | press and hold a tower, creature or card | right-click / hold | — |
-| Move / zoom the map | drag / pinch | drag / mouse wheel | — |
-| Next wave | **GO** / **Next** | same | `N` or `Enter` |
-| Speed 1x / 2x / 3x | speed button | same | `F` |
-| Pause | ❚❚ | same | `Space`, `P`, `Esc` |
-| Pick an element | **Pick an element!** | same | `E` |
+| Choose a tower | tap a card (tap **Build** first on small screens) | click a card | `1`–`9`, `0` |
+| Build | tap a square, then **✓** | click a square | — |
+| Upgrade / sell / targeting | tap a tower → buttons | click a tower | `U` / `S` / `T` |
+| Pick a specialization | tap a path in the panel | click | `1` / `2` |
+| Commander: select / special | tap the hero button, then the map | click | `H` / `Q` |
+| Abilities | tap an ability, then the map | click | `Z`, `X`, `C` |
+| Wave intel / next wave | tap the next-wave strip / **Start** · **Call** | click | `I` / `N` or `Enter` |
+| Speed 1× / 2× / 3× · pause | speed button · ❚❚ | same | `F` · `P` or `Space` |
+| Learn about anything | press and hold | right-click / hold | — |
+| Move / zoom the map | drag / pinch | drag / wheel | — |
 
-The game pauses itself when the tab is hidden, the window loses focus or the device rotates.
+Keys can be changed in Settings → Keyboard. The game pauses itself when the tab is hidden, the window loses focus
+or the device rotates.
 
 ## Build & run
 
-Requires Node 20+ (developed on Node 24).
+Requires Node 20+ (developed on Node 24, see `.nvmrc`).
 
 ```bash
 npm install
 ```
 
 ```bash
-npm run dev          # local dev server (http://localhost:5173)
+npm run dev
 ```
 
 ```bash
-npm run build        # typecheck + single-file build → dist/index.html
+npm run build
 ```
 
 ```bash
-npm test             # Vitest: unit tests + headless balance simulation (≈15 s)
+npm test
 ```
 
 ```bash
-npm run e2e          # build + Playwright on desktop, phone (landscape + portrait), tablet, sandboxed iframe
+npm run e2e
 ```
 
-```bash
-npm run sim          # autoplay bot plays every map on every difficulty (add -- --casual for a "younger player")
-```
-
-```bash
-npm run perf         # boot time + frame-time benchmark on CPU-throttled phone / tablet profiles
-```
+| Command | What it does |
+|---|---|
+| `npm run dev` | dev server (http://localhost:5173) |
+| `npm run build` | typecheck + single-file build → `dist/index.html` |
+| `npm test` | Vitest: unit tests + headless balance sims (~40 s) |
+| `npm run e2e` | build + Playwright: desktop, phones, tablet, sandboxed iframe, languages, accessibility, flash audit |
+| `npm run check:dist` | size budget + file:// and http smoke check, zero network requests |
+| `npm run sim [-- w2m1 hard] [-- --casual]` | autoplay bot over maps × difficulties |
+| `npm run balance-report` | full bot report → `docs/reports/balance.md` |
+| `npm run perf` | frame-time benchmark on throttled phone / tablet profiles → `perf-results/` |
+| `npm run audio:levels [-- --write]` | mixing pass: loudness of every track / sound → `src/audio/mix.ts` |
+| `npm run analyze-playtests -- <folder>` | playtest exports → tuning suggestions (never applied) |
 
 `dist/index.html` works when double-clicked (file://), on any static host, or inside a sandboxed iframe.
 
-**Handy URL flags:** `?map=w2m1&diff=hard` (jump into a map), `?map=w1m1&endless`, `?seed=42` (replay a run),
-`?stress=300` (performance stress test with an FPS meter — also works in the production build, so you can try
-it on a real phone), `?quality=low|medium|high|auto`. Dev server only: `?editor=1` (map editor),
-`?gallery=1` (all baked sprites).
+**URL flags:** `?map=w2m1&diff=hard` (jump into a sector), `?map=w1m1&endless`, `?seed=42`, `?lang=en|fil`,
+`?stress=300[&map=w6m3]` (stress test with an FPS meter — works in the production build too),
+`?quality=low|medium|high|auto`, `?playtest=1|0`. Dev server only: `?editor=1`, `?gallery=1`.
 
 ## Putting it on Ai Kids Games
 
 1. `npm run build`
 2. Copy `dist/index.html` → `public/games/vanex-defense/index.html`
 3. Copy `marketing/banner-16x9.svg` → `public/games/vanex-defense/banner.svg` and
-   `marketing/thumbnail-square.svg` → `public/games/vanex-defense/thumbnail.svg`
-4. Embed it like this (add `allow="fullscreen"` so the Full screen button works; the button hides itself if
-   fullscreen isn't allowed):
+   `marketing/thumbnail-square.svg` → `public/games/vanex-defense/thumbnail.svg`. **Recapture the site
+   previews:** both images are new for this version (crystal-tech look), so any cached or pre-rendered preview
+   images, social cards or screenshots of the old Vanex Defense on the site should be regenerated
+   (`node scripts/render-svg.mjs <out-dir>` writes PNG versions of both).
+4. Embed it (add `allow="fullscreen"` so the Full screen button works; it hides itself otherwise):
 
 ```html
 <iframe
@@ -118,78 +134,95 @@ it on a real phone), `?quality=low|medium|high|auto`. Dev server only: `?editor=
 ></iframe>
 ```
 
-5. Ready-to-paste entry for `games.ts` (adjust key names to match your `Game` type if they differ):
+5. Registry entry for `games.ts` (adjust key names to match your `Game` type if they differ):
 
 ```ts
 {
   slug: 'vanex-defense',
   title: 'Vanex Defense',
   description:
-    'Build elemental towers, mix them into combo towers and make a twisty maze to keep the cheeky Grumblewumps away from the crystal castle!',
+    'Command an elemental defense grid: build and maze towers, counter each wave’s elements, specialize, field a hero and hold the line across six worlds — or build your own map.',
   path: '/games/vanex-defense/index.html',
   thumbnail: '/games/vanex-defense/thumbnail.svg',
   banner: '/games/vanex-defense/banner.svg',
-  categories: ['Strategy', 'Action'],
-  ageGuidance: 'Ages 7+',
-  contentNotes: 'Cartoon creatures poof into sparkles',
+  categories: ['Strategy'],
+  ageGuidance: 'Ages 10–14',
+  contentNotes: 'Sci-fi fantasy battles against crystal robots: towers fire energy beams and constructs shatter into crystal shards. No blood, gore or scary horror. No ads, purchases, chat or accounts.',
   controls: ['touch', 'mouse', 'keyboard'],
   devices: ['phone', 'tablet', 'computer'],
-  estimatedPlayTime: '15–20 minutes per map (2–4 hours for the whole campaign)',
-  orientation: 'landscape', // portrait works too; landscape is roomier on phones
+  languages: ['en', 'fil'],
+  estimatedPlayTime: '15–25 minutes per sector (8–12 hours for the full campaign; Endless, Daily and the Workshop are open-ended)',
+  orientation: 'landscape', // portrait works; landscape is roomier on phones
 },
 ```
 
-Saves use `localStorage` (key `vanex-defense-save`, versioned with migrations). If storage is blocked the
-game still runs and simply forgets progress when the page closes.
+**Storage** (all `localStorage`, all keys prefixed `vanex-defense-`):
+
+| Key | When | Size |
+|---|---|---|
+| `vanex-defense-save` | always (versioned, v4, with migrations; progress from v1 carries over) | ~2–5 KB typical, < 50 KB worst case (tested) |
+| `vanex-defense-save-backup` | written once when an older save is upgraded | the size of the old save (~2 KB) |
+| `vanex-defense-playtest` | only with `?playtest=1` | ≤ 60 KB (oldest runs dropped) |
+
+Worst case total stays far below the 200 KB budget this game has on the shared site. If storage is blocked the
+game still runs and simply forgets progress when the page closes. **Build size:** `dist/index.html` ≈ 1.1 MB
+(≈ 335 KB gzip), budget 2 MB (enforced by `npm run check:dist`).
 
 ## Project structure
 
 ```
 src/
   core/      seeded RNG (sfc32), pools, math
-  data/      ALL content: elements, towers, enemies, waves, maps/, worlds, difficulty, achievements, strings
-  sim/       headless game logic (no DOM/Pixi): Game, grid, flowField, spatial hash, entities, events, autoplay bot
-  render/    Pixi: Stage, WorldView, Camera, MapPainter, Particles, FloatingText, quality governor, atlas/ (procedural art)
+  data/      content as data: tuning.ts (EVERY balance number), elements, towers (+ specs), enemies, waves,
+             difficulty, heroes, research, modes (daily), workshop codes, maps/, worlds, achievements
+  sim/       headless game logic (no DOM/Pixi): Game, grid, flowField (teleport edges), hero, spatial hash,
+             entities, events, autoplay bot, workshop checks
+  render/    Pixi: Stage, WorldView, Camera, MapPainter, Particles, FloatingText, flash safety, quality governor,
+             atlas/ (procedural art)
   ui/        DOM HUD + menus (Hud, modals, styles.css)
-  app/       App (screens, ticker, quality), GameScreen, flow (navigation), tutorial, achievements, save, stress
-  audio/     Web Audio synth: SFX + step-sequencer music
+  app/       App, GameScreen, flow (navigation), tutorial, achievements, save, a11y, hotkeys, playtest, perfTest,
+             screens/ (title, sector map, codex, research, daily, workshop, settings, …)
+  audio/     Web Audio synth voices, adaptive music, SFX + stingers, generated mix gains
+  i18n/      t() + plurals, en.ts (source), fil.ts (Filipino draft), pseudo-locale
   dev/       dev-only map editor & sprite gallery (tree-shaken from the production build)
-tests/unit/  Vitest (pathfinding, combat, economy, waves, saves, maps, achievements, quality, balance/)
-tests/e2e/   Playwright smoke + embed tests
-scripts/     simulate.ts, perf.mjs, check-dist.mjs, cpuprofile.mjs, shot.mjs, simdebug.ts, simmap.ts, render-svg.mjs
+tests/unit/  Vitest (pathfinding, combat, mechanics, heroes, saves, i18n, audio, a11y, playtest, maps, balance/)
+tests/e2e/   Playwright (smoke, embed, i18n overflow, accessibility, flash audit, device tools)
+scripts/     simulate, balance-report, perf, audio-levels, analyze-playtests, check-dist, review-shots, shot, …
+docs/        style guide, CI setup, reports/, screenshots/ (before / slice / after)
 marketing/   banner-16x9.svg, thumbnail-square.svg
 ```
 
 The simulation runs at a fixed 30 Hz and is completely separate from rendering, so it is unit-tested and
-balance-tested headlessly. The renderer interpolates between ticks and turns sim events (poofs, hits, coins)
-into particles, text and sound.
+balance-tested headlessly. The renderer interpolates between ticks and turns sim events into particles, text
+and sound.
 
 ## Adding content
 
 ### A new map
 
-1. Design it with the editor: `npm run dev`, open `http://localhost:5173/?editor=1`, paint, **Play test**, then
-   **Copy ASCII**.
+1. Design it with the dev editor (`npm run dev`, open `http://localhost:5173/?editor=1`, paint, **Play test**,
+   **Copy ASCII**) or in the in-game Map Workshop.
 2. Add a `MapDef` to `src/data/maps/worldN.ts`:
 
 ```ts
 {
-  id: 'w2m4', name: 'Dusty Dunes', world: 2, theme: 'desert', style: 'maze',
-  story: 'A short line for Pip to say.',
+  id: 'w2m4', world: 2, theme: 'desert', style: 'maze', // name + story live in src/i18n/en.ts (map.w2m4.*)
   favoredElements: ['fire', 'earth'], // creature elements that appear more often
   grid: [ /* rows of the legend below */ ],
 }
 ```
 
-Legend: `.` open ground (walk + build) · `o` build spot only · `=` road · `#` rock · `T` tree/cactus/pine/crystal
-· `~` water · `B` bush · `S` spawn · `C` castle (2×2). Keep rows the same width.
+Legend: see `src/data/maps/types.ts` (`.` open ground · `o` build spot · `=` road · `#` rock · `T`/`B` scenery ·
+`~` water · `S` spawn · `C` citadel 2×2, plus gates `P`/`Q`, bridges `H`/`h`, sky lane `Y`/`F`, unstable `U` /
+rubble `R`). Keep rows the same width. Add `map.<id>.name` and `map.<id>.story` to `en.ts` **and** `fil.ts`.
 
 3. `npm test` validates every map (castle, reachable spawns, room to build) and **proves it is winnable** on all
    difficulties with the autoplay bot. `npm run sim -- w2m4` shows details.
 
 ### A new tower
 
-Add an entry to `TOWERS` in `src/data/towers.ts` — stats for 4 levels via `makeLevels`, a `behavior`
+Identity (look, behaviour, text keys) goes in `src/data/towers.ts`, numbers in `TUNING.towers` /
+`TUNING.specs` in `src/data/tuning.ts` — stats for 4 levels via `makeLevels`, a `behavior`
 (`bullet`, `chain`, `beam`, `pulse`, `mortar`) and a `look` (silhouette + colours for the procedural painter).
 Abilities are data: `splash`, `slow`, `burnDps`, `poisonDps`/`poisonSpread`, `stunChance`, `armorBreak`,
 `pushback`, `zoneDps`, `auraRate`, `auraCoins`, `beamRamp`, `shots`, `chain`, `critChance`… If you need a
@@ -199,31 +232,31 @@ silhouette, one case in `src/render/atlas/drawTowers.ts`. Combo towers are found
 
 ### A new creature
 
-Add it to `ENEMIES` in `src/data/enemies.ts` (health, speed, armor, coins, and optional `flying`, `heal`,
-`split`, `shielded`, `shiftElement`…) and use it in `src/data/waves.ts`. Its sprite comes from one of the
-`look` painters in `src/render/atlas/drawEnemies.ts`.
+Identity in `src/data/enemies.ts`, numbers in `TUNING.enemies` (health, speed, armor, gold, and optional
+`flying`, `heal`, `split`, barrier, cloak, burrow, disable, regen…), wave use in `src/data/waves.ts` /
+`TUNING.waves.mechanics`. Its sprite comes from one of the `look` painters in
+`src/render/atlas/drawEnemies.ts`. Text: `enemy.<id>.name/blurb/tip` in both language files.
 
 ## Performance
 
-Measured with `npm run perf` (`?stress=300`: every tower type, 300 creatures, ~440 projectiles in flight,
-~1,400 particles) on the production build in headless Chromium with CPU throttling. See
-`perf-results/perf.json` after a run.
+`npm run perf` (`?stress=300`: every tower type, 300 constructs, ~440 projectiles, ~1,400 particles, plus the hero
+special and meteor / chrono abilities firing) on the production build with CPU throttling; results in
+`perf-results/perf.json`. Measured 2026-10-11 on an M3 Pro **while other projects kept the machine busy**
+(load average 30–45), so treat these as lower bounds and re-run on an idle machine (or the self-hosted Mac CI job):
 
-| Profile | FPS | p95 frame | frames > 20 ms | boot to title |
+| Profile | v2 FPS | p95 frame | sim / draw per frame | v1 at the same time |
 |---|---|---|---|---|
-| Phone, 4× CPU throttle (≈ mid-range Android) | 60 | 16.7 ms | 0% | 0.7 s |
-| Phone, 6× CPU throttle (≈ low-end) | ~50 (Auto quality lowers resolution) | 33 ms | 19% | 0.7 s |
-| Tablet, 2× CPU throttle | 60 | 16.7 ms | 0% | 0.3 s |
-| Desktop | 60 | 16.7 ms | 0% | 0.2 s |
-| Phone, *software* GPU (worst case), Auto quality | ~47 | 33 ms | 23% | 0.9 s |
+| Phone, 4× CPU throttle (≈ mid-range Android) | 54–58 | 33 ms | 2.2 / 6.4 ms | 53–57 fps, 1.6 / 5.6 ms |
+| Phone, 6× CPU throttle (low-end), heaviest map w6m3 | 36 (Auto → Low, 0.75× res) | 33 ms | 4.5 / 8.8 ms | — |
+| Tablet, 2× CPU throttle | 60 | 16.8 ms | 0.6 / 2.3 ms | — |
+| Desktop | 60 | 16.7 ms | 0.4 / 1.2 ms | — |
 
-How: fixed-timestep sim, Pixi render groups, sprites baked once into texture atlases, `ParticleContainer`
-particles, pooled everything (no allocations in the frame loop), spatial hash targeting, pathfinding only when
-towers change, a 60 FPS cap (also on 120 Hz screens), a stopped renderer in menus, and an FPS governor that
-lowers resolution, then particles/glow, on slow devices. Low / Medium / High / Auto are also in Settings.
-
-> Throttled desktop Chromium approximates but does not equal a real phone, especially for the GPU — please
-> try `index.html?stress=300` on the actual target devices.
+Texture memory: atlases 48 MB with mipmaps on High / Medium (29 MB on Low) + ~12 MB terrain ≈ 60 MB, inside the
+~64 MB budget. How: fixed-timestep sim, Pixi render groups, sprites baked once into texture atlases,
+`ParticleContainer` particles, pooled everything (no allocations in the frame loop), spatial hash targeting,
+pathfinding only when towers change, a 60 FPS cap, a stopped renderer in menus, and an FPS governor that lowers
+resolution, then particles/glow, on slow devices. Players can measure their own device in **Settings → Device →
+Test performance**.
 
 ## Continuous integration
 
@@ -252,8 +285,8 @@ by hand, for private repositories only. Setup, including putting the project on 
 
 ## Kid-safety & accessibility
 
-No ads, purchases, accounts, links, tracking or network requests. Gentle, short text; creatures “poof” into
-sparkles and coins. Colour + shape for every element, 48 px+ touch targets, safe-area aware layout, separate music
+Made for ages 10–14: no ads, purchases, accounts, chat, links, tracking or network requests. Constructs are
+crystal robots that shatter into shards — no blood, gore or horror; text is short and middle-school level. Colour + shape for every element, 48 px+ touch targets, safe-area aware layout, separate music
 and sound volumes, optional screen shake and damage numbers.
 
 Settings → Accessibility: **text size** (100 / 115 / 130 %), **high contrast**, and **reduced motion** (defaults to
@@ -274,7 +307,7 @@ on desktop and phones for clipped, cut-off, covered or untranslated text.
 
 | Language | Strings | Status |
 |---|---|---|
-| Filipino (`fil`) | all 949 | **Needs native review** — machine-assisted first draft (`FIL_REVIEW_STATUS = 'needs-native-review'`). Players see a short note under Settings → Language while this is set. |
+| Filipino (`fil`) | all 1,010 | **Needs native review** — machine-assisted first draft (`FIL_REVIEW_STATUS = 'needs-native-review'`). Players see a short note under Settings → Language while this is set. |
 
 Notes for the reviewer (open `src/i18n/fil.ts`; keys and `{placeholders}` must stay as in `en.ts`, `npm test` checks):
 - Proper nouns stay in English on purpose: tower, construct, hero, ability, specialization, world, map and

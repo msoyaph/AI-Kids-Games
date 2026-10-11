@@ -5,6 +5,9 @@ import { comboFor, ELEMENT_TOWERS, MAX_LEVEL, statsFor, TOWERS, type TowerId, ty
 import type { Tower } from './entities';
 import { DT, Game, type GameMode } from './Game';
 import { F_WALK } from './grid';
+import { heroPassable } from './hero';
+import { TUNING, type AbilityId, type HeroId, type ModifierId } from '../data/tuning';
+import type { RunBonuses } from '../data/research';
 import { UNREACHABLE } from './flowField';
 
 export interface BotOptions {
@@ -12,6 +15,14 @@ export interface BotOptions {
   skill?: 'good' | 'casual';
   /** Seconds between decisions. */
   thinkEvery?: number;
+}
+
+/** Extra run setup for bot reports: commander hero/abilities, research, challenges. */
+export interface SimSetup {
+  hero?: HeroId | null;
+  abilities?: AbilityId[];
+  bonuses?: RunBonuses;
+  modifiers?: ModifierId[];
 }
 
 /** Rough damage-per-second estimate used for spending decisions. */
@@ -135,6 +146,11 @@ export class AutoPlayer {
   update(): void {
     const g = this.g;
     if (g.state !== 'playing') return;
+    if (g.hero || g.abilities.length) this.commandTimer -= DT;
+    if (this.commandTimer <= 0 && g.waveNum > 0 && (g.hero || g.abilities.length)) {
+      this.commandTimer = 0.25;
+      this.command();
+    }
     if (g.waveNum === 0) {
       this.think();
       this.think();
@@ -145,6 +161,67 @@ export class AutoPlayer {
     if (this.timer > 0) return;
     this.timer = this.thinkEvery;
     this.think();
+  }
+
+  // ------------------------------------------------------------------ commander (hero + abilities)
+
+  private commandTimer = 0;
+  private heroPost = -1;
+  private heroPostVersion = -1;
+
+  /** Hero holds a post on the route near the castle; specials and abilities go into the thickest crowds. */
+  private command(): void {
+    const g = this.g;
+    const gr = g.grid;
+    const h = g.hero;
+    if (h && h.alive) {
+      if (this.heroPostVersion !== g.towerVersion) {
+        this.heroPostVersion = g.towerVersion;
+        this.heroPost = -1;
+        const p = g.currentPaths([])[0];
+        if (p) for (let k = Math.floor(p.length * 0.65); k < p.length - 1 && this.heroPost < 0; k++) if (heroPassable(gr, p[k]!)) this.heroPost = p[k]!;
+      }
+      const at = gr.cellAt(h.x, h.y);
+      if (this.heroPost >= 0 && h.path.length === 0 && at !== this.heroPost) g.moveHero(gr.cellX(this.heroPost), gr.cellY(this.heroPost));
+      const r2 = h.range * h.range;
+      let near = 0;
+      let boss = false;
+      for (const e of g.enemies) {
+        const dx = e.x - h.x;
+        const dy = e.y - h.y;
+        if (dx * dx + dy * dy > r2) continue;
+        near++;
+        if (e.def.boss) boss = true;
+      }
+      if (near >= 4 || boss) g.useHeroSpecial();
+    }
+    for (const id of g.abilities) {
+      if (!g.abilityReady(id)) continue;
+      if (id === 'funds') {
+        g.castAbility('funds');
+        continue;
+      }
+      const r = TUNING.abilities[id].radius ?? 2;
+      const best = this.densest(r);
+      if (best && (best.count >= (id === 'meteor' ? 5 : 8) || (id === 'meteor' && best.boss))) g.castAbility(id, best.x, best.y);
+    }
+  }
+
+  /** The construct with the most others within `r` (O(n²), n ≤ a few hundred, 4× a second). */
+  private densest(r: number): { x: number; y: number; count: number; boss: boolean } | null {
+    const es = this.g.enemies;
+    const r2 = r * r;
+    let best: { x: number; y: number; count: number; boss: boolean } | null = null;
+    for (const a of es) {
+      let n = 0;
+      for (const b of es) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        if (dx * dx + dy * dy <= r2) n++;
+      }
+      if (!best || n > best.count || (a.def.boss && !best.boss && n >= best.count - 1)) best = { x: a.x, y: a.y, count: n, boss: !!a.def.boss };
+    }
+    return best;
   }
 
   private think(): void {
@@ -188,7 +265,8 @@ export class AutoPlayer {
     const elementCost = TOWERS.flame.levels[0]!.cost;
     if (g.map.style === 'maze' && g.towers.length < 8 + g.waveNum * 0.7 && g.coins < elementCost) return 'arrow';
     const combos: TowerId[] = [];
-    for (let i = 0; i < un.length; i++) for (let j = i + 1; j < un.length; j++) combos.push(comboFor(un[i]!, un[j]!)!);
+    // (the No Combos challenge forbids them)
+    if (!g.modifiers.includes('nocombo')) for (let i = 0; i < un.length; i++) for (let j = i + 1; j < un.length; j++) combos.push(comboFor(un[i]!, un[j]!)!);
     const comboChoice = COMBO_RANK.find((c) => combos.includes(c));
     const airCapable = g.towers.filter((t) => t.def.targets === 'both').length;
     if (comboChoice && g.coins >= TOWERS[comboChoice].levels[0]!.cost) {
@@ -320,8 +398,8 @@ export interface SimResult {
 }
 
 /** Play a whole map headlessly with the bot. */
-export function simulate(map: MapDef, difficulty: Difficulty, opts: BotOptions & { seed?: number; mode?: GameMode; maxWaves?: number } = {}): SimResult {
-  const g = new Game({ map, difficulty, mode: opts.mode ?? 'campaign', seed: opts.seed ?? 1 });
+export function simulate(map: MapDef, difficulty: Difficulty, opts: BotOptions & SimSetup & { seed?: number; mode?: GameMode; maxWaves?: number } = {}): SimResult {
+  const g = new Game({ map, difficulty, mode: opts.mode ?? 'campaign', seed: opts.seed ?? 1, hero: opts.hero, abilities: opts.abilities, bonuses: opts.bonuses, modifiers: opts.modifiers });
   const bot = new AutoPlayer(g, opts);
   const maxTicks = 30 * 60 * 60; // one hour of game time
   let t = 0;

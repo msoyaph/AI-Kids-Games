@@ -219,6 +219,7 @@ export class GameScreen implements Screen, HudHost {
 
   exit(): void {
     // left mid-run: still useful (where do players give up?)
+    cancelAnimationFrame(this.layoutRaf);
     if (!this.ended && this.game.waveNum > 0) this.recordPlaytest('quit');
     this.recorder = null;
     this.app.achievements.onUnlock = () => {};
@@ -234,9 +235,13 @@ export class GameScreen implements Screen, HudHost {
     if (!this.modal && this.game.state === 'playing') this.openPause();
   }
 
+  /** Pending re-layout frame (cancelled on exit: the view may be destroyed before it runs). */
+  private layoutRaf = 0;
+
   resize(w: number, h: number): void {
     this.hud.layout(w, h);
-    requestAnimationFrame(() => {
+    cancelAnimationFrame(this.layoutRaf);
+    this.layoutRaf = requestAnimationFrame(() => {
       const ins = this.hud.insets();
       this.view.layout(w, h, { top: ins.top, bottom: ins.bottom, left: 4, right: 4 }, false);
     });

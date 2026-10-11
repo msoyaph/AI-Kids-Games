@@ -24,11 +24,11 @@ const KINDS: EnemyId[] = ['gloop', 'zoomkin', 'clankbot', 'puffbat', 'mendy', 's
  * every tower type at level 3 and N creatures kept alive (they keep poofing
  * and respawning, so particles, coins and text all stay busy).
  */
-export function startStress(app: App, nav: Nav, count: number, opts: { overlay?: boolean; onQuit?: () => void } = {}): GameScreen {
-  const map = mapById('w2m2')!;
+export function startStress(app: App, nav: Nav, count: number, opts: { overlay?: boolean; onQuit?: () => void; mapId?: string } = {}): GameScreen {
+  const map = mapById(opts.mapId ?? 'w2m2') ?? mapById('w2m2')!;
   const screen = new GameScreen(
     app,
-    { map, difficulty: 'normal', mode: 'endless', seed: 7, startCoins: 1e7, startCrystals: 6, autoWaves: false, benchmark: true },
+    { map, difficulty: 'normal', mode: 'endless', seed: 7, startCoins: 1e7, startCrystals: 6, autoWaves: false, benchmark: true, hero: 'vanguard', abilities: ['meteor', 'chrono'] },
     { quit: opts.onQuit ?? (() => nav.title()), restart: () => startStress(app, nav, count, opts) },
   );
   app.show(screen);
@@ -55,7 +55,20 @@ export function startStress(app: App, nav: Nav, count: number, opts: { overlay?:
   const open: number[] = [];
   for (let i = 0; i < grid.cols * grid.rows; i++) if (grid.isOpen(i) && g.flow.next[i]! >= 0) open.push(i);
   let n = 0;
-  screen.onFrame(() => {
+  let nextCast = 2;
+  let clock = 0;
+  screen.onFrame((dt) => {
+    // the commander joins in: hero special whenever ready, a meteor / chrono field every few seconds
+    clock += dt;
+    if (!screen.paused) g.useHeroSpecial();
+    if (clock >= nextCast && g.enemies.length) {
+      nextCast = clock + 3;
+      const e = g.enemies[(n * 31) % g.enemies.length]!;
+      for (const id of ['meteor', 'chrono'] as const) {
+        g.abilityCooldown[id] = 0;
+        g.castAbility(id, e.x, e.y);
+      }
+    }
     let guard = 40; // spread spawning over frames
     while (g.enemies.length < count && guard-- > 0) {
       const id = KINDS[n++ % KINDS.length]!;

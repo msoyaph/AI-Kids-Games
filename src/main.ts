@@ -80,7 +80,7 @@ async function boot(): Promise<void> {
   }
   const stress = Number(params.get('stress') ?? 0);
   if (stress > 0) {
-    startStress(app, nav, Math.min(1000, stress));
+    startStress(app, nav, Math.min(1000, stress), { mapId: params.get('map') ?? undefined });
     return;
   }
   const play = params.get('map');

@@ -15,6 +15,10 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   Uses `channel: 'chromium'` for the REAL GPU; Playwright's default headless shell is SwiftShader (software GL).
 - `npm run check:dist` — smoke check of dist via file:// AND a tiny http server, in full Chromium (catches
   browser-initiated requests like /favicon.ico — index.html has an inline data-URI icon for that reason).
+- `npm run balance-report [-- w4m3]` — ~2 min: campaign baseline / casual Story / Expert (baseline, starter kit,
+  full kit) / challenge medals (starter kit, failures retried with full kit) → `docs/reports/balance.md`.
+- `node scripts/review-shots.mjs [filter]` — dev server + bot fast-forward → `docs/screenshots/after/*.jpg`
+  (every world, bosses, tower panel, spec chooser, menus; desktop + phones).
 - `npm run analyze-playtests -- <folder>` — playtest exports vs bot runs → printed tuning suggestions (never applied);
   logic in `scripts/lib/playtests.ts` (unit-tested).
 - `npm run audio:levels [-- --write]` — mixing pass (~2 min): Vite dev server + Chromium render every track /
@@ -177,10 +181,25 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   timeouts ×2, 2 workers, 1 retry, html report; `tests/e2e/fixtures.ts` makes pages report 2 cores (Auto → Low).
   Specs import `test`/`expect` from `./fixtures`, not '@playwright/test'. flash.spec skips (with reason) below
   15 sampled fps. `.nvmrc` = 24. `docs/CI.md`: GitHub setup (gh signed in as msoyaph; repo not created yet),
-  runner steps, private-repo warning. Validate workflows with `actionlint`. (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
+  runner steps, private-repo warning. Validate workflows with `actionlint`.
+- Phase 15 done: bots + reports + polish. `AutoPlayer` commander logic when the run has a hero/abilities (hero
+  holds a post 65 % along the route, special into ≥4 constructs or a boss, meteor/chrono on the densest cluster,
+  funds when ready); respects No Combos. `simulate(map, diff, { hero, abilities, bonuses, modifiers })`.
+  Balance tests stay on the no-commander baseline (strictly harder than real play); `tests/unit/balance/
+  medals.test.ts` guards the hardest medal cells with the full kit. Stress scene (`?stress=N[&map=id]`) has
+  Vanguard + meteor/chrono firing; perf 6× profile uses w6m3. Hot-loop fixes: cached resist textures, hero
+  respawn label only on change. Banners turn `.compact` (top-left) while a tower panel is open; tips hide under
+  `.panel-open`. `GameScreen.resize` rAF is cancelled on exit (destroyed-view crash). Perf test uses wall-clock
+  time. New marketing SVGs. README rewritten for v2 (registry entry, storage table). Final report:
+  `docs/reports/final-report.md`.
+- New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the
   `vanex-defense-` prefix, total save < 200 KB; v3 save fixture in `tests/fixtures/save-v3.json` must migrate.
+
+## Status (vanex-upgrade)
+Step 1 + Phases 2–15 done. 281 unit tests + 68 E2E runs pass; build 1.11 MB (334 KB gzip). Waiting for the
+user's approval before anything is merged to `main`.
 
 ## Status (v1 on main)
 All 10 phases done: scaffold, grid/pathing, towers/economy, elements/combos, waves/bosses, campaign/endless,

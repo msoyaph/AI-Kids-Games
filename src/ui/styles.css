@@ -784,6 +784,28 @@
   letter-spacing: 0.3em;
   color: var(--gold);
 }
+.banner.compact {
+  top: calc(var(--safe-top) + var(--hud-h) + 14px);
+  left: calc(var(--safe-left) + 14px);
+  right: auto;
+  max-width: 46vw;
+  text-align: left;
+  font-size: calc(clamp(18px, 2.6vw, 26px) * var(--ts));
+  letter-spacing: 0.06em;
+  transform-origin: left center;
+}
+.banner.compact::before,
+.banner.compact::after {
+  display: none;
+}
+.banner.compact .small {
+  font-size: 0.55em;
+  letter-spacing: 0.12em;
+}
+/* one-time tips step aside while a tower panel is open (short phone screens have no room for both) */
+.panel-open .tip-card {
+  display: none;
+}
 @keyframes bannerin {
   0% {
     transform: scaleX(0.6);

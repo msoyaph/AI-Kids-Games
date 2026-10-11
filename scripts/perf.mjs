@@ -25,7 +25,8 @@ const url = 'file://' + process.cwd() + '/dist/index.html';
 // a deliberately pessimistic stand-in for a weak phone GPU.
 const PROFILES = [
   { name: 'phone (4x CPU throttle)', viewport: { width: 915, height: 412 }, dpr: 2.625, touch: true, cpu: 4, gpu: 'gpu' },
-  { name: 'phone (6x CPU, low-end)', viewport: { width: 800, height: 360 }, dpr: 2, touch: true, cpu: 6, gpu: 'gpu' },
+  // the heaviest new map (two worlds of gates, bridges and bosses) on the weakest profile
+  { name: 'phone (6x CPU, low-end) w6m3', viewport: { width: 800, height: 360 }, dpr: 2, touch: true, cpu: 6, gpu: 'gpu', map: 'w6m3' },
   { name: 'tablet (2x CPU throttle)', viewport: { width: 1180, height: 820 }, dpr: 2, touch: true, cpu: 2, gpu: 'gpu' },
   { name: 'desktop', viewport: { width: 1440, height: 900 }, dpr: 2, touch: false, cpu: 1, gpu: 'gpu' },
   { name: 'phone, software GPU', viewport: { width: 915, height: 412 }, dpr: 2.625, touch: true, cpu: 4, gpu: 'swiftshader' },
@@ -54,7 +55,7 @@ for (const p of PROFILES) {
   const bootMs = Date.now() - t0;
 
   // 2) stress test
-  await page.goto(`${url}?stress=${COUNT}${p.quality ? `&quality=${p.quality}` : ''}`);
+  await page.goto(`${url}?stress=${COUNT}${p.quality ? `&quality=${p.quality}` : ''}${p.map ? `&map=${p.map}` : ''}`);
   await page.waitForFunction(() => !!window.__perf, null, { timeout: 60000 });
   await page.waitForTimeout(4000); // warm-up: let creatures fill in and the governor settle
   const m = await page.evaluate(async (seconds) => {

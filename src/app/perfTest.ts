@@ -40,13 +40,18 @@ export function runPerfTest(app: App, nav: Nav): void {
   const label = h('div.perf-run.panel', { role: 'status' }, t('perf.running', { n: WARMUP + MEASURE }));
   screen.el.append(label);
   const stats = new FrameStats();
-  let time = 0;
+  // wall-clock time: frame dt is capped at 0.1 s, which would stretch the test on slow devices
+  const start = performance.now();
+  let last = start;
   let worst = 0;
   let load = { enemies: 0, shots: 0, fx: 0, n: 0 };
   let done = false;
-  screen.onFrame((dt) => {
+  screen.onFrame(() => {
     if (done) return;
-    time += dt;
+    const now = performance.now();
+    const dt = (now - last) / 1000;
+    last = now;
+    const time = (now - start) / 1000;
     setText(label, t('perf.running', { n: Math.max(0, Math.ceil(WARMUP + MEASURE - time)) }));
     if (time < WARMUP) return;
     stats.add(dt);

@@ -56,10 +56,14 @@ for (const locale of LOCALES) {
     await page.locator('.drawer button.card').first().click({ timeout: 10_000 });
     await check(page, 'build selected', locale);
     // place it, then open the tower panel (stat table with upgrade deltas)
+    // (retry with fresh coordinates: on a busy machine the camera may still be fitting the board)
+    await expect(async () => {
+      const c = await cellCenter(page, 6, 4);
+      await tap(page, info, c.x, c.y);
+      if (isTouch(info)) await page.locator('.confirm .btn.green').click({ timeout: 2000 });
+      expect((await testState(page)).towers).toBe(1);
+    }).toPass({ timeout: 30_000 });
     const c = await cellCenter(page, 6, 4);
-    await tap(page, info, c.x, c.y);
-    if (isTouch(info)) await page.locator('.confirm .btn.green').click();
-    await expect.poll(async () => (await testState(page)).towers).toBe(1);
     await page.keyboard.press('Escape').catch(() => {});
     await tap(page, info, c.x, c.y);
     await expect(page.locator('.tpanel')).toBeVisible();

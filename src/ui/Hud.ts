@@ -693,7 +693,8 @@ export class Hud {
       return;
     }
     this.bannerBusy = true;
-    const el = h('div.banner', { role: 'status' }, item[0], item[1] ? h('span.small', null, item[1]) : null);
+    // while a tower panel is open the banner shrinks into the top-left corner instead of covering the stats
+    const el = h('div.banner', { role: 'status', class: this.el.classList.contains('panel-open') ? 'compact' : '' }, item[0], item[1] ? h('span.small', null, item[1]) : null);
     this.el.append(el);
     window.setTimeout(() => {
       el.remove();
