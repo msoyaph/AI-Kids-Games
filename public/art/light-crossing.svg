@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" role="img" aria-labelledby="t d">
+<title id="t">A sunny little island</title><desc id="d">An original illustration of a green island with a lighthouse, little houses, trees, and a smiling explorer.</desc>
+<defs>
+<linearGradient id="sky" x2="0" y2="1"><stop stop-color="#d8f2ef"/><stop offset="1" stop-color="#a1ded6"/></linearGradient>
+<linearGradient id="grass" x2=".9" y2="1"><stop stop-color="#afdc91"/><stop offset="1" stop-color="#78ba83"/></linearGradient>
+<linearGradient id="cliff" x2="0" y2="1"><stop stop-color="#e2c79d"/><stop offset="1" stop-color="#b9b18d"/></linearGradient>
+<g id="tree"><path d="M0 0v-70" stroke="#5e7460" stroke-width="10" stroke-linecap="round"/><path d="M-35-35 0-120 36-35Z" fill="#2c886d"/><path d="M-28-72 0-139 28-72Z" fill="#499d70"/><path d="M-17-106 0-151 17-106Z" fill="#68b987"/></g>
+<g id="bush"><ellipse cy="-8" rx="27" ry="20" fill="#4b9c71"/><ellipse cx="-10" cy="-16" rx="15" ry="15" fill="#70b87d"/><circle cx="15" cy="-10" r="4" fill="#ffdc7c"/></g>
+<g id="flower"><path d="M0 4v-9" stroke="#45876c" stroke-width="3"/><path d="M0-12h0" stroke="#fff2b5" stroke-width="11" stroke-linecap="round"/><circle cy="-12" r="2.5" fill="#eeb563"/></g>
+</defs>
+<path fill="url(#sky)" d="M0 0h900v600H0z"/>
+<circle cx="744" cy="108" r="47" fill="#ffdf86"/><path d="M685 86h-22m26 67-16 15m72-109V37m52 38 16-15" stroke="#fff3c1" stroke-width="7" stroke-linecap="round"/>
+<g fill="#fffdf7" opacity=".85"><path d="M63 128c0-18 20-23 30-10 7-34 55-39 67-7 24-8 40 10 35 27H63Z"/><path d="M591 73c-2-13 13-23 25-15 11-27 52-25 61 2 25-6 31 8 32 23H591Z"/><path d="M358 48c0-15 17-24 30-13 12-30 52-23 54 4 21-5 32 7 30 17H358Z"/></g>
+<g fill="none" stroke="#e8ffed" stroke-width="4" stroke-linecap="round" opacity=".7"><path d="M35 451h68m-35 20h41m626 37h98m-65 18h42m-677 24h83m105-83h49M701 356h125"/></g>
+<ellipse cx="458" cy="477" rx="308" ry="71" fill="#6dbab7" opacity=".35"/>
+<ellipse cx="452" cy="434" rx="312" ry="116" fill="#bdeee0"/>
+<path d="M172 359c-2 19 13 62 53 91 92 56 332 65 474-23 29-19 48-52 47-75Z" fill="url(#cliff)"/>
+<path d="m214 385 23 58m76-56 10 78m87-65 3 75m120-84-5 77m110-105-14 61" stroke="#acaa88" stroke-width="4" opacity=".5"/>
+<path d="M169 347c18-68 151-134 286-133 145 0 261 54 294 116 29 55-54 106-215 132-128 21-263-10-327-45-28-16-46-40-38-70Z" fill="#f5dfaa"/>
+<path d="M187 341c23-58 147-111 269-111 148 0 265 56 265 106 0 51-118 104-269 104-153 0-289-42-265-99Z" fill="url(#grass)"/>
+<path d="M266 317c66-4 104 29 119 52 12 17 52 31 104 38m-97-83 58 38 104-37" fill="none" stroke="#ecdcb0" stroke-width="24" stroke-linecap="round"/>
+<ellipse cx="580" cy="346" rx="52" ry="24" fill="#528f78"/><ellipse cx="580" cy="341" rx="48" ry="21" fill="#80cac2"/>
+<path d="m573 337 32-1m-56 8h23" stroke="#d4f1d8" stroke-width="3" stroke-linecap="round"/>
+<g transform="translate(275 310)"><ellipse rx="68" ry="22" fill="#5d9c72" opacity=".4"/><path d="M-53-16V-97l72 12v85Z" fill="#fff5d8"/><path d="m19-85 34-25V-20L19 0Z" fill="#e2d8b5"/><path d="m-66-96 54-56 78 37-47 40Z" fill="#f08d70"/><path d="m-12-152 64 6 14 31Z" fill="#cc705f"/><path d="M-37-63v23l22 4v-24Z" fill="#95c6bd"/><path d="M-8-18v-28q12-13 22 3v29Z" fill="#a18368"/><path d="M-38-64h23m-12 0v27" stroke="#fff0cc" stroke-width="4"/><path d="M-45-103-7-142" stroke="#ffb195" stroke-width="5" stroke-linecap="round"/></g>
+<g transform="translate(429 259)"><ellipse cy="8" rx="49" ry="16" fill="#549876" opacity=".3"/><path d="m-25 1 5-142h37L27 1Q0 17-25 1Z" fill="#fff9e9"/><path d="m-23-28 2-22h41l2 22q-22 8-45 0Z" fill="#f1a17b"/><path d="m-20-117 1-19h35l1 19Z" fill="#badad2"/><path d="M-30-141h61v-8l-30-25-31 25Z" fill="#2d7166"/><path d="M-20-150v-18h40v18" fill="#ffe0a0" stroke="#3e7c6c" stroke-width="4"/><path d="M-37-137h75" stroke="#527d71" stroke-width="6" stroke-linecap="round"/><path d="M-5 4v-22q5-9 11 0V4Z" fill="#598779"/></g>
+<g><use href="#tree" transform="translate(561 265) scale(.9)"/><use href="#tree" transform="translate(605 278) scale(1.06)"/><use href="#tree" transform="translate(647 300) scale(.8)"/><use href="#tree" transform="translate(521 266) scale(.67)"/><use href="#tree" transform="translate(224 368) scale(.63)"/><use href="#tree" transform="translate(264 392) scale(.6)"/></g>
+<g transform="translate(451 371)"><ellipse cy="39" rx="20" ry="7" fill="#629873" opacity=".4"/><path d="m-10 17-2 17m22-17 4 17" stroke="#3d5c66" stroke-width="8" stroke-linecap="round"/><path d="m-18 7 36 0-6 21h-25Z" fill="#f19786"/><path d="m-16 7-8 12m40-12 9 9" stroke="#f6caa0" stroke-width="9" stroke-linecap="round"/><circle cy="-6" r="19" fill="#ffdab4"/><path d="M-21-13q3-22 23-19 20 3 20 20Z" fill="#b98159"/><path d="M-26-17q25-17 51 0v6h-51Z" fill="#f8dd9a"/><circle cx="-6" cy="-3" r="2.6" fill="#3b5b56"/><circle cx="8" cy="-3" r="2.6" fill="#3b5b56"/><path d="M-4 5q5 6 10 0" fill="none" stroke="#a76957" stroke-width="2" stroke-linecap="round"/></g>
+<g transform="translate(680 391)"><path d="m-12-19 96 42-19 20-93-39Z" fill="#c4976d"/><path d="m-7-19 92 41m-104-29 89 41" stroke="#f1c99a" stroke-width="5"/><path d="m11-10-16 15m36-7-16 15m36-6-16 15m35-7-16 15" stroke="#9c785a" stroke-width="3"/></g>
+<use href="#bush" transform="translate(348 299) scale(.7)"/><use href="#bush" transform="translate(684 365)"/><use href="#bush" transform="translate(316 412) scale(.8)"/>
+<g><use href="#flower" x="331" y="345"/><use href="#flower" x="343" y="355"/><use href="#flower" x="502" y="413"/><use href="#flower" x="512" y="401"/><use href="#flower" x="669" y="320"/></g>
+<g fill="none" stroke="#44897e" stroke-width="3" stroke-linecap="round"><path d="M107 242q7-8 15 0 8-8 15 0m-29-21q5-6 11 0 6-6 11 0m570-26q7-8 15 0 8-8 15 0"/></g>
+</svg>

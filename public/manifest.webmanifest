@@ -1,0 +1,17 @@
+{
+  "name": "Ai Kids Games",
+  "short_name": "Ai Kids Games",
+  "description": "Little games. Big adventures.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf7",
+  "theme_color": "#14745d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
