@@ -92,4 +92,23 @@ export const natureGeo = {
       part(ico(0.12, 0), 0xb08a64, { pos: [0.42, 0.04, 0.1], scale: [1, 0.5, 1] }),
     ]),
   stoneChunk: () => merge([part(dodec(0.1), W, { pos: [0, 0.07, 0] })]),
+  stick: () =>
+    merge([
+      part(cyl(0.035, 0.045, 0.6, 5), PAL.trunk, { pos: [0, 0.05, 0], rot: [0, 0.4, Math.PI / 2] }),
+      part(cyl(0.025, 0.03, 0.22, 4), PAL.trunk, { pos: [0.08, 0.06, 0.1], rot: [0, -0.6, Math.PI / 2] }),
+      part(ico(0.05, 0), 0x8fd18a, { pos: [-0.22, 0.07, -0.05], scale: [1, 0.5, 1] }),
+    ]),
+  shell: () => merge([part(cone(0.13, 0.12, 7), W, { pos: [0, 0.05, 0], rot: [-1.3, 0, 0], scale: [1, 1, 0.55] })]),
+  ball: () => merge([part(ico(0.12, 1), W, { pos: [0, 0.11, 0] })]),
+  bottle: () =>
+    merge([
+      part(cyl(0.07, 0.08, 0.26, 7), 0x9fd9cf, { pos: [0, 0.07, 0], rot: [0, 0.5, Math.PI / 2] }),
+      part(cyl(0.035, 0.035, 0.08, 5), 0xc9945f, { pos: [0.17, 0.07, -0.09], rot: [0, 0.5, Math.PI / 2] }),
+      part(box(0.1, 0.06, 0.02), 0xfff1d0, { pos: [0, 0.08, 0], rot: [0, 0.5, 0] }),
+    ]),
+  bundle: () =>
+    merge([
+      part(ico(0.13, 0), W, { pos: [0, 0.1, 0], scale: [1, 0.8, 1] }),
+      part(cone(0.05, 0.12, 4), 0x8fd18a, { pos: [0, 0.24, 0] }),
+    ]),
 };

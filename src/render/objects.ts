@@ -43,6 +43,11 @@ export class ObjectRenderer {
     L('dig', natureGeo.digSpot(), mat, 32, false);
     L('hole', natureGeo.hole(), mat, 32, false);
     L('stone', natureGeo.stoneChunk(), mat, 64);
+    L('stick', natureGeo.stick(), mat, 64);
+    L('shell', natureGeo.shell(), mat, 32);
+    L('ball', natureGeo.ball(), mat, 64);
+    L('bottle', natureGeo.bottle(), mat, 8);
+    L('bundle', natureGeo.bundle(), mat, 32);
     L('grass', natureGeo.grass(), sway, 2048, false);
     this.group.add(this.decor);
     this.buildGrass();
@@ -173,8 +178,26 @@ export class ObjectRenderer {
         }
         case 'item': {
           const vis = this.itemVisual(o.item ?? '');
-          if (vis.shape === 'stone') Ls.stone!.push(x, y, z, rot, 1.4, vis.color);
-          else Ls.stone!.push(x, y, z, rot, vis.shape === 'branch' ? 1.0 : 1.3, vis.color, vis.shape === 'shell' ? 0.6 : 1);
+          const bob = o.tag === 'lost' ? 0.05 : 0;
+          switch (vis.shape) {
+            case 'branch':
+              Ls.stick!.push(x, y, z, rot, 1, 0xffffff);
+              break;
+            case 'shell':
+              Ls.shell!.push(x, y, z, rot, 1.1, vis.color);
+              break;
+            case 'fruit':
+              Ls.ball!.push(x, y, z, rot, 1, vis.color);
+              break;
+            case 'bottle':
+              Ls.bottle!.push(x, y, z, rot, 1.2, 0xffffff);
+              break;
+            case 'stone':
+              Ls.stone!.push(x, y, z, rot, 1.5, vis.color);
+              break;
+            default:
+              Ls.bundle!.push(x, y + bob, z, rot, 1.1, vis.color);
+          }
           break;
         }
         default:

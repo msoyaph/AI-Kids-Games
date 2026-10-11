@@ -87,6 +87,25 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   location, waves/rain/critter ambience, dialogue blips), particles (dust/leaves/chips/dirt/splash/sparkle,
   fireflies), onboarding tips (data/tips.ts), touch controls, tool ring, adaptive pixel ratio, fades.
 
+- Phase 10 done: Playwright smoke + file:// + sandboxed-iframe e2e (GPU headless Chromium on macOS),
+  pacing simulation (scripts/pacing.ts, ~5.9 h / ~23 days) + regression test, quest/data validation
+  tests, ramp/bridge site checks across seeds, README.
+- Post-phase QA fixes: ramp landing collision, delivery flow, festival framing, item ground models,
+  notice board notes.
+
+## Verification checklist
+`npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
+(117 unit tests incl. a full new-game → festival playthrough; 2 e2e tests.)
+
+## Known issues / limitations
+- Villager homes, the shop and Lantern Hall have no walk-in interiors (conversation + panels instead).
+- Outdoor decorations auto-face the player; move them by picking up and re-placing.
+- Pacing is a model estimate (scripts/pacing.ts), not measured with real players.
+- Off macOS, headless e2e falls back to SwiftShader (very slow but functional).
+- `npm audit` flags `braces` via vite-plugin-singlefile → micromatch (dev-only build dependency).
+- Audio starts after the first user gesture (browser autoplay policy).
+- Reloading mid-contest cancels the contest; saving indoors resumes at the door outside.
+
 ## Story / quest notes
 - Missions auto-start when `requires` are done and `minDay` reached, unless `startTalk` (then the giver
   shows the intro when talked to). Talk/deliver objectives surface through `talkScene`/`questOptions`, which

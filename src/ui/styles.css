@@ -264,3 +264,4 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6
 .ring-btn .icon { width: 46px; height: 46px; }
 .ring-btn.focus, .ring-btn:hover { border-color: var(--gold); transform: translate(-50%, -50%) scale(1.08); }
 .fade.quick { transition: opacity 0.16s ease; }
+.completion .logo { color: #f28e6b; text-shadow: 0 3px 0 #fff, 0 8px 18px rgba(120, 60, 60, 0.18); }
