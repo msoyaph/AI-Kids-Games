@@ -21,9 +21,9 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
 4. COMPLETE implementation: iframe sandbox is exactly allow-scripts allow-same-origin
    allow-pointer-lock, with fullscreen; gamepad permission. Browser interaction
    and save checks run against the complete integration in step 8.
-5. Pre-import safety gate CLEAN: inspected compiled storage operations and original
-   storage modules/callers. No colliding keys or global clears. Calex ghost deletion
-   enumerates keys but filters to its own slot prefix. Formal audit and site migration pending.
+5. COMPLETE: STORAGE_AUDIT.md records every persistent/probe key and scoped deletion.
+   No collisions or global clears. Favorites/recent migrated to aikg: with merge,
+   corruption handling and retry on quota failure. Clearing lists touches only site keys.
 6. Pending: documentation warning for third-party games; remove outdated preview/memory-save claims.
 7. Pending: slow-download loading check and Vercel cache headers.
 8. Pending: existing tests and desktop/tablet/phone integrated QA, persistence and network checks.
@@ -32,6 +32,6 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
 Do not edit minified game builds. Any storage ownership defect must halt integration
 and be fixed in the original game's source project. Original game folders are read-only
 for this task. Old game-sources adaptations are obsolete and will be removed in step 6.
-Favorites/recently played currently use legacy keys; migrate to aikg: in step 5.
+Favorites/recently played use aikg:; legacy migration preserves existing device data.
 
 Existing Sites production remains unchanged. This launch targets Vercel preview first.
