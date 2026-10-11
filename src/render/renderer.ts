@@ -116,6 +116,26 @@ export class GameRenderer {
     r.setScissorTest(false);
   }
 
+  /** Render a single sub-viewport (split-screen). `first` resets per-frame stats. */
+  renderSub(v: RenderView, first: boolean): void {
+    const r = this.renderer;
+    if (first) r.info.reset();
+    const x = Math.round(v.rect.x * this.width);
+    const y = Math.round(v.rect.y * this.height);
+    const w = Math.round(v.rect.w * this.width);
+    const h = Math.round(v.rect.h * this.height);
+    const aspect = w / Math.max(1, h);
+    if (Math.abs(v.camera.aspect - aspect) > 1e-4) {
+      v.camera.aspect = aspect;
+      v.camera.updateProjectionMatrix();
+    }
+    r.setScissorTest(true);
+    r.setViewport(x, y, w, h);
+    r.setScissor(x, y, w, h);
+    r.render(v.scene, v.camera);
+    r.setScissorTest(false);
+  }
+
   /** Draw calls / triangles of the last frame, for the debug overlay. */
   stats(): { calls: number; triangles: number } {
     const info = this.renderer.info.render;

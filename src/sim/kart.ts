@@ -162,6 +162,10 @@ export class Kart {
   offroad = false;
   /** Current ribbon (0 main, >0 shortcut). */
   ribbon = 0;
+  /** Shortcut ribbon most recently entered (for stats). */
+  ribbonEntered = 0;
+  /** Finish time was projected (race ended before this kart crossed the line). */
+  projected = false;
 
   // items
   item: ItemId | null = null;

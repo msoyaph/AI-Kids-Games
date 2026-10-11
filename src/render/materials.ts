@@ -4,6 +4,8 @@ import * as THREE from 'three';
 export const Materials = {
   /** Faceted, vertex-coloured: props, track, karts. */
   flat: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
+  /** Double-sided faceted (procedural track geometry). */
+  flatDouble: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide }),
   /** Smooth, vertex-coloured: characters. */
   smooth: new THREE.MeshLambertMaterial({ vertexColors: true }),
   /** Unlit vertex colours (sky, glows, UI-ish 3D). */
