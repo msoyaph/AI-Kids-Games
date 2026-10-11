@@ -862,7 +862,39 @@ export class WorldView {
       case Ev.Zone:
         if (e.kind === 'lava') this.addShake(1.2);
         break;
+      case Ev.Victory:
+        this.celebrate();
+        break;
     }
+  }
+
+  /** Confetti of element shapes and sparkles over the castle. */
+  private celebrate(): void {
+    const g = this.game.grid;
+    const els = ['fire', 'water', 'nature', 'light', 'shadow', 'earth'] as const;
+    const cx = g.castleX * TILE;
+    const cy = (g.castleY - 0.5) * TILE;
+    for (let i = 0; i < 70; i++) {
+      const ang = this.fxRng.range(-Math.PI, 0);
+      const sp = this.fxRng.range(150, 420);
+      const add = i % 3 === 0;
+      (add ? this.particlesAdd : this.particles).emit({
+        tex: this.atlas.get(add ? 'sparkle' : `pel_${els[i % 6]}`),
+        x: cx,
+        y: cy,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp,
+        gravity: 380,
+        drag: 0.6,
+        life: this.fxRng.range(1.2, 2),
+        scale: this.fxRng.range(0.8, 1.4),
+        scaleEnd: 0.6,
+        alpha: 1,
+        alphaEnd: 0.2,
+        spin: this.fxRng.range(-6, 6),
+      });
+    }
+    this.particlesAdd.emit({ tex: this.atlas.get('glow'), x: cx, y: cy, life: 1, scale: 1, scaleEnd: 5, tint: 0xfff6b0, alpha: 1 });
   }
 
   /** Creatures "poof" into sparkles, puffs, element shapes and coins. */

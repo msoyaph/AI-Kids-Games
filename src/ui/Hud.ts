@@ -50,6 +50,10 @@ export class Hud {
   private speedBtn: HTMLButtonElement;
   private pauseBtn: HTMLButtonElement;
   private crystalWrap = h('div.crystal-btn');
+  private bossBar = h('div.bossbar.panel', { 'aria-label': 'Boss health' });
+  private bossName = h('span.bname');
+  private bossFill = h('i');
+  private bossFrame = 0;
   private drawer: HTMLElement;
   private cardsEl = h('div.cards');
   private cards: CardRef[] = [];
@@ -73,13 +77,15 @@ export class Hud {
     this.nextWrap = h('div.next-wave', { title: 'Next wave' }, this.nextIcons, this.nextTimer, this.goBtn);
     this.speedBtn = h('button.btn.round', { onClick: () => host.cycleSpeed(), 'aria-label': 'Game speed' }, '1x');
     this.pauseBtn = h('button.btn.round', { onClick: () => host.togglePause(), 'aria-label': 'Pause' }, '❚❚');
-    const top = h('div.hud-top', null, this.livesStat, this.coinsStat, waveStat, h('div.hud-spacer'), this.nextWrap, this.speedBtn, this.pauseBtn);
+    const top = h('div.hud-top', null, this.livesStat, this.coinsStat, waveStat, h('div.hud-right', null, this.nextWrap, this.speedBtn, this.pauseBtn));
 
     this.drawer = h('div.drawer.panel', { 'aria-label': 'Build towers' }, this.cardsEl);
     this.fab = h('div.build-fab', null, h('button.btn.gold', { onClick: () => this.setDrawerOpen(!this.drawerOpen), 'aria-label': 'Build' }, '🔨 Build'));
     this.chip = h('div.picked-chip.panel');
     this.chip.style.display = 'none';
-    this.el.append(top, this.crystalWrap, this.drawer, this.fab, this.chip);
+    this.bossBar.append(this.bossName, h('span.bbar', null, this.bossFill));
+    this.bossBar.style.display = 'none';
+    this.el.append(top, this.crystalWrap, this.bossBar, this.drawer, this.fab, this.chip);
     // Horizontal wheel scrolling on desktop for the tower row.
     this.cardsEl.addEventListener(
       'wheel',
@@ -119,6 +125,8 @@ export class Hud {
   /** Pixel insets the camera should keep clear. */
   insets(): { top: number; bottom: number } {
     const top = (this.el.querySelector('.hud-top') as HTMLElement | null)?.offsetHeight ?? 56;
+    // overlays positioned under the HUD (crystal button, boss bar, tutorial) follow its real height
+    document.documentElement.style.setProperty('--hud-h', `${Math.max(40, top - 6)}px`);
     const bottom = this.pinned ? this.drawer.offsetHeight + 12 : 0;
     return { top: top + 4, bottom };
   }
@@ -212,6 +220,7 @@ export class Hud {
       this.updateChip();
       this.applyDrawer();
     }
+    if (++this.bossFrame % 4 === 0) this.updateBoss();
     const sel = this.host.selected;
     const selId = sel ? sel.id : -1;
     if (selId !== L.sel || (sel && sel.level !== L.selLevel)) {
@@ -219,6 +228,18 @@ export class Hud {
       L.selLevel = sel?.level ?? 0;
       this.renderPanel(sel);
     }
+  }
+
+  private updateBoss(): void {
+    let boss = null;
+    for (const e of this.host.game.enemies) if (e.alive && e.boss && (!boss || e.maxHp > boss.maxHp)) boss = e;
+    if (!boss) {
+      if (this.bossBar.style.display !== 'none') this.bossBar.style.display = 'none';
+      return;
+    }
+    this.bossBar.style.display = '';
+    setText(this.bossName, boss.def.name);
+    this.bossFill.style.width = `${Math.max(0, (boss.hp / boss.maxHp) * 100).toFixed(1)}%`;
   }
 
   private flash(el: HTMLElement, cls: string): void {

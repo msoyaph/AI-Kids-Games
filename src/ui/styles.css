@@ -278,8 +278,13 @@
 /* World map */
 .worlds {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 14px;
+}
+@media (min-width: 1100px) {
+  .worlds {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 .world {
   padding: 14px;
@@ -462,6 +467,20 @@
   pointer-events: none;
 }
 .hud-top > * {
+  pointer-events: auto;
+}
+.hud-top {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+.hud-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+  pointer-events: none;
+}
+.hud-right > * {
   pointer-events: auto;
 }
 .stat {
@@ -1220,6 +1239,11 @@
   gap: 8px;
   justify-content: flex-end;
 }
+.tutorial .tut-actions .btn.ghost {
+  min-height: 36px;
+  font-size: 13px;
+  padding: 2px 10px;
+}
 .tutorial .tut-actions .btn {
   min-height: 44px;
   padding: 4px 14px;
@@ -1265,4 +1289,33 @@
 img.big-el {
   width: 56px;
   height: 56px;
+}
+
+/* boss health bar */
+.bossbar {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--hud-h) + 6px);
+  right: calc(var(--safe-right) + 10px);
+  width: min(300px, 46vw);
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 15;
+}
+.bossbar .bname {
+  font-weight: 900;
+  font-size: 14px;
+}
+.bossbar .bbar {
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+.bossbar .bbar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ff5a6a, #ffb21f);
+  transition: width 0.2s linear;
 }

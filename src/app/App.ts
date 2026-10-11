@@ -49,9 +49,9 @@ export class App {
     this.applyResolution();
 
     // Unlock audio on the first gesture (iOS needs this).
+    // iOS only counts touchend/click as a user activation for audio.
     const unlock = (): void => this.audio.unlock();
-    addEventListener('pointerdown', unlock, { once: false, passive: true });
-    addEventListener('keydown', unlock, { once: false });
+    for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, unlock, { passive: true, capture: true });
 
     addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.current?.back?.()) e.preventDefault();

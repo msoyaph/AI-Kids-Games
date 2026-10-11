@@ -187,7 +187,9 @@ export class GameScreen implements Screen, HudHost {
       if (steps >= maxSteps) this.acc = 0; // device can't keep up: drop time rather than spiral
     }
     this.game.events.drain(this.dispatch);
-    this.view.render(this.acc / DT, dt, running ? dt * this.speed : 0);
+    // effects keep playing after the run ends (victory confetti), but freeze while paused
+    const fxDt = running ? dt * this.speed : this.game.state !== 'playing' ? dt : 0;
+    this.view.render(this.acc / DT, dt, fxDt);
     this.updateConfirm();
     this.hud.update();
     for (const fn of this.frameListeners) fn(dt);
