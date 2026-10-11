@@ -46,7 +46,7 @@ export class ItemVisuals {
     private readonly effects: Effects,
   ) {
     const n = Math.max(1, items.boxes.length);
-    this.pods = new THREE.InstancedMesh(geo('pod'), Materials.basicInst, n);
+    this.pods = new THREE.InstancedMesh(geo('pod'), Materials.podInst, n);
     this.pods.frustumCulled = false;
     this.podScale = new Float32Array(n).fill(1);
     const c = new THREE.Color();

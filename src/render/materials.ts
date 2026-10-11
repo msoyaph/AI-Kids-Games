@@ -23,11 +23,19 @@ export const Materials = {
   // material shared by both kinds of mesh re-resolves its program for every object, every frame.
   /** `flat` for InstancedMesh (wheels). */
   flatInst: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
-  /** `basic` for InstancedMesh with per-instance colours (item pods). */
-  basicInst: new THREE.MeshBasicMaterial({ vertexColors: true }),
+  /** Item pods (instanced, per-pod colours): faceted and lit so they read as gems up close, with a glow so they
+   * stay bright on night tracks. */
+  podInst: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
   /** `basic` for InstancedMesh without per-instance colours (coins). */
   basicInstPlain: new THREE.MeshBasicMaterial({ vertexColors: true }),
 };
+
+/** Pod glow: keep 60 % of the pod's own colour unlit (bright on night tracks); the rest shows the lit facets. */
+export const POD_GLOW_GLSL = 'outgoingLight = mix(outgoingLight, diffuseColor.rgb, 0.6);';
+Materials.podInst.onBeforeCompile = (sh) => {
+  sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `${POD_GLOW_GLSL}\n#include <opaque_fragment>`);
+};
+Materials.podInst.customProgramCacheKey = () => 'podGlow';
 
 for (const m of Object.values(Materials)) m.userData.shared = true;
 Materials.blob.polygonOffset = true;

@@ -242,7 +242,7 @@ export class RaceView {
 
   attachItems(items: ItemSystem): void {
     this.itemVisuals = new ItemVisuals(items, this.world, this.visuals, this.effects);
-    if (this.gr.quality.level !== 'low') this.itemVisuals.pods.material = shimmerMaterial(Materials.basic);
+    if (this.gr.quality.level !== 'low') this.itemVisuals.pods.material = shimmerMaterial(Materials.podInst);
     this.scene.add(this.itemVisuals.group);
   }
 
@@ -311,6 +311,7 @@ export class RaceView {
         const lat2 = d2 - t * t;
         const blocking = t > 0 && t < len - 0.8 && lat2 < 1.8 * 1.8;
         v.root.visible = d2 > 4.2 * 4.2 && !blocking;
+        this.effects.hidden[v.kart.index] = !v.root.visible;
       }
     }
     this.syncWheels();
@@ -327,7 +328,8 @@ export class RaceView {
     for (let i = 0; i < this.world.karts.length; i++) {
       const k = this.world.karts[i];
       const g = k.ground;
-      const visible = g.hit && k.respawnState !== RespawnState.Falling;
+      // (no shadow for a kart the chase camera hides: it would be a big dark disc under the lens)
+      const visible = g.hit && k.respawnState !== RespawnState.Falling && !this.effects.hidden[i];
       const x = k.px + (k.x - k.px) * alpha;
       const z = k.pz + (k.z - k.pz) * alpha;
       const height = k.grounded ? k.py + (k.y - k.py) * alpha : g.height;

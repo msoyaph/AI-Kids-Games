@@ -68,6 +68,8 @@ log(`## 3. Racer fairness (identical AI skill & personality, items ${fairItems ?
 const tracks = quick ? TRACKS.slice(0, 4) : TRACKS;
 const posSum = new Map<string, number[]>();
 const groups = [RACERS.slice(0, 6), RACERS.slice(6, 12), [RACERS[0], RACERS[3], RACERS[6], RACERS[9], RACERS[1], RACERS[10]]];
+// racers added later (Yuki…) race a mixed group of light / medium / heavy originals
+for (let i = 12; i < RACERS.length; i++) groups.push([RACERS[i], RACERS[2], RACERS[5], RACERS[7], RACERS[8], RACERS[11]]);
 let race = 0;
 for (const t of tracks) {
   for (const group of groups) {

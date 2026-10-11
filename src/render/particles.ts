@@ -8,6 +8,8 @@ const VERT = /* glsl */ `
   void main() {
     vColor = aColor;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    // fade out right in front of the lens (huge blurry discs otherwise)
+    vColor.a *= smoothstep(1.5, 4.0, -mv.z);
     gl_Position = projectionMatrix * mv;
     gl_PointSize = max(1.0, aSize * uScale / max(0.5, -mv.z));
   }

@@ -41,7 +41,11 @@ export class Effects {
     this.skids = new SkidMarks(700);
     scene.add(this.soft.points, this.glow.points, this.skids.mesh);
     this.acc = world.karts.map(() => ({ smoke: 0, sparks: 0, flame: 0, dust: 0, trail: 0, bubbles: 0 }));
+    this.hidden = world.karts.map(() => false);
   }
+
+  /** Karts the chase camera hides (set by RaceView each frame): they emit no particles. */
+  readonly hidden: boolean[];
 
   applyQuality(p: QualityProfile): void {
     this.soft.budget = Math.round(p.particleBudget * 0.55);
@@ -83,6 +87,14 @@ export class Effects {
       const lz = backZ - rz * 0.75;
       const rxp = backX + rx * 0.75;
       const rzp = backZ + rz * 0.75;
+      if (this.hidden[i]) {
+        // hidden by the chase camera (right behind the lens): no particles, and end its skid marks cleanly
+        if (this.skidsOn) {
+          this.skids.add(i * 2, lx, k.y, lz, fx, fz, false);
+          this.skids.add(i * 2 + 1, rxp, k.y, rzp, fx, fz, false);
+        }
+        continue;
+      }
       const speed = Math.abs(k.speed);
 
       // Drift sparks (tier colour) + skid marks

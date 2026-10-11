@@ -47,4 +47,22 @@ describe('no weight class dominates', () => {
       expect(avg(byClass[w]), w).toBeLessThan(0.7);
     }
   });
+
+  it('racers added after launch (Yuki…) are neither dominant nor hopeless, on old and Frost tracks', () => {
+    const avg = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
+    for (let n = 12; n < RACERS.length; n++) {
+      const group = [RACERS[n], RACERS[2], RACERS[5], RACERS[7], RACERS[8], RACERS[11]];
+      const pos: number[] = [];
+      let seed = 500;
+      for (const t of [...TRACKS.slice(0, 3), ...TRACKS.slice(-3)]) {
+        for (let rot = 0; rot < 2; rot++) {
+          const grid = group.map((_, i) => (i + rot * 3) % group.length);
+          const r = runHeadlessRace({ trackId: t.id, speedClass: 'pro', entries: entries(group), seed: seed++, items: false, personality: 'balanced', equalSkill: true, gridOrder: grid });
+          pos.push((r.ranks[0] - 1) / (group.length - 1));
+        }
+      }
+      expect(avg(pos), RACERS[n].name).toBeGreaterThan(0.25);
+      expect(avg(pos), RACERS[n].name).toBeLessThan(0.75);
+    }
+  });
 });

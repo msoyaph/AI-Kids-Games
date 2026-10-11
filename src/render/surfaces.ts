@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import type { TrackModel } from '../sim/track/trackModel';
 import { F_WATER } from '../sim/track/trackModel';
+import { POD_GLOW_GLSL } from './materials';
 
 export const fxTime = { value: 0 };
 
@@ -103,8 +104,8 @@ export function sheenTrackMaterial(base: THREE.MeshLambertMaterial, sky: number,
   return m;
 }
 
-/** Item pods: a rainbow shimmer sweeping over the unlit pod colours. */
-export function shimmerMaterial(base: THREE.MeshBasicMaterial): THREE.MeshBasicMaterial {
+/** Item pods: a rainbow shimmer sweeping over the pod colours. */
+export function shimmerMaterial<T extends THREE.Material>(base: T): T {
   const m = base.clone();
   m.userData = {};
   m.onBeforeCompile = (sh) => {
@@ -116,7 +117,8 @@ export function shimmerMaterial(base: THREE.MeshBasicMaterial): THREE.MeshBasicM
       .replace('#include <common>', '#include <common>\nvarying vec3 vSh;\nuniform float fxTime;')
       .replace(
         '#include <opaque_fragment>',
-        `{
+        `${POD_GLOW_GLSL}
+        {
           float t = vSh.y * 2.5 + (vSh.x + vSh.z) * 0.7 - fxTime * 3.0;
           vec3 rainbow = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + t * 0.15));
           float band = pow(0.5 + 0.5 * sin(t), 6.0);
