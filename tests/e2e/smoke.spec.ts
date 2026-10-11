@@ -156,9 +156,15 @@ test('runs from file:// (double-click) and inside a sandboxed iframe', async ({ 
   // sandboxed iframe, as on the Ai Kids Games site
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   const host = await ctx.newPage();
+  // Serve a tiny host page (like the Ai Kids Games game page) on the same local server.
+  await host.route('http://localhost:4173/__host.html', (r) =>
+    r.fulfill({
+      contentType: 'text/html',
+      body: `<html><body style="margin:0;background:#000"><iframe id="g" src="http://localhost:4173/" sandbox="allow-scripts allow-pointer-lock allow-same-origin" allow="fullscreen; gamepad; autoplay" style="width:1000px;height:600px;border:0"></iframe></body></html>`,
+    }),
+  );
   const hw = watch(host);
-  await host.goto('http://localhost:4173/');
-  await host.setContent(`<html><body style="margin:0;background:#000"><iframe id="g" src="http://localhost:4173/" sandbox="allow-scripts allow-pointer-lock allow-same-origin" allow="fullscreen; gamepad; autoplay" style="width:1000px;height:600px;border:0"></iframe></body></html>`);
+  await host.goto('http://localhost:4173/__host.html');
   const frame = host.frameLocator('#g');
   await expect(frame.locator('.big-logo')).toBeVisible({ timeout: 20_000 });
   await frame.locator('.title-screen').click();
