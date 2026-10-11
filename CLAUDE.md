@@ -1,31 +1,62 @@
 # Vanex Defense — notes for Claude
 
-Kid-friendly (7+) elemental tower defense. Vite + TypeScript (strict) + PixiJS v8. Ships as ONE self-contained
+Kid-friendly (7+) elemental tower defense. Vite 8 + TypeScript (strict) + PixiJS 8. Ships as ONE self-contained
 `dist/index.html` (vite-plugin-singlefile) for the Ai Kids Games site (sandboxed iframe, zero network requests).
+Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlases; all audio is Web Audio synthesis.
 
 ## Commands
-- `npm run dev` — dev server (port from `$PORT`, default 5173). Dev-only URL flags: `?gallery=1` (atlas viewer).
-- `npm run build` — typecheck + single-file build → `dist/index.html`.
-- `node scripts/check-dist.mjs` — opens the build via file:// in headless Chromium; fails on console errors or external requests.
-- `npm test` — Vitest unit tests (`tests/unit`). `npm run typecheck`.
-- `npm run e2e` — Playwright (later phase). `npm run sim` — headless autoplay balance sim (later phase).
+- `npm run dev` — dev server (port from `$PORT`, default 5173). `.claude/launch.json` has `vanex-dev` (autoPort).
+- `npm run build` — typecheck + single-file build → `dist/index.html` (~830 KB, ~250 KB gzip).
+- `npm test` — Vitest (`tests/unit`, ~15 s incl. headless balance sims in `tests/unit/balance/`, one file per world).
+- `npm run e2e` — build + Playwright (`tests/e2e`; projects desktop / phone-landscape / phone-portrait / tablet;
+  served by `vite preview` on :4317; `reducedMotion: 'reduce'` because pulsing buttons are never "stable").
+- `npm run sim [-- w2m1 hard] [-- --casual]` — autoplay bot over maps × difficulties (vite-node).
+- `npm run perf` — `scripts/perf.mjs`: boot + `?stress=300` frame times on throttled profiles → `perf-results/`.
+  Uses `channel: 'chromium'` for the REAL GPU; Playwright's default headless shell is SwiftShader (software GL).
+- `npm run check:dist` — file:// smoke check (no console errors / external requests).
+- Dev tools: `scripts/shot.mjs <url> <out.png> [w h setup.js waitMs --touch]` (screenshots; the in-app browser pane
+  throttles rAF to ~3 fps, so use this for visual checks), `scripts/cpuprofile.mjs [throttle secs]` (top self-time
+  functions on the built game), `scripts/simdebug.ts` (per-wave bot trace), `scripts/simmap.ts` (ASCII of bot maze),
+  `scripts/render-svg.mjs <dir>` (marketing SVG → PNG).
+- URL flags: `?map=<id>&diff=<d>[&endless]`, `?seed=N`, `?stress=N`, `?quality=low|medium|high|auto`;
+  DEV only: `?editor=1`, `?gallery=1`. Dev exposes `window.__vanex` ({stage, atlas, app}) and `window.__game`.
+  All builds expose read-only `window.__vanexTest` (state + cellCenter) while a game screen is active.
 
 ## Architecture
-- `src/core` — pure utilities: seeded `Rng` (sfc32), math, `Pool` + `swapRemove`.
-- `src/data` — ALL content as typed data: `elements.ts` (wheel: Fire→Nature→Water→Fire, Light→Shadow→Earth→Light),
-  `towers.ts` (2 basic + 6 element + 15 combo, 4 levels each via `makeLevels`), `enemies.ts`.
-- `src/sim` — headless game logic (no DOM / Pixi imports allowed). Fixed 30 Hz step.
-- `src/render` — Pixi. `Stage.ts` (WebGL→Canvas fallback, DPR cap 2, resize, `requestRender()` for idle frames —
-  must go through rAF or the frame may never present). `quality.ts` (tiers + `FpsGovernor`).
-  `atlas/` = procedural Canvas2D art baked once into shelf-packed pages (`packer.ts`, `bake.ts`, `draw*.ts`, `paint.ts`).
-  Sprite names: `tb_<tower>_<lv>`, `th_<tower>_<lv>`, `e_<enemy>[_<element>][_f1]`, `p_<projectile>`, `shield_<el>`, `el_<el>`, fx names.
-- `src/ui` — DOM/CSS overlay for menus + HUD (system fonts only). `src/dev` — dev-only tools (must be tree-shaken from prod).
+- `src/core` — `Rng` (sfc32, `hashString`), math, `Pool` + `swapRemove`.
+- `src/data` — content as typed data: `elements.ts` (wheel Fire→Nature→Water→Fire, Light→Shadow→Earth→Light;
+  1.6×/0.6×), `towers.ts` (2 basic + 6 element + 15 combo, `makeLevels` → 4 levels; behaviours bullet/chain/beam/
+  pulse/mortar + ability fields), `enemies.ts` (hp is wave-1 strength, bosses too), `waves.ts` (seeded generator,
+  cycles of 10, boss every 10th, `hpScale`/`coinScale`/`waveClearBonus`/`CRYSTAL_WAVES`), `difficulty.ts`
+  (`hpEarly`→`hp` ramp by wave 20), `maps/` (ASCII grids, legend in `maps/types.ts`), `worlds.ts`,
+  `achievements.ts` (28, `live` ones checked during play), `strings.ts`.
+- `src/sim` — headless, no DOM/Pixi. `Game.ts` (fixed 30 Hz `step()`; waves, movement, statuses, damage, towers,
+  projectiles, zones, economy, build/sell/upgrade, block check `wouldKeepPath`), `flowField.ts` (octile Dijkstra,
+  no corner cutting, escape pointers for blocked cells), `grid.ts`, `spatial.ts` (hash rebuilt before AND after
+  enemy movement — indices go stale after compaction), `events.ts` (ring buffer of reusable events), `entities.ts`,
+  `autoplay.ts` (bot: counter elements, spawn-side serpentine wall plan, power-per-coin spending).
+- `src/render` — `Stage.ts` (WebGL→Canvas fallback, DPR≤2, Pixi ticker's own render REMOVED: `App.frame` renders
+  with its own 60 FPS cap because Pixi `maxFPS` truncation drops frames at 60 Hz; `requestRender()` via rAF for idle),
+  `WorldView.ts` (render groups on world + busy layers; per-slot sprite views; event → FX), `Particles.ts`
+  (zero-alloc: `begin()` scratch opts → `emit()`), `FloatingText.ts` (BitmapText pool), `Camera.ts`, `MapPainter.ts`,
+  `quality.ts` (tiers + `FpsGovernor`), `atlas/` (packer, bake, draw*.ts, paint.ts). Particle textures live on their
+  own atlas page (ParticleContainer needs one texture source).
+- `src/ui` — DOM overlay (system fonts only): `Hud.ts` (diffed per-frame updates, drawer pinned on tall screens,
+  slide-up + Build FAB on short ones), `modals.ts` (Pip), `styles.css`.
+- `src/app` — `App.ts` (screens, ticker, quality), `GameScreen.ts` (loop, input, modals, touch ✓/✕ confirm),
+  `flow.ts` (navigation, unlock rules, briefing, endless, run bookkeeping), `tutorial.ts`, `achievements.ts`,
+  `save.ts` (versioned + migrations, try/catch, in-memory fallback), `stress.ts`, `screens/`.
+- `src/audio` — `Audio.ts` (SFX, rate limits, unlock on gesture incl. iOS touchend), `music.ts` (lookahead sequencer).
 
 ## Rules
-- Never allocate in the sim/render hot loop: use pools, swap-remove, preallocated arrays.
-- No external assets / fonts / network. All art = code; all audio = Web Audio synthesis.
-- localStorage access always in try/catch (game must run without storage).
-- Kid-friendly copy: short sentences, no violence words ("poof", not "kill", in UI text).
+- Never allocate in sim/render hot loops (pools, swap-remove, cached strings/textures, scratch objects).
+- No external assets / fonts / network. Only widely supported emoji in UI text (no Unicode 14+ glyphs).
+- localStorage only via `SaveStore`. Bump `SAVE_VERSION` + add a migration when the save shape changes.
+- Kid-friendly copy: short sentences, "poof" not "kill".
+- After balance changes run `npm run sim` (and `-- --casual`): good bot must win all 36 runs; casual bot must get
+  3★ on every Easy map (enforced by tests).
 
 ## Status
-- Phase 1 (scaffold, single-file build, Pixi + DPR, atlas baking) — done.
+All 10 phases done: scaffold, grid/pathing, towers/economy, elements/combos, waves/bosses, campaign/endless,
+tutorial/book/badges/settings/editor, audio/polish, perf pass, tests/balance/docs. 157 unit tests + 33 E2E pass.
+Perf (`npm run perf`): 60 fps on 4×-throttled phone profile with 300 creatures / ~440 shots.

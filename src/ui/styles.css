@@ -1319,3 +1319,29 @@ img.big-el {
   background: linear-gradient(90deg, #ff5a6a, #ffb21f);
   transition: width 0.2s linear;
 }
+
+/* victory stars */
+.stars.big {
+  font-size: clamp(44px, 9vw, 68px);
+  gap: 10px;
+  margin: 4px 0;
+  justify-content: center;
+}
+.stars.big .star.on {
+  animation: starpop 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  text-shadow:
+    0 3px 0 #9a5b00,
+    0 0 18px rgba(255, 210, 63, 0.8);
+}
+.stars.big .star:nth-child(2) {
+  animation-delay: 0.25s;
+}
+.stars.big .star:nth-child(3) {
+  animation-delay: 0.5s;
+}
+@keyframes starpop {
+  from {
+    transform: scale(0) rotate(-30deg);
+    opacity: 0;
+  }
+}

@@ -154,9 +154,11 @@ export function createNav(app: App, hooks: FlowHooks = {}): Nav {
       closeModal();
       const next = mode === 'campaign' ? nextMap(map.id) : null;
       const extra = mode === 'tutorial' ? { waves: TUTORIAL_WAVES, startCoins: 60, startCrystals: 0, autoWaves: false } : {};
+      // ?seed=N replays a run exactly (handy for bug reports)
+      const seed = Number(new URLSearchParams(location.search).get('seed')) || undefined;
       const screen: GameScreen = new GameScreen(
         app,
-        { map, difficulty: diff, mode, ...extra },
+        { map, difficulty: diff, mode, seed, ...extra },
         {
           quit: () => (mode === 'endless' ? nav.endless() : mode === 'tutorial' ? nav.title() : nav.worlds()),
           restart: () => nav.play(map, diff, mode),

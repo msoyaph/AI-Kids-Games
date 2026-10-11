@@ -46,8 +46,8 @@ export function showModal(root: HTMLElement, content: HTMLElement[], opts: { onB
   };
 }
 
-export function starsHtml(n: number, max = 3): HTMLElement {
-  const wrap = h('span.stars', { 'aria-label': `${n} of ${max} stars` });
+export function starsHtml(n: number, max = 3, big = false): HTMLElement {
+  const wrap = h('span.stars', { 'aria-label': `${n} of ${max} stars`, class: big ? 'big' : '' });
   for (let i = 0; i < max; i++) wrap.append(h('span.star', { class: i < n ? 'on' : '' }, '★'));
   return wrap;
 }

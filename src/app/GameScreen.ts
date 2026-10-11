@@ -558,7 +558,7 @@ export class GameScreen implements Screen, HudHost {
         const line = WIN_LINES[Math.floor(Math.random() * WIN_LINES.length)]!;
         this.modal = showModal(this.el, [
           h('h2', null, 'Victory!'),
-          h('div', { style: 'font-size:48px' }, starsHtml(stars)),
+          starsHtml(stars, 3, true),
           pipSays(line, 'cheeky'),
           h('p', null, `Lives kept: ${g.lives}/${g.maxLives} · Poofs: ${g.stats.kills}`),
           result.badges?.length ? h('p', null, `New badge${result.badges.length > 1 ? 's' : ''}: ${result.badges.join(', ')}`) : null,
