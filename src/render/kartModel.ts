@@ -44,7 +44,7 @@ export function buildKartMeshes(racerId: string, cfg: KartConfig): {
   const tokens = kartTokens(cfg);
   const chassisGeo = cached(`body:${body.id}:${cfg.paint}:${cfg.decal}`, () => buildRecipe(body.model, tokens, buildDecalGeometry(cfg.decal, body, tokens)));
   const driverGeo = cached(`racer:${racer.id}`, () => buildRecipe(racer.model, { accent: racer.color2 }));
-  const wheelGeo = cached(`wheel:${wheels.id}`, () => buildRecipe(wheels.model, tokens));
+  const wheelGeo = cached(`wheel:${wheels.id}:${cfg.paint}`, () => buildRecipe(wheels.model, tokens));
   const gliderGeo = cached(`glider:${glider.id}:${cfg.paint}`, () => buildRecipe(glider.model, tokens));
   const chassis = new THREE.Mesh(chassisGeo, Materials.flat);
   const driver = new THREE.Mesh(driverGeo, Materials.smooth);

@@ -47,6 +47,8 @@ export class App {
   /** Screen factory registry (set by screens/index.ts to avoid import cycles). */
   screens!: import('../ui/screens/index').ScreenRegistry;
   onPauseRequest?: () => void;
+  /** Rolling timing stats (ms) for the FPS overlay and perf tests. */
+  readonly perf = { step: 0, render: 0, frames: 0, frameTimes: new Float32Array(600), cursor: 0 };
 
   constructor(
     readonly canvas: HTMLCanvasElement,
@@ -127,10 +129,19 @@ export class App {
   // loop
   // ---------------------------------------------------------------------------
   private step(dt: number): void {
-    if (this.session && !this.paused) this.session.step(dt);
+    if (this.session && !this.paused) {
+      const t0 = performance.now();
+      this.session.step(dt);
+      this.perf.step += (performance.now() - t0 - this.perf.step) * 0.05;
+    }
   }
 
   private render(alpha: number, frameDt: number): void {
+    const t0 = performance.now();
+    const p = this.perf;
+    p.frameTimes[p.cursor] = frameDt * 1000;
+    p.cursor = (p.cursor + 1) % p.frameTimes.length;
+    p.frames++;
     this.input.poll(frameDt);
     if (this.gr.quality.sample(frameDt)) this.gr.applyQuality();
     if (this.saves.data && !this.paused) this.saves.data.playSeconds += frameDt;
@@ -145,9 +156,10 @@ export class App {
       this.menu.render();
       this.audio.update(null, [], frameDt);
     }
+    p.render += (performance.now() - t0 - p.render) * 0.05;
     if (this.saves.settings.showFps) {
       const st = this.gr.stats();
-      this.fpsEl.textContent = `${this.gr.quality.fps} fps · ${this.gr.quality.level}${this.gr.quality.renderScale < 1 ? ` ×${this.gr.quality.renderScale}` : ''} · ${st.calls} draws`;
+      this.fpsEl.textContent = `${this.gr.quality.fps} fps · ${this.gr.quality.level}${this.gr.quality.renderScale < 1 ? ` ×${this.gr.quality.renderScale}` : ''} · ${st.calls} draws · sim ${p.step.toFixed(1)}ms · cpu ${p.render.toFixed(1)}ms`;
     }
   }
 

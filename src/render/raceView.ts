@@ -101,6 +101,7 @@ export class RaceView {
     this.blobs.renderOrder = 1;
     this.scene.add(this.blobs);
     for (let i = 0; i < targets.length; i++) this.cams.push(new ChaseCamera(profile.drawDistance));
+    this.batchWheels();
     this.effects = new Effects(world, this.scene);
     if (course.track) this.effects.offroadColor = course.track.data.palette.offroad;
     for (let i = 0; i < targets.length; i++) this.effects.camPos.push(this.cams[i].camera.position);
@@ -115,6 +116,39 @@ export class RaceView {
   }
 
   private balloons: THREE.Group[] = [];
+  /** All kart wheels drawn as one instanced mesh per wheel geometry (cuts ~4 draw calls per kart). */
+  private wheelBatches: Array<{ mesh: THREE.InstancedMesh; wheels: Array<{ m: THREE.Mesh; v: KartVisual }> }> = [];
+  private static readonly ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+
+  private batchWheels(): void {
+    const byGeo = new Map<THREE.BufferGeometry, Array<{ m: THREE.Mesh; v: KartVisual }>>();
+    for (const v of this.visuals) {
+      for (const w of v.wheels) {
+        let list = byGeo.get(w.geometry);
+        if (!list) byGeo.set(w.geometry, (list = []));
+        list.push({ m: w, v });
+        w.visible = false;
+      }
+    }
+    for (const [geo, wheels] of byGeo) {
+      const mesh = new THREE.InstancedMesh(geo, Materials.flat, wheels.length);
+      mesh.frustumCulled = false;
+      mesh.name = 'wheels';
+      this.scene.add(mesh);
+      this.wheelBatches.push({ mesh, wheels });
+    }
+  }
+
+  private syncWheels(): void {
+    for (const b of this.wheelBatches) {
+      for (let i = 0; i < b.wheels.length; i++) {
+        const { m, v } = b.wheels[i];
+        if (!v.body.visible || !v.root.visible) b.mesh.setMatrixAt(i, RaceView.ZERO);
+        else b.mesh.setMatrixAt(i, m.matrixWorld);
+      }
+      b.mesh.instanceMatrix.needsUpdate = true;
+    }
+  }
 
   /** Battle mode: three balloons float above every kart. */
   enableBalloons(): void {
@@ -191,7 +225,20 @@ export class RaceView {
 
   update(alpha: number, dt: number, lookBack: boolean[]): void {
     this.time += dt;
-    for (const v of this.visuals) v.update(alpha, dt, this.time);
+    for (const v of this.visuals) {
+      v.update(alpha, dt, this.time);
+      v.root.updateMatrixWorld(true);
+    }
+    // Rivals squeezed between the camera and your kart would block the view: hide them while very close.
+    if (this.cams.length === 1) {
+      const cp = this.cams[0].camera.position;
+      for (const v of this.visuals) {
+        if (v.kart.index === this.targets[0]) continue;
+        const d2 = (v.root.position.x - cp.x) ** 2 + (v.root.position.y - cp.y) ** 2 + (v.root.position.z - cp.z) ** 2;
+        v.root.visible = d2 > 4.2 * 4.2;
+      }
+    }
+    this.syncWheels();
     for (let i = 0; i < this.targets.length; i++) {
       const k = this.world.karts[this.targets[i]];
       this.cams[i].update(k, alpha, dt, lookBack[i] ?? false);
