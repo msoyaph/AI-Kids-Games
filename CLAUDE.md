@@ -30,7 +30,7 @@ Vite + TypeScript (strict) + PixiJS 8, shipped as ONE self-contained `dist/index
 ## Status
 - [x] Phase 1: scaffold, single-file build, Pixi + DPR/resize, atlases, loading screen, title.
 - [x] Phase 2: flight physics (systems/flight.ts), sector generator (systems/flightWorld.ts), input (input/input.ts + input/touch.ts), FlightScene + HUD, Tuggy tow.
-- [ ] Phase 3: star map, travel, landing, exploration.
+- [x] Phase 3: StarMapScene, LandingScene (systems/landing.ts), ExploreScene (systems/level.ts, platformer.ts, reachability.ts), tiles/themes, dialogue UI, read-aloud.
 - [ ] Phase 4: hangar, parts, economy.
 - [ ] Phase 5: mission engine, dialogue, read-aloud, hub.
 - [ ] Phase 6: chapters 1–5, finale, credits.

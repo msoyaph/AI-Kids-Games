@@ -1,6 +1,7 @@
 import type { AlienLook, CharacterDef, HumanLook } from '../../data/characters';
 import type { AstronautLook } from '../../data/types';
 import { circle, cuteFace, ellipse, glowDot, ink, linear, poly, radial, roundRect, softStar, type Ctx } from '../canvas';
+void cuteFace;
 import { C, rgba, shade } from '../palette';
 
 export type Mood = 'happy' | 'wow' | 'think' | 'sleepy';
@@ -627,4 +628,51 @@ export function drawPortrait(ctx: Ctx, ch: CharacterDef, w: number, h: number, m
   ctx.lineWidth = Math.max(3, R * 0.06);
   ctx.strokeStyle = C.ink;
   ctx.stroke(disc);
+}
+
+/** NPC standing in a level (side-ish view, facing right). Box w x h, feet at bottom. */
+export function drawNpcSide(ctx: Ctx, ch: CharacterDef, w: number, h: number, frame = 0): void {
+  switch (ch.kind) {
+    case 'human': {
+      const hl = ch.human!;
+      const look: AstronautLook = { name: ch.name, suit: hl.outfit, accent: '#ffe066', helmet: 'round', skin: hl.skin, hair: hl.hair, hairStyle: hl.hairStyle === 'pony' ? 'long' : hl.hairStyle, face: 'smile', outfit: 'none' };
+      ctx.save();
+      ctx.translate((w - 72) / 2, h - 88);
+      drawAstronautSide(ctx, look, frame ? 'walk1' : 'idle', 72, 88);
+      ctx.restore();
+      break;
+    }
+    case 'robot': {
+      const s = Math.min(w, h) / 110;
+      for (const x of [w * 0.3, w * 0.7]) ink(ctx, circle(x, h - 10, 9 * s * 1.2), C.dark, 3);
+      ink(ctx, roundRect(w * 0.25, h * 0.55, w * 0.5, h * 0.33, 10), linear(ctx, 0, 0, 0, h, [[0, '#ffffff'], [1, C.steel]]), 3);
+      ctx.save();
+      ctx.translate(w / 2, h * 0.36);
+      ctx.scale(0.55, 0.55);
+      drawRobotHeadPublic(ctx, ch.id === 'pots' ? C.orange : C.cyan, ch.id === 'pots');
+      ctx.restore();
+      break;
+    }
+    case 'tuggy':
+      drawTuggy(ctx, w, h);
+      break;
+    case 'alien':
+      drawAlienBody(ctx, ch.alien!, w / 2, h * 0.62 + (frame ? 2 : 0), Math.min(w, h) * 0.34, 'happy');
+      for (const s of [-1, 1]) ink(ctx, ellipse(w / 2 + s * w * 0.16, h - 5, w * 0.12, 5), shade(ch.alien!.body, -0.2), 2.5);
+      break;
+    case 'elder':
+      drawAlienBody(ctx, ch.alien!, w / 2, h * 0.66, Math.min(w, h) * 0.3, 'happy', true);
+      for (const s of [-1, 1]) ink(ctx, ellipse(w / 2 + s * w * 0.14, h - 5, w * 0.11, 5), shade(ch.alien!.body, -0.2), 2.5);
+      break;
+    case 'critter':
+      glowDot(ctx, w / 2, h * 0.5, w * 0.45, '#fff2a8');
+      ink(ctx, softStar(w / 2, h * 0.5, 4, w * 0.3, w * 0.1, 0), '#fff7b3', 3);
+      break;
+    default:
+      break;
+  }
+}
+
+function drawRobotHeadPublic(ctx: Ctx, color: string, chef: boolean): void {
+  drawRobotHead(ctx, 0, 0, 1, color, 'happy', chef);
 }

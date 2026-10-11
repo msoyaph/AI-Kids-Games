@@ -171,3 +171,35 @@ body.portrait #rotate-hint:not(.dismissed) { display: flex; }
 .toast.out { opacity: 0; transform: translateY(-20px); transition: opacity .3s, transform .3s; }
 .pause-panel { align-items: stretch; min-width: 460px; }
 .pause-panel .btn { width: 100%; }
+
+/* ---------------------------------------------------------------- Dialogue */
+.dlg-wrap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; padding: 0 calc(20px + var(--safe-r,0px)) calc(18px + var(--safe-b,0px)) calc(20px + var(--safe-l,0px)); pointer-events: auto; background: linear-gradient(180deg, rgba(10,6,40,0) 0%, rgba(10,6,40,.45) 60%); padding-top: 140px; }
+.dlg-box { position: relative; display: flex; align-items: center; gap: 22px; width: min(1180px, 100%); min-height: 210px; padding: 18px 22px 18px 18px; border-radius: 34px; background: linear-gradient(180deg, #ffffff, #e9eeff); color: var(--ink); border: 6px solid var(--ink); box-shadow: 0 10px 0 rgba(10,6,40,.55); cursor: pointer; }
+.dlg-box.pop { animation: slide-up .25s ease-out; }
+.dlg-portrait { flex: none; width: 170px; height: 170px; display: flex; align-items: center; justify-content: center; }
+.dlg-portrait canvas { width: 170px; height: 170px; }
+.dlg-portrait .dlg-sign { width: 130px; height: 130px; }
+.dlg-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.dlg-name { align-self: flex-start; padding: 4px 18px; border-radius: 16px; border: 4px solid var(--ink); color: var(--ink); font-size: 28px; font-weight: 900; }
+.dlg-text { font-size: 38px; line-height: 1.25; font-weight: 800; min-height: 2.5em; }
+.dlg-btns { display: flex; flex-direction: column; gap: 12px; align-self: stretch; justify-content: space-between; }
+
+/* ---------------------------------------------------------------- Landing gauge */
+.gauge { position: absolute; right: calc(36px + var(--safe-r,0px)); top: 150px; width: 56px; height: 300px; border-radius: 28px; background: rgba(10,6,40,.7); border: 5px solid var(--ink); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; }
+.gauge-safe { position: absolute; left: 0; right: 0; top: 0; height: 50%; background: rgba(46,212,122,.35); }
+.gauge-fill { position: relative; width: 100%; background: linear-gradient(180deg, #ffe066, #ff5d73); transition: height .08s; }
+.gauge.safe .gauge-fill { background: linear-gradient(180deg, #c6ff9e, #2ed47a); }
+.gauge-lbl { position: absolute; bottom: -44px; left: 50%; transform: translateX(-50%); font-size: 22px; white-space: nowrap; text-shadow: 0 3px 0 var(--ink); }
+#ui.touch-on .gauge { right: auto; left: calc(30px + var(--safe-l,0px)); top: 140px; }
+
+/* ---------------------------------------------------------------- Star map */
+.map-drag { position: absolute; inset: 0; pointer-events: auto; touch-action: none; cursor: grab; }
+.map-header { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 20px; padding: calc(14px + var(--safe-t,0px)) calc(20px + var(--safe-r,0px)) 0 calc(20px + var(--safe-l,0px)); pointer-events: none; }
+.map-header button { pointer-events: auto; }
+.map-title { font-size: 56px; }
+.map-card { position: absolute; left: 50%; bottom: calc(16px + var(--safe-b,0px)); transform: translateX(-50%); width: min(1100px, calc(100% - 40px)); display: flex; align-items: center; gap: 22px; padding: 14px 20px; animation: slide-up .3s ease-out; }
+.card-pic { width: 130px; height: 130px; flex: none; }
+.card-pic canvas { width: 130px; height: 130px; }
+.card-body { gap: 8px; }
+.card-text { font-size: 28px; line-height: 1.3; }
+#ui.dlg-open .prompt, #ui.dlg-open .touch-controls { display: none !important; }

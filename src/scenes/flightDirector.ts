@@ -41,11 +41,13 @@ export function travelDirector(p: FlightSceneParams): FlightDirector {
     update: () => {},
     onScan: () => {},
     onLand: (_scene, bodyId) => {
-      S.state.data.location = bodyId;
-      void S.game.go('title');
+      void S.game.go('landing', { body: bodyId });
     },
     onCourseDone: () => {},
-    onTowedHome: () => void S.game.go('title'),
+    onTowedHome: () => {
+      S.state.data.location = 'earth';
+      void S.game.go('hub');
+    },
   };
 }
 
