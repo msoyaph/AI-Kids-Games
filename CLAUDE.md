@@ -6,83 +6,73 @@ All assets and fonts are local; no remote runtime dependencies.
 Commands: npm run dev, npm run build, npm test, npm run test:e2e, npm run add-game.
 Build generates static route metadata/sitemap. Host routing must serve existing game files first.
 
-## Launch checkpoints (2026-10-11)
+## Hard rules
 
-1. COMPLETE: Imported all five finished HTML builds byte-for-byte. BUILD_IMPORTS.json
-   records source paths, sizes, and verified SHA-256 hashes. Import helper now copies
-   without inserting policies or changing compiled code. Removed leftover files in
-   the five game directories.
-2. COMPLETE: copied three provided banner/thumbnail pairs unchanged; created original
-   16:9 and square SVG art for TheaBonk (glowing Bonk Ring at dusk) and
-   Light Crossing (Driftlight Isle, lighthouse and floating lanterns).
-3. COMPLETE: reconciled all README entries with Game; added minAge and Strategy,
-   Racing, Learning; finished Light Crossing copy; exact device/control guidance,
-   Calex split-screen limitation and Browse player-age filter. Home features all five.
-4. COMPLETE implementation: iframe sandbox is exactly allow-scripts allow-same-origin
-   allow-pointer-lock, with fullscreen; gamepad permission. Browser interaction
-   and save checks run against the complete integration in step 8.
-5. COMPLETE: STORAGE_AUDIT.md records every persistent/probe key and scoped deletion.
-   No collisions or global clears. Favorites/recent migrated to aikg: with merge,
-   corruption handling and retry on quota failure. Clearing lists touches only site keys.
-6. COMPLETE: ADDING_A_GAME.md explicitly forbids third-party same-origin embedding
-   and requires a separate domain. README/parent/About copy reflect persistent
-   finished games. Removed obsolete adapted source copies and fixed art metadata.
-7. COMPLETE: throttled download (40 KiB/s, 200 ms latency) kept loading screen
-   visible until iframe load; Playwright passed. Unhashed HTML/art revalidate;
-   hashed Vite assets cache immutably for one year. CDN uses deployment-specific
-   static caching; verify deployed ETag/headers in step 9.
-8. COMPLETE: 20 unit tests and 47 applicable Playwright cases pass across desktop,
-   tablet and phone (16 intentional device-specific skips). All five games run
-   error-free for 20 seconds, persist saves/settings on iframe reload, unlock audio
-   on the first gesture and preserve other games' saves and catalog lists. Desktop
-   pointer lock/fullscreen and simulated gamepads pass. Actual touch events cover
-   Vanex towers, Light/Space movement and Calex driving/controls. Space/Calex need
-   landscape on touch devices; registry guidance now says so. Native Safari and
-   physical controller checks remain on the real-device checklist.
-9. COMPLETE: Vercel preview READY at
-   https://ai-kids-games-lkreq5wu9-real-tours.vercel.app. All 13 original hosted browser
-   checks pass; hosted game hashes, revalidation/304 and immutable asset cache
-   verified. Production was not published: a guard stopped Vercel's first-attempt
-   production classification; the second attempt is preview. Temporary QA access
-   revoked; normal Vercel sign-in retained. Real iPad/Safari/phone checklist is in
-   LAUNCH_REPORT.md. Production remains gated on explicit owner approval.
+- Never change a game build. public/games/*/index.html must match BUILD_IMPORTS.json.
+  Original game folders are read-only. Storage defects are fixed in the game's source.
+- Keep favorites, recently played (aikg: keys, legacy migration), the age filter,
+  iframe sandbox/permissions, storage keys, cache headers and kid-safety rules:
+  no tracking, no accounts, no requests to other origins.
+- Before every commit, check `git log` for commits this session did not make; if
+  any appear, stop and tell the owner. Don't rewrite history.
+- Stop and ask the owner only if something would change a game build, break saves,
+  favorites or recently played, need another origin, or make the definition of
+  done impossible. Otherwise decide, note it here, and continue.
 
-Do not edit minified game builds. Any storage ownership defect must halt integration
-and be fixed in the original game's source project. Original game folders are read-only
-for this task. The obsolete game-sources adaptations have been removed.
-Favorites/recently played use aikg:; legacy migration preserves existing device data.
+## Redesign and production launch (in progress, started 2026-10-11)
 
-The five-game release targets Vercel preview first. Existing Sites only received
-the later requested homepage cosmetic update; its two-game catalog is retained.
+Brief: visual/UX redesign, gameplay previews, new cover art, privacy and launch
+readiness, then production on Vercel. Approved design: DESIGN_PLAN.md.
 
-## Homepage review changes
+Owner decisions:
+1. Domain: the Vercel production domain for now.
+2. Real loading progress approved; site CSP may use `connect-src 'self'` only.
+3. Replace all five games' art. Each game's cover, logo and capture route live in
+   their own files so they can be redone (Vanex Defense is being restyled for
+   ages 10–14; Space Sky is moving to 3D; both will be recaptured later).
+4. No "Tap to start". Lighthouse Performance 90+ applies to home and details only.
+   The play page is exempt from Performance because it boots a 1 MB game inside
+   the page (long main-thread tasks are the game's, not the site's); its
+   Accessibility, Best Practices and SEO must still be 90+.
+5. Balanced grid must work for any count; screenshot-test 1, 4, 6, 7 and 12 games
+   with temporary mock entries.
 
-Removed the selected welcome strip, hero eyebrow badge and Featured/Recently
-Played/New Games/category subtitles. Kept headings, game content and controls.
-Added a small top gap after removing the strip. Apply the same cosmetic changes
-to the existing two-game Sites version and the five-game Vercel preview; the
-five-game production launch still requires owner approval.
+Codex commits reviewed (10:24–10:32): 9197120 and 2c433df only recorded preview
+deployments and Sites publishes in docs. c301c6d removed all-caps eyebrows and
+intros on Browse/Favorites/Parents (kept: fits the plan) and hid Light Crossing's
+card category/status via a slug check as a "selected" cosmetic edit, with no
+defect recorded; reverted in 5538700 so every card is uniform. The ChatGPT Sites
+publish (.openai/hosting.json) is left untouched.
 
-Homepage review verification: 15 catalog browser checks pass across desktop,
-tablet and phone. All selected phrases are absent at 855 and 390 pixel widths
-in both versions, without overflow or page errors. Sites version 2 is published
-at the existing URL; five-game Vercel production is still not approved.
+Progress (one commit per step):
+1. COMPLETE: design plan approved (DESIGN_PLAN.md).
+2. TODO: gameplay capture pipeline and previews.
+3. TODO: covers, logos, Open Graph images.
+4. TODO: design system and shell.
+5. TODO: preview player and cards.
+6. TODO: pages, including Privacy.
+7. TODO: launch metadata.
+8. TODO: tests, visual review, Lighthouse.
+9. TODO: preview deploy, hosted suite, production, smoke test, report.
 
-## Page and card review changes
+## Earlier launch checkpoints (2026-10-11, all complete)
 
-Removed the selected Browse and Favorites eyebrow/intro text and the Parents
-eyebrow. Hide Light Crossing’s category/status row on every game card while
-keeping other games’ metadata and all filters, details and controls. Apply the
-same cosmetic edit to Sites and the five-game Vercel preview. Production approval
-for the five-game release is still pending.
-
-Verification: both production builds pass; 15 catalog tests pass on desktop,
-tablet and phone. Sixteen focused checks cover Home/Browse/Favorites/Parents
-in both versions at 889 and 390 pixel widths: requested text and Light Crossing
-metadata are absent, other card metadata remains, and there is no overflow or
-page error.
-
-Published verification: Sites version 3 is live; the refreshed Vercel preview
-is READY. Sixteen hosted page checks pass across both versions and widths;
-eight preview assets match the local build. Temporary QA access is revoked.
-The five-game production deployment remains unapproved.
+1. Imported all five finished HTML builds byte-for-byte. BUILD_IMPORTS.json records
+   source paths, sizes and SHA-256 hashes; scripts/import-game-build.ts copies unchanged.
+2. Original art: three provided pairs plus two drawn pairs (being replaced, see above).
+3. Registry reconciled: minAge, Strategy/Racing/Learning, exact device/control
+   guidance, Calex split-screen limitation, player-age filter.
+4. Iframe sandbox is exactly allow-scripts allow-same-origin allow-pointer-lock,
+   with allow="fullscreen; gamepad".
+5. STORAGE_AUDIT.md: no collisions or global clears; site owns aikg:favorites and
+   aikg:recent; clearing lists touches only site keys.
+6. ADDING_A_GAME.md forbids third-party same-origin games (needs a separate domain).
+7. Loading screen stays visible during a throttled download. Unhashed HTML/art
+   revalidate; hashed Vite assets are immutable for a year.
+8. 20 unit tests and 47 applicable Playwright cases (desktop/tablet/phone) passed:
+   20-second clean runs, saves survive reloads, audio unlocks, cross-game storage
+   preserved, pointer lock, fullscreen, simulated gamepads, touch controls.
+9. Vercel preview deployed (real-tours/ai-kids-games). The build's production guard
+   (scripts/check-deployment.ts) requires AIKG_ALLOW_PRODUCTION=approved.
+   Later cosmetic edits by Codex were published to a refreshed preview and to the
+   older two-game ChatGPT Sites version (version 3).
