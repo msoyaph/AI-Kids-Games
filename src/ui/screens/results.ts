@@ -43,16 +43,16 @@ export function resultsScreen(app: App, r: SessionResult, extra: ResultsExtra): 
       h('tr', { class: isMe ? 'me' : '' }, h('td', null, ordinal(res.rank)), h('td', null, h('span', { class: 'dot', style: `background:${KART_COLORS[res.index % KART_COLORS.length]}` }), nameOf(r, res.index)), h('td', null, time, pts)),
     );
   }
-  const cols: HTMLElement[] = [h('div', { class: 'panel scroll', style: 'flex:1;min-width:0;max-height:100%' }, h('div', { style: 'font-weight:900;margin-bottom:6px' }, extra.raceNo ? `Race ${extra.raceNo}/${extra.races}: ${course}` : course), table)];
+  const cols: HTMLElement[] = [h('div', { class: 'panel scroll' }, h('div', { style: 'font-weight:900;margin-bottom:6px' }, extra.raceNo ? `Race ${extra.raceNo}/${extra.races}: ${course}` : course), table)];
   if (extra.standings) {
     const st = h('table', { class: 'table' });
     extra.standings.forEach((s, i) => {
       const res = r.results.find((x) => x.index === s.id)!;
       st.appendChild(h('tr', { class: res.player >= 0 ? 'me' : '' }, h('td', null, ordinal(i + 1)), h('td', null, h('span', { class: 'dot', style: `background:${KART_COLORS[s.id % KART_COLORS.length]}` }), nameOf(r, s.id)), h('td', null, `${s.points} pts`)));
     });
-    cols.push(h('div', { class: 'panel scroll', style: 'flex:1;min-width:0;max-height:100%' }, h('div', { style: 'font-weight:900;margin-bottom:6px' }, 'Cup standings'), st));
+    cols.push(h('div', { class: 'panel scroll' }, h('div', { style: 'font-weight:900;margin-bottom:6px' }, 'Cup standings'), st));
   }
-  const notes = (extra.notes ?? []).map((n) => h('div', { class: 'hint', style: 'color:#ffe45c;font-size:clamp(14px,2.4vh,18px)' }, n));
+  const notes = (extra.notes ?? []).map((n) => h('div', { class: 'hint results-note' }, n));
   const btns = h('div', { class: 'menu-row', style: 'justify-content:flex-end' }, ...extra.buttons.map((b) => button(b.label, b.action, b.cls ?? '')));
   // Instant replay of the race that just finished (kept in memory only)
   if ((app.session?.replayRec?.frames ?? 0) > 30) {
@@ -70,8 +70,9 @@ export function resultsScreen(app: App, r: SessionResult, extra: ResultsExtra): 
     'div',
     { class: 'dim', style: 'gap:10px' },
     h('div', { class: 'topbar' }, h('div', { class: 'title-h' }, headline)),
-    ...notes,
-    h('div', { style: 'flex:1;display:flex;gap:12px;min-height:0;flex-wrap:wrap' }, ...cols),
+    notes.length ? h('div', { class: 'results-notes' }, ...notes) : null,
+    // the tables shrink and scroll so the buttons below always stay visible and tappable (short phone screens)
+    h('div', { class: 'results-cols' }, ...cols),
     btns,
   );
   const first = (btns.querySelector('.yellow[data-nav]') ?? btns.querySelector('[data-nav]')) as HTMLElement | null;

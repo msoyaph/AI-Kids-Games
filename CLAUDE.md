@@ -65,14 +65,13 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - `scripts/probe.mjs` — open the game in headless Chromium and evaluate JS (`window.__calex` debug hook).
   Note: headless SwiftShader renders slowly, so drive-tests belong in Vitest sim tests; use the browser pane for visuals.
 
-## Status (all 13 phases complete)
-- 16 tracks / 4 cups (Sunrise, Thunder, Galaxy, Legend), 4 battle arenas, 12 racers, 12 items, 34 challenges,
-  22 procedural songs. Modes: Grand Prix, Time Trial (+ghosts/staff), Versus (single/cup), Battle, 2P split.
-- Tests: `npm test` (84 unit + headless sim incl. every-track completion per class and weight-class fairness),
-  `npm run test:e2e` (Playwright desktop/tablet/phone, file://, sandboxed iframe, gamepad stub).
-- Perf (Apple M3 Pro, built game): 60 fps on every track with 8 racers, including 4–6× CPU throttling + mobile
-  profile and split-screen; ~2 ms CPU/frame at 6× throttle; 33–53 draw calls; per-race GPU resources released.
-- Track validation: `npx tsx scripts/validateTracks.ts` (all OK); balance report: `npm run sim`.
+## Status (v0.2 upgrade complete on `calex-upgrade`; final report `docs/upgrade/REPORT.md`)
+- 20 tracks / 5 cups (Sunrise, Thunder, Galaxy, Legend, Frost), 5 arenas (Balloons + Coin Rush), 13 racers,
+  12 items, 40 challenges, Driving School (6 lessons, 2 practice courses), instant replay, 2P split.
+- Tests: `npm test` (192 unit + headless sim), `npm run test:e2e` (Playwright Chromium + WebKit × desktop/tablet/
+  phone, file://, sandboxed iframe, gamepad stub, a11y), `npm run validate`, `npm run sim`, `npm run balance-report`.
+- Perf (Apple M3 Pro, built game): 60 fps on every tier and profile incl. the throttled tablet at Medium; Low on
+  the heaviest tracks 42–46k avg triangles (v1: 71–111k). Build 1.21 MB; storage worst case 1.08 MB.
 
 ## Gotchas
 - `layout()` marks: new tracks get exact tangents; the 16 original tracks use `{ legacyMarkHeadings: true }`
@@ -182,7 +181,15 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   only, never PRs, guarded by `repository.private && actor == owner`, full quality + benchmark; warning text at
   the top of the file and in README. `CALEX_SWIFTSHADER=1` forces software GL locally to rehearse CI. Spec files
   import `test`/`expect` from `./fixtures`, not `@playwright/test`.
-- [ ] Phase 10 — testing, balance, screenshot review, final report
+- [x] Phase 10 — final verification + `docs/upgrade/REPORT.md` (before/after, balance, staff times, benchmark per
+  tier, build size, storage, device how-to, CI steps, registry entry, known issues). `npm run balance-report`
+  (`scripts/balanceReport.ts` → `sim-report/final/balance.md`); `scripts/perf.mjs` starts races directly
+  (`--url`, avg draws/tris). Review fixes: shared materials split into instanced twins (`Materials.flatInst`,
+  `podInst`, `basicInstPlain` — a material shared by instanced + plain meshes re-resolves its program every frame),
+  hidden rivals drop blob shadow + particles (`Effects.hidden`), particles fade within 4 m of the lens, faceted
+  glowing pods (`POD_GLOW_GLSL`), Yuki in the fairness report/test, controls card fits landscape phones, results
+  screen tables shrink/scroll (`.results-cols`, no `flex-wrap` + `max-height:100%`, which WebKit ignores) so the
+  buttons stay tappable on a landscape iPhone.
 
 ### Upgrade notes / decisions log
 - Phase 8/9 Coin Rush fix (found by a flaky e2e): AI circled coins (no slow-down), coins spawned inside obstacles

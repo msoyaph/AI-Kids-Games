@@ -1408,3 +1408,50 @@ kbd {
   text-align: center;
   box-shadow: 0 3px 0 rgba(29, 18, 80, 0.6);
 }
+@media (max-height: 460px) {
+  .controls-card .title-h {
+    font-size: 22px;
+    margin-bottom: 2px;
+  }
+  .cc-row {
+    padding: 1px 0;
+    font-size: 13px;
+  }
+}
+
+/* ---------------- Results ---------------- */
+.results-notes {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 30%;
+  overflow-y: auto;
+}
+.results-note {
+  color: #ffe45c;
+  font-size: clamp(14px, 2.4vh, 18px);
+}
+.results-cols {
+  flex: 1 1 0;
+  display: flex;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+.results-cols > .panel {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+@media (max-width: 560px) {
+  .results-cols {
+    flex-direction: column;
+  }
+}
+@media (max-height: 460px) {
+  .results-note {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+}
+

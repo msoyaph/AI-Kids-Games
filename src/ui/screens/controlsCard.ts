@@ -77,9 +77,10 @@ export function controlsCard(app: App, players: Array<{ src: InputSource; device
     { class: 'dim controls-card', style: 'justify-content:center;align-items:center' },
     h(
       'div',
-      { class: 'panel menu-col', style: `width:min(${many ? 900 : 600}px,94vw);max-height:100%` },
+      { class: 'panel menu-col', style: `width:min(${many ? 900 : 600}px,94vw);max-height:100%;min-height:0;overflow:hidden` },
       h('div', { class: 'title-h' }, '🕹 Controls'),
-      h('div', { class: 'scroll', style: 'min-height:0' }, h('div', { class: `cc-cols ${many ? 'two' : ''}` }, ...cols)),
+      // the list shrinks and scrolls on short (landscape phone) screens so the card always fits
+      h('div', { class: 'scroll', style: 'flex:1 1 auto;min-height:0' }, h('div', { class: `cc-cols ${many ? 'two' : ''}` }, ...cols)),
       h('div', { class: 'hint' }, 'Tip: drift round corners until the sparks show 3 chevrons ››› , then let go for a big boost!'),
       h('div', { class: 'menu-row', style: 'justify-content:center' }, ok),
       h('div', { class: 'hint', style: 'text-align:center' }, 'You can see this again in Settings → Controls.'),
