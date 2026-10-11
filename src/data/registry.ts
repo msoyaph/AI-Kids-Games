@@ -6,6 +6,7 @@ import { FOSSILS } from './fossils';
 import { FURNITURE, SURFACES } from './furniture';
 import { FLOWER_ITEMS, FRUIT_ITEMS, LOST_ITEMS, MATERIALS, MISC_ITEMS, SAPLING_ITEMS, SEASONAL_ITEMS, SEED_ITEMS, TOOLS } from './items';
 import { RECIPES } from './recipes';
+import { CLOTHING, CLOTH_BY_ID, DYE_COLORS, DYE_NAMES, clothingItem } from './clothing';
 import type { BugDef, FishDef, FossilDef, ItemDef, RecipeDef } from './types';
 
 export const ITEMS: Record<string, ItemDef> = {};
@@ -66,6 +67,7 @@ for (const f of FURNITURE)
     tags: f.tags,
     furn: f.furn,
   });
+for (const c of CLOTHING) add(clothingItem(c));
 for (const s of SURFACES)
   add({
     id: s.id,
@@ -94,10 +96,35 @@ export { FISH, BUGS, FOSSILS, FURNITURE, SURFACES, RECIPES };
 
 const MISSING: ItemDef = { id: '?', name: 'Unknown', cat: 'misc', price: 0, stack: 1, desc: '', icon: { s: 'mystery', c: 0xcccccc } };
 
+const dyed = new Map<string, ItemDef>();
+
+/** Look up an item. Dyed clothing ("cloth_x#3") resolves to the base piece in that dye color. */
 export function item(id: string): ItemDef {
-  return ITEMS[id] ?? { ...MISSING, id, name: id };
+  const hit = ITEMS[id];
+  if (hit) return hit;
+  const hash = id.indexOf('#');
+  if (hash > 0) {
+    const cached = dyed.get(id);
+    if (cached) return cached;
+    const base = ITEMS[id.slice(0, hash)];
+    const k = Number(id.slice(hash + 1));
+    if (base && CLOTH_BY_ID[base.id] && k >= 0 && k < DYE_COLORS.length) {
+      const d: ItemDef = { ...base, id, name: `${DYE_NAMES[k]} ${base.name}`, icon: { ...base.icon, c: DYE_COLORS[k]! } };
+      dyed.set(id, d);
+      return d;
+    }
+  }
+  return { ...MISSING, id, name: id };
 }
 
 export function hasItemDef(id: string): boolean {
-  return id in ITEMS;
+  return id in ITEMS || (id.includes('#') && item(id) !== undefined && item(id).name !== id);
 }
+
+/** Base clothing id of a (possibly dyed) piece. */
+export function baseId(id: string): string {
+  const k = id.indexOf('#');
+  return k > 0 ? id.slice(0, k) : id;
+}
+
+export { CLOTHING, CLOTH_BY_ID };

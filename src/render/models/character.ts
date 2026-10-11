@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { flatMat } from '../curve';
 import { box, cone, cyl, ico, sphere, torus } from './geo';
+import type { ClothSlot } from '../../data/clothing';
+import type { ClothVisual } from '../../sim/wardrobe';
 
 export const SKIN_TONES = [0xffe3c8, 0xf7d0aa, 0xe6b48a, 0xc98d62, 0x9c6845, 0x6f4a32];
 export const HAIR_COLORS = [0x4a3427, 0x2b2530, 0xf1d27a, 0xd9784a, 0xf3a3c0, 0xb9a3e8, 0x9ddcc4, 0xf4f1ea];
@@ -37,6 +39,8 @@ export interface CharSpec {
   mouth?: number;
   blush?: boolean;
   scale?: number;
+  /** worn clothes (player only) */
+  clothes?: Partial<Record<ClothSlot, ClothVisual>>;
 }
 
 export interface Rig {
@@ -75,11 +79,22 @@ export function buildCharacter(spec: CharSpec): Rig {
   const accent = spec.accent ?? 0xfff4e6;
   const isHuman = spec.species === 'human';
 
+  // clothes (player): a dress replaces the top and bottom
+  const cl = isHuman ? (spec.clothes ?? {}) : {};
+  const dress = cl.dress;
+  const top = dress ? undefined : cl.top;
+  const bottom = dress ? undefined : cl.bottom;
+  const torsoColor = dress?.color ?? top?.color ?? spec.outfit;
+  const barePegs = !!dress || bottom?.shape === 'shorts' || bottom?.shape === 'skirt';
+  const legColor = !isHuman ? skin : bottom && (bottom.shape === 'pants' || bottom.shape === 'overalls') ? bottom.color : barePegs ? skin : 0x6f6a8a;
+  const sleeveColor = top?.shape === 'tank' || dress?.shape === 'sundress' ? skin : torsoColor;
+
   // torso (outfit) + belly
-  const torso = mesh(cyl(0.2, 0.25, 0.42, 8), spec.outfit);
+  const torso = mesh(cyl(0.2, 0.25, 0.42, 8), torsoColor);
   at(torso, 0, 0.45, 0);
+  if (top?.shape === 'sweater' || top?.shape === 'hoodie') torso.scale.set(1.07, 1, 1.07);
   body.add(torso);
-  const collar = mesh(cyl(0.21, 0.21, 0.05, 8), mixLight(spec.outfit));
+  const collar = mesh(cyl(0.21, 0.21, 0.05, 8), mixLight(torsoColor));
   at(collar, 0, 0.66, 0);
   body.add(collar);
 
@@ -91,9 +106,9 @@ export function buildCharacter(spec: CharSpec): Rig {
     [legR, 0.1],
   ] as const) {
     at(g, x, 0.25, 0);
-    const leg = mesh(cyl(0.065, 0.075, 0.22, 6), isHuman ? 0x6f6a8a : skin);
+    const leg = mesh(cyl(0.065, 0.075, 0.22, 6), legColor);
     at(leg, 0, -0.12, 0);
-    const foot = mesh(box(0.13, 0.07, 0.18), isHuman ? 0x7a5a48 : darken(skin, 0.15));
+    const foot = mesh(box(0.13, 0.07, 0.18), isHuman ? (cl.shoes?.color ?? 0x7a5a48) : darken(skin, 0.15));
     at(foot, 0, -0.22, 0.03);
     g.add(leg, foot);
     body.add(g);
@@ -108,7 +123,7 @@ export function buildCharacter(spec: CharSpec): Rig {
     [armR, 0.25],
   ] as const) {
     at(g, x, 0.6, 0);
-    const sleeve = mesh(cyl(0.055, 0.06, 0.26, 6), spec.outfit);
+    const sleeve = mesh(cyl(0.055, 0.06, 0.26, 6), isHuman ? sleeveColor : spec.outfit);
     at(sleeve, 0, -0.12, 0);
     const paw = mesh(ico(0.065, 0), skin);
     at(paw, 0, -0.27, 0);
@@ -134,9 +149,205 @@ export function buildCharacter(spec: CharSpec): Rig {
     body.add(tail);
   }
 
+  if (isHuman) dressUp(body, head, legL, legR, armL, cl, top, bottom, dress, skin);
+
   const sc = spec.scale ?? 1;
   root.scale.setScalar(sc);
   return { root, body, head, armL, armR, legL, legR, hand, tail, phase: 0, bob: 0, spec };
+}
+
+/** Little front-of-shirt details for a pattern. */
+function patternBits(g: THREE.Group, v: ClothVisual, y: number, z: number, w: number): void {
+  const c = v.color2;
+  const add = (m: THREE.Mesh, x: number, yy: number, zz: number, rx = 0, rz = 0) => g.add(at(m, x, yy, zz, rx, 0, rz));
+  switch (v.pattern) {
+    case 'stripe':
+      for (const dy of [-0.07, 0.07]) add(mesh(cyl(w + 0.012, w + 0.016, 0.035, 8), c, false), 0, y + dy, 0);
+      break;
+    case 'dots':
+      for (const [x, dy] of [[-0.08, 0.05], [0.07, -0.02], [-0.02, -0.08]] as const) add(mesh(sphere(0.03, 5, 4), c, false), x, y + dy, z);
+      break;
+    case 'check':
+      add(mesh(cyl(w + 0.012, w + 0.016, 0.035, 8), c, false), 0, y, 0);
+      add(mesh(box(0.035, 0.3, 0.02), c, false), 0, y, z - 0.01);
+      break;
+    case 'stars':
+      for (const [x, dy] of [[-0.08, 0.05], [0.08, 0.0], [-0.01, -0.08]] as const) add(mesh(cone(0.035, 0.06, 5), c, false), x, y + dy, z, Math.PI / 2);
+      break;
+    case 'heart':
+      for (const x of [-0.03, 0.03]) add(mesh(sphere(0.035, 6, 4), c, false), x, y + 0.02, z);
+      add(mesh(cone(0.05, 0.07, 4), c, false), 0, y - 0.03, z, 0, Math.PI);
+      break;
+    case 'flower':
+      for (let k = 0; k < 5; k++) add(mesh(sphere(0.022, 5, 4), c, false), Math.cos((k / 5) * Math.PI * 2) * 0.04, y + Math.sin((k / 5) * Math.PI * 2) * 0.04, z);
+      add(mesh(sphere(0.02, 5, 4), 0xffd966, false), 0, y, z + 0.01);
+      break;
+    case 'leaf':
+      for (const [x, dy, r] of [[-0.05, 0.03, 0.6], [0.05, -0.04, -0.6]] as const) {
+        const m = mesh(sphere(0.045, 6, 4), c, false);
+        m.scale.set(0.5, 1, 0.3);
+        add(m, x, y + dy, z, 0, r);
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+function dressUp(body: THREE.Group, head: THREE.Group, legL: THREE.Group, legR: THREE.Group, armL: THREE.Group, cl: Partial<Record<ClothSlot, ClothVisual>>, top: ClothVisual | undefined, bottom: ClothVisual | undefined, dress: ClothVisual | undefined, skin: number): void {
+  // tops
+  if (top) {
+    patternBits(body, top, 0.48, 0.235, 0.215);
+    if (top.shape === 'hoodie' || top.shape === 'raincoat') {
+      const hood = mesh(torus(0.16, 0.06, 5, 10, Math.PI), top.color);
+      body.add(at(hood, 0, 0.7, -0.14, -0.4, 0, Math.PI));
+    }
+    if (top.shape === 'hoodie') body.add(at(mesh(box(0.22, 0.09, 0.04), mixLight(top.color), false), 0, 0.34, 0.23));
+    if (top.shape === 'raincoat') body.add(at(mesh(cyl(0.255, 0.29, 0.12, 8), top.color), 0, 0.22, 0));
+    if (top.shape === 'jacket') for (const s of [-1, 1]) body.add(at(mesh(box(0.08, 0.36, 0.03), top.color2, false), s * 0.08, 0.47, 0.22, 0, 0, s * 0.08));
+    if (top.shape === 'buttonup') {
+      for (const dy of [0.06, -0.04, -0.14]) body.add(at(mesh(sphere(0.018, 5, 4), top.color2, false), 0, 0.5 + dy, 0.24));
+      for (const s of [-1, 1]) body.add(at(mesh(cone(0.05, 0.08, 3), top.color2, false), s * 0.07, 0.64, 0.17, Math.PI / 2 + 0.3, 0, 0));
+    }
+  }
+  // bottoms
+  if (bottom) {
+    if (bottom.shape === 'skirt') {
+      body.add(at(mesh(cone(0.31, 0.26, 10), bottom.color), 0, 0.27, 0));
+      if (bottom.pattern !== 'plain') patternBits(body, bottom, 0.22, 0.27, 0.27);
+    } else {
+      // shorts / pants / overalls: a hip band, plus short leg sleeves for shorts
+      body.add(at(mesh(cyl(0.255, 0.25, 0.1, 8), bottom.color), 0, 0.27, 0));
+      if (bottom.shape === 'shorts') for (const g of [legL, legR]) g.add(at(mesh(cyl(0.08, 0.085, 0.09, 6), bottom.color), 0, -0.04, 0));
+      if (bottom.shape === 'overalls') {
+        body.add(at(mesh(box(0.22, 0.2, 0.04), bottom.color), 0, 0.42, 0.22));
+        for (const s of [-1, 1]) body.add(at(mesh(box(0.035, 0.3, 0.02), bottom.color, false), s * 0.09, 0.55, 0.215), at(mesh(sphere(0.02, 5, 4), bottom.color2, false), s * 0.09, 0.5, 0.24));
+      }
+      if (bottom.pattern === 'stripe') for (const g of [legL, legR]) g.add(at(mesh(box(0.02, 0.2, 0.02), bottom.color2, false), 0.07, -0.12, 0));
+      else if (bottom.pattern !== 'plain') patternBits(body, bottom, 0.27, 0.255, 0.25);
+    }
+  }
+  // dresses
+  if (dress) {
+    const long = dress.shape === 'longdress';
+    const puff = dress.shape === 'puffdress';
+    const skirt = mesh(cone(puff ? 0.38 : 0.33, long ? 0.42 : puff ? 0.26 : 0.3, 12), dress.color);
+    body.add(at(skirt, 0, long ? 0.16 : 0.24, 0));
+    if (puff) body.add(at(mesh(torus(0.3, 0.04, 5, 14), dress.color2, false), 0, 0.12, 0, Math.PI / 2, 0, 0));
+    patternBits(body, dress, 0.5, 0.235, 0.215);
+    patternBits(body, dress, 0.15, long ? 0.3 : 0.28, 0.3);
+  }
+  // shoes
+  const shoes = cl.shoes;
+  if (shoes) {
+    for (const g of [legL, legR]) {
+      if (shoes.shape === 'boots' || shoes.shape === 'rainboots') g.add(at(mesh(cyl(0.085, 0.09, shoes.shape === 'rainboots' ? 0.16 : 0.11, 7), shoes.color), 0, -0.16, 0.01));
+      if (shoes.shape === 'sneakers') g.add(at(mesh(box(0.14, 0.025, 0.19), shoes.color2, false), 0, -0.255, 0.03));
+      if (shoes.shape === 'sandals') g.add(at(mesh(box(0.1, 0.02, 0.04), shoes.color2, false), 0, -0.19, 0.06));
+      if (shoes.shape === 'slippers') for (const s of [-1, 1]) g.add(at(mesh(cone(0.025, 0.08, 4), shoes.color2, false), s * 0.035, -0.15, 0.08));
+    }
+  }
+  // bags
+  const bag = cl.bag;
+  if (bag) {
+    if (bag.shape === 'backpack') {
+      body.add(at(mesh(box(0.3, 0.32, 0.14), bag.color), 0, 0.5, -0.28));
+      body.add(at(mesh(box(0.22, 0.12, 0.05), bag.color2, false), 0, 0.42, -0.36));
+      for (const s of [-1, 1]) body.add(at(mesh(box(0.035, 0.34, 0.03), bag.color2, false), s * 0.12, 0.52, 0.2));
+    } else if (bag.shape === 'satchel') {
+      body.add(at(mesh(box(0.08, 0.22, 0.18), bag.color), 0.27, 0.34, 0.04));
+      body.add(at(mesh(box(0.035, 0.52, 0.025), bag.color2, false), 0.02, 0.5, 0.215, 0, 0, -0.75));
+    } else if (bag.shape === 'pouch') {
+      body.add(at(mesh(box(0.13, 0.11, 0.07), bag.color), -0.2, 0.3, 0.18));
+      body.add(at(mesh(sphere(0.025, 5, 4), bag.color2, false), -0.2, 0.32, 0.22));
+    } else {
+      // basket on the left arm
+      const b = mesh(cyl(0.11, 0.08, 0.12, 8), bag.color);
+      armL.add(at(b, 0, -0.32, 0.08));
+      armL.add(at(mesh(torus(0.09, 0.012, 4, 10, Math.PI), bag.color2, false), 0, -0.26, 0.08));
+    }
+  }
+  // hats (head space: the head is ~0.33 round, top near y 0.31)
+  const hat = cl.hat;
+  if (hat) {
+    switch (hat.shape) {
+      case 'cap':
+        head.add(at(mesh(new THREE.SphereGeometry(0.36, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.5), hat.color), 0, 0.06, -0.01, -0.12, 0, 0));
+        head.add(at(mesh(box(0.34, 0.03, 0.22), hat.color2), 0, 0.1, 0.3, -0.12, 0, 0));
+        break;
+      case 'beanie':
+        head.add(at(mesh(new THREE.SphereGeometry(0.365, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.55), hat.color), 0, 0.03, 0, -0.08, 0, 0));
+        head.add(at(mesh(cyl(0.355, 0.36, 0.07, 10), hat.color2, false), 0, 0.06, 0));
+        head.add(at(mesh(ico(0.08, 1), hat.color2), 0, 0.42, 0));
+        break;
+      case 'sunhat':
+        head.add(at(mesh(cyl(0.6, 0.6, 0.03, 14), hat.color), 0, 0.2, 0, -0.1, 0, 0));
+        head.add(at(mesh(cyl(0.27, 0.32, 0.2, 12), hat.color), 0, 0.3, -0.02, -0.1, 0, 0));
+        head.add(at(mesh(cyl(0.325, 0.325, 0.05, 12), hat.color2, false), 0, 0.23, -0.01, -0.1, 0, 0));
+        break;
+      case 'bow':
+        for (const s of [-1, 1]) head.add(at(mesh(cone(0.11, 0.2, 4), hat.color), s * 0.12, 0.32, -0.02, 0, 0, s * Math.PI / 2));
+        head.add(at(mesh(sphere(0.06, 6, 4), hat.color2), 0, 0.32, -0.02));
+        break;
+      case 'flowercrown':
+        head.add(at(mesh(torus(0.3, 0.035, 5, 14), hat.color), 0, 0.2, 0, Math.PI / 2 - 0.1, 0, 0));
+        for (let k = 0; k < 7; k++) {
+          const a = (k / 7) * Math.PI * 2;
+          head.add(at(mesh(ico(0.05, 0), [hat.color2, 0xffa8c8, 0xfdfbf4][k % 3]!, false), Math.cos(a) * 0.3, 0.21 + Math.sin(a) * 0.03, Math.sin(a) * 0.3));
+        }
+        break;
+      case 'bucket':
+        head.add(at(mesh(cyl(0.3, 0.37, 0.24, 12), hat.color), 0, 0.24, -0.01, -0.08, 0, 0));
+        head.add(at(mesh(cyl(0.48, 0.48, 0.03, 14), hat.color), 0, 0.12, 0, -0.08, 0, 0));
+        head.add(at(mesh(cyl(0.375, 0.375, 0.05, 12), hat.color2, false), 0, 0.15, -0.01, -0.08, 0, 0));
+        break;
+      case 'beret': {
+        const b = mesh(sphere(0.36, 10, 6), hat.color);
+        b.scale.set(1.05, 0.38, 1.05);
+        head.add(at(b, 0.04, 0.26, -0.02, 0, 0, -0.18));
+        head.add(at(mesh(cyl(0.02, 0.02, 0.06, 4), hat.color), 0.07, 0.4, -0.02));
+        break;
+      }
+      case 'crown':
+        head.add(at(mesh(new THREE.CylinderGeometry(0.25, 0.27, 0.14, 10, 1, true), hat.color), 0, 0.33, 0));
+        for (let k = 0; k < 5; k++) {
+          const a = (k / 5) * Math.PI * 2;
+          head.add(at(mesh(cone(0.05, 0.12, 4), hat.color), Math.cos(a) * 0.25, 0.45, Math.sin(a) * 0.25));
+        }
+        head.add(at(mesh(sphere(0.06, 6, 4), hat.color2), 0, 0.36, 0.26));
+        break;
+      default:
+        // party hat
+        head.add(at(mesh(cone(0.17, 0.4, 10), hat.color), 0.05, 0.48, 0, 0, 0, -0.15));
+        head.add(at(mesh(cyl(0.12, 0.13, 0.04, 10), hat.color2, false), 0.03, 0.4, 0, 0, 0, -0.15));
+        head.add(at(mesh(ico(0.05, 1), hat.color2), 0.1, 0.69, 0));
+    }
+  }
+  // glasses (eyes sit around y 0.0, z 0.29)
+  const gl = cl.glasses;
+  if (gl) {
+    if (gl.shape === 'shades') {
+      for (const s of [-1, 1]) head.add(at(mesh(box(0.15, 0.09, 0.02), gl.color, false), s * 0.11, 0.01, 0.33));
+      head.add(at(mesh(box(0.08, 0.02, 0.02), gl.color, false), 0, 0.03, 0.33));
+    } else if (gl.shape === 'goggles') {
+      for (const s of [-1, 1]) head.add(at(mesh(torus(0.075, 0.025, 6, 10), gl.color, false), s * 0.11, 0.01, 0.31));
+      head.add(at(mesh(torus(0.335, 0.02, 4, 18), gl.color, false), 0, 0.01, 0, Math.PI / 2, 0, 0));
+    } else if (gl.shape === 'heart' || gl.shape === 'star') {
+      for (const s of [-1, 1]) {
+        const lens = mesh(gl.shape === 'star' ? cone(0.08, 0.02, 5) : sphere(0.07, 6, 4), gl.color, false);
+        if (gl.shape === 'star') lens.rotation.x = Math.PI / 2;
+        else lens.scale.set(1, 0.85, 0.25);
+        head.add(at(lens, s * 0.11, 0.01, 0.32, gl.shape === 'star' ? Math.PI / 2 : 0));
+      }
+    } else {
+      for (const s of [-1, 1]) {
+        const frame = gl.shape === 'square' ? mesh(box(0.14, 0.11, 0.015), gl.color, false) : mesh(torus(0.07, 0.014, 5, 12), gl.color, false);
+        head.add(at(frame, s * 0.11, 0.01, 0.32));
+      }
+      head.add(at(mesh(box(0.06, 0.015, 0.015), gl.color, false), 0, 0.02, 0.33));
+    }
+  }
+  void skin;
 }
 
 function mixLight(c: number): number {

@@ -6,6 +6,8 @@ import { agents } from '../sim/agents';
 import { Ground, REGION_NAMES } from '../world/types';
 import { btn, clear, h, type Panel, type UIManager } from './dom';
 import { markerPos, questLogBody } from './story';
+import { playerPortraitURL } from './portraits';
+import { wornVisuals } from '../sim/wardrobe';
 import { trackedMission } from '../sim/hints';
 
 export interface PhoneApp {
@@ -35,7 +37,13 @@ export class Phone implements Panel {
       'div',
       { class: 'screen' },
       h('div', { class: 'dim', onclick: () => ui.pop(this) }),
-      h('div', { class: 'phone panel' }, h('div', { class: 'phone-notch' }), h('div', { class: 'phone-head' }, this.title, h('span', { class: 'spacer' }), btn('✕', () => ui.pop(this), 'small ghost')), this.body),
+      h(
+        'div',
+        { class: 'phone panel' },
+        h('div', { class: 'phone-notch' }),
+        h('div', { class: 'phone-head' }, h('img', { class: 'phone-me', alt: '', src: app.game ? playerPortraitURL(app.game.state.player.look, wornVisuals(app.game.state)) : '' }), this.title, h('span', { class: 'spacer' }), btn('✕', () => ui.pop(this), 'small ghost')),
+        this.body,
+      ),
     );
     const a = PHONE_APPS.find((x) => x.id === start);
     if (a) this.open(a);

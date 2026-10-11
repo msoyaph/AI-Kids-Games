@@ -9,8 +9,9 @@ import { learnRecipe } from './crafting';
 import { dayRng } from '../core/rng';
 import { placeOutdoor } from './decor';
 import { applySurface } from './housing';
+import { wear } from './wardrobe';
 
-export type UseVerb = 'Equip' | 'Plant' | 'Open' | 'Read' | 'Place' | 'Apply' | null;
+export type UseVerb = 'Equip' | 'Plant' | 'Open' | 'Read' | 'Place' | 'Apply' | 'Wear' | null;
 
 export function useVerb(g: Game, slot: number): UseVerb {
   const s = g.state.player.inv[slot];
@@ -21,6 +22,7 @@ export function useVerb(g: Game, slot: number): UseVerb {
   if (s.id === 'pouch') return 'Open';
   if (s.id === 'bottle') return 'Read';
   if (def.cat === 'furniture') return 'Place';
+  if (def.cat === 'clothing') return 'Wear';
   if ((def.cat === 'wallpaper' || def.cat === 'flooring') && g.state.player.location === 'home') return 'Apply';
   return null;
 }
@@ -72,6 +74,11 @@ export function useSlot(g: Game, slot: number): boolean {
       return false;
     case 'Apply':
       return applySurface(g, slot);
+    case 'Wear': {
+      const ok = wear(g, s.id);
+      if (ok) g.toast(`You put on the ${item(s.id).name}! It's in your closet now.`, 'good', s.id);
+      return ok;
+    }
     default:
       return false;
   }

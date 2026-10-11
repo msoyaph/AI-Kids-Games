@@ -17,7 +17,8 @@ export type DialogueTopic =
   | 'friendLow' | 'friendMid' | 'friendHigh'
   | 'giftLove' | 'giftLike' | 'giftNeutral' | 'giftDislike'
   | 'requestDeliver' | 'requestLost' | 'requestCatch' | 'requestThanks' | 'requestDecline' | 'requestRemind'
-  | 'movedIn' | 'museum' | 'festival' | 'heartGift' | 'bye';
+  | 'movedIn' | 'museum' | 'festival' | 'heartGift' | 'bye'
+  | 'outfit';
 
 export const DIALOGUE: Record<Personality, Record<DialogueTopic, string[]>> = {
   // ---------------------------------------------------------------------------
@@ -148,6 +149,11 @@ export const DIALOGUE: Record<Personality, Record<DialogueTopic, string[]>> = {
       "[love]The Lantern Crossing is coming! I'm baking lantern-shaped cookies for everyone, {catch}!",
       "[happy]Imagine it, {player}: hundreds of lanterns floating out to sea, glowing like tiny warm suns!",
       "[surprised]They say the old lighthouse will shine again! I'll pack snacks so we can watch all night!",
+    ],
+    outfit: [
+      "[happy]Ooh, new clothes! You look as sweet as a cupcake, {catch}!",
+      "[love]I love your outfit, {player}! It makes me want to bake something pink!",
+      "[surprised]Wow! Did you dress up for me? I feel so special!",
     ],
     heartGift: [
       "[love]{player}, I made you something special, because you're special. No arguing, {catch}!",
@@ -289,6 +295,11 @@ export const DIALOGUE: Record<Personality, Record<DialogueTopic, string[]>> = {
       "[sad]That old lighthouse up on the cliff hasn't been lit in years, they say. ...Be nice to see it shine.",
       "[happy]Lanterns on the water. A light on the cliff. ...Fine. I'm a little excited. Don't spread it around.",
     ],
+    outfit: [
+      "[neutral]Hrmph. New clothes? ...They look good. Don't tell anyone I said that.",
+      "[smug]That outfit looks sturdy. Good for gardening, {catch}.",
+      "[neutral]You changed your clothes. I noticed. I notice things.",
+    ],
     heartGift: [
       "[neutral]Here. Made this for you. Don't make it weird, {catch}.",
       "[love]You've been a good friend, {player}. Take this. ...You earned it.",
@@ -428,6 +439,11 @@ export const DIALOGUE: Record<Personality, Record<DialogueTopic, string[]>> = {
       "[happy]The Lantern Crossing! I've read that lanterns once guided sailors home. Now they'll carry our wishes, {catch}.",
       "[surprised]Relighting the lighthouse after all these years! I must take notes. Very thorough notes.",
       "[happy]I'll write my wish on my lantern in my neatest handwriting, so the sea can read it properly.",
+    ],
+    outfit: [
+      "[happy]A new outfit! Quite smart, {catch}. I will write that down.",
+      "[surprised]Goodness, you look very neat today. Like a brand new book!",
+      "[happy]I read that clothes can help you feel brave. You look brave today!",
     ],
     heartGift: [
       "[love]For you, {player}. I chose it after extensive research into what you'd like, {catch}.",
@@ -569,6 +585,11 @@ export const DIALOGUE: Record<Personality, Record<DialogueTopic, string[]>> = {
       "[love]Lanterns drifting out to sea... it's like a slow-motion race where everybody wins.",
       "[surprised]They're relighting the lighthouse! I'm gonna stand on that cliff and cheer SO loud!",
     ],
+    outfit: [
+      "[happy]New gear! You look ready to run a race, {catch}!",
+      "[surprised]Whoa, cool outfit! Let's jog to the beach and show it off!",
+      "[happy]Looking good, {player}! Comfy clothes make fast feet!",
+    ],
     heartGift: [
       "[love]Here, {player}! A trophy for my best teammate! Well, a present. Same thing, {catch}!",
       "[happy]You've been with me every step of the way. This one's for you!",
@@ -708,6 +729,11 @@ export const DIALOGUE: Record<Personality, Record<DialogueTopic, string[]>> = {
       "[happy]The Lantern Crossing! I've had my outfit planned for weeks. Weeks, {catch}.",
       "[love]Lanterns on the sea, the lighthouse ablaze... It shall be the most elegant night of the year.",
       "[smug]I intend to release my lantern with a graceful bow. I've been rehearsing in the mirror.",
+    ],
+    outfit: [
+      "[smug]Ah, a fine new outfit. Very stylish, {catch}.",
+      "[happy]You dress with real style. Bravo!",
+      "[surprised]My word! Those clothes suit you perfectly, {player}.",
     ],
     heartGift: [
       "[love]For you, my dear friend. A gift as fine as our friendship, {catch}.",
@@ -849,6 +875,11 @@ export const DIALOGUE: Record<Personality, Record<DialogueTopic, string[]>> = {
       "[surprised]The lighthouse is gonna light up again? I've always wanted to see the top!",
       "[happy]I'm painting fireflies on my lantern. Glowing stuff on glowing stuff. Genius!",
     ],
+    outfit: [
+      "[surprised]Whoa! New clothes! You look like an explorer, {catch}!",
+      "[happy]That outfit is awesome! Want to climb a tree in it?",
+      "[happy]Cool look, {player}! Very zippy!",
+    ],
     heartGift: [
       "[love]Here! This is for you, my best adventure buddy! Don't lose it, {catch}!",
       "[happy]I found this on an adventure and thought of you right away. It's yours now!",
@@ -989,6 +1020,11 @@ export const DIALOGUE: Record<Personality, Record<DialogueTopic, string[]>> = {
       "[happy]I'm painting my lantern with every color of the sunset, so it glows warm all the way out to sea.",
       "[surprised]When the lighthouse shines again, I think the whole sea will sparkle back at it.",
     ],
+    outfit: [
+      "[love]Your outfit is like a painting, {catch}. So many pretty colors!",
+      "[happy]Ooh, I want to paint you in those clothes!",
+      "[sleepy]You look like a soft cloud today. I like it, {player}.",
+    ],
     heartGift: [
       "[love]For you, {player}. I made it while thinking of you. It's full of happy colors, {catch}.",
       "[happy]Here... a little gift. Because you make my world brighter.",
@@ -1128,6 +1164,11 @@ export const DIALOGUE: Record<Personality, Record<DialogueTopic, string[]>> = {
       "[happy]Lantern Crossing's coming. Lanterns on the sea, stars in the sky... gonna be good, {catch}.",
       "[love]When that old lighthouse lights up again, I bet the stars get a little jealous.",
       "[sleepy]I'm gonna lie on the beach and watch every lantern drift away. Every single one.",
+    ],
+    outfit: [
+      "[sleepy]Mmm, new clothes? They look cozy, {catch}.",
+      "[happy]That outfit looks nice. Like a calm night sky.",
+      "[sleepy]You look comfy. Maybe comfy enough for a nap, {player}?",
     ],
     heartGift: [
       "[love]Here, {player}. Made you something. Took a while. Worth it, {catch}.",

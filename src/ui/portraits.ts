@@ -1,6 +1,10 @@
 // Canvas-drawn character portraits with simple expressions (no image assets).
 import type { CharacterLook } from '../data/villagers';
 import type { Expr } from '../sim/talk';
+import type { Appearance } from '../sim/state';
+import type { ClothSlot } from '../data/clothing';
+import type { ClothVisual } from '../sim/wardrobe';
+import { HAIR_COLORS, OUTFIT_COLORS, SKIN_TONES } from '../render/models/character';
 
 const cache = new Map<string, string>();
 const S = 160;
@@ -252,6 +256,135 @@ export function portraitURL(key: string, look: CharacterLook, expr: Expr = 'neut
     ctx.fillStyle = '#8a7ad9';
     ctx.font = 'bold 24px sans-serif';
     ctx.fillText('z', 124, 40);
+  }
+  const url = cv.toDataURL('image/png');
+  cache.set(k, url);
+  return url;
+}
+
+/**
+ * The player's portrait: face, hair and what they're wearing. Used on save cards,
+ * the Glowpad header and the wardrobe.
+ */
+export function playerPortraitURL(look: Appearance, clothes: Partial<Record<ClothSlot, ClothVisual>> = {}): string {
+  const k = `player|${JSON.stringify(look)}|${JSON.stringify(clothes)}`;
+  const hit = cache.get(k);
+  if (hit) return hit;
+  if (typeof document === 'undefined') return '';
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const ctx = cv.getContext('2d')!;
+  const skin = SKIN_TONES[look.skin] ?? SKIN_TONES[0]!;
+  const hair = HAIR_COLORS[look.hairColor] ?? HAIR_COLORS[0]!;
+  const top = clothes.dress ?? clothes.top;
+  const shirt = top?.color ?? OUTFIT_COLORS[look.outfit] ?? OUTFIT_COLORS[0]!;
+  const H = css(hair), HO = shade(hair, -0.3);
+  // shoulders + shirt pattern
+  ell(ctx, 80, 168, 62, 36, css(shirt), shade(shirt, -0.25));
+  if (top && top.pattern !== 'plain') {
+    ctx.fillStyle = css(top.color2);
+    if (top.pattern === 'stripe' || top.pattern === 'check') for (const y of [148, 162]) ctx.fillRect(24, y, 112, 6);
+    else for (const [x, y] of [[56, 150], [100, 156], [78, 166]] as const) ell(ctx, x, y, 6, 6, css(top.color2));
+  }
+  if (clothes.bag?.shape === 'backpack' || clothes.bag?.shape === 'satchel') {
+    ctx.strokeStyle = css(clothes.bag.color2);
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(48, 136);
+    ctx.lineTo(clothes.bag.shape === 'satchel' ? 112 : 48, 168);
+    ctx.stroke();
+  }
+  // back hair (long styles)
+  if (look.hair === 1 || look.hair === 3) ell(ctx, 80, 100, 58, 52, H, HO);
+  // face
+  ell(ctx, 80, 90, 50, 48, css(skin), shade(skin, -0.25));
+  for (const s of [-1, 1]) ell(ctx, 80 + s * 50, 94, 8, 10, css(skin), shade(skin, -0.25));
+  // hair on top (cap, bob, tuft, ponytail, bun, buzz)
+  ctx.beginPath();
+  ctx.ellipse(80, 72, 54, look.hair === 5 ? 30 : 38, 0, Math.PI * 1.02, Math.PI * 1.98);
+  ctx.closePath();
+  ctx.fillStyle = H;
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = HO;
+  ctx.stroke();
+  if (look.hair === 2) for (const x of [64, 80, 96]) tri(ctx, [[x - 8, 40], [x + 8, 40], [x, 18]], H, HO);
+  if (look.hair === 4) ell(ctx, 80, 30, 18, 16, H, HO);
+  if (look.hair === 3) ell(ctx, 124, 112, 10, 22, H, HO);
+  // eyes, blush, smile
+  drawEyes(ctx, 'happy', 94, 20, look.eyes === 1 || look.eyes === 3);
+  if (look.blush) {
+    ell(ctx, 80 - 32, 106, 9, 5, 'rgba(255,140,160,0.55)');
+    ell(ctx, 80 + 32, 106, 9, 5, 'rgba(255,140,160,0.55)');
+  }
+  drawMouth(ctx, 'happy', 114);
+  // glasses
+  const gl = clothes.glasses;
+  if (gl) {
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = css(gl.color);
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      if (gl.shape === 'square' || gl.shape === 'shades') ctx.rect(80 + s * 20 - 13, 84, 26, 18);
+      else ctx.ellipse(80 + s * 20, 94, 14, 12, 0, 0, Math.PI * 2);
+      if (gl.shape === 'shades') {
+        ctx.fillStyle = css(gl.color);
+        ctx.fill();
+      }
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(73, 92);
+    ctx.lineTo(87, 92);
+    ctx.stroke();
+  }
+  // hat
+  const hat = clothes.hat;
+  if (hat) {
+    const HC = css(hat.color), HO2 = shade(hat.color, -0.3), H2 = css(hat.color2);
+    switch (hat.shape) {
+      case 'sunhat':
+        ell(ctx, 80, 52, 76, 14, HC, HO2);
+        ell(ctx, 80, 40, 40, 24, HC, HO2);
+        ctx.fillStyle = H2;
+        ctx.fillRect(42, 44, 76, 8);
+        break;
+      case 'bow':
+        tri(ctx, [[80, 34], [44, 18], [44, 50]], HC, HO2);
+        tri(ctx, [[80, 34], [116, 18], [116, 50]], HC, HO2);
+        ell(ctx, 80, 34, 10, 10, H2, HO2);
+        break;
+      case 'flowercrown':
+        for (let i = 0; i < 7; i++) ell(ctx, 34 + i * 15, 50 + Math.abs(i - 3) * 2, 9, 9, [H2, '#ffa8c8', '#fdfbf4'][i % 3]!, HO2);
+        break;
+      case 'crown':
+        tri(ctx, [[46, 52], [46, 22], [62, 38], [80, 16], [98, 38], [114, 22], [114, 52]], HC, HO2);
+        ell(ctx, 80, 44, 7, 7, H2);
+        break;
+      case 'party':
+        tri(ctx, [[58, 50], [102, 50], [84, 0]], HC, HO2);
+        ell(ctx, 84, 4, 8, 8, H2);
+        break;
+      case 'beret':
+        ell(ctx, 84, 40, 54, 20, HC, HO2, -0.15);
+        break;
+      default: {
+        // cap / beanie / bucket
+        ctx.beginPath();
+        ctx.ellipse(80, 58, 56, 42, 0, Math.PI, Math.PI * 2);
+        ctx.closePath();
+        ctx.fillStyle = HC;
+        ctx.fill();
+        ctx.strokeStyle = HO2;
+        ctx.stroke();
+        if (hat.shape === 'cap') ell(ctx, 80, 58, 50, 9, H2, HO2);
+        else if (hat.shape === 'beanie') {
+          ctx.fillStyle = H2;
+          ctx.fillRect(26, 50, 108, 10);
+          ell(ctx, 80, 14, 11, 11, H2, HO2);
+        } else ell(ctx, 80, 58, 66, 10, HC, HO2);
+      }
+    }
   }
   const url = cv.toDataURL('image/png');
   cache.set(k, url);

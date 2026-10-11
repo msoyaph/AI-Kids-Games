@@ -5,7 +5,7 @@ import { HALL_ROOM, SHOP_ROOM, VILLAGER_ROOMS, GIFT_SLOTS, type PlacedDecor } fr
 import { FISH, BUGS, FOSSILS, item } from '../data/registry';
 import { NPC_BY_ID, VILLAGER_BY_ID } from '../data/villagers';
 import type { Game, Interaction } from './game';
-import { doorTile, footprint, homeFixtures, roomSize, sleep } from './housing';
+import { doorTile, footprint, furnitureAt, homeFixtures, roomSize, sleep } from './housing';
 import { facingVec, RUN_SPEED, WALK_SPEED } from './player';
 import { isDonated } from './museum';
 import { buy, dailyStock, type StockEntry } from './economy';
@@ -160,7 +160,7 @@ export function buildMuseumRoom(g: Game): Room {
   return room;
 }
 
-const STOCK_ORDER = ['tool', 'seed', 'sapling', 'fruit', 'furniture', 'wallpaper', 'flooring'];
+const STOCK_ORDER = ['tool', 'seed', 'sapling', 'fruit', 'furniture', 'wallpaper', 'flooring', 'clothing'];
 function stockRank(e: StockEntry): number {
   const def = item(e.id);
   const cat = def.tool ? 'tool' : def.cat;
@@ -473,7 +473,14 @@ export function interiorResolve(g: Game): Interaction | null {
     const owner = roomVillager(room.kind) ?? '';
     return { label: `Look at the ${item(gift.id).name}`, priority: 40, run: () => g.toast(`${personName(owner)} kept the ${item(gift.id).name} you gave them!`, 'good', gift.id) };
   }
-  if (room.kind === 'home') return { label: 'Decorate', priority: 5, run: () => g.ui.open('editor') };
+  if (room.kind === 'home') {
+    // dressing up: closets and mirrors open the wardrobe, the dye station opens dyeing
+    const pf = furnitureAt(g, f.x, f.z);
+    const model = pf ? item(pf.id).furn?.model : undefined;
+    if (model === 'wardrobe' || model === 'mirror') return { label: 'Change clothes', priority: 70, run: () => g.ui.open('wardrobe') };
+    if (model === 'dyestation') return { label: 'Dye clothes', priority: 70, run: () => g.ui.open('dye') };
+    return { label: 'Decorate', priority: 5, run: () => g.ui.open('editor') };
+  }
   return null;
 }
 

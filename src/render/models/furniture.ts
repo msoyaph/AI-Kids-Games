@@ -213,6 +213,14 @@ export function furnitureGeo(id: string, f: FurnitureInfo): [G, G | null] {
     case 'frame':
       P.push(part(box(0.7, 0.55, 0.06), c, { pos: [0, 1.0, -D / 2 + 0.05] }), part(box(0.58, 0.43, 0.065), c2, { pos: [0, 1.0, -D / 2 + 0.06] }), part(box(0.04, 1.0, 0.04), WOOD, { pos: [0, 0.5, -D / 2 + 0.02] }));
       break;
+    case 'mirror':
+      P.push(part(box(0.62, 1.3, 0.08), c, { pos: [0, 0.85, -0.05] }), part(box(0.5, 1.12, 0.09), c2, { pos: [0, 0.86, -0.04] }));
+      P.push(part(box(0.5, 0.06, 0.36), c, { pos: [0, 0.03, -0.05] }), part(box(0.12, 0.5, 0.02), 0xffffff, { pos: [-0.12, 1.05, 0.005], rot: [0, 0, 0.5] }));
+      break;
+    case 'dyestation':
+      P.push(part(box(0.84, 0.5, 0.6), c, { pos: [0, 0.25, 0] }), part(box(0.88, 0.06, 0.64), darken(c, 0.2), { pos: [0, 0.52, 0] }));
+      for (const [k, col] of [0xf27c7c, c2, 0xffd966].entries()) P.push(part(cyl(0.11, 0.1, 0.16, 8), 0xfdfbf4, { pos: [-0.26 + k * 0.26, 0.62, 0] }), part(cyl(0.09, 0.09, 0.02, 8), col, { pos: [-0.26 + k * 0.26, 0.69, 0] }));
+      break;
     // ---- wall pieces: back against the wall at z = -D/2, centred around 1.45 high ----
     case 'painting': {
       const bz = -D / 2 + 0.04, fw = W * 0.94;

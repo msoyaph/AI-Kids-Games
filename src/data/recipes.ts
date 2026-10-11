@@ -2,8 +2,9 @@
 // unlock: how the recipe is learned ('start' known from day one, 'mission' story/errands,
 // 'card' message bottles, 'friend' villager gifts, 'lumen' Lumen exchange, 'museum' museum wings).
 import type { RecipeDef } from './types';
+import { CLOTHING_RECIPES } from './clothing';
 
-export const RECIPES: RecipeDef[] = [
+const BASE_RECIPES: RecipeDef[] = [
   // ---- Tools & festival lanterns ----
   { id: 'r_net_flimsy', result: 'net_flimsy', ingredients: [{ id: 'branch', qty: 5 }], unlock: 'mission' },
   { id: 'r_rod_flimsy', result: 'rod_flimsy', ingredients: [{ id: 'branch', qty: 5 }], unlock: 'mission' },
@@ -103,5 +104,7 @@ export const RECIPES: RecipeDef[] = [
   { id: 'r_furn_wingbone_statue', result: 'furn_wingbone_statue', ingredients: [{ id: 'stone', qty: 12 }, { id: 'iron', qty: 2 }, { id: 'clay', qty: 2 }], unlock: 'museum' },
 ];
 
-/** Furniture recipes you know once your tent is up. */
+export const RECIPES: RecipeDef[] = [...BASE_RECIPES, ...CLOTHING_RECIPES];
+
+/** Recipes you know once your tent is up. */
 export const STARTER_RECIPES = RECIPES.filter((r) => r.unlock === 'start').map((r) => r.id);

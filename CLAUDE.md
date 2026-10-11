@@ -164,9 +164,24 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
     river banks; snow instead of rain (flurries when cloudy) in critters.ts; spring petals / autumn leaves drift in
     particles.ts; sky tint per season. HUD shows "🌸 Spring 3 · Tuesday"; catalog shows season chips.
 
+- Phase 5 done: clothing.
+  - `src/data/clothing.ts`: 46 original pieces (`ClothingDef` slot/shape/color/color2/pattern/source), 8 `DYE_COLORS`
+    (one per flower color), `VILLAGER_STYLE` gifts, `CLOTHING_RECIPES` (5 'start' + dye station + standing mirror,
+    9 'card'). Items are cat 'clothing'; dyed copies are ids like `cloth_sunny_tee#6`, resolved by `item()`
+    (`baseId()` strips the dye).
+  - `src/sim/wardrobe.ts`: `state.wardrobe {owned, worn, outfits[3]}`; `wear` (dress ↔ top/bottom), `takeOff`,
+    `takeOut`, `stash`, `saveOutfit`/`wearOutfit` (skips missing), `dye` (uses one flower of that color; updates worn
+    + outfits), `clothingThanks` (loved gifts → a style piece, ≤ every 3 days), `outfitHash` (villagers comment
+    once per new outfit: dialogue topic `outfit`), `wornVisuals` for rendering. Inventory verb "Wear".
+  - Sources: crafting, the shop (2 pieces/day on its own RNG stream; 24 shop shelves), villager gifts, events
+    (festival items in Phase 6). Home: wardrobe/mirror furniture → `WardrobePanel`, dye station → `DyePanel`.
+  - Visuals: `CharSpec.clothes` → `dressUp()` in render/models/character.ts (hats, glasses, skirts/dresses, shoes,
+    bags, pattern bits); `playerPortraitURL` (ui/portraits.ts) on save cards (`SaveMeta.worn`), the Glowpad
+    header and the closet. `GameView.rebuildPlayer` runs on `outfitChanged` (removes the old rig from any scene).
+
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
-(177 unit tests incl. full new-game → festival playthroughs, one per season; 2 e2e tests.)
+(188 unit tests incl. full new-game → festival playthroughs, one per season; 2 e2e tests.)
 
 ## Known issues / limitations
 - Pacing is a model estimate (scripts/pacing.ts), not measured with real players.

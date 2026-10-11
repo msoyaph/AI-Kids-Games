@@ -16,6 +16,7 @@ export type ItemCategory =
   | 'flooring'
   | 'recipe'
   | 'key'
+  | 'clothing'
   | 'misc';
 
 export type ToolKind = 'net' | 'rod' | 'shovel' | 'axe' | 'can' | 'ladder';
@@ -71,6 +72,10 @@ export type IconShape =
   | 'hat'
   | 'glasses'
   | 'book'
+  | 'shirt'
+  | 'pants'
+  | 'dress'
+  | 'shoes'
   | 'mystery';
 
 export interface IconSpec {
@@ -135,7 +140,9 @@ export type FurnModel =
   | 'wallshelf'
   | 'wreath'
   | 'sconce'
-  | 'kite';
+  | 'kite'
+  | 'mirror'
+  | 'dyestation';
 
 /** Where a piece goes: on the floor (default), on a wall, or small enough to sit on a table/shelf too. */
 export type FurnLayer = 'floor' | 'wall' | 'small';

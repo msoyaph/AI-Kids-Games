@@ -718,6 +718,74 @@ function drawIcon(ctx: Ctx, spec: IconSpec): void {
       ctx.fillStyle = S;
       ctx.fillRect(20, 16, 8, 66);
       break;
+    case 'shirt':
+      blob(ctx, F, S, () => {
+        ctx.moveTo(32, 18);
+        ctx.lineTo(14, 30);
+        ctx.lineTo(22, 44);
+        ctx.lineTo(30, 40);
+        ctx.lineTo(30, 80);
+        ctx.lineTo(66, 80);
+        ctx.lineTo(66, 40);
+        ctx.lineTo(74, 44);
+        ctx.lineTo(82, 30);
+        ctx.lineTo(64, 18);
+        ctx.quadraticCurveTo(48, 30, 32, 18);
+        ctx.closePath();
+      });
+      ctx.fillStyle = F2;
+      for (const [x, y] of [[40, 50], [56, 58], [44, 68]] as const) {
+        ctx.beginPath();
+        ell(ctx, x, y, 4, 4);
+        ctx.fill();
+      }
+      break;
+    case 'pants':
+      blob(ctx, F, S, () => {
+        ctx.moveTo(28, 16);
+        ctx.lineTo(68, 16);
+        ctx.lineTo(72, 82);
+        ctx.lineTo(54, 82);
+        ctx.lineTo(48, 40);
+        ctx.lineTo(42, 82);
+        ctx.lineTo(24, 82);
+        ctx.closePath();
+      });
+      ctx.fillStyle = F2;
+      ctx.fillRect(28, 16, 40, 7);
+      break;
+    case 'dress':
+      blob(ctx, F, S, () => {
+        ctx.moveTo(36, 14);
+        ctx.lineTo(60, 14);
+        ctx.lineTo(62, 38);
+        ctx.lineTo(80, 82);
+        ctx.lineTo(16, 82);
+        ctx.lineTo(34, 38);
+        ctx.closePath();
+      });
+      ctx.fillStyle = F2;
+      ctx.fillRect(33, 36, 30, 6);
+      for (const [x, y] of [[34, 64], [50, 70], [64, 62]] as const) {
+        ctx.beginPath();
+        ell(ctx, x, y, 4, 4);
+        ctx.fill();
+      }
+      break;
+    case 'shoes':
+      for (const [x, y] of [[30, 46], [58, 60]] as const) {
+        blob(ctx, F, S, () => {
+          ctx.moveTo(x - 12, y - 18);
+          ctx.lineTo(x + 2, y - 18);
+          ctx.lineTo(x + 4, y - 4);
+          ctx.quadraticCurveTo(x + 24, y - 2, x + 24, y + 10);
+          ctx.lineTo(x - 12, y + 10);
+          ctx.closePath();
+        });
+        ctx.fillStyle = F2;
+        ctx.fillRect(x - 12, y + 6, 36, 5);
+      }
+      break;
     case 'mystery':
     default:
       blob(ctx, F, S, () => ell(ctx, 48, 50, 32, 28));

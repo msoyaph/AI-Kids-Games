@@ -382,6 +382,18 @@ export const FURNITURE: FurnitureDef[] = [
     furn: { w: 1, d: 1, model: 'wallclock', color: 0x9b6a4a, color2: 0xf3dcb5, outdoor: false, decor: 2, layer: 'wall' },
   },
 
+  // ---- Dressing up ----
+  {
+    id: 'furn_dye_station', name: 'Dye Station', price: 200, buy: 0, tags: ['artsy', 'plain'],
+    desc: 'Tubs of color. Use a flower to dye your clothes!',
+    furn: { w: 1, d: 1, model: 'dyestation', color: 0xc9945f, color2: 0x7fb2ff, outdoor: false, decor: 1 },
+  },
+  {
+    id: 'furn_standing_mirror', name: 'Standing Mirror', price: 220, buy: 0, tags: ['cute', 'plain'],
+    desc: 'Look at your outfit and change your clothes.',
+    furn: { w: 1, d: 1, model: 'mirror', color: 0xd9ad7c, color2: 0xdcefff, outdoor: false, decor: 1 },
+  },
+
   // ---- Seasonal pieces (recipes learned by gathering that season's treasures) ----
   {
     id: 'furn_blossom_garland', name: 'Blossom Garland', price: 300, buy: 0, tags: ['cute', 'nature'],

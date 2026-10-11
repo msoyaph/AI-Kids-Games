@@ -13,6 +13,7 @@ import { toolMesh } from './models/tools';
 import { CritterView } from './critters';
 import { InteriorView, furnitureObject } from './interior';
 import { SEASONS } from '../sim/seasons';
+import { wornVisuals } from '../sim/wardrobe';
 import { AgentView } from './agents';
 import { PlacementView } from './placement';
 import { FestivalScene, LighthouseBeam } from './cutscene';
@@ -131,6 +132,7 @@ export class GameView {
     this.rig.snap(p.x, p.level * LEVEL_HEIGHT, p.z);
     game.bus.on('objectsChanged', () => (this.objects.dirty = true));
     game.bus.on('seasonChanged', () => this.applySeason());
+    game.bus.on('outfitChanged', () => this.rebuildPlayer());
     game.bus.on('structuresChanged', () => this.syncStructures());
     game.bus.on('fx', (f) => {
       if (f.kind === 'rockHit') this.rig.shake = 0.6;
@@ -170,7 +172,8 @@ export class GameView {
   }
 
   rebuildPlayer(): void {
-    if (this.player) this.islandRoot.remove(this.player.root);
+    // may be inside an interior scene right now
+    if (this.player) this.player.root.removeFromParent();
     const look = this.game.state.player.look;
     this.player = buildCharacter({
       species: 'human',
@@ -181,6 +184,7 @@ export class GameView {
       eyes: look.eyes,
       mouth: look.mouth,
       blush: look.blush,
+      clothes: this.game.state.wardrobe ? wornVisuals(this.game.state) : undefined,
     });
     this.islandRoot.add(this.player.root);
     this.heldKey = '';

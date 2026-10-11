@@ -272,6 +272,14 @@ export class InteriorView {
       obj.rotation.y = 0.4;
       return obj;
     }
+    if (def.cat === 'clothing') {
+      // a neatly folded piece
+      const geo = merge([part(box(0.42, 0.08, 0.3), def.icon.c, { pos: [0, 0.04, 0] }), part(box(0.42, 0.08, 0.3), def.icon.c, { pos: [0.02, 0.12, 0.01], rot: [0, 0.1, 0] }), part(box(0.2, 0.02, 0.12), def.icon.c2 ?? def.icon.c, { pos: [0.02, 0.17, 0.01] })]);
+      const m = new THREE.Mesh(geo, mat);
+      m.castShadow = true;
+      m.position.set(x, y, z);
+      return m;
+    }
     if (def.tool) {
       const t = toolMesh(def.tool.kind, def.tool.sturdy);
       const g = new THREE.Group();

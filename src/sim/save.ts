@@ -2,6 +2,7 @@
 // and storage that never throws (and never corrupts an existing save when the quota is full).
 import { SAVE_VERSION, type Appearance, type GameState, type TileObj } from './state';
 import { STARTER_RECIPES } from '../data/recipes';
+import { emptyWardrobe } from './wardrobe';
 
 export const SLOT_COUNT = 3;
 export const PREFIX = 'lightcrossing.';
@@ -117,6 +118,8 @@ export interface SaveMeta {
   finished: boolean;
   savedAt: number;
   look: Appearance;
+  /** clothes being worn (slot -> item id), for the save card portrait */
+  worn?: Record<string, string>;
 }
 
 export interface SaveFile {
@@ -301,6 +304,10 @@ function fillDefaults(s: GameState): GameState {
     const d = Math.max(0, (s.clock?.day ?? 1) - 1);
     s.season = { index: Math.floor(d / 7) % 4, day: (d % 7) + 1, paused: false, lastDay: s.clock?.day ?? 1 };
   }
+  s.wardrobe ??= emptyWardrobe();
+  s.wardrobe.owned ??= [];
+  s.wardrobe.worn ??= {};
+  s.wardrobe.outfits ??= emptyWardrobe().outfits;
   s.home.storage ??= [];
   s.home.furniture ??= [];
   s.home.walls ??= [];
@@ -320,6 +327,7 @@ export function metaOf(s: GameState): SaveMeta {
     finished: s.quests.finished,
     savedAt: Date.now(),
     look: s.player.look,
+    worn: { ...(s.wardrobe?.worn ?? {}) },
   };
 }
 

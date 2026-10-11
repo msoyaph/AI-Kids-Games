@@ -2,7 +2,7 @@
 import { dayRng } from '../core/rng';
 import { BUY_MULT, FLIMSY_TOOL_PRICE, HOT_ITEM_MULT, SAPLING_PRICE, SEED_PRICE } from '../data/economy';
 import { FOREIGN_FRUIT_MULT, FRUITS } from '../data/fruit';
-import { BUY_PRICE, FURNITURE_SHOP, RECIPES, SURFACE_SHOP, item } from '../data/registry';
+import { BUY_PRICE, CLOTHING, FURNITURE_SHOP, RECIPES, SURFACE_SHOP, item } from '../data/registry';
 import { SEED_ITEMS } from '../data/items';
 import type { Game } from './game';
 import { inSeason } from './seasons';
@@ -82,6 +82,9 @@ export function dailyStock(g: Game, stage: ShopStage): StockEntry[] {
   const foreign = FRUITS.filter((_, i) => i !== g.world.gen.nativeFruit);
   add(rng.pick(foreign).id, false);
   for (const t of ['net_flimsy', 'rod_flimsy', 'shovel_flimsy', 'axe_flimsy', 'can_flimsy']) add(t, false);
+  // clothes (own RNG stream so the rest of the stock stays the same)
+  const crng = dayRng(g.state.seed, g.state.clock.day, 'clothes');
+  crng.shuffle(CLOTHING.filter((c) => c.buy > 0)).slice(0, stage === 'shop' ? 2 : 1).forEach((c) => out.push({ id: c.id, price: c.buy, limited: true }));
   if (stage === 'shop') {
     rng.shuffle([...FURNITURE_SHOP]).slice(0, 5).forEach((f) => add(f.id, true));
     const walls = SURFACE_SHOP.filter((s) => s.kind === 'wallpaper');

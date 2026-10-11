@@ -2,6 +2,18 @@
 import { fmt } from '../../core/math';
 import type { SaveManager, SaveMeta } from '../../sim/save';
 import { btn, clear, h, type Panel, type UIManager } from '../dom';
+import { playerPortraitURL } from '../portraits';
+import { visualOf, type ClothVisual } from '../../sim/wardrobe';
+import type { ClothSlot } from '../../data/clothing';
+
+function metaClothes(worn: Record<string, string> | undefined): Partial<Record<ClothSlot, ClothVisual>> {
+  const out: Partial<Record<ClothSlot, ClothVisual>> = {};
+  for (const [slot, id] of Object.entries(worn ?? {})) {
+    const v = visualOf(id);
+    if (v) out[slot as ClothSlot] = v;
+  }
+  return out;
+}
 
 export function formatPlaytime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -53,6 +65,7 @@ export class SlotScreen implements Panel {
       'div',
       { class: 'slotcard' },
       h('div', { class: 'muted tiny' }, `Slot ${slot + 1}`),
+      meta.look ? h('img', { class: 'slot-portrait', alt: '', src: playerPortraitURL(meta.look, metaClothes(meta.worn)) }) : null,
       h('div', { class: 'nm' }, meta.name),
       h('div', null, `Day ${meta.day} · Chapter ${meta.chapter}${meta.finished ? ' ✓' : ''}`),
       h('div', { class: 'muted' }, `Played ${formatPlaytime(meta.playSeconds)}`),

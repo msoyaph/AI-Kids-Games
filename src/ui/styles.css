@@ -292,3 +292,29 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6
 .decor-edit-panel { position: relative; pointer-events: auto; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; max-width: 96vw; }
 @media (max-width: 720px) { .editor-bar { right: 12px; bottom: calc(40vh + 20px); } .editor { top: auto; height: 40vh; width: auto; left: 12px; } }
 .cat-season { position: absolute; left: 2px; top: 1px; font-size: 11px; line-height: 1; pointer-events: none; }
+
+/* ---- wardrobe + dye ---- */
+.wardrobe { padding: 18px; width: min(820px, 96vw); max-height: 92vh; display: flex; flex-direction: column; gap: 8px; }
+.wd-body { display: flex; gap: 16px; min-height: 0; }
+.wd-left { width: 200px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.wd-right { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.wd-portrait { width: 160px; height: 160px; border-radius: 24px; background: linear-gradient(#e8f6ff, #fff6e6); border: 3px solid var(--line); }
+.wd-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.wd-tab { display: inline-flex; align-items: center; gap: 4px; }
+.wd-ico { font-size: 18px; }
+.wd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; max-height: 46vh; align-content: start; }
+.wd-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.wd-wear { position: relative; width: 84px; height: 84px; border-radius: 18px; border: 3px solid var(--line); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; }
+.wd-wear .icon { width: 64px; height: 64px; }
+.wd-wear.on, .wd-cell.on .wd-wear { border-color: var(--teal); background: #eafaf6; }
+.wd-wear.focus, .wd-wear:hover { box-shadow: 0 0 0 3px var(--gold); }
+.wd-name { text-align: center; line-height: 1.2; min-height: 2.4em; }
+.wd-outfits { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.wd-outfit { border: 2px solid var(--line); border-radius: 14px; padding: 6px 8px; background: #fff; display: flex; flex-direction: column; gap: 4px; }
+.dye-colors { display: flex; flex-wrap: wrap; gap: 10px; }
+.dye-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.dye-btn { width: 56px; height: 56px; min-height: 56px; padding: 0; border-radius: 50%; }
+.dye-swatch { display: block; width: 40px; height: 40px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px var(--line); }
+@media (max-width: 720px) { .wd-body { flex-direction: column; } .wd-left { width: auto; flex-direction: row; flex-wrap: wrap; } .wd-portrait { width: 110px; height: 110px; } }
+.slot-portrait { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(#e8f6ff, #fff6e6); border: 2px solid var(--line); }
+.phone-me { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(#e8f6ff, #fff6e6); border: 2px solid var(--line); margin-right: 6px; }

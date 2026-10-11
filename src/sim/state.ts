@@ -1,5 +1,6 @@
 // The complete, JSON-serializable game state. Everything persistent lives here.
 import { generateIsland } from '../world/worldgen';
+import { emptyWardrobe, type WardrobeState } from './wardrobe';
 import { WORLD_SIZE } from '../world/types';
 
 export const SAVE_VERSION = 3;
@@ -192,6 +193,9 @@ export interface VillagerState {
   metDay: number;
   /** furniture the player gave them, most recent first (shown in their home) */
   gifts?: string[];
+  /** the outfit they last commented on, and when they last gave you clothes */
+  outfitSeen?: string;
+  clothDay?: number;
 }
 
 export interface MissionProgress {
@@ -248,6 +252,8 @@ export interface GameState {
   tips: Record<string, number>;
   /** 0 spring, 1 summer, 2 autumn, 3 winter; day 1..7 within the season */
   season: SeasonState;
+  /** clothes in the closet, what you're wearing, saved outfits */
+  wardrobe: WardrobeState;
 }
 
 export interface SeasonState {
@@ -352,5 +358,6 @@ export function newGameState(seed: number, name: string, look: Appearance = DEFA
     flags: {},
     tips: {},
     season: { index: 0, day: 1, paused: false, lastDay: 0 },
+    wardrobe: emptyWardrobe(),
   };
 }

@@ -233,5 +233,7 @@ export const SHOP_ROOM: RoomLayout & { fixtures: FixtureDef[]; host: { x: number
     { x: 1, z: 0, kind: 'wall' },
     { x: 2, z: 0, kind: 'wall' },
     { x: 7, z: 6, kind: 'table' },
+    { x: 3, z: 6, kind: 'table' },
+    { x: 6, z: 6, kind: 'table' },
   ],
 };

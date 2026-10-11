@@ -8,6 +8,7 @@ import type { Game } from '../sim/game';
 import { parseLine, topicLine, villagerCtx, type Line } from '../sim/talk';
 import { acceptRequest, canFulfill, declineRequest, dueHeartRewards, fulfillRequest, giveGift, noteTalk, placeDescription, vstate } from '../sim/villagers';
 import { DialogueBox, type Speaker } from './dialogue';
+import { clothingThanks, outfitHash } from '../sim/wardrobe';
 import { InventoryPanel } from './inventory';
 import { TEXT_CPS } from '../settings';
 import { phaseOf } from '../sim/clock';
@@ -79,6 +80,13 @@ export async function talkToVillager(app: App, g: Game, id: string): Promise<voi
       }
       await box.say(lines);
     }
+    // they notice new clothes
+    const look = outfitHash(g);
+    if (look && look !== v.outfitSeen) {
+      v.outfitSeen = look;
+      emote(g, id, 'heart');
+      await box.say([L('outfit')]);
+    }
     // heart milestone rewards
     for (const r of dueHeartRewards(g, id)) {
       emote(g, id, 'heart');
@@ -120,6 +128,12 @@ export async function talkToVillager(app: App, g: Game, id: string): Promise<voi
             const topic: DialogueTopic = r === 'love' ? 'giftLove' : r === 'like' ? 'giftLike' : r === 'dislike' ? 'giftDislike' : 'giftNeutral';
             if (r === 'love' || r === 'like') emote(g, id, 'heart');
             await b.say([L(topic, { item: item(iid).name })]);
+            // a loved gift is sometimes returned with clothes in their own style
+            const cloth = r === 'love' ? clothingThanks(g, id) : null;
+            if (cloth) {
+              await b.say([parseLine(`[happy]You are so kind! This is for you: a ${item(cloth).name}. I think it will look great on you!`)]);
+              g.toast(`Received ${item(cloth).name}! Use it from your pockets to wear it.`, 'good', cloth);
+            }
           },
         },
       ];

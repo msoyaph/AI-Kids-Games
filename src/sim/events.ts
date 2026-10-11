@@ -64,6 +64,8 @@ export interface GameEvents {
   tip: { id: string };
   finale: Record<string, never>;
   seasonChanged: { season: string };
+  outfitChanged: { hash: string };
+  itemDyed: { id: string };
   catalogNew: { id: string };
   recipeLearned: { id: string; source: string };
   regionVisited: { region: number };
