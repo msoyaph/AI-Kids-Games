@@ -3,6 +3,8 @@ import { dailySpawns } from './spawns';
 import { dailyGarden } from './gardening';
 import { dailyWeather } from './weather';
 import { foragingResolver } from './foraging';
+import { fishingPress, fishingResolver, fishingRT, resetFishing, updateFishing } from './fishing';
+import { bugResolver, resetBugs, updateBugs } from './bugs';
 import { Game } from './game';
 import type { GameState } from './state';
 
@@ -12,7 +14,20 @@ export function installSystems(g: Game): void {
   g.onDay(dailyWeather);
   g.onDay(dailyGarden);
   g.onDay(dailySpawns);
+  g.onDay(resetFishing);
+  g.onDay(resetBugs);
   g.addResolver(foragingResolver);
+  g.addResolver(fishingResolver);
+  g.addResolver(bugResolver);
+  g.onPress((game) => {
+    if (!fishingRT(game).cast) return false;
+    fishingPress(game);
+    return true;
+  });
+  g.onUpdate((game, dt) => {
+    updateFishing(game, dt, game.held, game.moveMag > 0.35);
+    updateBugs(game, dt, game.held);
+  });
 }
 
 export function createGame(state: GameState): Game {

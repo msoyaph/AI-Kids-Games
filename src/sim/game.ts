@@ -56,6 +56,13 @@ export class Game {
   private resolvers: Resolver[] = [];
   /** Runtime-only systems state (not saved): fish shadows, bugs, villager positions... */
   runtime: Record<string, unknown> = {};
+  /** action button held this frame */
+  held = false;
+  /** analog move magnitude this frame */
+  moveMag = 0;
+  /** player is sneaking (net raised) */
+  sneaking = false;
+  private pressHandlers: ((g: Game) => boolean)[] = [];
   /** UI hook: request a confirmation/dialog from the presentation layer */
   ui: {
     confirm: (text: string, yes: () => void, no?: () => void) => void;
@@ -81,6 +88,11 @@ export class Game {
 
   addResolver(r: Resolver): void {
     this.resolvers.push(r);
+  }
+
+  /** Handlers that may consume the action button before normal interactions (fishing, events...). */
+  onPress(h: (g: Game) => boolean): void {
+    this.pressHandlers.push(h);
   }
 
   emit<K extends keyof GameEvents>(k: K, p: GameEvents[K]): void {
@@ -138,6 +150,7 @@ export class Game {
 
   /** Action button pressed in free play. */
   act(): boolean {
+    for (const h of this.pressHandlers) if (h(this)) return true;
     if (this.mode !== 'play' || this.action) return false;
     const i = this.resolve();
     if (i && !i.disabled) {
@@ -165,9 +178,11 @@ export class Game {
         a.after?.();
       }
     }
+    this.held = !!input?.actionHeld;
+    this.moveMag = input ? Math.hypot(input.move.x, input.move.z) : 0;
     const canMove = this.mode === 'play' && !this.action && input && this.state.player.location === 'island';
     if (canMove) {
-      stepPlayer(this.world, this.state.player, this.motion, input.move, dt);
+      stepPlayer(this.world, this.state.player, this.motion, { ...input.move, sneak: this.sneaking, run: input.move.run && !this.sneaking }, dt);
     } else {
       this.motion.speed = 0;
       this.motion.vx = 0;

@@ -10,6 +10,7 @@ import { Sky } from './sky';
 import { TerrainRenderer, WaterRenderer } from './terrain';
 import { equippedTool } from '../sim/tools';
 import { toolMesh } from './models/tools';
+import { CritterView } from './critters';
 import { LEVEL_HEIGHT } from '../world/types';
 
 export class GameView {
@@ -20,6 +21,7 @@ export class GameView {
   private terrain!: TerrainRenderer;
   private water!: WaterRenderer;
   objects!: ObjectRenderer;
+  critters!: CritterView;
   private structGroup = new THREE.Group();
   private structMeshes = new Map<number, { obj: THREE.Group; key: string }>();
   player!: Rig;
@@ -61,7 +63,8 @@ export class GameView {
     this.terrain = new TerrainRenderer(game.world.gen);
     this.water = new WaterRenderer(game.world.size / 2);
     this.objects = new ObjectRenderer(game.world, this.itemVisual);
-    this.islandRoot.add(this.terrain.group, this.water.mesh, this.objects.group, this.structGroup);
+    this.critters = new CritterView(game);
+    this.islandRoot.add(this.terrain.group, this.water.mesh, this.objects.group, this.structGroup, this.critters.group);
     this.objects.rebuild();
     this.syncStructures();
     this.rebuildPlayer();
@@ -163,6 +166,7 @@ export class GameView {
       this.rig.follow(p.x, Math.max(0, y), p.z, dt);
     }
     sharedUniforms.uCurveOrigin.value.copy(this.rig.target);
+    this.critters.frame(dt, this.rig.target, this.sky.night);
     this.sky.update(g.state.clock.minute, g.state.weather.today, this.rig.target);
     this.renderer.render(this.scene, this.rig.camera);
   }

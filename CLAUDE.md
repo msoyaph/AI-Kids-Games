@@ -59,3 +59,10 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   tools + durability, foraging (shake/chop/mine/pluck/pickup/dig/plant/water/ladder), daily spawns,
   gardening growth + breeding, save slots + migration, title/slots/creator/pause screens, HUD.
   (Temporary: main.ts gives starter tools on new game until the story missions exist.)
+- Phase 3 done: weather roll + creature filters, fishing (shadows by water kind, cast/nibble/bite timing,
+  reel minigame for size>=4, ReelBar UI), bugs (habitat spawning, stealth alert model, sneak/swing net),
+  museum logic (assess fossils, donate, wing rewards), creature 3D models, rain/rainbow FX.
+
+## Testing tips
+- The Claude browser pane may be hidden → rAF paused. Use `window.__lc.debugStep(frames)` to advance the
+  game synchronously, and dispatch `KeyboardEvent`s on window for input. `window.__lc` is the App.

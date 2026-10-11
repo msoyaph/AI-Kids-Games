@@ -12,6 +12,7 @@ import { h, UIManager, type Panel } from './ui/dom';
 import { Hud } from './ui/hud';
 import { iconImg } from './ui/icons';
 import { InventoryPanel } from './ui/inventory';
+import { ReelBar } from './ui/fishing';
 import { CreatorScreen } from './ui/screens/creator';
 import { controlsPanel, PauseMenu } from './ui/screens/pause';
 import { confirmPanel, SlotScreen } from './ui/screens/slots';
@@ -25,6 +26,7 @@ export class App {
   readonly view: GameView;
   readonly ui: UIManager;
   readonly hud: Hud;
+  private reel: ReelBar;
   readonly saves = new SaveManager();
   settings: Settings;
   game: Game | null = null;
@@ -52,6 +54,7 @@ export class App {
     });
     this.ui = new UIManager(root);
     this.hud = new Hud(root);
+    this.reel = new ReelBar(root);
     document.body.appendChild(this.fadeEl);
     this.applySettings();
     this.demo = createGame(newGameState(TITLE_SEED, 'Demo'));
@@ -255,9 +258,19 @@ export class App {
     }
   }
 
+  /** Advance the game synchronously (testing / hidden tabs where rAF is paused). */
+  debugStep(frames: number, dt = 1 / 60): void {
+    for (let k = 0; k < frames; k++) this.tick(dt, k === frames - 1);
+  }
+
   private loop(now: number): void {
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
+    this.tick(dt, true);
+    requestAnimationFrame((t) => this.loop(t));
+  }
+
+  private tick(dt: number, render: boolean): void {
     const f = this.input.poll(dt);
     this.hud.device = this.input.lastDevice;
     const g = this.game;
@@ -273,10 +286,10 @@ export class App {
         this.saveNow(true);
       }
       this.hud.update(g);
+      this.reel.update(g);
     } else {
       this.demo.update(dt, null);
     }
-    this.view.frame(dt);
-    requestAnimationFrame((t) => this.loop(t));
+    if (render) this.view.frame(dt);
   }
 }
