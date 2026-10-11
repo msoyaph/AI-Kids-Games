@@ -49,7 +49,7 @@ Key rules:
 3. [x] Weapons, XP, leveling, upgrade picker
 4. [x] Full weapon/item roster, evolutions, chests, shrines
 5. [x] Bosses, 20-minute waves, win/lose flow
-6. [ ] Menus, characters, meta-progression, save system
+6. [x] Menus, characters, meta-progression, save system
 7. [ ] Audio, juice, polish, settings
 8. [ ] Performance pass (1000-enemy stress test)
 9. [ ] Unit tests + Playwright smoke test

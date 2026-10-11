@@ -2,24 +2,45 @@ import { DT } from '../config/balance';
 import { BANNERS, BANNER } from '../config/waves';
 import { Ev } from '../core/events';
 import { randomSeed } from '../core/rng';
+import { SafeLocalStore } from '../core/storage';
 import { InputManager, type UiAction } from '../input/InputManager';
+import { applyRunResult, checkAchievements, metaBonuses, summarize } from '../meta/progression';
+import { SaveManager } from '../meta/save';
 import { GameRenderer } from '../render/Renderer';
+import { characterDef } from '../config/characters';
 import { newRun } from '../sim/run';
 import { closeChest, step } from '../sim/sim';
 import { Terrain } from '../sim/terrain';
 import { reroll, resolveLevelUp } from '../sim/upgrades';
 import { emptyInput, type UpgradeChoice, type World } from '../sim/world';
 import { h } from '../ui/dom';
+import { Menus, rewardText, type GameApi } from '../ui/menus';
 import { UI } from '../ui/UI';
 
 const MAX_STEPS_PER_FRAME = 5;
+const MENU_SEED = 1337;
 
-export class Game {
+export type SoundName = 'click' | 'buy' | 'error' | 'back' | 'open';
+
+/**
+ * Application root: owns renderer, input, UI, save data and the active run.
+ * Runs the fixed-timestep loop (60 Hz sim, interpolated rendering).
+ */
+export class Game implements GameApi {
   readonly renderer: GameRenderer;
   readonly input: InputManager;
   readonly ui: UI;
+  readonly save: SaveManager;
+  readonly menus: Menus;
   world: World | null = null;
   paused = false;
+  /** Hook for the audio engine (set in main). */
+  onSound: ((name: SoundName) => void) | null = null;
+  /** Called every frame with the world events before they are cleared (audio). */
+  onEvents: ((w: World) => void) | null = null;
+  /** Called when entering/leaving a run (music). */
+  onMode: ((mode: 'menu' | 'run' | 'paused' | 'end', w: World | null) => void) | null = null;
+
   private acc = 0;
   private last = 0;
   private simInput = emptyInput();
@@ -28,6 +49,9 @@ export class Game {
   private fwd = { x: 0, z: 0 };
   private lastWorldState: World['state'] = 'playing';
   private lockLostAt = -1e9;
+  private achT = 0;
+  private menuTerrain = new Terrain(MENU_SEED);
+  private fpsEl: HTMLElement;
   // debug overlay
   private showDebug = false;
   private fpsFrames = 0;
@@ -42,11 +66,16 @@ export class Game {
     overlay: HTMLCanvasElement,
     uiRoot: HTMLElement,
   ) {
-    this.renderer = new GameRenderer(canvas, overlay, 'high');
+    this.save = new SaveManager(new SafeLocalStore());
+    this.renderer = new GameRenderer(canvas, overlay, this.save.data.settings.quality);
     this.input = new InputManager(canvas);
     this.ui = new UI(uiRoot);
-    this.renderer.setTerrain(new Terrain(1337));
+    this.menus = new Menus(this);
+    this.fpsEl = h('div', { class: 'fps hidden' });
+    uiRoot.append(this.fpsEl);
+    this.renderer.setTerrain(this.menuTerrain);
     this.input.onAction = (a) => this.onAction(a);
+    this.applySettings();
     this.resize();
     window.addEventListener('resize', () => this.resize());
     // pause when the tab / iframe loses focus
@@ -70,30 +99,98 @@ export class Game {
 
   start(): void {
     this.last = performance.now();
+    this.menus.title();
+    this.onMode?.('menu', null);
     requestAnimationFrame(this.frame);
   }
 
-  // ───────────────────────────── run lifecycle ─────────────────────────────
+  // ───────────────────────────── GameApi ─────────────────────────────
+
+  sound(name: SoundName): void {
+    this.onSound?.(name);
+  }
+
+  showcase(characterId: string): void {
+    this.renderer.setCharacter(characterDef(characterId));
+  }
+
+  applySettings(): void {
+    const s = this.save.data.settings;
+    if (this.renderer.quality !== s.quality) this.renderer.setQuality(s.quality);
+    this.input.sensitivity = s.sensitivity;
+    this.input.invertY = s.invertY;
+    this.input.setMouseMode(s.mouseMode);
+    this.renderer.rig.shakeEnabled = s.screenShake;
+    this.renderer.fx.numbers.enabled = s.damageNumbers;
+    this.fpsEl.classList.toggle('hidden', !s.showFps);
+    this.onSettings?.();
+  }
+
+  /** Audio volume hook (set in main). */
+  onSettings: (() => void) | null = null;
 
   startRun(characterId: string, seed = randomSeed()): void {
     const params = new URLSearchParams(location.search);
     const stress = Number(params.get('stress') || 0);
     const fixedSeed = params.get('seed');
-    this.world = newRun({ seed: fixedSeed ? Number(fixedSeed) : seed, characterId, stress, unlockedWeapons: ['wispBees', 'frostFan'] });
+    const d = this.save.data;
+    this.world = newRun({
+      seed: fixedSeed ? Number(fixedSeed) : seed,
+      characterId,
+      stress,
+      meta: metaBonuses(d),
+      unlockedWeapons: d.unlockedWeapons,
+    });
     const w = this.world;
     this.renderer.setTerrain(w.terrain);
     this.renderer.setCharacter(w.player.character);
     this.renderer.rig.yaw = 0;
+    this.renderer.rig.pitch = 0.5;
     this.renderer.rig.snap(w.player.x, w.player.y, w.player.z);
     this.renderer.resetTransient();
     this.acc = 0;
+    this.achT = 1;
     this.paused = false;
     this.lastWorldState = 'playing';
     this.ui.close();
     this.ui.hud.show(true);
     this.ui.hud.showBanner(BANNERS[BANNER.start]);
     this.setGameplayInput(true);
+    this.onMode?.('run', w);
   }
+
+  resume(): void {
+    if (!this.paused) return;
+    this.paused = false;
+    this.ui.close();
+    this.setGameplayInput(true);
+    this.onMode?.('run', this.world);
+  }
+
+  quitToTitle(): void {
+    const w = this.world;
+    if (w && w.state !== 'dead' && w.state !== 'won') {
+      // abandoning still banks what was earned
+      w.state = 'dead';
+      applyRunResult(this.save.data, summarize(w));
+      this.save.save();
+    }
+    this.clearRun();
+    this.menus.title();
+  }
+
+  clearRun(): void {
+    this.world = null;
+    this.paused = false;
+    this.setGameplayInput(false);
+    this.ui.hud.show(false);
+    this.renderer.setTerrain(this.menuTerrain);
+    this.renderer.resetTransient();
+    this.renderer.playerView.hurt(0);
+    this.onMode?.('menu', null);
+  }
+
+  // ───────────────────────────── run flow ─────────────────────────────
 
   private setGameplayInput(on: boolean): void {
     this.input.gameplay = on;
@@ -107,35 +204,12 @@ export class Game {
     if (!w || this.paused || w.state !== 'playing') return;
     this.paused = true;
     this.setGameplayInput(false);
-    const resume = (): void => this.resume();
-    const el = h(
-      'div',
-      { class: 'modal panel' },
-      h('div', { class: 'title' }, 'Paused'),
-      h('button', { class: 'btn primary', onclick: resume, 'data-autofocus': true }, 'Resume'),
-      h('button', { class: 'btn ghost', onclick: () => this.endRun() }, 'Give up'),
-    );
-    this.ui.show('pause', el, resume);
-  }
-
-  resume(): void {
-    if (!this.paused) return;
-    this.paused = false;
-    this.ui.close();
-    this.setGameplayInput(true);
+    this.menus.pause(w);
+    this.onMode?.('paused', w);
   }
 
   private autoPause(): void {
-    if (this.world && this.world.state === 'playing' && !this.paused) this.pause();
-  }
-
-  endRun(): void {
-    const w = this.world;
-    if (!w) return;
-    w.state = 'dead';
-    this.paused = false;
-    this.ui.close();
-    this.onWorldState(w);
+    if (this.world && this.world.state === 'playing' && !this.paused && !this.ui.hasScreen) this.pause();
   }
 
   private onAction(a: UiAction): void {
@@ -147,23 +221,25 @@ export class Game {
     if (a === 'pause') {
       // the Escape that released pointer lock already paused us; don't instantly resume
       if (performance.now() - this.lockLostAt < 300) return;
-      if (this.paused) this.resume();
+      if (this.paused && this.ui.screenName === 'pause') this.resume();
       else if (this.world && this.world.state === 'playing' && !this.ui.hasScreen) this.pause();
+      else if (this.ui.hasScreen) this.ui.handleAction('back');
       return;
     }
-    this.ui.handleAction(a);
+    if (this.ui.handleAction(a)) this.sound('click');
   }
 
   /** React to sim state transitions (level-up, chest, death, victory). */
   private onWorldState(w: World): void {
-    if (w.state === this.lastWorldState && w.state !== 'levelup') return;
+    if (w.state === this.lastWorldState) return;
     this.lastWorldState = w.state;
     switch (w.state) {
       case 'levelup':
-        if (this.ui.screenName !== 'levelup') this.showLevelUp(w);
+        this.showLevelUp(w);
         break;
       case 'chest':
         this.setGameplayInput(false);
+        this.sound('open');
         this.ui.showChest(w.chestRewards, () => {
           closeChest(w);
           this.ui.close();
@@ -173,21 +249,27 @@ export class Game {
         break;
       case 'dead':
       case 'won':
-        this.setGameplayInput(false);
-        this.ui.hud.show(false);
-        this.ui.show(
-          'gameover',
-          h('div', { class: 'modal panel' }, h('div', { class: 'title' }, w.state === 'won' ? 'Dawn breaks!' : 'Bonked!'), h('div', { class: 'subtitle' }, `Kills: ${w.stats.kills} · Level ${w.player.level}`), h('button', { class: 'btn primary', onclick: () => this.startRun(w.player.character.id), 'data-autofocus': true }, 'Try again')),
-        );
+        this.finishRun(w);
         break;
       default:
         break;
     }
   }
 
+  private finishRun(w: World): void {
+    this.setGameplayInput(false);
+    this.ui.hud.show(false);
+    const summary = summarize(w);
+    const outcome = applyRunResult(this.save.data, summary);
+    this.save.save();
+    this.onMode?.('end', w);
+    this.menus.gameOver(summary, outcome, () => this.startRun(summary.characterId));
+  }
+
   private showLevelUp(w: World): void {
     this.setGameplayInput(false);
     const pick = (c: UpgradeChoice | null): void => {
+      this.sound(c ? 'buy' : 'back');
       const more = resolveLevelUp(w, c);
       if (more) this.showLevelUp(w);
       else {
@@ -197,8 +279,22 @@ export class Game {
       }
     };
     this.ui.showLevelUp(w, pick, () => {
-      if (reroll(w)) this.showLevelUp(w);
+      if (reroll(w)) {
+        this.sound('click');
+        this.showLevelUp(w);
+      } else this.sound('error');
     });
+  }
+
+  /** Achievements can pop mid-run (e.g. kill counts); rewards apply immediately. */
+  private liveAchievements(w: World): void {
+    const earned = checkAchievements(this.save.data, summarize(w));
+    if (earned.length === 0) return;
+    for (const a of earned) {
+      this.ui.hud.toast('Achievement unlocked', `${a.name} — ${rewardText(a)}`);
+      if (a.reward.weapon) w.unlockedWeapons.add(a.reward.weapon);
+    }
+    this.save.save();
   }
 
   // ───────────────────────────── frame loop ─────────────────────────────
@@ -235,6 +331,8 @@ export class Game {
         this.renderer.playerView.hurt();
       } else if (t === Ev.Land) {
         this.renderer.playerView.land(ev.get(n, 3));
+      } else if (t === Ev.Evolve) {
+        this.ui.hud.showBanner('Evolution!');
       }
     }
   }
@@ -251,7 +349,8 @@ export class Game {
     const w = this.world;
     if (w) {
       let simT = 0;
-      if (!this.paused && w.state === 'playing') {
+      const running = !this.paused && w.state === 'playing';
+      if (running) {
         this.input.consumeLook(dt, this.look);
         this.renderer.rig.look(this.look.x, this.look.y);
         if (this.input.wheel !== 0) {
@@ -270,13 +369,18 @@ export class Game {
         }
         simT = performance.now() - s0;
         if (steps >= MAX_STEPS_PER_FRAME) this.acc = 0;
+        this.achT -= dt;
+        if (this.achT <= 0) {
+          this.achT = 1;
+          this.liveAchievements(w);
+        }
       }
       this.processEvents(w);
+      this.onEvents?.(w);
       this.renderer.fx.consume(w.events, w.player.x, w.player.y, w.player.z);
       w.events.clear();
-      const running = !this.paused && w.state === 'playing';
       this.renderer.renderGame(w, running ? this.acc / DT : 1, running ? dt : 0);
-      this.ui.hud.update(w, dt, w.stats.coins);
+      if (w.state !== 'dead' && w.state !== 'won') this.ui.hud.update(w, dt, w.stats.coins);
       this.onWorldState(w);
       this.simMs = this.simMs * 0.9 + simT * 0.1;
     } else {
@@ -293,6 +397,7 @@ export class Game {
       this.fps = this.fpsFrames / this.fpsTime;
       this.fpsFrames = 0;
       this.fpsTime = 0;
+      if (this.save.data.settings.showFps) this.fpsEl.textContent = `${this.fps.toFixed(0)} fps`;
     }
     if (!this.showDebug) return;
     this.debugT -= dt;
@@ -304,7 +409,7 @@ export class Game {
       `FPS        ${this.fps.toFixed(0)}`,
       `frame ms   ${this.frameMs.toFixed(2)}  (sim ${this.simMs.toFixed(2)})`,
       `draw calls ${info.render.calls}`,
-      `triangles  ${info.render.triangles}`,
+      `triangles  ${info.render.triangles.toLocaleString()}`,
       w ? `enemies    ${w.enemies.count}` : '',
       w ? `projectile ${w.projectiles.count} (+${w.enemyShots.count} hostile)` : '',
       w ? `gems       ${w.gems.count}   pickups ${w.pickups.count}` : '',

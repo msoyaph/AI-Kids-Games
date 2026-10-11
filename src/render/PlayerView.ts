@@ -43,8 +43,9 @@ export class PlayerView {
     if (this.mesh) this.mesh.castShadow = on;
   }
 
-  hurt(): void {
-    this.flash = 1;
+  hurt(amount = 1): void {
+    this.flash = amount;
+    if (amount === 0) this.material.emissive.setRGB(0, 0, 0);
   }
 
   land(impact: number): void {

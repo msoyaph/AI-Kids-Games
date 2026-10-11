@@ -63,6 +63,12 @@ export class InputManager {
     }, { passive: false });
   }
 
+  /** 'auto' picks drag-to-look inside iframes (pointer lock is often sandboxed away). */
+  setMouseMode(mode: 'auto' | 'lock' | 'drag'): void {
+    this.mouseMode = mode === 'auto' ? (inIframe() ? 'drag' : 'lock') : mode;
+    if (this.mouseMode === 'drag') this.releaseLock();
+  }
+
   get pointerLocked(): boolean {
     return document.pointerLockElement === this.canvas;
   }

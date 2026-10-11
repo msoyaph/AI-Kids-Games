@@ -153,8 +153,17 @@ export class GameRenderer {
     this.sun.target.position.set(x, 0, z);
   }
 
+  private setDynamicVisible(on: boolean): void {
+    this.enemies.group.visible = on;
+    this.pickups.group.visible = on;
+    this.projectiles.group.visible = on;
+    this.shrines.group.visible = on;
+    this.fx.group.visible = on;
+  }
+
   /** Gameplay frame: interpolate sim state by alpha. */
   renderGame(w: World, alpha: number, dt: number): void {
+    this.setDynamicVisible(true);
     const p = w.player;
     const x = lerp(p.px, p.x, alpha);
     const y = lerp(p.py, p.y, alpha);
@@ -180,13 +189,16 @@ export class GameRenderer {
 
   /** Menu backdrop: slow orbit around the showcased character. */
   renderMenu(dt: number): void {
+    this.setDynamicVisible(false);
     this.menuT += dt;
     const t = this.terrain;
     const y = t ? t.height(0, 0) : 0;
     this.playerView.update(0, y, 0, y, Math.PI * 0.15 + Math.sin(this.menuT * 0.4) * 0.3, 0, true, false, 0, dt, this.menuT, false);
-    const a = this.menuT * 0.06;
-    this.camera.position.set(Math.sin(a) * 9, y + 3.2, Math.cos(a) * 9);
-    this.camera.lookAt(0, y + 1.3, 0);
+    const a = Math.sin(this.menuT * 0.12) * 0.5;
+    this.camera.position.set(Math.sin(a) * 8, y + 2.6, Math.cos(a) * 8);
+    // aim left of the hero so it sits on the right, clear of the menus
+    const off = this.camera.aspect > 1.2 ? 2.6 : 0.8;
+    this.camera.lookAt(-Math.cos(a) * off, y + 1.4, Math.sin(a) * off);
     if (this.camera.fov !== 55) {
       this.camera.fov = 55;
       this.camera.updateProjectionMatrix();
