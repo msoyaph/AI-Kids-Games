@@ -18,6 +18,8 @@ export const FLASH_EFFECTS = {
   elite: 0.95,
   /** Red hurt vignette (at most this often). */
   hurtVignette: 2.5,
+  /** Touch stick rim flash when Thea is hurt (at most this often). */
+  stickHurt: 2.5,
 } as const;
 
 export type FlashEffect = keyof typeof FLASH_EFFECTS;

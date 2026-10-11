@@ -88,11 +88,32 @@
   transition: background-color 0.12s, box-shadow 0.12s;
 }
 
+.glass-ui.hidden {
+  display: none;
+}
+
+/* thumb zones (placed by TouchControls.relayout: stick side / camera side, below the HUD) */
+.tzone {
+  position: absolute;
+  bottom: 0;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* reads the safe-area insets for the layout */
+.g-safe-probe {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
 /* ───────────── stick ───────────── */
 
 .gstick {
   left: 0;
   top: 0;
+  pointer-events: none;
   width: var(--g-b);
   height: var(--g-b);
   margin: calc(var(--g-b) / -2) 0 0 calc(var(--g-b) / -2);

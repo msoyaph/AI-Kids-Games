@@ -268,6 +268,14 @@ quality governor) → accessibility → tests → handoff. `npx tsx scripts/glas
   cross-fades; opacity per layer — an ancestor with opacity < 1 would become a backdrop root
   and the blur would stop seeing the canvas), glassGlyphs.ts, glassLayout.ts
 - [x] 2. Touch-first detection, InputModeTracker hybrid switching, no pause on lock release
+- [x] 3. Glass joystick (input/touch.ts rewrite): floating (default) or fixed stick on the
+  stick half below the top HUD band (ZONE_TOP 22%); input/stick.ts response (10% dead
+  zone, full speed at 90% travel, ^1.25 curve, analog 360°); each control owns its pointerId
+  (captured; up / cancel / lostpointercapture release — never pointerleave); DOM writes
+  batched into one rAF (transform + CSS vars only). Feedback: hurt() rim flash (≤ 3 Hz via
+  flash.ts `stickHurt`), setFast() glow + chevrons from Game.touchFeedback (sliding faster
+  than 1.35 × walkSpeed, angle in camera space). setGlass('fake' | 'blur') cross-fades.
+  main.ts shows a "couldn't start" card (and sets window.__theabonkError) if Game throws.
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

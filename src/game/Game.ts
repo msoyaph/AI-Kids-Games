@@ -340,6 +340,7 @@ export class Game implements GameApi {
     const reduced = reducedMotionOn(s.access);
     applyAccessClasses(s.access, reduced);
     this.renderer.setAccess(reduced, s.access.colorblind);
+    this.touch.setLook({ reducedMotion: reduced, highContrast: s.access.highContrast });
     this.input.setMouseMode(this.tuningPanel ? 'drag' : s.mouseMode);
     this.renderer.rig.shakeEnabled = s.screenShake;
     this.renderer.fx.numbers.enabled = s.damageNumbers;
@@ -694,6 +695,7 @@ export class Game implements GameApi {
       } else if (t === Ev.PlayerHurt) {
         this.ui.hud.hurt();
         this.renderer.playerView.hurt();
+        if (this.input.touchMode) this.touch.hurt();
         this.input.rumble(0.7, 0.45, 160);
       } else if (t === Ev.Explosion) {
         // boss slams / blasts close by thump through the controller
@@ -783,6 +785,7 @@ export class Game implements GameApi {
       if (w.state !== 'dead' && w.state !== 'won') {
         this.renderer.rig.forward(this.ui.hud.camFwd);
         this.ui.hud.update(w, dt, w.stats.coins);
+        if (this.touch.visible) this.touchFeedback(w);
       }
       this.onWorldState(w);
       this.simMs = this.simMs * 0.9 + simT * 0.1;
@@ -795,6 +798,19 @@ export class Game implements GameApi {
     this.frameMs = this.frameMs * 0.9 + (performance.now() - t0) * 0.1;
     this.updateDebug(dt);
   };
+
+  /** Fast slides light up the touch stick, with chevrons along the way Thea is going. */
+  private touchFeedback(w: World): void {
+    const p = w.player;
+    const fast = p.sliding && Math.hypot(p.vx, p.vz) > w.tuning.movement.walkSpeed * 1.35;
+    let ang = 0;
+    if (fast) {
+      // velocity in screen terms: camera forward = up, camera right = right
+      const f = this.ui.hud.camFwd;
+      ang = (Math.atan2(-p.vx * f.z + p.vz * f.x, p.vx * f.x + p.vz * f.z) * 180) / Math.PI;
+    }
+    this.touch.setFast(fast, ang);
+  }
 
   private updateDebug(dt: number): void {
     this.fpsFrames++;

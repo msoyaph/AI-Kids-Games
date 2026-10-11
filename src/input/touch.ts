@@ -1,6 +1,10 @@
 import { h } from '../ui/dom';
+import { minInterval } from '../render/flash';
+import { GLYPHS } from './glassGlyphs';
+import { buttonSizes, defaultLayout, stickBase, type GlassLayout, type GlassSize, type Insets } from './glassLayout';
+import { stickReading, stickResponse } from './stick';
 
-/** Keep receiving a finger's moves after it leaves the zone (never throws). */
+/** Keep receiving a finger's moves after it leaves the element (never throws). */
 function capture(el: HTMLElement, id: number): void {
   try {
     el.setPointerCapture(id);
@@ -9,14 +13,35 @@ function capture(el: HTMLElement, id: number): void {
   }
 }
 
-/** Stick radius in CSS px at which the stick reads full deflection. */
-const STICK_RADIUS = 56;
+/** How the controls look (Settings → Touch controls; accessibility). */
+export interface TouchLook {
+  size: GlassSize;
+  /** 0.4–1 */
+  opacity: number;
+  leftHanded: boolean;
+  fixedStick: boolean;
+  highContrast: boolean;
+  reducedMotion: boolean;
+}
+
+export const DEFAULT_TOUCH_LOOK: TouchLook = { size: 'm', opacity: 1, leftHanded: false, fixedStick: false, highContrast: false, reducedMotion: false };
+
+/** Real backdrop blur, or the layered "fake glass" (no blur). */
+export type GlassMode = 'fake' | 'blur';
+
+/** Thumb zones start below the top HUD band (timer, boss bar, warnings). */
+const ZONE_TOP = 0.22;
+/** Knob travel radius as a share of the stick base. */
+const TRAVEL = 0.3;
 
 /**
- * Twin-stick touch controls (Pointer Events, multi-touch):
- *  - left half: a floating stick appears where you touch and moves you (analog)
- *  - right half: drag to turn the camera
- *  - big Jump and Slide buttons on the right, Pause at the top
+ * Glass twin-stick touch controls (Pointer Events, multi-touch). Every control owns its
+ * own finger (pointerId), so moving, turning the camera, jumping and sliding all work at
+ * once; captured fingers keep working when they slide off their control.
+ *  - stick side: a floating (or fixed) analog stick
+ *  - other side: drag to turn the camera; big Jump and Slide buttons; Pause top-right
+ * Visual updates are batched into one animation frame and only touch transforms and CSS
+ * variables (see ui/glass.css).
  */
 export class TouchControls {
   readonly root: HTMLElement;
@@ -27,68 +52,119 @@ export class TouchControls {
   jumpHeld = false;
   /** Slide button toggles instead of hold (settings). */
   slideToggle = false;
+  /** Camera drag sensitivity. */
   sensitivity = 1;
   onPause: (() => void) | null = null;
-  /** Any touch input happened (switches HUD into touch mode). */
-  onTouch: (() => void) | null = null;
+  /** When the camera finger last lifted (performance.now ms; auto camera waits on it). */
+  lookReleasedAt = -1e9;
 
+  private look: TouchLook = { ...DEFAULT_TOUCH_LOOK };
+  private glass: GlassMode = 'fake';
+  private glassTimer = 0;
   private lookDX = 0;
   private lookDY = 0;
   private jumpQueued = false;
   private stickId = -1;
   private lookId = -1;
-  private ox = 0;
-  private oy = 0;
+  private jumpId = -1;
+  private slideId = -1;
   private lx = 0;
   private ly = 0;
-  private base: HTMLElement;
+  /** Stick centre and knob offset (CSS px). */
+  private cx = 0;
+  private cy = 0;
+  private kx = 0;
+  private ky = 0;
+  private base = 120;
+  private layout: GlassLayout | null = null;
+  private reading = stickReading();
+  private painted = true;
+  private raf = 0;
+  private lastHurt = -1e9;
+  private hurtTimer = 0;
+  private hideTimer = 0;
+  private fast = false;
+  private zoneStick: HTMLElement;
+  private zoneLook: HTMLElement;
+  private stick: HTMLElement;
   private knob: HTMLElement;
-  private slideBtn: HTMLElement;
+  private jump: HTMLElement;
+  private slide: HTMLElement;
+  private pause: HTMLElement;
+  private safeProbe: HTMLElement;
 
   constructor(parent: HTMLElement) {
-    this.knob = h('div', { class: 'tstick-knob' });
-    this.base = h('div', { class: 'tstick hidden' }, this.knob);
-    const left = h('div', { class: 'tzone tzone-left' });
-    const right = h('div', { class: 'tzone tzone-right' });
-    const jump = h('button', { class: 'tbtn tbtn-jump', 'aria-label': 'Jump' }, 'Jump');
-    this.slideBtn = h('button', { class: 'tbtn tbtn-slide', 'aria-label': 'Slide' }, 'Slide');
-    const pause = h('button', { class: 'tbtn tbtn-pause', 'aria-label': 'Pause' }, 'II');
-    this.root = h('div', { class: 'touch-ui hidden' }, left, right, this.base, jump, this.slideBtn, pause);
+    this.zoneStick = h('div', { class: 'tzone tzone-stick' });
+    this.zoneLook = h('div', { class: 'tzone tzone-look' });
+    this.knob = h('div', { class: 'glass gstick-knob' });
+    this.stick = h('div', { class: 'glass gstick gone', html: GLYPHS.stickChevrons + '<div class="gstick-ring"></div><div class="gstick-halo"></div>' + GLYPHS.speed });
+    this.stick.append(this.knob);
+    const button = (cls: string, label: string, glyph: string, text: string | null): HTMLElement => {
+      const b = h('button', { class: `glass gbtn ${cls}`, 'aria-label': label, html: `<div class="g-clip"></div>${cls === 'gbtn-slide' ? '<i class="g-dot"></i>' : ''}${glyph}${text ? `<span>${text}</span>` : ''}` });
+      return b;
+    };
+    this.jump = button('gbtn-jump', 'Jump', GLYPHS.jump, 'JUMP');
+    this.slide = button('gbtn-slide', 'Slide', GLYPHS.slide, 'SLIDE');
+    this.pause = button('gbtn-pause', 'Pause', GLYPHS.pause, null);
+    this.safeProbe = h('div', { class: 'g-safe-probe' });
+    this.root = h('div', { class: 'touch-ui glass-ui hidden', 'data-size': 'm' }, this.zoneStick, this.zoneLook, this.stick, this.jump, this.slide, this.pause, this.safeProbe);
     parent.append(this.root);
 
-    left.addEventListener('pointerdown', (e) => {
+    // ── stick ──
+    const zs = this.zoneStick;
+    zs.addEventListener('pointerdown', (e) => {
       if (this.stickId >= 0) return;
-      this.touched(e);
+      e.preventDefault();
       this.stickId = e.pointerId;
-      capture(left, e.pointerId);
-      this.ox = e.clientX;
-      this.oy = e.clientY;
-      this.base.style.left = `${e.clientX}px`;
-      this.base.style.top = `${e.clientY}px`;
-      this.base.classList.remove('hidden');
-      this.setStick(e.clientX, e.clientY);
+      capture(zs, e.pointerId);
+      clearTimeout(this.hideTimer);
+      if (!this.look.fixedStick || !this.layout) {
+        // floating: the stick appears under the thumb (kept fully on screen)
+        const r = this.base / 2;
+        this.cx = Math.max(r, Math.min(innerWidth - r, e.clientX));
+        this.cy = Math.max(r, Math.min(innerHeight - r, e.clientY));
+      }
+      this.knob.classList.remove('back');
+      this.stick.classList.remove('gone', 'idle');
+      this.stick.classList.add('active');
+      this.setKnob(e.clientX - this.cx, e.clientY - this.cy);
     });
-    left.addEventListener('pointermove', (e) => {
-      if (e.pointerId === this.stickId) this.setStick(e.clientX, e.clientY);
+    zs.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== this.stickId) return;
+      let dx = e.clientX - this.cx;
+      let dy = e.clientY - this.cy;
+      const travel = this.base * TRAVEL;
+      const l = Math.hypot(dx, dy);
+      if (!this.look.fixedStick && l > travel * 1.25) {
+        // a floating stick trails a thumb that runs well past the rim
+        const k = (l - travel * 1.25) / l;
+        this.cx += dx * k;
+        this.cy += dy * k;
+        dx = e.clientX - this.cx;
+        dy = e.clientY - this.cy;
+      }
+      this.setKnob(dx, dy);
     });
     const endStick = (e: PointerEvent): void => {
       if (e.pointerId !== this.stickId) return;
       this.stickId = -1;
-      this.moveX = this.moveY = 0;
-      this.base.classList.add('hidden');
+      this.releaseStick();
     };
-    left.addEventListener('pointerup', endStick);
-    left.addEventListener('pointercancel', endStick);
+    zs.addEventListener('pointerup', endStick);
+    zs.addEventListener('pointercancel', endStick);
+    zs.addEventListener('lostpointercapture', endStick);
 
-    right.addEventListener('pointerdown', (e) => {
+    // ── camera drag ──
+    const zl = this.zoneLook;
+    zl.addEventListener('pointerdown', (e) => {
       if (this.lookId >= 0) return;
-      this.touched(e);
+      e.preventDefault();
       this.lookId = e.pointerId;
-      capture(right, e.pointerId);
+      capture(zl, e.pointerId);
       this.lx = e.clientX;
       this.ly = e.clientY;
     });
-    right.addEventListener('pointermove', (e) => {
+    zl.addEventListener('pointermove', (e) => {
       if (e.pointerId !== this.lookId) return;
       this.lookDX += e.clientX - this.lx;
       this.lookDY += e.clientY - this.ly;
@@ -96,98 +172,269 @@ export class TouchControls {
       this.ly = e.clientY;
     });
     const endLook = (e: PointerEvent): void => {
-      if (e.pointerId === this.lookId) this.lookId = -1;
+      if (e.pointerId !== this.lookId) return;
+      this.lookId = -1;
+      this.lookReleasedAt = performance.now();
     };
-    right.addEventListener('pointerup', endLook);
-    right.addEventListener('pointercancel', endLook);
+    zl.addEventListener('pointerup', endLook);
+    zl.addEventListener('pointercancel', endLook);
+    zl.addEventListener('lostpointercapture', endLook);
 
-    jump.addEventListener('pointerdown', (e) => {
-      this.touched(e);
+    // ── buttons: each tracks its own finger; rolling off the edge doesn't release ──
+    this.jump.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (this.jumpId >= 0) return;
+      this.jumpId = e.pointerId;
+      capture(this.jump, e.pointerId);
       this.jumpQueued = true;
       this.jumpHeld = true;
-      jump.classList.add('down');
+      this.jump.classList.add('down');
+      this.ripple(this.jump, e);
     });
-    const jumpUp = (): void => {
+    const jumpUp = (e: PointerEvent): void => {
+      if (e.pointerId !== this.jumpId) return;
+      this.jumpId = -1;
       this.jumpHeld = false;
-      jump.classList.remove('down');
+      this.jump.classList.remove('down');
     };
-    jump.addEventListener('pointerup', jumpUp);
-    jump.addEventListener('pointercancel', jumpUp);
-    jump.addEventListener('pointerleave', jumpUp);
+    for (const t of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) this.jump.addEventListener(t, jumpUp);
 
-    this.slideBtn.addEventListener('pointerdown', (e) => {
-      this.touched(e);
-      this.slideHeld = this.slideToggle ? !this.slideHeld : true;
-      this.slideBtn.classList.toggle('down', this.slideHeld);
-    });
-    const slideUp = (): void => {
-      if (this.slideToggle) return;
-      this.slideHeld = false;
-      this.slideBtn.classList.remove('down');
-    };
-    this.slideBtn.addEventListener('pointerup', slideUp);
-    this.slideBtn.addEventListener('pointercancel', slideUp);
-    this.slideBtn.addEventListener('pointerleave', slideUp);
-
-    pause.addEventListener('pointerdown', (e) => {
-      this.touched(e);
+    this.slide.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      if (this.slideId >= 0) return;
+      this.slideId = e.pointerId;
+      capture(this.slide, e.pointerId);
+      this.slideHeld = this.slideToggle ? !this.slideHeld : true;
+      this.slide.classList.add('down');
+      this.slide.classList.toggle('latched', this.slideToggle && this.slideHeld);
+      this.ripple(this.slide, e);
+    });
+    const slideUp = (e: PointerEvent): void => {
+      if (e.pointerId !== this.slideId) return;
+      this.slideId = -1;
+      this.slide.classList.remove('down');
+      if (!this.slideToggle) this.slideHeld = false;
+    };
+    for (const t of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) this.slide.addEventListener(t, slideUp);
+
+    this.pause.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      this.ripple(this.pause, e);
       this.onPause?.();
     });
     // no long-press menus / text selection on the controls
     this.root.addEventListener('contextmenu', (e) => e.preventDefault());
+    window.addEventListener('resize', () => this.relayout());
+    window.addEventListener('orientationchange', () => this.relayout());
   }
 
-  private touched(e: PointerEvent): void {
-    e.preventDefault();
-    this.onTouch?.();
+  /** Size, opacity, handedness, stick mode, high contrast, reduced motion. */
+  setLook(look: Partial<TouchLook>): void {
+    Object.assign(this.look, look);
+    const l = this.look;
+    this.root.dataset.size = l.size;
+    this.root.style.setProperty('--g-o-base', String(Math.max(0.4, Math.min(1, l.opacity))));
+    this.root.classList.toggle('hc', l.highContrast);
+    this.root.classList.toggle('rm', l.reducedMotion);
+    this.root.classList.toggle('lefty', l.leftHanded);
+    this.relayout();
   }
 
-  private setStick(x: number, y: number): void {
-    let dx = x - this.ox;
-    let dy = y - this.oy;
-    const l = Math.hypot(dx, dy);
-    if (l > STICK_RADIUS) {
-      // the stick follows a finger that runs past the rim
-      this.ox = x - (dx / l) * STICK_RADIUS;
-      this.oy = y - (dy / l) * STICK_RADIUS;
-      this.base.style.left = `${this.ox}px`;
-      this.base.style.top = `${this.oy}px`;
-      dx = (dx / l) * STICK_RADIUS;
-      dy = (dy / l) * STICK_RADIUS;
+  getLook(): Readonly<TouchLook> {
+    return this.look;
+  }
+
+  /**
+   * Real blur or fake glass. The blur layer cross-fades (≈0.4 s) so a change — the player's
+   * tier, or the quality governor stepping down mid-run — never pops.
+   */
+  setGlass(mode: GlassMode): void {
+    if (mode === this.glass) return;
+    this.glass = mode;
+    clearTimeout(this.glassTimer);
+    const c = this.root.classList;
+    if (mode === 'blur') {
+      c.add('blur-layer');
+      // next frame, so the opacity transition runs from 0
+      requestAnimationFrame(() => {
+        if (this.glass === 'blur') c.add('blur-on');
+      });
+    } else {
+      c.remove('blur-on');
+      this.glassTimer = window.setTimeout(() => {
+        if (this.glass === 'fake') c.remove('blur-layer');
+      }, 450);
     }
-    this.knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    const k = 1 / STICK_RADIUS;
-    // small dead zone so a resting thumb doesn't creep
-    const mx = dx * k;
-    const my = -dy * k;
-    const m = Math.hypot(mx, my);
-    const s = m < 0.12 ? 0 : (m - 0.12) / 0.88 / m;
-    this.moveX = mx * s;
-    this.moveY = my * s;
+  }
+
+  get glassMode(): GlassMode {
+    return this.glass;
+  }
+
+  /** Where things go: the default layout for this screen + handedness. */
+  relayout(): void {
+    const w = innerWidth;
+    const hgt = innerHeight;
+    const cs = getComputedStyle(this.safeProbe);
+    const safe: Insets = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
+    this.base = stickBase(w, hgt, this.look.size);
+    const lay = defaultLayout(w, hgt, this.look.size, safe, this.look.leftHanded);
+    this.layout = lay;
+    const s = buttonSizes(this.base);
+    const place = (el: HTMLElement, p: { x: number; y: number }, d: number): void => {
+      el.style.setProperty('--x', `${p.x}px`);
+      el.style.setProperty('--y', `${p.y}px`);
+      el.style.setProperty('--d', `${d}px`);
+    };
+    place(this.jump, lay.jump, s.jump);
+    place(this.slide, lay.slide, s.slide);
+    place(this.pause, lay.pause, s.pause);
+    // thumb zones: the stick side and the camera side (below the top HUD band)
+    const half = `${Math.round(w * 0.5)}px`;
+    const zs = this.zoneStick.style;
+    const zl = this.zoneLook.style;
+    zs.top = zl.top = `${Math.round(hgt * ZONE_TOP)}px`;
+    zs.width = zl.width = half;
+    zs.left = this.look.leftHanded ? half : '0px';
+    zl.left = this.look.leftHanded ? '0px' : half;
+    if (this.look.fixedStick && this.stickId < 0) {
+      this.cx = lay.stick.x;
+      this.cy = lay.stick.y;
+      this.stick.classList.remove('gone');
+      this.stick.classList.add('idle');
+    } else if (!this.look.fixedStick && this.stickId < 0) {
+      this.stick.classList.add('gone');
+    }
+    this.schedule();
+  }
+
+  private setKnob(dx: number, dy: number): void {
+    const travel = this.base * TRAVEL;
+    const r = stickResponse(dx, dy, travel, this.reading);
+    this.moveX = r.x;
+    this.moveY = r.y;
+    const l = Math.hypot(dx, dy);
+    const k = l > travel ? travel / l : 1;
+    this.kx = dx * k;
+    this.ky = dy * k;
+    this.schedule();
+  }
+
+  private releaseStick(): void {
+    this.moveX = this.moveY = 0;
+    this.reading.raw = this.reading.mag = 0;
+    this.kx = this.ky = 0;
+    this.stick.classList.remove('active');
+    // the bead springs back to the centre
+    this.knob.classList.add('back');
+    if (this.look.fixedStick) this.stick.classList.add('idle');
+    else {
+      clearTimeout(this.hideTimer);
+      this.hideTimer = window.setTimeout(() => {
+        if (this.stickId < 0 && !this.look.fixedStick) this.stick.classList.add('gone');
+      }, this.look.reducedMotion ? 0 : 170);
+    }
+    this.schedule();
+  }
+
+  /** Batch DOM writes into the next animation frame (pointer events can outpace frames). */
+  private schedule(): void {
+    this.painted = false;
+    if (this.raf) return;
+    this.raf = requestAnimationFrame(() => {
+      this.raf = 0;
+      this.paint();
+    });
+  }
+
+  private paint(): void {
+    if (this.painted) return;
+    this.painted = true;
+    const s = this.stick.style;
+    s.setProperty('--sx', `${this.cx}px`);
+    s.setProperty('--sy', `${this.cy}px`);
+    s.setProperty('--ang', `${this.reading.ang}deg`);
+    s.setProperty('--mag', String(Math.min(1, this.reading.raw * 1.15)));
+    const k = this.knob.style;
+    k.setProperty('--kx', `${this.kx}px`);
+    k.setProperty('--ky', `${this.ky}px`);
+    // the highlight slides the other way, like light on a glass bead
+    const travel = this.base * TRAVEL;
+    k.setProperty('--hx', `${38 - (this.kx / travel) * 12}%`);
+    k.setProperty('--hy', `${30 - (this.ky / travel) * 12}%`);
+  }
+
+  /** Thea took damage: the stick rim flashes (≤ 3 Hz; shape + brightness, not only colour). */
+  hurt(): void {
+    const now = performance.now();
+    if (now - this.lastHurt < minInterval('stickHurt') * 1000) return;
+    this.lastHurt = now;
+    const c = this.stick.classList;
+    c.remove('hurt');
+    // restart the pulse animation
+    void this.stick.offsetWidth;
+    c.add('hurt');
+    clearTimeout(this.hurtTimer);
+    this.hurtTimer = window.setTimeout(() => c.remove('hurt'), 260);
+  }
+
+  /** Sliding fast: the rim glows, chevrons point along the movement (degrees from screen up). */
+  setFast(on: boolean, angleDeg: number): void {
+    if (on) this.stick.style.setProperty('--mang', `${angleDeg.toFixed(0)}deg`);
+    if (on === this.fast) return;
+    this.fast = on;
+    this.stick.classList.toggle('fast', on);
+  }
+
+  private ripple(btn: HTMLElement, e: PointerEvent): void {
+    if (this.look.reducedMotion) return;
+    const clip = btn.firstElementChild as HTMLElement | null;
+    if (!clip) return;
+    const r = btn.getBoundingClientRect();
+    const dot = h('span', { class: 'g-ripple', style: `left:${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%;top:${(((e.clientY - r.top) / r.height) * 100).toFixed(1)}%` });
+    clip.replaceChildren(dot);
+    dot.addEventListener('animationend', () => dot.remove());
   }
 
   setVisible(on: boolean): void {
+    const was = !this.root.classList.contains('hidden');
     this.root.classList.toggle('hidden', !on);
     if (!on) this.reset();
+    else if (!was) this.relayout();
   }
 
-  /** Forget every touch (run ended, screen opened). */
+  get visible(): boolean {
+    return !this.root.classList.contains('hidden');
+  }
+
+  /** Forget every touch (run ended, screen opened, input switched). */
   reset(): void {
-    this.stickId = this.lookId = -1;
+    this.stickId = this.lookId = this.jumpId = this.slideId = -1;
     this.moveX = this.moveY = 0;
     this.lookDX = this.lookDY = 0;
     this.jumpQueued = this.jumpHeld = false;
     this.slideHeld = false;
-    this.slideBtn.classList.remove('down');
-    this.base.classList.add('hidden');
+    this.kx = this.ky = 0;
+    this.reading.raw = this.reading.mag = 0;
+    this.jump.classList.remove('down');
+    this.slide.classList.remove('down', 'latched');
+    this.stick.classList.remove('active', 'hurt', 'fast');
+    this.fast = false;
+    if (this.look.fixedStick) this.stick.classList.add('idle');
+    else this.stick.classList.add('gone');
+    this.schedule();
   }
 
   /** The game reports a slide ended (a toggled slide switches off). */
   slideEnded(): void {
     if (!this.slideToggle) return;
     this.slideHeld = false;
-    this.slideBtn.classList.remove('down');
+    this.slide.classList.remove('latched');
+  }
+
+  /** A finger is turning the camera right now. */
+  get looking(): boolean {
+    return this.lookId >= 0;
   }
 
   consumeJump(): boolean {

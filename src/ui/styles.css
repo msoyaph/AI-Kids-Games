@@ -2365,97 +2365,6 @@ html.high-contrast .modal {
   display: none;
 }
 
-.tzone {
-  position: absolute;
-  top: 18%;
-  bottom: 0;
-  pointer-events: auto;
-  touch-action: none;
-}
-
-.tzone-left {
-  left: 0;
-  width: 45%;
-}
-
-.tzone-right {
-  right: 0;
-  width: 55%;
-}
-
-.tstick {
-  position: absolute;
-  width: 8rem;
-  height: 8rem;
-  margin: -4rem 0 0 -4rem;
-  border-radius: 50%;
-  background: rgba(255, 248, 236, 0.12);
-  box-shadow: inset 0 0 0 0.2rem rgba(255, 248, 236, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.tstick.hidden {
-  display: none;
-}
-
-.tstick-knob {
-  width: 3.4rem;
-  height: 3.4rem;
-  border-radius: 50%;
-  background: rgba(255, 248, 236, 0.75);
-  box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.35);
-}
-
-.tbtn {
-  position: absolute;
-  pointer-events: auto;
-  touch-action: none;
-  font: inherit;
-  font-weight: 900;
-  color: var(--ink);
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 248, 236, 0.82);
-  box-shadow: 0 0.3rem 0 rgba(0, 0, 0, 0.3);
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-
-.tbtn.down {
-  background: var(--accent);
-  transform: translateY(0.15rem);
-  box-shadow: 0 0.1rem 0 rgba(0, 0, 0, 0.3);
-}
-
-.tbtn-jump {
-  width: 6rem;
-  height: 6rem;
-  right: calc(1.4rem + env(safe-area-inset-right));
-  bottom: calc(5.5rem + env(safe-area-inset-bottom));
-  font-size: 1.15rem;
-}
-
-.tbtn-slide {
-  width: 4.6rem;
-  height: 4.6rem;
-  right: calc(8.4rem + env(safe-area-inset-right));
-  bottom: calc(3.4rem + env(safe-area-inset-bottom));
-  font-size: 0.95rem;
-}
-
-.tbtn-pause {
-  width: 3.2rem;
-  height: 3.2rem;
-  right: calc(1rem + env(safe-area-inset-right));
-  top: calc(5.6rem + env(safe-area-inset-top));
-  font-size: 1rem;
-  letter-spacing: -0.1em;
-}
-
 /* HUD out of the thumbs' way, inside the notch / rounded corners */
 html.touch .hud-br {
   display: none;
@@ -2467,7 +2376,8 @@ html.touch .hud-tl {
 }
 
 html.touch .hud-tr {
-  right: max(0.8rem, env(safe-area-inset-right));
+  /* the glass Pause button owns the top-right corner (48 px + 10 px) */
+  right: calc(max(0.8rem, env(safe-area-inset-right)) + 58px);
   top: max(0.8rem, env(safe-area-inset-top));
 }
 
