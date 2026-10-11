@@ -283,32 +283,54 @@ export class InputManager {
     }
   }
 
+  /** The device a local player is using right now. */
+  deviceOf(player: number): Device {
+    const src = this.players[player] ?? { kind: 'any' };
+    return src.kind === 'gamepad' || src.kind === 'combo' ? 'gamepad' : src.kind === 'touch' ? 'touch' : src.kind === 'keyboard' ? 'keyboard' : this.lastDevice;
+  }
+
   /**
-   * Haptics for one local player: gamepad dual-rumble when they play on a pad, `navigator.vibrate` on touch
-   * phones that support it (Android). Magnitudes 0..1. Silently does nothing elsewhere.
+   * Gamepad dual-rumble for one local player (magnitudes 0..1). Silently does nothing on other devices; touch
+   * phones get their own short, sparing pulses through `buzz()`.
    */
   rumble(player: number, strong: number, weak: number, ms: number): void {
-    if (!this.rumbleOn) return;
+    if (!this.rumbleOn || this.deviceOf(player) !== 'gamepad') return;
     const now = performance.now();
     if (now - this.lastRumble < 45) return;
     this.lastRumble = now;
     const src = this.players[player] ?? { kind: 'any' };
-    const device: Device = src.kind === 'gamepad' || src.kind === 'combo' ? 'gamepad' : src.kind === 'touch' ? 'touch' : src.kind === 'keyboard' ? 'keyboard' : this.lastDevice;
     try {
-      if (device === 'gamepad') {
-        const idx = src.kind === 'gamepad' || src.kind === 'combo' ? src.index : this.lastPad[player];
-        const pad = idx >= 0 ? navigator.getGamepads?.()[idx] : null;
-        const act = (pad as (Gamepad & { vibrationActuator?: { playEffect?: (t: string, p: object) => Promise<unknown> } }) | null)?.vibrationActuator;
-        void act?.playEffect?.('dual-rumble', { startDelay: 0, duration: ms, strongMagnitude: Math.min(1, strong), weakMagnitude: Math.min(1, weak) })?.catch(() => {});
-      } else if (device === 'touch' && typeof navigator.vibrate === 'function') {
-        // only after the player has touched the page (browsers block it otherwise)
-        const ua = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
-        if (!ua || ua.hasBeenActive) navigator.vibrate(Math.round(ms * Math.max(0.3, Math.max(strong, weak))));
-      }
+      const idx = src.kind === 'gamepad' || src.kind === 'combo' ? src.index : this.lastPad[player];
+      const pad = idx >= 0 ? navigator.getGamepads?.()[idx] : null;
+      const act = (pad as (Gamepad & { vibrationActuator?: { playEffect?: (t: string, p: object) => Promise<unknown> } }) | null)?.vibrationActuator;
+      void act?.playEffect?.('dual-rumble', { startDelay: 0, duration: ms, strongMagnitude: Math.min(1, strong), weakMagnitude: Math.min(1, weak) })?.catch(() => {});
     } catch {
       /* haptics are optional */
     }
   }
+
+  /** Vibrations actually sent (for tests; `navigator.vibrate` can't be observed otherwise). */
+  buzzCount = 0;
+
+  /**
+   * A short vibration for a touch player (Android, where `navigator.vibrate` exists). iOS has no web vibration, so
+   * this quietly does nothing there. Only after the player has touched the page (browsers block it otherwise).
+   */
+  buzz(player: number, ms: number): void {
+    if (!this.rumbleOn || this.deviceOf(player) !== 'touch' || typeof navigator.vibrate !== 'function') return;
+    const now = performance.now();
+    if (now - this.lastBuzz < 80) return;
+    const ua = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+    if (ua && !ua.hasBeenActive) return;
+    this.lastBuzz = now;
+    try {
+      if (navigator.vibrate(Math.round(ms))) this.buzzCount++;
+    } catch {
+      /* haptics are optional */
+    }
+  }
+
+  private lastBuzz = 0;
 
   private padAction(p: Gamepad, list: number[]): boolean {
     for (let i = 0; i < list.length; i++) if (p.buttons[list[i]]?.pressed) return true;

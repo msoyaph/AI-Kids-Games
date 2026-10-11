@@ -100,7 +100,11 @@ Decisions: tablets may race in portrait, phones keep the rotate screen; vibratio
   Settings v3 (`touchSteer` joystick|buttons|tilt, `touch` config; old 'buttons' → 'joystick'). Left-handed moves
   the touch minimap right (`.hud.touch.lefty`). In a race the controls measure the real HUD boxes. Sim:
   `DriverStyle.steerMap` (test-only device model), tests/sim/touchAssist.test.ts; unit: tests/unit/touch.test.ts.
-- [ ] Step 3 — glass buttons, feel, haptics
+- [x] Step 3 — glass buttons (pressed: sink + brighten + ripple; GO countdown pulse; ITEM shows the held item via
+  `TouchControls.setRaceState(tier, item, rolling)` from `RaceSession.render`), drift tier ring + badge on the
+  stick/pads. Haptics: `InputManager.rumble` is now gamepad-only (unchanged for pads); new `InputManager.buzz`
+  (touch only, `navigator.vibrate`, ≥ 80 ms apart, `buzzCount` for tests) on drift tier up 18 ms, item hit 40 ms
+  (not goo/cloud), landing impact > 9 25 ms. On/off = `settings.rumble` ("Rumble & vibration").
 - [ ] Step 4 — Touch settings tab, layout editor, tablet portrait
 - [ ] Step 5 — performance (blur measurement, fake/real policy, crossfade)
 - [ ] Step 6 — accessibility

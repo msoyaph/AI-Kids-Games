@@ -332,6 +332,14 @@ export class RaceSession {
     if (i >= 0) this.ctx.input.rumble(i, strong, weak, ms);
   }
 
+  /** Touch haptics stay short and few: drift tier up, being hit by an item, a big landing. */
+  private buzz(kart: number, ms: number): void {
+    const i = this.locals.indexOf(kart);
+    if (i >= 0) this.ctx.input.buzz(i, ms);
+  }
+
+  private lastTier: number[] = [];
+
   private onEvent = (e: SimEvent): void => {
     this.replayRec?.event(e);
     this.view.onEvent(e);
@@ -343,6 +351,7 @@ export class RaceSession {
     // ---- impact feel: hit-stop, camera kick, rumble
     switch (e.type) {
       case 'itemHit':
+        if (e.effect !== 'goo' && e.effect !== 'cloud') this.buzz(e.kart, 40);
         if (this.locals.includes(e.kart)) {
           this.hitStop(0.085);
           this.view.kick(e.kart, e.effect === 'tumble' ? 0.9 : 0.65);
@@ -360,6 +369,7 @@ export class RaceSession {
         this.feel(e.other, 0.2 * e.strength, 0.4 * e.strength, 70);
         break;
       case 'land':
+        if (e.impact > 9) this.buzz(e.kart, 25);
         if (e.impact > 9) {
           this.view.kick(e.kart, 0.25);
           this.feel(e.kart, 0.35, 0.25, 90);
@@ -586,6 +596,13 @@ export class RaceSession {
     }
     this.ctx.audio.update(w, this.locals, dt);
     this.ctx.input.touch.setCountdown(w.phase === 'countdown' || w.phase === 'intro');
+    // drift tier up → a tiny tick on touch phones (the same moment the sparks change colour)
+    for (const i of this.locals) {
+      const k = w.karts[i];
+      const tier = k.drifting ? k.driftTier : 0;
+      if (tier > (this.lastTier[i] ?? 0)) this.buzz(i, 18);
+      this.lastTier[i] = tier;
+    }
     if (this.ctx.input.touch.shown) {
       // drift tier on the stick ring + the held item inside the ITEM glass (dirty-checked inside)
       const k = w.karts[this.locals[0]];
