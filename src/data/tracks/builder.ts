@@ -154,3 +154,13 @@ export function offset(p: MarkPos, fwd: number, right: number, y?: number): { x:
   const rz = fx;
   return { x: round(p.x + fx * fwd + rx * right), z: round(p.z + fz * fwd + rz * right), y: y ?? p.y };
 }
+
+/** Point a fraction `t` of the way from mark a to mark b (plus a lateral nudge relative to a→b, + = right). */
+export function between(a: MarkPos, b: MarkPos, t: number, right = 0, y?: number): { x: number; z: number; y: number } {
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const len = Math.hypot(dx, dz) || 1;
+  const rx = -dz / len;
+  const rz = dx / len;
+  return { x: round(a.x + dx * t + rx * right), z: round(a.z + dz * t + rz * right), y: y ?? round(a.y + (b.y - a.y) * t) };
+}

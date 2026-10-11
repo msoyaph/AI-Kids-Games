@@ -105,7 +105,7 @@ export function buildTrackProps(track: TrackModel, seed: string): { group: THREE
         let y: number;
         const beyond = off - B;
         const roadY = rb.py[i] + rb.ry[i] * B * side;
-        if (edge === EDGE_DROP || !hasGround) {
+        if (edge === EDGE_DROP || !hasGround || track.data.verge === false) {
           // floating tracks: only place props when there's real ground below, otherwise skip
           if (!hasGround) continue;
           y = groundY;

@@ -130,6 +130,7 @@ export class ArenaModel implements GroundModel {
     out.ramp = RAMP_NONE;
     out.ribbon = 0;
     out.sample = 0;
+    out.ribbonT = 0;
     const R = TUNING.kartRadius;
 
     // platforms (raised floors)

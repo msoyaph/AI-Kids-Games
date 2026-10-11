@@ -618,6 +618,7 @@ export class TrackModel implements GroundModel {
     out.ribbon = bestRibbon;
     out.sample = i;
     out.s = bestRibbon === 0 ? best.s : shortcutS;
+    out.ribbonT = bestRibbon === 0 ? 0 : best.s / this.shortcuts[bestRibbon - 1].length;
     out.d = best.d;
     out.halfWidth = best.hw;
     out.dirX = best.dirX;

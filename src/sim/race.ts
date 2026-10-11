@@ -73,13 +73,15 @@ export class RaceTracker {
       if (k.grounded && g.hit && Math.abs(g.d) < g.halfWidth + 1 && g.ribbon === 0) k.safeS = s;
       else if (k.grounded && g.hit && g.ribbon > 0) k.safeS = s;
 
-      // shortcut stat: entering a shortcut ribbon
-      if (g.ribbon > 0 && k.grounded && k.ribbonEntered !== g.ribbon) {
-        k.ribbonEntered = g.ribbon;
+      // shortcut stat: counted once per shortcut per lap, when past its middle
+      if (k.shortcutLap !== k.lapsDone) {
+        k.shortcutLap = k.lapsDone;
+        k.shortcutMask = 0;
+      }
+      if (g.ribbon > 0 && g.ribbonT > 0.35 && g.ribbonT < 0.65 && !(k.shortcutMask & (1 << g.ribbon))) {
+        k.shortcutMask |= 1 << g.ribbon;
         k.raceStats.shortcuts++;
         w.events.push({ type: 'shortcut', kart: k.index });
-      } else if (g.ribbon === 0 && Math.abs(g.d) < g.halfWidth) {
-        k.ribbonEntered = 0;
       }
 
       // wrong way: moving against the track direction for a while

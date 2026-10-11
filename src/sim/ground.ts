@@ -38,6 +38,8 @@ export interface GroundHit {
   ramp: number;
   ribbon: number;
   sample: number;
+  /** 0..1 position along a shortcut ribbon (0 on the main road). */
+  ribbonT: number;
 }
 
 export function makeGroundHit(): GroundHit {
@@ -62,6 +64,7 @@ export function makeGroundHit(): GroundHit {
     ramp: RAMP_NONE,
     ribbon: 0,
     sample: 0,
+    ribbonT: 0,
   };
 }
 

@@ -37,6 +37,8 @@ export class AiDriver {
   private shortcut = -1;
   private shortcutDecided = new Set<number>();
   private scIndex = 0;
+  /** Seconds spent trying to get onto the chosen shortcut. */
+  private scTry = 0;
   private startPressAt: number;
   /** Pace (fraction of top speed this driver aims for on straights). */
   readonly pace: number;
@@ -100,8 +102,13 @@ export class AiDriver {
     }
     this.lane += (this.laneTarget - this.lane) * Math.min(1, dt * 0.8);
 
-    // --- shortcut decisions
+    // --- shortcut decisions (and adopt one we got bumped onto)
     this.considerShortcuts();
+    if (this.shortcut < 0 && k.ground.ribbon > 0 && k.grounded) {
+      this.shortcut = k.ground.ribbon - 1;
+      this.scIndex = 0;
+      this.scTry = 0;
+    }
 
     // --- target point
     const look = 7 + speed * 0.42;
@@ -113,7 +120,10 @@ export class AiDriver {
       const j = Math.min(sc.n - 1, this.scIndex + Math.round(look / sc.ds));
       tx = sc.px[j];
       tz = sc.pz[j];
-      if (this.scIndex >= sc.n - 3 || (k.ground.ribbon === 0 && this.scIndex > sc.n * 0.6)) this.shortcut = -1;
+      if (k.ground.ribbon === this.shortcut + 1) this.scTry = 0;
+      else this.scTry += dt;
+      // give up if we can't get onto it (blocked, knocked off line…)
+      if (this.scIndex >= sc.n - 3 || (k.ground.ribbon === 0 && this.scIndex > sc.n * 0.6) || this.scTry > 2.5) this.shortcut = -1;
     } else {
       const j = rb.idx(i + Math.round(look / rb.ds));
       this.updateAvoidance(i, j);
@@ -244,6 +254,7 @@ export class AiDriver {
         if (this.rng.chance(p)) {
           this.shortcut = r;
           this.scIndex = 0;
+          this.scTry = 0;
           this.wantDrift = false;
         }
       }

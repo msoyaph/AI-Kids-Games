@@ -137,7 +137,7 @@ export interface TrackMeshes {
 export function buildTrackMeshes(track: TrackModel): TrackMeshes {
   const pal = track.data.palette;
   const groundY = track.data.sky.groundY ?? track.minY - 0.5;
-  const hasGround = track.data.sky.ground !== null;
+  const hasGround = track.data.sky.ground !== null && track.data.verge !== false;
   const w = new GeoWriter();
   const pads = new GeoWriter();
   buildRibbon(w, pads, track.main, pal, groundY, hasGround, false);
@@ -348,7 +348,7 @@ function buildSupports(track: TrackModel, groundY: number): THREE.Mesh | null {
     const yawDeg = (Math.atan2(rb.tx[i], rb.tz[i]) * 180) / Math.PI;
     const cx = rb.px[i];
     const cz = rb.pz[i];
-    const w = rb.hw[i] * 2 + 1.2;
+    const w = rb.hw[i] * 2 + rb.shL[i] + rb.shR[i] + 1.2;
     if (sup.kind === 'blocks') {
       const c = k % 2 ? sup.color : sup.color2 ?? sup.color;
       geos.push(prim('box', c, [cx, bottom + h / 2, cz], [w, h, step * rb.ds + 0.4], [0, yawDeg, 0]));

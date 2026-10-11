@@ -369,6 +369,8 @@ export interface TrackData {
   props?: PropPlacement[];
   /** Song id from data/songs.ts. */
   music: string;
+  /** Draw sloped terrain verges from the road down to the ground plane (default true). */
+  verge?: boolean;
   /** Structures drawn under elevated road (bridges, buildings, floating rock). */
   supports?: { kind: 'pillars' | 'blocks' | 'rock'; color: number; color2?: number };
 }
