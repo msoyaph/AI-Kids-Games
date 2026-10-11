@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#2b1d6b" />
+    <meta name="description" content="Calex Cart — a bright, original 3D kart racer for ages 10–14." />
+    <title>Calex Cart</title>
+    <style>
+      /* Loading screen styles are inline so they paint before the game script parses. */
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #2b1d6b; }
+      body { font-family: "Trebuchet MS", "Segoe UI", "Arial Rounded MT Bold", system-ui, sans-serif; color: #fff;
+        -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; overscroll-behavior: none; }
+      #boot { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: radial-gradient(circle at 50% 35%, #6a4cff 0%, #3a2696 45%, #1d1250 100%); transition: opacity .45s ease; }
+      #boot.done { opacity: 0; pointer-events: none; }
+      #boot .logo { font-size: clamp(38px, 9vw, 92px); font-weight: 900; letter-spacing: .04em; line-height: 1; text-align: center;
+        text-shadow: 0 6px 0 #1a0f45, 0 10px 24px rgba(0,0,0,.35); }
+      #boot .logo span { display: inline-block; animation: bounce 1.2s ease-in-out infinite; }
+      #boot .logo .c1 { color: #ffd23f; } #boot .logo .c2 { color: #4ce0d2; } #boot .logo .c3 { color: #ff6fae; } #boot .logo .c4 { color: #8cff6b; }
+      @keyframes bounce { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+      #boot .road { position: relative; width: min(76vw, 520px); height: 64px; margin-top: 4vh; }
+      #boot .track { position: absolute; left: 0; right: 0; bottom: 6px; height: 16px; border-radius: 9px; background: #1a0f45; overflow: hidden;
+        box-shadow: inset 0 2px 0 rgba(0,0,0,.4); }
+      #boot .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 9px; transition: width .2s ease;
+        background: repeating-linear-gradient(-45deg, #ffd23f 0 12px, #ff9f1c 12px 24px); background-size: 34px 34px; animation: stripes .6s linear infinite; }
+      @keyframes stripes { from { background-position: 0 0 } to { background-position: 34px 0 } }
+      #boot .kart { position: absolute; bottom: 18px; left: 0%; width: 58px; height: 34px; transform: translateX(-50%); transition: left .2s ease; }
+      #boot .kart .body { position: absolute; left: 4px; right: 4px; bottom: 9px; height: 15px; background: #ff4d6d; border-radius: 8px 14px 5px 5px;
+        box-shadow: inset 0 -4px 0 rgba(0,0,0,.25); animation: rumble .18s linear infinite; }
+      #boot .kart .head { position: absolute; left: 20px; bottom: 20px; width: 15px; height: 15px; border-radius: 50%; background: #ffd9a8;
+        box-shadow: inset 0 5px 0 #3fa7ff; animation: rumble .18s linear infinite; }
+      #boot .kart .w { position: absolute; bottom: 0; width: 15px; height: 15px; border-radius: 50%; background: #222; border: 3px solid #555; box-sizing: border-box;
+        animation: spin .3s linear infinite; }
+      #boot .kart .w1 { left: 4px } #boot .kart .w2 { right: 4px }
+      #boot .kart .puff { position: absolute; left: -10px; bottom: 6px; width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.6); animation: puff .5s ease-out infinite; }
+      @keyframes rumble { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-1.5px) } }
+      @keyframes spin { to { transform: rotate(360deg) } }
+      @keyframes puff { from { transform: translate(0,0) scale(.6); opacity: .9 } to { transform: translate(-22px,-6px) scale(1.6); opacity: 0 } }
+      #boot .pct { margin-top: 10px; font-size: 15px; font-weight: 700; opacity: .85; }
+      #boot .tip { margin-top: 3vh; max-width: min(86vw, 560px); min-height: 2.6em; text-align: center; font-size: clamp(14px, 2.2vw, 18px); line-height: 1.3;
+        color: #e7e0ff; transition: opacity .3s ease; }
+      #boot .err { display: none; margin-top: 16px; max-width: 80vw; padding: 12px 16px; border-radius: 12px; background: #ff4d6d; color: #fff; font-weight: 700; text-align: center; }
+      #boot.failed .err { display: block; }
+      #app { position: fixed; inset: 0; }
+      #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="gl" tabindex="0" aria-label="Calex Cart game view"></canvas>
+      <div id="ui"></div>
+    </div>
+    <div id="boot" role="status" aria-live="polite">
+      <div class="logo" aria-label="Calex Cart">
+        <span class="c1">C</span><span class="c2" style="animation-delay:.08s">A</span><span class="c3" style="animation-delay:.16s">L</span><span class="c4" style="animation-delay:.24s">E</span><span class="c1" style="animation-delay:.32s">X</span>
+        <br />
+        <span class="c3" style="animation-delay:.4s">C</span><span class="c4" style="animation-delay:.48s">A</span><span class="c2" style="animation-delay:.56s">R</span><span class="c1" style="animation-delay:.64s">T</span>
+      </div>
+      <div class="road">
+        <div class="kart" id="boot-kart"><div class="puff"></div><div class="body"></div><div class="head"></div><div class="w w1"></div><div class="w w2"></div></div>
+        <div class="track"><div class="fill" id="boot-fill"></div></div>
+      </div>
+      <div class="pct" id="boot-pct">Warming up engines… 0%</div>
+      <div class="tip" id="boot-tip">Tip: Hold drift through a turn until the sparks turn pink for the biggest boost!</div>
+      <div class="err" id="boot-err">Oops! Your browser couldn't start the 3D engine. Try a different browser or turn on hardware acceleration.</div>
+    </div>
+    <script>
+      // Tiny pre-boot helper so the loading screen animates while the game bundle parses.
+      (function () {
+        var tips = [
+          'Tip: Hold drift through a turn until the sparks turn pink for the biggest boost!',
+          'Tip: Press drift right as you fly off a ramp to do a trick and land with a boost.',
+          'Tip: Tap accelerate when the countdown light turns green for a rocket start.',
+          'Tip: Hold an item behind you to block things thrown at your tail.',
+          'Tip: A shield bubble pops paper planes before they reach you.',
+          'Tip: Every track hides a risky shortcut. Find it in Time Trial first!',
+          'Tip: Goo puddles are slippery. Steer around the shiny purple blobs.',
+          'Tip: Racers at the back get bigger helpers from item boxes.'
+        ];
+        var i = Math.floor(Math.random() * tips.length);
+        var tipEl = document.getElementById('boot-tip');
+        tipEl.textContent = tips[i];
+        var timer = setInterval(function () {
+          i = (i + 1) % tips.length; tipEl.style.opacity = '0';
+          setTimeout(function () { tipEl.textContent = tips[i]; tipEl.style.opacity = '1'; }, 300);
+        }, 3200);
+        window.__boot = {
+          set: function (p, label) {
+            var pct = Math.max(0, Math.min(100, Math.round(p * 100)));
+            document.getElementById('boot-fill').style.width = pct + '%';
+            document.getElementById('boot-kart').style.left = pct + '%';
+            document.getElementById('boot-pct').textContent = (label || 'Loading') + '… ' + pct + '%';
+          },
+          done: function () {
+            clearInterval(timer);
+            var b = document.getElementById('boot');
+            b.classList.add('done');
+            setTimeout(function () { b.style.display = 'none'; }, 500);
+          },
+          fail: function (msg) {
+            clearInterval(timer);
+            var b = document.getElementById('boot');
+            b.classList.add('failed');
+            if (msg) document.getElementById('boot-err').textContent = msg;
+          }
+        };
+        window.__boot.set(0.05, 'Warming up engines');
+      })();
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
