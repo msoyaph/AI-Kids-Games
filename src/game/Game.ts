@@ -20,7 +20,7 @@ import { UI } from '../ui/UI';
 const MAX_STEPS_PER_FRAME = 5;
 const MENU_SEED = 1337;
 
-export type SoundName = 'click' | 'buy' | 'error' | 'back' | 'open';
+export type SoundName = 'click' | 'buy' | 'error' | 'back' | 'open' | 'achievement';
 
 /**
  * Application root: owns renderer, input, UI, save data and the active run.
@@ -38,6 +38,8 @@ export class Game implements GameApi {
   onSound: ((name: SoundName) => void) | null = null;
   /** Called every frame with the world events before they are cleared (audio). */
   onEvents: ((w: World) => void) | null = null;
+  /** Called once per rendered frame (music scheduling). */
+  onFrame: (() => void) | null = null;
   /** Called when entering/leaving a run (music). */
   onMode: ((mode: 'menu' | 'run' | 'paused' | 'end', w: World | null) => void) | null = null;
 
@@ -290,6 +292,7 @@ export class Game implements GameApi {
   private liveAchievements(w: World): void {
     const earned = checkAchievements(this.save.data, summarize(w));
     if (earned.length === 0) return;
+    this.sound('achievement');
     for (const a of earned) {
       this.ui.hud.toast('Achievement unlocked', `${a.name} — ${rewardText(a)}`);
       if (a.reward.weapon) w.unlockedWeapons.add(a.reward.weapon);
@@ -386,6 +389,7 @@ export class Game implements GameApi {
     } else {
       this.renderer.renderMenu(dt);
     }
+    this.onFrame?.();
     this.frameMs = this.frameMs * 0.9 + (performance.now() - t0) * 0.1;
     this.updateDebug(dt);
   };

@@ -23,7 +23,7 @@ export interface GameApi {
   /** Drop the finished run so menus get the idle backdrop again. */
   clearRun(): void;
   resume(): void;
-  sound(name: 'click' | 'buy' | 'error' | 'back' | 'open'): void;
+  sound(name: 'click' | 'buy' | 'error' | 'back' | 'open' | 'achievement'): void;
 }
 
 /** Icon used for each shop upgrade (reuses passive glyphs). */

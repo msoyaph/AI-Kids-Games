@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RUN_LENGTH } from '../config/balance';
 import type { CharacterDef } from '../config/types';
 import { lerp } from '../core/math';
 import type { Terrain } from '../sim/terrain';
@@ -11,12 +12,11 @@ import { PickupRenderer } from './PickupRenderer';
 import { PlayerView } from './PlayerView';
 import { ProjectileRenderer } from './ProjectileRenderer';
 import { ShrineRenderer } from './ShrineRenderer';
+import { Sky } from './Sky';
 import { buildWorldMesh } from './worldMesh';
 
 export type Quality = 'low' | 'medium' | 'high';
 
-const SKY_TOP = 0x5fb4f0;
-const SKY_HORIZON = 0xfce3c4;
 const FOG = 0xd9e9ef;
 
 /** Owns the WebGL context, scene graph, lights and all render subsystems. */
@@ -33,6 +33,7 @@ export class GameRenderer {
   readonly projectiles: ProjectileRenderer;
   readonly shrines = new ShrineRenderer();
   private sun: THREE.DirectionalLight;
+  private sky: Sky;
   private worldGroup: THREE.Group | null = null;
   private worldSeed = -1;
   terrain: Terrain | null = null;
@@ -49,7 +50,6 @@ export class GameRenderer {
 
     this.scene.background = new THREE.Color(FOG);
     this.scene.fog = new THREE.Fog(FOG, 55, 150);
-    this.scene.add(this.buildSky());
 
     const hemi = new THREE.HemisphereLight(0xdff1ff, 0x6a5a4a, 1.25);
     this.scene.add(hemi);
@@ -67,33 +67,13 @@ export class GameRenderer {
     this.sun.shadow.normalBias = 0.04;
     this.scene.add(this.sun);
     this.scene.add(this.sun.target);
+    this.sky = new Sky(this.scene, hemi, this.sun);
+    this.sky.setMenu();
     this.scene.add(this.playerView.root);
     this.fx = new Fx(this.particles, overlay, this.rig);
     this.projectiles = new ProjectileRenderer(this.particles);
     this.scene.add(this.enemies.group, this.pickups.group, this.projectiles.group, this.shrines.group, this.fx.group);
     this.setQuality(quality);
-  }
-
-  private buildSky(): THREE.Mesh {
-    const geo = new THREE.SphereGeometry(500, 16, 10);
-    const pos = geo.getAttribute('position') as THREE.BufferAttribute;
-    const col = new Float32Array(pos.count * 3);
-    const top = new THREE.Color(SKY_TOP);
-    const hor = new THREE.Color(SKY_HORIZON);
-    const c = new THREE.Color();
-    for (let i = 0; i < pos.count; i++) {
-      const t = Math.max(0, pos.getY(i) / 500);
-      c.copy(hor).lerp(top, Math.pow(t, 0.6));
-      col[i * 3] = c.r;
-      col[i * 3 + 1] = c.g;
-      col[i * 3 + 2] = c.b;
-    }
-    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    const mat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false });
-    const sky = new THREE.Mesh(geo, mat);
-    sky.name = 'sky';
-    sky.renderOrder = -10;
-    return sky;
   }
 
   setQuality(q: Quality): void {
@@ -149,8 +129,11 @@ export class GameRenderer {
   }
 
   private followSun(x: number, z: number): void {
-    this.sun.position.set(x + 40, 70, z + 25);
+    const e = this.sky.elev;
+    const horiz = 80 * (1 - e) + 15;
+    this.sun.position.set(x + horiz * 0.85, 20 + e * 70, z + horiz * 0.5);
     this.sun.target.position.set(x, 0, z);
+    this.sky.follow(x, z);
   }
 
   private setDynamicVisible(on: boolean): void {
@@ -164,6 +147,7 @@ export class GameRenderer {
   /** Gameplay frame: interpolate sim state by alpha. */
   renderGame(w: World, alpha: number, dt: number): void {
     this.setDynamicVisible(true);
+    this.sky.setRunProgress(Math.min(1, w.time / RUN_LENGTH));
     const p = w.player;
     const x = lerp(p.px, p.x, alpha);
     const y = lerp(p.py, p.y, alpha);
@@ -171,6 +155,23 @@ export class GameRenderer {
     const speed = Math.hypot(p.vx, p.vz);
     const gy = w.terrain.height(x, z);
     this.playerView.update(x, y, z, gy, p.yaw, speed, p.onGround, p.sliding, p.vy, dt, w.time, p.iframes > 0 || p.buffs.ward > 0);
+    // momentum feedback: wind streaks when moving fast, sparks when sliding
+    if (dt > 0 && speed > 11) {
+      const n = Math.min(3, (speed - 11) * 0.15 + Math.random());
+      for (let k = 0; k < n; k++) {
+        const side = (Math.random() - 0.5) * 1.6;
+        const cx = Math.cos(p.yaw);
+        const sx = Math.sin(p.yaw);
+        this.particles.emit(x + cx * side, y + 0.4 + Math.random() * 1.2, z - sx * side, -p.vx * 0.15, 0.2, -p.vz * 0.15, 0.35, 0.12, 0xeaf6ff, 0);
+      }
+    }
+    if (dt > 0 && p.sliding && p.onGround && speed > 4 && Math.random() < 0.6) {
+      this.particles.emit(x, y + 0.1, z, (Math.random() - 0.5) * 2, 1.5, (Math.random() - 0.5) * 2, 0.4, 0.18, 0xd8c8a8, 6);
+    }
+    if (p.buffs.ward > 0 && dt > 0 && Math.random() < 0.4) {
+      const a = Math.random() * Math.PI * 2;
+      this.particles.emit(x + Math.cos(a) * 1.1, y + Math.random() * 2, z + Math.sin(a) * 1.1, 0, 1.5, 0, 0.5, 0.14, 0xfff2a8, 0);
+    }
     this.rig.update(this.camera, x, y, z, speed, dt, w.terrain);
     this.followSun(x, z);
     const time = w.time + alpha / 60;
@@ -190,6 +191,7 @@ export class GameRenderer {
   /** Menu backdrop: slow orbit around the showcased character. */
   renderMenu(dt: number): void {
     this.setDynamicVisible(false);
+    this.sky.setMenu();
     this.menuT += dt;
     const t = this.terrain;
     const y = t ? t.height(0, 0) : 0;

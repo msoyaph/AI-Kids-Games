@@ -37,6 +37,7 @@ export class Hud {
   private bannerT = 0;
   private toasts: HTMLElement;
   private ghostHp = 1;
+  private lastLevel = 0;
   private lastBuffKey = '';
   private hurtVignette: HTMLElement;
   private prompt: HTMLElement;
@@ -98,6 +99,12 @@ export class Hud {
 
   show(on: boolean): void {
     this.root.classList.toggle('hidden', !on);
+    if (on) {
+      this.lastLevel = 0;
+      this.ghostHp = 1;
+      this.banner.classList.add('hidden');
+      this.toasts.innerHTML = '';
+    }
   }
 
   showBanner(text: string, boss = false): void {
@@ -143,6 +150,15 @@ export class Hud {
     setWidth(this.hpGhost, this.ghostHp);
     setText(this.hpText, `${Math.ceil(p.hp)} / ${Math.round(p.stats.maxHp)}`);
     this.hpFill.classList.toggle('low', hpFrac < 0.3);
+    this.hurtVignette.classList.toggle('low', hpFrac < 0.25 && p.alive);
+    if (p.level !== this.lastLevel) {
+      if (this.lastLevel > 0) {
+        this.level.classList.remove('bump');
+        void this.level.offsetWidth;
+        this.level.classList.add('bump');
+      }
+      this.lastLevel = p.level;
+    }
     setWidth(this.xpFill, p.xp / p.xpNext);
     setText(this.level, String(p.level));
     setText(this.timer, formatTime(w.time));

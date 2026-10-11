@@ -42,9 +42,9 @@ function buildGround(t: Terrain): THREE.Mesh {
   }
   const pos = new Float32Array(n * n * 6 * 3);
   const col = new Float32Array(n * n * 6 * 3);
-  const grassA = new THREE.Color(0x5aa64a);
-  const grassB = new THREE.Color(0x82c95e);
-  const dry = new THREE.Color(0xb5c65a);
+  const grassA = new THREE.Color(0x4a9440);
+  const grassB = new THREE.Color(0x72b552);
+  const dry = new THREE.Color(0xa8b85a);
   const dirt = new THREE.Color(0xa88a5c);
   const rock = new THREE.Color(0x8f8e9a);
   let p = 0;
