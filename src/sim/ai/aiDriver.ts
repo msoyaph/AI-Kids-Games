@@ -104,7 +104,7 @@ export class AiDriver {
 
     // --- shortcut decisions (and adopt one we got bumped onto)
     this.considerShortcuts();
-    if (this.shortcut < 0 && k.ground.ribbon > 0 && k.grounded) {
+    if (this.shortcut < 0 && k.ground.ribbon > 0 && k.grounded && k.ground.ribbonT > 0.2 && k.ground.ribbonT < 0.8) {
       this.shortcut = k.ground.ribbon - 1;
       this.scIndex = 0;
       this.scTry = 0;
