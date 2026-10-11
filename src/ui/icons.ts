@@ -451,7 +451,7 @@ export function iconUrl(id: string, kind: IconKind = 'weapon'): string {
   try {
     const c = document.createElement('canvas');
     c.width = c.height = S;
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d', { willReadFrequently: true });
     if (ctx) {
       const evolvedBase = EVOLVED_BASE[id];
       if (kind === 'locked') bg(ctx, '#3a3350', '#241e36', '#5a5070');
@@ -493,7 +493,7 @@ export function portraitUrl(id: string, colors: { primary: number; secondary: nu
   try {
     const c = document.createElement('canvas');
     c.width = c.height = S * 2;
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d', { willReadFrequently: true });
     if (ctx) {
       ctx.scale(2, 2);
       bg(ctx, hex(colors.primary), hex(colors.primary, 0.55), 'rgba(255,255,255,0.4)');

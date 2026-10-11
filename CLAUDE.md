@@ -63,5 +63,5 @@ Key rules:
 6. [x] Menus, characters, meta-progression, save system
 7. [x] Audio, juice, polish, settings
 8. [x] Performance pass (1000-enemy stress test)
-9. [ ] Unit tests + Playwright smoke test
+9. [x] Unit tests + Playwright smoke test
 10. [ ] Balance pass with simulated runs
