@@ -118,6 +118,7 @@ export const CSS = `
 .fade.on { opacity: 1; pointer-events: auto; }
 .fade .msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--paper); font-size: 1.3em; font-weight: 700; text-align: center; padding: 20px; }
 
+.lost { position: absolute; inset: 0; z-index: 90; background: rgba(13, 10, 20, .7); display: none; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; }
 .fps { position: absolute; left: 8px; bottom: 8px; padding: 4px 8px; font: 700 13px/1.2 ui-monospace, Menlo, monospace; pointer-events: none; white-space: pre; }
 
 @media (max-width: 520px), (max-height: 520px) {

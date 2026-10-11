@@ -143,6 +143,37 @@ export function interactAt(sim: Sim, x: number, y: number): InteractOutcome {
   return { type: 'none' };
 }
 
+/** Would tapping this tile with a hand do something? (no side effects) */
+export function canInteract(sim: Sim, x: number, y: number): boolean {
+  const loc = sim.here;
+  if (loc.triggerAt(x, y)) return true;
+  const a = loc.objAnchor(x, y);
+  if (!a) return false;
+  const { o, i } = a;
+  const ax = i % loc.w, ay = Math.floor(i / loc.w);
+  switch (o.k) {
+    case 'crop':
+      return isMature(o, loc, ax, ay);
+    case 'forage':
+    case 'chest':
+    case 'machine':
+    case 'beehouse':
+    case 'crabpot':
+    case 'gate':
+    case 'mineChest':
+    case 'heartstone':
+    case 'ladder':
+      return true;
+    case 'fruitTree':
+      return (o.n ?? 0) > 0;
+    case 'tree':
+      return !!o.tap?.out;
+    case 'bush':
+      return (o.n ?? 0) > 0;
+  }
+  return false;
+}
+
 /** Eat one of an item from the bag. */
 export function eat(sim: Sim, id: string): boolean {
   const d = tryItem(id);

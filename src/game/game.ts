@@ -13,6 +13,9 @@ import { Fx } from '../render/fx';
 import { createRenderer, type RenderHost } from '../render/renderer';
 import { WorldView } from '../render/world-view';
 import { Lighting } from '../render/lighting';
+import { AudioEngine } from '../audio/audio';
+import { Music, songFor } from '../audio/music';
+import { playSfx } from '../audio/sfx';
 import { WeatherFx } from '../render/weather';
 import { Sim } from '../sim';
 import type { NewGameOptions } from '../sim/newgame';
@@ -45,6 +48,8 @@ import { installCutscenes } from './cutscene';
 import { installStory } from './story';
 import { installFestivals } from './festival';
 import { installCollections } from './collections';
+import { installControls } from './controls';
+import { installTips } from './tips';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
 
 export interface GameOptions {
@@ -75,6 +80,8 @@ export interface GameHooks {
   afterDay: ((g: Game, next: () => void) => void)[];
   /** return true to stop going to bed (e.g. the finale must happen first) */
   beforeSleep?: (g: Game) => boolean;
+  /** automatic movement (tap-to-move); returns a direction or null */
+  autoMove?: (g: Game, dt: number) => { x: number; y: number } | null;
 }
 
 export const HOOKS: GameHooks = { trigger: {}, onEnter: [], onUpdate: [], onRender: [], onAttach: [], interactNearby: [], special: {}, inspect: [], pointerInteract: [], afterDay: [] };
@@ -98,6 +105,10 @@ export class Game implements MenuHost {
   ctl!: Controller;
   lighting!: Lighting;
   weather = new WeatherFx();
+  audio = new AudioEngine();
+  music = new Music(this.audio);
+  /** set by the festival module while the player is at a fair */
+  atFestival = false;
   fps = 60;
   // UI
   uiRoot!: HTMLElement;
@@ -147,6 +158,7 @@ export class Game implements MenuHost {
     this.view.top.addChild(this.ctl.layer);
     this.input.attachCanvas(this.host.app.canvas as HTMLCanvasElement);
     this.initUI();
+    this.applyAudioSettings();
     installVillagers(this);
     installAnimals(this);
     installMine(this);
@@ -156,7 +168,11 @@ export class Game implements MenuHost {
     installStory(this);
     installFestivals(this);
     installCollections(this);
+    installControls(this);
+    installTips(this);
     this.input.onAction = (a) => this.onRawAction(a);
+    this.host.onContextLost.push(() => this.contextLost());
+    this.host.onContextRestored.push(() => this.contextRestored());
     window.addEventListener('pagehide', () => this.suspend());
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') this.suspend();
@@ -356,8 +372,14 @@ export class Game implements MenuHost {
     return { x: (cssX * dpr - this.view.root.x) / z, y: (cssY * dpr - this.view.root.y) / z };
   }
 
-  /** Sound hook (the audio system replaces this). */
-  sfx(_id: string): void {}
+  private lastSfx = new Map<string, number>();
+  /** Play a synthesized sound effect (rate-limited per id). */
+  sfx(id: string): void {
+    const now = performance.now();
+    if ((this.lastSfx.get(id) ?? 0) > now - 45) return;
+    this.lastSfx.set(id, now);
+    playSfx(this.audio, id);
+  }
 
   useSpecialTool(k: ToolKind): void {
     const f = HOOKS.special[k];
@@ -388,6 +410,36 @@ export class Game implements MenuHost {
 
   inspectObject(o: WorldObject, x: number, y: number): void {
     for (const f of HOOKS.inspect) if (f(this, o, x, y)) return;
+  }
+
+  // ── Graphics context loss ─────────────────────────────────
+  private lostOverlay: HTMLElement | null = null;
+  contextIsLost = false;
+
+  private contextLost(): void {
+    this.contextIsLost = true;
+    if (this.sim) this.sim.paused = true;
+    if (!this.lostOverlay) {
+      this.lostOverlay = h('div', { class: 'lost', role: 'button', tabindex: '0' }, h('div', { class: 'panel', style: 'padding:16px 22px;font-weight:800;font-size:1.3em' }, 'Tap to continue'));
+      this.lostOverlay.addEventListener('pointerdown', () => this.resumeFromLost());
+      this.lostOverlay.addEventListener('keydown', () => this.resumeFromLost());
+      this.uiRoot.appendChild(this.lostOverlay);
+    }
+    this.lostOverlay.style.display = 'flex';
+  }
+
+  private contextRestored(): void {
+    this.atlas.reupload();
+    this.playerAtlas.reupload();
+    this.view.invalidate();
+  }
+
+  private resumeFromLost(): void {
+    if (!this.lostOverlay) return;
+    this.lostOverlay.style.display = 'none';
+    this.contextIsLost = false;
+    this.contextRestored();
+    if (this.sim) this.sim.paused = this.modals.open || this.mode !== 'play';
   }
 
   // ── Menus & triggers ─────────────────────────────────────
@@ -440,8 +492,9 @@ export class Game implements MenuHost {
     });
   }
 
-  /** Audio system replaces this. */
-  applyAudioSettings(): void {}
+  applyAudioSettings(): void {
+    this.audio.setVolumes(this.settings.music, this.settings.sfx);
+  }
 
   /** Benchmark system replaces this. */
   testPerformance(): void {
@@ -530,7 +583,7 @@ export class Game implements MenuHost {
       this.fpsN = 0;
     }
     requestAnimationFrame((tt) => this.frame(tt));
-    if (!this.sim) return;
+    if (!this.sim || this.contextIsLost) return;
     try {
       this.update(dt);
       this.render(dt);
@@ -560,7 +613,15 @@ export class Game implements MenuHost {
     this.ctl.update(dt);
     if (!this.modals.open && !this.ctl.locked && !this.inputBlocked) {
       const before = this.sim.p.loc;
-      this.sim.movePlayer(input.moveX, input.moveY, dt);
+      let mx = input.moveX, my = input.moveY;
+      if (mx === 0 && my === 0 && HOOKS.autoMove) {
+        const a = HOOKS.autoMove(this, dt);
+        if (a) {
+          mx = a.x;
+          my = a.y;
+        }
+      }
+      this.sim.movePlayer(mx, my, dt);
       if (this.sim.p.loc !== before) this.enterLocation();
     } else this.sim.moving = false;
     if (!this.modals.open) this.ctl.updateTarget();
@@ -649,6 +710,7 @@ export class Game implements MenuHost {
     this.weather.reduced = this.settings.reducedMotion;
     this.weather.update(dt, this.host.width, this.host.height, st.weather, season, loc.def.outdoor && this.mode !== 'title', z);
     if (this.weather.flashed()) this.sfx('thunder');
+    this.music.play(songFor({ mode: this.mode, music: loc.def.music, season, min: st.min, outdoor: loc.def.outdoor, weather: st.weather, festival: this.atFestival, dark: !!loc.def.dark }));
     this.view.update();
     if (this.mode === 'play') this.ctl.drawHighlights();
     this.host.app.render();

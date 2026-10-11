@@ -290,6 +290,7 @@ export function installFestivals(_g: Game): void {
     const sim = game.sim;
     if (f && sim.p.loc === 'town' && festivalOpen(sim)) {
       placeDecor(game, f);
+      game.atFestival = true;
       if (!inFestival) {
         inFestival = true;
         game.holdClock = true;
@@ -307,6 +308,7 @@ export function installFestivals(_g: Game): void {
         if (sim.state.min < f.close) sim.advanceMinutes(f.close - sim.state.min);
         game.toasts.show(`The ${f.name} is over. What a fun day!`, 'ui.star2');
       }
+      game.atFestival = false;
       hidePanel();
     }
   });
