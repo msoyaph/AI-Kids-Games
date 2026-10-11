@@ -15,6 +15,9 @@ import { Effects } from './effects';
 import type { SimEvent } from '../sim/events';
 import { ItemVisuals } from './itemVisuals';
 import type { ItemSystem } from '../sim/items/itemSystem';
+import { buildBackdrop } from './backdrop';
+import { HazardVisuals } from './hazardVisuals';
+import type { HazardSystem } from '../sim/hazards';
 
 export type SplitMode = 'horizontal' | 'vertical';
 
@@ -46,6 +49,9 @@ export class RaceView {
   private readonly disposers: Array<() => void> = [];
   readonly effects: Effects;
   itemVisuals: ItemVisuals | null = null;
+  hazardVisuals: HazardVisuals | null = null;
+  private readonly backdrop: THREE.Group;
+  private readonly backdropY: number;
   private readonly fogBase = new THREE.Color();
   private readonly waterFog = new THREE.Color(0x2a7fd4);
   private waterBlend = 0;
@@ -63,6 +69,9 @@ export class RaceView {
     this.sun = built.sun;
     this.dome = built.dome;
     this.domeBase = profile.drawDistance;
+    this.backdrop = buildBackdrop(sky, course.track?.data.id ?? course.arena?.data.id ?? 'x');
+    this.backdropY = sky.groundY ?? (course.track ? course.track.minY - 2 : 0);
+    this.scene.add(this.backdrop);
     if (course.track) {
       const tm = buildTrackMeshes(course.track);
       this.scene.add(tm.group);
@@ -105,6 +114,11 @@ export class RaceView {
     this.disposers.push(off);
   }
 
+  attachHazards(h: HazardSystem): void {
+    this.hazardVisuals = new HazardVisuals(h);
+    this.scene.add(this.hazardVisuals.group);
+  }
+
   attachItems(items: ItemSystem): void {
     this.itemVisuals = new ItemVisuals(items, this.world, this.visuals, this.effects);
     this.scene.add(this.itemVisuals.group);
@@ -119,6 +133,7 @@ export class RaceView {
       fog.far = p.drawDistance * 0.92;
     }
     this.dome.scale.setScalar(p.drawDistance / this.domeBase);
+    this.backdrop.scale.setScalar(p.drawDistance * 0.86);
     for (const c of this.cams) {
       c.camera.far = p.drawDistance;
       c.camera.updateProjectionMatrix();
@@ -181,6 +196,7 @@ export class RaceView {
       this.sun.target.updateMatrixWorld();
     }
     this.itemVisuals?.update(dt);
+    this.hazardVisuals?.update();
     this.effects.update(dt);
     // Underwater tint for player 1's view
     if (this.targets.length > 0 && this.scene.fog) {
@@ -216,6 +232,7 @@ export class RaceView {
   beforeRender(camIndex: number): void {
     const cam = this.cams[camIndex].camera;
     this.dome.position.copy(cam.position);
+    this.backdrop.position.set(cam.position.x, this.backdropY, cam.position.z);
     const rect = this.rectFor(camIndex, this.cams.length);
     this.effects.setViewport(this.gr.height * rect.h * this.gr.renderer.getPixelRatio(), cam.fov);
   }

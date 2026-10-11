@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PROPS } from '../data/props';
+import { PROPS } from '../data/props/index';
 import type { PropPlacement, PropScatter } from '../data/types';
 import { Rng } from '../core/rng';
 import { buildRecipe } from './lowpoly';

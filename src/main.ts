@@ -4,7 +4,8 @@ import { GameRenderer } from './render/renderer';
 import { InputManager } from './input/manager';
 import { World } from './sim/world';
 import { TrackModel } from './sim/track/trackModel';
-import { TEST_LOOP } from './data/tracks/testLoop';
+import { findTrack } from './data/tracks/index';
+import { HazardSystem } from './sim/hazards';
 import { RaceTracker } from './sim/race';
 import { RaceView } from './render/raceView';
 import { formatTime, ordinal } from './core/math';
@@ -35,7 +36,7 @@ async function boot(): Promise<void> {
   if (gr.isTouch) input.touch.show(true);
 
   const params = new URLSearchParams(location.search);
-  const track = new TrackModel(TEST_LOOP, params.has('mirror'));
+  const track = new TrackModel(findTrack(params.get('track') ?? 'test-loop'), params.has('mirror'));
   const cfg = { body: 'zoomster', wheels: 'standard', glider: 'kite', paint: 'cherry', decal: 'none' };
   const world = new World({
     ground: track,
@@ -57,11 +58,13 @@ async function boot(): Promise<void> {
   if (autodrive) world.karts[0].player = 0;
   const items = new ItemSystem(world, track, track, { set: 'all' });
   ai.attachItems(items);
+  const hazards = new HazardSystem(world, track, items.hazards);
   world.karts[0].autoAccel = gr.isTouch;
   bootUi?.set(0.6, 'Planting trees');
   await nextFrame();
   const view = new RaceView(gr, world, { track }, [0]);
   view.attachItems(items);
+  view.attachHazards(hazards);
 
   const hud = document.createElement('div');
   hud.style.cssText = 'position:absolute;top:8px;left:8px;font:700 14px monospace;color:#fff;text-shadow:0 1px 2px #000;pointer-events:none;white-space:pre';

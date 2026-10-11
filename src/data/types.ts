@@ -262,6 +262,10 @@ export interface HazardData {
   amp?: number;
   period?: number;
   phase?: number;
+  /** Prop recipe name used to draw it (defaults per kind). */
+  model?: string;
+  /** Collision radius (metres). */
+  radius?: number;
 }
 
 export interface ShortcutData {
@@ -365,6 +369,8 @@ export interface TrackData {
   props?: PropPlacement[];
   /** Song id from data/songs.ts. */
   music: string;
+  /** Structures drawn under elevated road (bridges, buildings, floating rock). */
+  supports?: { kind: 'pillars' | 'blocks' | 'rock'; color: number; color2?: number };
 }
 
 export interface CupData {

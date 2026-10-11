@@ -3,6 +3,7 @@ import type { TrackPalette } from '../data/types';
 import { EDGE_DROP, EDGE_OPEN, EDGE_WALL, F_GAP, Ribbon, TrackModel } from '../sim/track/trackModel';
 import { RAMP_GLIDER } from '../sim/ground';
 import { Materials } from './materials';
+import { mergeColored, prim } from './lowpoly';
 
 /** Growable typed-array geometry writer (position + colour), triangles only. */
 class GeoWriter {
@@ -170,6 +171,8 @@ export function buildTrackMeshes(track: TrackModel): TrackMeshes {
   }
   // Start gate arch
   group.add(buildStartGate(track));
+  const sup = buildSupports(track, groundY);
+  if (sup) group.add(sup);
   return { group, boostMaterial };
 }
 
@@ -326,6 +329,44 @@ function buildRibbon(w: GeoWriter, pads: GeoWriter, rb: Ribbon, pal: TrackPalett
       pads.tri(...(pt(rb, i1, dc, 0.06 + lift) as [number, number, number]), ...(pt(rb, im, dc, 0.06 + lift) as [number, number, number]), ...(pt(rb, i0, dc + hwp * 0.2, 0.06 + lift) as [number, number, number]), 0xfff6b0);
     }
   }
+}
+
+/** Pillars / building blocks / rock spires under elevated road sections. */
+function buildSupports(track: TrackModel, groundY: number): THREE.Mesh | null {
+  const sup = track.data.supports;
+  if (!sup) return null;
+  const rb = track.main;
+  const geos: THREE.BufferGeometry[] = [];
+  const step = sup.kind === 'blocks' ? Math.round(10 / rb.ds) : sup.kind === 'rock' ? Math.round(16 / rb.ds) : Math.round(18 / rb.ds);
+  let k = 0;
+  for (let i = 0; i < rb.n; i += step, k++) {
+    if (rb.flags[i] & F_GAP) continue;
+    const top = rb.py[i] - (sup.kind === 'blocks' ? 0.3 : 1.2);
+    const bottom = sup.kind === 'rock' ? Math.max(groundY, top - 18) : groundY;
+    const h = top - bottom;
+    if (h < 2.5) continue;
+    const yawDeg = (Math.atan2(rb.tx[i], rb.tz[i]) * 180) / Math.PI;
+    const cx = rb.px[i];
+    const cz = rb.pz[i];
+    const w = rb.hw[i] * 2 + 1.2;
+    if (sup.kind === 'blocks') {
+      const c = k % 2 ? sup.color : sup.color2 ?? sup.color;
+      geos.push(prim('box', c, [cx, bottom + h / 2, cz], [w, h, step * rb.ds + 0.4], [0, yawDeg, 0]));
+      // window bands
+      for (let y = bottom + 4; y < top - 2; y += 5) geos.push(prim('box', 0xd8ecff, [cx, y, cz], [w + 0.1, 1.4, step * rb.ds * 0.8], [0, yawDeg, 0]));
+    } else if (sup.kind === 'pillars') {
+      const r = Math.min(3, rb.hw[i] * 0.35);
+      geos.push(prim('cyl', sup.color, [cx, bottom + h / 2, cz], [r, h, r], [0, 0, 0], 8));
+      geos.push(prim('box', sup.color2 ?? sup.color, [cx, top - 0.5, cz], [w * 0.9, 1, 2.2], [0, yawDeg, 0]));
+    } else {
+      const r = rb.hw[i] * 2.1;
+      geos.push(prim('cone', k % 2 ? sup.color : sup.color2 ?? sup.color, [cx, top - h / 2, cz], [r, h, r * 0.8], [180, yawDeg, 0], 7));
+    }
+  }
+  if (geos.length === 0) return null;
+  const mesh = new THREE.Mesh(mergeColored(geos), Materials.flat);
+  mesh.name = 'track';
+  return mesh;
 }
 
 function buildStartGate(track: TrackModel): THREE.Mesh {
