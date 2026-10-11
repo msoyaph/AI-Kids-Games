@@ -1,12 +1,14 @@
 /** Cliff Valley town: plaza, Valley Hall, shops and homes. */
 import { Ter } from '../../sim/terrain';
 import { MapBuilder } from './builder';
+import type { MapContext } from './index';
 import type { MapDef } from './types';
 
 export const TOWN_W = 72;
 export const TOWN_H = 56;
 
-export function buildTown(): MapDef {
+export function buildTown(ctx: MapContext = { houseLevel: 0, done: [] }): MapDef {
+  const train = ctx.done.includes('animal');
   const b = new MapBuilder(TOWN_W, TOWN_H, Ter.GRASS);
 
   // river along the south, flowing out east
@@ -62,9 +64,18 @@ export function buildTown(): MapDef {
 
   // train tracks (overgrown until the Valley Train is restored)
   b.rect(54, 6, 18, 1, Ter.RAIL);
-  b.prop('rubble', 58, 6);
-  b.prop('rubble', 66, 6);
   b.prop('railEnd', 54, 6);
+  if (!train) {
+    b.prop('rubble', 58, 6);
+    b.prop('rubble', 66, 6);
+    b.prop('sign', 60, 7);
+    b.trigger(60, 7, 'sign', 'station');
+  } else {
+    b.prop('stall', 58, 8);
+    b.trigger(58, 8, 'shop', 'cart', 2, 1);
+    b.prop('banner', 57, 8);
+    b.prop('banner', 61, 8);
+  }
 
   // ranch pasture
   for (let x = 2; x <= 19; x++) {

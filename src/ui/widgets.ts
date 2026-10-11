@@ -49,8 +49,8 @@ export class Modals {
     return this.stack.length > 0;
   }
   /** Show arbitrary content; returns a close function. */
-  show(content: HTMLElement, opts: { onClose?: () => void; cancel?: () => void; bare?: boolean } = {}): () => void {
-    const bg = h('div', { class: 'modal-bg' });
+  show(content: HTMLElement, opts: { onClose?: () => void; cancel?: () => void; bare?: boolean; light?: boolean } = {}): () => void {
+    const bg = h('div', { class: 'modal-bg' + (opts.light ? ' light' : '') });
     if (opts.bare) bg.appendChild(content);
     else bg.appendChild(h('div', { class: 'modal panel', role: 'dialog', 'aria-modal': 'true' }, content));
     bg.addEventListener('pointerdown', (e) => {

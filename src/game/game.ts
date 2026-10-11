@@ -39,6 +39,9 @@ import { installAnimals } from './animals';
 import { installMine } from './mine';
 import { installFishing } from './fishing';
 import { installCrafting } from './crafting';
+import { installCutscenes } from './cutscene';
+import { installStory } from './story';
+import { installFestivals } from './festival';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
 
 export interface GameOptions {
@@ -67,6 +70,8 @@ export interface GameHooks {
   useItem?: (g: Game, id: string) => void;
   /** steps after the day summary, before waking (perk choice, cutscenes…); call next() to continue */
   afterDay: ((g: Game, next: () => void) => void)[];
+  /** return true to stop going to bed (e.g. the finale must happen first) */
+  beforeSleep?: (g: Game) => boolean;
 }
 
 export const HOOKS: GameHooks = { trigger: {}, onEnter: [], onUpdate: [], onRender: [], onAttach: [], interactNearby: [], special: {}, inspect: [], pointerInteract: [], afterDay: [] };
@@ -139,6 +144,9 @@ export class Game implements MenuHost {
     installMine(this);
     installFishing(this);
     installCrafting(this);
+    installCutscenes(this);
+    installStory(this);
+    installFestivals(this);
     this.input.onAction = (a) => this.onRawAction(a);
     window.addEventListener('pagehide', () => this.suspend());
     document.addEventListener('visibilitychange', () => {
@@ -162,7 +170,7 @@ export class Game implements MenuHost {
     this.toasts = new Toasts(this.uiRoot);
     this.modals = new Modals(this.uiRoot);
     this.modals.onChange = (open) => {
-      if (this.sim) this.sim.paused = open || this.mode !== 'play';
+      if (this.sim) this.sim.paused = open || this.mode !== 'play' || this.holdClock;
       this.input.clear();
       this.input.holdUse = false;
     };
@@ -274,6 +282,7 @@ export class Game implements MenuHost {
 
   async goToBed(passedOut: boolean): Promise<void> {
     if (this.busy || this.mode !== 'play') return;
+    if (HOOKS.beforeSleep?.(this)) return;
     this.busy = true;
     this.mode = 'sleeping';
     this.sim.paused = true;
@@ -551,6 +560,8 @@ export class Game implements MenuHost {
 
   /** Set by cutscenes/minigames to stop walking. */
   inputBlocked = false;
+  /** Keeps the clock stopped (cutscenes). */
+  holdClock = false;
 
   snapCamera(): void {
     this.cam.x = this.sim.p.x;

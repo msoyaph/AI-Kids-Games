@@ -17,5 +17,7 @@ import './critters';
 import './forage';
 import './crafting';
 import './machines';
+import './story';
+import './festivals';
 export { Sim } from './sim';
 export type { SavedLoc, SimEvents } from './sim';

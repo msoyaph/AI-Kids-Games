@@ -144,9 +144,35 @@ export const SHOPS: Record<string, ShopDef> = {
   },
 };
 
+SHOPS.cart = {
+  id: 'cart',
+  name: "Toby's Traveling Cart",
+  keeper: 'toby',
+  open: 10 * 60,
+  close: 18 * 60,
+  closed: [0, 1, 2],
+  room: 'town',
+  greeting: 'All aboard! Treasures from far-off towns, fresh off the Valley Train!',
+  buys: [],
+  stock: (st) => {
+    const out: ShopEntry[] = [];
+    const season = seasonOf(st.day);
+    const other = CROPS.filter((c) => !c.seasons.includes(season));
+    for (let k = 0; k < 3 && other.length; k++) {
+      const c = other[(st.day * 7 + k * 13) % other.length];
+      if (!out.some((e) => e.id === `seed.${c.id}`)) out.push({ id: `seed.${c.id}`, price: CROP_BALANCE[c.id].seed * 2, limit: 5 });
+    }
+    out.push({ id: 'battery', price: 800, limit: 1 });
+    out.push({ id: 'cloth', price: 900, limit: 1 });
+    out.push({ id: 'sapling.pear', price: 1500, limit: 1 });
+    out.push({ id: 'goldBar', price: 1000, limit: 2 });
+    return out.filter((e) => has(e.id));
+  },
+};
+
 /** Which shop (if any) owns an interior room. */
 export const SHOP_BY_ROOM: Record<string, string> = {};
-for (const s of Object.values(SHOPS)) SHOP_BY_ROOM[s.room] = s.id;
+for (const s of Object.values(SHOPS)) if (s.id !== 'cart') SHOP_BY_ROOM[s.room] = s.id;
 
 /** Homes are open to visitors in the daytime. */
 export const HOME_HOURS = { open: 8 * 60, close: 20 * 60 };

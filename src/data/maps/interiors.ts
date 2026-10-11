@@ -1,6 +1,7 @@
 /** Shop and home interiors (ASCII). Each returns to its town door one tile below. */
 import { Ter } from '../../sim/terrain';
 import { interior } from './builder';
+import type { MapContext } from './index';
 import type { MapDef } from './types';
 
 const PROPS: Record<string, { t?: (typeof Ter)[keyof typeof Ter]; prop?: string }> = {
@@ -220,7 +221,8 @@ export const ROOMS: RoomSpec[] = [
 ];
 
 /** The Valley Hall with its six restoration boards and the crystal lamp. */
-export function buildHall(): MapDef {
+export function buildHall(ctx: MapContext = { houseLevel: 0, done: [] }): MapDef {
+  const restored = ctx.done.includes('crafted');
   const rows = [
     '####################',
     '#WWwWWWWWWWWWWWWwWW#',
@@ -250,6 +252,16 @@ export function buildHall(): MapDef {
   b.prop('plant', 18, 12);
   b.prop('bench', 3, 9);
   b.prop('bench', 15, 9);
+  if (restored) {
+    for (const x of [4, 7, 12, 15]) b.prop('painting', x, 1);
+    b.prop('banner', 1, 4);
+    b.prop('banner', 18, 4);
+    b.prop('rug', 8, 10);
+    b.prop('plant', 1, 5);
+    b.prop('plant', 18, 5);
+  } else {
+    for (const [x, y] of [[5, 5], [14, 6], [3, 11], [16, 11], [12, 4]]) b.prop('rubble', x, y);
+  }
   b.warp(9, 13, 'town', 35, 17, { dir: 0 });
   b.point('door', 9, 12, 3);
   b.point('mayor', 12, 5);

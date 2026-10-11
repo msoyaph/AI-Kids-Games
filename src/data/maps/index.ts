@@ -19,8 +19,8 @@ type Builder = (ctx: MapContext) => MapDef;
 const BUILDERS: Record<string, Builder> = {
   farm: () => buildFarm(),
   farmhouse: (ctx) => buildFarmhouse(ctx.houseLevel),
-  town: () => buildTown(),
-  hall: () => buildHall(),
+  town: (ctx) => buildTown(ctx),
+  hall: (ctx) => buildHall(ctx),
   coop: () => buildCoop(),
   barn: () => buildBarn(),
   shed: () => buildShed(),

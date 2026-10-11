@@ -14,7 +14,6 @@ export function buildMountain(ctx: MapContext): MapDef {
   b.rect(19, 6, 8, 3, Ter.DIRT);
   // chasm with the old bridge to the quarry
   b.rect(8, 0, 3, 32, Ter.WATER);
-  b.rect(8, 15, 3, 3, bridge ? Ter.BRIDGE : Ter.BROKENBRIDGE);
   b.waterZones.push({ x: 7, y: 0, w: 5, h: 32, zone: 'river' });
   // lake
   b.ellipse(37, 14, 8, 5, Ter.WATER);
@@ -27,7 +26,8 @@ export function buildMountain(ctx: MapContext): MapDef {
   b.path(44, 31, 44, 24, Ter.PATH, 2);
   b.path(44, 24, 22, 22, Ter.PATH, 1);
   b.path(11, 16, 20, 18, Ter.PATH, 1);
-  b.path(0, 16, 8, 16, Ter.DIRT, 2);
+  b.path(0, 16, 7, 16, Ter.DIRT, 2);
+  b.rect(8, 15, 3, 3, bridge ? Ter.BRIDGE : Ter.BROKENBRIDGE);
   // decoration
   b.forestBorder('pine', 1, 77, [
     { x: 16, y: 27, w: 8, h: 5 },

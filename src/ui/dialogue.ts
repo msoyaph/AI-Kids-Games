@@ -135,6 +135,7 @@ export function showDialogue(modals: Modals, o: DialogueOpts): () => void {
   if (o.speak) speak(o.text, o.pitch);
   close = modals.show(bg, {
     bare: true,
+    light: true,
     cancel: () => {},
     onClose: () => {
       clearInterval(timer);
