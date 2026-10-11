@@ -1,15 +1,9 @@
 /** Client glue for the mine: critters, bonk stick, slingshot, ladders, elevator, fainting, smithy services. */
 import { Container, Sprite, type Texture } from 'pixi.js';
 import { DIR_DX, DIR_DY, TILE } from '../core/math';
-import { GEODES, MINERALS } from '../data/minerals';
-import { TOOLS, tryItem } from '../data/items';
-import { addStock } from '../data/shops';
-import { TIER_NAMES } from '../render/art/icons';
 import { bonk, combat, shoot } from '../sim/critters';
 import { canDescend, elevatorFloors, enterFloor, layerOf, LAYER_NAMES, openMineChest, takeHeartstone } from '../sim/mine';
-import { count, remove } from '../sim/inventory';
-import { SERVICES } from '../sim/shops';
-import { TOOL_TIERS, TUNING } from '../tuning';
+import { TUNING } from '../tuning';
 import { h } from '../ui/dom';
 import { icon } from '../ui/icons';
 import { iconName, itemName } from '../ui/itemview';
@@ -268,45 +262,3 @@ async function faint(g: Game): Promise<void> {
   g.modals.ask('Back home!', 'Lumi found you resting in the mine and helped you home. You feel much better! Nothing was lost. (Tip: eat a snack to heal while exploring.)', [{ label: 'OK', primary: true }]);
 }
 
-// ── Smithy: tool upgrades + geode cracking ─────────────────
-const UPGRADABLE = TOOLS.filter((t) => t !== 'sling');
-addStock('smithy', (st) => {
-  const out: { id: string; price: number; label?: string; desc?: string; service?: string; mats?: [string, number][]; locked?: string }[] = [];
-  for (const t of UPGRADABLE) {
-    const tier = st.player.tools[t] ?? -1;
-    if (tier < 0 || tier >= 3) continue;
-    const [coins, bar, n] = TOOL_TIERS.upgrade[tier + 1];
-    out.push({ id: `tool.${t}`, price: coins, label: `${TIER_NAMES[tier + 1]} ${tryItem(`tool.${t}`)?.name}`, desc: 'Grit upgrades it on the spot! Better tools work faster and use less energy.', service: `upgrade:${t}`, mats: [[bar, n]] });
-  }
-  out.push({ id: 'geode', price: 25, label: 'Crack a geode', desc: 'Grit cracks one geode from your bag. What\'s inside?', service: 'crack' });
-  return out;
-});
-for (const t of UPGRADABLE) {
-  SERVICES[`upgrade:${t}`] = (sim) => {
-    sim.p.tools[t] = Math.min(3, (sim.p.tools[t] ?? 0) + 1);
-    return { ok: true, msg: `Clang, clang! Your ${tryItem(`tool.${t}`)?.name} is now ${TIER_NAMES[sim.p.tools[t]]}!` };
-  };
-}
-let lastCrack: string | null = null;
-SERVICES.crack = (sim) => {
-  const g = GEODES.find((x) => count(sim.p.inv, x.id) > 0);
-  if (!g) return { ok: false, msg: "You don't have any geodes. Find them in the mine!" };
-  remove(sim.p.inv, g.id, 1);
-  const pool = MINERALS.filter((m) => m.from.includes(g.pool as never) || (g.pool === 'geode' && m.from.includes('geode')));
-  const rng = sim.rng(0x9e0, sim.state.stats.geodes);
-  const owned = new Set(sim.state.col.museum);
-  // prefer things you haven't found yet, gently
-  const fresh = pool.filter((m) => !sim.state.col.found[m.id] && !owned.has(m.id));
-  const pick = fresh.length && rng.chance(0.5) ? rng.pick(fresh) : rng.pick(pool);
-  const extra = rng.chance(0.25);
-  sim.give(pick.id, 1);
-  if (extra) sim.give(rng.pick(['coal', 'copperOre', 'ironOre', 'stone']), rng.range(2, 5));
-  sim.state.stats.geodes++;
-  lastCrack = pick.id;
-  return { ok: true, msg: `Crack! Inside the ${g.name}: a ${pick.name}!` };
-};
-export function takeLastCrack(): string | null {
-  const v = lastCrack;
-  lastCrack = null;
-  return v;
-}

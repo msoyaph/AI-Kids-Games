@@ -10,8 +10,12 @@ import { Rng, hash32 } from '../core/rng';
 import { registerMap } from '../data/maps';
 import { MapBuilder } from '../data/maps/builder';
 import type { MapDef } from '../data/maps/types';
-import { MINERALS, ORES } from '../data/minerals';
-import { TUNING } from '../tuning';
+import { GEODES, MINERALS, ORES } from '../data/minerals';
+import { TIER_NAMES, TOOLS, tryItem } from '../data/items';
+import { addStock } from '../data/shops';
+import { TOOL_TIERS, TUNING } from '../tuning';
+import { count, remove } from './inventory';
+import { SERVICES } from './shops';
 import { gainXp, hasPerk } from './skills';
 import { simInitHooks, type Sim } from './sim';
 import { Ter } from './terrain';
@@ -23,7 +27,8 @@ export const MINE_W = 40;
 export const MINE_H = 30;
 
 export function layerOf(floor: number): number {
-  return Math.min(3, Math.floor((floor - 1) / 10));
+  // floor 0 = outside the mine (e.g. the Old Quarry) → earth layer
+  return Math.max(0, Math.min(3, Math.floor((floor - 1) / 10)));
 }
 export const LAYER_NAMES = ['Earth Caves', 'Frost Caves', 'Glow Caves', 'Crystal Core'];
 
@@ -261,11 +266,11 @@ function hitMine(sim: Sim, loc: Loc, x: number, y: number, dmg: number): boolean
   switch (o.k) {
     case 'ore':
       sim.give(o.id, o.id === 'coal' ? rng.range(1, 2) : rng.range(1, 3) + (hasPerk(sim, 'prospector') ? 1 : 0));
-      gainXp(sim, 'mining', 6 + L * 3);
+      gainXp(sim, 'mining', TUNING.mineXp.ore[0] + L * TUNING.mineXp.ore[1]);
       break;
     case 'gem':
       sim.give(o.id, 1);
-      gainXp(sim, 'mining', 15 + L * 4);
+      gainXp(sim, 'mining', TUNING.mineXp.gem[0] + L * TUNING.mineXp.gem[1]);
       break;
     case 'ice':
       if (rng.chance(0.3)) sim.give('quartz', 1);
@@ -281,11 +286,13 @@ function hitMine(sim: Sim, loc: Loc, x: number, y: number, dmg: number): boolean
       else if (rng.chance(0.06)) sim.give(['geode', 'frostGeode', 'glowGeode', 'crystalGeode'][rng.int(L + 1)], 1);
       if (rng.chance(0.05)) sim.give('coal', 1);
       if (L === 2 && rng.chance(0.03)) sim.give('battery', 1);
-      gainXp(sim, 'mining', 2 + L);
+      gainXp(sim, 'mining', TUNING.mineXp.rock[0] + Math.floor(L * TUNING.mineXp.rock[1] / 2));
     }
   }
-  // ladders: the hidden one, or a lucky extra
-  const lucky = rng.chance(0.015 + (hasPerk(sim, 'tunneler') ? 0.03 : 0));
+  // ladders: the hidden one, a lucky extra, or (kid-friendly) a sure one after enough rocks
+  const broken = ((sim.ext.floorRocks as number | undefined) ?? 0) + 1;
+  sim.ext.floorRocks = broken;
+  const lucky = rng.chance(TUNING.ladderChance + (hasPerk(sim, 'tunneler') ? 0.04 : 0)) || broken >= TUNING.ladderPity;
   if ((o.hid || lucky) && !hasLadder(loc)) {
     placeLadder(sim, loc, [x, y]);
     sim.ev.emit('toast', { text: 'You found a ladder going down!', icon: 'ui.star2' });
@@ -321,6 +328,7 @@ export function enterFloor(sim: Sim, floor: number): void {
     return;
   }
   st.mine.floor = floor;
+  sim.ext.floorRocks = 0;
   building = { floor, seed: st.seed, day: st.day };
   sim.world.delete('mine');
   sim.forgetMapCache('mine');
@@ -393,3 +401,39 @@ export function takeHeartstone(sim: Sim, loc: Loc, x: number, y: number): boolea
 }
 
 export const mineTile = (p: { x: number; y: number }) => ({ x: Math.floor(p.x / TILE), y: Math.floor(p.y / TILE) });
+
+// ── Smithy: tool upgrades + geode cracking ─────────────────
+const UPGRADABLE = TOOLS.filter((t) => t !== 'sling');
+addStock('smithy', (st) => {
+  const out: { id: string; price: number; label?: string; desc?: string; service?: string; mats?: [string, number][]; locked?: string }[] = [];
+  for (const t of UPGRADABLE) {
+    const tier = st.player.tools[t] ?? -1;
+    if (tier < 0 || tier >= 3) continue;
+    const [coins, bar, n] = TOOL_TIERS.upgrade[tier + 1];
+    out.push({ id: `tool.${t}`, price: coins, label: `${TIER_NAMES[tier + 1]} ${tryItem(`tool.${t}`)?.name}`, desc: 'Grit upgrades it on the spot! Better tools work faster and use less energy.', service: `upgrade:${t}`, mats: [[bar, n]] });
+  }
+  out.push({ id: 'geode', price: 25, label: 'Crack a geode', desc: 'Grit cracks one geode from your bag. What\'s inside?', service: 'crack' });
+  return out;
+});
+for (const t of UPGRADABLE) {
+  SERVICES[`upgrade:${t}`] = (sim) => {
+    sim.p.tools[t] = Math.min(3, (sim.p.tools[t] ?? 0) + 1);
+    return { ok: true, msg: `Clang, clang! Your ${tryItem(`tool.${t}`)?.name} is now ${TIER_NAMES[sim.p.tools[t]]}!` };
+  };
+}
+SERVICES.crack = (sim) => {
+  const g = GEODES.find((x) => count(sim.p.inv, x.id) > 0);
+  if (!g) return { ok: false, msg: "You don't have any geodes. Find them in the mine!" };
+  remove(sim.p.inv, g.id, 1);
+  const pool = MINERALS.filter((m) => m.from.includes(g.pool as never) || (g.pool === 'geode' && m.from.includes('geode')));
+  const rng = sim.rng(0x9e0, sim.state.stats.geodes);
+  const owned = new Set(sim.state.col.museum);
+  // prefer things you haven't found yet, gently
+  const fresh = pool.filter((m) => !sim.state.col.found[m.id] && !owned.has(m.id));
+  const pick = fresh.length && rng.chance(0.5) ? rng.pick(fresh) : rng.pick(pool);
+  const extra = rng.chance(0.25);
+  sim.give(pick.id, 1);
+  if (extra) sim.give(rng.pick(['coal', 'copperOre', 'ironOre', 'stone']), rng.range(2, 5));
+  sim.state.stats.geodes++;
+  return { ok: true, msg: `Crack! Inside the ${g.name}: a ${pick.name}!` };
+};

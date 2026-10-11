@@ -1,7 +1,7 @@
 /** Shared item presentation helpers (names, icons, quality stars). */
 import { isTool, toolKind, tryItem } from '../data/items';
 import type { ItemStack } from '../sim/types';
-import { TIER_NAMES } from '../render/art/icons';
+import { TIER_NAMES } from '../data/items';
 import { h } from './dom';
 import { icon } from './icons';
 

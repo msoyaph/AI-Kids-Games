@@ -71,6 +71,15 @@ export const TUNING = {
   mineFloors: 40,
   elevatorEvery: 5,
   liftFloor: 20,
+  /** animals: love needed for big products (big egg / big milk) and the chance at that love */
+  animalStartLove: 200,
+  animalBigLove: 300,
+  animalBigChance: 0.2,
+  /** chance each broken rock reveals a ladder, and the sure ladder after this many rocks on a floor */
+  ladderChance: 0.05,
+  ladderPity: 10,
+  /** mining XP: [rock, ore, gem] base + per-layer bonus */
+  mineXp: { rock: [1, 1], ore: [5, 2], gem: [10, 3] } as Record<string, [number, number]>,
 
   // ── Saves ──────────────────────────────────────────────
   saveBudgetBytes: 300 * 1024,

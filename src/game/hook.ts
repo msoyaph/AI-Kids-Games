@@ -136,6 +136,7 @@ export function installHook(g: Game): void {
         renderer: g.host.kind,
         zoom: g.host.zoom,
         modalOpen: g.modals.open,
+        blocked: g.inputBlocked,
       };
     },
     /** Start a new (unsaved unless it sleeps) game in a slot. */
@@ -172,6 +173,11 @@ export function installHook(g: Game): void {
     warp(loc: string, x: number, y: number) {
       g.sim.warpTo(loc, x, y, 0);
       g.enterLocation();
+    },
+    /** Where a tile's center is on screen, in CSS pixels relative to the game canvas. */
+    screenOf(x: number, y: number) {
+      const z = g.host.zoom, dpr = g.host.dpr;
+      return { x: ((x + 0.5) * TILE * z + g.view.root.x) / dpr, y: ((y + 0.5) * TILE * z + g.view.root.y) / dpr };
     },
     setTime(min: number) {
       g.sim.state.min = min;

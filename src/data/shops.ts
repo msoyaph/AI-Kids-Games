@@ -104,6 +104,7 @@ export const SHOPS: Record<string, ShopDef> = {
       { id: 'wood', price: 10 },
       { id: 'stone', price: 20 },
       { id: 'hardwood', price: 60 },
+      { id: 'clay', price: 30 },
     ],
   },
   ranch: {

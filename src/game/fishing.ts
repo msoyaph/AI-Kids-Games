@@ -7,8 +7,6 @@ import { Sprite } from 'pixi.js';
 import { DIR_DX, DIR_DY, TILE } from '../core/math';
 import { FISH_BY_ID } from '../data/fish';
 import { tryItem } from '../data/items';
-import { addStock } from '../data/shops';
-import { SERVICES } from '../sim/shops';
 import { Reel, biteDelay, landCatch, pickCatch, reelParams, zoneAt, type Catch } from '../sim/fishing';
 import { remove, count } from '../sim/inventory';
 import { level } from '../sim/skills';
@@ -41,22 +39,6 @@ let alert: Sprite | null = null;
 let line: Sprite | null = null;
 let ui: HTMLElement | null = null;
 let ptrHold = false;
-
-addStock('fishshop', (st) => {
-  const out: { id: string; price: number; label?: string; desc?: string; service?: string; locked?: string }[] = [
-    { id: 'bait', price: 5 },
-    { id: 'crabPot', price: 500 },
-  ];
-  if ((st.player.tools.rod ?? -1) < 0) out.unshift({ id: 'tool.rod', price: 0, label: 'Fishing Rod (free from Wren!)', desc: 'Every farmer needs a rod. Hold to cast, then reel!', service: 'freeRod' });
-  return out;
-});
-
-SERVICES.freeRod = (sim) => {
-  if ((sim.p.tools.rod ?? -1) >= 0) return { ok: false, msg: 'You already have a rod!' };
-  sim.p.tools.rod = 0;
-  sim.give('tool.rod', 1);
-  return { ok: true, msg: '"Here ye go, sprout! A rod of yer very own. Hold to cast, tap at the \"!\", then reel!" — Cap\'n Wren' };
-};
 
 function end(g: Game, msg?: string): void {
   S.phase = 'idle';

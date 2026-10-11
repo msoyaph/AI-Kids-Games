@@ -1,12 +1,10 @@
 /** Client glue for animals, pet, ranch shop, silo hopper and building sites. */
 import { Sprite } from 'pixi.js';
 import { DIR_DX, DIR_DY, TILE } from '../core/math';
-import { ANIMAL, ANIMALS, SILO_CAP } from '../data/animals';
-import { addStock } from '../data/shops';
+import { ANIMAL, SILO_CAP } from '../data/animals';
 import { AnimalView } from '../render/animal-view';
-import { addAnimal, animalHearts, canBuy, petPet, petRt, touchAnimal } from '../sim/animals';
+import { animalHearts, petPet, petRt, touchAnimal } from '../sim/animals';
 import { count, remove } from '../sim/inventory';
-import { SERVICES } from '../sim/shops';
 import type { AnimalState } from '../sim/state';
 import { h } from '../ui/dom';
 import { icon } from '../ui/icons';
@@ -16,26 +14,6 @@ import { HOOKS, type Game } from './game';
 let view: AnimalView | null = null;
 const siteSprites: Sprite[] = [];
 let bowlSprite: Sprite | null = null;
-
-addStock('ranch', (st) => {
-  const out = [{ id: 'hay', price: 50 }] as { id: string; price: number; service?: string; label?: string; desc?: string; locked?: string }[];
-  for (const a of ANIMALS) {
-    const lvl = st.buildings.built[a.home];
-    const locked = lvl === undefined ? `Needs a ${a.home === 'coop' ? 'Coop' : 'Barn'} (ask Hollis!)` : lvl < a.level ? `Needs a ${['', 'Big', 'Deluxe'][a.level]} ${a.home === 'coop' ? 'Coop' : 'Barn'}` : undefined;
-    out.push({ id: `animal.${a.id}`, price: a.price, service: `animal:${a.id}`, label: a.name, desc: a.desc, locked });
-  }
-  return out;
-});
-for (const a of ANIMALS) {
-  SERVICES[`animal:${a.id}`] = (sim) => {
-    const c = canBuy(sim, a.id);
-    if (!c.ok) return c;
-    const pick = sim.rng(0xa9, sim.state.nextAnimalId).pick(a.names);
-    const an = addAnimal(sim, a.id, pick);
-    sim.ev.emit('newAnimal' as never, { id: an.id } as never);
-    return { ok: true, msg: `Your new ${a.name.toLowerCase()} is waiting in your ${a.home}!` };
-  };
-}
 
 function nearAnimal(g: Game, px: number, py: number, r: number): AnimalState | 'pet' | null {
   const sim = g.sim;

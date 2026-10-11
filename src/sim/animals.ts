@@ -4,7 +4,10 @@
  */
 import { TILE } from '../core/math';
 import { nearestOpen } from '../core/pathfind';
-import { ANIMAL, CAPACITY, SILO_CAP } from '../data/animals';
+import { ANIMAL, ANIMALS, CAPACITY, SILO_CAP } from '../data/animals';
+import { TUNING } from '../tuning';
+import { addStock } from '../data/shops';
+import { SERVICES } from './shops';
 import { gainXp, hasPerk } from './skills';
 import { simInitHooks, type Sim } from './sim';
 import { seasonOf, type AnimalState } from './state';
@@ -43,7 +46,7 @@ export function addAnimal(sim: Sim, kind: string, name: string): AnimalState {
     name: name.trim().slice(0, 12) || d.names[0],
     home: d.home,
     age: 0,
-    love: 150,
+    love: TUNING.animalStartLove,
     fed: false,
     petted: false,
     prod: null,
@@ -320,7 +323,7 @@ registerSystem({
         if (a.pd >= d.every && !a.prod) {
           a.pd = 0;
           const rng = sim.rng(0xe66, a.id);
-          const big = d.bigProduct && a.love > 650 && rng.chance(0.25 + a.love / 4000);
+          const big = d.bigProduct && a.love > TUNING.animalBigLove && rng.chance(TUNING.animalBigChance + (a.love - TUNING.animalBigLove) / 1500);
           a.prod = big ? d.bigProduct! : d.product;
           a.prodQ = a.love > 900 ? 2 : a.love > 550 ? 1 : 0;
           if (d.bonus && a.love > 400 && rng.chance(0.3)) a.prod = d.bonus;
@@ -365,3 +368,24 @@ registerSystem({
     if (m === 18 * 60 && sim.state.animals.some((a) => a.out)) goIn(sim);
   },
 });
+
+// ── Ranch shop: hay and animals ─────────────────────────
+addStock('ranch', (st) => {
+  const out = [{ id: 'hay', price: 50, locked: st.buildings.built.silo === undefined ? 'Needs a Silo to keep it in (ask Hollis!)' : undefined }] as { id: string; price: number; service?: string; label?: string; desc?: string; locked?: string }[];
+  for (const a of ANIMALS) {
+    const lvl = st.buildings.built[a.home];
+    const locked = lvl === undefined ? `Needs a ${a.home === 'coop' ? 'Coop' : 'Barn'} (ask Hollis!)` : lvl < a.level ? `Needs a ${['', 'Big', 'Deluxe'][a.level]} ${a.home === 'coop' ? 'Coop' : 'Barn'}` : undefined;
+    out.push({ id: `animal.${a.id}`, price: a.price, service: `animal:${a.id}`, label: a.name, desc: a.desc, locked });
+  }
+  return out;
+});
+for (const a of ANIMALS) {
+  SERVICES[`animal:${a.id}`] = (sim) => {
+    const c = canBuy(sim, a.id);
+    if (!c.ok) return c;
+    const pick = sim.rng(0xa9, sim.state.nextAnimalId).pick(a.names);
+    const an = addAnimal(sim, a.id, pick);
+    sim.ev.emit('newAnimal' as never, { id: an.id } as never);
+    return { ok: true, msg: `Your new ${a.name.toLowerCase()} is waiting in your ${a.home}!` };
+  };
+}

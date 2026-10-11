@@ -6,6 +6,8 @@
  */
 import { Rng } from '../core/rng';
 import { FISH, FISH_BY_ID, JUNK, type FishDef, type Zone } from '../data/fish';
+import { addStock } from '../data/shops';
+import { SERVICES } from './shops';
 import { gainXp, hasPerk, level } from './skills';
 import type { Sim } from './sim';
 import { seasonOf } from './state';
@@ -156,3 +158,20 @@ export function landCatch(sim: Sim, c: Catch, perfect: boolean): { q: number; si
   gainXp(sim, 'fishing', 6 + f.difficulty * 5 + (perfect ? 6 : 0));
   return { q, size };
 }
+
+// ── Fish shop: the free rod, bait and crab pots ─────────
+addStock('fishshop', (st) => {
+  const out: { id: string; price: number; label?: string; desc?: string; service?: string; locked?: string }[] = [
+    { id: 'bait', price: 5 },
+    { id: 'crabPot', price: 500 },
+  ];
+  if ((st.player.tools.rod ?? -1) < 0) out.unshift({ id: 'tool.rod', price: 0, label: 'Fishing Rod (free from Wren!)', desc: 'Every farmer needs a rod. Hold to cast, then reel!', service: 'freeRod' });
+  return out;
+});
+
+SERVICES.freeRod = (sim) => {
+  if ((sim.p.tools.rod ?? -1) >= 0) return { ok: false, msg: 'You already have a rod!' };
+  sim.p.tools.rod = 0;
+  sim.give('tool.rod', 1);
+  return { ok: true, msg: '"Here ye go, sprout! A rod of yer very own. Hold to cast, tap at the \"!\", then reel!" — Cap\'n Wren' };
+};

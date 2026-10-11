@@ -56,7 +56,7 @@ function show(g: Game, id: string, ico: string, text: string, isTip = true): voi
     box!.classList.remove('show');
     showing = null;
   });
-  box.append(icon(ico, 32), h('span', null, text), ok);
+  box.append(icon(ico, 32), h('span', { class: 'tip-text' }, text), ok);
   box.classList.add('show');
   if (isTip) g.sim.state.tips.push(id);
   if (g.settings.readAloud) import('../ui/dialogue').then((d) => d.speak(text, 1.1));
@@ -91,7 +91,8 @@ export function installTips(_g: Game): void {
   style.textContent = `
 .tip { position: absolute; left: 50%; top: calc(max(8px, env(safe-area-inset-top)) + 150px * var(--ui)); transform: translateX(-50%) translateY(-8px); display: flex; gap: 10px; align-items: center; padding: 8px 12px; width: min(92vw, 520px); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; z-index: 30; }
 .tip.show { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
-.tip span { flex: 1; font-weight: 700; }
+.tip .tip-text { flex: 1; font-weight: 700; }
+.tip .ico { flex: none; }
 `;
   document.head.appendChild(style);
   HOOKS.onUpdate.push((game, dt) => {

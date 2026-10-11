@@ -97,3 +97,6 @@ for (const t of TOOLS) {
 
 export const isTool = (id: string): boolean => id.startsWith('tool.');
 export const toolKind = (id: string): ToolKind => id.slice(5) as ToolKind;
+
+/** Tool upgrade tier names (0 = basic). */
+export const TIER_NAMES = ['Basic', 'Copper', 'Iron', 'Gold'];

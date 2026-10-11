@@ -4,7 +4,7 @@ import { P } from '../palette';
 import { PixelCanvas, darken, lighten } from '../pixelcanvas';
 
 export const TIER_COLORS = [0x9a98a8, 0xd2803a, 0xdfe4ee, 0xf5c838];
-export const TIER_NAMES = ['Basic', 'Copper', 'Iron', 'Gold'];
+export { TIER_NAMES } from '../../data/items';
 
 const ic = () => new PixelCanvas(16, 16);
 

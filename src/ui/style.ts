@@ -52,7 +52,7 @@ export const CSS = `
 .hud-energy .lbl { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); }
 .hud-hp { right: calc(max(10px, env(safe-area-inset-right)) + 38px); }
 .hud-hp .fill { background: linear-gradient(90deg, #ff8a8a, #d2434a); }
-.toolbar { position: absolute; left: 50%; bottom: max(8px, env(safe-area-inset-bottom)); transform: translateX(-50%) scale(var(--ui)); transform-origin: bottom center;
+.toolbar { position: absolute; left: 50%; bottom: max(8px, env(safe-area-inset-bottom)); transform: translateX(-50%) scale(var(--tb, var(--ui))); transform-origin: bottom center;
   display: flex; gap: 3px; padding: 5px; }
 .slot { position: relative; width: 46px; height: 46px; background: var(--paper2); border: 2px solid var(--paper3); border-radius: 6px;
   display: flex; align-items: center; justify-content: center; cursor: pointer; touch-action: manipulation; }
@@ -127,4 +127,9 @@ export const CSS = `
 @media (max-width: 380px) {
   :root { --ui: .74; }
 }
+/* the 10-slot toolbar (~500px) always fits narrow phones with a little margin */
+@media (max-width: 430px) { :root { --tb: .78; } }
+@media (max-width: 410px) { :root { --tb: .74; } }
+@media (max-width: 375px) { :root { --tb: .68; } }
+@media (max-width: 345px) { :root { --tb: .6; } }
 `;

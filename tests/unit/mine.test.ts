@@ -4,6 +4,8 @@ import { canDescend, elevatorFloors, enterFloor } from '../../src/sim/mine';
 import { bonk, combat, critterDamage } from '../../src/sim/critters';
 import { findPath } from '../../src/core/pathfind';
 import { TILE } from '../../src/core/math';
+import { count } from '../../src/sim/inventory';
+import { useTool } from '../../src/sim/tools';
 
 const mk = (seed = 5) => Sim.newGame({ name: 'Pip', farm: 'Daisy', pet: 'dog', petName: 'Rex', seed });
 
@@ -85,5 +87,27 @@ describe('mine', () => {
     expect(sim.p.coins).toBe(1234);
     expect(JSON.stringify(sim.p.inv)).toBe(inv);
     void TILE;
+  });
+});
+
+describe('quarry rocks', () => {
+  it('give real items (layer clamps to earth outside the mine)', () => {
+    const sim = Sim.newGame({ name: 'Q', farm: 'Q', pet: 'cat', petName: 'Q', seed: 5 });
+    sim.state.story.done.push('forage');
+    sim.refreshLoc('mountain');
+    const q = sim.loc('quarry');
+    sim.warpTo('quarry', 5, 5, 0);
+    let broke = 0;
+    for (let y = 0; y < q.h; y++)
+      for (let x = 0; x < q.w; x++) {
+        if (q.inb(x, y) && !q.obj(x, y) && !q.blocked(x, y) && broke < 20) {
+          q.setObj(x, y, { k: 'rock', id: 'geode0', hp: 1 });
+          useTool(sim, 'pick', x, y);
+          broke++;
+        }
+      }
+    expect(broke).toBe(20);
+    expect(sim.p.inv.every((s) => !s || typeof s.id === 'string')).toBe(true);
+    expect(count(sim.p.inv, 'geode')).toBeGreaterThan(0);
   });
 });
