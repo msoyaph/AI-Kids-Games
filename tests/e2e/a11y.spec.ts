@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { expectClean, guard, waitForGame } from './helpers';
 import { check, open } from './layout';
 

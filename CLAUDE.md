@@ -171,7 +171,13 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   constructs, results modal). GPU context loss: `Stage.onContextLoss` → `App.graphicsLost/Restored` (ticker stops,
   GameScreen.onGraphicsLost opens pause, `.gfx-overlay` "Tap to continue", Reload after 5 s); all textures are
   CanvasSource so Pixi re-uploads. `tests/e2e/device.spec.ts` covers all three. `GAME_VERSION` in `src/app/version.ts`.
-- New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
+- Phase 14 done: CI. `.github/workflows/ci.yml` (ubuntu, push/PR: typecheck, unit+balance, build, check:dist incl.
+  2 MB size budget, all Playwright) and `selfhosted-mac.yml` (manual, `[self-hosted, macOS]`, job `if:` repo is
+  private, `CI: ''` so local timings apply, + `npm run perf`, uploads results). `CI=true` → playwright.config
+  timeouts ×2, 2 workers, 1 retry, html report; `tests/e2e/fixtures.ts` makes pages report 2 cores (Auto → Low).
+  Specs import `test`/`expect` from `./fixtures`, not '@playwright/test'. flash.spec skips (with reason) below
+  15 sampled fps. `.nvmrc` = 24. `docs/CI.md`: GitHub setup (gh signed in as msoyaph; repo not created yet),
+  runner steps, private-repo warning. Validate workflows with `actionlint`. (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the
   `vanex-defense-` prefix, total save < 200 KB; v3 save fixture in `tests/fixtures/save-v3.json` must migrate.

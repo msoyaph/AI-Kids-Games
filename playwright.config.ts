@@ -2,14 +2,18 @@ import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4317;
 
+// CI machines (GitHub-hosted) render WebGL in software on shared CPUs: give them more time, fewer workers
+// and one retry; pages also report a 2-core device there so Auto quality picks Low (tests/e2e/fixtures.ts).
+const CI = !!process.env.CI;
+
 export default defineConfig({
   testDir: 'tests/e2e',
-  timeout: 90_000,
-  expect: { timeout: 15_000 },
+  timeout: CI ? 180_000 : 90_000,
+  expect: { timeout: CI ? 30_000 : 15_000 },
   fullyParallel: true,
-  workers: 4,
-  retries: 0,
-  reporter: [['list']],
+  workers: CI ? 2 : 4,
+  retries: CI ? 1 : 0,
+  reporter: CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',

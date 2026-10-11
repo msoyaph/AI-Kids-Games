@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { cellCenter, pickTower, expectClean, guard, isTouch, tap, testState, waitForGame } from './helpers';
 
 test('title screen loads with no errors and no network requests', async ({ page, baseURL }) => {

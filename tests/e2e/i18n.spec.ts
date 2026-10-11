@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { check, open } from './layout';
 import { cellCenter, expectClean, guard, isTouch, tap, testState, waitForGame } from './helpers';
 

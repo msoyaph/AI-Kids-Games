@@ -12,6 +12,12 @@ if (files.length !== 1 || files[0] !== 'index.html') {
   process.exit(1);
 }
 const html = readFileSync('dist/index.html');
+// size budget: the whole game is one file and must stay under 2 MB
+const MAX_BYTES = 2 * 1024 * 1024;
+if (html.length > MAX_BYTES) {
+  console.error(`dist/index.html is ${(html.length / 1024).toFixed(0)} KB — over the ${MAX_BYTES / 1024} KB budget`);
+  process.exit(1);
+}
 // tiny static server: only the page itself exists
 const served = [];
 const server = createServer((req, res) => {
@@ -46,5 +52,5 @@ for (const url of ['file://' + process.cwd() + '/dist/index.html', origin + '/']
 }
 await browser.close();
 server.close();
-console.log(JSON.stringify({ errors, externalRequests: requests, httpPathsServed: served }, null, 2));
+console.log(JSON.stringify({ sizeKB: Math.round(html.length / 1024), errors, externalRequests: requests, httpPathsServed: served }, null, 2));
 process.exit(errors.length || requests.length ? 1 : 0);

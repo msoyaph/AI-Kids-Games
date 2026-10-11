@@ -225,6 +225,12 @@ lowers resolution, then particles/glow, on slow devices. Low / Medium / High / A
 > Throttled desktop Chromium approximates but does not equal a real phone, especially for the GPU — please
 > try `index.html?stress=300` on the actual target devices.
 
+## Continuous integration
+
+GitHub Actions: `ci.yml` checks every push and pull request on Ubuntu (typecheck, unit tests + balance sims, build,
+dist checks, all Playwright tests); `selfhosted-mac.yml` runs the same plus the real-GPU benchmark on your own Mac,
+by hand, for private repositories only. Setup, including putting the project on GitHub: [docs/CI.md](docs/CI.md).
+
 ## Testing on real devices
 
 - **Settings → Device → Test performance** runs a 15-second battle (every tower, 300 constructs) with the player's

@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { expectClean, guard } from './helpers';
 
 /**
@@ -88,6 +89,8 @@ test('flash safety: no screen area flashes more than 3 times a second', async ({
   // a packed battlefield (every tower, 150 constructs) …
   const busy = await audit(page, 'stress=150&quality=high', 6);
   console.log(`flash audit, busy: ${busy.frames} frames, worst ${JSON.stringify(busy.worst)}`);
+  // seeing ≥ 3 flashes/s needs ≥ ~15 samples/s; software-GL CI machines are slower (the Mac job runs it)
+  test.skip(busy.frames < 15 * 6, `only ${(busy.frames / 6).toFixed(0)} frames/s sampled — needs a GPU`);
   expect(busy.frames).toBeGreaterThan(60);
   expect(busy.worst.max, JSON.stringify(busy.worst)).toBeLessThanOrEqual(3);
   // … and a storm of meteor strikes (≈7 big bursts a second, far beyond real play)

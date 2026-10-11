@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { readFileSync } from 'node:fs';
 import { cellCenter, pickTower, expectClean, guard, isTouch, testState, waitForGame } from './helpers';
 
