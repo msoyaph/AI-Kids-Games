@@ -1,0 +1,30 @@
+{
+  "name": "ai-kids-games",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5190",
+    "build": "tsx scripts/validate-games.ts && tsc --noEmit && vite build && tsx scripts/generate-route-shells.ts",
+    "preview": "vite preview --host 127.0.0.1 --port 4190",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "add-game": "tsx scripts/add-game.ts"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.9",
+    "vitest": "^5.0.3"
+  }
+}
