@@ -20,6 +20,8 @@ export interface Placement {
   dir?: number;
   level?: number;
   onPlaced?: (s: Structure) => void;
+  /** custom confirm (bridges / ramps) */
+  onConfirm?: (g: Game, p: Placement) => boolean;
   /** recompute rect/validity from the player's position */
   compute: (g: Game, p: Placement) => void;
 }
@@ -93,6 +95,7 @@ export function confirmPlacement(g: Game): boolean {
     g.emit('sfx', { name: 'error' });
     return false;
   }
+  if (pl.onConfirm) return pl.onConfirm(g, pl);
   if (pl.kind === 'plot') {
     const s = addStructure(g, { type: 'plot', ...pl.rect, level: g.state.player.level, owner: pl.owner });
     g.emit('plotPlaced', { owner: pl.owner ?? '' });

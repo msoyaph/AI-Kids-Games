@@ -14,6 +14,7 @@ import { dailyVillagers } from './villagers';
 import { homeResolver, talkResolver, updateAgents } from './agents';
 import { confirmPlacement, placementRT, updatePlacement } from './placement';
 import { installQuests, tryStart } from './quests';
+import { dailyChallenges, installChallenges } from './challenges';
 import { tileOf } from './player';
 import { Game } from './game';
 import type { GameState } from './state';
@@ -49,6 +50,7 @@ export function installSystems(g: Game): void {
     return true;
   });
   installQuests(g);
+  installChallenges(g);
   g.onUpdate((game) => {
     if (game.state.player.location !== 'island') return;
     const reg = game.world.region(tileOf(game.world, game.state.player.x, game.state.player.z));
@@ -75,6 +77,7 @@ export function createGame(state: GameState): Game {
   const g = new Game(state);
   installSystems(g);
   g.ensureDayRolled();
+  dailyChallenges(g);
   tryStart(g);
   return g;
 }

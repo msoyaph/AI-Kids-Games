@@ -9,6 +9,7 @@ import { findStructure } from '../sim/structures';
 import { parseLine } from '../sim/talk';
 import { Region } from '../world/types';
 import { makeBox, type TalkOption } from './conversation';
+import { contestOptions } from './journal';
 import { clear, h, type Panel } from './dom';
 import { fmt } from '../core/math';
 
@@ -27,7 +28,8 @@ export function installStory(app: App): void {
     },
     options: (id) => {
       const g = app.game!;
-      return questOptions(g, id).map(
+      const contest = contestOptions(app, id);
+      return contest.concat(questOptions(g, id).map(
         (o): TalkOption => ({
           label: o.label,
           run: async (box) => {
@@ -42,7 +44,7 @@ export function installStory(app: App): void {
             await drainFor(app, box, id);
           },
         }),
-      );
+      ));
     },
   };
 }
@@ -106,7 +108,7 @@ export class QuestTracker {
 
   update(app: App): void {
     const g = app.game;
-    if (!g || !app.hud.visible) {
+    if (!g || !app.hud.visible || app.ui.modalOpen) {
       this.el.style.display = 'none';
       this.arrow.style.display = 'none';
       return;

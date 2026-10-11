@@ -2,6 +2,7 @@
 // (origin = structure's top-left tile corner at its ground level), doors face south (+z).
 import * as THREE from 'three';
 import type { Structure } from '../../sim/state';
+import { LEVEL_HEIGHT } from '../../world/types';
 import { PAL } from '../palette';
 import { curved, vcolMat } from '../curve';
 import { box, cone, cyl, ico, merge, part, sphere, torus } from './geo';
@@ -276,9 +277,10 @@ export function buildStructure(s: Structure, extra: { homeLevel?: number; lit?: 
       const steps = 8;
       for (let k = 0; k < steps; k++) {
         const t = (k + 0.5) / steps;
-        P.push(part(box(wid - 0.1, 0.12 + t * 1.0, len / steps + 0.02), k % 2 ? 0xd8c7a8 : 0xcbb894, { pos: [0, (0.12 + t * 1.0) / 2, len / 2 - t * len] }));
+        const hgt = 0.12 + t * LEVEL_HEIGHT;
+        P.push(part(box(wid - 0.1, hgt, len / steps + 0.02), k % 2 ? 0xd8c7a8 : 0xcbb894, { pos: [0, hgt / 2, len / 2 - t * len] }));
       }
-      for (const side of [-wid / 2 + 0.05, wid / 2 - 0.05]) P.push(part(box(0.1, 0.25, len * 1.05), 0xb79f86, { pos: [side, 0.55, 0], rot: [-Math.atan2(1, len), 0, 0] }));
+      for (const side of [-wid / 2 + 0.05, wid / 2 - 0.05]) P.push(part(box(0.1, 0.25, len * 1.12), 0xb79f86, { pos: [side, LEVEL_HEIGHT / 2 + 0.2, 0], rot: [Math.atan2(LEVEL_HEIGHT, len), 0, 0] }));
       const mesh = solid(P);
       const holder = new THREE.Group();
       holder.add(mesh);

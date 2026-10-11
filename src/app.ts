@@ -24,6 +24,10 @@ import { questRT } from './sim/quests';
 import { Phone } from './ui/phone';
 import { settingsBody, settingsPanel } from './ui/settings';
 import { runFinale } from './ui/finale';
+import { ContestHud, LumenPanel } from './ui/journal';
+import { BUILD_COSTS, canAfford, startBuildPlacement } from './sim/build';
+import { MEDAL_PRIZES, CONTESTS } from './data/challenges';
+import { item as itemDef } from './data/registry';
 import type { TalkHooks } from './ui/conversation';
 import { cancelPlacement, placementRT } from './sim/placement';
 
@@ -37,6 +41,7 @@ export class App {
   readonly hud: Hud;
   private reel: ReelBar;
   private tracker: QuestTracker;
+  private contestHud: ContestHud;
   readonly saves = new SaveManager();
   settings: Settings;
   game: Game | null = null;
@@ -70,6 +75,7 @@ export class App {
     this.hud = new Hud(root);
     this.reel = new ReelBar(root);
     this.tracker = new QuestTracker(root);
+    this.contestHud = new ContestHud(root);
     document.body.appendChild(this.fadeEl);
     this.applySettings();
     this.demo = createGame(newGameState(TITLE_SEED, 'Demo'));
@@ -82,6 +88,31 @@ export class App {
     this.panels.settings = () => this.ui.push(settingsPanel(this));
     this.panels.settingsInline = (body) => settingsBody(this, body as HTMLElement);
     this.panels.credits = () => this.titleCredits();
+    this.panels.lumens = () => this.game && this.ui.push(new LumenPanel(this.ui, this.game));
+    this.hallHooks.push(() => {
+      const g = this.game!;
+      const q = g.state.quests;
+      const out: { label: string; run: () => void }[] = [];
+      const permit = (kind: 'bridge' | 'ramp') => {
+        const c = BUILD_COSTS[kind];
+        return {
+          label: `Build a ${kind} (✦ ${c.glints.toLocaleString()} + ${c.qty} ${itemDef(c.item).name})`,
+          run: () => {
+            const ok = canAfford(g, kind);
+            if (!ok.ok) {
+              this.hud.toast(ok.reason ?? '', 'warn');
+              return;
+            }
+            this.ui.closeAll();
+            startBuildPlacement(g, kind);
+            this.hud.toast(kind === 'bridge' ? 'Stand on a river bank facing the water. E to build, Esc to cancel.' : 'Stand two tiles from a cliff, facing it. E to build, Esc to cancel.');
+          },
+        };
+      };
+      if (q.active.m3_bridge || q.done.includes('m3_bridge')) out.push(permit('bridge'));
+      if (q.active.m3_ladder || q.done.includes('m3_ladder')) out.push(permit('ramp'));
+      return out;
+    });
     this.showTitle();
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') this.saveNow(true);
@@ -206,6 +237,11 @@ export class App {
       done?.();
     };
     g.bus.on('finale', () => setTimeout(() => runFinale(this), 400));
+    g.bus.on('eventFinished', (e) => {
+      const name = CONTESTS[e.kind as 'tournament' | 'bugoff'].name;
+      const prize = e.medal > 0 ? MEDAL_PRIZES[e.medal - 1] : null;
+      this.hud.toast(prize ? `${name} over! ${e.score} points — ${['Bronze', 'Silver', 'Gold'][e.medal - 1]} medal! You won a ${itemDef(prize.trophy).name} and ${prize.lumens} Lumens.` : `${name} over! ${e.score} points — no medal this time. Try again!`, prize ? 'good' : 'warn');
+    });
     g.ui.open = (panel, arg) => this.panels[panel]?.(arg);
     g.bus.on('toast', (t) => this.hud.toast(t.text, t.kind, t.item));
     g.bus.on('dayStarted', () => this.saveNow(true));
@@ -353,6 +389,7 @@ export class App {
       this.hud.update(g);
       this.reel.update(g);
       this.tracker.update(this);
+      this.contestHud.update(g);
       pumpInbox(this);
     } else {
       this.demo.update(dt, null);

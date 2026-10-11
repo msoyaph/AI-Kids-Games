@@ -76,6 +76,13 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   compass marker, Glowpad phone (Missions/Map/Island Glow/Settings), island rating (sim/rating.ts),
   festival cutscene + credits + completion screen. Story driver for tests in tests/story.ts.
 
+- Phase 7 done: daily challenges (data/challenges.ts, 20-pool, 3/day), 44 tiered achievements with Lumen
+  rewards, catalog/journal/challenges Glowpad apps, Lumen Exchange, timed contests (tournament / bug-off)
+  with medals + trophies (sim/challenges.ts).
+- Phase 8 done: bridges + ramps placement with validity reasons, permits at Lantern Hall, overnight
+  construction (sim/build.ts), region-visit tracking. Full playthrough test reaches the finale
+  (tests/fullgame.test.ts).
+
 ## Story / quest notes
 - Missions auto-start when `requires` are done and `minDay` reached, unless `startTalk` (then the giver
   shows the intro when talked to). Talk/deliver objectives surface through `talkScene`/`questOptions`, which

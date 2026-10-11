@@ -1,7 +1,7 @@
 // Mission engine: data-driven missions with event/state/deliver/talk objectives, triggers,
 // effects and rewards. Pure simulation; the UI asks it what to say/offer.
 import { CHAPTERS, MISSIONS, MISSION_BY_ID } from '../data/missions';
-import type { DeliverObjective, Effect, EventObjective, MissionDef, Objective, TalkObjective } from '../data/questTypes';
+import type { DeliverObjective, Effect, MissionDef, Objective, TalkObjective } from '../data/questTypes';
 import { FRUITS } from '../data/fruit';
 import { item } from '../data/registry';
 import { Region } from '../world/types';
@@ -269,9 +269,9 @@ export function evaluate(g: Game): void {
   }
 }
 
-function matchFilter(o: EventObjective, payload: Record<string, unknown>): boolean {
-  if (!o.filter) return true;
-  for (const [k, v] of Object.entries(o.filter)) {
+export function matchFilter(filter: Record<string, string | number | boolean> | undefined, payload: Record<string, unknown>): boolean {
+  if (!filter) return true;
+  for (const [k, v] of Object.entries(filter)) {
     if (k.startsWith('min:')) {
       if (!((payload[k.slice(4)] as number) >= (v as number))) return false;
     } else if (k.startsWith('prefix:')) {
@@ -289,7 +289,7 @@ export function onEvent(g: Game, type: string, payload: unknown): void {
     m.objectives.forEach((o, i) => {
       if (o.kind !== 'event' || o.event !== type || !objectiveLive(g, m, i)) return;
       if (p.counts[i]! >= o.count) return;
-      if (!matchFilter(o, pl)) return;
+      if (!matchFilter(o.filter, pl)) return;
       p.counts[i] = Math.min(o.count, p.counts[i]! + (o.sum ? Number(pl[o.sum] ?? 0) : 1));
       touched = true;
     });
