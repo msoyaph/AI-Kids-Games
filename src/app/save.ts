@@ -212,7 +212,7 @@ export interface KV {
   removeItem(k: string): void;
 }
 
-function safeStorage(): KV | null {
+export function safeStorage(): KV | null {
   try {
     const ls = globalThis.localStorage;
     if (!ls) return null;

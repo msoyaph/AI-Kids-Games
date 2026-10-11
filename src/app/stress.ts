@@ -24,12 +24,12 @@ const KINDS: EnemyId[] = ['gloop', 'zoomkin', 'clankbot', 'puffbat', 'mendy', 's
  * every tower type at level 3 and N creatures kept alive (they keep poofing
  * and respawning, so particles, coins and text all stay busy).
  */
-export function startStress(app: App, nav: Nav, count: number): void {
+export function startStress(app: App, nav: Nav, count: number, opts: { overlay?: boolean; onQuit?: () => void } = {}): GameScreen {
   const map = mapById('w2m2')!;
   const screen = new GameScreen(
     app,
-    { map, difficulty: 'normal', mode: 'endless', seed: 7, startCoins: 1e7, startCrystals: 6, autoWaves: false },
-    { quit: () => nav.title(), restart: () => startStress(app, nav, count) },
+    { map, difficulty: 'normal', mode: 'endless', seed: 7, startCoins: 1e7, startCrystals: 6, autoWaves: false, benchmark: true },
+    { quit: opts.onQuit ?? (() => nav.title()), restart: () => startStress(app, nav, count, opts) },
   );
   app.show(screen);
   const g = screen.game;
@@ -74,7 +74,8 @@ export function startStress(app: App, nav: Nav, count: number): void {
       }
     }
   });
-  showPerfOverlay(app, screen);
+  if (opts.overlay !== false) showPerfOverlay(app, screen);
+  return screen;
 }
 
 /** Small FPS meter (stress mode / ?fps=1). */

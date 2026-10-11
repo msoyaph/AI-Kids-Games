@@ -1,3 +1,6 @@
+import { PlaytestStore } from './playtest';
+import { t } from '../i18n';
+import { h } from '../ui/dom';
 import { applyA11y, watchSystemMotion } from './a11y';
 import { AudioEngine } from '../audio/Audio';
 import type { Atlas } from '../render/atlas/bake';
@@ -59,6 +62,10 @@ export class App {
     addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.current?.back?.()) e.preventDefault();
     });
+    stage.onContextLoss(
+      () => this.graphicsLost(),
+      () => this.graphicsRestored(),
+    );
     // pending (debounced) saves must not be lost when the page closes or navigates
     addEventListener('pagehide', () => this.save.flush());
     document.addEventListener('visibilitychange', () => {
@@ -71,6 +78,46 @@ export class App {
         this.audio.resume();
       }
     });
+  }
+
+  private gfxOverlay: HTMLElement | null = null;
+  private gfxTimer = 0;
+
+  /** GPU context lost: pause the match and explain; offer a reload if it never comes back. */
+  private graphicsLost(): void {
+    this.stage.app.ticker.stop();
+    (this.current as { onGraphicsLost?: () => void } | null)?.onGraphicsLost?.();
+    this.save.flush();
+    this.gfxOverlay?.remove();
+    const status = h('p', { role: 'status' }, t('gfx.wait'));
+    const actions = h('div.row');
+    this.gfxOverlay = h('div.gfx-overlay', { role: 'alertdialog', 'aria-label': t('gfx.title') }, h('div.panel', null, h('h2', null, t('gfx.title')), h('p', null, t('gfx.body')), status, actions));
+    document.body.append(this.gfxOverlay);
+    clearTimeout(this.gfxTimer);
+    this.gfxTimer = window.setTimeout(() => {
+      if (!this.stage.contextLost) return;
+      actions.replaceChildren(h('button.btn.gold', { onClick: () => location.reload() }, t('gfx.reload')));
+      status.textContent = t('gfx.stuck');
+    }, 5000);
+  }
+
+  /** Context is back: one tap (a user gesture, which also re-unlocks audio on iOS) continues. */
+  private graphicsRestored(): void {
+    clearTimeout(this.gfxTimer);
+    const ov = this.gfxOverlay;
+    if (!ov) return;
+    const panel = ov.querySelector('.panel')!;
+    const go = h('button.btn.green.big', { onClick: () => this.continueAfterGraphics() }, t('gfx.continue'));
+    panel.replaceChildren(h('h2', null, t('gfx.title')), h('p', null, t('gfx.back')), h('div.row', null, go));
+    go.focus();
+  }
+
+  private continueAfterGraphics(): void {
+    this.gfxOverlay?.remove();
+    this.gfxOverlay = null;
+    this.stage.resize();
+    if (this.current?.usesCanvas) this.startTicker();
+    this.stage.requestRender();
   }
 
   show(screen: Screen): void {
@@ -98,6 +145,9 @@ export class App {
    * battery) while tolerating normal 60 Hz timing jitter, and measures real
    * elapsed time so skipped frames never slow the game down.
    */
+  /** Playtest recording (`?playtest=1`): on-device stats, never sent anywhere. */
+  readonly playtest = new PlaytestStore();
+
   /** Test hook (flash audit): runs right after each render, while the frame is still readable. */
   afterRender: ((canvas: HTMLCanvasElement) => void) | null = null;
 
@@ -107,6 +157,7 @@ export class App {
     if (dtMs < 1000 / 60 - 6) return;
     this.lastFrame = now;
     const clamped = Math.min(dtMs, 250);
+    if (this.stage.contextLost) return;
     this.current?.frame?.(clamped);
     this.stage.app.renderer.render(this.stage.app.stage);
     this.afterRender?.(this.stage.app.canvas);

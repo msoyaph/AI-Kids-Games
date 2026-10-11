@@ -225,6 +225,25 @@ lowers resolution, then particles/glow, on slow devices. Low / Medium / High / A
 > Throttled desktop Chromium approximates but does not equal a real phone, especially for the GPU — please
 > try `index.html?stress=300` on the actual target devices.
 
+## Testing on real devices
+
+- **Settings → Device → Test performance** runs a 15-second battle (every tower, 300 constructs) with the player's
+  own quality setting and shows average fps, the slowest 1 %, the longest frame, quality tier, renderer and screen.
+  "Copy results" puts a plain-text summary on the clipboard.
+- **Playtest mode:** open the game once with `?playtest=1` (e.g. `index.html?playtest=1`); it stays on for that
+  device until "Stop recording" (or `?playtest=0`). Each match (won, lost or abandoned) records map, difficulty,
+  waves, lives, lives lost per wave, towers, specializations, abilities, game speed, pauses, frame rate, quality
+  tier and screen size — in `localStorage` key `vanex-defense-playtest`, capped at ~60 KB (oldest runs drop off).
+  **Nothing personal is recorded, and nothing is ever sent anywhere.** The title screen's "Playtest · N runs"
+  button shows the data: *Download JSON* (standalone page) or copy the text (always works, also inside the site's
+  iframe), *Delete recorded runs*, *Stop recording*.
+- **Analyse:** put the exported `.json` files in a folder and run `npm run analyze-playtests -- <folder>`. It prints
+  win rates, where losses cluster, lives lost per wave, speed use and frame rate per map/difficulty and device,
+  replays the same maps with the good and casual bots, and lists tuning **suggestions** — it never changes any
+  file. Apply a suggestion in `src/data/tuning.ts`, then run `npm run sim` and `npm test`.
+- If the GPU context is lost (driver reset, memory pressure), the match pauses with "Graphics paused" and continues
+  after one tap when graphics return; if they never do, a Reload button appears (progress is saved).
+
 ## Kid-safety & accessibility
 
 No ads, purchases, accounts, links, tracking or network requests. Gentle, short text; creatures “poof” into

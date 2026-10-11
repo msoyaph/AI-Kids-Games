@@ -1,4 +1,5 @@
 import { motionReduced } from './a11y';
+import { PlaytestRecorder } from './playtest';
 import { actionsByCode, keyLabel, resolveHotkeys, type HotkeyAction } from './hotkeys';
 import { DIFFICULTIES, difficultyHp, starsFor, type Difficulty } from '../data/difficulty';
 import { ELEMENT_ORDER, ELEMENTS, counterOf } from '../data/elements';
@@ -10,7 +11,7 @@ import { ABILITIES, type AbilityId, type HeroId } from '../data/heroes';
 import type { RunBonuses } from '../data/research';
 import type { ModifierId, MutatorId } from '../data/modes';
 import { traitsOf } from '../data/traits';
-import { t, type MessageKey } from '../i18n';
+import { getLocale, t, type MessageKey } from '../i18n';
 import { enemyStatGrid, towerLevelTable } from '../ui/statTables';
 import { resultsReport } from '../ui/results';
 import { traitChip } from '../ui/traitIcons';
@@ -43,6 +44,8 @@ export interface GameScreenOpts {
   bonuses?: RunBonuses;
   modifiers?: ModifierId[];
   mutators?: MutatorId[];
+  /** Stress scene / performance test: no badges, no playtest recording. */
+  benchmark?: boolean;
 }
 
 export interface GameNav {
@@ -124,8 +127,18 @@ export class GameScreen implements Screen, HudHost {
     this.frameListeners.push(fn);
   }
 
+  /** Playtest stats for this run (only when playtest mode is on). */
+  private recorder: PlaytestRecorder | null = null;
+
+  private recordPlaytest(result: 'won' | 'lost' | 'quit'): void {
+    if (!this.recorder) return;
+    this.app.playtest.add(this.recorder.finish(result, { quality: this.app.quality.tier, renderer: this.app.stage.rendererName, locale: getLocale() }));
+    this.recorder = null;
+  }
+
   enter(): void {
     const s = this.app.save.data.settings;
+    if (this.app.playtest.enabled && !this.opts.benchmark) this.recorder = new PlaytestRecorder(this);
     this.keys = resolveHotkeys(s.hotkeys);
     this.keyActions = actionsByCode(this.keys);
     this.view = new WorldView(this.atlas, this.game, this.app.quality, { shake: s.shake, damageNumbers: s.damageNumbers, reducedMotion: motionReduced(s) }, this.app.bakeScale, this.app.stage.maxTextureSize);
@@ -205,12 +218,20 @@ export class GameScreen implements Screen, HudHost {
   }
 
   exit(): void {
+    // left mid-run: still useful (where do players give up?)
+    if (!this.ended && this.game.waveNum > 0) this.recordPlaytest('quit');
+    this.recorder = null;
     this.app.achievements.onUnlock = () => {};
     for (const c of this.cleanup) c();
     this.gestures?.destroy();
     this.modal?.close();
     this.view.destroy();
     this.app.audio.stopMusic();
+  }
+
+  /** GPU context lost (App shows the overlay): stop the match under a pause menu. */
+  onGraphicsLost(): void {
+    if (!this.modal && this.game.state === 'playing') this.openPause();
   }
 
   resize(w: number, h: number): void {
@@ -263,7 +284,8 @@ export class GameScreen implements Screen, HudHost {
       this.app.audio.updateMatch({ wave: g.waveNum, enemies: g.enemies.length, lives: g.lives, maxLives: g.maxLives });
     }
     for (const fn of this.frameListeners) fn(dt);
-    if (running) this.app.achievements.tick(dt, this.game, this.opts.mode);
+    if (running && !this.opts.benchmark) this.app.achievements.tick(dt, this.game, this.opts.mode);
+    this.recorder?.frame(dt);
     if (this.game.state !== 'playing' && !this.ended) this.finish();
   }
 
@@ -779,6 +801,7 @@ export class GameScreen implements Screen, HudHost {
 
   private finish(): void {
     this.ended = true;
+    this.recordPlaytest(this.game.state === 'won' ? 'won' : 'lost');
     this.selectTower(null);
     this.clearGhost();
     const g = this.game;

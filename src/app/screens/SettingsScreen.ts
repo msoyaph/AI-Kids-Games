@@ -53,6 +53,8 @@ export class SettingsScreen implements Screen {
     private readonly onBack: () => void,
     /** Rebuilds this screen (after the language changes). */
     private readonly reopen: () => void = onBack,
+    /** Settings → Test performance. */
+    runPerfTest?: () => void,
   ) {
     const s = app.save.data.settings;
     const save = (): void => app.save.save();
@@ -216,6 +218,8 @@ export class SettingsScreen implements Screen {
       ),
       fullscreenAvailable() ? h('div.setting.panel', null, h('label', null, t('settings.fullscreen')), h('button.btn', { onClick: () => toggleFullscreen() }, t('settings.toggle'))) : null,
       hasKeyboard() ? this.keysSection() : null,
+      runPerfTest ? h('h3.section', null, t('settings.section.device')) : null,
+      runPerfTest ? h('div.setting.panel', null, h('label', null, t('perf.help')), h('button.btn', { onClick: () => runPerfTest() }, t('perf.button'))) : null,
       h('h3.section', null, t('settings.section.data')),
       h(
         'div.setting.panel',

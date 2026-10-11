@@ -1,3 +1,5 @@
+import { GAME_VERSION } from '../version';
+import { showPlaytestPanel } from './PlaytestPanel';
 import { atlasIconUrl, enemyTexName, towerIconUrl } from '../../render/atlas/bake';
 import { h, img } from '../../ui/dom';
 import { t } from '../../i18n';
@@ -74,6 +76,13 @@ export class TitleScreen implements Screen {
       h('div.row2', null, h('button.btn', { onClick: () => nav.workshop() }, t('title.workshop')), h('button.btn', { onClick: () => nav.encyclopedia() }, t('title.codex'))),
       h('div.row2', null, h('button.btn', { onClick: () => nav.badges() }, t('title.badges')), h('button.btn', { onClick: () => nav.settings() }, t('title.settings'))),
       fullscreenAvailable() ? h('div.row2', null, h('button.btn.ghost', { onClick: () => toggleFullscreen() }, t('title.fullscreen'))) : null,
+      app.playtest.enabled || app.playtest.data.runs.length
+        ? h(
+            'div.row2',
+            null,
+            h('button.btn.ghost.playtest-btn', { onClick: () => showPlaytestPanel(app, () => nav.title()) }, t('playtest.chip', { count: app.playtest.data.runs.length })),
+          )
+        : null,
     );
     this.el = h(
       'div.screen.menu',
@@ -90,7 +99,7 @@ export class TitleScreen implements Screen {
         ),
         buttons,
       ),
-      h('div.version', null, t('title.version', { v: '2.0', stars: t('unit.stars', { count: app.save.totalStars() }) })),
+      h('div.version', null, t('title.version', { v: GAME_VERSION, stars: t('unit.stars', { count: app.save.totalStars() }) })),
     );
   }
 }

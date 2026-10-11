@@ -15,6 +15,8 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   Uses `channel: 'chromium'` for the REAL GPU; Playwright's default headless shell is SwiftShader (software GL).
 - `npm run check:dist` — smoke check of dist via file:// AND a tiny http server, in full Chromium (catches
   browser-initiated requests like /favicon.ico — index.html has an inline data-URI icon for that reason).
+- `npm run analyze-playtests -- <folder>` — playtest exports vs bot runs → printed tuning suggestions (never applied);
+  logic in `scripts/lib/playtests.ts` (unit-tested).
 - `npm run audio:levels [-- --write]` — mixing pass (~2 min): Vite dev server + Chromium render every track /
   stinger / SFX offline, print peak + LUFS, `--write` regenerates `src/audio/mix.ts`. Re-run after audio changes.
 - Dev tools: `scripts/shot.mjs <url> <out.png> [w h setup.js waitMs --touch]` (screenshots; the in-app browser pane
@@ -161,6 +163,14 @@ Original IP: no Element TD names/assets. All art is Canvas2D code baked to atlas
   (hidden on pure-touch devices); HUD key hints follow bindings (`HudHost.keyFor`). Layout helpers shared in
   `tests/e2e/layout.ts`; `a11y.spec.ts` = 130 % text + high contrast overflow sweep (en/fil, phones + desktop),
   remap test, reduced-motion test.
+- Phase 13 done: device & playtest tools. `src/app/playtest.ts`: `PlaytestStore` (key `vanex-defense-playtest`,
+  ≤ 30 000 chars, oldest dropped; `?playtest=1/0`), `PlaytestRecorder` (GameScreen: frame/speed/pause stats,
+  records won/lost/quit), `FrameStats` (1 ms histogram → avg + 1 %-low fps). Title "Playtest · N runs" →
+  `PlaytestPanel` (download only outside iframes, copy box always). `GameScreenOpts.benchmark` (stress + perf test:
+  no badges, no recording). `src/app/perfTest.ts` (Settings → Device → Test performance: 3 s warm-up + 12 s at 300
+  constructs, results modal). GPU context loss: `Stage.onContextLoss` → `App.graphicsLost/Restored` (ticker stops,
+  GameScreen.onGraphicsLost opens pause, `.gfx-overlay` "Tap to continue", Reload after 5 s); all textures are
+  CanvasSource so Pixi re-uploads. `tests/e2e/device.spec.ts` covers all three. `GAME_VERSION` in `src/app/version.ts`.
 - New art helpers: `src/render/atlas/tech.ts` (TECH palette, chamfers, facets, crystals, rune rings, energy cores).
   Tower/enemy names changed, ids did not. `src/data/stats.ts` = stat rows + DPS for the HUD/codex.
 - Upgrade rules: kid-safe (no gore/horror/ads/IAP/tracking/network); keep `vanex-defense-save`, new keys use the

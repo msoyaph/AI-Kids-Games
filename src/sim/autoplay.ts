@@ -315,6 +315,8 @@ export interface SimResult {
   towers: number;
   seconds: number;
   pathLength: number;
+  /** Lives lost per wave (index = wave − 1). */
+  leaksByWave: number[];
 }
 
 /** Play a whole map headlessly with the bot. */
@@ -341,6 +343,7 @@ export function simulate(map: MapDef, difficulty: Difficulty, opts: BotOptions &
     towers: g.towers.length,
     seconds: Math.round(g.time),
     pathLength: Math.round(g.pathLength()),
+    leaksByWave: g.stats.leaksByWave.map((n) => n ?? 0),
   };
 }
 

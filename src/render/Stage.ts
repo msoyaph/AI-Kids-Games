@@ -59,6 +59,27 @@ export class Stage {
     this.resize();
   }
 
+  /** True between webglcontextlost and webglcontextrestored. */
+  contextLost = false;
+
+  /**
+   * GPU context loss (driver reset, too many tabs, phone memory pressure).
+   * Pixi restores its GL state itself and every texture here comes from a
+   * kept canvas, so all art re-uploads after `restored`.
+   */
+  onContextLoss(lost: () => void, restored: () => void): void {
+    const canvas = this.app.canvas;
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault(); // allow the browser to restore it
+      this.contextLost = true;
+      lost();
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.contextLost = false;
+      restored();
+    });
+  }
+
   get rendererName(): string {
     const t = this.app.renderer.type;
     return t === 1 ? 'webgl' : t === 2 ? 'webgpu' : 'canvas';
@@ -103,7 +124,7 @@ export class Stage {
     this.renderQueued = true;
     requestAnimationFrame(() => {
       this.renderQueued = false;
-      this.app.renderer.render(this.app.stage);
+      if (!this.contextLost) this.app.renderer.render(this.app.stage);
     });
   }
 }

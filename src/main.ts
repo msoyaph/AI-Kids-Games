@@ -5,6 +5,7 @@ import { startStress } from './app/stress';
 import { BadgesScreen } from './app/screens/BadgesScreen';
 import { EncyclopediaScreen } from './app/screens/EncyclopediaScreen';
 import { SettingsScreen } from './app/screens/SettingsScreen';
+import { runPerfTest } from './app/perfTest';
 import { SaveStore } from './app/save';
 import { mapById } from './data/maps';
 import { resolveLocale, setLocale, t } from './i18n';
@@ -58,11 +59,14 @@ async function boot(): Promise<void> {
     showGallery(stage, atlas);
     return;
   }
+  // ?playtest=1 starts recording on this device, ?playtest=0 stops (data stays until deleted)
+  const pt = params.get('playtest');
+  if (pt === '1' || pt === '0') app.playtest.setEnabled(pt === '1');
   const nav = createNav(app, {
     onRunEnd: (game, won, mode) => app.achievements.checkEnd(game, won, mode),
     encyclopedia: (a, n) => new EncyclopediaScreen(a, n),
     badges: (a, n) => new BadgesScreen(a, n),
-    settings: (a, n, back) => new SettingsScreen(a, back, () => n.settings()),
+    settings: (a, n, back) => new SettingsScreen(a, back, () => n.settings(), () => runPerfTest(a, n)),
   });
   if (import.meta.env.DEV) Object.assign((window as unknown as Record<string, Record<string, unknown>>).__vanex!, { nav, mapById });
   if (import.meta.env.DEV && params.has('editor')) {

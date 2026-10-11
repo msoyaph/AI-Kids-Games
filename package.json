@@ -16,7 +16,8 @@
     "perf": "node scripts/perf.mjs",
     "check:dist": "node scripts/check-dist.mjs",
     "test:all": "npm run typecheck && npm test && npm run e2e",
-    "audio:levels": "node scripts/audio-levels.mjs"
+    "audio:levels": "node scripts/audio-levels.mjs",
+    "analyze-playtests": "vite-node scripts/analyze-playtests.ts"
   },
   "dependencies": {
     "pixi.js": "^8.22.0"
