@@ -604,7 +604,10 @@ export class TrackModel implements GroundModel {
       if (x < sc.minX || x > sc.maxX || z < sc.minZ || z > sc.maxZ) continue;
       const j = this.nearestGlobal(sc, x, y, z);
       const cand = this.evalRibbon(sc, j, x, z, best === this.hitA ? this.hitB : this.hitA);
-      const sc2 = this.score(cand, y);
+      let sc2 = this.score(cand, y);
+      // Driving off the side of a drop-edged shortcut means falling — not being caught by the
+      // main road's out-of-bounds fence somewhere nearby.
+      if (cand.region === 2 && cand.edge === EDGE_DROP && j > 3 && j < sc.n - 4 && Math.abs(cand.d) < cand.boundary + 7) sc2 = 3.5;
       if (sc2 < bestScore) {
         best = cand;
         bestScore = sc2;

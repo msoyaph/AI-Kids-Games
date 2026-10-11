@@ -348,6 +348,14 @@ function buildSupports(track: TrackModel, groundY: number): THREE.Mesh | null {
     const yawDeg = (Math.atan2(rb.tx[i], rb.tz[i]) * 180) / Math.PI;
     const cx = rb.px[i];
     const cz = rb.pz[i];
+    // skip supports that would stand on another stretch of road underneath (overpasses)
+    let blocked = false;
+    for (let j = 0; j < rb.n && !blocked; j += 2) {
+      if (rb.py[j] > rb.py[i] - 3) continue;
+      const clear = rb.hw[j] + Math.max(rb.shL[j], rb.shR[j]) + rb.hw[i] + 1;
+      if ((rb.px[j] - cx) ** 2 + (rb.pz[j] - cz) ** 2 < clear * clear) blocked = true;
+    }
+    if (blocked) continue;
     const w = rb.hw[i] * 2 + rb.shL[i] + rb.shR[i] + 1.2;
     if (sup.kind === 'blocks') {
       const c = k % 2 ? sup.color : sup.color2 ?? sup.color;

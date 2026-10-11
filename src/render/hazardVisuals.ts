@@ -16,7 +16,17 @@ export class HazardVisuals {
       const name = h.data.model ?? DEFAULT_MODEL[h.data.kind];
       const geo = propGeometry(name) ?? propGeometry(DEFAULT_MODEL[h.data.kind])!;
       const holder = new THREE.Group();
-      const m = new THREE.Mesh(geo, Materials.flat);
+      let g = geo;
+      let lift = 0;
+      if (h.data.kind === 'roller') {
+        // spin around the ball's centre, not its base
+        g.computeBoundingBox();
+        const bb = g.boundingBox!;
+        lift = (bb.min.y + bb.max.y) / 2;
+        g = g.clone().translate(0, -lift, 0);
+      }
+      const m = new THREE.Mesh(g, Materials.flat);
+      m.position.y = lift;
       if (h.data.kind === 'swinger') {
         // pendulum: pivot high above the road, head swings across
         m.position.y = -6;

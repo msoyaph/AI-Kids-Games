@@ -261,7 +261,7 @@ function finishStep(k: Kart, ground: GroundModel, env: StepEnv, dt: number, _was
     k.nz += (0 - k.nz) * a;
   }
   if (hit.hit && !k.grounded) k.voidTime = 0;
-  else if (!k.grounded && !k.gliding) k.voidTime += dt;
+  else if (!k.grounded && (!k.gliding || Math.abs(hit.d) > hit.halfWidth + 30 || k.airTime > 7)) k.voidTime += dt;
   else k.voidTime = 0;
 
   // ---- falling out of the world → drone respawn
