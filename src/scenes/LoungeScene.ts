@@ -5,14 +5,14 @@ import { sfx } from '../audio/sfx';
 import { CHAR_BY_ID } from '../data/characters';
 import { dialogue } from '../data/dialogue';
 import { DECOR_BY_ID } from '../data/shop';
-import { drawToCanvas } from '../gfx/canvas';
-import { drawNpcSide, drawPortrait } from '../gfx/art/characters';
+import { drawNpcSide } from '../gfx/art/characters';
 import { drawDecor, drawLounge } from '../gfx/art/rooms';
 import { ensureTex } from '../gfx/textures';
 import { showDialogue } from '../ui/dialogue';
 import { h } from '../ui/dom';
 import { button } from '../ui/widgets';
 import { crewTalk } from './crew';
+import { portraitEl } from '../ui/portraits';
 
 /** Where bought decorations go in the room (fractions of the 1600 x 720 backdrop). */
 const DECOR_SPOTS: Array<[number, number, number]> = [
@@ -37,7 +37,7 @@ export class LoungeScene extends Scene {
     const people = h('div', { class: 'crew-row' });
     for (const id of this.cast) {
       const ch = CHAR_BY_ID[id];
-      const face = drawToCanvas(110, 110, (c, w, hh) => drawPortrait(c, ch, w, hh));
+      const face = portraitEl(ch.id, 110);
       const b = h('button', { class: 'crew-btn', type: 'button', 'data-testid': `crew-${id}` }, face, h('span', null, ch.name));
       b.addEventListener('click', () => this.talk(id));
       people.append(b);

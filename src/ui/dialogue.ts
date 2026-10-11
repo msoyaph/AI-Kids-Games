@@ -2,12 +2,12 @@ import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { CHAR_BY_ID } from '../data/characters';
 import type { Line } from '../data/dialogueTypes';
-import { drawToCanvas } from '../gfx/canvas';
-import { drawPortrait, type Mood } from '../gfx/art/characters';
+import { type Mood } from '../gfx/art/characters';
 import { h, setText } from './dom';
 import { setFreeze } from './modal';
 import { readAloudOn, speak, stopSpeech } from './speech';
 import { button, iconEl } from './widgets';
+import { portraitEl } from './portraits';
 
 const portraitCache = new Map<string, HTMLCanvasElement>();
 
@@ -16,7 +16,7 @@ function portrait(who: string, mood: Mood): HTMLCanvasElement {
   let c = portraitCache.get(key);
   if (!c) {
     const ch = CHAR_BY_ID[who] ?? CHAR_BY_ID.player;
-    c = drawToCanvas(150, 150, (ctx, w, hh) => drawPortrait(ctx, ch, w, hh, mood, S.state.data.profile));
+    c = portraitEl(ch.id, 150, mood, S.state.data.profile);
     portraitCache.set(key, c);
   }
   const copy = c.cloneNode(false) as HTMLCanvasElement;

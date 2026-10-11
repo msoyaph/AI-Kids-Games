@@ -4,9 +4,8 @@ import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { CHAR_BY_ID } from '../data/characters';
 import { CHAPTER_NAMES } from '../data/missions';
-import { drawToCanvas } from '../gfx/canvas';
 import { drawAcademy } from '../gfx/art/rooms';
-import { drawNpcSide, drawPortrait } from '../gfx/art/characters';
+import { drawNpcSide } from '../gfx/art/characters';
 import { ensureTex, rocketTex, tex } from '../gfx/textures';
 import type { HubPlace } from '../systems/events';
 import { h, setText } from '../ui/dom';
@@ -14,6 +13,7 @@ import { showDialogue } from '../ui/dialogue';
 import { button, iconEl } from '../ui/widgets';
 import { objectiveLabel, whereOf } from './director';
 import { hubHooks } from './hubHooks';
+import { portraitEl, warmPortraits } from '../ui/portraits';
 
 const PLACE_SCENE: Record<HubPlace, string> = {
   board: 'board', hangar: 'hangar', codex: 'codex', badges: 'badges', lounge: 'lounge', map: 'map', shop: 'shop',
@@ -76,7 +76,7 @@ export class HubScene extends Scene {
 
     // Top bar.
     const d = S.state.data;
-    const face = drawToCanvas(80, 80, (c, w, hh) => drawPortrait(c, CHAR_BY_ID.player, w, hh, 'happy', d.profile));
+    const face = portraitEl('player', 80, 'happy', d.profile);
     face.className = 'hub-face';
     this.coinText = h('span', null, String(d.coins));
     const top = h(
@@ -123,6 +123,7 @@ export class HubScene extends Scene {
     S.state.data.location = 'earth';
     this.refresh();
     hubHooks.onEnter(this);
+    warmPortraits(['player', 'stella', 'pip', 'rio', 'boltzy', 'tuggy', ...(S.state.flag('zibboJoined') ? ['zibbo'] : [])], S.state.data.profile);
   }
 
   override back(): boolean {
@@ -192,7 +193,7 @@ export class HubScene extends Scene {
       setText(this.bannerObj, lbl.text);
       if (this.bannerFace.dataset.who !== cur.mission.giver) {
         this.bannerFace.dataset.who = cur.mission.giver;
-        this.bannerFace.replaceChildren(drawToCanvas(84, 84, (c, w, hh) => drawPortrait(c, CHAR_BY_ID[cur.mission.giver] ?? CHAR_BY_ID.stella, w, hh)));
+        this.bannerFace.replaceChildren(portraitEl(CHAR_BY_ID[cur.mission.giver] ? cur.mission.giver : 'stella', 84));
       }
       const w = whereOf(cur.obj);
       const place: HubPlace = w.place ?? (cur.obj.kind === 'talk' && cur.obj.area === 'lounge' ? 'lounge' : 'map');

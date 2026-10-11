@@ -2,10 +2,8 @@ import { Sprite } from 'pixi.js';
 import { Scene } from '../app/Scene';
 import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
-import { CHAR_BY_ID } from '../data/characters';
 import { DECOR, OUTFITS } from '../data/shop';
 import { drawToCanvas } from '../gfx/canvas';
-import { drawAstronautBust, drawPortrait } from '../gfx/art/characters';
 import { drawDecor, drawLounge } from '../gfx/art/rooms';
 import { ensureTex } from '../gfx/textures';
 import { buy, canBuy, equipOutfit, isUnlocked, toggleDecor, unlockHint } from '../systems/economy';
@@ -13,6 +11,7 @@ import { clear, h, setText } from '../ui/dom';
 import { speak } from '../ui/speech';
 import { toast } from '../ui/toast';
 import { button, iconEl } from '../ui/widgets';
+import { portraitEl } from '../ui/portraits';
 
 type Tab = 'outfits' | 'decor';
 
@@ -48,7 +47,7 @@ export class ShopScene extends Scene {
       h('div', { class: 'pill', 'data-testid': 'coins' }, iconEl('coin'), this.coinText),
     );
     this.preview = h('div', { class: 'shop-preview' });
-    const face = drawToCanvas(110, 110, (c, w, hh) => drawPortrait(c, CHAR_BY_ID.pots, w, hh, 'happy'));
+    const face = portraitEl('pots', 110);
     face.className = 'tip-face';
     this.tip = h('div', { class: 'tip-text' }, 'Welcome to my shop! Spend your star-coins here.');
     const tabs = h('div', { class: 'tabs' });
@@ -96,10 +95,7 @@ export class ShopScene extends Scene {
     for (const it of list) {
       const owned = it.price === 0 || save.owned.includes(it.id);
       const unlocked = isUnlocked(it.unlock, save);
-      const pic = drawToCanvas(90, 90, (c, w, hh) => {
-        if (this.tab === 'outfits') drawAstronautBust(c, { ...save.profile, outfit: it.style }, w / 2, hh * 0.42, w * 0.26);
-        else drawDecor(c, it.style, w, hh);
-      });
+      const pic = this.tab === 'outfits' ? portraitEl('player', 90, 'happy', { ...save.profile, outfit: it.style }, { frame: 'full' }) : drawToCanvas(90, 90, (c, w, hh) => drawDecor(c, it.style, w, hh));
       if (!unlocked) pic.style.filter = 'brightness(.3) saturate(0)';
       const inUse = this.tab === 'outfits' ? save.profile.outfit === it.style : save.decorPlaced.includes(it.id);
       let status: HTMLElement;
@@ -122,7 +118,7 @@ export class ShopScene extends Scene {
   private renderPreview(): void {
     const save = S.state.data;
     if (this.tab === 'outfits') {
-      const c = drawToCanvas(300, 300, (ctx, w, hh) => drawAstronautBust(ctx, { ...save.profile, outfit: this.tryOutfit }, w / 2, hh * 0.4, w * 0.24));
+      const c = portraitEl('player', 300, 'happy', { ...save.profile, outfit: this.tryOutfit }, { frame: 'full' });
       c.className = 'shop-bust';
       this.preview.replaceChildren(c);
     } else {

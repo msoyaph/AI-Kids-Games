@@ -369,8 +369,8 @@ body.portrait #rotate-hint:not(.dismissed) { display: flex; }
 .slot-info .ico { width: 28px; height: 28px; }
 .storage-note { align-self: center; padding: 10px 18px; border-radius: 18px; background: rgba(255,93,115,.3); font-size: 22px; }
 .creator-left { width: 36%; min-width: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-.creator-preview canvas { width: 260px; height: 260px; filter: drop-shadow(0 10px 0 rgba(10,6,40,.4)); }
-.creator-side canvas { width: 110px; height: 134px; }
+.creator-preview { width: 100%; flex: 1; min-height: 300px; cursor: grab; touch-action: none; pointer-events: auto; }
+.creator-preview:active { cursor: grabbing; }
 .creator-right { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 12px; }
 .creator-sections { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding-right: 8px; }
 .cr-title { font-size: 24px; color: var(--yellow); text-shadow: 0 2px 0 var(--ink); margin-bottom: 6px; }

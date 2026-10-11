@@ -8,8 +8,6 @@ import { STICKER_BY_ID } from '../data/stickers';
 import { STAT_KEYS, type PartSlot, type RocketLoadout, type StatKey } from '../data/types';
 import { drawToCanvas } from '../gfx/canvas';
 import { drawSticker } from '../gfx/art/stickers';
-import { drawPortrait } from '../gfx/art/characters';
-import { CHAR_BY_ID } from '../data/characters';
 import { updateRocketTex } from '../gfx/textures';
 import { Particles3 } from '../r3/fx/particles';
 import { RocketModel } from '../r3/models/rocket';
@@ -22,6 +20,7 @@ import { speak } from '../ui/speech';
 import { toast } from '../ui/toast';
 import { button, iconEl, starIcon } from '../ui/widgets';
 import { clearThumbQueue, rocketThumb } from '../ui/rocketThumbs';
+import { portraitEl } from '../ui/portraits';
 
 type Tab = PartSlot | 'stickers';
 
@@ -118,7 +117,7 @@ export class HangarScene extends Scene3D {
       this.statRows[k] = row;
       stats.append(row);
     }
-    const boltzy = drawToCanvas(110, 110, (c, w, hh) => drawPortrait(c, CHAR_BY_ID.boltzy, w, hh, 'happy'));
+    const boltzy = portraitEl('boltzy', 110);
     boltzy.className = 'tip-face';
     this.tip = h('div', { class: 'tip-text' }, 'Tap a part to try it on!');
     const tipBox = h('div', { class: 'tip-box' }, boltzy, this.tip);

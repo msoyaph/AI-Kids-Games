@@ -53,9 +53,9 @@ test('graphics quality can be switched in settings', async ({ page }) => {
   for (const q of ['low', 'medium', 'high']) {
     await page.getByTestId('btn-settings').click({ force: true });
     await expect(page.getByTestId('settings')).toBeVisible();
-    await page.getByTestId(`set-quality-${q}`).click({ force: true });
+    await page.getByTestId(`set-quality-${q}`).click();
     await expect.poll(tier).toBe(q);
-    await page.getByTestId('btn-settings-done').click({ force: true });
+    await page.getByTestId('btn-settings-done').click();
     await expect(page.getByTestId('settings')).toHaveCount(0);
     await page.waitForTimeout(300);
   }

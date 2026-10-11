@@ -2,11 +2,10 @@ import { S } from '../app/services';
 import { sfx } from '../audio/sfx';
 import { CHAR_BY_ID } from '../data/characters';
 import type { Line } from '../data/dialogueTypes';
-import { drawToCanvas } from '../gfx/canvas';
-import { drawPortrait } from '../gfx/art/characters';
 import { fillName } from './dialogue';
 import { h } from './dom';
 import { readAloudOn, speak } from './speech';
+import { portraitEl } from './portraits';
 
 const queue: Line[] = [];
 let showing = false;
@@ -29,7 +28,7 @@ function next(): void {
   showing = true;
   const ch = CHAR_BY_ID[line.who] ?? CHAR_BY_ID.stella;
   const text = fillName(line.text);
-  const face = drawToCanvas(84, 84, (c, w, hh) => drawPortrait(c, ch, w, hh, line.mood ?? 'happy', S.state.data.profile));
+  const face = portraitEl(ch.id, 84, line.mood ?? 'happy', S.state.data.profile);
   const card = h('div', { class: 'radio-card hit', 'data-testid': 'radio' }, face, h('div', { class: 'grow' }, h('div', { class: 'radio-name' }, ch.name), h('div', { class: 'radio-text' }, text)));
   S.game.topLayer.append(card);
   sfx('blip', { pitch: ch.voice.pitch });

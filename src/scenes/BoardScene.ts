@@ -9,7 +9,6 @@ import type { MissionDef } from '../data/missionTypes';
 import { PART_BY_ID } from '../data/parts';
 import { STICKER_BY_ID } from '../data/stickers';
 import { drawToCanvas } from '../gfx/canvas';
-import { drawPortrait } from '../gfx/art/characters';
 import { drawGlyph } from '../gfx/art/glyphs';
 import { drawLounge } from '../gfx/art/rooms';
 import { ensureTex } from '../gfx/textures';
@@ -17,6 +16,7 @@ import { showDialogue } from '../ui/dialogue';
 import { clear, h } from '../ui/dom';
 import { button, iconEl } from '../ui/widgets';
 import { boardHooks } from './boardHooks';
+import { portraitEl } from '../ui/portraits';
 
 type Tab = 'missions' | 'daily' | 'races';
 type Status = 'done' | 'active' | 'new' | 'locked';
@@ -123,7 +123,7 @@ export class BoardScene extends Scene {
     const st = this.status(m);
     const prog = S.missions.progress(m.id);
     const giver = CHAR_BY_ID[m.giver];
-    const face = drawToCanvas(96, 96, (c, w, hh) => drawPortrait(c, giver, w, hh));
+    const face = portraitEl(giver.id, 96);
     const objs = h('div', { class: 'obj-list' });
     m.objectives.forEach((o, i) => {
       const done = st === 'done' || (prog && i < prog.step);

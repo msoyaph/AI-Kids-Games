@@ -7,6 +7,7 @@ import { disposeObject } from '../r3/dispose';
 import { cloneCanvas, snapshot } from '../r3/snapshot';
 import { createPlanet } from '../r3/space/planets';
 import { recipeFor } from '../r3/space/recipes';
+import { portraitEl } from './portraits';
 
 /**
  * Pictures for the DOM UI (Codex pages, fact cards, the star map card). Real places are rendered
@@ -49,5 +50,6 @@ export function codexPicture(e: CodexEntry, cssSize: number): HTMLCanvasElement 
     const pic = bodyPicture(e.picture.body, cssSize);
     if (pic) return pic;
   }
+  if ('char' in e.picture) return portraitEl(e.picture.char, cssSize);
   return drawToCanvas(cssSize, cssSize, (c, w, hh) => drawCodexPicture(c, e, w, hh));
 }

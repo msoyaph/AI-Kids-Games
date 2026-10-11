@@ -18,5 +18,6 @@ export const FLAGS = {
   stress: p.has('stress'),
   gallery: p.has('gallery'),
   rockets: p.has('rockets'),
+  chars: p.has('chars'),
   quality: (q === 'low' || q === 'medium' || q === 'high' ? q : null) as QualityTier | null,
 };

@@ -27,7 +27,7 @@ import { Particles3 } from '../r3/fx/particles';
 import { Trail } from '../r3/fx/trail';
 import { atmosphereMaterial } from '../r3/materials';
 import { RocketModel } from '../r3/models/rocket';
-import { TuggyModel } from '../r3/models/tuggy';
+import { Character } from '../r3/models/characters';
 import { addSpaceSky } from '../r3/space/backdrop';
 import { SKIES, type SkyStyle, type SpaceSky } from '../r3/space/sky';
 import { makeEvents, resetEvents, type FlightEvents } from '../systems/flight';
@@ -93,7 +93,7 @@ export class FlightScene extends Scene3D {
   private dust: SpeedDust;
   private guide = new GuideTrail();
   private floats: FloatLabels;
-  private tuggy = new TuggyModel();
+  private tuggy = new Character('tuggy');
   private towBeam: Mesh;
   private bubble: Mesh;
   private marker = new Group();
@@ -219,7 +219,8 @@ export class FlightScene extends Scene3D {
     this.chase.comfort = this.comfort;
 
     // Tuggy and the tow beam.
-    this.tuggy.group.scale.setScalar(70);
+    this.tuggy.group.scale.setScalar(120);
+    this.tuggy.setAnim('hover');
     this.tuggy.group.visible = false;
     this.towBeam = new Mesh(new CylinderGeometry(1, 1, 1, 10, 1, true), new MeshBasicMaterial({ color: new Color('#7dffe9').multiplyScalar(2), transparent: true, opacity: 0.7, blending: AdditiveBlending, depthWrite: false }));
     this.towBeam.visible = false;
@@ -731,7 +732,8 @@ export class FlightScene extends Scene3D {
     this.dust.update(this.camera.position, ship.vx, ship.vh, ship.vy, clamp(speed / this.params.maxSpeed, 0, 1.6) * (this.comfort ? 0.35 : 1));
     // Tuggy and the tow line.
     if (this.tuggy.group.visible) {
-      this.tuggy.update(dt, 0.8);
+      this.tuggy.talk(this.towT < 2.4);
+      this.tuggy.update(dt);
       this.tuggy.group.lookAt(this.camera.position.x, this.tuggy.group.position.y, this.camera.position.z);
       if (this.towT > 1.5) {
         const a = this.tuggy.group.position;

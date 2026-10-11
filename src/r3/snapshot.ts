@@ -44,6 +44,8 @@ export interface SnapshotOptions {
   lit?: Texture | null;
   /** Camera distance and field of view framing an object of radius ~1 at the origin. */
   distance?: number;
+  /** Camera height (default 0). */
+  camY?: number;
   fov?: number;
   lookAt?: Vector3;
   /** Called before rendering (e.g. to update planet uniforms). */
@@ -65,7 +67,7 @@ export function snapshot(renderer: WebGLRenderer, object: Object3D, o: SnapshotO
   }
   camera.fov = o.fov ?? 30;
   camera.aspect = W / H;
-  camera.position.set(0, 0, o.distance ?? 4.2);
+  camera.position.set(0, o.camY ?? 0, o.distance ?? 4.2);
   camera.lookAt(o.lookAt ?? new Vector3());
   camera.updateProjectionMatrix();
   const parent = object.parent;

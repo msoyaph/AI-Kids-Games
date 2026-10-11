@@ -63,6 +63,15 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   Scene: `scenes/FlightScene.ts` (Scene3D), `r3/flight/flightView.ts` (planets, instanced coins/fuel/ice/glimmers,
   asteroid LOD buckets, comets with dust+ion tails away from the Sun, hoops, satellites), `r3/flight/flightFx.ts`
   (ChaseCam never rolls, ≤6° FOV kick, SpeedDust, Easy GuideTrail, DOM FloatLabels). Gamepad B = action in play.
+- Characters (`r3/models/characters.ts`, `faces.ts`): `new Character(id, profile?, {helmet, frame})`, ~1 unit
+  tall, feet at origin, facing +z; kinds from data/characters.ts (human, player/cadet with every Creator option and
+  shop outfit, robot, tuggy, alien, elder, critter). Joint groups (hips/torso/head/shoulders/elbows/hips/knees),
+  procedural anims via `setAnim` ('idle','wave','celebrate','talk','walk','run','jump','fall','hover','push',
+  'carry'), `mood`, `talk(on)`, `freeze(mood)` for stills. Faces = shared 4x2 canvas sheets per style; expression =
+  texture offset on a per-character clone. `?chars[&ids=a,b&anim=wave&mood=wow&talk]` review page.
+- Portraits (`ui/portraits.ts`): `portraitEl(id, cssSize, mood, profile?, {frame})` = cached 3D snapshot on the
+  character's colored disc (2D fallback); used by dialogue, radio, hub, board, lounge, slots, shop, hangar, Codex.
+  `warmPortraits` pre-draws the main cast after the hub loads. Creator shows a live 3D cadet (setViewOffset).
 - Post: NO multisampled render targets (they corrupted frames on ANGLE-Metal with many draws) → FXAA in its own
   pass after the merged bloom/tone-map pass (FXAA merged with bloom caused dark halos). Bloom threshold 1.25.
 - `scripts/shot.mjs <path> <out.png> [w h waitMs js]` (env `NEWGAME=1`, `BASE=`) for headless screenshots
@@ -106,7 +115,9 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
   turntable with snap-on animation and sparkles, 3D card thumbnails, two-column settings panel.
 - [x] 3D Phase 4: 3D flight (chase cam, steering, Easy assists, comfort), all flight content in 3D, Tuggy tow,
   Saturn ring races with hoops, bots for every trip and race, pacing +3 warp/swoop cinematics (Easy 6.7 h, Normal 5.7 h).
-- [ ] 5 characters · [ ] 4 flight · [ ] 5 characters · [ ] 6 landing/explore · [ ] 7 hub/menus
+- [x] 3D Phase 5: 3D cast (cadet + all options/outfits, crew, robots, Tuggy, Zephyrans, glimmer) with faces,
+  expressions and procedural animations; 3D portraits everywhere in the DOM; live 3D Creator; 3D Tuggy in flight.
+- [ ] 6 landing/explore · [ ] 4 flight · [ ] 5 characters · [ ] 6 landing/explore · [ ] 7 hub/menus
   (remove Pixi) · [ ] 8 cutscenes · [ ] 9 perf · [ ] 10 tests/review/handoff
 
 ## Current numbers

@@ -3,14 +3,12 @@ import { Scene3D } from '../app/Scene3D';
 import { S } from '../app/services';
 import { formatPlaytime } from '../core/mathx';
 import { STICKERS } from '../data/stickers';
-import { CHAR_BY_ID } from '../data/characters';
-import { drawToCanvas } from '../gfx/canvas';
-import { drawPortrait } from '../gfx/art/characters';
 import { MenuBackdrop } from '../r3/space/backdrop';
 import { h } from '../ui/dom';
 import { celebrate } from '../ui/fx';
 import { button, iconEl } from '../ui/widgets';
 import { completeHooks } from './completeHooks';
+import { portraitEl } from '../ui/portraits';
 
 /** "You did it!" screen with play time, Codex %, missions and badges. */
 export class CompleteScene extends Scene3D {
@@ -25,7 +23,7 @@ export class CompleteScene extends Scene3D {
     const codex = completeHooks.codexPercent();
     const badges = completeHooks.badges();
     const stat = (icon: string, label: string, value: string) => h('div', { class: 'stat-tile' }, iconEl(icon), h('div', { class: 'stat-val' }, value), h('div', { class: 'stat-lbl' }, label));
-    const face = drawToCanvas(150, 150, (c, w, hh) => drawPortrait(c, CHAR_BY_ID.player, w, hh, 'wow', d.profile));
+    const face = portraitEl('player', 150, 'wow', d.profile);
     const finished = S.missions.isDone('c5_beacon');
     this.ui.append(
       h('div', { class: 'complete-wrap' },

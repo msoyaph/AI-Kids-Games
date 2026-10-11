@@ -4,10 +4,7 @@ import { S } from '../app/services';
 import { startSession } from '../app/session';
 import { sfx } from '../audio/sfx';
 import { formatPlaytime } from '../core/mathx';
-import { CHAR_BY_ID } from '../data/characters';
 import { CHAPTER_NAMES } from '../data/missions';
-import { drawToCanvas } from '../gfx/canvas';
-import { drawPortrait } from '../gfx/art/characters';
 import { MenuBackdrop } from '../r3/space/backdrop';
 import { deleteSlot, listSlots, loadSlot } from '../systems/save/saveManager';
 import { storageAvailable } from '../systems/save/storage';
@@ -15,6 +12,7 @@ import { clear, h } from '../ui/dom';
 import { closeTopModal, openModal } from '../ui/modal';
 import { openSettings } from '../ui/settings';
 import { button, iconEl } from '../ui/widgets';
+import { portraitEl } from '../ui/portraits';
 
 /** Pick one of three save slots (one per player in the family). */
 export class SlotsScene extends Scene3D {
@@ -69,7 +67,7 @@ export class SlotsScene extends Scene3D {
         continue;
       }
       const d = s.data;
-      const face = drawToCanvas(120, 120, (c, w, hh) => drawPortrait(c, CHAR_BY_ID.player, w, hh, 'happy', d.profile));
+      const face = portraitEl('player', 120, 'happy', d.profile);
       const del = button('Erase', 'trash', (e) => {
         e.stopPropagation();
         this.confirmDelete(s.slot, d.profile.name);
