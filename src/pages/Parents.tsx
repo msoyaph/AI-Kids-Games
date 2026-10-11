@@ -4,9 +4,28 @@ import { games } from '../data/games';
 import { usePreferences } from '../lib/preferences';
 import { usePageMeta } from '../lib/meta';
 import { Icon } from '../components/Icon';
-import { mediaFor } from '../lib/media';
+
 export default function Parents() {
-  usePageMeta('For Parents','How Ai Kids Games keeps play simple: no ads, no chat, no accounts, and browser-local lists and game saves.');
+  usePageMeta('For parents','No ads, no tracking, no accounts. Game progress stays on your device. Age guidance for every game.');
   const { clearHistory } = usePreferences(); const [cleared,setCleared] = useState(false);
-  return <div className="container inner-page parents-page"><div className="page-heading"><h1>More play.<br />Less worry.</h1><p>A small collection of games. A clear promise to your family.</p></div><div className="promise-grid">{[['No ads or tracking','No advertising, tracking pixels, analytics, or third-party network scripts. We use system fonts and local artwork.'],['No social features','No accounts, chat, comments, uploads, or content from other players. Kids simply choose a game and play.'],['Stays on your device','Favorites, recently played and game saves stay in your browser. We do not send them to a server.']].map(([title,body]) => <section key={title} className="promise-card"><span><Icon name="check" size={24} /></span><h2>{title}</h2><p>{body}</p></section>)}</div><section className="prose-section"><h2>A few useful things to know</h2><p>Game progress, unlocks and settings save in this browser. Your favorites and recent games also remain on this device. Clearing the lists below leaves game saves alone; use each game’s own save controls to manage its progress. Browser storage can be unavailable or cleared, so saves are not backed up to an account.</p><p>The theme follows your device settings. You can switch light or dark mode using the button at the top. Your choice lasts for this visit.</p><p>Any link to another website asks a grown-up first. Our reviewed first-party games use local assets and do not make requests to other websites. Playing a game needs a modern browser; the 3D games need WebGL.</p><p>The website has no accounts or sign-up flow. Preview hosting may require the owner’s hosting sign-in; this is separate from the games.</p><p>Age guidance is our starting suggestion, not an official rating. Please try each game and decide what feels right for your child. Take breaks and help younger players with the controls.</p></section><section className="prose-section"><h2>Meet the launch games</h2><div className="parent-games">{games.map(game => <article className="parent-game" key={game.slug}><img src={mediaFor(game).cover} alt={`Original artwork for ${game.title}`} width="720" height="720" loading="lazy" /><div><h3>{game.title}<span className="age-badge static">{game.ageGuidance}</span></h3><p>{game.contentNotes}</p><Link className="text-link" to={`/game/${game.slug}`}>See game details<Icon name="arrow" size={16} /></Link></div></article>)}</div></section><section className="clear-data-panel"><div><h2>A fresh start</h2><p>Clear the favorites and recently played lists on this device.</p></div><button className="button secondary" onClick={() => { clearHistory(); setCleared(true); }}>Clear saved lists</button>{cleared && <p className="data-cleared" role="status"><Icon name="check" size={18} />Your saved lists have been cleared.</p>}</section></div>;
+  return <div className="container page">
+    <div className="page-head"><h1 className="display">For parents</h1><p className="muted">A small set of games, made to be simple and safe.</p></div>
+    <ul className="promises">
+      <li><Icon name="check" /><div><strong>No ads or tracking</strong><p className="muted">No advertising, analytics, tracking pixels or outside scripts. Everything loads from this site.</p></div></li>
+      <li><Icon name="check" /><div><strong>No accounts or chat</strong><p className="muted">No sign-ups, messages, uploads or other players. Kids pick a game and play.</p></div></li>
+      <li><Icon name="check" /><div><strong>Progress stays on this device</strong><p className="muted">Game saves, favorites and recently played live in this browser. We never receive them. Read the <Link to="/privacy">privacy page</Link>.</p></div></li>
+    </ul>
+    <section className="section" aria-labelledby="the-games"><h2 id="the-games" className="title" style={{ marginBottom: 16 }}>The games</h2>
+      <table className="games-table"><thead><tr><th scope="col">Game</th><th scope="col">Age</th><th scope="col">Good to know</th></tr></thead>
+        <tbody>{games.map(game => <tr key={game.slug}><th scope="row"><Link to={`/game/${game.slug}`}>{game.title}</Link></th><td>{game.ageGuidance}</td><td>{game.contentNotes}</td></tr>)}</tbody></table>
+    </section>
+    <section className="section prose" aria-labelledby="tips"><h2 id="tips" className="title" style={{ marginBottom: 16 }}>Good to know</h2>
+      <p>Ages are our suggestion, not an official rating. Try a game together and decide what feels right. Take breaks, and help younger players with the controls.</p>
+      <p>Saves are kept in this browser only, so clearing browser data removes them. Each game has its own save controls. Links to other websites ask a grown-up first.</p>
+      <p>The 3D games need a modern browser with WebGL. TheaBonk needs a keyboard and mouse or a gamepad.</p>
+    </section>
+    <section className="section panel" aria-labelledby="fresh-start"><div><h2 id="fresh-start" className="heading">Clear saved lists</h2><p>Removes favorites and recently played on this device. Game saves stay.</p></div>
+      <button className="button secondary" onClick={() => { clearHistory(); setCleared(true); }}>Clear saved lists</button>
+      {cleared && <p className="status" role="status"><Icon name="check" />Your saved lists have been cleared.</p>}</section>
+  </div>;
 }

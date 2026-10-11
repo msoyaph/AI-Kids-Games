@@ -32,10 +32,13 @@ build, not just its registry description.
    `npx tsx scripts/import-game-build.ts <slug> <source-index.html>` copies it
    unchanged and verifies SHA-256. Keep BUILD_IMPORTS.json current.
 4. Remove placeholders and add the art in `public/media/<slug>/` (see "Cover art" below).
-5. Add metadata using Game's actual fields: slug, title, tagline, description,
-   categories, tags, minAge, ageGuidance, contentNotes, estimatedPlayTime,
-   controls.types, controls.howToPlay, supportedDevices, thumbnail, banner,
-   releaseDate, featured, accentColor, status. Do not blindly paste README keys.
+5. Add metadata using Game's actual fields: slug, title, tagline (the hero's one line),
+   description (two short sentences for the details page), categories, tags, minAge,
+   ageGuidance, contentNotes, estimatedPlayTime, quickStart (three short first steps),
+   controls.types, controls.howToPlay (the exact full guidance, shown under "All
+   controls"), supportedDevices, coverLayers, releaseDate, featured, accentColor,
+   status. Do not blindly paste README keys. Art and previews are found by slug in
+   `public/media/<slug>/`; the build fails if a ready game lacks them.
 6. Run build, units and Playwright desktop/tablet/phone checks. Verify actual saves
    survive an iframe reload and other games/site lists survive each game's use
    and reset/delete actions. Test fullscreen, pointer lock, gamepad, first-tap
@@ -104,9 +107,11 @@ small script against a game page while you work out a route.
 ## Scaffolding and categories
 
 `npm run add-game` makes a Coming soon placeholder without overwriting a slug.
-Replace its art and HTML before launch. Launch categories: Action, Adventure,
-Cozy, Strategy, Racing, Learning. New categories need the Category type,
-Home icon map and scaffolder choices updated. Browse compares a game's numeric
+Replace its placeholder art and HTML before launch. Launch categories: Action,
+Adventure, Cozy, Strategy, Racing, Learning. New categories need the Category type
+and scaffolder choices updated. The home page shows one balanced "All games" grid;
+per-category rows appear automatically once there are 12 or more games
+(`CATEGORY_ROWS_FROM` in src/pages/Home.tsx). Browse compares a game's numeric
 minAge with the selected player age; ageGuidance is the display recommendation.
 
 ## Caching and hosting

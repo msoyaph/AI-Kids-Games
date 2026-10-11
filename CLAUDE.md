@@ -64,9 +64,18 @@ Progress (one commit per step):
    (opentype.js 1.3.4: 2.0 mis-parses Nunito's WOFF); public/og/<slug>.jpg and
    site.jpg by scripts/art/og.ts. Old public/art removed; registry drops thumbnail/
    banner, adds coverLayers and quickStart; src/lib/media.ts derives all media paths.
-4. TODO: design system and shell.
-5. TODO: preview player and cards.
-6. TODO: pages, including Privacy.
+4. COMPLETE: design system (src/styles.css tokens: Paper/Surface/Ink/Slate/Mist/Go,
+   light+dark via prefers-color-scheme and data-theme; self-hosted Nunito in
+   src/assets/fonts with OFL, preloaded by vite.config.ts), new Layout/Icon/Mark,
+   favicons (scripts/art/icons.ts), manifest, CSP connect-src 'self'.
+5. COMPLETE: src/lib/previews.ts (one controller: hover/focus on desktop, most-in-view
+   on touch, one at a time, lazy sources, never with reduced motion/Save-Data, error →
+   still), Preview/Cover/GameCard/GameGrid (src/lib/grid.ts balanced rows)/Hero/Lightbox.
+   Pitfall fixed: effects must depend on primitives (mediaFor() returns new objects).
+6. COMPLETE: pages Home (hero, single filtered grid, Play again, category rows at 12+),
+   Search, Details (facts, gallery/lightbox, quickStart + All controls), Play (streamed
+   real progress from build-sizes.json, then iframe; sandbox unchanged), Favorites,
+   For parents, Privacy, About, 404. Route shells add canonical/robots/sitemap.
 7. TODO: launch metadata.
 8. TODO: tests, visual review, Lighthouse.
 9. TODO: preview deploy, hosted suite, production, smoke test, report.

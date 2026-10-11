@@ -18,6 +18,10 @@ describe('game builds',() => {
       expect(createHash('sha256').update(bytes).digest('hex')).toBe(record!.sha256);
     }
   });
+  it('expected download sizes for the play page progress bar match the builds',() => {
+    const sizes = JSON.parse(readFileSync('src/data/build-sizes.json','utf8'));
+    expect(sizes).toEqual(Object.fromEntries(imports.games.map(entry => [entry.slug,entry.bytes])));
+  });
   it('folders contain only the game build',() => {
     for (const game of games) expect(readdirSync(pub(`games/${game.slug}`))).toEqual(['index.html']);
   });

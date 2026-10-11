@@ -30,7 +30,7 @@ export const games: Game[] = [
     "slug": "light-crossing",
     "title": "Light Crossing",
     "tagline": "Make a little island shine.",
-    "description": "Arrive on Driftlight Isle, pitch a tent and build a cozy island life. Befriend eight neighbors, fish, catch bugs, craft tools, decorate your home and fill the museum. Follow five story chapters to bring the lighthouse back to life for the Lantern Crossing festival, then keep exploring after the credits.",
+    "description": "Build a cozy life on Driftlight Isle. Befriend your neighbors, fish, catch bugs and decorate your home, then light the old lighthouse for the Lantern Crossing festival.",
     "categories": [
       "Cozy",
       "Adventure"
@@ -77,7 +77,7 @@ export const games: Game[] = [
     "slug": "theabonk",
     "title": "TheaBonk",
     "tagline": "Small hero. Mighty big bonks.",
-    "description": "Help Thea push back the Gloom with her glowing Bonk Ring. Explore a colorful 3D world, dodge waves of cartoon monsters and choose upgrades as you survive until dawn. Unlock new characters and grow your collection across runs.",
+    "description": "Help Thea push back the Gloom with her glowing Bonk Ring. Dodge waves of cartoon monsters, pick new powers as you level up and survive until dawn.",
     "categories": [
       "Action",
       "Adventure"
@@ -119,7 +119,7 @@ export const games: Game[] = [
     "slug": "vanex-defense",
     "title": "Vanex Defense",
     "tagline": "Little towers. Clever plans.",
-    "description": "Build elemental towers, mix them into combo towers and make a twisty maze to keep the cheeky Grumblewumps away from the crystal castle. Try new strategies across a colorful campaign and endless challenges.",
+    "description": "Build elemental towers, mix them into combo towers and make a twisty maze to keep the cheeky Grumblewumps away from the crystal castle.",
     "categories": [
       "Strategy",
       "Action"
@@ -163,7 +163,7 @@ export const games: Game[] = [
     "slug": "space-sky",
     "title": "Space Sky",
     "tagline": "Your rocket. A universe of wonder.",
-    "description": "Build your own rocket, explore the solar system and beyond, meet friendly aliens and learn real space facts. Take off on a colorful journey with discoveries, missions and a growing collection of space badges.",
+    "description": "Build your own rocket and explore the solar system and beyond. Meet friendly aliens, learn real space facts and collect space badges.",
     "categories": [
       "Adventure",
       "Learning"
@@ -208,7 +208,7 @@ export const games: Game[] = [
     "slug": "calex-cart",
     "title": "Calex Cart",
     "tagline": "Drift, boost and chase the finish.",
-    "description": "Drift, boost and glide through 16 bright tracks in an original 3D kart racer. Win Grand Prix trophies, chase Time Trial ghosts, pop balloons in Battle or race a friend in split-screen.",
+    "description": "Drift, boost and glide through 16 bright tracks in a 3D kart racer. Win Grand Prix trophies, chase Time Trial ghosts or race a friend in split-screen.",
     "categories": [
       "Racing",
       "Action"

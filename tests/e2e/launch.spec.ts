@@ -3,11 +3,11 @@ import { boot,guard,instrument,launchGames,startGame,verifySaveReload } from './
 for (const game of launchGames) test(`${game.slug}: home → details → play, 20 seconds clean, durable save`,async ({ page },info) => {
   await instrument(page); const checks = guard(page);
   await page.goto('/');
-  const card = page.getByRole('region',{ name:'Featured',exact:true }).locator('.game-card-link').filter({ has: page.getByRole('heading',{ name:game.title,exact:true }) });
+  const card = page.getByRole('region',{ name:'All games',exact:true }).locator('.game-card-link').filter({ has: page.getByRole('heading',{ name:game.title,exact:true }) });
   await card.click();
   await expect(page.getByRole('heading',{ level:1,name:game.title })).toBeVisible();
   await expect(page.getByRole('link',{ name:'Play',exact:true })).toHaveAttribute('href',`/play/${game.slug}`);
-  if (game.slug === 'calex-cart') await expect(page.getByText(/Split-screen requires a keyboard/)).toBeVisible();
+  if (game.slug === 'calex-cart') await expect(page.getByText(/Split-screen needs a keyboard or gamepads/)).toBeVisible();
   const f = await startGame(page,game.slug,!!info.project.use.hasTouch);
   await expect(page.locator('iframe')).toHaveAttribute('sandbox','allow-scripts allow-same-origin allow-pointer-lock');
   await expect(page.locator('iframe')).toHaveAttribute('allow','fullscreen; gamepad');
@@ -22,7 +22,7 @@ for (const game of launchGames) test(`${game.slug}: home → details → play, 2
 test('all five games preserve favorites, recent history and one another’s saves',async ({ page },info) => {
   test.setTimeout(180000); await instrument(page); const checks = guard(page);
   await page.goto('/');
-  for (const game of launchGames) await page.getByRole('region',{ name:'Featured',exact:true }).getByRole('button',{ name:`Add ${game.title} to favorites` }).click();
+  for (const game of launchGames) await page.getByRole('region',{ name:'All games',exact:true }).getByRole('button',{ name:`Add ${game.title} to favorites` }).click();
   const saved = new Map<string,string>();
   for (const game of launchGames) {
     const f = await startGame(page,game.slug,!!info.project.use.hasTouch);

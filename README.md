@@ -40,8 +40,13 @@ The first-party iframe allows scripts, same-origin storage, pointer lock,
 fullscreen and gamepad. It does not isolate trusted games from the site;
 third-party games need a separate domain. See STORAGE_AUDIT.md.
 
-Illustrations are original local SVG artwork, not gameplay screenshots. Three
-provided art pairs and two new SVG art pairs cover all five games.
+Each game has real gameplay previews (a 7–8 s muted loop, poster and 4–6 screenshots
+captured from the actual build with `npm run capture-previews -- <slug>`), a hand-drawn
+SVG cover in the site's shared style with slow idle layers, a transparent title logo and
+an Open Graph image, all in `public/media/<slug>/` and `public/og/`. Previews play on
+hover or focus (desktop) or when mostly in view (touch), one at a time, never with
+reduced motion or Save-Data. Design system: DESIGN_PLAN.md (Nunito, six colors, one
+action color).
 
 ## Deployment
 

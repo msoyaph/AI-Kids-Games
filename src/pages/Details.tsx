@@ -1,14 +1,52 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { findGame, games } from '../data/games';
+import { findGame, games, type Control, type Device } from '../data/games';
 import { usePageMeta } from '../lib/meta';
-import { FavoriteButton } from '../components/GameCard';
-import GameRow from '../components/GameRow';
-import { Icon } from '../components/Icon';
-import NotFound from './NotFound';
 import { mediaFor } from '../lib/media';
+import { FavoriteButton } from '../components/GameCard';
+import GameGrid from '../components/GameGrid';
+import Lightbox from '../components/Lightbox';
+import Preview, { Still } from '../components/Preview';
+import { Icon, type IconName } from '../components/Icon';
+import NotFound from './NotFound';
+
+const deviceIcon: Record<Device,IconName> = { Computer: 'computer',Tablet: 'tablet',Phone: 'phone' };
+const controlIcon: Record<Control,IconName> = { Keyboard: 'keyboard',Mouse: 'mouse',Gamepad: 'gamepad',Touch: 'touch' };
+const list = (items: string[]) => items.length < 2 ? items.join('') : `${items.slice(0,-1).join(', ')} and ${items.at(-1)}`;
+
 export default function Details() {
   const { slug } = useParams(); const game = findGame(slug);
-  usePageMeta(game?.title || 'Game not found',game?.tagline || 'This little adventure could not be found.',game ? mediaFor(game).og : undefined);
+  usePageMeta(game?.title || 'Game not found',game?.tagline || 'This game could not be found.',game ? mediaFor(game).og : undefined);
+  const [shot,setShot] = useState<number | null>(null);
   if (!game) return <NotFound />;
-  return <div className="container details-page"><Link className="back-link" to="/games"><Icon name="back" size={18} />All games</Link><div className={`detail-banner ${game.slug === 'theabonk' ? 'banner-bonk' : ''}`}><img src={mediaFor(game).cover} alt={`Original illustration for ${game.title}`} width="1280" height="720" fetchPriority="high" /><div className="banner-caption"><span className="eyebrow">{game.categories.join(' + ')}</span><h1>{game.title}</h1><p>{game.tagline}</p></div><span className="banner-art-note">Original game illustration</span></div><div className="game-detail-heading"><div className="detail-tags"><span className="age-badge static">{game.ageGuidance}</span><span><span className="status-dot" />{game.status}</span><span><Icon name="clock" size={16} />{game.estimatedPlayTime}</span></div><div className="detail-buttons"><Link to={`/play/${game.slug}`} className="button primary play-big"><Icon name="play" filled />Play</Link><FavoriteButton game={game} large /></div></div><div className="details-columns"><div><section className="detail-section"><h2>A little about the game</h2><p>{game.description}</p><div className="tag-list">{game.tags.map(tag => <span key={tag}>{tag}</span>)}</div></section><section className="detail-section"><h2>How to play</h2><ol className="how-to-play">{game.controls.howToPlay.map((step,index) => <li key={step}><span>{index+1}</span><p>{step}</p></li>)}</ol></section></div><aside className="game-info-panel"><h2>Good to know</h2><div><h3>Ways to play</h3><p className="control-types">{game.controls.types.map(type => <span key={type}><Icon name={type === 'Gamepad' ? 'gamepad' : type === 'Touch' ? 'phone' : 'computer'} size={17} />{type}</span>)}</p></div><div><h3>Works on</h3><p>{game.supportedDevices.join(' · ')}</p></div><div><h3>For grown-ups</h3><p>{game.contentNotes}</p><Link className="text-link" to="/parents">Our play promise<Icon name="arrow" size={16} /></Link></div><div><h3>Added to the collection</h3><p>{new Intl.DateTimeFormat('en-US',{ month: 'long', day: 'numeric',year: 'numeric',timeZone: 'UTC' }).format(new Date(game.releaseDate))}</p></div></aside></div><GameRow title="More games you might like" games={games.filter(item => item.slug !== game.slug)} href="/games" /></div>;
+  const media = mediaFor(game);
+  const devices = game.supportedDevices.map((device,index) => index ? device.toLowerCase() : device);
+  return <div className="container details">
+    <Link className="back-link" to="/games"><Icon name="back" size={20} />All games</Link>
+    <div className="details-top">
+      <div className="details-media"><Preview game={game} still="poster" auto eager sizes="(min-width: 1024px) 700px, 100vw" /></div>
+      <div className="details-copy">
+        <h1><img src={media.logo} alt={game.title} width={440} height={140} /></h1>
+        <p>{game.description}</p>
+        <div className="details-actions"><Link to={`/play/${game.slug}`} className="button primary play"><Icon name="play" filled size={20} />Play</Link><FavoriteButton game={game} large /></div>
+      </div>
+    </div>
+    <dl className="facts">
+      <div className="fact"><dt><Icon name="age" />Age</dt><dd>{game.ageGuidance}</dd></div>
+      <div className="fact"><dt><Icon name="clock" />Play time</dt><dd>{game.estimatedPlayTime}</dd></div>
+      <div className="fact"><dt><Icon name={deviceIcon[game.supportedDevices[0]]} />Works on</dt><dd>{list(devices)}</dd></div>
+      <div className="fact"><dt><Icon name="gamepad" />Controls</dt><dd className="fact-icons">{game.controls.types.map(type => <span key={type} title={type} role="img" aria-label={type}><Icon name={controlIcon[type]} /></span>)}</dd></div>
+    </dl>
+    {media.shots.length > 0 && <section className="section" aria-labelledby="screenshots"><div className="section-head"><h2 id="screenshots" className="title">Screenshots</h2></div>
+      <div className="gallery">{media.shots.map((item,index) => <button key={index} onClick={() => setShot(index)} aria-label={`View screenshot: ${item.alt}`}><Still image={item.thumb} alt="" sizes="320px" /></button>)}</div>
+      <Lightbox shots={media.shots} index={shot} onIndex={setShot} onClose={() => setShot(null)} /></section>}
+    <div className="section how">
+      <section aria-labelledby="how-to-play"><h2 id="how-to-play" className="title">How to play</h2>
+        <ol className="steps" style={{ marginTop: 20 }}>{game.quickStart.map(step => <li key={step}>{step}</li>)}</ol>
+        <details className="all-controls"><summary><Icon name="chevron" size={18} />All controls</summary><ul>{game.controls.howToPlay.map(step => <li key={step}>{step}</li>)}</ul></details>
+      </section>
+      <section className="grownups" aria-labelledby="grownups"><h2 id="grownups" className="title">For grown-ups</h2><p style={{ marginTop: 16 }}>{game.contentNotes}</p><p className="links"><Link className="text-link" to="/parents">For parents</Link><Link className="text-link" to="/privacy">Privacy</Link></p></section>
+    </div>
+    <section className="section" aria-labelledby="more-games"><div className="section-head"><h2 id="more-games" className="title">More games</h2></div><GameGrid games={games.filter(item => item.slug !== game.slug)} /></section>
+  </div>;
 }
