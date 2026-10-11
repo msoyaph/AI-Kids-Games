@@ -1,6 +1,7 @@
 import { BASE_STATS, CAPS, MAP_HALF } from '../config/balance';
 import { mergeTuning, TUNING_DEFAULTS, xpToNextWith, type Tuning, type TuningOverrides } from '../config/tuning';
 import { characterDef } from '../config/characters';
+import { mapDef, type MapDef, type MapId } from '../config/maps';
 import type { WeaponConfig } from '../config/weapons';
 import type { CharacterDef, PassiveDef, PlayerStats, ShrineKind, WeaponStats } from '../config/types';
 import { EventBuffer } from '../core/events';
@@ -92,6 +93,8 @@ export interface Player {
   hurtFlash: number;
   /** Max HP at the last stat recompute (to heal by the delta when max HP rises). */
   hpMaxCache: number;
+  /** Seconds left chilled (slowed) by frost attacks. */
+  chill: number;
 }
 
 export type WorldState = 'playing' | 'levelup' | 'chest' | 'dead' | 'won';
@@ -172,11 +175,36 @@ export interface DirectorState {
   /** Counts down to the victory screen once the run is won. */
   victoryT: number;
   dawn: boolean;
+  /** Highest health phase the current boss has entered (phase-change attacks fire once). */
+  bossPhase: number;
+}
+
+/** Map weather / hazards (Rimewood gusts and icicles). Driven by `w.hazardRng`. */
+export interface Weather {
+  /** Time of the next icicle volley. */
+  nextIcicle: number;
+  /** Time the next gust warning starts. */
+  nextGust: number;
+  /** Seconds of warning left before the current gust pushes (0 = none pending). */
+  warnT: number;
+  /** Seconds of push left. */
+  gustT: number;
+  /** Unit push direction and strength (u/s) of the current / announced gust. */
+  dirX: number;
+  dirZ: number;
+  push: number;
+  enemyPush: number;
+  /** Boss blizzard: seconds left, and its centre (pushes swirl around it). */
+  blizzardT: number;
+  blizzardX: number;
+  blizzardZ: number;
 }
 
 export interface WorldOptions {
   seed: number;
   characterId: string;
+  /** Map to play (default Gloam Meadow). */
+  map?: MapId;
   /** Permanent bonuses from the shop (added to base stats). */
   meta?: Partial<PlayerStats>;
   unlockedWeapons?: string[];
@@ -192,6 +220,13 @@ export interface WorldOptions {
 export interface World {
   seed: number;
   rng: Rng;
+  /**
+   * Separate stream for map hazards (icicles, gusts): adding hazards to a map never shifts
+   * the main stream, so other maps' spawn sequences stay identical.
+   */
+  hazardRng: Rng;
+  map: MapDef;
+  weather: Weather;
   terrain: Terrain;
   time: number;
   tick: number;
@@ -236,7 +271,8 @@ export function makeStats(): PlayerStats {
 export function createWorld(opts: WorldOptions): World {
   const rng = new Rng(opts.seed);
   const tuning = mergeTuning(TUNING_DEFAULTS, opts.tuning);
-  const terrain = new Terrain(opts.seed);
+  const map = mapDef(opts.map ?? 'meadow');
+  const terrain = new Terrain(opts.seed, map.terrain);
   const character = characterDef(opts.characterId);
 
   const baseStats = makeStats();
@@ -275,12 +311,28 @@ export function createWorld(opts: WorldOptions): World {
     character,
     hurtFlash: 0,
     hpMaxCache: baseStats.maxHp,
+    chill: 0,
   };
 
   const stress = opts.stress ?? 0;
   const world: World = {
     seed: opts.seed,
     rng,
+    hazardRng: new Rng((opts.seed ^ 0x2c1b3c6d) >>> 0),
+    map,
+    weather: {
+      nextIcicle: map.hazards.icicles?.start ?? Infinity,
+      nextGust: map.hazards.gusts?.start ?? Infinity,
+      warnT: 0,
+      gustT: 0,
+      dirX: 0,
+      dirZ: 0,
+      push: 0,
+      enemyPush: 0,
+      blizzardT: 0,
+      blizzardX: 0,
+      blizzardZ: 0,
+    },
     terrain,
     time: 0,
     tick: 0,
@@ -302,7 +354,7 @@ export function createWorld(opts: WorldOptions): World {
     pendingChests: 0,
     choices: [],
     chestRewards: [],
-    director: { spawnAcc: 0, eventIndex: 0, bossUid: 0, bossType: -1, bossMaxHp: 0, finalBossDefeated: false, lastSegment: -1, victoryT: 0, dawn: false },
+    director: { spawnAcc: 0, eventIndex: 0, bossUid: 0, bossType: -1, bossMaxHp: 0, finalBossDefeated: false, lastSegment: -1, victoryT: 0, dawn: false, bossPhase: 0 },
     stats: {
       kills: 0,
       damageTaken: 0,

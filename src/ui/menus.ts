@@ -1,6 +1,7 @@
 import { ACHIEVEMENTS, type AchievementDef } from '../config/achievements';
 import { CHARACTERS } from '../config/characters';
 import { ENEMIES } from '../config/enemies';
+import { MAPS, mapDef } from '../config/maps';
 import { SHOP } from '../config/meta';
 import { passiveDef } from '../config/passives';
 import type { CharacterDef } from '../config/types';
@@ -9,16 +10,17 @@ import { formatTime } from '../core/math';
 import { achievementContext, buy, nextCost, refundAll, shopRank, totalSpent, type RunOutcome, type RunSummary } from '../meta/progression';
 import type { SaveManager, Settings } from '../meta/save';
 import type { World } from '../sim/world';
-import { h, img } from './dom';
+import { h, img, setText } from './dom';
 import { iconUrl, portraitUrl } from './icons';
 import type { UI } from './UI';
 
 export interface GameApi {
   ui: UI;
   save: SaveManager;
-  startRun(characterId: string): void;
+  startRun(characterId: string, mapId?: string): void;
   applySettings(): void;
-  showcase(characterId: string): void;
+  /** Show a hero in the menu backdrop (and switch the backdrop to a map). */
+  showcase(characterId: string, mapId?: string): void;
   quitToTitle(): void;
   /** Drop the finished run so menus get the idle backdrop again. */
   clearRun(): void;
@@ -70,6 +72,7 @@ function statLine(def: CharacterDef): string {
 
 export class Menus {
   private selected = 'thea';
+  private selectedMap = 'meadow';
 
   constructor(private g: GameApi) {}
 
@@ -110,7 +113,33 @@ export class Menus {
   characterSelect(): void {
     const d = this.g.save.data;
     this.selected = d.unlockedCharacters.includes(d.lastCharacter) ? d.lastCharacter : 'thea';
-    this.g.showcase(this.selected);
+    this.selectedMap = d.unlockedMaps.includes(d.lastMap) ? d.lastMap : 'meadow';
+    this.g.showcase(this.selected, this.selectedMap);
+    const mapNote = h('div', { class: 'map-note' });
+    const mapTabs = MAPS.map((m) => {
+      const open = d.unlockedMaps.includes(m.id);
+      const best = d.stats.bestTimeByMap[m.id];
+      const tab = h(
+        'button',
+        { class: `map-tab${open ? '' : ' locked'}${m.id === this.selectedMap ? ' sel' : ''}` },
+        h('div', { class: 'map-name' }, open ? m.name : `${m.name} (locked)`),
+        h('div', { class: 'map-sub' }, open ? (best ? `Best ${formatTime(best)}` : 'Not yet survived') : (m.unlock?.text ?? '')),
+      );
+      tab.addEventListener('click', () => {
+        if (!open) {
+          this.g.sound('error');
+          setText(mapNote, `${m.name} unlocks when you ${m.unlock?.text.toLowerCase() ?? 'play more'}.`);
+          return;
+        }
+        this.g.sound('click');
+        this.selectedMap = m.id;
+        mapTabs.forEach((t) => t.classList.toggle('sel', t === tab));
+        setText(mapNote, m.tagline);
+        this.g.showcase(this.selected, m.id);
+      });
+      return tab;
+    });
+    setText(mapNote, mapDef(this.selectedMap).tagline);
     const details = h('div', { class: 'char-details panel' });
     const startBtn = h('button', { class: 'btn primary big', onclick: () => this.begin() }, 'Start run');
     const render = (): void => {
@@ -139,7 +168,7 @@ export class Menus {
       );
       const select = (): void => {
         this.selected = c.id;
-        this.g.showcase(c.id);
+        this.g.showcase(c.id, this.selectedMap);
         document.querySelectorAll('.char-card').forEach((n) => n.classList.remove('sel'));
         b.classList.add('sel');
         render();
@@ -166,6 +195,8 @@ export class Menus {
       'div',
       { class: 'select-screen' },
       h('div', { class: 'title small' }, 'Choose your hero'),
+      h('div', { class: 'map-row' }, ...mapTabs),
+      mapNote,
       h('div', { class: 'char-row' }, ...cards),
       details,
       h('div', { class: 'row' }, h('button', { class: 'btn ghost', onclick: back }, 'Back'), startBtn),
@@ -197,9 +228,10 @@ export class Menus {
       return;
     }
     d.lastCharacter = this.selected;
+    if (d.unlockedMaps.includes(this.selectedMap)) d.lastMap = this.selectedMap;
     this.g.save.save();
     this.g.sound('open');
-    this.g.startRun(this.selected);
+    this.g.startRun(this.selected, d.lastMap);
   }
 
   // ───────────────────────────── shop ─────────────────────────────
@@ -494,8 +526,9 @@ export class Menus {
       'div',
       { class: 'modal panel gameover' },
       h('div', { class: `title${won ? ' win' : ''}` }, won ? 'Dawn breaks!' : 'Bonked!'),
-      h('div', { class: 'subtitle' }, won ? 'The Gloom retreats. Thea’s meadow is safe… for now.' : `You held out for ${formatTime(r.time)}.${out.newBest ? ' A new personal best!' : ''}`),
+      h('div', { class: 'subtitle' }, won ? mapDef(r.mapId).winText : `You held out for ${formatTime(r.time)} in ${mapDef(r.mapId).name}.${out.newBest ? ' A new personal best!' : ''}`),
       note ? h('div', { class: 'subtitle warn' }, note) : null,
+      ...out.newMaps.map((id) => h('div', { class: 'subtitle unlock' }, `New map unlocked: ${mapDef(id).name}! Pick it on the hero screen.`)),
       h(
         'div',
         { class: 'go-cols' },

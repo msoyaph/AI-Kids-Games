@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { CAPS } from '../config/balance';
 import { ENEMIES } from '../config/enemies';
 import type { World } from '../sim/world';
-import { addFlashAttribute, commitInstances, flashLambert, makeInstanced, TRS, writeTRSFrom } from './instancing';
-import { enemyGeometry } from './models';
+import { addFlashAttribute, commitInstances, flashLambert, makeInstanced, TRS, writeTRSFrom, writeTRSPitchFrom } from './instancing';
+import { enemyGeometry, ROLLER_BODY } from './models';
 
 const BEHAVIOR_CHARGER = 'charger';
 const BEHAVIOR_EXPLODER = 'exploder';
@@ -19,6 +19,7 @@ export class EnemyRenderer {
   private isExploder: Uint8Array;
   private isBoss: Uint8Array;
   private bobAmp: Float32Array;
+  private isRoller: Uint8Array;
   shadowsEnabled = true;
 
   constructor(cap = CAPS.enemies + 400) {
@@ -27,10 +28,11 @@ export class EnemyRenderer {
     this.isCharger = new Uint8Array(ENEMIES.map((d) => (d.behavior === BEHAVIOR_CHARGER ? 1 : 0)));
     this.isExploder = new Uint8Array(ENEMIES.map((d) => (d.behavior === BEHAVIOR_EXPLODER ? 1 : 0)));
     this.isBoss = new Uint8Array(ENEMIES.map((d) => (d.behavior === 'boss' ? 1 : 0)));
-    this.bobAmp = Float32Array.from(ENEMIES.map((d) => (d.id === 'gnatlet' ? 0.25 : d.id === 'gloamRegent' ? 0.6 : 0)));
+    this.bobAmp = Float32Array.from(ENEMIES.map((d) => d.bob ?? 0));
+    this.isRoller = new Uint8Array(ENEMIES.map((d) => (d.roll ? 1 : 0)));
     ENEMIES.forEach((def) => {
       const c = Math.min(cap, def.maxCount ?? cap);
-      const mesh = makeInstanced(enemyGeometry(def.id, def.color), flashLambert(), c, true);
+      const mesh = makeInstanced(enemyGeometry(def), flashLambert(), c, true);
       mesh.name = `enemy:${def.id}`;
       this.flash.push(addFlashAttribute(mesh, c));
       this.meshes.push(mesh);
@@ -105,14 +107,22 @@ export class EnemyRenderer {
       }
       const bob = this.bobAmp[t] > 0 ? Math.sin(time * 6 + e.uid[i]) * this.bobAmp[t] : 0;
       TRS[0] = x;
-      TRS[1] = y + bob;
       TRS[2] = z;
       TRS[3] = e.yaw[i];
-      TRS[4] = roll;
       TRS[5] = s;
-      TRS[6] = sy;
       TRS[7] = s;
-      writeTRSFrom(mesh.instanceMatrix.array as Float32Array, k * 16);
+      if (this.isRoller[t]) {
+        // centred model: spin by the distance rolled (the sim keeps it in stC)
+        TRS[1] = y + ROLLER_BODY * s;
+        TRS[4] = e.stC[i] / (ROLLER_BODY * s);
+        TRS[6] = s;
+        writeTRSPitchFrom(mesh.instanceMatrix.array as Float32Array, k * 16);
+      } else {
+        TRS[1] = y + bob;
+        TRS[4] = roll;
+        TRS[6] = sy;
+        writeTRSFrom(mesh.instanceMatrix.array as Float32Array, k * 16);
+      }
       const col = mesh.instanceColor!.array as Float32Array;
       col[k * 3] = cr;
       col[k * 3 + 1] = cg;

@@ -6,17 +6,18 @@ asset files, CDN links or web fonts.
 
 ## Commands
 - `npm run dev` — dev server (http://localhost:5173). URL params: `?seed=123` (fixed run
-  seed), `?stress=1000` (stress test: keeps N enemies + 0.4·N projectiles alive, player
-  invulnerable). F3 toggles the debug overlay. `window.__theabonk` is the Game instance
+  seed), `?map=rimewood` (force a map), `?stress=1000` (stress test: keeps N enemies +
+  0.4·N projectiles alive, player invulnerable). F3 toggles the debug overlay. `window.__theabonk` is the Game instance
   (`advance(seconds)` steps frames synchronously — handy when rAF is throttled).
 - `npm run build` — typecheck + single-file build → `dist/index.html` (works from file:// and in a
   sandboxed iframe).
 - `npm test` — Vitest unit tests (`tests/unit`).
 - `npm run test:e2e` — Playwright smoke tests (`tests/e2e`), builds + serves on a dedicated port
   (47413, `E2E_PORT` overrides; never reuses a foreign server).
-- `npm run simulate -- [seeds] [skill]` — headless balance simulation (bot plays full runs
-  per character). `VERBOSE=1` prints every run.
-- `npm run bench -- [enemies] [seconds]` — headless sim performance benchmark.
+- `npm run simulate -- [seeds] [skill] [--map rimewood]` — headless balance simulation (bot
+  plays full runs per character). `VERBOSE=1` prints every run.
+- `npm run bench -- [enemies] [seconds] [--map rimewood]` — headless sim performance benchmark
+  (also prints CPU ms/tick, steadier than wall time on a busy machine).
 - `npm run check-size` — after build: single file, ≤1.5 MB, no external references.
 - `?playtest=1` — records each run on the device (`theabonk.playtest`, ≤20 runs/60 KB):
   damage by source, cause of death, picks, build, slide/jump time, boss attack hit rates.
@@ -34,16 +35,18 @@ asset files, CDN links or web fonts.
 src/
   core/      rng (seeded), math helpers, event ring buffer, safe storage
   config/    ALL tuning data (typed): tuning.ts (every feel/balance knob, ranges, defaults
-             block), weapons, passives, enemies, waves, characters, evolutions, shop,
-             achievements; balance.ts keeps structural constants only
+             block), maps.ts (MapDef per map), weapons, passives, enemies, waves, characters,
+             evolutions, shop, achievements; balance.ts keeps structural constants only
   sim/       Pure game logic — NO three.js / DOM imports. Deterministic given seed + inputs.
              world.ts (state), pools.ts (SoA typed-array pools), spatialHash.ts, terrain.ts
-             (+ walkability lattice `pass`), flowField.ts (enemy pathing), player.ts (momentum movement), enemyAI.ts, director.ts (waves/bosses), combat.ts,
+             (+ walkability lattice `pass`, ice/snow `surface`), flowField.ts (enemy
+             pathing), weather.ts (icicles, gusts, blizzard wind), player.ts (momentum movement), enemyAI.ts, director.ts (waves/bosses), combat.ts,
              weapons/*.ts (one behavior fn per weapon behavior), pickups.ts, leveling.ts,
              upgrades.ts, shrines.ts, sim.ts (fixed-step orchestration), bot.ts (AI player)
   render/    three.js only reads sim state: instanced meshes per enemy/projectile kind, gems,
              particles, terrain/props, camera rig, damage numbers (2D canvas overlay),
-             occlusion.ts (GPU dithered fade of props between camera and player)
+             occlusion.ts (GPU dithered fade of props between camera and player),
+             Sky.ts (per-map moods + aurora), Snowfall.ts
   audio/     Web Audio synth SFX + procedural music
   input/     keyboard/mouse/pointer-lock/gamepad (+ drag-look fallback in iframes)
   ui/        DOM screens (title, select, shop, settings, pause, level-up, chest, game over),
@@ -70,7 +73,15 @@ Key rules:
   (never `TUNING_DEFAULTS` directly) and applies it at use time so live panel edits take
   effect immediately; the camera reads `rig.tuning`. Runs with changed tuning are flagged
   `w.options.tuned` and never touch the save.
+- Maps are data (`config/maps.ts`): terrain spec, props, palette, sky, hazards, waves/events,
+  `variants` (base enemy → map variant; summons go through `variantOf`), `finalBoss`, music,
+  banners, unlock rule. Sim reads `w.map`; Renderer.setTerrain(t, map) caches by map+seed.
+  Map hazards use `w.hazardRng` only, so adding hazards never shifts the main stream.
+- Enemy data fields replace id checks: `model` (variants reuse a base model + `frostTrim`),
+  `flying`, `bob`, `chill`, `roll`, `shotVisual`; bosses by `bossPattern`.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
+  Save v2 (`meta/save.ts`): older saves are migrated in sanitizeSave and copied once to
+  `theabonk.save.bak` just before the first write in the new format.
 
 ## Performance notes
 - `npx tsx scripts/bench.ts 1000 20` — headless sim benchmark (stress mode keeps N enemies +
@@ -113,6 +124,9 @@ the golden "sim" fingerprints). Damage sources: sim/sources.ts codes passed to
   and bosses are exempt. `spawnEnemy` snaps ground spawns to reachable cells and returns -1
   when there is none within 6 units. Player on an unreachable island → `flow.island` and
   everyone chases directly.
+- Warning circles / shockwaves use `alphaBasic` with a per-map style: additive glow on dark
+  ground, solid see-through colour on bright ground (`palette.telegraphs: 'solid'`, snow) —
+  additive white-on-white vanishes.
 - Prop materials patched by `fadeProps` need `OCCLUSION_UNIFORMS` set each frame (Renderer
   does it); `uFocus` far away in menus disables the fade. The player's ghost silhouette
   (`GreaterDepth`) renders before the player mesh (renderOrder 1 → 2).
@@ -130,6 +144,8 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
 - [x] 1. Tuning file + live panel + apply-tuning
 - [x] 2. Playtest recording, damage sources, analyze-playtests, sliding bot
 - [x] 3. Flow-field pathing + camera occlusion fade / player silhouette
+- [x] 4. Map system (MapDef) + Rimewood (ice, drifts, icicles, gusts, variants, Old Rime),
+  save v2 with backup, map picker
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

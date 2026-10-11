@@ -54,6 +54,11 @@ export function writeTRSFrom(a: Float32Array, o: number): void {
   writeTRS(a, o, TRS[0], TRS[1], TRS[2], TRS[3], TRS[4], TRS[5], TRS[6], TRS[7]);
 }
 
+/** writeTRSPitch from the TRS scratch (TRS[4] holds the pitch). */
+export function writeTRSPitchFrom(a: Float32Array, o: number): void {
+  writeTRSPitch(a, o, TRS[0], TRS[1], TRS[2], TRS[3], TRS[4], TRS[5], TRS[6], TRS[7]);
+}
+
 /** T · Ry(yaw) · Rx(pitch) · S — for projectiles pointing along a 3D direction. */
 export function writeTRSPitch(a: Float32Array, o: number, x: number, y: number, z: number, yaw: number, pitch: number, sx: number, sy: number, sz: number): void {
   const c = Math.cos(yaw);
@@ -117,6 +122,32 @@ export function makeInstanced(geo: THREE.BufferGeometry, mat: THREE.Material, ca
   mesh.count = 0;
   mesh.frustumCulled = false;
   return mesh;
+}
+
+/**
+ * Unlit material with a per-instance `aAlpha` attribute (telegraph discs / shockwave walls):
+ * additive glow on dark maps, solid see-through colour on bright ones (snow), where an
+ * additive white-on-white warning would vanish.
+ */
+export function alphaBasic(params: THREE.MeshBasicMaterialParameters): THREE.MeshBasicMaterial {
+  const mat = new THREE.MeshBasicMaterial({ ...params, transparent: true, depthWrite: false });
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float aAlpha;\nvarying float vAlpha;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvAlpha = aAlpha;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vAlpha;')
+      .replace('#include <opaque_fragment>', '#include <opaque_fragment>\ngl_FragColor.a *= vAlpha;');
+  };
+  return mat;
+}
+
+/** Adds the per-instance `aAlpha` attribute alphaBasic() reads. */
+export function addAlphaAttribute(mesh: THREE.InstancedMesh, cap: number): THREE.InstancedBufferAttribute {
+  const a = new THREE.InstancedBufferAttribute(new Float32Array(cap).fill(1), 1);
+  a.setUsage(THREE.DynamicDrawUsage);
+  mesh.geometry.setAttribute('aAlpha', a);
+  return a;
 }
 
 /**

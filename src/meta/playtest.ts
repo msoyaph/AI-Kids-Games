@@ -1,6 +1,6 @@
 import { GAME_VERSION } from '../config/version';
 import type { KeyValueStore } from '../core/storage';
-import { BOSS_ATTACKS, sourceName } from '../sim/sources';
+import { BOSS_ATTACKS, bossAttackPrefix, sourceName } from '../sim/sources';
 import type { World } from '../sim/world';
 
 /**
@@ -92,7 +92,7 @@ export function recordRun(w: World, ctx: RecordContext = {}): PlaytestRun {
     game: GAME_VERSION,
     at,
     hero: w.player.character.id,
-    map: ctx.map ?? 'meadow',
+    map: ctx.map ?? w.map.id,
     difficulty: ctx.difficulty ?? 'normal',
     seed: w.seed,
     player: ctx.player ?? 'human',
@@ -115,7 +115,7 @@ export function recordRun(w: World, ctx: RecordContext = {}): PlaytestRun {
     bosses: st.bossFights.map((f) => {
       const attacks: Record<string, { used: number; hits: number }> = {};
       BOSS_ATTACKS.forEach((name, i) => {
-        if (!name.startsWith(bossPrefix(f.id))) return;
+        if (!name.startsWith(bossAttackPrefix(f.id))) return;
         const used = st.bossAttackUsed[i];
         const hits = st.bossAttackHits[i];
         if (used || hits) attacks[name] = { used, hits };
@@ -123,10 +123,6 @@ export function recordRun(w: World, ctx: RecordContext = {}): PlaytestRun {
       return { id: f.id, spawnedAt: r1(f.spawnedAt), killedAt: f.killedAt >= 0 ? r1(f.killedAt) : null, damageTaken: r1(f.damageTaken), attacks };
     }),
   };
-}
-
-function bossPrefix(enemyId: string): string {
-  return enemyId === 'gloamRegent' ? 'regent.' : `${enemyId}.`;
 }
 
 /** Expand a run's interned picks back into item keys. */

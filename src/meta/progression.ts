@@ -2,7 +2,7 @@ import { ACHIEVEMENTS, type AchievementContext, type AchievementDef } from '../c
 import { SHOP, shopCost } from '../config/meta';
 import type { PlayerStats } from '../config/types';
 import type { World } from '../sim/world';
-import type { SaveData } from './save';
+import { refreshMapUnlocks, type SaveData } from './save';
 
 // ───────────────────────────── shop ─────────────────────────────
 
@@ -52,6 +52,7 @@ export function metaBonuses(save: SaveData): Partial<PlayerStats> {
 
 export interface RunSummary {
   characterId: string;
+  mapId: string;
   time: number;
   won: boolean;
   level: number;
@@ -69,6 +70,7 @@ export interface RunSummary {
 export function summarize(w: World): RunSummary {
   return {
     characterId: w.player.character.id,
+    mapId: w.map.id,
     time: w.time,
     won: w.state === 'won',
     level: w.player.level,
@@ -155,6 +157,8 @@ export interface RunOutcome {
   gold: GoldBreakdown;
   achievements: AchievementDef[];
   newBest: boolean;
+  /** Maps this run unlocked. */
+  newMaps: string[];
 }
 
 /** Commit a finished run to the save: gold, lifetime stats, achievements. */
@@ -164,7 +168,11 @@ export function applyRunResult(save: SaveData, r: RunSummary): RunOutcome {
   const s = save.stats;
   s.totalGold += gold.total;
   s.runsPlayed++;
-  if (r.won) s.wins++;
+  if (r.won) {
+    s.wins++;
+    s.winsByMap[r.mapId] = (s.winsByMap[r.mapId] ?? 0) + 1;
+  }
+  s.bestTimeByMap[r.mapId] = Math.max(s.bestTimeByMap[r.mapId] ?? 0, r.time);
   s.totalKills += r.kills;
   const newBest = r.time > s.bestTime;
   s.bestTime = Math.max(s.bestTime, r.time);
@@ -176,5 +184,6 @@ export function applyRunResult(save: SaveData, r: RunSummary): RunOutcome {
   s.topSpeed = Math.max(s.topSpeed, r.topSpeed);
   s.playtime += r.time;
   const achievements = checkAchievements(save);
-  return { gold, achievements, newBest };
+  const newMaps = refreshMapUnlocks(save);
+  return { gold, achievements, newBest, newMaps };
 }

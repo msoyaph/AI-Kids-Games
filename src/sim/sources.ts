@@ -33,11 +33,17 @@ export const BOSS_ATTACKS = [
   'regent.slam',
   'regent.rings',
   'regent.volley',
+  'oldRime.contact',
+  'oldRime.charge',
+  'oldRime.spikes',
+  'oldRime.shards',
+  'oldRime.blizzard',
 ] as const;
 export type BossAttack = (typeof BOSS_ATTACKS)[number];
 
-/** Map hazards that can hurt the player (extended by map definitions). */
-export const MAP_HAZARDS: string[] = ['generic'];
+/** Map hazards that can hurt the player. Append only (indices are stored in runs). */
+export const MAP_HAZARDS = ['generic', 'icicle'] as const;
+export const HAZARD_ICICLE = 1;
 
 const ATTACK_INDEX = new Map<string, number>(BOSS_ATTACKS.map((a, i) => [a, i]));
 
@@ -53,15 +59,28 @@ export function bossSrc(name: BossAttack): number {
   return src(SrcKind.Boss, bossAttackIndex(name));
 }
 
-/** Contact source for an enemy type (bosses map to their named contact attack). */
-export const CONTACT_SRC: Int32Array = Int32Array.from(
-  ENEMIES.map((d, i) => {
-    if (d.bossPattern === 'grumblecap') return bossSrc('grumblecap.contact');
-    if (d.bossPattern === 'clockjaw') return bossSrc('clockjaw.contact');
-    if (d.bossPattern === 'regent') return bossSrc('regent.contact');
-    return src(SrcKind.Contact, i);
-  }),
-);
+/** Contact source for an enemy type (bosses map to their pattern's named contact attack). */
+export const CONTACT_SRC: Int32Array = Int32Array.from(ENEMIES.map((d, i) => (d.bossPattern ? bossSrc(`${d.bossPattern}.contact` as BossAttack) : src(SrcKind.Contact, i))));
+
+/** Boss attack names start with this (frosted variants share their base's pattern). */
+export function bossAttackPrefix(enemyId: string): string {
+  const d = ENEMIES.find((e) => e.id === enemyId);
+  return `${d?.bossPattern ?? enemyId}.`;
+}
+
+/** Seconds of chill a hit from each source inflicts (frost enemies, their shots, Old Rime). */
+export const CHILL_BY_SOURCE: Float32Array = (() => {
+  const out = new Float32Array(SOURCE_SLOTS);
+  ENEMIES.forEach((d, i) => {
+    if (!d.chill || d.behavior === 'boss') return;
+    out[src(SrcKind.Contact, i)] = d.chill;
+    out[src(SrcKind.Shot, i)] = d.chill;
+  });
+  out[bossSrc('oldRime.shards')] = 1.2;
+  out[bossSrc('oldRime.spikes')] = 1.0;
+  out[bossSrc('oldRime.blizzard')] = 1.0;
+  return out;
+})();
 
 export function sourceName(code: number): string {
   const kind = code >> 8;

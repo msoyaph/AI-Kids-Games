@@ -490,6 +490,39 @@ body {
   text-align: center;
 }
 
+.gust {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.8rem 0.3rem 0.4rem;
+  border-radius: 2rem;
+  background: rgba(20, 40, 70, 0.72);
+  box-shadow: inset 0 0 0 0.12rem rgba(190, 235, 255, 0.5);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #e6fbff;
+}
+
+.gust-arrow {
+  width: 1.9rem;
+  height: 1.9rem;
+  background: #bff0ff;
+  clip-path: polygon(50% 0, 100% 55%, 66% 55%, 66% 100%, 34% 100%, 34% 55%, 0 55%);
+  transition: transform 0.15s linear;
+}
+
+.gust.swirl .gust-arrow {
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: gust-spin 1.6s linear infinite;
+}
+
+@keyframes gust-spin {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
 .boss-name {
   font-weight: 900;
   font-size: 1.2rem;
@@ -684,7 +717,11 @@ body {
   font-size: 2.3rem;
   font-weight: 900;
   white-space: nowrap;
-  text-shadow: 0 0.15rem 0 #2a1d4d, 0 0.3rem 1.2rem rgba(0, 0, 0, 0.6);
+  /* a soft plate keeps it readable on bright ground (snow, dawn) */
+  padding: 0.15rem 1.2rem 0.3rem;
+  border-radius: 1.4rem;
+  background: rgba(30, 22, 50, 0.42);
+  text-shadow: 0 0.15rem 0 #2a1d4d, 0 0 0.35rem #2a1d4d, 0 0.3rem 1.2rem rgba(0, 0, 0, 0.6);
 }
 
 .banner.boss {
@@ -1029,15 +1066,70 @@ body {
   inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* safe: on short screens start at the top and scroll instead of clipping the title */
+  justify-content: safe center;
   align-items: flex-start;
-  padding-left: 6vw;
+  padding: 1rem 0 1rem 6vw;
   gap: 1.1rem;
+  overflow-y: auto;
 }
 
 .char-row {
   display: flex;
   gap: 1rem;
+}
+
+.map-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.map-tab {
+  font: inherit;
+  color: var(--paper);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 0.9rem;
+  padding: 0.45rem 0.9rem 0.5rem;
+  background: rgba(40, 30, 66, 0.85);
+  box-shadow: inset 0 0 0 0.15rem var(--edge), 0 0.3rem 0 #1b1236;
+  outline: none;
+}
+
+.map-tab:focus,
+.map-tab:hover {
+  transform: translateY(-0.15rem);
+}
+
+.map-tab.sel {
+  box-shadow: inset 0 0 0 0.15rem var(--edge), 0 0 0 0.22rem var(--accent-2), 0 0.3rem 0 #1b1236;
+}
+
+.map-tab.locked {
+  opacity: 0.7;
+}
+
+.map-name {
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+.map-sub {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.map-note {
+  max-width: 34rem;
+  font-size: 0.95rem;
+  opacity: 0.9;
+  text-shadow: 0 0.1rem 0.3rem rgba(0, 0, 0, 0.5);
+}
+
+.subtitle.unlock {
+  color: #9ff0ff;
+  font-weight: 900;
 }
 
 .char-card {

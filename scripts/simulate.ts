@@ -2,11 +2,12 @@
  * Balance simulation: the heuristic bot plays full headless runs for every character
  * (no shop upgrades, no unlocked weapons — a true first run) and reports survival stats.
  *
- * Usage: npm run simulate -- [seeds=8] [skill=0.7] [--tuning exported.json]
+ * Usage: npm run simulate -- [seeds=8] [skill=0.7] [--tuning exported.json] [--map rimewood]
  *        npx tsx scripts/simulate.ts 12 0.7
  */
 import { readFileSync } from 'node:fs';
 import { CHARACTERS } from '../src/config/characters';
+import { isMapId, mapDef, type MapId } from '../src/config/maps';
 import { diffTuning, mergeTuning, TUNING_DEFAULTS, TUNING_EXPORT_FORMAT, type TuningIssue, type TuningOverrides } from '../src/config/tuning';
 import { formatTime } from '../src/core/math';
 import { simulateRun, type HeadlessResult } from '../src/sim/headless';
@@ -23,6 +24,14 @@ if (tIdx >= 0) {
   tuning = diffTuning(TUNING_DEFAULTS, merged);
   argv.splice(tIdx, 2);
 }
+const mIdx = argv.indexOf('--map');
+let map: MapId = 'meadow';
+if (mIdx >= 0) {
+  const id = argv[mIdx + 1];
+  if (!isMapId(id)) throw new Error(`unknown map ${id}`);
+  map = id;
+  argv.splice(mIdx, 2);
+}
 const seeds = Number(argv[0] ?? 8);
 const skill = Number(argv[1] ?? 0.7);
 
@@ -32,12 +41,12 @@ function median(v: number[]): number {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
-console.log(`TheaBonk balance sim — ${seeds} seeds per hero, bot skill ${skill}, first-run (no meta)${tuning ? ' — WITH TUNING OVERRIDES' : ''}\n`);
+console.log(`TheaBonk balance sim — ${mapDef(map).name}, ${seeds} seeds per hero, bot skill ${skill}, first-run (no meta)${tuning ? ' — WITH TUNING OVERRIDES' : ''}\n`);
 const t0 = performance.now();
 const all: HeadlessResult[] = [];
 for (const c of CHARACTERS) {
   const res: HeadlessResult[] = [];
-  for (let s = 0; s < seeds; s++) res.push(simulateRun({ characterId: c.id, seed: 1000 + s * 7919, skill, tuning }));
+  for (let s = 0; s < seeds; s++) res.push(simulateRun({ characterId: c.id, seed: 1000 + s * 7919, skill, tuning, map }));
   all.push(...res);
   const times = res.map((r) => r.time);
   const avg = times.reduce((a, b) => a + b, 0) / times.length;

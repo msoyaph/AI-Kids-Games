@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { RUN_LENGTH } from '../config/balance';
+import { mapDef, type MapDef } from '../config/maps';
 import type { CharacterDef } from '../config/types';
 import { lerp } from '../core/math';
 import type { Terrain } from '../sim/terrain';
+import { playerWind } from '../sim/weather';
 import type { World } from '../sim/world';
 import { CameraRig } from './CameraRig';
 import { EnemyRenderer } from './EnemyRenderer';
@@ -14,6 +16,7 @@ import { PlayerView } from './PlayerView';
 import { ProjectileRenderer } from './ProjectileRenderer';
 import { ShrineRenderer } from './ShrineRenderer';
 import { Sky } from './Sky';
+import { Snowfall } from './Snowfall';
 import { buildWorldMesh } from './worldMesh';
 
 export type Quality = 'low' | 'medium' | 'high';
@@ -33,11 +36,16 @@ export class GameRenderer {
   readonly fx: Fx;
   readonly projectiles: ProjectileRenderer;
   readonly shrines = new ShrineRenderer();
+  readonly snow = new Snowfall();
   private sun: THREE.DirectionalLight;
   private sky: Sky;
   private worldGroup: THREE.Group | null = null;
-  private worldSeed = -1;
+  /** Map + seed of the built world meshes (two maps can share a seed). */
+  private worldKey = '';
   terrain: Terrain | null = null;
+  map: MapDef = mapDef('meadow');
+  private wind = new Float32Array(2);
+  private clock = 0;
   quality: Quality = 'high';
   private menuT = 0;
 
@@ -73,7 +81,7 @@ export class GameRenderer {
     this.scene.add(this.playerView.root);
     this.fx = new Fx(this.particles, overlay, this.rig);
     this.projectiles = new ProjectileRenderer(this.particles);
-    this.scene.add(this.enemies.group, this.pickups.group, this.projectiles.group, this.shrines.group, this.fx.group);
+    this.scene.add(this.enemies.group, this.pickups.group, this.projectiles.group, this.shrines.group, this.fx.group, this.snow.points);
     this.setQuality(quality);
   }
 
@@ -92,8 +100,8 @@ export class GameRenderer {
     this.particles.density = q === 'low' ? 0.4 : q === 'medium' ? 0.7 : 1;
     if (this.terrain) {
       // rebuild static meshes with the right shadow flags
-      this.worldSeed = -1;
-      this.setTerrain(this.terrain);
+      this.worldKey = '';
+      this.setTerrain(this.terrain, this.map);
     }
     this.scene.traverse((o) => {
       const m = (o as THREE.Mesh).material as THREE.Material | undefined;
@@ -101,9 +109,17 @@ export class GameRenderer {
     });
   }
 
-  setTerrain(t: Terrain): void {
+  setTerrain(t: Terrain, map: MapDef): void {
     this.terrain = t;
-    if (this.worldSeed === t.seed && this.worldGroup) return;
+    this.map = map;
+    this.sky.setMap(map);
+    const fog = this.scene.fog as THREE.Fog;
+    fog.near = map.sky.fog[0];
+    fog.far = map.sky.fog[1];
+    this.snow.density = map.sky.snow;
+    this.projectiles.setTelegraphStyle(map.palette.telegraphs === 'solid');
+    const key = `${map.id}:${t.seed}`;
+    if (this.worldKey === key && this.worldGroup) return;
     if (this.worldGroup) {
       this.scene.remove(this.worldGroup);
       this.worldGroup.traverse((o) => {
@@ -113,9 +129,9 @@ export class GameRenderer {
         if (mat) mat.dispose();
       });
     }
-    this.worldGroup = buildWorldMesh(t, this.quality === 'high');
+    this.worldGroup = buildWorldMesh(t, map, this.quality === 'high');
     this.scene.add(this.worldGroup);
-    this.worldSeed = t.seed;
+    this.worldKey = key;
   }
 
   setCharacter(def: CharacterDef): void {
@@ -174,6 +190,7 @@ export class GameRenderer {
       this.particles.emit(x + Math.cos(a) * 1.1, y + Math.random() * 2, z + Math.sin(a) * 1.1, 0, 1.5, 0, 0.5, 0.14, 0xfff2a8, 0);
     }
     this.rig.update(this.camera, x, y, z, speed, dt, w.terrain);
+    this.updateWeather(w, x, z, dt);
     OCCLUSION_UNIFORMS.uCamPos.value.copy(this.camera.position);
     OCCLUSION_UNIFORMS.uFocus.value.set(x, y + 1.1, z);
     this.playerView.showGhost = true;
@@ -185,6 +202,21 @@ export class GameRenderer {
     this.shrines.update(w, time);
     this.fx.update(dt, this.camera);
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /** Snowfall + blizzard haze follow the sim's weather. */
+  private updateWeather(w: World, x: number, z: number, dt: number): void {
+    this.clock += dt;
+    this.sky.tick(this.clock);
+    const wt = w.weather;
+    const blizzard = wt.blizzardT > 0 ? Math.min(1, wt.blizzardT / 0.6, (5.5 - wt.blizzardT) / 0.6) : 0;
+    if (wt.gustT > 0 || wt.blizzardT > 0) playerWind(w, x, z, this.wind);
+    else this.wind[0] = this.wind[1] = 0;
+    this.snow.density = this.map.sky.snow * (1 + blizzard * 1.5);
+    this.snow.update(dt, this.camera.position, this.wind[0], this.wind[1]);
+    const fog = this.scene.fog as THREE.Fog;
+    fog.near = this.map.sky.fog[0] * (1 - blizzard * 0.55);
+    fog.far = this.map.sky.fog[1] * (1 - blizzard * 0.5);
   }
 
   /** Clear all transient visuals (new run / back to menu). */
@@ -212,6 +244,13 @@ export class GameRenderer {
       this.camera.updateProjectionMatrix();
     }
     this.followSun(0, 0);
+    this.clock += dt;
+    this.sky.tick(this.clock);
+    const fog = this.scene.fog as THREE.Fog;
+    fog.near = this.map.sky.fog[0];
+    fog.far = this.map.sky.fog[1];
+    this.snow.density = this.map.sky.snow * 0.6;
+    this.snow.update(dt, this.camera.position, 0, 0);
     this.renderer.render(this.scene, this.camera);
   }
 }

@@ -1,4 +1,6 @@
 import { MAP_HALF } from '../config/balance';
+import { mapDef, type TerrainSpec } from '../config/maps';
+import type { PropKind } from '../config/types';
 import { ValueNoise2D, smoothstep, clamp } from '../core/math';
 import { Rng } from '../core/rng';
 
@@ -27,7 +29,19 @@ export interface Structure {
   baseY: number;
 }
 
-export type PropKind = 'pine' | 'oak' | 'rock' | 'mushroom' | 'crystal' | 'stump' | 'flower' | 'tuft' | 'post';
+export type { PropKind };
+
+/** Ground surface under a lattice cell (Terrain.surface). */
+export const Surface = { Ground: 0, Ice: 1, Snow: 2 } as const;
+
+/** A frozen pond (flat ice) or a snowdrift (soft mound). */
+export interface Patch {
+  x: number;
+  z: number;
+  r: number;
+  /** Pond: ice level. Drift: mound height. */
+  y: number;
+}
 
 export interface Prop {
   kind: PropKind;
@@ -74,6 +88,9 @@ export class Terrain {
   readonly structures: Structure[] = [];
   readonly props: Prop[] = [];
   readonly shrineSpots: Spot[] = [];
+  readonly ponds: Patch[] = [];
+  readonly drifts: Patch[] = [];
+  readonly spec: TerrainSpec;
 
   // structure lookup grid
   private sCells: number;
@@ -99,12 +116,16 @@ export class Terrain {
    * Plateau / ramp walls block both ways; natural slopes only when absurdly steep.
    */
   readonly pass: Uint8Array;
+  /** Surface kind per lattice cell (Surface.*), or null on maps without ice / snow. */
+  readonly surface: Uint8Array | null;
 
-  constructor(seed: number) {
+  constructor(seed: number, spec: TerrainSpec = mapDef('meadow').terrain) {
     this.seed = seed;
+    this.spec = spec;
     this.noise = new ValueNoise2D(seed ^ 0x5bd1e995);
     const rng = new Rng(seed ^ 0x1234567);
     this.generateStructures(rng);
+    this.generatePatches(rng);
     this.sCells = Math.ceil((this.half * 2) / GRID_CELL);
     [this.sCellStart, this.sCellItems] = this.buildStructureGrid();
     this.generateProps(rng);
@@ -140,6 +161,32 @@ export class Terrain {
       for (let i = 0; i < this.hdim; i++) this.hcache[j * this.hdim + i] = this.height(i - this.half, j - this.half);
     }
     this.pass = this.buildPassability();
+    this.surface = this.ponds.length || this.drifts.length ? this.buildSurface() : null;
+  }
+
+  private buildSurface(): Uint8Array {
+    const d = this.hdim;
+    const out = new Uint8Array(d * d);
+    const mark = (list: Patch[], k: number, inner: number, kind: number): void => {
+      for (const p of list) {
+        const r = p.r * inner;
+        for (let z = Math.floor(p.z - r); z <= p.z + r; z++) {
+          for (let x = Math.floor(p.x - r); x <= p.x + r; x++) {
+            if ((x - p.x) ** 2 + (z - p.z) ** 2 > r * r) continue;
+            const c = this.cellOf(x, z);
+            if (out[c] === 0 || k > 0) out[c] = kind;
+          }
+        }
+      }
+    };
+    mark(this.drifts, 0, 0.9, Surface.Snow);
+    mark(this.ponds, 1, 0.8, Surface.Ice);
+    return out;
+  }
+
+  /** Surface kind under a world position (Surface.Ground on maps without patches). */
+  surfaceAt(x: number, z: number): number {
+    return this.surface ? this.surface[this.cellOf(x, z)] : Surface.Ground;
   }
 
   /** Which structure (index + 1) covers a lattice point, 0 for open ground. */
@@ -295,8 +342,29 @@ export class Terrain {
     return this.colNear[cz * this.colCells + cx] === 1;
   }
 
-  /** Rolling hills only (no structures). */
+  /** Rolling hills (+ ponds and drifts), no structures. */
   baseHeight(x: number, z: number): number {
+    let h = this.hills(x, z);
+    for (let k = 0; k < this.ponds.length; k++) {
+      const p = this.ponds[k];
+      const dx = x - p.x;
+      const dz = z - p.z;
+      const d2 = dx * dx + dz * dz;
+      if (d2 >= p.r * p.r) continue;
+      // flat ice inside 75% of the radius, a gentle bank outside
+      h += (p.y - h) * smoothstep(p.r, p.r * 0.75, Math.sqrt(d2));
+    }
+    for (let k = 0; k < this.drifts.length; k++) {
+      const p = this.drifts[k];
+      const dx = x - p.x;
+      const dz = z - p.z;
+      const q = 1 - (dx * dx + dz * dz) / (p.r * p.r);
+      if (q > 0) h += p.y * q * q;
+    }
+    return h;
+  }
+
+  private hills(x: number, z: number): number {
     const n = this.noise;
     let h = n.fbm(x * 0.011, z * 0.011, 3) * 9 + n.sample(x * 0.045 + 31, z * 0.045 - 7) * 1.6;
     // keep the starting meadow gentle
@@ -307,6 +375,12 @@ export class Terrain {
     const e = edge - (this.half - 22);
     if (e > 0) h += e * e * 0.05;
     return h;
+  }
+
+  /** True inside a frozen pond's footprint (props and shrines keep off the ice). */
+  inPond(x: number, z: number, pad = 0): boolean {
+    for (const p of this.ponds) if ((x - p.x) ** 2 + (z - p.z) ** 2 < (p.r + pad) ** 2) return true;
+    return false;
   }
 
   /** Full walkable ground height at (x, z). */
@@ -413,7 +487,7 @@ export class Terrain {
     // Mesas with one or two access ramps
     let attempts = 0;
     let mesas = 0;
-    while (mesas < 11 && attempts++ < 400) {
+    while (mesas < this.spec.mesas && attempts++ < 400) {
       const x = rng.range(-this.half + 30, this.half - 30);
       const z = rng.range(-this.half + 30, this.half - 30);
       if (Math.hypot(x, z) < 28) continue;
@@ -453,7 +527,7 @@ export class Terrain {
     // Standalone kicker ramps (launch pads)
     attempts = 0;
     let kickers = 0;
-    while (kickers < 16 && attempts++ < 400) {
+    while (kickers < this.spec.kickers && attempts++ < 400) {
       const x = rng.range(-this.half + 25, this.half - 25);
       const z = rng.range(-this.half + 25, this.half - 25);
       if (Math.hypot(x, z) < 14) continue;
@@ -466,6 +540,42 @@ export class Terrain {
       const y0 = this.baseHeight(startX, startZ) - 0.15;
       this.addStructure('ramp', x, z, len / 2, rng.range(1.8, 2.8), rot, y0, y0 + rise);
       kickers++;
+    }
+  }
+
+  /** Frozen ponds on gentle open ground, then snowdrifts (none on maps without them). */
+  private generatePatches(rng: Rng): void {
+    let tries = 0;
+    while (this.ponds.length < this.spec.ponds && tries++ < 600) {
+      const x = rng.range(-this.half + 30, this.half - 30);
+      const z = rng.range(-this.half + 30, this.half - 30);
+      const r = rng.range(6, 11);
+      if (Math.hypot(x, z) < r + 14) continue;
+      if (this.overlapsStructure(x, z, r + 4)) continue;
+      if (this.ponds.some((p) => Math.hypot(p.x - x, p.z - z) < p.r + r + 8)) continue;
+      // gentle ground only: the bank must stay walkable
+      let lo = Infinity;
+      let hi = -Infinity;
+      for (let k = 0; k < 9; k++) {
+        const a = (k / 8) * Math.PI * 2;
+        const rr = k === 8 ? 0 : r;
+        const hh = this.hills(x + Math.cos(a) * rr, z + Math.sin(a) * rr);
+        lo = Math.min(lo, hh);
+        hi = Math.max(hi, hh);
+      }
+      if (hi - lo > 2.2) continue;
+      this.ponds.push({ x, z, r, y: lo - 0.15 });
+    }
+    tries = 0;
+    while (this.drifts.length < this.spec.drifts && tries++ < 600) {
+      const x = rng.range(-this.half + 20, this.half - 20);
+      const z = rng.range(-this.half + 20, this.half - 20);
+      const r = rng.range(5, 9);
+      if (Math.hypot(x, z) < r + 10) continue;
+      if (this.overlapsStructure(x, z, r + 2)) continue;
+      if (this.inPond(x, z, r + 3)) continue;
+      if (this.drifts.some((p) => Math.hypot(p.x - x, p.z - z) < p.r + r + 4)) continue;
+      this.drifts.push({ x, z, r, y: rng.range(0.5, 0.9) });
     }
   }
 
@@ -503,6 +613,7 @@ export class Terrain {
         const z = rng.range(-this.half + 4, this.half - 4);
         if (Math.hypot(x, z) < avoidCenter) continue;
         if (pad >= 0 && this.overlapsStructure(x, z, pad)) continue;
+        if (this.ponds.length && this.inPond(x, z, radiusK > 0 ? 1.5 : 0)) continue;
         // keep big blockers apart
         if (radiusK > 0) {
           let close = false;
@@ -520,23 +631,17 @@ export class Terrain {
         placed++;
       }
     };
-    place('pine', 120, 0.8, 1.5, 0.55, 18, 2);
-    place('oak', 70, 0.8, 1.3, 0.6, 18, 2);
-    place('rock', 90, 0.6, 1.8, 0.9, 14, 1);
-    place('stump', 30, 0.8, 1.2, 0.45, 12, 1);
-    place('crystal', 26, 0.7, 1.4, 0, 20, 1);
-    place('mushroom', 90, 0.5, 1.3, 0, 6, 0.5);
-    place('flower', 420, 0.6, 1.2, 0, 2, -1);
-    place('tuft', 900, 0.6, 1.4, 0, 1, -1);
+    for (const sp of this.spec.props) place(sp.kind, sp.count, sp.scale[0], sp.scale[1], sp.radius, sp.avoidCenter, sp.pad);
     // fence posts ring near the boundary
+    const fence = this.spec.fence;
     const ring = this.half - 10;
-    for (let a = 0; a < 360; a++) {
+    for (let a = 0; a < 360 && fence; a++) {
       const t = (a / 360) * Math.PI * 2;
       // square ring
       const s = Math.max(Math.abs(Math.cos(t)), Math.abs(Math.sin(t)));
       const x = (Math.cos(t) / s) * ring;
       const z = (Math.sin(t) / s) * ring;
-      if (a % 2 === 0) this.props.push({ kind: 'post', x, z, y: this.height(x, z), rot: t, scale: 1, radius: 0 });
+      if (a % 2 === 0) this.props.push({ kind: fence, x, z, y: this.height(x, z), rot: t, scale: 1, radius: 0 });
     }
   }
 
@@ -550,6 +655,7 @@ export class Terrain {
       const z = rng.range(-this.half + 20, this.half - 20);
       if (Math.hypot(x, z) < 20) continue;
       if (this.overlapsStructure(x, z, 3)) continue;
+      if (this.ponds.length && this.inPond(x, z, 2)) continue;
       if (this.shrineSpots.some((s) => Math.hypot(s.x - x, s.z - z) < 30)) continue;
       this.shrineSpots.push({ x, z });
     }

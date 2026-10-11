@@ -30,6 +30,7 @@ export const Ev = {
   Revive: 24, // x y z
   Buff: 25, // i = buff kind
   Achievement: 26, // i = achievement index
+  Gust: 27, // dirX dirZ warnSeconds durationSeconds
 } as const;
 
 export type EvType = (typeof Ev)[keyof typeof Ev];

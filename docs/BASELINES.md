@@ -37,3 +37,11 @@ Recorded at the start of the `theabonk-upgrade` branch so every later phase can 
   1.2 ms CPU / 3.0 ms synced → branch 1.2 ms / 3.3 ms (within noise; load average ~9).
 - Balance after pathing (16 seeds, 0.7): Thea 8:45, Pip 15:16, Brindle 13:51, all 12:37 —
   hero spread re-tuned in phase 13.
+
+## Upgrade phase 4 (maps + Rimewood)
+- Gloam Meadow is bit-identical (golden fingerprints unchanged through the MapDef conversion).
+- Rimewood 1000-enemy stress (in-browser): 55 draw calls, ~408k triangles (Meadow ~50 /
+  ~315k) — variant models + snowy props; aurora + snowfall are 4 extra draw calls.
+- Sim profiles (1000 enemies): GC < 3% on both maps, no new hot spots; Rimewood spends a
+  little more in flow-field rebuilds (gusts move the player).
+- Build: 814 KB.

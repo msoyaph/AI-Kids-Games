@@ -1,6 +1,8 @@
 import { DROPS, DT } from '../config/balance';
 import { ENEMIES, enemyIndex } from '../config/enemies';
+import { variantOf } from '../config/maps';
 import { sfxId } from '../config/sfx';
+import { ShotVisual } from '../config/types';
 import { BANNER } from '../config/waves';
 import { Ev } from '../core/events';
 import { setBossKilledHandler, spawnEnemy, spawnGem, spawnPickup } from './combat';
@@ -25,6 +27,8 @@ const DASH = 2;
 const RECOVER = 3;
 const BARRAGE = 4;
 const SLAM = 5;
+const SPIKES = 6;
+const BLIZZARD = 7;
 
 export function spawnBoss(w: World, type: number): void {
   const p = w.player;
@@ -38,6 +42,7 @@ export function spawnBoss(w: World, type: number): void {
   w.director.bossUid = e.uid[i];
   w.director.bossType = type;
   w.director.bossMaxHp = e.maxHp[i];
+  w.director.bossPhase = 0;
   w.events.push(Ev.BossSpawn, e.x[i], e.y[i], e.z[i], 0, 0, 0, type);
   w.events.push(Ev.Sfx, e.x[i], e.y[i], e.z[i], 1, 0, 0, sfxId('roar'));
   w.stats.bossFights.push({ id: ENEMIES[type].id, spawnedAt: w.time, killedAt: -1, damageTaken: 0 });
@@ -52,19 +57,22 @@ function beginAttack(w: World, i: number, name: BossAttack): number {
   return inst;
 }
 
+/** Summon `count` of this map's version of `id` around boss i. */
 function summon(w: World, i: number, id: string, count: number, radius: number): void {
   const e = w.enemies;
-  const t = enemyIndex(id);
+  const t = enemyIndex(variantOf(w.map, id));
   for (let k = 0; k < count; k++) {
     const a = (k / count) * Math.PI * 2 + w.rng.next();
     spawnEnemy(w, t, e.x[i] + Math.sin(a) * radius, e.z[i] + Math.cos(a) * radius);
   }
 }
 
+/** A ring of shots from boss i. `visual` is the default look; the boss's shotVisual overrides it. */
 function ring(w: World, i: number, n: number, speed: number, damage: number, offset: number, visual: number, attack: BossAttack, inst: number): void {
   const e = w.enemies;
   const y = e.y[i] + 2;
   const source = bossSrc(attack);
+  visual = ENEMIES[e.type[i]].shotVisual ?? visual;
   for (let k = 0; k < n; k++) {
     const a = offset + (k / n) * Math.PI * 2;
     fireEnemyShot(w, e.x[i], y, e.z[i], Math.sin(a), Math.cos(a), speed, damage, visual, source, inst);
@@ -77,8 +85,8 @@ function shockwave(w: World, x: number, z: number, maxR: number, speed: number, 
   w.events.push(Ev.Sfx, x, w.terrain.height(x, z), z, 1, 0, 0, sfxId('slam'));
 }
 
-function slam(w: World, x: number, z: number, r: number, damage: number, fuse: number, attack: BossAttack, inst: number): void {
-  spawnEnemyHazard(w, HazardKind.EnemySlam, x, z, r, damage, fuse + 0.05, fuse, 0, 0xff3b4f, bossSrc(attack), inst);
+function slam(w: World, x: number, z: number, r: number, damage: number, fuse: number, attack: BossAttack, inst: number, color = 0xff3b4f, look = 0): void {
+  spawnEnemyHazard(w, HazardKind.EnemySlam, x, z, r, damage, fuse + 0.05, fuse, look, color, bossSrc(attack), inst);
 }
 
 /** Writes the boss's desired velocity into out. */
@@ -99,6 +107,9 @@ export function updateBoss(w: World, i: number, dist: number, dx: number, dz: nu
       break;
     case 'regent':
       regent(w, i, dist, dx, dz, hpFrac, out);
+      break;
+    case 'oldRime':
+      oldRime(w, i, dist, dx, dz, hpFrac, out);
       break;
   }
 }
@@ -270,6 +281,123 @@ function regent(w: World, i: number, dist: number, dx: number, dz: number, hpFra
   }
 }
 
+/**
+ * Old Rime, the Frost Stag: antler charges, telegraphed ice-spike lines, shard volleys and
+ * Frostling summons. Entering each health phase (66%, 33%) calls a blizzard: it stands its
+ * ground while a swirling wind pushes the player and icicles rain down.
+ */
+function oldRime(w: World, i: number, dist: number, dx: number, dz: number, hpFrac: number, out: Float32Array): void {
+  const e = w.enemies;
+  const def = ENEMIES[e.type[i]];
+  const d = w.director;
+  const phase = hpFrac < 0.33 ? 2 : hpFrac < 0.66 ? 1 : 0;
+  const dmg = def.projectileDamage ?? 12;
+  const sp = def.projectileSpeed ?? 11;
+  const p = w.player;
+  if (phase > d.bossPhase && e.state[i] !== DASH) {
+    d.bossPhase = phase;
+    e.state[i] = BLIZZARD;
+    e.stT[i] = 5.5;
+    e.stA[i] = 0;
+    e.atk[i] = beginAttack(w, i, 'oldRime.blizzard');
+    const wt = w.weather;
+    wt.blizzardT = 5.5;
+    wt.blizzardX = e.x[i];
+    wt.blizzardZ = e.z[i];
+    w.events.push(Ev.Banner, 0, 0, 0, 0, 0, 0, BANNER.blizzard);
+    w.events.push(Ev.Sfx, e.x[i], e.y[i], e.z[i], 1, 0, 0, sfxId('roar'));
+  }
+  switch (e.state[i]) {
+    case WINDUP:
+      out[0] = out[1] = 0;
+      if (e.stT[i] > 0.35) {
+        e.stA[i] = dx;
+        e.stB[i] = dz;
+      }
+      if (e.stT[i] <= 0) {
+        e.state[i] = DASH;
+        e.stT[i] = def.chargeTime ?? 1;
+        beginAttack(w, i, 'oldRime.charge');
+      }
+      return;
+    case DASH: {
+      const cs = (def.chargeSpeed ?? 20) * (1 + phase * 0.1);
+      out[0] = e.stA[i] * cs;
+      out[1] = e.stB[i] * cs;
+      if (e.stT[i] <= 0) {
+        // antlers dig in: a burst of shards where it stops (later phases)
+        if (phase > 0) ring(w, i, 8 + phase * 4, sp * 0.8, dmg, w.rng.next(), ShotVisual.Shard, 'oldRime.shards', beginAttack(w, i, 'oldRime.shards'));
+        e.state[i] = RECOVER;
+        e.stT[i] = 1.2;
+      }
+      return;
+    }
+    case RECOVER:
+      out[0] *= 0.3;
+      out[1] *= 0.3;
+      if (e.stT[i] <= 0) {
+        e.state[i] = IDLE;
+        e.stT[i] = 1.4 - phase * 0.3;
+      }
+      return;
+    case SPIKES:
+      out[0] = out[1] = 0;
+      if (e.stT[i] <= 0) {
+        e.state[i] = IDLE;
+        e.stT[i] = 1.0;
+      }
+      return;
+    case BLIZZARD: {
+      out[0] = out[1] = 0;
+      e.stA[i] -= DT;
+      if (e.stA[i] <= 0) {
+        // icicles rain around the player (aimed a little ahead)
+        e.stA[i] = 0.5 - phase * 0.08;
+        const a = w.rng.next() * Math.PI * 2;
+        const r = 1 + w.rng.next() * 5;
+        slam(w, p.x + p.vx * 0.5 + Math.sin(a) * r, p.z + p.vz * 0.5 + Math.cos(a) * r, 1.6, dmg, w.tuning.telegraphs.rimeSpikeFuse + 0.2, 'oldRime.blizzard', e.atk[i], 0x9fe8ff, 1);
+      }
+      if (e.stT[i] <= 0) {
+        e.state[i] = IDLE;
+        e.stT[i] = 1.2;
+        w.weather.blizzardT = 0;
+      }
+      return;
+    }
+  }
+  if (e.stT[i] > 0) return;
+  const c = e.stC[i]++ % 4;
+  if (c === 0 && dist < 36) {
+    e.state[i] = WINDUP;
+    e.stT[i] = (def.windup ?? 1) * w.tuning.telegraphs.bossWindupMult;
+    e.stA[i] = dx;
+    e.stB[i] = dz;
+  } else if (c === 1 || c === 0) {
+    // ice-spike lines racing out toward the player (fuses ripple outward)
+    const inst = beginAttack(w, i, 'oldRime.spikes');
+    const lines = 1 + phase;
+    const base = Math.atan2(dx, dz);
+    const fuse = w.tuning.telegraphs.rimeSpikeFuse;
+    for (let k = 0; k < lines; k++) {
+      const a = base + (k - (lines - 1) / 2) * 0.45;
+      const sa = Math.sin(a);
+      const ca = Math.cos(a);
+      for (let j = 1; j <= 12; j++) slam(w, e.x[i] + sa * (1.5 + j * 2.2), e.z[i] + ca * (1.5 + j * 2.2), 1.35, dmg * 1.1, fuse + j * 0.06, 'oldRime.spikes', inst, 0x8fe3ff, 2);
+    }
+    w.events.push(Ev.Sfx, e.x[i], e.y[i], e.z[i], 1, 0, 0, sfxId('slam'));
+    e.state[i] = SPIKES;
+    e.stT[i] = 1.1;
+  } else if (c === 2) {
+    const inst = beginAttack(w, i, 'oldRime.shards');
+    ring(w, i, 14 + phase * 4, sp, dmg, w.rng.next(), ShotVisual.Shard, 'oldRime.shards', inst);
+    if (phase > 0) ring(w, i, 14 + phase * 4, sp * 0.7, dmg, w.rng.next(), ShotVisual.Shard, 'oldRime.shards', inst);
+    e.stT[i] = 2.6 - phase * 0.3;
+  } else {
+    summon(w, i, 'gloomling', 4 + phase * 2, 5);
+    e.stT[i] = 2.4;
+  }
+}
+
 setBossKilledHandler((w, i) => {
   const e = w.enemies;
   const type = e.type[i];
@@ -297,9 +425,10 @@ setBossKilledHandler((w, i) => {
   // clear the boss's hazards so the victory moment is clean
   const hz = w.hazards;
   for (let k = 0; k < hz.count; k++) if (hz.kind[k] >= HazardKind.EnemyRing) hz.alive[k] = 0;
-  if (def.bossPattern === 'regent') {
+  if (def.bossPattern === 'oldRime') w.weather.blizzardT = 0;
+  if (def.id === w.map.finalBoss) {
     w.director.finalBossDefeated = true;
     w.director.victoryT = 3;
-    w.events.push(Ev.Banner, 0, 0, 0, 0, 0, 0, BANNER.regentDown);
+    w.events.push(Ev.Banner, 0, 0, 0, 0, 0, 0, BANNER.finalDown);
   }
 });

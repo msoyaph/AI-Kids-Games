@@ -1,5 +1,6 @@
 import { DT } from '../config/balance';
-import { BANNERS, BANNER } from '../config/waves';
+import { bannerText, isMapId, mapDef, type MapId } from '../config/maps';
+import { BANNER } from '../config/waves';
 import { Ev } from '../core/events';
 import { randomSeed } from '../core/rng';
 import { urlParam } from '../core/env';
@@ -26,7 +27,7 @@ const MAX_STEPS_PER_FRAME = 5;
 const TUNING_KEY = 'theabonk.tuning';
 
 function unrecordedOutcome(): RunOutcome {
-  return { gold: { coins: 0, kills: 0, time: 0, bosses: 0, victory: 0, total: 0 }, achievements: [], newBest: false };
+  return { gold: { coins: 0, kills: 0, time: 0, bosses: 0, victory: 0, total: 0 }, achievements: [], newBest: false, newMaps: [] };
 }
 const MENU_SEED = 1337;
 
@@ -62,7 +63,8 @@ export class Game implements GameApi {
   private lastWorldState: World['state'] = 'playing';
   private lockLostAt = -1e9;
   private achT = 0;
-  private menuTerrain = new Terrain(MENU_SEED);
+  /** Menu backdrops, built on first use per map. */
+  private menuTerrains = new Map<MapId, Terrain>();
   private fpsEl: HTMLElement;
   // debug overlay
   private showDebug = false;
@@ -95,7 +97,7 @@ export class Game implements GameApi {
     this.menus = new Menus(this);
     this.fpsEl = h('div', { class: 'fps hidden' });
     uiRoot.append(this.fpsEl);
-    this.renderer.setTerrain(this.menuTerrain);
+    this.showMenuMap(this.save.data.lastMap);
     this.input.onAction = (a) => this.onAction(a);
     this.applySettings();
     this.resize();
@@ -198,8 +200,20 @@ export class Game implements GameApi {
     this.onSound?.(name);
   }
 
-  showcase(characterId: string): void {
+  showcase(characterId: string, mapId?: string): void {
     this.renderer.setCharacter(characterDef(characterId));
+    if (mapId && !this.world) this.showMenuMap(mapId);
+  }
+
+  /** Menu backdrop on a map (each built once, then cached). */
+  private showMenuMap(id: string): void {
+    const map = mapDef(id);
+    let t = this.menuTerrains.get(map.id);
+    if (!t) {
+      t = new Terrain(MENU_SEED, map.terrain);
+      this.menuTerrains.set(map.id, t);
+    }
+    this.renderer.setTerrain(t, map);
   }
 
   applySettings(): void {
@@ -217,15 +231,19 @@ export class Game implements GameApi {
   /** Audio volume hook (set in main). */
   onSettings: (() => void) | null = null;
 
-  startRun(characterId: string, seed = randomSeed()): void {
+  startRun(characterId: string, mapId?: string, seed = randomSeed()): void {
     const params = new URLSearchParams(location.search);
     const stress = Number(params.get('stress') || 0);
     const fixedSeed = params.get('seed');
     const d = this.save.data;
     const overrides = this.tuningPanel?.overrides;
+    // ?map=rimewood (testing) > the requested map > the last one played
+    const want = urlParam('map') ?? mapId ?? d.lastMap;
+    const map: MapId = isMapId(want) ? want : 'meadow';
     this.world = newRun({
       seed: fixedSeed ? Number(fixedSeed) : seed,
       characterId,
+      map,
       stress,
       meta: metaBonuses(d),
       unlockedWeapons: d.unlockedWeapons,
@@ -233,7 +251,7 @@ export class Game implements GameApi {
       tuned: !!this.tuningPanel?.isTuned,
     });
     const w = this.world;
-    this.renderer.setTerrain(w.terrain);
+    this.renderer.setTerrain(w.terrain, w.map);
     this.renderer.setCharacter(w.player.character);
     this.renderer.rig.yaw = 0;
     this.renderer.rig.pitch = this.renderer.rig.tuning.pitch;
@@ -246,7 +264,7 @@ export class Game implements GameApi {
     this.lastWorldState = 'playing';
     this.ui.close();
     this.ui.hud.show(true);
-    this.ui.hud.showBanner(BANNERS[BANNER.start]);
+    this.ui.hud.showBanner(bannerText(w.map, BANNER.start));
     this.setGameplayInput(true);
     this.onMode?.('run', w);
   }
@@ -280,7 +298,7 @@ export class Game implements GameApi {
     this.paused = false;
     this.setGameplayInput(false);
     this.ui.hud.show(false);
-    this.renderer.setTerrain(this.menuTerrain);
+    this.showMenuMap(this.save.data.lastMap);
     this.renderer.resetTransient();
     this.renderer.playerView.hurt(0);
     this.onMode?.('menu', null);
@@ -361,7 +379,7 @@ export class Game implements GameApi {
     const outcome = w.options.tuned ? unrecordedOutcome() : applyRunResult(this.save.data, summary);
     if (!w.options.tuned) this.save.save();
     this.onMode?.('end', w);
-    this.menus.gameOver(summary, outcome, () => this.startRun(summary.characterId), w.options.tuned ? 'Tuned run — not recorded (gold, records and achievements unchanged).' : undefined);
+    this.menus.gameOver(summary, outcome, () => this.startRun(summary.characterId, summary.mapId), w.options.tuned ? 'Tuned run — not recorded (gold, records and achievements unchanged).' : undefined);
   }
 
   private showLevelUp(w: World): void {
@@ -425,7 +443,8 @@ export class Game implements GameApi {
       const t = ev.type[n];
       if (t === Ev.Banner) {
         const id = ev.i[n];
-        this.ui.hud.showBanner(BANNERS[id] ?? '', id >= 1 && id <= 3);
+        this.ui.hud.showBanner(bannerText(w.map, id), id >= 1 && id <= 3);
+
       } else if (t === Ev.PlayerHurt) {
         this.ui.hud.hurt();
         this.renderer.playerView.hurt();
@@ -483,7 +502,10 @@ export class Game implements GameApi {
       this.renderer.fx.consume(w.events, w.player.x, w.player.y, w.player.z);
       w.events.clear();
       this.renderer.renderGame(w, running ? this.acc / DT : 1, running ? dt : 0);
-      if (w.state !== 'dead' && w.state !== 'won') this.ui.hud.update(w, dt, w.stats.coins);
+      if (w.state !== 'dead' && w.state !== 'won') {
+        this.renderer.rig.forward(this.ui.hud.camFwd);
+        this.ui.hud.update(w, dt, w.stats.coins);
+      }
       this.onWorldState(w);
       this.simMs = this.simMs * 0.9 + simT * 0.1;
     } else {

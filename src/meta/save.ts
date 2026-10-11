@@ -1,5 +1,6 @@
 import { ACHIEVEMENTS } from '../config/achievements';
 import { CHARACTERS } from '../config/characters';
+import { MAPS } from '../config/maps';
 import { SHOP } from '../config/meta';
 import { WEAPONS } from '../config/weapons';
 import type { KeyValueStore } from '../core/storage';
@@ -33,6 +34,9 @@ export interface LifetimeStats {
   topSpeed: number;
   totalGold: number;
   playtime: number;
+  /** Wins / best survival per map id. */
+  winsByMap: Record<string, number>;
+  bestTimeByMap: Record<string, number>;
 }
 
 export interface SaveData {
@@ -45,10 +49,18 @@ export interface SaveData {
   stats: LifetimeStats;
   settings: Settings;
   lastCharacter: string;
+  unlockedMaps: string[];
+  lastMap: string;
 }
 
 export const SAVE_KEY = 'theabonk.save';
-export const SAVE_VERSION = 1;
+/** Copy of the save as it was before the first upgrade to a newer format (written once). */
+export const SAVE_BACKUP_KEY = 'theabonk.save.bak';
+/**
+ * 1: original release. 2: maps (unlockedMaps, lastMap, per-map wins / best times).
+ * Older saves are migrated in sanitizeSave; nothing is ever dropped from a valid old save.
+ */
+export const SAVE_VERSION = 2;
 
 export function defaultSettings(): Settings {
   return {
@@ -86,10 +98,27 @@ export function defaultSave(): SaveData {
       topSpeed: 0,
       totalGold: 0,
       playtime: 0,
+      winsByMap: {},
+      bestTimeByMap: {},
     },
     settings: defaultSettings(),
     lastCharacter: 'thea',
+    unlockedMaps: MAPS.filter((m) => !m.unlock).map((m) => m.id),
+    lastMap: 'meadow',
   };
+}
+
+/** Add every map whose unlock rule is met; returns the newly unlocked ids. */
+export function refreshMapUnlocks(d: SaveData): string[] {
+  const added: string[] = [];
+  for (const m of MAPS) {
+    if (d.unlockedMaps.includes(m.id) || !m.unlock) continue;
+    if ((d.stats.winsByMap[m.unlock.winOn] ?? 0) > 0) {
+      d.unlockedMaps.push(m.id);
+      added.push(m.id);
+    }
+  }
+  return added;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -117,7 +146,9 @@ export function sanitizeSave(raw: unknown): SaveData {
   const charIds = new Set(CHARACTERS.map((c) => c.id));
   const weaponIds = new Set(WEAPONS.map((w) => w.id));
   const achIds = new Set(ACHIEVEMENTS.map((a) => a.id));
+  const mapIds = new Set(MAPS.map((m) => m.id));
   const shopMax = new Map(SHOP.map((s) => [s.id, s.maxRank]));
+  const version = Math.floor(num(raw.version, 1, 1, 1e6));
 
   d.gold = Math.floor(num(raw.gold, 0, 0, 1e9));
   if (isObj(raw.shop)) {
@@ -146,7 +177,17 @@ export function sanitizeSave(raw: unknown): SaveData {
     topSpeed: num(s.topSpeed, 0, 0, 1000),
     totalGold: Math.floor(num(s.totalGold, 0, 0)),
     playtime: num(s.playtime, 0, 0),
+    winsByMap: numMap(s.winsByMap, mapIds),
+    bestTimeByMap: numMap(s.bestTimeByMap, mapIds, 1e6),
   };
+  if (version < 2) {
+    // v1 had one map: every win and best time so far happened on Gloam Meadow
+    if (d.stats.wins > 0) d.stats.winsByMap.meadow = d.stats.wins;
+    if (d.stats.bestTime > 0) d.stats.bestTimeByMap.meadow = d.stats.bestTime;
+  }
+  d.unlockedMaps = Array.from(new Set([...d.unlockedMaps, ...strList(raw.unlockedMaps, mapIds)]));
+  refreshMapUnlocks(d);
+  d.lastMap = typeof raw.lastMap === 'string' && d.unlockedMaps.includes(raw.lastMap) ? raw.lastMap : 'meadow';
 
   const st = isObj(raw.settings) ? raw.settings : {};
   const def = defaultSettings();
@@ -170,6 +211,8 @@ export function sanitizeSave(raw: unknown): SaveData {
 /** Loads/saves SaveData through a never-throwing KeyValueStore. */
 export class SaveManager {
   data: SaveData;
+  /** The raw older-format save, backed up just before the first write in the new format. */
+  private pendingBackup: string | null = null;
 
   constructor(private store: KeyValueStore) {
     this.data = this.load();
@@ -183,7 +226,11 @@ export class SaveManager {
   load(): SaveData {
     try {
       const raw = this.store.get(SAVE_KEY);
-      return raw ? sanitizeSave(JSON.parse(raw)) : defaultSave();
+      if (!raw) return defaultSave();
+      const parsed: unknown = JSON.parse(raw);
+      const v = typeof parsed === 'object' && parsed !== null ? (parsed as { version?: unknown }).version : undefined;
+      if (typeof v !== 'number' || v < SAVE_VERSION) this.pendingBackup = raw;
+      return sanitizeSave(parsed);
     } catch {
       return defaultSave();
     }
@@ -191,6 +238,11 @@ export class SaveManager {
 
   save(): boolean {
     try {
+      if (this.pendingBackup !== null) {
+        // keep the very first pre-upgrade copy if one already exists
+        if (!this.store.get(SAVE_BACKUP_KEY)) this.store.set(SAVE_BACKUP_KEY, this.pendingBackup);
+        this.pendingBackup = null;
+      }
       return this.store.set(SAVE_KEY, JSON.stringify(this.data));
     } catch {
       return false;

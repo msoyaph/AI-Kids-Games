@@ -2,10 +2,13 @@ import { DT, PLAYER_RADIUS } from '../config/balance';
 import { Ev } from '../core/events';
 import { clamp } from '../core/math';
 import { moveSpeedMult } from './stats';
+import { Surface } from './terrain';
+import { playerWind } from './weather';
 import type { SimInput, World } from './world';
 
 const grad = new Float32Array(2);
 const push = new Float32Array(2);
+const wind = new Float32Array(2);
 
 export function walkSpeed(w: World): number {
   const p = w.player;
@@ -24,7 +27,13 @@ export function updatePlayer(w: World, input: SimInput): void {
   const t = w.terrain;
   const mv = p.character.move;
   const MOVE = w.tuning.movement;
-  const walk = walkSpeed(w);
+  // ground surface (Rimewood): ice is slippery, snowdrifts are slow; frost chills slow you
+  const surf = p.onGround ? t.surfaceAt(p.x, p.z) : Surface.Ground;
+  const onIce = surf === Surface.Ice;
+  const onSnow = surf === Surface.Snow;
+  const grip = onIce ? MOVE.iceGrip : 1;
+  const walk = walkSpeed(w) * (onSnow ? MOVE.snowSpeed : 1) * (p.chill > 0 ? 1 - MOVE.chillSlow : 1);
+  if (p.chill > 0) p.chill = Math.max(0, p.chill - DT);
 
   p.coyote = p.onGround ? MOVE.coyoteTime : Math.max(0, p.coyote - DT);
   p.jumpBuffer = input.jump ? MOVE.jumpBuffer : Math.max(0, p.jumpBuffer - DT);
@@ -88,7 +97,7 @@ export function updatePlayer(w: World, input: SimInput): void {
         // pulling straight back brakes
         if (Math.abs(d) > 2.4) hs = Math.max(0, hs - 6 * DT);
       }
-      const fr = MOVE.slideFriction * mv.slideFriction;
+      const fr = MOVE.slideFriction * mv.slideFriction * (onIce ? MOVE.iceSlide : onSnow ? MOVE.snowSlide : 1);
       const ns = Math.max(0, hs - fr * DT);
       if (hs > 0.0001) {
         p.vx *= ns / hs;
@@ -104,7 +113,7 @@ export function updatePlayer(w: World, input: SimInput): void {
       const dl = Math.hypot(dvx, dvz);
       // over walk speed: keep momentum, bleed it slowly (still steerable)
       const over = hs > walk * 1.05;
-      const accel = over ? MOVE.overspeedFriction + (inLen > 0.1 ? 10 : 0) : inLen > 0.1 ? MOVE.groundAccel : MOVE.groundFriction;
+      const accel = (over ? MOVE.overspeedFriction + (inLen > 0.1 ? 10 : 0) : inLen > 0.1 ? MOVE.groundAccel : MOVE.groundFriction) * grip;
       const maxDv = accel * DT;
       if (dl > maxDv) {
         dvx *= maxDv / dl;
@@ -117,9 +126,9 @@ export function updatePlayer(w: World, input: SimInput): void {
         let d = want - cur;
         while (d > Math.PI) d -= Math.PI * 2;
         while (d < -Math.PI) d += Math.PI * 2;
-        const turn = clamp(d, -4 * DT, 4 * DT);
+        const turn = clamp(d, -4 * grip * DT, 4 * grip * DT);
         const na = cur + turn;
-        const ns = Math.max(walk, hs - MOVE.overspeedFriction * DT);
+        const ns = Math.max(walk, hs - MOVE.overspeedFriction * grip * DT);
         p.vx = Math.sin(na) * ns;
         p.vz = Math.cos(na) * ns;
       } else {
@@ -167,6 +176,14 @@ export function updatePlayer(w: World, input: SimInput): void {
   // ── horizontal integration with step/wall checks ──
   let nx = p.x + p.vx * DT;
   let nz = p.z + p.vz * DT;
+  const wt = w.weather;
+  if (wt.gustT > 0 || wt.blizzardT > 0) {
+    // wind shoves you (more so in the air) without adding to your own momentum
+    playerWind(w, p.x, p.z, wind);
+    const k = (p.onGround ? 1 : 1.3) * DT;
+    nx += wind[0] * k;
+    nz += wind[1] * k;
+  }
   const limit = p.y + MOVE.stepHeight;
   if (t.height(nx, nz) > limit) {
     if (t.height(nx, p.z) <= limit) {

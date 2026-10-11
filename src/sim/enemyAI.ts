@@ -1,5 +1,5 @@
 import { DT, PLAYER_RADIUS } from '../config/balance';
-import { ENEMIES } from '../config/enemies';
+import { ELITE, ENEMIES } from '../config/enemies';
 import { Ev } from '../core/events';
 import { updateBoss } from './bosses';
 import { damageArea, damagePlayer, killEnemy } from './combat';
@@ -8,9 +8,9 @@ import { UNREACHABLE } from './flowField';
 import type { EnemyPool } from './pools';
 import { bossSrc, CONTACT_SRC, src, SrcKind } from './sources';
 import type { Terrain } from './terrain';
+import { gustStrength } from './weather';
 import type { World } from './world';
 
-const CLOCKJAW_CHARGE = bossSrc('clockjaw.charge');
 
 /** Charger states */
 const CH_APPROACH = 0;
@@ -26,6 +26,8 @@ const bossMove = new Float32Array(2);
 const fdir = new Float32Array(2);
 /** Walker step scratch: candidate x, z in → corrected x, z and ground height out. */
 const wpos = new Float64Array(3);
+/** Snowball Roller speed factor for this tick (rollerStep → updateEnemies). */
+const rollK = new Float64Array(1);
 /** Per-type speed multipliers from tuning, refreshed each tick (live panel friendly). */
 const speedMul = new Float32Array(ENEMIES.length);
 const MAX_NEIGHBORS = 10;
@@ -33,7 +35,13 @@ const MAX_NEIGHBORS = 10;
 // Behaviour ids resolved once (avoid string compares in the hot loop)
 const BEHAVIOR_ID: Record<string, number> = { chaser: 0, swarmer: 1, tank: 2, ranged: 3, charger: 4, splitter: 5, exploder: 6, boss: 7 };
 const TYPE_BEHAVIOR = new Uint8Array(ENEMIES.map((d) => BEHAVIOR_ID[d.behavior]));
-const TYPE_FLYING = new Uint8Array(ENEMIES.map((d) => (d.id === 'gnatlet' || d.id === 'gloamRegent' ? 1 : 0)));
+const TYPE_FLYING = new Uint8Array(ENEMIES.map((d) => (d.flying ? 1 : 0)));
+const TYPE_ROLL = new Float32Array(ENEMIES.map((d) => d.roll ?? 0));
+const TYPE_SHOT_VISUAL = new Uint8Array(ENEMIES.map((d) => d.shotVisual ?? 0));
+/** How much a gust moves each type (bosses stand firm; light flyers get blown about). */
+const TYPE_GUST = new Float32Array(ENEMIES.map((d) => (d.behavior === 'boss' ? 0 : d.flying ? 1.2 : 1 - d.knockbackResist * 0.7)));
+/** Source code of a boss's charge (contact while dashing counts as the charge attack). */
+const TYPE_CHARGE_SRC = Int32Array.from(ENEMIES.map((d) => (d.bossPattern === 'clockjaw' ? bossSrc('clockjaw.charge') : d.bossPattern === 'oldRime' ? bossSrc('oldRime.charge') : 0)));
 
 export function fireEnemyShot(w: World, x: number, y: number, z: number, dirX: number, dirZ: number, speed: number, damage: number, visual = 0, source = 0, inst = 0): void {
   const s = w.enemyShots;
@@ -72,6 +80,14 @@ export function updateEnemies(w: World): void {
   const px = p.x;
   const pz = p.z;
   const flow = w.flow;
+  // ground surfaces (ice / snow) and gusts — both absent on most maps
+  const surf = t.surface;
+  const sDim = t.hdim;
+  const sHalf = t.half + 0.5;
+  const decayIce = Math.exp(-2.5 * DT);
+  const gk = gustStrength(w) * w.weather.enemyPush * DT;
+  const gwx = w.weather.dirX * gk;
+  const gwz = w.weather.dirZ * gk;
 
   for (let i = 0; i < e.count; i++) {
     if (!e.alive[i]) continue;
@@ -109,7 +125,18 @@ export function updateEnemies(w: World): void {
       pathDirect = false;
     }
 
-    const speed = e.speed[i] * speedMul[type] * (1 - e.slowAmt[i]);
+    let surfMul = 1;
+    let kd = decay;
+    if (surf !== null && TYPE_FLYING[type] === 0 && beh !== 7) {
+      const sk = surf[((z + sHalf) | 0) * sDim + ((x + sHalf) | 0)];
+      if (sk === 1) {
+        surfMul = 0.9;
+        kd = decayIce; // knocked across the ice
+      } else if (sk === 2) surfMul = 0.75;
+    }
+    if (TYPE_ROLL[type] !== 0) rollerStep(e, i, type);
+
+    const speed = e.speed[i] * speedMul[type] * (1 - e.slowAmt[i]) * surfMul;
     let mvx = pdx * speed;
     let mvz = pdz * speed;
 
@@ -144,7 +171,7 @@ export function updateEnemies(w: World): void {
           const tt = dist / ps;
           const ax = px + p.vx * tt * 0.5 - x;
           const az = pz + p.vz * tt * 0.5 - z;
-          fireEnemyShot(w, x, e.y[i] + 1.0 * e.scale[i], z, ax, az, ps, (def.projectileDamage ?? 6) * (e.damage[i] / Math.max(1, def.damage)), 0, src(SrcKind.Shot, type));
+          fireEnemyShot(w, x, e.y[i] + 1.0 * e.scale[i], z, ax, az, ps, (def.projectileDamage ?? 6) * (e.damage[i] / Math.max(1, def.damage)), TYPE_SHOT_VISUAL[type], src(SrcKind.Shot, type));
           w.events.push(Ev.EnemyShoot, x, e.y[i] + 1, z);
         }
         break;
@@ -172,7 +199,7 @@ export function updateEnemies(w: World): void {
             e.stT[i] = def.chargeTime ?? 0.7;
           }
         } else if (st === CH_DASH) {
-          const cs = (def.chargeSpeed ?? 16) * (1 - e.slowAmt[i] * 0.5);
+          const cs = (def.chargeSpeed ?? 16) * (1 - e.slowAmt[i] * 0.5) * (TYPE_ROLL[type] !== 0 ? rollK[0] : 1);
           mvx = e.stA[i] * cs;
           mvz = e.stB[i] * cs;
           e.stT[i] -= DT;
@@ -255,8 +282,13 @@ export function updateEnemies(w: World): void {
 
     x += (mvx + e.kx[i]) * DT + sx * 0.35;
     z += (mvz + e.kz[i]) * DT + sz * 0.35;
-    e.kx[i] *= decay;
-    e.kz[i] *= decay;
+    e.kx[i] *= kd;
+    e.kz[i] *= kd;
+    if (gwx !== 0 || gwz !== 0) {
+      const gf = TYPE_GUST[type];
+      x += gwx * gf;
+      z += gwz * gf;
+    }
 
     if (beh !== 7 && !TYPE_FLYING[type] && t.colliderCellNear(x, z) && t.resolveColliders(x, z, r * 0.8, push)) {
       x = push[0];
@@ -310,6 +342,29 @@ function flowSteer(w: World, i: number): boolean {
   const c = w.terrain.cellOf(x, z);
   const cost = w.flow.dist[c];
   return cost !== UNREACHABLE && cost > dist * 2.2 + 3 && w.flow.directionAt(c, fdir);
+}
+
+/**
+ * Snowball Roller: while rolling it grows (up to def.roll × size) and speeds up; afterwards
+ * the extra snow falls off. Writes this tick's speed factor to rollK; stC accumulates the
+ * distance rolled (the renderer turns it into spin).
+ */
+function rollerStep(e: EnemyPool, i: number, type: number): void {
+  const def = ENEMIES[type];
+  const base = e.elite[i] ? ELITE.scale : 1;
+  const st = e.state[i];
+  if (st === CH_DASH) {
+    const t = Math.min(1, Math.max(0, 1 - e.stT[i] / (def.chargeTime ?? 1)));
+    e.scale[i] = base * (1 + ((def.roll ?? 1) - 1) * t);
+    rollK[0] = 0.6 + 0.9 * t;
+    e.stC[i] += (def.chargeSpeed ?? 10) * rollK[0] * DT;
+  } else {
+    const s = e.scale[i];
+    if (s > base) e.scale[i] = Math.max(base, s - DT * 0.6);
+    rollK[0] = 1;
+    if (st !== CH_WINDUP) e.stC[i] += e.speed[i] * (st === CH_RECOVER ? 0.3 : 1) * DT;
+  }
+  e.radius[i] = def.radius * e.scale[i];
 }
 
 /**
@@ -386,9 +441,9 @@ export function enemyContacts(w: World): void {
     const mult = TYPE_BEHAVIOR[type] === 4 && e.state[i] === CH_DASH ? 1.3 : 1;
     if (e.damage[i] * mult > best) {
       best = e.damage[i] * mult;
-      // a dashing Clockjaw counts as its charge attack
-      const charging = TYPE_BEHAVIOR[type] === 7 && ENEMIES[type].bossPattern === 'clockjaw' && e.state[i] === 2;
-      bestSrc = charging ? CLOCKJAW_CHARGE : CONTACT_SRC[type];
+      // a dashing Clockjaw / Old Rime counts as its charge attack
+      const chargeSrc = TYPE_CHARGE_SRC[type];
+      bestSrc = chargeSrc !== 0 && e.state[i] === 2 ? chargeSrc : CONTACT_SRC[type];
       bestInst = e.atk[i];
     }
   }

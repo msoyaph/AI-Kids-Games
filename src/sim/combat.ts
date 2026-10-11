@@ -4,15 +4,15 @@ import { ELITE, ENEMIES, enemyIndex } from '../config/enemies';
 import { Ev } from '../core/events';
 import { damageAfterArmor, hitDamage, isCrit, knockbackImpulse } from './damage';
 import { PickupKind, type PickupKindT } from './pools';
-import { SrcKind } from './sources';
+import { CHILL_BY_SOURCE, SrcKind } from './sources';
 import { goldMult } from './stats';
 import type { World } from './world';
 
 // ───────────────────────────── spawning ─────────────────────────────
 
 const snap = new Float32Array(2);
-/** Creatures that ignore ground pathing. */
-export const FLYING = Uint8Array.from(ENEMIES.map((d) => (d.id === 'gnatlet' || d.id === 'gloamRegent' ? 1 : 0)));
+/** Creatures that ignore ground pathing and surfaces. */
+export const FLYING = Uint8Array.from(ENEMIES.map((d) => (d.flying ? 1 : 0)));
 
 export function spawnEnemy(w: World, type: number, x: number, z: number, elite = false): number {
   const e = w.enemies;
@@ -226,6 +226,8 @@ export function damagePlayer(w: World, raw: number, source = 0, inst = 0): boole
     }
   }
   for (let k = 0; k < st.bossFights.length; k++) if (st.bossFights[k].killedAt < 0) st.bossFights[k].damageTaken += dmg;
+  const chill = CHILL_BY_SOURCE[source];
+  if (chill > p.chill) p.chill = chill;
   w.events.push(Ev.PlayerHurt, dmg);
   if (p.hp <= 0) {
     if (p.revivals > 0) revivePlayer(w);

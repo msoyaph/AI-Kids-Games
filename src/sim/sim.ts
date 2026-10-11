@@ -2,6 +2,7 @@ import { DT, RUN_LENGTH } from '../config/balance';
 import { BANNER } from '../config/waves';
 import { Ev } from '../core/events';
 import { updateDirector } from './director';
+import { updateWeather } from './weather';
 import { enemyContacts, killDepleted, updateEnemies, updateEnemyShots } from './enemyAI';
 import { updateHazards } from './hazards';
 import { updateGems, updatePickups } from './pickups';
@@ -102,6 +103,7 @@ export function step(w: World, input: SimInput): void {
   updatePlayer(w, input);
   w.flow.update(w);
   if (!w.director.dawn && w.director.victoryT <= 0) updateDirector(w);
+  updateWeather(w);
   checkVictory(w);
 
   const e = w.enemies;

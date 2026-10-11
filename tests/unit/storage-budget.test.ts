@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ACHIEVEMENTS } from '../../src/config/achievements';
 import { CHARACTERS } from '../../src/config/characters';
 import { ENEMIES } from '../../src/config/enemies';
+import { MAPS } from '../../src/config/maps';
 import { SHOP } from '../../src/config/meta';
 import { WEAPONS } from '../../src/config/weapons';
 import { cloneTuning, diffTuning, TUNING_DEFAULTS, TUNING_RANGES, type Range, type TuningGroup } from '../../src/config/tuning';
@@ -22,6 +23,11 @@ export function maximalSave(): ReturnType<typeof defaultSave> {
   for (const c of CHARACTERS) d.stats.bestTimeByChar[c.id] = 1203.123456789;
   for (const e of ENEMIES) d.stats.bossKills[e.id] = 99999;
   d.stats.totalKills = 99_999_999;
+  d.unlockedMaps = MAPS.map((m) => m.id);
+  for (const m of MAPS) {
+    d.stats.winsByMap[m.id] = 99999;
+    d.stats.bestTimeByMap[m.id] = 1203.123456789;
+  }
   return sanitizeSave(JSON.parse(JSON.stringify(d)));
 }
 

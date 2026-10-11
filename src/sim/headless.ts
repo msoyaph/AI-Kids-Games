@@ -1,3 +1,4 @@
+import type { MapId } from '../config/maps';
 import type { TuningOverrides } from '../config/tuning';
 import { recordRun, type PlaytestRun } from '../meta/playtest';
 import type { PlayerStats } from '../config/types';
@@ -28,6 +29,7 @@ export interface HeadlessResult {
 export function simulateRun(opts: {
   characterId: string;
   seed: number;
+  map?: MapId;
   skill?: number;
   maxSeconds?: number;
   meta?: Partial<PlayerStats>;
@@ -37,7 +39,7 @@ export function simulateRun(opts: {
   botMovement?: boolean;
   onWorld?: (w: World) => void;
 }): HeadlessResult {
-  const w = newRun({ seed: opts.seed, characterId: opts.characterId, meta: opts.meta, unlockedWeapons: opts.unlockedWeapons, tuning: opts.tuning });
+  const w = newRun({ seed: opts.seed, characterId: opts.characterId, map: opts.map, meta: opts.meta, unlockedWeapons: opts.unlockedWeapons, tuning: opts.tuning });
   opts.onWorld?.(w);
   const bot = new Bot(opts.seed, opts.skill ?? 0.7, opts.botMovement ?? true);
   const input = emptyInput();

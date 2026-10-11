@@ -48,6 +48,16 @@ export interface Tuning {
     maxSpeed: number;
     /** Highest ledge you can walk up without jumping. */
     stepHeight: number;
+    /** Ice: multiplier on walking acceleration / friction (low = slippery). */
+    iceGrip: number;
+    /** Ice: multiplier on slide friction (low = slides go further). */
+    iceSlide: number;
+    /** Snowdrifts: multiplier on walking speed. */
+    snowSpeed: number;
+    /** Snowdrifts: multiplier on slide friction. */
+    snowSlide: number;
+    /** Fraction of walking speed lost while chilled by frost attacks. */
+    chillSlow: number;
   };
   /** Third-person camera (render-only, never affects the simulation). */
   camera: {
@@ -83,6 +93,8 @@ export interface Tuning {
     regentSlamFuse: number;
     /** Multiplier on every boss shockwave ring's expansion speed. */
     shockwaveSpeedMult: number;
+    /** Old Rime's ice-spike line warning (first spike), seconds. */
+    rimeSpikeFuse: number;
   };
   /** Enemy movement speed multipliers. */
   enemies: {
@@ -166,6 +178,11 @@ export const TUNING_RANGES: { [G in TuningGroup]: { [K in keyof Tuning[G]]: Tuni
     bhopBoost: [0, 4, 0.05],
     maxSpeed: [10, 60, 0.5],
     stepHeight: [0.1, 1.5, 0.05],
+    iceGrip: [0.05, 1, 0.01],
+    iceSlide: [0.05, 1, 0.01],
+    snowSpeed: [0.3, 1, 0.01],
+    snowSlide: [1, 5, 0.05],
+    chillSlow: [0, 0.8, 0.01],
   },
   camera: {
     distance: [5, 24, 0.25],
@@ -185,6 +202,7 @@ export const TUNING_RANGES: { [G in TuningGroup]: { [K in keyof Tuning[G]]: Tuni
     bossWindupMult: [0.3, 3, 0.05],
     regentSlamFuse: [0.3, 3, 0.05],
     shockwaveSpeedMult: [0.3, 2, 0.05],
+    rimeSpikeFuse: [0.3, 3, 0.05],
   },
   enemies: {
     speedMult: [0.25, 3, 0.05],
@@ -241,6 +259,11 @@ export const TUNING_DEFAULTS: Tuning = {
     bhopBoost: 0.6,
     maxSpeed: 34,
     stepHeight: 0.65,
+    iceGrip: 0.18,
+    iceSlide: 0.3,
+    snowSpeed: 0.78,
+    snowSlide: 2,
+    chillSlow: 0.3,
   },
   camera: {
     distance: 11.5,
@@ -260,6 +283,7 @@ export const TUNING_DEFAULTS: Tuning = {
     bossWindupMult: 1,
     regentSlamFuse: 1.1,
     shockwaveSpeedMult: 1,
+    rimeSpikeFuse: 0.95,
   },
   enemies: {
     speedMult: 1,
@@ -275,6 +299,12 @@ export const TUNING_DEFAULTS: Tuning = {
       grumblecap: 1,
       clockjaw: 1,
       gloamRegent: 1,
+      frostling: 1,
+      snowRoller: 1,
+      icicap: 1,
+      grumblecapFrost: 1,
+      clockjawFrost: 1,
+      oldRime: 1,
     },
   },
   spawns: {

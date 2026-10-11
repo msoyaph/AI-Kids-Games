@@ -41,6 +41,13 @@ export class Hud {
   private lastBuffKey = '';
   private hurtVignette: HTMLElement;
   private prompt: HTMLElement;
+  /** Wind warning: an arrow showing which way a gust / blizzard will shove you. */
+  private gust: HTMLElement;
+  private gustArrow: HTMLElement;
+  private gustLabel: HTMLElement;
+  private gustKey = '';
+  /** Camera forward on the ground plane (set by the game each frame) for screen-relative arrows. */
+  camFwd = { x: 0, z: 1 };
 
   constructor() {
     const slot = (): Slot => {
@@ -71,13 +78,16 @@ export class Hud {
     this.toasts = h('div', { class: 'toasts' });
     this.hurtVignette = h('div', { class: 'hurt-vignette' });
     this.prompt = h('div', { class: 'prompt hidden' });
+    this.gustArrow = h('div', { class: 'gust-arrow' });
+    this.gustLabel = h('div', { class: 'gust-label' });
+    this.gust = h('div', { class: 'gust hidden' }, this.gustArrow, this.gustLabel);
 
     this.root = h(
       'div',
       { class: 'hud hidden' },
       this.hurtVignette,
       h('div', { class: 'hud-tl' }, h('div', { class: 'slots' }, ...this.weaponSlots.map((s) => s.root)), h('div', { class: 'slots small' }, ...this.passiveSlots.map((s) => s.root))),
-      h('div', { class: 'hud-tc' }, this.timer, h('div', { class: 'dawn' }, this.dawn, ...marks), this.bossWrap),
+      h('div', { class: 'hud-tc' }, this.timer, h('div', { class: 'dawn' }, this.dawn, ...marks), this.bossWrap, this.gust),
       h(
         'div',
         { class: 'hud-tr' },
@@ -119,6 +129,24 @@ export class Hud {
     this.bannerT = 3.2;
   }
 
+  private updateGust(w: World): void {
+    const wt = w.weather;
+    const blizzard = wt.blizzardT > 0;
+    const state = blizzard ? 'blizzard' : wt.warnT > 0 ? `warn${Math.ceil(wt.warnT)}` : wt.gustT > 0 ? 'gust' : '';
+    if (state !== this.gustKey) {
+      this.gustKey = state;
+      this.gust.classList.toggle('hidden', state === '');
+      this.gust.classList.toggle('swirl', blizzard);
+      setText(this.gustLabel, blizzard ? 'Blizzard!' : wt.warnT > 0 ? `Gust in ${Math.ceil(wt.warnT)}` : 'Gust!');
+    }
+    if (state === '' || blizzard) return;
+    // arrow points where the wind pushes, relative to the camera (up = away from you)
+    const f = this.camFwd;
+    const fwd = wt.dirX * f.x + wt.dirZ * f.z;
+    const right = wt.dirX * -f.z + wt.dirZ * f.x;
+    this.gustArrow.style.transform = `rotate(${Math.round((Math.atan2(right, fwd) * 180) / Math.PI)}deg)`;
+  }
+
   toast(title: string, body: string): void {
     const t = h('div', { class: 'toast' }, h('div', { class: 'toast-title' }, title), h('div', { class: 'toast-body' }, body));
     this.toasts.append(t);
@@ -149,6 +177,7 @@ export class Hud {
   update(w: World, dt: number, gold: number): void {
     const p = w.player;
     const L = this.last;
+    this.updateGust(w);
     const hpFrac = p.hp / p.stats.maxHp;
     this.ghostHp = Math.max(hpFrac, this.ghostHp - dt * 0.6);
     // only touch the DOM when a displayed value actually changes

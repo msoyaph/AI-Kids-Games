@@ -65,6 +65,37 @@ test('loads, starts a run and plays 30s without console errors', async ({ page }
   expect(problems, problems.join('\n')).toEqual([]);
 });
 
+test('an old save with a win unlocks Rimewood, which plays without console errors', async ({ page }) => {
+  const problems = watchConsole(page);
+  const fs = await import('node:fs');
+  const v1 = JSON.parse(fs.readFileSync('tests/fixtures/save-v1.json', 'utf8'));
+  v1.stats.wins = 1;
+  const raw = JSON.stringify(v1);
+  await page.addInitScript((s) => {
+    if (!localStorage.getItem('theabonk.save')) localStorage.setItem('theabonk.save', s);
+  }, raw);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.locator('.map-tab', { hasText: 'Rimewood' }).click();
+  await page.getByRole('button', { name: 'Start run' }).click();
+  await expect(page.locator('.hud')).toBeVisible();
+  await babysit(page, 20);
+  const info = await page.evaluate(() => {
+    const g = (window as unknown as { __theabonk: { world: { map: { id: string }; time: number } } }).__theabonk;
+    return { map: g.world.map.id, time: g.world.time, backup: localStorage.getItem('theabonk.save.bak'), save: JSON.parse(localStorage.getItem('theabonk.save') ?? '{}') };
+  });
+  expect(info.map).toBe('rimewood');
+  expect(info.time).toBeGreaterThan(5);
+  // the upgrade kept a copy of the original save and wrote the new format
+  expect(info.backup).toBe(raw);
+  expect(info.save.version).toBe(2);
+  expect(info.save.lastMap).toBe('rimewood');
+  // nothing lost (a live achievement — 'Dawnbringer' for the existing win — may add gold)
+  expect(info.save.gold).toBeGreaterThanOrEqual(v1.gold);
+  expect(info.save.achievements).toEqual(expect.arrayContaining(v1.achievements));
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
 test('Escape pauses and stays paused; Escape again resumes', async ({ page }) => {
   const problems = watchConsole(page);
   await page.goto('/');

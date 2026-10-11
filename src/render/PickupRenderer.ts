@@ -4,7 +4,7 @@ import { PickupKind } from '../sim/pools';
 import type { World } from '../sim/world';
 import { lowPolyMaterial } from './geo';
 import { commitInstances, makeInstanced, TRS, writeTRSFrom } from './instancing';
-import { chestGeometry, coinGeometry, gemGeometry, heartGeometry, magnetGeometry, projectileGeometry } from './models';
+import { chestGeometry, coinGeometry, gemGeometry, heartGeometry, magnetGeometry, projectileGeometry, shardGeometry } from './models';
 
 /** Gems, coins, hearts, magnets, chests and hostile projectiles. */
 export class PickupRenderer {
@@ -15,7 +15,7 @@ export class PickupRenderer {
   private beams: THREE.InstancedMesh;
   private tierColors: THREE.Color[];
   private kindCounts = new Int32Array(4);
-  private shotCounts = new Int32Array(2);
+  private shotCounts = new Int32Array(3);
 
   constructor() {
     this.group.name = 'pickups';
@@ -39,7 +39,8 @@ export class PickupRenderer {
     this.beams = makeInstanced(bg, new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }), 32, false);
     this.group.add(this.beams);
 
-    this.shots = [projectileGeometry('enemyOrb'), projectileGeometry('enemySpore')].map((g) => {
+    // indexed by ShotVisual: orb, spore, ice shard
+    this.shots = [projectileGeometry('enemyOrb'), projectileGeometry('enemySpore'), shardGeometry()].map((g) => {
       const m = makeInstanced(g, new THREE.MeshBasicMaterial({ vertexColors: true }), CAPS.enemyProjectiles, false);
       this.group.add(m);
       return m;
@@ -125,7 +126,7 @@ export class PickupRenderer {
     sc.fill(0);
     for (let i = 0; i < s.count; i++) {
       if (!s.alive[i]) continue;
-      const v = s.visual[i] > 0 ? 1 : 0;
+      const v = s.visual[i] < 3 ? s.visual[i] : 0;
       const mesh = this.shots[v];
       const k = sc[v]++;
       const x = s.px[i] + (s.x[i] - s.px[i]) * alpha;
@@ -135,14 +136,14 @@ export class PickupRenderer {
       TRS[0] = x;
       TRS[1] = y;
       TRS[2] = z;
-      TRS[3] = time * 5;
+      // shards point where they fly; orbs and spores tumble
+      TRS[3] = v === 2 ? Math.atan2(s.vx[i], s.vz[i]) : time * 5;
       TRS[4] = 0;
       TRS[5] = pulse;
       TRS[6] = pulse;
       TRS[7] = pulse;
       writeTRSFrom(mesh.instanceMatrix.array as Float32Array, k * 16);
     }
-    commitInstances(this.shots[0], sc[0]);
-    commitInstances(this.shots[1], sc[1]);
+    for (let v = 0; v < this.shots.length; v++) commitInstances(this.shots[v], sc[v]);
   }
 }

@@ -3,6 +3,7 @@ import { EVOLUTIONS } from '../config/passives';
 import { Rng } from '../core/rng';
 import { walkSpeed } from './player';
 import { HazardKind, PickupKind } from './pools';
+import { playerWind } from './weather';
 import type { SimInput, UpgradeChoice, World } from './world';
 
 /**
@@ -22,6 +23,7 @@ export class Bot {
   private stuckT = 0;
   private unstickT = 0;
   private lastX = 0;
+  private wind = new Float32Array(2);
   private lastZ = 0;
   private unstickA = 0;
   // movement skills
@@ -88,6 +90,21 @@ export class Bot {
     }
     out.moveX = this.mx;
     out.moveZ = this.mz;
+    const wt = w.weather;
+    if (wt.gustT > 0 || wt.blizzardT > 0) {
+      // lean into the wind (better players compensate more) and stay grounded: the air
+      // catches more of a gust
+      playerWind(w, p.x, p.z, this.wind);
+      const ws = walkSpeed(w);
+      const ax = this.mx * ws - this.wind[0] * this.skill;
+      const az = this.mz * ws - this.wind[1] * this.skill;
+      const l = Math.hypot(ax, az);
+      if (l > 1e-3) {
+        out.moveX = ax / l;
+        out.moveZ = az / l;
+      }
+      if (this.escapeT <= 0 && !this.ringNear(w)) this.wantJump = false;
+    }
     out.jump = this.wantJump;
     this.wantJump = false;
     out.slide = this.wantSlide;
@@ -221,7 +238,7 @@ export class Bot {
       if (edgeD < closest) closest = edgeD;
       if (d < 7 && near < this.angles.length) this.angles[near++] = Math.atan2(-dx, -dz);
       const def = ENEMIES[e.type[i]];
-      const charging = (def.behavior === 'charger' || def.bossPattern === 'clockjaw') && (e.state[i] === 1 || e.state[i] === 2);
+      const charging = (def.behavior === 'charger' || def.bossPattern === 'clockjaw' || def.bossPattern === 'oldRime') && (e.state[i] === 1 || e.state[i] === 2);
       if (charging && edgeD < 18 && this.rng.next() < this.skill) {
         // sidestep out of the telegraphed charge line
         const lx = e.stA[i];

@@ -1,6 +1,6 @@
 import { DT } from '../config/balance';
 import { ENEMIES, enemyIndex } from '../config/enemies';
-import { WAVES, WAVE_EVENTS } from '../config/waves';
+import type { MapDef } from '../config/maps';
 import type { WaveEvent } from '../config/types';
 import { Ev } from '../core/events';
 import { spawnBoss } from './bosses';
@@ -9,13 +9,30 @@ import { Motion } from './pools';
 import { spawnProjectile } from './weapons/common';
 import type { World } from './world';
 
-/** Pre-resolved spawn tables per wave segment. */
-const MIX = WAVES.map((seg) => ({
-  types: Int32Array.from(seg.mix.map(([id]) => enemyIndex(id))),
-  weights: Float32Array.from(seg.mix.map(([, wgt]) => wgt)),
-}));
+interface MapTables {
+  /** Pre-resolved spawn tables per wave segment. */
+  mix: Array<{ types: Int32Array; weights: Float32Array }>;
+  /** Stress-test roster: every regular enemy the map's waves use (in ENEMIES order). */
+  stress: Int32Array;
+}
 
-const NON_BOSS_TYPES = Int32Array.from(ENEMIES.map((d, i) => (d.behavior === 'boss' || d.id === 'blobbit' ? -1 : i)).filter((i) => i >= 0));
+const TABLES = new Map<string, MapTables>();
+
+function tablesFor(map: MapDef): MapTables {
+  let t = TABLES.get(map.id);
+  if (!t) {
+    const used = new Set(map.waves.flatMap((seg) => seg.mix.map(([id]) => id)));
+    t = {
+      mix: map.waves.map((seg) => ({
+        types: Int32Array.from(seg.mix.map(([id]) => enemyIndex(id))),
+        weights: Float32Array.from(seg.mix.map(([, wgt]) => wgt)),
+      })),
+      stress: Int32Array.from(ENEMIES.map((d, i) => (used.has(d.id) && d.behavior !== 'boss' ? i : -1)).filter((i) => i >= 0)),
+    };
+    TABLES.set(map.id, t);
+  }
+  return t;
+}
 
 const tmp = new Float32Array(2);
 
@@ -105,10 +122,12 @@ function runEvent(w: World, ev: WaveEvent): void {
 
 export function updateDirector(w: World): void {
   const d = w.director;
+  const tables = tablesFor(w.map);
   if (w.options.stress > 0) {
     let budget = 60;
+    const roster = tables.stress;
     while (w.enemies.count < w.options.stress && budget-- > 0) {
-      spawnOffscreen(w, NON_BOSS_TYPES[w.rng.int(NON_BOSS_TYPES.length)]);
+      spawnOffscreen(w, roster[w.rng.int(roster.length)]);
     }
     // keep a large projectile population alive too (piercing, long-lived)
     const wi = w.weapons[0];
@@ -123,10 +142,12 @@ export function updateDirector(w: World): void {
     return;
   }
 
+  const waves = w.map.waves;
+  const events = w.map.events;
   let segIdx = 0;
-  for (let k = 0; k < WAVES.length; k++) if (WAVES[k].start <= w.time) segIdx = k;
-  const seg = WAVES[segIdx];
-  const mix = MIX[segIdx];
+  for (let k = 0; k < waves.length; k++) if (waves[k].start <= w.time) segIdx = k;
+  const seg = waves[segIdx];
+  const mix = tables.mix[segIdx];
   d.lastSegment = segIdx;
 
   const alive = aliveRegular(w);
@@ -145,8 +166,8 @@ export function updateDirector(w: World): void {
     d.spawnAcc = 0;
   }
 
-  while (d.eventIndex < WAVE_EVENTS.length && WAVE_EVENTS[d.eventIndex].time <= w.time) {
-    runEvent(w, WAVE_EVENTS[d.eventIndex]);
+  while (d.eventIndex < events.length && events[d.eventIndex].time <= w.time) {
+    runEvent(w, events[d.eventIndex]);
     d.eventIndex++;
   }
 }
