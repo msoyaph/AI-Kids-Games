@@ -114,6 +114,32 @@ export class RaceView {
     this.disposers.push(off);
   }
 
+  private balloons: THREE.Group[] = [];
+
+  /** Battle mode: three balloons float above every kart. */
+  enableBalloons(): void {
+    const geo = new THREE.SphereGeometry(0.55, 10, 8);
+    geo.scale(1, 1.2, 1);
+    const stringGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.4, 3);
+    const colors = [0xff4d6d, 0x3fa7ff, 0xffd23f, 0x8cff6b, 0xb47bff, 0xff9f1c, 0x4ce0d2, 0xff6fae];
+    for (const v of this.visuals) {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshLambertMaterial({ color: colors[v.kart.index % colors.length], emissive: colors[v.kart.index % colors.length], emissiveIntensity: 0.25 });
+      for (let i = 0; i < 3; i++) {
+        const b = new THREE.Group();
+        const ball = new THREE.Mesh(geo, mat);
+        ball.position.y = 0.7;
+        const str = new THREE.Mesh(stringGeo, Materials.basic);
+        b.add(ball, str);
+        b.position.set((i - 1) * 0.55, 1.9, -0.7);
+        b.rotation.z = (i - 1) * -0.25;
+        g.add(b);
+      }
+      v.root.add(g);
+      this.balloons.push(g);
+    }
+  }
+
   attachHazards(h: HazardSystem): void {
     this.hazardVisuals = new HazardVisuals(h);
     this.scene.add(this.hazardVisuals.group);
@@ -196,6 +222,15 @@ export class RaceView {
       this.sun.target.updateMatrixWorld();
     }
     this.itemVisuals?.update(dt);
+    for (let i = 0; i < this.balloons.length; i++) {
+      const k = this.world.karts[i];
+      const g = this.balloons[i];
+      for (let b = 0; b < 3; b++) {
+        const child = g.children[b];
+        child.visible = b < k.balloons;
+        child.rotation.x = Math.sin(this.time * 2.2 + b + i) * 0.12 - Math.min(0.5, Math.max(0, k.speed) * 0.015);
+      }
+    }
     this.hazardVisuals?.update();
     this.effects.update(dt);
     // Underwater tint for player 1's view

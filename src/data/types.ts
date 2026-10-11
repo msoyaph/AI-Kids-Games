@@ -435,6 +435,10 @@ export interface ArenaData {
   sky: SkyData;
   music: string;
   unlocked: boolean;
+  /** Gravity multiplier (moon arena). */
+  gravity?: number;
+  /** Scenery outside the walls. */
+  props?: PropPlacement[];
 }
 
 // ---------------------------------------------------------------------------

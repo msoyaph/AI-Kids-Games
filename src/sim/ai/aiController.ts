@@ -28,7 +28,8 @@ export interface AiOptions {
 export class AiController {
   readonly drivers: AiDriver[] = [];
   private readonly byKart: Array<AiDriver | null>;
-  readonly hazards: HazardInfo[] = [];
+  /** Hazard slots for AI avoidance when no item system exists (track hazards fill these). */
+  readonly hazards: HazardInfo[] = Array.from({ length: 24 }, () => ({ x: 0, z: 0, radius: 1, active: false }));
 
   constructor(
     readonly world: World,
@@ -56,6 +57,14 @@ export class AiController {
       d.brain = new ItemBrain(d.kart, this.world, this.track, d.profile, d.skill, new Rng(rng.nextU32()));
       d.hazards = items.hazards;
     }
+  }
+
+  /** Let the AI drive a player's kart (victory lap after finishing). */
+  takeOver(k: Kart): void {
+    if (this.byKart[k.index]) return;
+    const d = new AiDriver(k, this.world, this.track, AI_PROFILES.careful, 0.8, new Rng(1000 + k.index));
+    this.byKart[k.index] = d;
+    this.drivers.push(d);
   }
 
   driverFor(k: Kart): AiDriver | null {

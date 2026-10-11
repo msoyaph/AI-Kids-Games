@@ -17,7 +17,8 @@ for (let i = 1; i < args.length; i++) {
   else code = readFileSync(args[i], 'utf8');
 }
 
-const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const gpuArgs = process.env.SWIFTSHADER ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'];
+const browser = await chromium.launch({ args: gpuArgs });
 const page = await browser.newPage({ viewport: { width: size[0], height: size[1] }, hasTouch: touch, isMobile: touch });
 const errors = [];
 page.on('console', (m) => {
