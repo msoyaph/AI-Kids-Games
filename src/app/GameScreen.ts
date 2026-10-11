@@ -142,6 +142,17 @@ export class GameScreen implements Screen, HudHost {
       this.cleanup.push(() => ro.disconnect());
     }
     this.app.audio.playMusic(this.opts.map.theme);
+    // Read-only hook for automated tests (state + where a map cell is on screen).
+    const g = this.game;
+    (window as unknown as Record<string, unknown>).__vanexTest = {
+      state: () => ({ coins: g.coins, lives: g.lives, wave: g.waveNum, towers: g.towers.length, enemies: g.enemies.length, kills: g.stats.kills, state: g.state, crystals: g.crystals, unlocked: [...g.unlocked], paused: this.paused, modal: !!this.modal }),
+      cellCenter: (cx: number, cy: number) => {
+        const p = this.view.camera.worldToScreen((cx + 0.5) * TILE, (cy + 0.5) * TILE);
+        const r = this.app.stage.app.canvas.getBoundingClientRect();
+        return { x: r.left + p.x, y: r.top + p.y };
+      },
+    };
+    this.cleanup.push(() => delete (window as unknown as Record<string, unknown>).__vanexTest);
     // the first element crystal is a gift: ask right away
     if (this.game.crystals > 0 && this.opts.mode !== 'tutorial') setTimeout(() => this.openElementPick(true), 350);
     this.maybeRotateHint();
@@ -258,7 +269,9 @@ export class GameScreen implements Screen, HudHost {
   }
 
   private onHover(sx: number, sy: number): void {
-    if (!this.buildType || this.modal) return;
+    // A ghost placed by touch waits for ✓/✕: mouse moves (hybrid devices, or the
+    // pointer leaving the canvas to press ✓) must not move or clear it.
+    if (!this.buildType || this.modal || this.confirmEl) return;
     const { cx, cy } = this.cellAt(sx, sy);
     if (this.ghost && this.ghost.cx === cx && this.ghost.cy === cy) return;
     if (!this.game.grid.inBounds(cx, cy)) {

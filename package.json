@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Vanex Defense — a kid-friendly elemental tower defense game.",
+  "description": "Vanex Defense \u2014 a kid-friendly elemental tower defense game.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -12,8 +12,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sim": "vite-node scripts/simulate.ts",
-    "e2e": "playwright test",
-    "perf": "node scripts/perf.mjs"
+    "e2e": "npm run build && playwright test",
+    "perf": "node scripts/perf.mjs",
+    "check:dist": "node scripts/check-dist.mjs",
+    "test:all": "npm run typecheck && npm test && npm run e2e"
   },
   "dependencies": {
     "pixi.js": "^8.22.0"
