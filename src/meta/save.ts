@@ -7,7 +7,8 @@ import { WEAPONS } from '../config/weapons';
 import type { KeyValueStore } from '../core/storage';
 import { defaultBindings, sanitizeBindings, type Bindings } from '../input/actions';
 
-export type Quality = 'low' | 'medium' | 'high';
+/** 'auto' picks per device (Tablet on touch devices, High elsewhere). */
+export type Quality = 'auto' | 'low' | 'medium' | 'high' | 'tablet';
 export type MouseMode = 'auto' | 'lock' | 'drag';
 
 export interface Settings {
@@ -148,7 +149,7 @@ export function defaultSettings(): Settings {
     sfxVolume: 0.8,
     sensitivity: 1,
     invertY: false,
-    quality: 'high',
+    quality: 'auto',
     showFps: false,
     screenShake: true,
     damageNumbers: true,
@@ -335,7 +336,7 @@ export function sanitizeSave(raw: unknown): SaveData {
     sfxVolume: num(st.sfxVolume, def.sfxVolume, 0, 1),
     sensitivity: num(st.sensitivity, def.sensitivity, 0.1, 4),
     invertY: bool(st.invertY, def.invertY),
-    quality: st.quality === 'low' || st.quality === 'medium' || st.quality === 'high' ? st.quality : def.quality,
+    quality: st.quality === 'low' || st.quality === 'medium' || st.quality === 'high' || st.quality === 'tablet' || st.quality === 'auto' ? st.quality : def.quality,
     showFps: bool(st.showFps, def.showFps),
     screenShake: bool(st.screenShake, def.screenShake),
     damageNumbers: bool(st.damageNumbers, def.damageNumbers),

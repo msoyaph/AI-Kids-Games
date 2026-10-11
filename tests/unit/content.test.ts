@@ -6,7 +6,8 @@ import { enemyIndex } from '../../src/config/enemies';
 import { dailySpec, utcDate } from '../../src/meta/daily';
 import { applyRunResult, checkAchievements, collectedCount, goldForRun, summarize } from '../../src/meta/progression';
 import { defaultSave, sanitizeSave } from '../../src/meta/save';
-import { damagePlayer, spawnEnemy } from '../../src/sim/combat';
+import { BOSS_RESERVE, damagePlayer, spawnEnemy } from '../../src/sim/combat';
+import { spawnBoss } from '../../src/sim/bosses';
 import { HeroPassive } from '../../src/sim/heroes';
 import { newRun } from '../../src/sim/run';
 import { step } from '../../src/sim/sim';
@@ -252,5 +253,47 @@ describe('unlocks and collection', () => {
     expect(back.collection.kills.futureBeast).toBe(3);
     expect(back.collection.weapons).toContain('futureWand');
     expect(collectedCount(back)).toBe(2); // unknown ids don't count
+  });
+});
+
+describe('tablet tier', () => {
+  it('fields about 65% of the Gloom, each tougher and richer; bosses unchanged', () => {
+    const run = (tablet: boolean): World => {
+      const w = newRun({ seed: 21, characterId: 'thea', god: true, tablet });
+      w.weapons.length = 0;
+      const input = emptyInput();
+      for (let k = 0; k < 60 * 75; k++) {
+        step(w, input);
+        w.events.clear();
+        if (w.state !== 'playing') {
+          w.state = 'playing';
+          w.pendingLevels = 0;
+          w.pendingChests = 0;
+        }
+      }
+      return w;
+    };
+    const normal = run(false);
+    const tablet = run(true);
+    const ratio = tablet.enemies.count / normal.enemies.count;
+    expect(ratio).toBeGreaterThan(0.5);
+    expect(ratio).toBeLessThan(0.8);
+    const g = enemyIndex('gloomling');
+    const a = spawnEnemy(normal, g, normal.player.x + 30, normal.player.z);
+    const b = spawnEnemy(tablet, g, tablet.player.x + 30, tablet.player.z);
+    expect(tablet.enemies.maxHp[b] / normal.enemies.maxHp[a]).toBeCloseTo(1 / 0.65, 2);
+    expect(tablet.enemies.xp[b] / normal.enemies.xp[a]).toBeCloseTo(1 / 0.65, 2);
+    expect(tablet.mods.enemyHp).toBe(1); // bosses aren't thinned, so they aren't buffed
+  });
+
+  it('a packed field never blocks a boss', () => {
+    const w = newRun({ seed: 22, characterId: 'thea' });
+    w.maxEnemies = w.enemies.cap;
+    const g = enemyIndex('gloomling');
+    let n = 0;
+    while (spawnEnemy(w, g, (n % 40) - 20, Math.floor(n / 40) - 20) >= 0) n++;
+    expect(w.enemies.count).toBe(w.enemies.cap - BOSS_RESERVE);
+    spawnBoss(w, enemyIndex('grumblecap'));
+    expect(w.director.bossUid).toBeGreaterThan(0);
   });
 });

@@ -28,7 +28,16 @@ export interface RunMods {
   rerolls: number;
   skips: number;
   banishes: number;
+  /** Crowd size (spawn rate, alive caps, event counts) — the tablet tier fields fewer Gloom. */
+  crowd: number;
+  /** HP, XP and coin value per regular Gloom (scaled up when the crowd is smaller). */
+  crowdHp: number;
+  enemyXp: number;
+  coinValue: number;
 }
+
+/** Tablet tier: about 65% of the Gloom, each one tougher and richer to match. */
+export const TABLET_CROWD = 0.65;
 
 export interface DifficultyDef {
   id: DifficultyId;
@@ -52,6 +61,10 @@ export const NORMAL_MODS: Readonly<RunMods> = {
   rerolls: 0,
   skips: 0,
   banishes: 0,
+  crowd: 1,
+  crowdHp: 1,
+  enemyXp: 1,
+  coinValue: 1,
 };
 
 export const DIFFICULTIES: DifficultyDef[] = [
@@ -106,9 +119,16 @@ function combine(into: RunMods, m: Partial<RunMods>): void {
   }
 }
 
-/** The run's modifiers for a difficulty (tier only applies on Hard). */
-export function runMods(difficulty: DifficultyId, tier = 0): RunMods {
+/** The run's modifiers for a difficulty (tier only applies on Hard); `tablet` thins the crowd. */
+export function runMods(difficulty: DifficultyId, tier = 0, tablet = false): RunMods {
   const out: RunMods = { ...NORMAL_MODS };
+  if (tablet) {
+    // same total challenge with fewer bodies on screen: HP, XP and coins carry the difference
+    out.crowd = TABLET_CROWD;
+    out.crowdHp = 1 / TABLET_CROWD;
+    out.enemyXp = 1 / TABLET_CROWD;
+    out.coinValue = 1 / TABLET_CROWD;
+  }
   combine(out, difficultyDef(difficulty).mods);
   if (difficulty === 'hard') {
     const t = Math.max(0, Math.min(MAX_TIER, Math.floor(tier)));

@@ -1,6 +1,7 @@
 import { inIframe, isTypingTarget } from '../core/env';
 import { defaultBindings, FIXED_KEYS, lookup, type Bindings, type GameAction, type PadFamily } from './actions';
 import { chooseActivePad, normalizePad, PadCalibration, padActive, rumblePad, type StdPad } from './gamepad';
+import type { TouchControls } from './touch';
 
 export type UiAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'debug';
 
@@ -60,6 +61,11 @@ export class InputManager {
   /** A controller has ever been seen (Firefox only reveals them after a button press). */
   padSeen = false;
   rumbleEnabled = true;
+  /** On-screen touch controls (phones / tablets), merged with everything else. */
+  touch: TouchControls | null = null;
+  /** Touch is the active input: no pointer lock. */
+  touchMode = false;
+  private touchLook = { x: 0, y: 0 };
   usingGamepad = false;
   wheel = 0;
 
@@ -153,7 +159,7 @@ export class InputManager {
    * huge movement spikes Windows Chrome can report; Firefox and Safari use the default.
    */
   requestLock(): void {
-    if (this.mouseMode !== 'lock' || this.pointerLocked) return;
+    if (this.mouseMode !== 'lock' || this.pointerLocked || this.touchMode) return;
     const plain = (): void => {
       try {
         const r = this.canvas.requestPointerLock() as unknown;
@@ -371,8 +377,8 @@ export class InputManager {
     if (this.keyHeld('moveDown')) y -= 1;
     if (this.keyHeld('moveLeft')) x -= 1;
     if (this.keyHeld('moveRight')) x += 1;
-    x = Math.max(-1, Math.min(1, x)) + this.padMove.x;
-    y = Math.max(-1, Math.min(1, y)) + this.padMove.y;
+    x = Math.max(-1, Math.min(1, x)) + this.padMove.x + (this.touch?.moveX ?? 0);
+    y = Math.max(-1, Math.min(1, y)) + this.padMove.y + (this.touch?.moveY ?? 0);
     const l = Math.hypot(x, y);
     if (l > 1) {
       x /= l;
@@ -383,20 +389,21 @@ export class InputManager {
   }
 
   slideHeld(): boolean {
-    return this.slideToggle ? this.slideLatched : this.held('slide');
+    return (this.slideToggle ? this.slideLatched : this.held('slide')) || (this.touch?.slideHeld ?? false);
   }
 
   /** The game reports that a slide ended: a toggled slide switches itself off. */
   slideEnded(): void {
     this.slideLatched = false;
+    this.touch?.slideEnded();
   }
 
   jumpHeld(): boolean {
-    return this.held('jump');
+    return this.held('jump') || (this.touch?.jumpHeld ?? false);
   }
 
   consumeJump(): boolean {
-    const j = this.jumpQueued;
+    const j = this.jumpQueued || (this.touch?.consumeJump() ?? false);
     this.jumpQueued = false;
     return j;
   }
@@ -411,6 +418,11 @@ export class InputManager {
     y += this.padLook.y * 2.0 * dt * this.sensitivity;
     if (this.held('lookLeft')) x -= 2.2 * dt;
     if (this.held('lookRight')) x += 2.2 * dt;
+    if (this.touch) {
+      this.touch.consumeLook(this.touchLook);
+      x += this.touchLook.x;
+      y += this.touchLook.y;
+    }
     out.x = x;
     out.y = this.invertY ? -y : y;
   }
@@ -420,5 +432,6 @@ export class InputManager {
     this.jumpQueued = false;
     this.slideLatched = false;
     this.wheel = 0;
+    this.touch?.reset();
   }
 }

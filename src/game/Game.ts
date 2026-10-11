@@ -26,6 +26,8 @@ import { emptyInput, type UpgradeChoice, type World } from '../sim/world';
 import { h } from '../ui/dom';
 import { Menus, rewardText, type GameApi } from '../ui/menus';
 import { UI } from '../ui/UI';
+import { isTouchDevice, TouchControls } from '../input/touch';
+import type { Quality as RenderQuality } from '../render/Renderer';
 import { applyAccessClasses, reducedMotionOn, watchReducedMotion } from '../ui/access';
 
 const MAX_STEPS_PER_FRAME = 5;
@@ -86,6 +88,8 @@ export class Game implements GameApi {
   playtest: PlaytestStore | null = null;
   private padFrames = 0;
   private kbFrames = 0;
+  private touch: TouchControls;
+  private touchDevice: boolean;
   private store: KeyValueStore;
   private tuneSaveT = 0;
 
@@ -98,9 +102,21 @@ export class Game implements GameApi {
     this.save = new SaveManager(this.store);
     // unlocks added since the save was written (e.g. heroes earned by past progress) apply now
     if (checkAchievements(this.save.data).length > 0) this.save.save();
-    this.renderer = new GameRenderer(canvas, overlay, this.save.data.settings.quality);
+    this.touchDevice = isTouchDevice();
+    this.renderer = new GameRenderer(canvas, overlay, this.effectiveQuality());
     this.input = new InputManager(canvas);
     this.ui = new UI(uiRoot);
+    // touch: on-screen controls, touch-sized menus, landscape only
+    this.touch = new TouchControls(uiRoot);
+    this.input.touch = this.touch;
+    this.touch.onPause = () => this.onAction('pause');
+    this.touch.onTouch = () => this.setTouchMode(true);
+    uiRoot.append(h('div', { class: 'rotate-hint' }, h('div', { class: 'rotate-phone' }), h('div', null, 'Turn your device sideways to play')));
+    this.setTouchMode(this.touchDevice);
+    if (this.touchDevice && this.save.data.stats.runsPlayed === 0 && this.save.data.lastDifficulty === 'normal') {
+      // first time on a phone / tablet: start gentle (the player can still pick Normal)
+      this.save.data.lastDifficulty = 'relaxed';
+    }
     this.menus = new Menus(this);
     this.fpsEl = h('div', { class: 'fps hidden' });
     uiRoot.append(this.fpsEl);
@@ -196,6 +212,23 @@ export class Game implements GameApi {
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
     this.renderer.resize(w, h);
+    // turning a phone upright mid-run pauses it (the rotate hint covers the screen)
+    if (this.input.touchMode && h > w && this.world?.state === 'playing' && !this.paused) this.pause();
+  }
+
+  /** Touch input in use: on-screen controls during runs, touch-sized menus. */
+  private setTouchMode(on: boolean): void {
+    if (this.input.touchMode === on) return;
+    this.input.touchMode = on;
+    document.documentElement.classList.toggle('touch', on);
+    this.touch.setVisible(on && this.input.gameplay);
+    if (on) this.input.releaseLock();
+  }
+
+  /** The render tier to use: 'auto' is Tablet on touch devices, High elsewhere. */
+  private effectiveQuality(): RenderQuality {
+    const q = this.save.data.settings.quality;
+    return q === 'auto' ? (this.touchDevice ? 'tablet' : 'high') : q;
   }
 
   start(): void {
@@ -252,7 +285,10 @@ export class Game implements GameApi {
 
   applySettings(): void {
     const s = this.save.data.settings;
-    if (this.renderer.quality !== s.quality) this.renderer.setQuality(s.quality);
+    const q = this.effectiveQuality();
+    if (this.renderer.quality !== q) this.renderer.setQuality(q);
+    this.touch.sensitivity = s.sensitivity;
+    this.touch.slideToggle = s.controls.slideToggle;
     this.input.sensitivity = s.sensitivity;
     this.input.invertY = s.invertY;
     this.input.setBindings(s.controls.bindings);
@@ -295,6 +331,8 @@ export class Game implements GameApi {
       difficulty,
       tier: difficulty === 'hard' ? Math.min(opts.tier ?? d.lastTier, d.unlockedTier) : 0,
       daily: !!daily,
+      // the tablet tier fields fewer (but tougher, richer) Gloom
+      tablet: this.renderer.quality === 'tablet',
       stress,
       // the daily is the same for everyone: no shop bonuses or unlocked extras
       meta: daily ? undefined : metaBonuses(d),
@@ -368,6 +406,7 @@ export class Game implements GameApi {
   private setGameplayInput(on: boolean): void {
     this.input.gameplay = on;
     this.input.clearTransient();
+    this.touch.setVisible(on && this.input.touchMode);
     if (on) this.input.requestLock();
     else this.input.releaseLock();
   }

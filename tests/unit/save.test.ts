@@ -90,7 +90,7 @@ describe('save / load', () => {
     expect(d.stats.totalKills).toBe(0);
     expect(d.stats.bestTime).toBe(640);
     expect(d.settings.masterVolume).toBe(1);
-    expect(d.settings.quality).toBe('high');
+    expect(d.settings.quality).toBe('auto');
     expect(d.settings.invertY).toBe(false);
   });
 

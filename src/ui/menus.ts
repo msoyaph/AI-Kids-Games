@@ -662,7 +662,7 @@ export class Menus {
         slider('Look sensitivity', 'sensitivity', 0.2, 3, 0.1, (v) => `${v.toFixed(1)}×`),
         toggle('Invert look Y', 'invertY'),
         cycle('Camera control', 'mouseMode', ['auto', 'lock', 'drag'], { auto: 'Auto', lock: 'Mouse lock', drag: 'Hold to drag' }),
-        cycle('Graphics quality', 'quality', ['low', 'medium', 'high'], { low: 'Low', medium: 'Medium', high: 'High' }),
+        cycle('Graphics quality', 'quality', ['auto', 'low', 'medium', 'high', 'tablet'], { auto: 'Auto', low: 'Low', medium: 'Medium', high: 'High', tablet: 'Tablet' }),
         toggle('Show FPS', 'showFps'),
         toggle('Screen shake', 'screenShake'),
         toggle('Damage numbers', 'damageNumbers'),

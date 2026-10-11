@@ -85,6 +85,11 @@ function aliveRegular(w: World): number {
   return w.director.bossUid ? w.enemies.count - 1 : w.enemies.count;
 }
 
+/** Event head-count scaled by the crowd mod (tablet tier); unchanged at 1. */
+function crowd(w: World, n: number): number {
+  return w.mods.crowd === 1 ? n : Math.max(1, Math.round(n * w.mods.crowd));
+}
+
 function runEvent(w: World, ev: WaveEvent): void {
   const type = enemyIndex(ev.enemy);
   const p = w.player;
@@ -92,21 +97,22 @@ function runEvent(w: World, ev: WaveEvent): void {
   switch (ev.kind) {
     case 'ring': {
       const r = 24;
-      for (let k = 0; k < ev.count; k++) {
-        const a = (k / ev.count) * Math.PI * 2;
+      const n = crowd(w, ev.count);
+      for (let k = 0; k < n; k++) {
+        const a = (k / n) * Math.PI * 2;
         spawnEnemy(w, type, p.x + Math.sin(a) * r, p.z + Math.cos(a) * r);
       }
       break;
     }
     case 'swarm': {
       ringPoint(w, w.tuning.spawns.minDist - 6, w.tuning.spawns.minDist, 0, 0, tmp);
-      for (let k = 0; k < ev.count; k++) {
+      for (let k = 0, n = crowd(w, ev.count); k < n; k++) {
         spawnEnemy(w, type, tmp[0] + (w.rng.next() - 0.5) * 8, tmp[1] + (w.rng.next() - 0.5) * 8);
       }
       break;
     }
     case 'horde':
-      for (let k = 0; k < ev.count; k++) spawnOffscreen(w, type);
+      for (let k = 0, n = crowd(w, ev.count); k < n; k++) spawnOffscreen(w, type);
       break;
     case 'elite':
       for (let k = 0; k < ev.count + w.mods.extraElites; k++) {
@@ -153,9 +159,9 @@ export function updateDirector(w: World): void {
   const alive = aliveRegular(w);
   const sp = w.tuning.spawns;
   const mods = w.mods;
-  if (alive < seg.maxAlive * sp.maxAliveMult * mods.maxAlive) {
-    const base = seg.rate * sp.rateMult * mods.spawnRate;
-    const rate = alive < seg.minAlive * sp.minAliveMult ? base * 3 : base;
+  if (alive < seg.maxAlive * sp.maxAliveMult * mods.maxAlive * mods.crowd) {
+    const base = seg.rate * sp.rateMult * mods.spawnRate * mods.crowd;
+    const rate = alive < seg.minAlive * sp.minAliveMult * mods.crowd ? base * 3 : base;
     d.spawnAcc += rate * DT;
     let budget = 20;
     while (d.spawnAcc >= 1 && budget-- > 0) {

@@ -909,9 +909,10 @@ body {
   inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding-left: 8vw;
+  justify-content: safe center;
+  padding: 1rem 0 1rem max(8vw, env(safe-area-inset-left));
   gap: 1.2rem;
+  overflow-y: auto;
 }
 
 .logo {
@@ -2046,9 +2047,56 @@ body {
 
 /* ───────────────────────── accessibility ───────────────────────── */
 
-/* Larger text: the whole interface is sized in rem */
+/*
+ * Interface size: everything is in rem. Short screens (phones in landscape) get a smaller
+ * base; "Larger text" multiplies whatever the base is.
+ */
+:root {
+  --ui-base: 16px;
+  --ui-scale: 1;
+}
+
+html {
+  font-size: calc(var(--ui-base) * var(--ui-scale));
+}
+
 html.large-text {
-  font-size: 125%;
+  --ui-scale: 1.25;
+}
+
+@media (max-height: 640px) {
+  :root {
+    --ui-base: 13px;
+  }
+}
+
+@media (max-height: 440px) {
+  :root {
+    --ui-base: 11px;
+  }
+
+  .title-screen {
+    gap: 0.5rem;
+  }
+
+  .logo {
+    font-size: 4.6rem;
+  }
+
+  .tagline {
+    font-size: 1.2rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .menu-col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 15rem));
+    gap: 0.5rem 0.8rem;
+  }
+
+  .menu-col .btn.big {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Reduced motion: no animated movement or flashing in the interface */
@@ -2109,4 +2157,200 @@ html.high-contrast .card,
 html.high-contrast .modal {
   background: #120c22;
   box-shadow: inset 0 0 0 0.16rem #fff;
+}
+
+/* ───────────────────────── touch (phones / tablets) ───────────────────────── */
+
+.touch-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  touch-action: none;
+}
+
+.touch-ui.hidden {
+  display: none;
+}
+
+.tzone {
+  position: absolute;
+  top: 18%;
+  bottom: 0;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.tzone-left {
+  left: 0;
+  width: 45%;
+}
+
+.tzone-right {
+  right: 0;
+  width: 55%;
+}
+
+.tstick {
+  position: absolute;
+  width: 8rem;
+  height: 8rem;
+  margin: -4rem 0 0 -4rem;
+  border-radius: 50%;
+  background: rgba(255, 248, 236, 0.12);
+  box-shadow: inset 0 0 0 0.2rem rgba(255, 248, 236, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.tstick.hidden {
+  display: none;
+}
+
+.tstick-knob {
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  background: rgba(255, 248, 236, 0.75);
+  box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.35);
+}
+
+.tbtn {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+  font: inherit;
+  font-weight: 900;
+  color: var(--ink);
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 248, 236, 0.82);
+  box-shadow: 0 0.3rem 0 rgba(0, 0, 0, 0.3);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.tbtn.down {
+  background: var(--accent);
+  transform: translateY(0.15rem);
+  box-shadow: 0 0.1rem 0 rgba(0, 0, 0, 0.3);
+}
+
+.tbtn-jump {
+  width: 6rem;
+  height: 6rem;
+  right: calc(1.4rem + env(safe-area-inset-right));
+  bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  font-size: 1.15rem;
+}
+
+.tbtn-slide {
+  width: 4.6rem;
+  height: 4.6rem;
+  right: calc(8.4rem + env(safe-area-inset-right));
+  bottom: calc(3.4rem + env(safe-area-inset-bottom));
+  font-size: 0.95rem;
+}
+
+.tbtn-pause {
+  width: 3.2rem;
+  height: 3.2rem;
+  right: calc(1rem + env(safe-area-inset-right));
+  top: calc(5.6rem + env(safe-area-inset-top));
+  font-size: 1rem;
+  letter-spacing: -0.1em;
+}
+
+/* HUD out of the thumbs' way, inside the notch / rounded corners */
+html.touch .hud-br {
+  display: none;
+}
+
+html.touch .hud-tl {
+  left: max(0.8rem, env(safe-area-inset-left));
+  top: max(0.8rem, env(safe-area-inset-top));
+}
+
+html.touch .hud-tr {
+  right: max(0.8rem, env(safe-area-inset-right));
+  top: max(0.8rem, env(safe-area-inset-top));
+}
+
+html.touch .hud-bc {
+  bottom: max(0.6rem, env(safe-area-inset-bottom));
+}
+
+/* touch-sized menus: bigger targets, no hover-only affordances */
+html.touch .btn {
+  min-height: 3rem;
+}
+
+html.touch .btn.small,
+html.touch .btn.tiny {
+  min-height: 2.6rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+html.touch .card {
+  min-height: 15rem;
+}
+
+html.touch .map-tab,
+html.touch .diff-tab,
+html.touch .tier-tab,
+html.touch .col-tab,
+html.touch .chip {
+  min-height: 2.6rem;
+}
+
+html.touch .select-screen,
+html.touch .collection-screen {
+  padding-left: max(1rem, env(safe-area-inset-left));
+}
+
+/* landscape only on phones / tablets */
+.rotate-hint {
+  display: none;
+}
+
+@media (orientation: portrait) {
+  html.touch .rotate-hint {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.4rem;
+    background: #1c1530;
+    color: var(--paper);
+    font-weight: 900;
+    font-size: 1.3rem;
+    text-align: center;
+    padding: 2rem;
+    pointer-events: auto;
+  }
+}
+
+.rotate-phone {
+  width: 3.6rem;
+  height: 6rem;
+  border-radius: 0.7rem;
+  box-shadow: inset 0 0 0 0.35rem var(--paper);
+  animation: rotate-phone 2.4s ease-in-out infinite;
+}
+
+@keyframes rotate-phone {
+  0%,
+  30% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(-90deg);
+  }
 }

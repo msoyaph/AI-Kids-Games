@@ -26,7 +26,9 @@ asset files, CDN links or web fonts.
 - `?tune=1` — live tuning panel (F2 hides). Export → `npm run apply-tuning -- file.json`
   (validates + rewrites the generated block in src/config/tuning.ts);
   `npm run simulate -- 8 0.7 --tuning file.json` tests an export headlessly.
-- E2E needs `npx playwright install chromium firefox` once (projects: chromium, firefox). On
+- E2E needs `npx playwright install chromium firefox webkit` once. Projects: chromium,
+  firefox (desktop specs) and webkit-tablet, webkit-phone, chromium-tablet (tests/e2e/
+  touch.spec.ts only — synthetic touch Pointer Events drive the on-screen controls). On
   macOS Chromium uses the real GPU via ANGLE/Metal; elsewhere SwiftShader. Tolerated
   browser-internal notices (never game errors) are listed in tests/e2e/smoke.spec.ts:
   SwiftShader's ReadPixels stall, Firefox's "implementation-defined" shadow filtering note
@@ -56,7 +58,8 @@ src/
   input/     InputManager (the ONE keyboard listener: routes keys to the open menu via
              ui.handleKey, else to gameplay through remappable bindings), actions.ts
              (GameAction bindings, labels, conflicts), gamepad.ts (raw → standard layout,
-             learned calibration, last-used pad, rumble), mouse/pointer-lock
+             learned calibration, last-used pad, rumble), touch.ts (twin-stick on-screen
+             controls), mouse/pointer-lock
   ui/        DOM screens (title, select, shop, settings, pause, level-up, chest, game over),
              HUD, procedural canvas icons, menu focus navigation
   meta/      save schema + migration, gold/achievements/unlocks, daily.ts (UTC date →
@@ -114,6 +117,14 @@ Key rules:
   Check Xbox ids before PlayStation ("Xbox Wireless Controller" vs DS4 "Wireless Controller").
 - Pointer lock asks for raw input (unadjustedMovement) and falls back to a plain lock; if
   lock never works in a session (pointerlockerror before any success) look switches to drag.
+- Touch: `html.touch` (coarse pointer or first touch) shows the on-screen controls during
+  runs, enlarges tap targets, and hides the speedometer; portrait shows the rotate hint and
+  pauses. Quality 'auto' = Tablet on touch devices, High elsewhere. The tablet tier renders
+  lighter (DPR 1, no shadows, thinned decoration) and its runs field ~65% of the Gloom with
+  HP / XP / coins ×1/0.65 (`mods.crowd / crowdHp / enemyXp / coinValue`; bosses untouched).
+- The last BOSS_RESERVE enemy-pool slots are bosses-only (a packed field never blocks one).
+- Interface scale: root font = `--ui-base` (16 / 13 / 11 px by screen height) × `--ui-scale`
+  (Larger text). Use rem everywhere.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
   Save v2 (`meta/save.ts`): older saves are migrated in sanitizeSave and copied once to
   `theabonk.save.bak` just before the first write in the new format. v2 adds maps, difficulty
@@ -191,6 +202,8 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
   high contrast
 - [x] 7. Gamepad layer (standard + raw layouts, calibration, last-used), controller test +
   quick setup, rumble, raw-input pointer lock + fallback, 125%/150% scaling e2e, Firefox e2e
+- [x] 8. Touch twin-stick controls, touch-sized menus, rotate hint, safe areas, Relaxed
+  preselected on touch, Tablet tier (render + crowd), boss slots reserved, WebKit e2e
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

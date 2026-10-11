@@ -234,6 +234,8 @@ export interface WorldOptions {
   tier?: number;
   /** Daily run (recorded separately; shop bonuses are left out by the caller). */
   daily?: boolean;
+  /** Tablet tier: fewer, tougher Gloom (see TABLET_CROWD). */
+  tablet?: boolean;
   /** Permanent bonuses from the shop (added to base stats). */
   meta?: Partial<PlayerStats>;
   unlockedWeapons?: string[];
@@ -310,7 +312,7 @@ export function createWorld(opts: WorldOptions): World {
   const terrain = new Terrain(opts.seed, map.terrain);
   const difficulty = opts.difficulty ?? 'normal';
   const tier = difficulty === 'hard' ? Math.max(0, Math.min(5, Math.floor(opts.tier ?? 0))) : 0;
-  const mods = runMods(difficulty, tier);
+  const mods = runMods(difficulty, tier, !!opts.tablet);
   const character = characterDef(opts.characterId);
 
   const baseStats = makeStats();

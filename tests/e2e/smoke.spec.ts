@@ -192,11 +192,16 @@ test('remapped keys work in a run; accessibility options apply', async ({ page }
   await page.getByRole('button', { name: 'Done' }).click();
   await page.getByRole('button', { name: 'Done' }).click();
   await startRun(page);
-  await page.waitForTimeout(800);
-  await page.keyboard.press('KeyJ');
-  await page.waitForTimeout(500);
-  const jumps = await page.evaluate(() => (window as unknown as { __theabonk: { world: { stats: { jumps: number } } } }).__theabonk.world.stats.jumps);
-  expect(jumps).toBeGreaterThan(0);
+  // press J until a jump registers (a slow machine may still be warming up)
+  await expect
+    .poll(
+      async () => {
+        await page.keyboard.press('KeyJ');
+        return page.evaluate(() => (window as unknown as { __theabonk: { world: { stats: { jumps: number } } } }).__theabonk.world.stats.jumps);
+      },
+      { timeout: 15_000, intervals: [400] },
+    )
+    .toBeGreaterThan(0);
   expect(problems, problems.join('\n')).toEqual([]);
 });
 

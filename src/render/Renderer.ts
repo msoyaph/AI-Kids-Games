@@ -23,7 +23,11 @@ import { ENEMIES } from '../config/enemies';
 import { lowPolyMaterial } from './geo';
 import { enemyGeometry, ROLLER_BODY } from './models';
 
-export type Quality = 'low' | 'medium' | 'high';
+/**
+ * Render tier. 'tablet' is for phones / tablets: device-pixel ratio 1, no shadows, fewer
+ * particles and decorative props (its runs also field fewer, tougher enemies — WorldOptions).
+ */
+export type Quality = 'low' | 'medium' | 'high' | 'tablet';
 
 const FOG = 0xd9e9ef;
 
@@ -97,7 +101,7 @@ export class GameRenderer {
   setQuality(q: Quality): void {
     this.quality = q;
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-    const ratio = q === 'low' ? Math.min(dpr, 1) * 0.75 : q === 'medium' ? Math.min(dpr, 1.5) : Math.min(dpr, 2);
+    const ratio = q === 'low' ? Math.min(dpr, 1) * 0.75 : q === 'tablet' ? Math.min(dpr, 1) : q === 'medium' ? Math.min(dpr, 1.5) : Math.min(dpr, 2);
     this.renderer.setPixelRatio(ratio);
     const shadows = q === 'high';
     this.renderer.shadowMap.enabled = shadows;
@@ -106,7 +110,7 @@ export class GameRenderer {
     this.enemies.setCastShadows(shadows);
     this.shrines.setShadows(shadows);
     this.enemies.shadowsEnabled = q !== 'low';
-    this.particles.density = q === 'low' ? 0.4 : q === 'medium' ? 0.7 : 1;
+    this.particles.density = q === 'low' ? 0.4 : q === 'tablet' ? 0.35 : q === 'medium' ? 0.7 : 1;
     if (this.terrain) {
       // rebuild static meshes with the right shadow flags
       this.worldKey = '';
@@ -138,7 +142,7 @@ export class GameRenderer {
         if (mat) mat.dispose();
       });
     }
-    this.worldGroup = buildWorldMesh(t, map, this.quality === 'high');
+    this.worldGroup = buildWorldMesh(t, map, this.quality === 'high', this.quality === 'tablet' ? 0.45 : 1);
     this.scene.add(this.worldGroup);
     this.worldKey = key;
   }

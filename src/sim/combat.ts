@@ -12,14 +12,18 @@ import type { World } from './world';
 // ───────────────────────────── spawning ─────────────────────────────
 
 const snap = new Float32Array(2);
+/** Enemy-pool slots only bosses may use. */
+export const BOSS_RESERVE = 4;
 /** Creatures that ignore ground pathing and surfaces. */
 export const FLYING = Uint8Array.from(ENEMIES.map((d) => (d.flying ? 1 : 0)));
 
 export function spawnEnemy(w: World, type: number, x: number, z: number, elite = false): number {
   const e = w.enemies;
-  if (e.count >= w.maxEnemies) return -1;
   const def = ENEMIES[type];
   const boss = def.behavior === 'boss';
+  // regular Gloom respect the soft cap and leave the last pool slots free: a packed field
+  // can never block a boss fight
+  if (boss ? e.count >= e.cap : e.count >= w.maxEnemies || e.count >= e.cap - BOSS_RESERVE) return -1;
   const t = w.terrain;
   x = t.clampToMap(x);
   z = t.clampToMap(z);
@@ -33,7 +37,7 @@ export function spawnEnemy(w: World, type: number, x: number, z: number, elite =
   if (i < 0) return -1;
   const minutes = w.time / 60;
   const hpScale = boss ? 1 + w.player.level * 0.03 : enemyHpScaleWith(minutes, w.tuning.combat);
-  const hp = def.hp * hpScale * (elite ? ELITE.hpMult : 1) * w.mods.enemyHp;
+  const hp = def.hp * hpScale * (elite ? ELITE.hpMult : 1) * w.mods.enemyHp * (boss ? 1 : w.mods.crowdHp);
   const y = t.height(x, z);
   e.type[i] = type;
   e.x[i] = e.px[i] = x;
@@ -44,7 +48,7 @@ export function spawnEnemy(w: World, type: number, x: number, z: number, elite =
   e.damage[i] = def.damage * (boss ? 1 : enemyDamageScaleWith(minutes, w.tuning.combat)) * (elite ? ELITE.damageMult : 1);
   e.scale[i] = elite ? ELITE.scale : 1;
   e.radius[i] = def.radius * e.scale[i];
-  e.xp[i] = def.xp * (elite ? ELITE.xpMult : 1);
+  e.xp[i] = def.xp * (elite ? ELITE.xpMult : 1) * (boss ? 1 : w.mods.enemyXp);
   e.elite[i] = elite ? 1 : 0;
   e.yaw[i] = Math.atan2(w.player.x - x, w.player.z - z);
   // desync behaviour timers so groups don't act in lockstep
@@ -179,7 +183,7 @@ export function killEnemy(w: World, i: number, slot: number): void {
     const c = w.tuning.combat;
     if (r < c.magnetChance * luck) spawnPickup(w, PickupKind.Magnet, x, y, z);
     else if (r < (c.magnetChance + c.heartChance * w.mods.hearts) * luck) spawnPickup(w, PickupKind.Heart, x, y, z, c.heartHeal);
-    else if (r < (c.magnetChance + c.heartChance * w.mods.hearts + c.coinChance) * luck) spawnPickup(w, PickupKind.Coin, x, y, z, Math.max(1, Math.round(DROPS.coinValue * goldMult(w.player.stats))));
+    else if (r < (c.magnetChance + c.heartChance * w.mods.hearts + c.coinChance) * luck) spawnPickup(w, PickupKind.Coin, x, y, z, Math.max(1, Math.round(DROPS.coinValue * goldMult(w.player.stats) * w.mods.coinValue)));
   }
 
   if (def.splitInto) {

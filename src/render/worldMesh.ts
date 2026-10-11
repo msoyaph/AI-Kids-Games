@@ -28,8 +28,11 @@ function hash2(x: number, z: number): number {
   return s - Math.floor(s);
 }
 
-/** Builds all static map geometry for a terrain. */
-export function buildWorldMesh(terrain: Terrain, map: MapDef, shadows: boolean): THREE.Group {
+/** Small walk-through decoration (thinned on lighter tiers). */
+const DECOR: ReadonlySet<PropKind> = new Set<PropKind>(['tuft', 'flower', 'snowTuft', 'mushroom', 'frostShrub']);
+
+/** Builds all static map geometry for a terrain. `decor` = share of small decoration kept. */
+export function buildWorldMesh(terrain: Terrain, map: MapDef, shadows: boolean, decor = 1): THREE.Group {
   const group = new THREE.Group();
   group.name = 'world';
   const ground = buildGround(terrain, map.palette);
@@ -39,7 +42,7 @@ export function buildWorldMesh(terrain: Terrain, map: MapDef, shadows: boolean):
   structs.receiveShadow = shadows;
   structs.castShadow = shadows;
   group.add(structs);
-  for (const m of buildProps(terrain, map.palette, shadows)) group.add(m);
+  for (const m of buildProps(terrain, map.palette, shadows, decor)) group.add(m);
   if (terrain.ponds.length) {
     const ice = buildIce(terrain, map.palette);
     ice.receiveShadow = shadows;
@@ -271,9 +274,12 @@ function buildStructures(structs: Structure[], pal: MapPalette): THREE.Mesh {
   return mesh;
 }
 
-function buildProps(t: Terrain, pal: MapPalette, shadows: boolean): THREE.InstancedMesh[] {
+function buildProps(t: Terrain, pal: MapPalette, shadows: boolean, decor: number): THREE.InstancedMesh[] {
   const byKind = new Map<PropKind, typeof t.props>();
+  let k = 0;
   for (const p of t.props) {
+    // thin small decoration evenly (render-only: never touches collision or the sim)
+    if (DECOR.has(p.kind) && decor < 1 && ((k++ * 0.618034) % 1) >= decor) continue;
     let arr = byKind.get(p.kind);
     if (!arr) byKind.set(p.kind, (arr = []));
     arr.push(p);
