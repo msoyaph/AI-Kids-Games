@@ -180,7 +180,7 @@ function dig(g: Game, i: number, o: TileObj | undefined): void {
       w.setObj(i, { k: 'hole' });
       if (found === 'pouch') {
         const amt = 1000;
-        money(g, amt);
+        money(g, amt, 0, 'found');
         g.toast(`You dug up a Glint Pouch! +${amt} Glints`, 'good');
       } else {
         give(g, found, 1, 'dig');

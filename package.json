@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Light Crossing — a cozy procedural island life-sim for the browser",
+  "description": "Light Crossing \u2014 a cozy procedural island life-sim for the browser",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "verify": "npm run typecheck && npm test && npm run e2e",
-    "pacing": "tsx scripts/pacing.ts"
+    "pacing": "tsx scripts/pacing.ts",
+    "analyze-playtests": "tsx scripts/analyze-playtests.ts"
   },
   "dependencies": {
     "three": "^0.186.1"

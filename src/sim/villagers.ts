@@ -279,7 +279,7 @@ export function fulfillRequest(g: Game, id: string): RequestReward | null {
   if (!r || !canFulfill(g, id)) return null;
   removeItem(g, r.target, r.qty, 'request');
   r.done = true;
-  money(g, r.reward);
+  money(g, r.reward, 0, 'request');
   addFriendship(g, id, FRIEND.request);
   stat(g, 'requestsDone');
   g.emit('requestDone', { npc: id, kind: r.kind });
@@ -311,11 +311,11 @@ export function dueHeartRewards(g: Game, id: string): HeartReward[] {
       const rid = def.heartRecipes[m - 2];
       if (rid && learnRecipe(g, rid, 'friend', true)) out.push({ kind: 'recipe', id: rid });
       else {
-        money(g, 0, 300);
+        money(g, 0, 300, 'friendship');
         out.push({ kind: 'lumens', amount: 300 });
       }
     } else if (m === 4) {
-      money(g, 0, 600);
+      money(g, 0, 600, 'friendship');
       out.push({ kind: 'lumens', amount: 600 });
     } else {
       give(g, def.heartGift, 1, 'friend');

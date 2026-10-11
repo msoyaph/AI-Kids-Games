@@ -1,6 +1,5 @@
 // Story presentation: quest talk hooks, mission messages, chapter banners, HUD tracker + compass.
 import type { App } from '../app';
-import { MISSION_BY_ID } from '../data/missions';
 import { agents } from '../sim/agents';
 import type { Game } from '../sim/game';
 import { startPlotPlacement } from '../sim/placement';
@@ -10,7 +9,8 @@ import { parseLine } from '../sim/talk';
 import { Region } from '../world/types';
 import { makeBox, type TalkOption } from './conversation';
 import { contestOptions } from './journal';
-import { clear, h, type Panel } from './dom';
+import { btn, clear, h, type Panel } from './dom';
+import { sendHint, trackedMission } from '../sim/hints';
 import { fmt } from '../core/math';
 
 const ctxOf = (g: Game) => ({ player: g.state.player.name });
@@ -113,8 +113,7 @@ export class QuestTracker {
       this.arrow.style.display = 'none';
       return;
     }
-    const q = g.state.quests;
-    const m = MISSION_BY_ID[q.tracked] ?? active(g)[0];
+    const m = trackedMission(g);
     if (!m) {
       this.el.style.display = 'none';
       this.arrow.style.display = 'none';
@@ -208,7 +207,7 @@ export function markerPos(g: Game, m: ReturnType<typeof active>[number]): { x: n
 
 // ---------------------------------------------------------------- quest log
 
-export function questLogBody(g: Game, onTrack: () => void): HTMLElement {
+export function questLogBody(g: Game, onTrack: () => void, onHelp?: () => void): HTMLElement {
   const body = h('div', { class: 'col', style: 'gap:10px' });
   const list = active(g);
   if (!list.length) body.append(h('div', { class: 'muted' }, g.state.quests.finished ? 'The story is complete! Enjoy island life.' : 'No active missions right now. Explore, chat with neighbors, or sleep until tomorrow!'));
@@ -232,6 +231,19 @@ export function questLogBody(g: Game, onTrack: () => void): HTMLElement {
     });
     body.append(card);
   }
+  const tm = trackedMission(g);
+  if (tm && onHelp)
+    body.append(
+      h(
+        'div',
+        { class: 'help-row' },
+        h('span', null, 'Stuck? '),
+        btn('🙋 Ask Pemberly', () => {
+          sendHint(g, tm, undefined, true);
+          onHelp();
+        }, 'small primary'),
+      ),
+    );
   const done = g.state.quests.done.length;
   body.append(h('div', { class: 'tiny muted' }, `${done} missions completed.`));
   return body;

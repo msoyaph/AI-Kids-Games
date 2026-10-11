@@ -138,6 +138,7 @@ registerPhoneApp({ id: 'challenges', name: 'Challenges', icon: '❖', color: '#b
 // ---------------------------------------------------------------- Lumen Exchange
 
 export class LumenPanel implements Panel {
+  name = 'lumens';
   el: HTMLElement;
   modal = true;
   private body = h('div', { class: 'col scroll', style: 'gap:8px;max-height:64vh' });

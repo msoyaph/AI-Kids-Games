@@ -37,6 +37,7 @@ import { MEDAL_PRIZES, CONTESTS } from './data/challenges';
 import { item as itemDef } from './data/registry';
 import type { TalkHooks } from './ui/conversation';
 import { cancelPlacement, placementRT } from './sim/placement';
+import { PlaytestRecorder } from './sim/playtest';
 
 const AUTOSAVE_SEC = 60;
 const TITLE_SEED = 20261011;
@@ -65,8 +66,23 @@ export class App {
   private stepOdo = 0;
   /** story layer hooks into conversations */
   talkHooks: TalkHooks = { intro: async () => false, options: () => [] };
-  /** panel factories other modules can open via game.ui.open */
-  panels: Record<string, (arg?: unknown) => void> = {};
+  /** panel factories other modules can open via game.ui.open (panels they push get the key as name) */
+  panels: Record<string, (arg?: unknown) => void> = new Proxy({} as Record<string, (arg?: unknown) => void>, {
+    set: (t, k, fn: (arg?: unknown) => void) => {
+      t[String(k)] = (arg?: unknown) => this.ui.named(String(k), () => fn(arg));
+      return true;
+    },
+  });
+  /** on-device playtest log for the current slot (null when playtest mode is off) */
+  playtest: PlaytestRecorder | null = null;
+  private playtestParam = (() => {
+    try {
+      return new URLSearchParams(location.search).get('playtest') === '1';
+    } catch {
+      return false;
+    }
+  })();
+  private ptBadge = h('div', { class: 'pt-badge' }, '● Playtest');
 
   constructor(readonly canvas: HTMLCanvasElement, private root: HTMLElement) {
     this.settings = this.saves.loadSettings(DEFAULT_SETTINGS);
@@ -130,6 +146,13 @@ export class App {
       if (q.active.m3_ladder || q.done.includes('m3_ladder')) out.push(permit('ramp'));
       return out;
     });
+    root.appendChild(this.ptBadge);
+    const activity = () => {
+      if (this.game) this.game.idleSec = 0;
+    };
+    window.addEventListener('pointerdown', activity);
+    window.addEventListener('wheel', activity, { passive: true });
+    window.addEventListener('keydown', activity);
     this.showTitle();
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') this.saveNow(true);
@@ -149,9 +172,39 @@ export class App {
 
   // ---------------- screen flow ----------------
 
+  get currentSlot(): number {
+    return this.slot;
+  }
+
+  playtestEnabled(): boolean {
+    return this.settings.playtest || this.playtestParam;
+  }
+
+  /** Start/stop the playtest recorder to match the setting for the current game. */
+  syncPlaytest(): void {
+    const want = this.playtestEnabled() && !!this.game && this.slot >= 0;
+    if (want && !this.playtest) {
+      const key = `playtest.slot${this.slot}`;
+      const st = this.saves.storage;
+      this.playtest = new PlaytestRecorder({ load: () => st.get(key), save: (d) => void st.put(key, d) });
+      this.playtest.attach(this.game!);
+    } else if (!want && this.playtest) {
+      this.playtest.flush();
+      this.playtest.detach();
+      this.playtest = null;
+    }
+    this.ptBadge.style.display = this.playtest ? 'block' : 'none';
+  }
+
   showTitle(): void {
     this.mode = 'title';
     this.ui.closeAll();
+    if (this.playtest) {
+      this.playtest.flush();
+      this.playtest.detach();
+      this.playtest = null;
+    }
+    this.ptBadge.style.display = 'none';
     this.game = null;
     this.hud.setVisible(false);
     this.view.attach(this.demo);
@@ -274,6 +327,11 @@ export class App {
     });
     this.autosaveT = 0;
     this.tips.bind(g);
+    if (this.playtest) {
+      this.playtest.detach();
+      this.playtest = null;
+    }
+    this.syncPlaytest();
     this.onEnterGame?.(g);
   }
 
@@ -298,6 +356,8 @@ export class App {
       this.hud.toast(r === 'memory' ? 'Saving is unavailable here — progress will be lost when the page closes.' : 'Could not save just now. Your last save is safe.', 'warn');
     }
     if (!ok) this.saveWarned = r;
+    // after the real save: quota recovery may have dropped the old playtest log
+    this.playtest?.flush();
     this.hud.saving.classList.add('on');
     setTimeout(() => this.hud.saving.classList.remove('on'), 900);
     return ok;
@@ -435,12 +495,14 @@ export class App {
     const f = this.input.poll(dt);
     this.hud.device = this.input.lastDevice;
     const g = this.game;
+    if (g && (f.commands.length || Math.abs(f.moveX) + Math.abs(f.moveZ) > 0.05)) g.idleSec = 0;
     if (this.ui.top) this.ui.handle(f.commands);
     else if (g && this.mode === 'game') for (const c of f.commands) this.gameplayCommand(g, c);
     this.ui.update(dt);
     if (g && this.mode === 'game') {
       const free = !this.ui.modalOpen;
       g.update(dt, free ? { move: { x: f.moveX, z: f.moveZ, run: f.run }, actionHeld: f.actionHeld } : null);
+      this.playtest?.tick(dt, this.ui.topName);
       this.autosaveT += dt;
       if (this.autosaveT > AUTOSAVE_SEC) {
         this.autosaveT = 0;

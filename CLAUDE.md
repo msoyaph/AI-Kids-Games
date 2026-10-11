@@ -11,6 +11,7 @@ all audio is Web Audio synthesis, no web fonts, no network requests.
 - `npm run typecheck` — `tsc --noEmit` (TypeScript 7 native compiler).
 - `npm run e2e` — Playwright smoke test (`e2e/`), runs against `vite preview` of the built file.
 - `npm run pacing` — pacing simulation (`scripts/pacing.ts`) estimating minutes per chapter.
+- `npm run analyze-playtests -- <folder>` — compare playtest exports with the pacing model.
 
 ## Architecture (logic decoupled from rendering)
 - `src/core/` — seeded RNG (`Rng`, `hashInts`, `dayRng`), value noise, typed `EventBus`, math helpers.
@@ -104,9 +105,22 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
   GPU Chromium + vite dev server; `npx tsx scripts/screenshots.ts --out <dir> [--scenes a,b] [--quality q]`),
   compact save format v3 + quota/verify handling + storage budget tests.
 
+- Phase 1 done: playtest mode + stall hints.
+  - `src/sim/playtest.ts` `PlaytestRecorder`: on-device log (`lightcrossing.playtest.slotN`, ≤64 KB, expendable on quota):
+    real seconds play/menu/idle (idle = `game.idleSec` ≥ 30, reset by any input in `App.tick` + pointer/key listeners),
+    per mission/chapter seconds + in-game days, menu time by `Panel.name` (`UIManager.topName`; `App.panels[key]`
+    auto-names the panels it pushes), stalls, Glints/Lumens by `money(..., reason)`, loans (`loanTaken` event), activity
+    counts. No names/timestamps/device data. Enabled by `?playtest=1` or `settings.playtest` (Settings → tap the version
+    line 5×). Export: Blob download standalone, JSON box + Copy in iframes (`src/ui/playtest.ts`).
+  - `src/sim/hints.ts`: always on. Tracked mission without progress for `STALL_SEC` (6 min) of active play →
+    `missionStalled` + Pemberly Glowpad call (`hintLines` per objective kind; unread hints replace each other).
+    Missions app has "Ask Pemberly"; the Map app draws a pulsing ★ at `markerPos` of `trackedMission`.
+  - `scripts/pacing.ts` exports `estimatePacing()` (per-mission estimates); `npm run analyze-playtests -- <folder>`
+    (`scripts/analyze-playtests.ts`) prints medians vs model and *suggests* missions.ts / economy.ts edits.
+
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run e2e && npm run pacing`
-(129 unit tests incl. a full new-game → festival playthrough; 2 e2e tests.)
+(141 unit tests incl. a full new-game → festival playthrough; 2 e2e tests.)
 
 ## Known issues / limitations
 - Villager homes, the shop and Lantern Hall have no walk-in interiors (conversation + panels instead).

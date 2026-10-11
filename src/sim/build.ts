@@ -162,7 +162,7 @@ export function placeBuild(g: Game, pl: Placement): boolean {
     return false;
   }
   const c = BUILD_COSTS[kind];
-  money(g, -c.glints);
+  money(g, -c.glints, 0, 'build');
   removeItem(g, c.item, c.qty, 'build');
   const s = addStructure(g, { type: kind, ...pl.rect, level: pl.level ?? 0, dir: pl.dir });
   startConstruction(g, s, kind, 1);

@@ -2,6 +2,7 @@
 import { btn, h, type Panel, type UIManager } from '../dom';
 
 export class PauseMenu implements Panel {
+  name = 'pause';
   el: HTMLElement;
   modal = true;
   constructor(ui: UIManager, opts: { onSave: () => void; onSettings: () => void; onControls: () => void; onQuit: () => void }) {

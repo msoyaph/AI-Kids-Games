@@ -13,6 +13,7 @@ import { iconImg } from './icons';
 type Held = { kind: 'pocket'; index: number; id: string } | { kind: 'storage'; index: number; id: string } | { kind: 'move'; uid: number; id: string; ox: number; oz: number; orot: number };
 
 export class EditorPanel implements Panel {
+  name = 'editor';
   el: HTMLElement;
   modal = true;
   private cx = 1;

@@ -79,6 +79,7 @@ export class SlotScreen implements Panel {
 /** Generic yes/no confirmation. */
 export function confirmPanel(ui: UIManager, text: string, yes: () => void, no?: () => void, labels: [string, string] = ['Yes', 'No']): void {
   const p: Panel = {
+    name: 'confirm',
     modal: true,
     el: h('div', { class: 'screen', style: 'z-index:10' }, h('div', { class: 'dim' })),
     command(c) {
@@ -118,6 +119,7 @@ export function noticePanel(ui: UIManager, title: string, text: string, ok = 'OK
     onClose?.();
   };
   const p: Panel = {
+    name: 'notice',
     modal: true,
     el: h('div', { class: 'screen', style: 'z-index:10' }, h('div', { class: 'dim' })),
     command(c) {

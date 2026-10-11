@@ -38,6 +38,7 @@ const CRAFT_TABS: { id: string; label: string; test: (r: RecipeDef) => boolean }
 ];
 
 export class CraftPanel implements Panel {
+  name = 'craft';
   el: HTMLElement;
   modal = true;
   private tab = 'tools';
@@ -120,6 +121,7 @@ export class CraftPanel implements Panel {
 // ---------------- shop ----------------
 
 export class ShopPanel implements Panel {
+  name = 'shop';
   el: HTMLElement;
   modal = true;
   private mode: 'buy' | 'sell' = 'buy';
@@ -225,6 +227,7 @@ export class ShopPanel implements Panel {
 // ---------------- Lantern Hall ----------------
 
 export class HallPanel implements Panel {
+  name = 'hall';
   el: HTMLElement;
   modal = true;
   private body = h('div', { class: 'col', style: 'gap:10px' });
@@ -282,6 +285,7 @@ export class HallPanel implements Panel {
 // ---------------- storage ----------------
 
 export class StoragePanel implements Panel {
+  name = 'storage';
   el: HTMLElement;
   modal = true;
   private body = h('div', { class: 'col scroll', style: 'gap:8px' });
@@ -318,6 +322,7 @@ export class StoragePanel implements Panel {
 // ---------------- museum ----------------
 
 export class MuseumPanel implements Panel {
+  name = 'museum';
   el: HTMLElement;
   modal = true;
   private body = h('div', { class: 'col', style: 'gap:10px' });

@@ -14,6 +14,7 @@ export interface Speaker {
 }
 
 export class DialogueBox implements Panel {
+  name = 'dialogue';
   el: HTMLElement;
   modal = true;
   sticky = true;

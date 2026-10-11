@@ -156,6 +156,7 @@ export function orderUpgrade(g: Game): boolean {
   h.loan = t.cost;
   h.loanTotal = t.cost;
   h.upgradeReadyDay = g.state.clock.day + 1;
+  g.emit('loanTaken', { amount: t.cost, level: t.level });
   g.toast(`Construction on your ${t.name} starts tonight. It'll be ready tomorrow!`, 'good');
   return true;
 }
@@ -164,7 +165,7 @@ export function payLoan(g: Game, amount: number): number {
   const h = g.state.home;
   const pay = Math.min(amount, h.loan, g.state.player.glints);
   if (pay <= 0) return 0;
-  money(g, -pay);
+  money(g, -pay, 0, 'loan');
   h.loan -= pay;
   stat(g, 'loanPaid', pay);
   g.emit('loanPaid', { amount: pay, remaining: h.loan });

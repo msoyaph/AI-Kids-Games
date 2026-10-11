@@ -21,6 +21,8 @@ export interface QuestMessage {
   speaker: string;
   lines: string[];
   title?: string;
+  /** a stall hint (replaced rather than stacked) */
+  hint?: boolean;
 }
 
 interface QuestRT {
@@ -197,7 +199,7 @@ export function applyEffect(g: Game, e: Effect): void {
       learnRecipe(g, e.id, 'quest');
       break;
     case 'money':
-      money(g, e.glints ?? 0, e.lumens ?? 0);
+      money(g, e.glints ?? 0, e.lumens ?? 0, 'mission');
       if (e.glints) g.toast(`+${e.glints.toLocaleString()} Glints`, 'good');
       if (e.lumens) g.toast(`+${e.lumens.toLocaleString()} Lumens`, 'good');
       break;

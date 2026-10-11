@@ -2,6 +2,7 @@
 import type { App } from '../app';
 import { sharedUniforms } from '../render/curve';
 import { btn, h, type Panel } from './dom';
+import { playtestSettings } from './playtest';
 
 export function settingsBody(app: App, body: HTMLElement): void {
   const s = app.settings;
@@ -53,6 +54,7 @@ export function settingsBody(app: App, body: HTMLElement): void {
       app.hud.toast('Tutorial tips will show again.');
     }, 'small')),
   );
+  playtestSettings(app, body);
   void sharedUniforms;
 }
 
@@ -60,6 +62,7 @@ export function settingsPanel(app: App): Panel {
   const body = h('div', { class: 'col scroll', style: 'max-height:70vh;gap:4px' });
   settingsBody(app, body);
   const p: Panel = {
+    name: 'settings',
     modal: true,
     el: h(
       'div',

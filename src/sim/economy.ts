@@ -40,7 +40,7 @@ export function sellSlot(g: Game, slot: number, qty?: number): number {
   const id = s.id;
   removeAt(g, slot, n, 'sell');
   const total = each * n;
-  money(g, total);
+  money(g, total, 0, 'sell');
   stat(g, 'itemsSold', n);
   g.emit('itemSold', { id, qty: n, total, category: item(id).cat });
   g.emit('sfx', { name: 'coins' });
@@ -105,7 +105,7 @@ export function buy(g: Game, e: StockEntry, qty = 1): boolean {
     g.toast('Your pockets are full!', 'warn');
     return false;
   }
-  money(g, -total);
+  money(g, -total, 0, 'shop');
   give(g, e.id, qty, 'buy');
   if (e.limited) g.state.shop.sold.push(e.id);
   stat(g, 'itemsBought', qty);

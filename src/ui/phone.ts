@@ -5,7 +5,8 @@ import { ratingBreakdown } from '../sim/rating';
 import { agents } from '../sim/agents';
 import { Ground, REGION_NAMES } from '../world/types';
 import { btn, clear, h, type Panel, type UIManager } from './dom';
-import { questLogBody } from './story';
+import { markerPos, questLogBody } from './story';
+import { trackedMission } from '../sim/hints';
 
 export interface PhoneApp {
   id: string;
@@ -23,6 +24,7 @@ export function registerPhoneApp(a: PhoneApp): void {
 }
 
 export class Phone implements Panel {
+  name = 'phone';
   el: HTMLElement;
   modal = true;
   private body = h('div', { class: 'phone-body scroll' });
@@ -42,6 +44,7 @@ export class Phone implements Panel {
 
   home(): void {
     this.current = null;
+    this.name = 'phone';
     this.title.textContent = 'Glowpad';
     clear(this.body);
     const grid = h('div', { class: 'phone-grid' });
@@ -58,6 +61,7 @@ export class Phone implements Panel {
 
   open(a: PhoneApp): void {
     this.current = a;
+    this.name = `phone:${a.id}`;
     this.title.textContent = a.name;
     const rerender = () => {
       clear(this.body);
@@ -90,7 +94,7 @@ registerPhoneApp({
   name: 'Missions',
   icon: '★',
   color: '#f6a5b5',
-  render: (_app, g, body, rerender) => body.append(questLogBody(g, rerender)),
+  render: (app, g, body, rerender) => body.append(questLogBody(g, rerender, () => app.ui.closeAll())),
 });
 
 registerPhoneApp({
@@ -101,8 +105,23 @@ registerPhoneApp({
   render: (_app, g, body) => {
     const cv = h('canvas', { class: 'map-canvas' }) as HTMLCanvasElement;
     drawMap(g, cv);
-    const legend = h('div', { class: 'row wrap tiny' }, h('span', { class: 'tag' }, '● You'), h('span', { class: 'tag' }, '■ Buildings'), h('span', { class: 'tag' }, '○ Neighbors'));
-    body.append(cv, legend);
+    const wrap = h('div', { class: 'map-wrap' }, cv);
+    // big pulsing star on the tracked mission's target
+    const m = trackedMission(g);
+    const t = m ? markerPos(g, m) : null;
+    if (t) {
+      const N = g.world.size;
+      wrap.append(h('div', { class: 'map-star', style: `left:${(t.x / N) * 100}%;top:${(t.z / N) * 100}%` }, '★'));
+    }
+    const legend = h(
+      'div',
+      { class: 'row wrap tiny' },
+      h('span', { class: 'tag' }, '● You'),
+      t ? h('span', { class: 'tag star' }, `★ ${m!.title}`) : null,
+      h('span', { class: 'tag' }, '■ Buildings'),
+      h('span', { class: 'tag' }, '○ Neighbors'),
+    );
+    body.append(wrap, legend);
   },
 });
 

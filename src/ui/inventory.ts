@@ -37,6 +37,7 @@ export function slotButton(g: Game, i: number, s: InvSlot | null | undefined, ex
 }
 
 export class InventoryPanel implements Panel {
+  name = 'inventory';
   el: HTMLElement;
   modal = true;
   private grid = h('div', { class: 'inv-grid' });

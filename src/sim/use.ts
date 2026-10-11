@@ -46,7 +46,7 @@ export function useSlot(g: Game, slot: number): boolean {
       return plantFromSlot(g, slot);
     case 'Open':
       removeAt(g, slot, 1, 'use');
-      money(g, 1000);
+      money(g, 1000, 0, 'found');
       g.toast('+1,000 Glints!', 'good');
       g.emit('sfx', { name: 'coins' });
       return true;
@@ -55,7 +55,7 @@ export function useSlot(g: Game, slot: number): boolean {
       removeAt(g, slot, 1, 'use');
       stat(g, 'bottlesRead');
       if (!unknown.length) {
-        money(g, 500);
+        money(g, 500, 0, 'found');
         g.toast('The note inside is a thank-you card... with 500 Glints tucked in!', 'good');
         return true;
       }

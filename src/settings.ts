@@ -12,6 +12,8 @@ export interface Settings {
   touch: 'auto' | 'on' | 'off';
   tips: boolean;
   reduceMotion: boolean;
+  /** playtest recording (hidden toggle; also ?playtest=1) */
+  playtest: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -25,6 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   touch: 'auto',
   tips: true,
   reduceMotion: false,
+  playtest: false,
 };
 
 export const TEXT_CPS: Record<Settings['textSpeed'], number> = { slow: 28, normal: 55, fast: 110, instant: 100000 };

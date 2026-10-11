@@ -195,13 +195,14 @@ export function putInStorage(g: Game, slot: number, qty?: number): boolean {
   return true;
 }
 
-export function money(g: Game, dGlints: number, dLumens = 0): void {
+/** Change the player's Glints / Lumens. `reason` labels the flow for stats and playtest logs. */
+export function money(g: Game, dGlints: number, dLumens = 0, reason = 'other'): void {
   const p = g.state.player;
   p.glints = Math.max(0, p.glints + dGlints);
   p.lumens = Math.max(0, p.lumens + dLumens);
   if (dGlints > 0) g.state.stats.glintsEarned = (g.state.stats.glintsEarned ?? 0) + dGlints;
   if (dLumens > 0) g.state.stats.lumensEarned = (g.state.stats.lumensEarned ?? 0) + dLumens;
-  g.emit('money', { glints: p.glints, lumens: p.lumens, dg: dGlints, dl: dLumens });
+  g.emit('money', { glints: p.glints, lumens: p.lumens, dg: dGlints, dl: dLumens, reason });
 }
 
 export function stat(g: Game, key: string, inc = 1): void {

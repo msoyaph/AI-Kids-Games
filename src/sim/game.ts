@@ -62,6 +62,8 @@ export class Game {
   moveMag = 0;
   /** player is sneaking (net raised) */
   sneaking = false;
+  /** real seconds since the player last moved or pressed anything (the App resets it on input) */
+  idleSec = 0;
   /** last movement intent (interiors use it) */
   moveIntent = { x: 0, z: 0, run: false };
   /** interaction resolver used while inside a building */
@@ -184,6 +186,8 @@ export class Game {
     }
     this.held = !!input?.actionHeld;
     this.moveMag = input ? Math.hypot(input.move.x, input.move.z) : 0;
+    if (this.moveMag > 0.05 || this.held) this.idleSec = 0;
+    else this.idleSec += dt;
     this.moveIntent = input ? { x: input.move.x, z: input.move.z, run: input.move.run } : { x: 0, z: 0, run: false };
     const canMove = (this.mode === 'play' || this.mode === 'placement') && !this.action && input && this.state.player.location === 'island';
     if (canMove) {

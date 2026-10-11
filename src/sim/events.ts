@@ -8,7 +8,7 @@ export interface GameEvents {
   itemGained: { id: string; qty: number; source: string };
   itemRemoved: { id: string; qty: number; reason: string };
   inventoryChanged: Record<string, never>;
-  money: { glints: number; lumens: number; dg: number; dl: number };
+  money: { glints: number; lumens: number; dg: number; dl: number; reason?: string };
   toolUsed: { tool: string; ok: boolean };
   toolBroke: { id: string };
   fishCaught: { id: string; size: number; where: string; rarity: number };
@@ -39,10 +39,15 @@ export interface GameEvents {
   plotPlaced: { owner: string };
   homeUpgraded: { level: number };
   loanPaid: { amount: number; remaining: number };
+  loanTaken: { amount: number; level: number };
   furniturePlaced: { id: string; where: 'home' | 'outdoor' };
   structureBuilt: { type: string; id: number };
   missionStarted: { id: string };
   missionCompleted: { id: string };
+  /** tracked mission made no progress for a while of active play (obj -1 = turn-in) */
+  missionStalled: { id: string; obj: number };
+  /** a guide hint was sent (asked = player pressed the help button) */
+  hintShown: { id: string; asked: boolean };
   chapterStarted: { chapter: number };
   challengeCompleted: { id: string; reward: number };
   achievement: { id: string; tier: number };
