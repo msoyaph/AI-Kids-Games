@@ -189,18 +189,25 @@ Key rules:
   object allocation).
 
 ## Balance notes
-`npm run simulate -- 16 0.7` (16 seeds/hero, bot skill 0.7 ≈ "decent player", no meta):
-Thea ~12:35, Pip ~11:30, Brindle ~15:00 average survival (overall ~13:00); ~25% first-run
-wins. Deaths
-cluster at the boss gates (5:00 Grumblecap, 10:00 Clockjaw, 15:00+ Regent). Skill 0.45 →
-~11:10, 0.9 → ~13:10. Main knobs: wave
-`rate/minAlive/maxAlive` (waves.ts), boss hp/projectileDamage (enemies.ts + bosses.ts),
-`tuning.combat.*` (i-frames, level heal, drops, HP/damage scaling) and `tuning.spawns.*`.
+`npm run balance-sweep -- 12` (every map × difficulty, Hard tiers, bot skill 0.7 "decent" and
+0.9 "expert", 6 heroes × N seeds per cell, parallel; `--only meadow-normal-0.7,...`) compares
+with the targets and flags heroes more than 1:30 from the cell average. Upgrade phase 13
+results (12 seeds, decent bot): Relaxed Meadow 14:11 / 44% wins, Rimewood 16:01 / 51%;
+Normal Meadow 13:21 / 29%, Rimewood 12:24 / 21% (≈ 1 min shorter, as intended); Hard Meadow
+8:43 / 0%, Rimewood 8:04 / 3%. The 0.9 bot is barely stronger than 0.7 (Normal wins 35 / 36%),
+so the "expert" Relaxed / Hard / tier win targets are out of reach without making the game
+easier for everyone — treat them as bot-limited. Hero averages carry ±1:10 of noise at 12
+seeds; use 24+ seeds (`--only` the Normal cells) before touching a hero.
+Knobs: difficulty multipliers (config/difficulty.ts DIFFICULTIES / TIERS), per-map `mods` on
+MapDef (Meadow enemyHp 1.09 · damageTaken 1.04; Rimewood damageTaken 0.9 · enemyHp 0.97),
+hero stats / passives (config/characters.ts, sim/heroes.ts SHELL_GUARD_MULT, thorns ×2),
+wave `rate/minAlive/maxAlive` (waves.ts), boss hp/projectileDamage, `tuning.combat.*`,
+`tuning.spawns.*`. `npm run simulate -- 16 0.7 --map rimewood --difficulty hard --tier 2`.
 The bot (sim/bot.ts) kites, dodges shots predictively, sidesteps telegraphed charges,
-hops shockwave rings, un-sticks itself, and (since the upgrade) slides for travel/downhill,
-chains slide boosts, bunny-hops on open ground, escapes encirclements through the widest
-gap and climbs ramps to plateau shrines. `new Bot(seed, skill, false)` = the v1 bot (used by
-the golden "sim" fingerprints). Damage sources: sim/sources.ts codes passed to
+hops shockwave rings, un-sticks itself, slides for travel/downhill, chains slide boosts,
+bunny-hops on open ground, escapes encirclements through the widest gap and climbs ramps
+to plateau shrines. `new Bot(seed, skill, false)` = the v1 bot (used by the golden "sim"
+fingerprints). Damage sources: sim/sources.ts codes passed to
 `damagePlayer(w, raw, source, inst)`; boss attacks call `beginAttack()` for used/hit counts.
 
 ## Gotchas
@@ -254,6 +261,10 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
   −1 dBFS limiter, offline audio report + test
 - [x] 11. Benchmark (`?bench=1`, Settings → Test…, result card, bench-browser matrix), Low
   tier (no decor, 0.72× fog + 150 far plane with the sky scaled to fit), GPU-based auto quality
+- [x] 13. Balance sweep (scripts/balance-sweep.ts, simulate --difficulty / --tier / --json):
+  Relaxed toned down, Hard eased, per-map MapDef.mods (Meadow a little harder, Rimewood
+  easier), hero pass (Thea / Ottie / Nova up; Brindle / Bramble / Pip down). Golden
+  fingerprints updated for the intentional balance change.
 - [x] 12. CI: .github/workflows/ci.yml (Ubuntu: typecheck, build, size, unit, short
   simulate, e2e matrix per project; CI=true → longer timeouts, 1 retry, HTML report +
   failure screenshots / traces uploaded), gpu.yml (self-hosted Mac, manual or pushes to

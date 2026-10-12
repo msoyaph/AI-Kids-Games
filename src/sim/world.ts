@@ -312,7 +312,7 @@ export function createWorld(opts: WorldOptions): World {
   const terrain = new Terrain(opts.seed, map.terrain);
   const difficulty = opts.difficulty ?? 'normal';
   const tier = difficulty === 'hard' ? Math.max(0, Math.min(5, Math.floor(opts.tier ?? 0))) : 0;
-  const mods = runMods(difficulty, tier, !!opts.tablet);
+  const mods = runMods(difficulty, tier, !!opts.tablet, map.mods);
   const character = characterDef(opts.characterId);
 
   const baseStats = makeStats();

@@ -125,3 +125,25 @@ medians of 2 interleaved; avg / 1% low FPS)
 
 No average-FPS loss at Auto on the throttled phone and tablet with the glass controls; the
 1% lows move within run-to-run noise (WebKit iPhone's "no controls" scored lowest).
+
+## Upgrade phase 13: balance sweep (`npm run balance-sweep -- 12`)
+12 seeds per hero per cell (72 runs per cell), first-run (no shop bonuses), sliding bot.
+
+| Cell | Avg survival | Wins | Target |
+| --- | --- | --- | --- |
+| Meadow · Relaxed · decent | 14:11 | 44% | ~15:00, 40–55% |
+| Meadow · Normal · decent | 13:21 | 29% | 10–15 min, 15–30% |
+| Meadow · Hard · decent | 8:43 | 0% | 7–11 min, ≤10% |
+| Rimewood · Relaxed · decent | 16:01 | 51% | ~15:00, 40–55% |
+| Rimewood · Normal · decent | 12:24 | 21% | ~1 min under Meadow, 10–25% |
+| Rimewood · Hard · decent | 8:04 | 3% | 7–11 min, ≤10% |
+| Meadow · Normal · expert | 13:38 | 35% | 30–45% ✓ |
+| Rimewood · Normal · expert | 14:08 | 36% | 25–40% ✓ |
+| Meadow / Rimewood · Relaxed · expert | 15:18 / 15:51 | 53% / 51% | 60%+ ✗ (bot-limited) |
+| Meadow / Rimewood · Hard · expert | 7:32 / 8:28 | 1% / 4% | 15–25% ✗ (bot-limited) |
+| Meadow · Hard tiers 1→5 · expert | 8:48 → 5:00 | 3, 1, 0, 0, 0% | ~15% → 2% (tiers 4–5 ✓) |
+
+Before the sweep (same bot, 8 seeds): Relaxed Meadow 18:45 / 88% wins, Normal Meadow
+15:44 / 42%, Normal Rimewood 10:20, Hard Rimewood 4:25 — Relaxed far too easy, Rimewood
+five minutes shorter than Meadow instead of one. Hero spread at 24 seeds on Normal: within
+±1:30 for most heroes after the hero pass (single 12-seed cells still swing ±2 min).

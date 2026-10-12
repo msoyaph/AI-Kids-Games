@@ -44,7 +44,7 @@ const HERO_SLOT = -1;
 
 /** Shell Guard: damage multiplier for an incoming hit. */
 export const SHELL_GUARD_HP = 0.3;
-export const SHELL_GUARD_MULT = 0.6;
+export const SHELL_GUARD_MULT = 0.7;
 /** Slipstream: sliding faster than this bowls Gloom over. */
 export const SLIPSTREAM_SPEED = 8;
 
@@ -101,5 +101,5 @@ export function thornshell(w: World, i: number, raw: number): void {
   const p = w.player;
   const e = w.enemies;
   if (!e.alive[i]) return;
-  hitEnemy(w, i, raw * 2.5 * (1 + p.stats.might), 0, HERO_SLOT, e.x[i] - p.x, e.z[i] - p.z, 6);
+  hitEnemy(w, i, raw * 2 * (1 + p.stats.might), 0, HERO_SLOT, e.x[i] - p.x, e.z[i] - p.z, 6);
 }

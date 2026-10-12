@@ -1,14 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { CHARACTERS } from '../../src/config/characters';
-import { runMods } from '../../src/config/difficulty';
+import { difficultyDef, runMods } from '../../src/config/difficulty';
 import { enemyIndex } from '../../src/config/enemies';
 import { dailySpec, utcDate } from '../../src/meta/daily';
 import { applyRunResult, checkAchievements, collectedCount, goldForRun, summarize } from '../../src/meta/progression';
 import { defaultSave, sanitizeSave } from '../../src/meta/save';
 import { BOSS_RESERVE, damagePlayer, spawnEnemy } from '../../src/sim/combat';
 import { spawnBoss } from '../../src/sim/bosses';
-import { HeroPassive } from '../../src/sim/heroes';
+import { HeroPassive, SHELL_GUARD_MULT } from '../../src/sim/heroes';
 import { newRun } from '../../src/sim/run';
 import { step } from '../../src/sim/sim';
 import { src, SrcKind } from '../../src/sim/sources';
@@ -24,12 +24,16 @@ function quiet(w: World): World {
 describe('difficulty and tiers', () => {
   it('resolves multipliers; tiers stack on Hard only', () => {
     expect(runMods('normal')).toMatchObject({ playerHp: 1, enemyHp: 1, damageTaken: 1, gold: 1, skips: 0 });
-    expect(runMods('relaxed')).toMatchObject({ playerHp: 1.5, rerolls: 1, skips: 1, banishes: 1 });
+    const relaxedHp = difficultyDef('relaxed').mods.playerHp!;
+    const hardHp = difficultyDef('hard').mods.enemyHp!;
+    expect(relaxedHp).toBeGreaterThan(1);
+    expect(hardHp).toBeGreaterThan(1);
+    expect(runMods('relaxed')).toMatchObject({ playerHp: relaxedHp, rerolls: 1, skips: 1, banishes: 1 });
     const hard = runMods('hard');
-    expect(hard.enemyHp).toBeCloseTo(1.35);
+    expect(hard.enemyHp).toBeCloseTo(hardHp);
     expect(hard.extraElites).toBe(1);
     const t5 = runMods('hard', 5);
-    expect(t5.enemyHp).toBeCloseTo(1.35 * 1.25);
+    expect(t5.enemyHp).toBeCloseTo(hardHp * 1.25);
     expect(t5.extraElites).toBe(2);
     expect(t5.bossEnraged).toBe(true);
     expect(t5.gold).toBeGreaterThan(hard.gold);
@@ -39,12 +43,12 @@ describe('difficulty and tiers', () => {
   it('applies to a run: player HP, enemy HP and damage taken', () => {
     const relaxed = newRun({ seed: 1, characterId: 'thea', difficulty: 'relaxed' });
     const normal = newRun({ seed: 1, characterId: 'thea' });
-    expect(relaxed.player.stats.maxHp).toBeCloseTo(normal.player.stats.maxHp * 1.5);
+    expect(relaxed.player.stats.maxHp).toBeCloseTo(normal.player.stats.maxHp * difficultyDef('relaxed').mods.playerHp!);
     expect(relaxed.player.hp).toBeCloseTo(relaxed.player.stats.maxHp);
     const hard = newRun({ seed: 1, characterId: 'thea', difficulty: 'hard' });
     const a = spawnEnemy(normal, enemyIndex('gloomling'), 20, 0);
     const b = spawnEnemy(hard, enemyIndex('gloomling'), 20, 0);
-    expect(hard.enemies.maxHp[b]).toBeCloseTo(normal.enemies.maxHp[a] * 1.35);
+    expect(hard.enemies.maxHp[b]).toBeCloseTo(normal.enemies.maxHp[a] * difficultyDef('hard').mods.enemyHp!);
     const hp0 = hard.player.hp;
     damagePlayer(hard, 20, 0);
     const hn = normal.player.hp;
@@ -172,7 +176,7 @@ describe('hero passives', () => {
       damagePlayer(w, 20, 0);
       return before - w.player.hp;
     };
-    expect(hit('brindle', 0.25)).toBeCloseTo(hit('brindle', 0.9) * 0.6);
+    expect(hit('brindle', 0.25)).toBeCloseTo(hit('brindle', 0.9) * SHELL_GUARD_MULT);
   });
 
   it('Bramble’s Thornshell hurts whatever touched him', () => {
@@ -283,7 +287,8 @@ describe('tablet tier', () => {
     const b = spawnEnemy(tablet, g, tablet.player.x + 30, tablet.player.z);
     expect(tablet.enemies.maxHp[b] / normal.enemies.maxHp[a]).toBeCloseTo(1 / 0.65, 2);
     expect(tablet.enemies.xp[b] / normal.enemies.xp[a]).toBeCloseTo(1 / 0.65, 2);
-    expect(tablet.mods.enemyHp).toBe(1); // bosses aren't thinned, so they aren't buffed
+    // bosses aren't thinned, so they aren't buffed (the map's own modifier applies to both)
+    expect(tablet.mods.enemyHp).toBe(normal.mods.enemyHp);
   });
 
   it('a packed field never blocks a boss', () => {

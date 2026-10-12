@@ -1,3 +1,4 @@
+import type { DifficultyId } from '../config/difficulty';
 import type { MapId } from '../config/maps';
 import type { TuningOverrides } from '../config/tuning';
 import { recordRun, type PlaytestRun } from '../meta/playtest';
@@ -30,6 +31,9 @@ export function simulateRun(opts: {
   characterId: string;
   seed: number;
   map?: MapId;
+  difficulty?: DifficultyId;
+  /** Hard only: tier 1–5. */
+  tier?: number;
   skill?: number;
   maxSeconds?: number;
   meta?: Partial<PlayerStats>;
@@ -39,7 +43,7 @@ export function simulateRun(opts: {
   botMovement?: boolean;
   onWorld?: (w: World) => void;
 }): HeadlessResult {
-  const w = newRun({ seed: opts.seed, characterId: opts.characterId, map: opts.map, meta: opts.meta, unlockedWeapons: opts.unlockedWeapons, tuning: opts.tuning });
+  const w = newRun({ seed: opts.seed, characterId: opts.characterId, map: opts.map, difficulty: opts.difficulty, tier: opts.tier, meta: opts.meta, unlockedWeapons: opts.unlockedWeapons, tuning: opts.tuning });
   opts.onWorld?.(w);
   const bot = new Bot(opts.seed, opts.skill ?? 0.7, opts.botMovement ?? true);
   const input = emptyInput();

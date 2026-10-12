@@ -1,4 +1,5 @@
 import type { PropKind, WaveEvent, WaveSegment } from './types';
+import type { RunMods } from './difficulty';
 import { BANNER, BANNERS, WAVES, WAVE_EVENTS, type BannerKey } from './waves';
 
 /**
@@ -130,6 +131,11 @@ export interface MapDef {
   winText: string;
   /** Unlocked by winning a run on another map (undefined = always open). */
   unlock?: { winOn: MapId; text: string };
+  /**
+   * The map's own difficulty, on top of the chosen difficulty (balance sweep: Rimewood's
+   * hazards and frost variants made it much harder than Meadow; target ≈ 1 minute shorter).
+   */
+  mods?: Partial<RunMods>;
 }
 
 const MEADOW: MapDef = {
@@ -194,6 +200,7 @@ const MEADOW: MapDef = {
   music: 'meadow',
   banners: {},
   winText: 'The Gloom retreats. The meadow is safe… for now.',
+  mods: { enemyHp: 1.09, damageTaken: 1.04 },
 };
 
 const RIME_VARIANTS: Record<string, string> = {
@@ -276,6 +283,7 @@ const RIMEWOOD: MapDef = {
     dawn: 'Dawn breaks — the thaw has come!',
   },
   winText: 'The frost lifts. The Rimewood sleeps until next winter.',
+  mods: { damageTaken: 0.9, enemyHp: 0.97 },
   unlock: { winOn: 'meadow', text: 'Win a run on Gloam Meadow' },
 };
 

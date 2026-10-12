@@ -8,6 +8,7 @@
 import { readFileSync } from 'node:fs';
 import { CHARACTERS } from '../src/config/characters';
 import { isMapId, mapDef, type MapId } from '../src/config/maps';
+import { difficultyLabel, isDifficultyId, type DifficultyId } from '../src/config/difficulty';
 import { diffTuning, mergeTuning, TUNING_DEFAULTS, TUNING_EXPORT_FORMAT, type TuningIssue, type TuningOverrides } from '../src/config/tuning';
 import { formatTime } from '../src/core/math';
 import { simulateRun, type HeadlessResult } from '../src/sim/headless';
@@ -32,6 +33,23 @@ if (mIdx >= 0) {
   map = id;
   argv.splice(mIdx, 2);
 }
+const dIdx = argv.indexOf('--difficulty');
+let difficulty: DifficultyId = 'normal';
+if (dIdx >= 0) {
+  const id = argv[dIdx + 1];
+  if (!isDifficultyId(id)) throw new Error(`unknown difficulty ${id}`);
+  difficulty = id;
+  argv.splice(dIdx, 2);
+}
+const tIdx2 = argv.indexOf('--tier');
+let tier = 0;
+if (tIdx2 >= 0) {
+  tier = Math.max(0, Math.min(5, Number(argv[tIdx2 + 1]) || 0));
+  argv.splice(tIdx2, 2);
+}
+// --json: one machine-readable summary line at the end (balance sweeps)
+const json = argv.includes('--json');
+if (json) argv.splice(argv.indexOf('--json'), 1);
 const seeds = Number(argv[0] ?? 8);
 const skill = Number(argv[1] ?? 0.7);
 
@@ -41,12 +59,12 @@ function median(v: number[]): number {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
-console.log(`TheaBonk balance sim — ${mapDef(map).name}, ${seeds} seeds per hero, bot skill ${skill}, first-run (no meta)${tuning ? ' — WITH TUNING OVERRIDES' : ''}\n`);
+console.log(`TheaBonk balance sim — ${mapDef(map).name}, ${difficultyLabel(difficulty, tier)}, ${seeds} seeds per hero, bot skill ${skill}, first-run (no meta)${tuning ? ' — WITH TUNING OVERRIDES' : ''}\n`);
 const t0 = performance.now();
 const all: HeadlessResult[] = [];
 for (const c of CHARACTERS) {
   const res: HeadlessResult[] = [];
-  for (let s = 0; s < seeds; s++) res.push(simulateRun({ characterId: c.id, seed: 1000 + s * 7919, skill, tuning, map }));
+  for (let s = 0; s < seeds; s++) res.push(simulateRun({ characterId: c.id, seed: 1000 + s * 7919, skill, tuning, map, difficulty, tier: difficulty === 'hard' ? tier : 0 }));
   all.push(...res);
   const times = res.map((r) => r.time);
   const avg = times.reduce((a, b) => a + b, 0) / times.length;
@@ -64,4 +82,12 @@ for (const c of CHARACTERS) {
 }
 const avgAll = all.reduce((a, r) => a + r.time, 0) / all.length;
 console.log(`\nall heroes: avg survival ${formatTime(avgAll)} (target for a decent first run: 10:00–15:00)`);
+if (json) {
+  const byHero: Record<string, { avg: number; wins: number; n: number }> = {};
+  for (const c of CHARACTERS) {
+    const r = all.filter((x) => x.characterId === c.id);
+    byHero[c.id] = { avg: Math.round(r.reduce((a, x) => a + x.time, 0) / r.length), wins: r.filter((x) => x.state === 'won').length, n: r.length };
+  }
+  console.log(`JSON ${JSON.stringify({ map, difficulty, tier, skill, seeds, avg: Math.round(avgAll), wins: all.filter((x) => x.state === 'won').length, n: all.length, byHero })}`);
+}
 console.log(`(${((performance.now() - t0) / 1000).toFixed(1)}s)`);

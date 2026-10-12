@@ -72,7 +72,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
     id: 'relaxed',
     name: 'Relaxed',
     description: 'More health, slower and gentler Gloom, more hearts, and an extra reroll, skip and banish. Less gold.',
-    mods: { playerHp: 1.5, damageTaken: 0.7, enemySpeed: 0.9, hearts: 1.6, heal: 1.3, gold: 0.75, rerolls: 1, skips: 1, banishes: 1 },
+    mods: { playerHp: 1.18, damageTaken: 0.92, enemySpeed: 0.93, hearts: 1.3, heal: 1.15, gold: 0.75, rerolls: 1, skips: 1, banishes: 1 },
   },
   {
     id: 'normal',
@@ -84,7 +84,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
     id: 'hard',
     name: 'Hard',
     description: 'Tougher Gloom that come faster, more elites and less healing. More gold.',
-    mods: { enemyHp: 1.35, damageTaken: 1.25, spawnRate: 1.25, maxAlive: 1.15, extraElites: 1, heal: 0.6, hearts: 0.6, gold: 1.5 },
+    mods: { enemyHp: 1.28, damageTaken: 1.18, spawnRate: 1.22, maxAlive: 1.12, extraElites: 1, heal: 0.6, hearts: 0.6, gold: 1.5 },
   },
 ];
 
@@ -120,7 +120,7 @@ function combine(into: RunMods, m: Partial<RunMods>): void {
 }
 
 /** The run's modifiers for a difficulty (tier only applies on Hard); `tablet` thins the crowd. */
-export function runMods(difficulty: DifficultyId, tier = 0, tablet = false): RunMods {
+export function runMods(difficulty: DifficultyId, tier = 0, tablet = false, mapMods?: Partial<RunMods>): RunMods {
   const out: RunMods = { ...NORMAL_MODS };
   if (tablet) {
     // same total challenge with fewer bodies on screen: HP, XP and coins carry the difference
@@ -130,6 +130,7 @@ export function runMods(difficulty: DifficultyId, tier = 0, tablet = false): Run
     out.coinValue = 1 / TABLET_CROWD;
   }
   combine(out, difficultyDef(difficulty).mods);
+  if (mapMods) combine(out, mapMods);
   if (difficulty === 'hard') {
     const t = Math.max(0, Math.min(MAX_TIER, Math.floor(tier)));
     for (let k = 0; k < t; k++) combine(out, TIERS[k].mods);

@@ -18,7 +18,8 @@
     "apply-tuning": "tsx scripts/apply-tuning.ts",
     "analyze-playtests": "tsx scripts/analyze-playtests.ts",
     "audio-report": "npm run build && tsx scripts/audio-report.ts",
-    "bench-browser": "npm run build && tsx scripts/bench-browser.ts"
+    "bench-browser": "npm run build && tsx scripts/bench-browser.ts",
+    "balance-sweep": "tsx scripts/balance-sweep.ts"
   },
   "dependencies": {
     "three": "^0.186.1"
