@@ -37,15 +37,17 @@
   },
   "theabonk": {
     "loopSeconds": 8,
-    "mp4Bytes": 711440,
-    "webmBytes": 747074,
+    "mp4Bytes": 722732,
+    "webmBytes": 745282,
     "shots": [
       "A huge crowd of cartoon monsters rushes at Thea",
+      "Ottie faces Old Rime, the Frost Stag, in the snowy Rimewood",
+      "On a phone or tablet: the glass touch stick and the Jump and Slide buttons",
+      "Thea faces Grumblecap, the giant mushroom boss",
       "Thea and her glowing Bonk Ring in a ring of pink Blobbins",
-      "Level up: choose one of three new powers",
-      "Thea faces Grumblecap, the giant mushroom boss"
+      "Level up: choose one of three new powers"
     ],
-    "capturedAt": "2026-10-11"
+    "capturedAt": "2026-10-12"
   },
   "vanex-defense": {
     "loopSeconds": 7.2,
