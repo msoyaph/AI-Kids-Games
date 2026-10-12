@@ -1,0 +1,105 @@
+import type { TrackData } from '../../types';
+import { between, layout, left, offset, right, straight } from '../builder';
+
+// A pastel candy-land loop around a sweets factory: conveyor boosts, gumball hill, a swinging lollipop.
+const L = layout({ x: 0, z: 0, heading: 0, y: 0 }, [
+  straight(130, { mark: 'conveyor' }),
+  right(120, 36, { mark: 'sweep' }),
+  straight(50, { y: 6 }),
+  left(90, 40, { y: 8, mark: 'hill' }),
+  straight(70, { mark: 'gumballs' }),
+  right(150, 30, { y: 4, mark: 'hairpin' }),
+  straight(36, { y: 1, mark: 'bA' }),
+  left(65, 28),
+  right(130, 28, { mark: 'bulge' }),
+  left(65, 28, { mark: 'bB' }),
+  straight(44, { y: 0, mark: 'jump' }),
+  right(120, 42, { mark: 'lolly' }),
+  straight(60),
+  left(60, 50),
+  right(120, 38, { mark: 'last' }),
+], { legacyMarkHeadings: true });
+const m = L.marks;
+const P = L.pos;
+
+export const CANDY_FACTORY: TrackData = {
+  id: 'candy-factory',
+  name: 'Candy Factory',
+  cup: 'sunrise',
+  theme: 'candy',
+  feature: 'Conveyor-belt boosts, rolling gumballs on Gumdrop Hill and a giant swinging lollipop',
+  width: 14,
+  shoulder: 5,
+  edge: 'wall',
+  autoBank: 0.6,
+  start: 0.5,
+  points: L.points,
+  edges: [
+    { from: m.bA - 0.3, to: m.bA + 0.8, side: 'right', type: 'open' },
+    { from: m.bB - 0.8, to: m.bB + 0.3, side: 'right', type: 'open' },
+  ],
+  boostPads: [
+    { at: m.conveyor - 3.2, offset: -0.35, width: 4 },
+    { at: m.conveyor - 2.4, offset: 0.35, width: 4 },
+    { at: m.conveyor - 1.6, offset: -0.35, width: 4 },
+    { at: m.hairpin + 0.8, offset: 0 },
+  ],
+  itemRows: [{ at: m.sweep + 0.8 }, { at: m.hill + 0.5 }, { at: m.jump + 0.9, count: 4 }],
+  ramps: [{ at: m.jump - 0.2, kind: 'trick', length: 6, height: 1.3, offset: -0.4, width: 6 }],
+  hazards: [
+    { kind: 'roller', at: m.gumballs - 1.8, amp: 0.7, period: 4.4, model: 'hz_gumball', radius: 1.7 },
+    { kind: 'roller', at: m.gumballs - 0.6, amp: 0.7, period: 4.4, phase: 0.5, model: 'hz_gumball', radius: 1.7 },
+    { kind: 'swinger', at: m.lolly + 1.2, amp: 0.9, period: 3.6, model: 'hz_lollyswing', radius: 1.8 },
+  ],
+  shortcuts: [
+    {
+      points: [offset(P.bA, -6, 0), between(P.bA, P.bB, 0.25), between(P.bA, P.bB, 0.5, 0, 1.6), between(P.bA, P.bB, 0.75), offset(P.bB, 6, 0)],
+      width: 6,
+      edge: 'drop',
+      surface: 'road',
+      joinFrom: m.bA,
+      joinTo: m.bB,
+      boostPads: [{ at: 1.3, offset: 0, width: 3 }],
+      hint: 'The licorice bridge skips the swerve around the giant cupcake — it’s narrow and has no rails!',
+      aiUse: 0.45,
+    },
+  ],
+  palette: {
+    road: 0xe6a4c4,
+    road2: 0xdc96b8,
+    line: 0xffffff,
+    kerb: 0xff4d6d,
+    kerb2: 0xffffff,
+    offroad: 0xb9f6ca,
+    wall: 0xffe0b2,
+    wall2: 0xff8fc8,
+    side: 0x8d5524,
+  },
+  sky: {
+    light: { sunIntensity: 1.5, hemiIntensity: 1.6, hemiGround: 0xd8a0c0, grade: 0xfff4fa },
+    top: 0x8fd3ff,
+    bottom: 0xffe1f0,
+    fog: 0xffe9f5,
+    sun: 0xfff8f0,
+    ambient: 0xffffff,
+    ground: 0xa5f3c6,
+    groundY: -1,
+    backdrop: 'dunes',
+    backdropColor: 0xffb3d9,
+  },
+  supports: { kind: 'pillars', color: 0xffffff, color2: 0xff4d6d },
+  scatter: [
+    { types: ['lollipop', 'candycane', 'gumdrop', 'gumdrop2', 'donut', 'icecream'], density: 9, near: 2, far: 20 },
+    { types: ['cupcake', 'gingerhouse', 'chocobar', 'candypipe', 'lollipop'], density: 3, near: 18, far: 50, scale: [1, 1.6] },
+  ],
+  props: [
+    { type: 'cupcake', ...between(P.bA, P.bB, 0.5, -16), y: -1, scale: 3 },
+    { type: 'candypipe', ...offset(P.conveyor, -40, -20), y: -1, scale: 1.6 },
+    { type: 'candypipe', ...offset(P.conveyor, -70, -22), y: -1, scale: 2 },
+    { type: 'gingerhouse', ...offset(P.conveyor, -100, 24), y: -1, scale: 2, rot: 1.6 },
+    { type: 'donut', ...offset(P.hill, 20, -30), y: 3, scale: 3 },
+    { type: 'icecream', ...offset(P.last, -20, 30), y: -1, scale: 2.5 },
+  ],
+  music: 'sunrise3',
+  roadSound: 'metal',
+};

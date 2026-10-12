@@ -1,0 +1,138 @@
+import type { TrackData } from '../../types';
+import { between, layout, left, offset, right, straight } from '../builder';
+
+// Volcano trail: switchback climb up a smoking volcano, lava vents on the crater rim, a glider leap over the lava
+// river and a skinny basalt bridge across the bubbling lava pool.
+const L = layout({ x: 0, z: 0, heading: 0, y: 2 }, [
+  straight(130, { mark: 'start' }),
+  right(90, 42, { y: 3, mark: 'turn1' }),
+  straight(40, { y: 7, mark: 'climb' }),
+  left(170, 26, { y: 8, mark: 'hairpin1' }),
+  straight(60, { y: 15 }),
+  right(170, 26, { y: 16, mark: 'hairpin2' }),
+  straight(50, { y: 20, mark: 'switchTop' }),
+  left(20, 90),
+  right(20, 90, { y: 23, mark: 'ridge' }),
+  straight(134, { y: 24, mark: 'ridgeEnd' }),
+  right(90, 36, { mark: 'rimIn' }),
+  straight(31),
+  left(25, 60, { mark: 'rimA' }),
+  right(50, 60, { mark: 'rim' }),
+  left(25, 60, { mark: 'rimB' }),
+  straight(23),
+  right(45, 60, { mark: 'rimOut' }),
+  straight(30, { y: 21.5, mark: 'lip' }),
+  straight(44, { y: 20, mark: 'gapEnd' }),
+  straight(50, { y: 17, mark: 'landed' }),
+  right(45, 50, { y: 14 }),
+  straight(10, { y: 13, mark: 'bridgeA' }),
+  left(70, 28, { y: 12 }),
+  straight(8, { y: 11.5 }),
+  right(140, 28, { y: 8, mark: 'pool' }),
+  straight(8, { y: 7 }),
+  left(70, 28, { y: 5, mark: 'bridgeB' }),
+  straight(12, { y: 4.2, mark: 'bridgeOut' }),
+  right(90, 40, { y: 2, mark: 'last' }),
+], { legacyMarkHeadings: true });
+const m = L.marks;
+const P = L.pos;
+const GROUND = -8;
+
+export const CINDER_SUMMIT: TrackData = {
+  id: 'cinder-summit',
+  name: 'Cinder Summit',
+  cup: 'thunder',
+  theme: 'volcano',
+  feature: 'Zig-zag up a smoking volcano, dodge lava vents on the crater rim and glide over the lava river',
+  width: 14,
+  shoulder: 4,
+  edge: 'wall',
+  autoBank: 0.6,
+  start: 0.5,
+  points: L.points,
+  edges: [
+    { from: m.lip - 0.6, to: m.landed + 0.3, side: 'both', type: 'drop' },
+    // the lava-crack path leaves and rejoins on the right: low fences there instead of rock walls
+    { from: m.bridgeA - 0.3, to: m.bridgeA + 0.9, side: 'right', type: 'open' },
+    { from: m.bridgeB - 0.9, to: m.bridgeB + 0.3, side: 'right', type: 'open' },
+  ],
+  gaps: [{ from: m.lip + 0.12, to: m.gapEnd - 0.05 }],
+  boostPads: [
+    { at: m.start - 2.6, offset: 0 },
+    { at: m.hairpin2 + 0.7, offset: 0 },
+    { at: m.ridgeEnd - 1.5, offset: 0.35 },
+  ],
+  itemRows: [
+    { at: m.start - 1.1 },
+    { at: m.switchTop + 0.4, count: 4 },
+    { at: m.rimIn + 0.6, count: 4 },
+    { at: m.bridgeOut + 0.2, count: 3 },
+  ],
+  ramps: [
+    { at: m.lip, kind: 'glider', length: 9, height: 2.4 },
+    { at: m.ridge + 2.2, kind: 'trick', length: 6, height: 1.3, offset: -0.4, width: 6 },
+  ],
+  hazards: [
+    { kind: 'geyser', at: m.rimA - 0.3, offset: -0.42, period: 4.2, phase: 0, model: 'th_lavavent', radius: 2.4 },
+    { kind: 'geyser', at: m.rim, offset: 0.42, period: 4.2, phase: 0.35, model: 'th_lavavent', radius: 2.4 },
+    { kind: 'geyser', at: m.rimB + 0.6, offset: -0.3, period: 4.2, phase: 0.7, model: 'th_lavavent', radius: 2.4 },
+  ],
+  shortcuts: [
+    {
+      points: [
+        offset(P.bridgeA, -6, 0),
+        between(P.bridgeA, P.bridgeB, 0.25),
+        between(P.bridgeA, P.bridgeB, 0.5),
+        between(P.bridgeA, P.bridgeB, 0.75),
+        offset(P.bridgeOut, 0, 0),
+      ],
+      width: 7,
+      edge: 'wall',
+      surface: 'road',
+      joinFrom: m.bridgeA,
+      joinTo: m.bridgeOut,
+      ramps: [{ at: 1.98, kind: 'trick', length: 5, height: 1.2 }],
+      gaps: [{ from: 2.02, to: 2.3 }],
+      boostPads: [{ at: 1.45, offset: 0, width: 2.8 }],
+      hint: 'Take the rocky lava-crack path and jump the glowing crack! Go in fast — if you are too slow you will drop into the lava.',
+      aiUse: 0.5,
+    },
+  ],
+  palette: {
+    road: 0x4a4048,
+    road2: 0x524750,
+    line: 0xffd23f,
+    kerb: 0xff7b1c,
+    kerb2: 0x2b2228,
+    offroad: 0x5a4a50,
+    wall: 0x3a3036,
+    wall2: 0xff8a3c,
+    side: 0x2e2428,
+  },
+  sky: {
+    light: { sunDir: [0.3, 0.6, 0.8], sun: 0xff9a6a, hemiGround: 0x5a1a10, grade: 0xffe0d0 },
+    top: 0x2a1838,
+    bottom: 0xff9a5a,
+    fog: 0xc0604a,
+    fogNear: 0.4,
+    sun: 0xffc49b,
+    ambient: 0xffd8c8,
+    ground: 0xff5a1f,
+    groundY: GROUND,
+    backdrop: 'mountains',
+    backdropColor: 0x3a2430,
+  },
+  supports: { kind: 'rock', color: 0x3a3036, color2: 0x4a3c42 },
+  scatter: [
+    { types: ['th_basalt', 'th_lavarock', 'th_fireflower', 'th_emberbush', 'th_obsidian', 'th_warnsign', 'th_fireflower'], density: 7, near: 1.5, far: 12 },
+    { types: ['th_basalt', 'th_lavarock', 'th_obsidian', 'th_steamvent'], density: 2.4, near: 26, far: 70, scale: [1.3, 2.4] },
+  ],
+  props: [
+    { type: 'th_volcano', x: -185, z: 125, y: GROUND, scale: 1 },
+    { type: 'th_lavafall', ...offset(P.pool, 0, -42), y: GROUND, rot: 2.6 },
+    { type: 'th_steamvent', ...offset(P.rim, 0, -45), y: GROUND, scale: 2.4 },
+    { type: 'th_warnsign', ...offset(P.lip, -24, 9.5), y: P.lip.y + 2.1, rot: 0.6 },
+    { type: 'th_obsidian', ...offset(P.start, -60, -40), y: GROUND, scale: 3 },
+  ],
+  music: 'thunder1',
+};
