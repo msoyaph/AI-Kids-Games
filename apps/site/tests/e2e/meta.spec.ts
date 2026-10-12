@@ -7,7 +7,7 @@ test('static metadata, robots, sitemap and icons',async ({ request },info) => {
   // Vercel preview builds are deliberately noindex with a Disallow-all robots.txt.
   const robots = await (await request.get('/robots.txt')).text();
   const preview = /Disallow: \/\n/.test(robots);
-  for (const [path,title,image] of [['/','Ai Kids Games — Little games. Big adventures.','/og/site.jpg'],['/game/theabonk','TheaBonk | Ai Kids Games','/og/theabonk.jpg'],['/play/space-sky','Play Space Sky | Ai Kids Games','/og/space-sky.jpg'],['/privacy','Privacy | Ai Kids Games','/og/site.jpg']]) {
+  for (const [path,title,image] of [['/',"Ai Kids Games: The games kids love. None of the stuff parents don't.",'/og/site.jpg'],['/game/theabonk','TheaBonk | Ai Kids Games','/og/theabonk.jpg'],['/play/space-sky','Play Space Sky | Ai Kids Games','/og/space-sky.jpg'],['/privacy','Privacy | Ai Kids Games','/og/site.jpg']]) {
     const html = await (await request.get(path)).text();
     expect(html,path).toContain(`<title>${title}</title>`);
     expect(html,path).toMatch(new RegExp(`<link rel="canonical" href="https?://[^"]+${path === '/' ? '/' : path}"`));
@@ -19,7 +19,7 @@ test('static metadata, robots, sitemap and icons',async ({ request },info) => {
   }
   if (!preview) expect(robots).toMatch(/Sitemap: https?:\/\/.+\/sitemap\.xml/);
   const sitemap = await (await request.get('/sitemap.xml')).text();
-  for (const path of ['/games','/parents','/privacy','/about','/game/light-crossing','/category/racing']) expect(sitemap).toContain(`${path}</loc>`);
+  for (const path of ['/games','/parents','/privacy','/about','/list-your-game','/game/light-crossing','/game/cliff-valley','/category/racing','/category/farming']) expect(sitemap).toContain(`${path}</loc>`);
   expect(sitemap).not.toContain('/play/');
   for (const icon of ['/favicon.ico','/favicon.svg','/apple-touch-icon.png','/icon-192.png','/icon-512.png','/icon-maskable-512.png','/og/site.jpg']) expect((await request.get(icon)).status(),icon).toBe(200);
   const manifest = await (await request.get('/manifest.webmanifest')).json();

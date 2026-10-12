@@ -1,10 +1,11 @@
 import { expect,type Frame,type Locator,type Page } from '@playwright/test';
 export const launchGames = [
-  { slug: 'light-crossing',title: 'Light Crossing',key: 'lightcrossing.slot0',prefix: /^lightcrossing\.|^__lc_probe__$/ },
+  { slug: 'cliff-valley',title: 'Cliff Valley',key: 'cliffvalley.slot.1',prefix: /^cliffvalley\./ },
+  { slug: 'light-crossing',title: 'Light Crossing',key: 'lightcrossing.slot0',prefix: /^lightcrossing\./ },
   { slug: 'theabonk',title: 'TheaBonk',key: 'theabonk.save',prefix: /^theabonk\.save$|^__theabonk_probe__$/ },
-  { slug: 'vanex-defense',title: 'Vanex Defense',key: 'vanex-defense-save',prefix: /^vanex-defense-save$|^__vanex_probe__$/ },
+  { slug: 'vanex-defense',title: 'Vanex Defense',key: 'vanex-defense-save',prefix: /^vanex-defense-|^__vanex_probe__$/ },
   { slug: 'space-sky',title: 'Space Sky',key: 'spacesky.slot.0',prefix: /^spacesky\.|^__spacesky_probe__$/ },
-  { slug: 'calex-cart',title: 'Calex Cart',key: 'calexcart.slot.1',prefix: /^calexcart\.|^__calex_probe__$/ }
+  { slug: 'calex-cart',title: 'Calex Cart',key: 'calexcart.slot.1',prefix: /^calexcart\./ }
 ];
 export async function press(locator: Locator,touch: boolean) { if (touch) await locator.tap(); else await locator.click(); }
 export async function instrument(page: Page) {
@@ -70,11 +71,23 @@ export async function startGame(page: Page,slug: string,touch: boolean): Promise
     await press(f.getByRole('button',{ name:'Play',exact:true }),touch);
     await press(f.getByRole('button',{ name:'Start run',exact:true }),touch);
     await expect.poll(() => f.evaluate(() => !!(window as any).__theabonk.world)).toBe(true);
+  } else if (slug === 'cliff-valley') {
+    await f.waitForFunction(() => (window as any).__cliffvalley?.ready === true,null,{ timeout: 90000 });
+    await press(f.getByRole('button',{ name:'Start Playing' }),touch);
+    await checkAudio(f);
+    await press(f.getByRole('button',{ name:'New' }).first(),touch);
+    await f.getByLabel('Farmer nickname').fill('LaunchTest');
+    await f.getByLabel('Farm name').fill('Sunny');
+    await f.getByLabel('Pet name').fill('Biscuit');
+    await press(f.getByRole('button',{ name:'Start farming!' }),touch);
+    await f.waitForFunction(() => (window as any).__cliffvalley.info?.mode === 'play',null,{ timeout: 60000 });
+    await f.evaluate(() => (window as any).__cliffvalley.sleep());
+    await f.waitForFunction(() => (window as any).__cliffvalley.info?.day === 1,null,{ timeout: 60000 });
   } else if (slug === 'light-crossing') {
-    await press(f.getByRole('button',{ name:'Start',exact:true }),touch);
+    await press(f.getByRole('button',{ name:/Start|Continue/ }).first(),touch);
     await checkAudio(f);
     await expect(f.getByText(/Saving is unavailable/)).toHaveCount(0);
-    await press(f.getByRole('button',{ name:/New Game/ }).first(),touch);
+    await press(f.getByText('New Game').first(),touch);
     await f.locator('input').first().fill('LaunchTest');
     await press(f.getByRole('button',{ name:'Set sail!' }),touch);
     await expect.poll(() => f.evaluate(() => !!(window as any).__lc.game)).toBe(true);
@@ -87,15 +100,15 @@ export async function startGame(page: Page,slug: string,touch: boolean): Promise
     await checkAudio(f);
     await press(f.locator('.setting').filter({ hasText:'Screen shake' }).getByRole('radio',{ name:'Off' }),touch);
     await press(f.getByRole('button',{ name:'Back',exact:true }),touch);
-    await press(f.getByRole('button',{ name:/Play/ }),touch);
+    await press(f.getByRole('button',{ name:/Campaign/ }),touch);
     await press(f.getByRole('button',{ name:'Skip',exact:true }),touch);
-    await press(f.getByRole('button',{ name:'Daisy Field',exact:true }),touch);
-    await press(f.getByRole('button',{ name:/Play!/ }),touch);
+    await press(f.getByRole('button',{ name:'Breach Point',exact:true }),touch);
+    await press(f.getByRole('button',{ name:/Deploy/ }),touch);
     await f.waitForFunction(() => !!(window as any).__vanexTest);
     await press(f.getByRole('button',{ name:'Water',exact:true }),touch);
     const drawer = f.getByRole('button',{ name:'Build',exact:true });
     if (await drawer.isVisible()) await press(drawer,touch);
-    await press(f.getByRole('button',{ name:/Arrow Post/ }).first(),touch);
+    await press(f.getByRole('button',{ name:/Bolt Turret/ }).first(),touch);
     const point = await f.evaluate(() => (window as any).__vanexTest.cellCenter(6,4));
     const box = await page.locator('iframe').boundingBox();
     if (touch) { await page.touchscreen.tap(box!.x+point.x,box!.y+point.y); await press(f.getByRole('button',{ name:'Build here' }),true); }
@@ -128,6 +141,9 @@ export async function startGame(page: Page,slug: string,touch: boolean): Promise
     await press(f.locator('.ui-root [data-nav]').filter({ hasText:'Calex' }).first(),touch);
     await press(f.locator('.ui-root [data-nav]').filter({ hasText:/Next/ }).first(),touch);
     await press(f.locator('.ui-root [data-nav]').filter({ hasText:'Seashell Boardwalk' }).first(),touch);
+    // the first race on a device explains its controls first
+    await expect(f.locator('.controls-card')).toBeVisible();
+    await press(f.getByRole('button',{ name:/Got it/ }),touch);
     await expect(f.locator('.hud')).toBeVisible();
     await f.waitForFunction(() => (window as any).__calex.app.session?.world.phase === 'race');
     if (touch) {
@@ -156,8 +172,13 @@ export async function verifySaveReload(f: Frame,slug: string) {
     await f.waitForFunction(() => !!(window as any).__theabonk);
     expect(await f.evaluate(() => (window as any).__theabonk.save.data.settings.screenShake)).toBe(false);
     expect(await f.evaluate(() => (window as any).__theabonk.save.persistent)).toBe(true);
+  } else if (slug === 'cliff-valley') {
+    await f.waitForFunction(() => (window as any).__cliffvalley?.ready === true,null,{ timeout: 90000 });
+    await f.getByRole('button',{ name:/Continue — LaunchTest/ }).click();
+    await f.waitForFunction(() => (window as any).__cliffvalley.info?.mode === 'play',null,{ timeout: 60000 });
+    expect(await f.evaluate(() => (window as any).__cliffvalley.info.day)).toBe(1);
   } else if (slug === 'light-crossing') {
-    await f.getByRole('button',{ name:/Start|Continue/,exact:true }).click();
+    await f.getByRole('button',{ name:/Start|Continue/ }).first().click();
     await expect(f.locator('.slotcard').first()).toContainText('LaunchTest');
     await f.getByRole('button',{ name:'Continue',exact:true }).first().click();
     await expect.poll(() => f.evaluate(() => (window as any).__lc.game?.state.player.name)).toBe('LaunchTest');

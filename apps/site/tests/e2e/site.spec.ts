@@ -1,9 +1,10 @@
 import { expect,test } from '@playwright/test';
+import { games } from '../../src/data/games';
 const allGames = (page: import('@playwright/test').Page) => page.getByRole('region',{ name: 'All games',exact: true });
 test('home, details, favorites and reload',async ({ page }) => {
   const errors: string[] = []; page.on('pageerror',error => errors.push(error.message));
   page.on('console',message => { if (message.type() === 'error') errors.push(message.text()); });
-  await page.goto('/'); await expect(page.getByRole('heading',{ level: 1 })).toHaveText('Ai Kids Games');
+  await page.goto('/'); await expect(page.getByRole('heading',{ level: 1 })).toHaveText('Ai Kids Games: The games kids love. None of the stuff parents don’t.');
   await expect(page.getByRole('region',{ name: 'Featured games' }).getByRole('link',{ name: 'Play',exact: true })).toBeVisible();
   await expect(allGames(page).getByRole('heading',{ name: 'TheaBonk' })).toBeVisible();
   await allGames(page).getByRole('button',{ name: 'Add TheaBonk to favorites' }).click();
@@ -17,7 +18,7 @@ test('home, details, favorites and reload',async ({ page }) => {
 test('cards show the same information for every game and no leftover labels',async ({ page }) => {
   await page.goto('/');
   const cards = allGames(page).locator('.card');
-  await expect(cards).toHaveCount(5);
+  await expect(cards).toHaveCount(games.length);
   for (const card of await cards.all()) {
     await expect(card.locator('.card-title')).not.toBeEmpty(); await expect(card.locator('.card-meta')).not.toBeEmpty(); await expect(card.locator('.card-badge')).toHaveText(/^Ages /); await expect(card.locator('.heart')).toBeVisible();
   }
@@ -37,7 +38,7 @@ test('home filters: category and player age',async ({ page }) => {
   await expect(allGames(page).locator('.card-title')).toHaveText(['Calex Cart']);
   await allGames(page).getByRole('button',{ name: 'All',exact: true }).click();
   await allGames(page).getByLabel('Player age').selectOption('7');
-  await expect(allGames(page).locator('.card-title')).toHaveText(['Light Crossing','Vanex Defense','Space Sky']);
+  await expect(allGames(page).locator('.card-title')).toHaveText(['Light Crossing','Space Sky']);
 });
 test('theme, parental clearing, privacy, mobile notice and 404',async ({ page },testInfo) => {
   await page.goto('/'); await page.getByRole('button',{ name: 'Switch to dark mode' }).click(); await expect(page.locator('html')).toHaveAttribute('data-theme','dark');

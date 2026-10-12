@@ -19,8 +19,8 @@ for (const game of launchGames) test(`${game.slug}: home → details → play, 2
   expect(checks.errors).toEqual([]); expect(checks.external).toEqual([]);
   await page.screenshot({ path:`test-results/${game.slug}-${info.project.name}.png` });
 });
-test('all five games preserve favorites, recent history and one another’s saves',async ({ page },info) => {
-  test.setTimeout(180000); await instrument(page); const checks = guard(page);
+test('every game preserves favorites, recent history and one another’s saves',async ({ page },info) => {
+  test.setTimeout(300000); await instrument(page); const checks = guard(page);
   await page.goto('/');
   for (const game of launchGames) await page.getByRole('region',{ name:'All games',exact:true }).getByRole('button',{ name:`Add ${game.title} to favorites` }).click();
   const saved = new Map<string,string>();
@@ -42,8 +42,8 @@ test('age filtering, new categories and mobile computer notice',async ({ page },
   await page.goto('/games'); await page.getByLabel('Player age').selectOption('6');
   await expect(page.locator('.game-grid h3')).toHaveText(['Light Crossing','Space Sky']);
   await page.reload(); await expect(page.getByLabel('Player age')).toHaveValue('6');
-  await page.getByLabel('Player age').selectOption('10'); await expect(page.locator('.game-grid h3')).toHaveCount(5);
-  for (const name of ['Strategy','Racing','Learning','Cozy']) await expect(page.getByRole('button',{ name,exact:true })).toBeVisible();
+  await page.getByLabel('Player age').selectOption('10'); await expect(page.locator('.game-grid h3')).toHaveCount(launchGames.length);
+  for (const name of ['Strategy','Racing','Learning','Cozy','Farming']) await expect(page.getByRole('button',{ name,exact:true })).toBeVisible();
   if (info.project.name === 'phone') { await page.goto('/play/theabonk'); await expect(page.getByRole('note')).toContainText('This game works best on a computer.'); }
 });
 test('fullscreen works in the embedding browser',async ({ page },info) => {

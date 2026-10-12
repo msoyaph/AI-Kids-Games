@@ -31,19 +31,24 @@ test('no preview downloads before it is needed',async ({ page },info) => {
   test.skip(!!info.project.use.hasTouch,'Desktop: cards wait for hover or focus.');
   const requests = videoRequests(page);
   await page.goto('/'); await page.waitForTimeout(1500);
-  // Only the hero's loop may load on its own; card loops wait for hover or focus.
-  expect(requests.every(url => url.includes('/media/light-crossing/'))).toBe(true);
-  await page.locator('.card-link').nth(2).hover();
-  await expect.poll(() => playing(page),{ timeout: 10000 }).toEqual(['vanex-defense']);
-  // Leaving the card hands playback back to the hero (whichever slide it is on) once it is in view.
+  // Only the hero's own loop may load on its own (the first featured game); card loops wait for hover or focus.
+  const heroVideo = page.locator('.hero video');
+  const hero = await heroVideo.count() ? await heroVideo.first().getAttribute('data-game') : null;
+  expect(requests.every(url => !!hero && url.includes(`/media/${hero}/`))).toBe(true);
+  // A card with a captured loop (games with temporary art show a still instead).
+  const card = page.locator('.card-link').filter({ has: page.locator('video[data-game="theabonk"]') }).first();
+  await card.hover();
+  await expect.poll(() => playing(page),{ timeout: 10000 }).toEqual(['theabonk']);
+  // Leaving the card stops it; the hero takes over again if its current slide has a loop.
   await page.mouse.move(2,2); await page.evaluate(() => scrollTo(0,0));
-  await expect.poll(async () => { const now = await playing(page); return now.length === 1 && now[0] !== 'vanex-defense'; },{ timeout: 10000 }).toBe(true);
+  await expect.poll(async () => { const now = await playing(page); return now.length <= 1 && !now.includes('theabonk'); },{ timeout: 10000 }).toBe(true);
 });
 
 test('only one preview plays at a time on touch devices',async ({ page },info) => {
   test.skip(!info.project.use.hasTouch,'Touch devices play the preview that is mostly in view.');
   await page.goto('/');
-  await expect.poll(() => playing(page),{ timeout: 10000 }).toHaveLength(1);
+  // the first featured game may show a still (temporary art), so at most one plays at the top
+  await expect.poll(async () => (await playing(page)).length <= 1,{ timeout: 10000 }).toBe(true);
   const seen = new Set<string>();
   const height = await page.evaluate(() => document.body.scrollHeight);
   for (let y = 0; y < height; y += 180) {
