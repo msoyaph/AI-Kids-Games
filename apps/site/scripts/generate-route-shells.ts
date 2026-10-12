@@ -66,6 +66,8 @@ for (const route of routes) { const dir = resolve('dist','.'+route.path); mkdirS
 writeFileSync('dist/404.html',page({ path: '/404',title: 'Page not found',description: 'This page wandered off. Head back home to find a game.',index: false }));
 // Play pages stay indexable (they are real pages) but the sitemap lists the details pages instead.
 const listed = ['/',...routes.filter(route => route.index !== false && !route.path.startsWith('/play/')).map(route => route.path)];
+// llms.txt names the site by its permanent address; serve it with this deployment's own origin until that domain is live.
+writeFileSync('dist/llms.txt',readFileSync('dist/llms.txt','utf8').replaceAll('https://aikids.games',origin));
 writeFileSync('dist/sitemap.xml',`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${listed.map(path => `  <url><loc>${escape(origin+path)}</loc></url>`).join('\n')}\n</urlset>\n`);
 // Search engines and AI assistants' crawlers are welcome on the public site; previews stay private.
 const crawlers = ['GPTBot','ClaudeBot','PerplexityBot','Google-Extended','Applebot-Extended'];
