@@ -74,7 +74,8 @@ never collects any data: listing requests will go through GitHub.
 
 The games and the website were built with [Claude Code](https://claude.com/claude-code), working
 from written briefs: the genre, ages, content rules, controls, the single-file contract and a
-definition of done. The original briefs will be shared in `docs/prompts/` as examples.
+definition of done. The original briefs are in [docs/prompts](docs/prompts/), as examples you
+can borrow from.
 
 ## Tech stack
 
