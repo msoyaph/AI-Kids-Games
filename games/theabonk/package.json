@@ -1,0 +1,31 @@
+{
+  "name": "theabonk",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TheaBonk \u2014 a 3D low-poly survivors-like roguelite. Bonk the Gloom, survive until dawn.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "simulate": "tsx scripts/simulate.ts",
+    "bench": "tsx scripts/bench.ts"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^24.19.2",
+    "@types/three": "^0.186.0",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.4",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^5.0.3"
+  }
+}
