@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.1.1",
+  "release": "2.2.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.1.1",
+    "release": "2.2.0",
     "date": "2026-10-12",
     "approvedBy": "Owner",
-    "scope": "Patch while TheaBonk v1 is live: on a touch-only device, Play on a computer-only game shows \"TheaBonk needs a keyboard and mouse or a game controller for now. Touch controls are coming soon!\" with Back and \"I have a keyboard or controller\" instead of loading the game; its card and details page show it as a computer game. Driven by game.json devices and controls, so it disappears when a game lists touch controls. No game build changes.",
-    "note": "Owner wrote: \"If 2.1.0 is live, ship Step 1 straight away as a patch … I approve both. Record the approvals so the production guard allows them.\" Both = this patch and the next release (TheaBonk v2 touch controls + fullscreen play), recorded when that release is prepared. Guard: scripts/check-deployment.ts needs this record for 2.1.1, AIKG_ALLOW_PRODUCTION=2.1.1 in Vercel's Production environment only, and a build from main."
+    "scope": "TheaBonk 2.0.0 (touch controls on phones and tablets, Rimewood, six heroes, difficulty, accessibility, gamepads; imported byte-identical to its verified build, manifest Computer/Tablet/Phone + Touch, storage audit, new previews) and fullscreen play on the site (top-bar button, corner menu rail, one-time \"Play fullscreen?\" and iPhone Home Screen card in aikg:tips, Android orientation lock, web-app manifest and Apple tags, safe areas).",
+    "note": "Owner wrote: \"If 2.1.0 is live … ship Steps 2–3 as the next release once preview checks pass. I approve both. Record the approvals so the production guard allows them.\" Guard: scripts/check-deployment.ts needs this record for 2.2.0, AIKG_ALLOW_PRODUCTION=2.2.0 in Vercel's Production environment only (set just before the merge), and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
@@ -29,7 +29,8 @@
       "check": "Signed-in browser check at phone (375×812, touch) and tablet (744×1133, touch) sizes: keyboard screen, Back, continue, card label, details note; touch games unaffected."
     },
     "localSuite": "Full site suite on a real GPU: 103 passed, 23 device skips.",
-    "ci": "PR #4: What changed, Repo checks, Website and CI passed green (game suites not triggered: no game changed)."
+    "ci": "PR #4: What changed, Repo checks, Website and CI passed green (game suites not triggered: no game changed).",
+    "note": "Still release 2.1.1 until 2.2.0 is deployed and recorded."
   },
   "deploymentProtection": {
     "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",
@@ -40,6 +41,38 @@
   "gameCacheControl": "public, max-age=0, must-revalidate",
   "hashedAssetCacheControl": "public, max-age=31536000, immutable",
   "history": [
+    {
+      "release": "2.1.1",
+      "commit": "79f7cf5",
+      "production": {
+        "url": "https://ai-kids-games-fawn.vercel.app",
+        "deploymentId": "dpl_6rR17ZwcTwAc6aufd9rarH7KmPWW",
+        "deploymentUrl": "https://ai-kids-games-r9zws3d29-real-tours.vercel.app",
+        "readyState": "READY",
+        "publishedAt": "2026-10-12",
+        "public": true,
+        "release": "2.1.1",
+        "commit": "79f7cf5",
+        "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/4",
+        "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+        "guardLog": "Production deployment of release 2.1.1 approved by the owner on 2026-10-12.",
+        "smokeTest": "Logged-out Playwright against production (touch-gate, site, catalog, meta specs on desktop, tablet and phone): 41 passed, 4 intentional device skips, 0 failed.",
+        "verifiedPreview": {
+          "url": "https://ai-kids-games-3rb37b4l3-real-tours.vercel.app",
+          "check": "Signed-in browser check at phone (375×812, touch) and tablet (744×1133, touch) sizes: keyboard screen, Back, continue, card label, details note; touch games unaffected."
+        },
+        "localSuite": "Full site suite on a real GPU: 103 passed, 23 device skips.",
+        "ci": "PR #4: What changed, Repo checks, Website and CI passed green (game suites not triggered: no game changed)."
+      },
+      "productionApproval": {
+        "approved": true,
+        "release": "2.1.1",
+        "date": "2026-10-12",
+        "approvedBy": "Owner",
+        "scope": "Patch while TheaBonk v1 is live: on a touch-only device, Play on a computer-only game shows \"TheaBonk needs a keyboard and mouse or a game controller for now. Touch controls are coming soon!\" with Back and \"I have a keyboard or controller\" instead of loading the game; its card and details page show it as a computer game. Driven by game.json devices and controls, so it disappears when a game lists touch controls. No game build changes.",
+        "note": "Owner wrote: \"If 2.1.0 is live, ship Step 1 straight away as a patch … I approve both. Record the approvals so the production guard allows them.\" Both = this patch and the next release (TheaBonk v2 touch controls + fullscreen play), recorded when that release is prepared. Guard: scripts/check-deployment.ts needs this record for 2.1.1, AIKG_ALLOW_PRODUCTION=2.1.1 in Vercel's Production environment only, and a build from main."
+      }
+    },
     {
       "release": "2.1.0",
       "commit": "dc4a5f7",
