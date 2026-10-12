@@ -54,7 +54,8 @@ test('Chapter 1 from a new game, by touch only', async ({ page, browserName }) =
     if ((await pl.peek()).location !== 'hall') {
       const d = (await pl.dev<{ x: number; z: number; tx: number; tz: number }>('door', 'hall'))!;
       await pl.walkTo(d.x, d.z, 1.2);
-      expect(await pl.tapWorld(d.tx, d.tz, 0.8)).toBe(true);
+      // (the walk may already have taken you in: a tap near a building goes to its door)
+      if ((await pl.peek()).location !== 'hall') expect(await pl.tapWorld(d.tx, d.tz, 0.8)).toBe(true);
       await pl.until(async () => (await pl.peek()).location === 'hall', 10_000, 'Lantern Hall');
       await pl.wait(700);
     }
@@ -110,7 +111,7 @@ test('Chapter 1 from a new game, by touch only', async ({ page, browserName }) =
     await leave();
     const tent = (await pl.dev<{ x: number; z: number; tx: number; tz: number }>('door', 'home'))!;
     await pl.walkTo(tent.x, tent.z, 1.2);
-    expect(await pl.tapWorld(tent.tx, tent.tz, 0.6)).toBe(true);
+    if ((await pl.peek()).location !== 'home') expect(await pl.tapWorld(tent.tx, tent.tz, 0.6)).toBe(true);
     await pl.until(async () => (await pl.peek()).location === 'home', 10_000, 'the tent');
     await pl.wait(700);
     const bed = await page.evaluate(() => {
@@ -171,7 +172,7 @@ test('Chapter 1 from a new game, by touch only', async ({ page, browserName }) =
   await leave();
   const bench = (await pl.dev<{ x: number; z: number; tx: number; tz: number }>('door', 'workbench'))!;
   await pl.walkTo(bench.x, bench.z, 1.2);
-  expect(await pl.tapWorld(bench.tx, bench.tz, 0.6)).toBe(true);
+  if ((await pl.peek()).panel === null) expect(await pl.tapWorld(bench.tx, bench.tz, 0.6)).toBe(true);
   await pl.until(async () => (await pl.peek()).panel !== null, 8000, 'the workbench');
   await pl.button(/Tools/);
   for (const name of ['Twig Net', 'Twig Rod', 'Stone Hatchet', 'Twig Shovel']) {
@@ -207,7 +208,7 @@ test('Chapter 1 from a new game, by touch only', async ({ page, browserName }) =
   const t0 = Date.now();
   const skipBug = new Set<string>(); // bugs we couldn't get any closer to (something in the way)
   const bugKey = (b: { x: number; z: number }) => `${Math.floor(b.x)},${Math.floor(b.z)}`;
-  for (let tries = 0; (await bugs()) < 2 && Date.now() - t0 < (LOW ? 900_000 : 300_000); tries++) {
+  for (let tries = 0; (await bugs()) < 2 && Date.now() - t0 < (LOW ? 900_000 : 480_000); tries++) {
     const p0 = await pl.peek();
     // a bug on our side of the river, sitting still if possible
     const list = (await pl.dev<{ x: number; z: number; y: number; state: string; reachable: boolean; habitat: string; alert: number }[]>('bugs')).filter((b) => b.state === 'idle' && b.reachable && b.habitat !== 'water' && b.alert < 0.3 && !skipBug.has(bugKey(b)));

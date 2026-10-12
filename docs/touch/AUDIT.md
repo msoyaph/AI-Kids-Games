@@ -179,6 +179,8 @@ Before / after on a phone (390×844 and 844×390): [portrait](compare-phone-port
   walk you up to the counter.
 - With the net out and a bug sitting on a tree, A shook the tree instead of swinging the net (with every input,
   not just touch). The net wins now when a bug is in reach.
+- On portrait phones, rooms were cut off at both sides (the tent's bed was half off screen). The indoor camera now
+  backs off until the whole width of the room fits.
 - Tapping the workbench could walk you to the ground behind it: at this camera angle a low object covers the
   tile behind it, and picking went by the nearest tile centre. A tap inside a building's (or the workbench's)
   outline on screen now picks it; ground in front of it, trees and people still win where they're in front.

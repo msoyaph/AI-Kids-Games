@@ -1,0 +1,71 @@
+{
+  "slug": "light-crossing",
+  "title": "Light Crossing",
+  "version": "2.0.0",
+  "description": "A cozy island life-sim: make friends, fish, catch bugs, decorate, and light the old lighthouse.",
+  "ages": "6+",
+  "file": "index.html",
+  "bytes": 1250266,
+  "sha256": "7730e932006a60cc50f2112548c387a97f26ceb650fb7cf279360abea8b732c8",
+  "singleFile": true,
+  "network": false,
+  "embed": {
+    "sandbox": "allow-scripts",
+    "worksFromFile": true,
+    "optional": [
+      "allow-same-origin (saves)",
+      "allowfullscreen (fullscreen button on tablets and desktops)"
+    ]
+  },
+  "input": [
+    "touch",
+    "keyboard",
+    "mouse",
+    "gamepad"
+  ],
+  "devices": [
+    "phone",
+    "tablet",
+    "desktop"
+  ],
+  "orientation": "any",
+  "storage": {
+    "prefix": "lightcrossing.",
+    "keys": [
+      "lightcrossing.slot0",
+      "lightcrossing.slot1",
+      "lightcrossing.slot2",
+      "lightcrossing.settings",
+      "lightcrossing.playtest.slot0",
+      "lightcrossing.playtest.slot1",
+      "lightcrossing.playtest.slot2",
+      "lightcrossing.__probe"
+    ],
+    "budgetPerSlotBytes": 307200,
+    "typicalSlotBytes": {
+      "newGame": 8000,
+      "storyFinished": 23000
+    }
+  },
+  "preview": {
+    "route": "?preview=cover",
+    "scenes": [
+      "cover",
+      "spring",
+      "summer",
+      "autumn",
+      "winter",
+      "festival",
+      "home",
+      "shop",
+      "villager"
+    ],
+    "ready": "window.__previewReady === true (then wait ~1 s for the first frames)",
+    "suggestedSizes": [
+      "1280x720",
+      "1080x1080",
+      "720x1280"
+    ]
+  },
+  "playtime": "about 6 hours of story, then open-ended"
+}

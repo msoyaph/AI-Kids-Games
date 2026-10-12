@@ -575,7 +575,12 @@ export class InteriorView {
     this.camX += (targetX - this.camX) * Math.min(1, dt * 6);
     if (!wide || Math.abs(this.camX - targetX) > 20) this.camX = targetX;
     const span = Math.max(room.w, room.d * 1.3);
-    const dist = wide ? 11 : 4 + span * 0.95;
+    let dist = wide ? 11 : 4 + span * 0.95;
+    // tall narrow screens (portrait phones): back off until the whole width of the room fits
+    if (!wide) {
+      const half = Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect);
+      dist = Math.max(dist, (room.w / 2 + 0.6) / Math.tan(half));
+    }
     this.camera.position.set(this.camX, dist * 0.82, room.d + dist * 0.62);
     this.camera.lookAt(this.camX, 0, room.d * 0.48);
     renderer.render(this.scene, this.camera);

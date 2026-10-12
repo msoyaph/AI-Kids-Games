@@ -339,9 +339,17 @@ Build 1,250 kB (1.19 MiB); pacing 5.86 h.)
     reach beats "Shake tree" (`bugResolver` priority 60 via `bugInReach`, else 20 — any input, not just touch); menu
     tips (craft / shop / inventory) show inside the menu (`App.tipInside` → `TipManager.inline`, class `menu-tip`)
     instead of after it closes; `pickTile` picks a building (DOORS types, `HEIGHT` table) when the tap is inside its
-    projected outline and the ground it would otherwise pick is behind it (tests/tapmove.test.ts).
+    projected outline and the ground it would otherwise pick is behind it (tests/tapmove.test.ts); the interior camera
+    (`InteriorView` frame) backs off on narrow aspect ratios so the room's full width fits (rooms ≤ 12 wide).
     `playwright.config.ts` sets `actionTimeout` (15 s) so a stuck tap fails fast.
   - Results: Chapter 1 by touch passes on all 8 projects (5–7 min each; 12.6 min for all 8 with 4 workers), 160/160 spot
     checks, 20/20 layout runs, 3/3 desktop. Throttled bench (`--profile phone|tablet`, CPU 4×, vsync): phone → Low,
     tablet → Medium, both 60 avg / 59.5 1%-low (docs/bench/2026-10-11-{phone,tablet}-profile.json). Before/after phone
     screenshots: docs/touch/before, docs/touch/after, docs/touch/compare-phone-{portrait,landscape}.jpg.
+- Step 6 done: release 2.0.0 (local only — no remote, nothing pushed).
+  - `lightcrossing-upgrade` merged into `main` (--no-ff, 5c3a16a), then on main: the interior camera fit for portrait
+    phones, playthrough test robustness, `docs/REPORT.md` (full implementation report), `docs/registry-entry.json`
+    (`npx tsx scripts/registry-entry.ts` after a build), README handoff size. Tag `v2.0.0` = the release commit.
+  - Verified on main: typecheck, 222 unit tests (+1 skipped), build 1,250,266 bytes (reproducible; SHA-256
+    7730e932006a60cc50f2112548c387a97f26ceb650fb7cf279360abea8b732c8), size, pacing 5.86 h, 191/191 e2e.
+  - Any later change to `src/` changes the hash: rebuild, rerun `scripts/registry-entry.ts`, update REPORT/README.

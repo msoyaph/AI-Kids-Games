@@ -189,7 +189,7 @@ install the self-hosted runner safely.
 
 - **Slug:** `light-crossing`.
 - **Build:**
-  - `npm run build` produces one file, `dist/index.html`: **1,207 kB** (1.15 MiB) against a 2 MB limit.
+  - `npm run build` produces one file, `dist/index.html`: **1,250 kB** (1.19 MiB) against a 2 MB limit.
   - It makes no network requests and works from `file://` and in `<iframe sandbox="allow-scripts">`.
 - **Storage keys:** all keys start with `lightcrossing.`
 
