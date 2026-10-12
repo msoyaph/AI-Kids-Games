@@ -136,6 +136,8 @@ Dev server at http://localhost:5173. URL options:
 
 - `?seed=123` reproduces a run's map and rolls.
 - `?stress=1000` is a stress test that keeps 1000 enemies and about 400 projectiles alive with the player invulnerable. Press F3 to see the numbers.
+- Test-only options (never touch the save): `?nodamage=1` (Thea takes no damage), `?slowframe=45` (every frame costs 45 ms, a slow device on any machine), `?gputier=high` (what Auto picks for a GPU of that tier).
+- `npx tsx scripts/touch-compare.ts 24 0.7 --map rimewood --difficulty relaxed` compares survival with keyboard and touch controls (results in `docs/BASELINES.md`).
 
 ```bash
 npm run build

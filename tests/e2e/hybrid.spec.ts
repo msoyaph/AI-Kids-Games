@@ -80,3 +80,45 @@ test('a touchscreen laptop switches between touch and keyboard / mouse mid-run',
   expect((await game(page)).paused).toBe(false);
   expect(problems, problems.join('\n')).toEqual([]);
 });
+
+test('a touchscreen laptop on High: the governor steps down and the real blur falls back to fake glass', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'real touches need Chromium (CDP)');
+  test.setTimeout(180_000);
+  const problems: string[] = [];
+  page.on('pageerror', (e) => problems.push(e.message));
+  page.on('console', (m) => {
+    if (m.type() === 'error') problems.push(m.text());
+  });
+  await emulateTouchLaptop(page);
+  // test only: a GPU rated High, every frame costing 45 ms (≈ 20 fps), Thea taking no damage
+  await page.goto('/?seed=7&gputier=high&slowframe=45&nodamage=1');
+  await page.waitForFunction(() => (window as unknown as { __theabonk?: unknown }).__theabonk, null, { timeout: 60_000 });
+  const state = (): Promise<{ q: string; glass: string; drops: string[] }> =>
+    page.evaluate(() => {
+      const g = (window as unknown as { __theabonk: { renderer: { quality: string }; touch: { glassMode: string }; govDrops: Array<{ from: string; to: string }> } }).__theabonk;
+      return { q: g.renderer.quality, glass: g.touch.glassMode, drops: g.govDrops.map((d) => `${d.from}→${d.to}`) };
+    });
+  expect((await state()).q).toBe('high');
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.getByRole('button', { name: 'Start run' }).click();
+  const f = await Fingers.attach(page);
+  const vp = page.viewportSize()!;
+  await f.tap(vp.width * 0.5, vp.height * 0.5);
+  const ui = page.locator('.touch-ui');
+  await expect(ui).toBeVisible();
+  // High on a laptop: the real blur is on
+  expect((await state()).glass).toBe('blur');
+  await expect(ui).toHaveClass(/\bblur-on\b/);
+  const end = Date.now() + 140_000;
+  while ((await state()).q !== 'low' && Date.now() < end) {
+    const card = page.locator('.screen-levelup .card, .screen-chest .btn').first();
+    if (await card.isVisible().catch(() => false)) await card.dispatchEvent('click').catch(() => undefined);
+    await page.waitForTimeout(1000);
+  }
+  const after = await state();
+  expect(after.drops).toEqual(['high→medium', 'medium→low']);
+  expect(after.glass, 'stepped-down tiers use fake glass').toBe('fake');
+  await expect(ui).not.toHaveClass(/\bblur-on\b/);
+  await expect(ui).not.toHaveClass(/\bblur-layer\b/);
+  expect(problems, problems.join('\n')).toEqual([]);
+});

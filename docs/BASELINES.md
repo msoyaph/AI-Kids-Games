@@ -147,3 +147,29 @@ Before the sweep (same bot, 8 seeds): Relaxed Meadow 18:45 / 88% wins, Normal Me
 15:44 / 42%, Normal Rimewood 10:20, Hard Rimewood 4:25 — Relaxed far too easy, Rimewood
 five minutes shorter than Meadow instead of one. Hero spread at 24 seeds on Normal: within
 ±1:30 for most heroes after the hero pass (single 12-seed cells still swing ±2 min).
+
+## Touch vs keyboard survival (2026-10-12, before release v2.0.0)
+
+`npx tsx scripts/touch-compare.ts <seeds> 0.7 --map <map> --difficulty relaxed` — headless and
+deterministic (machine load can't change it): the same bot, seeds and level-up picks; only the
+path from the bot's wish to Thea differs, through the game's real stick response, auto camera
+and heading-lock code. A "thumb" holds its direction and re-aims when the wish turns > 12° or
+Thea drifts > 30° (0.1 s reaction). Relaxed, six heroes, paired differences vs keyboard (± SE):
+
+| Scheme | Gloam Meadow (24 seeds, 144 runs) | Rimewood (48 seeds, 288 runs) |
+| --- | --- | --- |
+| keyboard (8-way, still camera) | 13:45 ± 0:30 | 14:27 ± 0:20 |
+| touch, auto camera off | 14:08 (+0:22 ± 0:41) | 14:02 (−0:24 ± 0:27) |
+| touch, auto camera on (shipping) | 15:14 (+1:28 ± 0:40) | 13:35 (−0:51 ± 0:28) |
+| touch, auto camera + heading lock | 14:19 (+0:34 ± 0:40) | 14:02 (−0:25 ± 0:28) |
+| touch, auto camera slowed on diagonals | — | 13:58 (−0:29 ± 0:28) |
+
+A looser "casual" thumb (re-aims at 20° / 50°, 0.2 s; Meadow, 12 seeds): keyboard 11:53, touch
+auto camera off 14:42, on 13:26, heading lock 12:23. Touch play is not worse than keyboard; the
+auto camera helps on the meadow (its gentle curve doubles as kiting) and costs a little on the
+ice. A held diagonal does circle with the auto camera (`--circle`: 273° in 8 s, 16 m from the
+start instead of 57 m; 137° with the diagonal slow-down; 0° with the heading lock), so the lock
+exists as `tuning.camera.autoCamHeadingLock` (off by default) for playtests with real players.
+Before v2: the 5-minute touch playthrough died at 3:30–4:09 on Relaxed because its bot read the
+advice only when the test polled (≈ 10× slower re-planning), tapped the first card and lived with
+input latency — now the playthrough checks the controls with `?nodamage=1`.

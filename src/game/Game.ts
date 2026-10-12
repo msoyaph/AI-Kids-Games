@@ -32,6 +32,7 @@ import { glassFor, TouchControls } from '../input/touch';
 import { GOVERNOR, QualityGovernor, stepDown } from './governor';
 import { touchFirstDevice } from '../input/mode';
 import { autoCameraTurn } from '../render/autoCamera';
+import { TouchSteer } from '../input/touchSteer';
 import type { Quality as RenderQuality } from '../render/Renderer';
 import { applyAccessClasses, reducedMotionOn, watchReducedMotion } from '../ui/access';
 import { BENCH, BenchRecorder, GAME_VERSION, gpuName, tierForGpu, type BenchResult } from './benchmark';
@@ -135,6 +136,9 @@ export class Game implements GameApi {
     this.touchDevice = touchFirstDevice();
     this.renderer = new GameRenderer(canvas, overlay, this.effectiveQuality());
     this.autoTier = tierForGpu(gpuName(this.renderer.renderer.getContext()));
+    // test only (?gputier=high|medium|low): what Auto would pick for a GPU rated that tier
+    const gpuTier = urlParam('gputier');
+    if (gpuTier === 'high' || gpuTier === 'medium' || gpuTier === 'low') this.autoTier = gpuTier;
     if (this.renderer.quality !== this.effectiveQuality()) this.renderer.setQuality(this.effectiveQuality());
     this.input = new InputManager(canvas);
     this.ui = new UI(uiRoot);
@@ -416,6 +420,8 @@ export class Game implements GameApi {
   startRun(characterId: string, mapId?: string, opts: { seed?: number; difficulty?: DifficultyId; tier?: number; daily?: string } = {}): void {
     const params = new URLSearchParams(location.search);
     const stress = Number(params.get('stress') || 0);
+    // test only (?nodamage=1): Thea takes no damage; like a tuned run, it never touches the save
+    const noDamage = params.get('nodamage') === '1';
     const fixedSeed = params.get('seed');
     const d = this.save.data;
     const overrides = this.tuningPanel?.overrides;
@@ -436,11 +442,12 @@ export class Game implements GameApi {
       // the tablet tier fields fewer (but tougher, richer) Gloom
       tablet: this.lightCrowd(this.renderer.quality),
       stress,
+      god: noDamage,
       // the daily is the same for everyone: no shop bonuses or unlocked extras
       meta: daily ? undefined : metaBonuses(d),
       unlockedWeapons: daily ? [] : d.unlockedWeapons,
       tuning: overrides,
-      tuned: !!this.tuningPanel?.isTuned,
+      tuned: !!this.tuningPanel?.isTuned || noDamage,
     });
     this.enterRun(this.world);
   }
@@ -451,6 +458,7 @@ export class Game implements GameApi {
     this.renderer.setTerrain(w.terrain, w.map);
     this.renderer.setCharacter(w.player.character);
     this.renderer.rig.yaw = 0;
+    this.steer.thumb(false, 0);
     this.renderer.rig.pitch = this.renderer.rig.tuning.pitch;
     this.renderer.rig.snap(w.player.x, w.player.y, w.player.z);
     this.renderer.resetTransient();
@@ -486,6 +494,9 @@ export class Game implements GameApi {
   hudPreview(on: boolean): void {
     if (!this.world) this.ui.hud.show(on);
   }
+
+  /** Which camera yaw the touch stick is read against (heading lock, input/touchSteer.ts). */
+  private steer = new TouchSteer();
 
   private hintBot: Bot | null = null;
   private hintWorld: World | null = null;
@@ -715,7 +726,8 @@ export class Game implements GameApi {
     const retry = daily
       ? () => this.startRun(summary.characterId, summary.mapId, { seed: w.seed, daily })
       : () => this.startRun(summary.characterId, summary.mapId, { difficulty: summary.difficulty, tier: summary.tier });
-    this.menus.gameOver(summary, outcome, retry, w.options.tuned ? 'Tuned run — not recorded (gold, records and achievements unchanged).' : undefined);
+    const unrecorded = w.options.god ? 'Test run (no damage) — not recorded.' : 'Tuned run — not recorded (gold, records and achievements unchanged).';
+    this.menus.gameOver(summary, outcome, retry, w.options.tuned ? unrecorded : undefined);
   }
 
   private showLevelUp(w: World): void {
@@ -779,6 +791,12 @@ export class Game implements GameApi {
     const i = this.simInput;
     this.input.move(this.move);
     this.renderer.rig.forward(this.fwd);
+    if (this.steer.offset !== 0) {
+      // heading lock: the stick reads against the view as it was, not the auto camera's turn
+      const yaw = this.steer.yaw(this.renderer.rig.yaw);
+      this.fwd.x = -Math.sin(yaw);
+      this.fwd.z = -Math.cos(yaw);
+    }
     const rx = -this.fwd.z;
     const rz = this.fwd.x;
     i.moveX = rx * this.move.x + this.fwd.x * this.move.y;
@@ -829,8 +847,20 @@ export class Game implements GameApi {
     }
   }
 
+  /**
+   * Test only (?slowframe=ms): a fixed busy cost per rendered frame, so the governor e2e can
+   * simulate a slow device without CPU throttling (a fast machine shrugs throttling off).
+   */
+  private readonly slowFrameMs = Math.max(0, Math.min(500, Number(urlParam('slowframe')) || 0));
+
   private frame = (now: number, schedule = true): void => {
     if (schedule) requestAnimationFrame(this.frame);
+    if (this.slowFrameMs > 0 && schedule) {
+      const until = performance.now() + this.slowFrameMs;
+      while (performance.now() < until) {
+        // busy: the frame costs this much, like a slow device's would
+      }
+    }
     const t0 = performance.now();
     const rawMs = now - this.last;
     let dt = (now - this.last) / 1000;
@@ -856,7 +886,10 @@ export class Game implements GameApi {
         } else {
           this.input.consumeLook(dt, this.look);
           this.renderer.rig.look(this.look.x, this.look.y);
-          if (this.input.touchMode) this.autoCamera(w, dt);
+          const t = this.touch;
+          const thumb = this.input.touchMode && (t.moveX !== 0 || t.moveY !== 0);
+          this.steer.thumb(thumb, Math.atan2(t.moveX, t.moveY));
+          if (this.input.touchMode) this.autoCamera(w, dt, thumb);
           if (this.input.wheel !== 0) {
             const rig = this.renderer.rig;
             rig.zoom = Math.max(6 - rig.tuning.distance, Math.min(20 - rig.tuning.distance, rig.zoom + this.input.wheel * 0.8));
@@ -933,14 +966,16 @@ export class Game implements GameApi {
    * Touch auto camera: swings in behind Thea's movement; a camera drag takes over at once,
    * and it eases back in `autoCamDelay` seconds after the finger lifts.
    */
-  private autoCamera(w: World, dt: number): void {
+  private autoCamera(w: World, dt: number, thumb: boolean): void {
     const t = this.touch;
     if (!t.autoCamera || t.looking) return;
     const rig = this.renderer.rig;
     const since = (performance.now() - t.lookReleasedAt) / 1000 - rig.tuning.autoCamDelay;
     if (since <= 0) return;
     const gain = Math.min(1, since / 0.6) * (this.renderer.reducedMotion ? 0.6 : 1);
-    rig.yaw += autoCameraTurn(rig.yaw, w.player.vx, w.player.vz, dt, rig.tuning, gain);
+    const turn = autoCameraTurn(rig.yaw, w.player.vx, w.player.vz, dt, rig.tuning, gain);
+    rig.yaw += turn;
+    this.steer.autoTurned(turn, rig.tuning.autoCamHeadingLock > 0, thumb);
   }
 
   /** Fast slides light up the touch stick, with chevrons along the way Thea is going. */

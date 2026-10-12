@@ -113,8 +113,8 @@ const probe = (page: Page): Promise<{ x: number; z: number; yaw: number; jumps: 
     return { x: g.world.player.x, z: g.world.player.z, yaw: g.renderer.rig.yaw, jumps: g.world.stats.jumps };
   });
 
-async function startTouchRun(page: Page): Promise<void> {
-  await open(page, '/?seed=7');
+async function startTouchRun(page: Page, query = ''): Promise<void> {
+  await open(page, `/?seed=7${query}`);
   await page.getByRole('button', { name: 'Play', exact: true }).tap();
   await page.getByRole('button', { name: 'Start run' }).tap();
   await expect(page.locator('.touch-ui')).toBeVisible();
@@ -411,33 +411,57 @@ test('accessibility: reduced motion, high-contrast controls, 48 px at Small, nev
   expect(problems, problems.join('\n')).toEqual([]);
 });
 
-test('the quality governor steps Auto down on a struggling device, behind a covering screen', async ({ page, browserName }) => {
-  test.skip(browserName !== 'chromium', 'CPU throttling needs CDP (Chromium)');
-  test.setTimeout(240_000);
-  const problems = watch(page);
-  await startTouchRun(page);
-  const quality = (): Promise<{ q: string; glass: string }> =>
-    page.evaluate(() => {
-      const g = (window as unknown as { __theabonk: { renderer: { quality: string }; touch: { glassMode: string } } }).__theabonk;
-      return { q: g.renderer.quality, glass: g.touch.glassMode };
-    });
-  expect((await quality()).q).toBe('tablet');
-  // a very slow device: well under 48 fps for seconds on end
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 24 });
-  // keep playing (take level-ups, as a player would) until the governor steps down
-  const end = Date.now() + 150_000;
-  while ((await quality()).q !== 'low' && Date.now() < end) {
+type GovState = { q: string; glass: string; drops: number };
+const govState = (page: Page): Promise<GovState> =>
+  page.evaluate(() => {
+    const g = (window as unknown as { __theabonk: { renderer: { quality: string }; touch: { glassMode: string }; govDrops: unknown[] } }).__theabonk;
+    return { q: g.renderer.quality, glass: g.touch.glassMode, drops: g.govDrops.length };
+  });
+
+/** Keep playing (take level-ups and chests, as a player would) until `done` or the deadline. */
+async function playUntil(page: Page, done: () => Promise<boolean>, ms: number): Promise<void> {
+  const end = Date.now() + ms;
+  while (!(await done()) && Date.now() < end) {
     const card = page.locator('.screen-levelup .card, .screen-chest .btn').first();
     if (await card.isVisible().catch(() => false)) await card.dispatchEvent('click').catch(() => undefined);
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
   }
-  expect((await quality()).q).toBe('low');
-  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
-  const after = await quality();
-  expect(after.glass, 'stepped-down tiers use fake glass').toBe('fake');
-  // it sticks for the session (the next run starts on Low), never steps back up
+}
+
+test('the quality governor steps Auto down on a slow device (Tablet → Low, fake glass)', async ({ page }) => {
+  test.setTimeout(180_000);
+  const problems = watch(page);
+  // test only: every frame costs 45 ms (≈ 20 fps on any machine), Thea takes no damage
+  await startTouchRun(page, '&slowframe=45&nodamage=1');
+  const start = await govState(page);
+  expect(start.q).toBe('tablet');
+  expect(start.glass, 'phones and tablets always use fake glass').toBe('fake');
+  await playUntil(page, async () => (await govState(page)).q === 'low', 120_000);
+  const after = await govState(page);
+  expect(after.q, 'Auto stepped down to Low').toBe('low');
+  expect(after.drops, 'one step: Tablet → Low').toBe(1);
+  expect(after.glass).toBe('fake');
+  await expect(page.locator('.touch-ui')).not.toHaveClass(/\bblur-on\b/);
+  // it sticks for the session and never steps back up
   await page.waitForTimeout(3000);
-  expect((await quality()).q).toBe('low');
+  expect((await govState(page)).q).toBe('low');
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('extra, non-blocking: the governor under real CPU throttling (24×)', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'CPU throttling needs CDP (Chromium)');
+  test.setTimeout(240_000);
+  // A fast machine can hold 60 fps even at 24× throttling, so this only reports what happened;
+  // the blocking check is the simulated slow device above.
+  const problems = watch(page);
+  await startTouchRun(page, '&nodamage=1');
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 24 });
+  await playUntil(page, async () => (await govState(page)).q === 'low', 150_000);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  const after = await govState(page);
+  const note = `throttled 24×: Auto ended on ${after.q} after ${after.drops} step(s), glass ${after.glass}`;
+  test.info().annotations.push({ type: after.q === 'low' ? 'info' : 'warning', description: note });
+  console.log(note);
   expect(problems, problems.join('\n')).toEqual([]);
 });

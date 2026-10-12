@@ -1,4 +1,5 @@
-import { defineConfig, devices } from '@playwright/test';
+import { chromium, defineConfig, devices, firefox, webkit, type PlaywrightTestProject } from '@playwright/test';
+import { existsSync } from 'node:fs';
 
 /**
  * Smoke tests run against the production single-file build served by `vite preview`.
@@ -13,6 +14,25 @@ const PORT = Number(process.env.E2E_PORT || 47413);
 // Ubuntu runners render with SwiftShader, where the game's Auto quality picks Low by itself.
 const slow = !!process.env.CI;
 const gpuArgs = process.platform === 'darwin' ? ['--use-angle=metal', '--ignore-gpu-blocklist'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+/**
+ * Projects whose browser is installed. Locally (and in this repo's CI matrix) that's all six; the
+ * Ai Kids Games monorepo CI installs Chromium only and so runs the three Chromium projects.
+ */
+function installedOnly(projects: PlaywrightTestProject[]): PlaywrightTestProject[] {
+  const has = (b: { executablePath(): string }): boolean => {
+    try {
+      return existsSync(b.executablePath());
+    } catch {
+      return false;
+    }
+  };
+  const ok = { chromium: has(chromium), firefox: has(firefox), webkit: has(webkit) };
+  const keep = projects.filter((p) => ok[(p.use?.defaultBrowserType ?? ((p.name ?? '').startsWith('firefox') ? 'firefox' : 'chromium')) as keyof typeof ok]);
+  const skipped = projects.filter((p) => !keep.includes(p)).map((p) => p.name);
+  if (skipped.length) console.log(`Playwright: skipping ${skipped.join(', ')} (browser not installed)`);
+  return keep;
+}
+
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: slow ? 300_000 : 120_000,
@@ -27,7 +47,7 @@ export default defineConfig({
     trace: slow ? 'retain-on-failure' : 'off',
     viewport: { width: 1280, height: 720 },
   },
-  projects: [
+  projects: installedOnly([
     { name: 'chromium', testIgnore: /touch(-playthrough)?\.spec/, use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 }, launchOptions: { args: gpuArgs } } },
     // Firefox: raw gamepad layouts, different pointer-lock / WebGL paths
     { name: 'firefox', testIgnore: /touch(-playthrough)?\.spec/, use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 720 } } },
@@ -37,7 +57,7 @@ export default defineConfig({
     { name: 'chromium-tablet', testMatch: /touch\.spec/, use: { ...devices['Galaxy Tab S9 landscape'], launchOptions: { args: gpuArgs } } },
     // a Chromium phone: real CDP multi-touch at phone size, and the 5-minute touch playthrough
     { name: 'chromium-phone', testMatch: /touch(-playthrough)?\.spec/, use: { ...devices['Pixel 7 landscape'], launchOptions: { args: gpuArgs } } },
-  ],
+  ]),
   webServer: {
     command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,

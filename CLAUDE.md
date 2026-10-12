@@ -334,7 +334,7 @@ quality governor) → accessibility → tests → handoff. `npx tsx scripts/glas
   .g-ripple via the Web Animations API — no repaints (the first version dropped a frame per
   press at 4× CPU). Real blur sits only on the stick base and Jump / Slide. Quality governor (game/governor.ts, Auto only, never
   in the benchmark or with ?quality=): median frame slower than 48 fps over 4 s (after a 5 s
-  warm-up / 3 s settle; > 250 ms gaps ignored) → one step down (High → Medium → Low, Tablet
+  warm-up / 3 s settle; ≥ 3 frames, > 5 s gaps ignored, reset when the tab comes back) → one step down (High → Medium → Low, Tablet
   → Low), applied behind the next level-up / chest screen or after 8 s; sticks for the
   session (`sessionTier`), never steps up mid-run, glass cross-fades. Touch devices on Low
   keep the tablet crowd (`lightCrowd`).
@@ -351,6 +351,34 @@ quality governor) → accessibility → tests → handoff. `npx tsx scripts/glas
   quick start, remove the keyboard-required note), BASELINES controls table.
   Screenshots: scripts/touch-shots.ts (GLASS=fake|blur env), scripts/glass-mockups.ts and
   scripts/screenshot-review.ts write into the git-ignored shots/ folder.
+
+## Shipping v2 (owner task "Ship TheaBonk's touch controls", 2026-10-12)
+The two phone tests that held v2 back are now deterministic, and touch steering is fixed:
+- Test-only URL options (never touch the save): `?slowframe=ms` (Game.frame busy-waits that long
+  per rendered frame — a slow device on any machine), `?nodamage=1` (run with `god`, flagged
+  `tuned`: "Test run (no damage) — not recorded"), `?gputier=high|medium|low` (what Auto picks
+  for a GPU of that tier).
+- Governor e2e: touch.spec `slowframe=45` → Auto Tablet → Low in one step, fake glass (blocking);
+  hybrid.spec touchscreen laptop `gputier=high&slowframe=45` → High → Medium → Low, real blur
+  cross-fades to fake (blocking); the 24× CPU-throttle run only reports (annotation) — a fast Mac
+  holds 60 fps there.
+- touch-playthrough.spec: `?nodamage=1`, then by real CDP touches: the stick in 8 directions
+  (Thea's velocity within 35° of the stick read against `Game.steer.yaw(rig.yaw)`), Jump, Slide,
+  a slide-jump (third finger), Pause / Resume, level-ups and a chest, ≥ 5:00 of play.
+- Heading lock (input/touchSteer.ts, `tuning.camera.autoCamHeadingLock`, OFF by default): the
+  auto camera's turns don't steer Thea while the thumb holds still (a held diagonal circles 273° in
+  8 s and ends 16 m from the start instead of 57 m without it); a deliberate thumb move (beyond a
+  6° deadband) re-reads the stick against the view (1.5° of camera turn per degree of thumb),
+  lifting resets it, and a camera drag still turns Thea. Off because touch survival already matches
+  keyboard (Relaxed, paired vs keyboard — Meadow 24 seeds: auto cam +1:28 ± 0:40, lock +0:34,
+  auto cam off +0:22; Rimewood 48 seeds: auto cam −0:51 ± 0:28, lock −0:25, off −0:24, auto cam
+  slowed on diagonals −0:29) and without it the stick always means "that way on screen". Game: `steer.thumb()` each running frame, `steer.autoTurned()` in
+  autoCamera, buildSimInput reads the stick against `steer.yaw(rig.yaw)`.
+- `npx tsx scripts/touch-compare.ts [seeds] [skill] [--map] [--difficulty] [--casual] [--circle]`:
+  headless, deterministic survival with the same bot / seeds / picks through ideal, keyboard
+  (8-way, still camera), touch-off, touch-on (auto camera, no lock) and touch-lock; a "thumb"
+  holds its direction and re-aims when the wish turns > 12° (casual 20°) or Thea drifts > 30°
+  (casual 50°), after 0.1 s (casual 0.2 s). `--circle` = the held-diagonal check.
 
 ## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera

@@ -86,6 +86,13 @@ export interface Tuning {
     autoCamMinSpeed: number;
     /** Touch auto camera: degrees off straight ahead beyond which it never turns (retreating). */
     autoCamMaxAngle: number;
+    /**
+     * Touch heading lock (1 = on, off by default): while the thumb holds still, the auto camera's
+     * turns don't steer Thea (no circling on a held diagonal); a deliberate thumb move re-reads the
+     * view. Off because touch survival already matches keyboard (scripts/touch-compare.ts) and the
+     * stick then always means "that way on screen"; on for playtests that want straight lines.
+     */
+    autoCamHeadingLock: number;
   };
   /** Warning (telegraph) durations — how long players get to react. */
   telegraphs: {
@@ -206,6 +213,7 @@ export const TUNING_RANGES: { [G in TuningGroup]: { [K in keyof Tuning[G]]: Tuni
     autoCamDelay: [0, 4, 0.1],
     autoCamMinSpeed: [0, 10, 0.1],
     autoCamMaxAngle: [30, 180, 1],
+    autoCamHeadingLock: [0, 1, 1],
   },
   telegraphs: {
     chargerWindupMult: [0.3, 3, 0.05],
@@ -291,6 +299,7 @@ export const TUNING_DEFAULTS: Tuning = {
     autoCamDelay: 1.2,
     autoCamMinSpeed: 2,
     autoCamMaxAngle: 120,
+    autoCamHeadingLock: 0,
   },
   telegraphs: {
     chargerWindupMult: 1,
