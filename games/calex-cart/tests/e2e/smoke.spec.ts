@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { frames } from './helpers';
 import { test, expect, slow, MIN_FPS } from './fixtures';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
@@ -121,9 +122,9 @@ test('gamepad navigates menus and drives', async ({ page }, info) => {
   await boot(page);
   const tapButton = async (b: number): Promise<void> => {
     await page.evaluate((i) => ((window as unknown as { __pad: { buttons: Array<{ pressed: boolean; value: number }> } }).__pad.buttons[i].pressed = true), b);
-    await page.waitForTimeout(120);
+    await Promise.all([page.waitForTimeout(120), frames(page, 3)]);
     await page.evaluate((i) => ((window as unknown as { __pad: { buttons: Array<{ pressed: boolean; value: number }> } }).__pad.buttons[i].pressed = false), b);
-    await page.waitForTimeout(150);
+    await Promise.all([page.waitForTimeout(150), frames(page, 3)]);
   };
   await tapButton(0); // title → slots
   await expect(page.getByText('Choose a save')).toBeVisible();

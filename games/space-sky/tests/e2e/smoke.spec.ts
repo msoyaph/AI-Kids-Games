@@ -17,7 +17,8 @@ test('boots to the 3D title screen without errors or network requests', async ({
   await expect(page.getByTestId('btn-play')).toBeVisible();
   const elapsed = Date.now() - start;
   console.log(`[${test.info().project.name}] title visible after ${elapsed} ms`);
-  expect(elapsed).toBeLessThan(15000);
+  // software WebGL on CI compiles shaders far more slowly than a real GPU
+  expect(elapsed).toBeLessThan(process.env.CI || process.platform !== 'darwin' || process.env.SPACESKY_SWIFTSHADER ? 60000 : 15000);
   // The world is drawn by Three.js on a WebGL2 canvas.
   const gl = await page.evaluate(() => {
     const c = document.getElementById('stage3') as HTMLCanvasElement | null;

@@ -50,7 +50,7 @@ npm run perf --workspace games/vanex-defense            # 300 constructs, thrott
 
 ```bash
 npm run build --workspace games/space-sky
-npm run test:e2e --workspace games/space-sky
+npm run test:e2e --workspace games/space-sky   # includes the walk through all 20 areas (GPU only)
 npm run perf --workspace games/space-sky                # every heavy scene, Low/Medium/High, CPU ×1/×4/×6
 ```
 

@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { test, expect, slow } from './fixtures';
-import { boot, watch } from './helpers';
+import { frames, boot, watch } from './helpers';
 
 // Accessibility: every menu works with a keyboard alone, a gamepad alone, and touch alone.
 
@@ -137,9 +137,9 @@ test('gamepad only: title → save → menus with the D-pad, RB/LB tabs, B back,
   await boot(page);
   const tap = async (b: number): Promise<void> => {
     await page.evaluate((i) => ((window as unknown as { __pad: { buttons: Array<{ pressed: boolean }> } }).__pad.buttons[i].pressed = true), b);
-    await page.waitForTimeout(110);
+    await Promise.all([page.waitForTimeout(110), frames(page, 3)]);
     await page.evaluate((i) => ((window as unknown as { __pad: { buttons: Array<{ pressed: boolean }> } }).__pad.buttons[i].pressed = false), b);
-    await page.waitForTimeout(140);
+    await Promise.all([page.waitForTimeout(140), frames(page, 3)]);
   };
   const A = 0, B = 1, LB = 4, RB = 5, UP = 12, DOWN = 13, LEFT = 14, RIGHT = 15;
   const focusText = (): Promise<string> => page.evaluate(() => window.__calex.app.ui.focused?.textContent ?? '');

@@ -102,7 +102,7 @@ jobs:
         run: npm run build --workspace apps/site
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Browser tests (desktop, tablet, phone)
+      - name: Browser tests (desktop, tablet, phone; the GPU play-throughs run locally before each release)
         run: npm run test:e2e --workspace apps/site
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()

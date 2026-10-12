@@ -74,3 +74,8 @@ export async function skipControlsCard(page: Page): Promise<void> {
     a.saves.settings.controlsSeen = { keyboard: true, gamepad: true, touch: true };
   });
 }
+
+/** Wait for `n` animation frames: the game reads gamepads once per frame, and software-rendered CI browsers can run at a few frames per second. */
+export async function frames(page: Page, n: number): Promise<void> {
+  await page.evaluate((count) => new Promise<void>((done) => { const step = (k: number): void => { if (k <= 0) done(); else requestAnimationFrame(() => step(k - 1)); }; step(count); }), n);
+}
