@@ -181,3 +181,9 @@ session's uncommitted sizzle-reel work — never touch that checkout's files.
   the landscape lock + back gesture, real multi-touch feel of TheaBonk's glass controls (stick
   dead zone, auto camera, haptics on Android), a real gamepad and pointer lock in fullscreen on a
   computer, and performance / the quality governor on a mid-range phone and tablet.
+- 2.2.0 LIVE 2026-10-12 (PR #7, merge commit 56d4e5d — merge, never rebase, when a PR carries a
+  subtree pull; dpl_J9CH4QjiZXktsabniqKTeY3Pa9AY): guard log "approved by the owner";
+  AIKG_ALLOW_PRODUCTION=2.2.0. Production suite 132/0 (72 device/engine skips); Lighthouse mobile
+  home 98/100/100/100, details 99/100/100/100, play 92/100/100/100. Monorepo tag theabonk-v2.0.0.
+  CI: TheaBonk's Chromium suite (incl. the 5-minute touch playthrough) passes on GitHub's runners;
+  its desktop 150% scaling check flaked once (passed on retry).
