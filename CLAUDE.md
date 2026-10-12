@@ -153,7 +153,13 @@ this Mac: missing libx265) and @ffprobe-installer/ffprobe for HyperFrames' ffpro
    - Never pgrep/pkill with a pattern that matches the waiting shell's own command line.
    - Another session works in the worktree ~/Documents/AI-Kids-Games-ship (branch
      theabonk-touch-gate) and runs browser tests there; the capture waits for them.
-3–6. Written, not yet run: music/ (synth + score from the cut's blocks), compose/build.ts,
-   render/ (media trims and mix, HyperFrames renders, encodes, captions, publish), review/run.ts;
-   site: components/Trailer.tsx (Home button + dialog, About inline), styles, tests
-   (tests/trailer.test.ts, tests/e2e/trailer.spec.ts). Web files go to apps/site/public/trailer/.
+3–5. COMPLETE: music (1,025 notes, renders in ~2 s), 4 HyperFrames renders (60 s 16:9 and 9:16,
+   15 s cutdowns; ~5 min each 60 s on this Mac), review: every cut on the beat, at most 2 flashes
+   per second, −14.0 LUFS / −4.3 dBTP, text on screen long enough to read. Pitfalls: SVT-AV1 in
+   ffmpeg-static 6.0 is v1.4 and slow: one pass at a target bitrate, preset 10. HyperFrames falls
+   back to screenshot capture when CSS blur is used (fine, ~5 min per minute of 1080p60).
+6. Site: Trailer.tsx (Home "Watch the trailer" dialog: muted, captions on, Escape closes, focus
+   returns, nothing loads before play; About: poster you press, text description), files in
+   apps/site/public/trailer/ (AV1 WebM first, H.264 fallback, 720/1080 by screen), trailer.json
+   written by `npm run publish` in marketing/sizzle. Home Lighthouse 97/100/100/100, 0 trailer
+   requests before play; 109 site e2e passed. README thumbnail links to the release.

@@ -57,7 +57,7 @@ export const REEL: Record<Slug, { shots: [Shot, Shot, Shot]; describe: string }>
     ]
   },
   'vanex-defense': {
-    describe: 'Towers zap a line of crystal robots winding through a snowy maze, then a sky road, then a giant boss.',
+    describe: 'Towers zap enemies winding through a snowy maze and along a sky road, then a giant boss arrives.',
     shots: [
       shot('vanex-defense', 'frost-maze', { from: 0.4, focus: [0.18, 0.5], sfx: 0.5, sound: 'towers zap' }),
       shot('vanex-defense', 'sky-lane', { from: 0.3, focus: [0.42, 0.3] }),
@@ -81,7 +81,7 @@ export const REEL: Record<Slug, { shots: [Shot, Shot, Shot]; describe: string }>
     ]
   },
   'cliff-valley': {
-    describe: 'Picking ripe crops on the farm, sky lanterns at the Starlight Night festival and the crystal mine.',
+    describe: 'Picking ripe crops on the farm, the snowy town square on Starlight Night and the crystal mine.',
     shots: [
       shot('cliff-valley', 'harvest', { from: 0.2, focus: [0.5, 0.5], sfx: 0.6, sound: 'harvest pops' }),
       shot('cliff-valley', 'festival', { from: 0.2, focus: [0.5, 0.5], sfx: 0.45, sound: 'a festival chime' }),
