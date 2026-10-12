@@ -13,7 +13,7 @@ read by hand.
 
 | Owner | Persistent keys | Only in special modes | Availability probe (written and removed at once) |
 |---|---|---|---|
-| Ai Kids Games (site) | `aikg:favorites`, `aikg:recent` | none | none |
+| Ai Kids Games (site) | `aikg:favorites`, `aikg:recent`, `aikg:tips` (one-time play-page tips answered, ≤ 40 bytes) | none | none |
 | TheaBonk 1.0.0 | `theabonk.save` | none | `__theabonk_probe__` |
 | Light Crossing 2.0.0 | `lightcrossing.slot0`–`slot2`, `lightcrossing.settings` | `lightcrossing.playtest.slot0`–`slot2` (`?playtest=1`) | `lightcrossing.__probe` |
 | Vanex Defense 2.0.0 | `vanex-defense-save`, `vanex-defense-save-backup` (written once when an older save is upgraded) | `vanex-defense-playtest` (`?playtest=1`) | `__vanex_probe__` |
@@ -31,9 +31,11 @@ game.
 
 ## How each owner stays in its lane
 
-- **Site:** `src/lib/storage.ts` reads and writes only `aikg:favorites` and `aikg:recent`, merges
-  the legacy `aikidsgames.favorites` / `aikidsgames.recent` lists once and removes them only after
-  a successful migration. "Clear saved lists" removes only the site's own keys.
+- **Site:** `src/lib/storage.ts` reads and writes only `aikg:favorites`, `aikg:recent` and
+  `aikg:tips` (which one-time play-page tips were answered: "Play fullscreen?" and the iPhone Home
+  Screen card), merges the legacy `aikidsgames.favorites` / `aikidsgames.recent` lists once and
+  removes them only after a successful migration. "Clear saved lists" removes only the site's own
+  lists (the tips stay answered).
 - **TheaBonk:** `src/core/storage.ts` wraps a probed `Storage`; `src/meta/save.ts` uses the single
   `theabonk.save` key. No enumeration or removal of other keys.
 - **Light Crossing:** `src/sim/save.ts` prefixes every access with `lightcrossing.`. Its `keys()`

@@ -27,3 +27,16 @@ export function writeList(key: string, slugs: readonly string[], storage: Storag
   try { if (!storage) return false; storage.setItem(key,JSON.stringify(slugs)); return true; } catch { return false; }
 }
 export function addRecent(slugs: readonly string[], slug: string) { return [slug,...slugs.filter(item => item !== slug)].slice(0,10); }
+/** One-time play-page tips already answered on this device ("Play fullscreen?", Home Screen card). */
+export const TIPS_KEY = 'aikg:tips';
+export type TipId = 'fullscreen' | 'home-screen';
+const TIP_IDS: readonly TipId[] = ['fullscreen','home-screen'];
+export function tipsSeen(storage: StorageLike | undefined): TipId[] {
+  try {
+    const parsed: unknown = JSON.parse(storage?.getItem(TIPS_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.filter((item): item is TipId => TIP_IDS.includes(item as TipId)) : [];
+  } catch { return []; }
+}
+export function markTipSeen(id: TipId, storage: StorageLike | undefined): void {
+  try { const seen = tipsSeen(storage); if (!seen.includes(id)) storage?.setItem(TIPS_KEY,JSON.stringify([...seen,id])); } catch { /* the tip may show again next time */ }
+}

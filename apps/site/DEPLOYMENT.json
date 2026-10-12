@@ -13,35 +13,23 @@
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
-    "deploymentId": "dpl_565CFC3FJtQh2oMy2m4mGboRM9r3",
-    "deploymentUrl": "https://ai-kids-games-81eqv7ogy-real-tours.vercel.app",
+    "deploymentId": "dpl_6rR17ZwcTwAc6aufd9rarH7KmPWW",
+    "deploymentUrl": "https://ai-kids-games-r9zws3d29-real-tours.vercel.app",
     "readyState": "READY",
     "publishedAt": "2026-10-12",
     "public": true,
+    "release": "2.1.1",
+    "commit": "79f7cf5",
+    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/4",
     "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
-    "smokeTest": "Logged-out Playwright suite against production: 94 passed, 23 intentional device skips, 0 failed (all six games played 20 s on desktop, tablet and phone, saves survive reload, favorites and recently played persist, games keep one another's saves, no console errors, no other-origin requests).",
-    "lighthouseMobile": {
-      "home": {
-        "performance": 99,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "details": {
-        "performance": 99,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "play": {
-        "performance": 73,
-        "performanceExempt": true,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      }
+    "guardLog": "Production deployment of release 2.1.1 approved by the owner on 2026-10-12.",
+    "smokeTest": "Logged-out Playwright against production (touch-gate, site, catalog, meta specs on desktop, tablet and phone): 41 passed, 4 intentional device skips, 0 failed.",
+    "verifiedPreview": {
+      "url": "https://ai-kids-games-3rb37b4l3-real-tours.vercel.app",
+      "check": "Signed-in browser check at phone (375×812, touch) and tablet (744×1133, touch) sizes: keyboard screen, Back, continue, card label, details note; touch games unaffected."
     },
-    "note": "Still release 2.1.0 until 2.1.1 is deployed and recorded."
+    "localSuite": "Full site suite on a real GPU: 103 passed, 23 device skips.",
+    "ci": "PR #4: What changed, Repo checks, Website and CI passed green (game suites not triggered: no game changed)."
   },
   "deploymentProtection": {
     "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",

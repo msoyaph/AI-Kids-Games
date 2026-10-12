@@ -43,7 +43,7 @@ button,a { -webkit-tap-highlight-color: transparent; }
 .prose h2 + p { margin-top: 8px; }
 .prose a:not(.button) { text-decoration: underline; text-underline-offset: 3px; }
 
-.container { width: min(var(--max),calc(100% - 2 * var(--gutter))); margin-inline: auto; }
+.container { width: min(var(--max),calc(100% - 2 * var(--gutter) - env(safe-area-inset-left) - env(safe-area-inset-right))); margin-inline: auto; }
 .skip-link { position: fixed; z-index: 100; top: -100px; left: 16px; padding: 12px 18px; border-radius: var(--radius-control); background: var(--surface); color: var(--ink); box-shadow: var(--lift); font-weight: 700; }
 .skip-link:focus { top: 12px; }
 
@@ -62,7 +62,7 @@ button,a { -webkit-tap-highlight-color: transparent; }
 .badge { display: inline-flex; align-items: center; min-height: 30px; padding: 4px 12px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--mist); font-size: 15px; font-weight: 700; white-space: nowrap; }
 
 /* Header, footer and mobile navigation. */
-.site-header { position: sticky; top: 0; z-index: 30; background: var(--surface); box-shadow: 0 1px 0 var(--mist); }
+.site-header { position: sticky; top: 0; z-index: 30; padding-top: env(safe-area-inset-top); background: var(--surface); box-shadow: 0 1px 0 var(--mist); }
 .header-inner { display: flex; align-items: center; gap: 24px; min-height: 64px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; font-size: 20px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; }
 .brand svg { width: 34px; height: 34px; }
@@ -265,6 +265,40 @@ main { min-height: 70vh; }
 .device-notice .button { background: #F1F3F6; color: #16191F; }
 .play-message { padding: 10px 20px; background: #181B21; color: #A2A9B6; }
 .play-bar-spacer { width: 96px; }
+/* Opened from the Home Screen (black-translucent status bar): keep clear of the notch and the bar. */
+.play-bar { padding-top: max(4px,env(safe-area-inset-top)); padding-left: max(8px,env(safe-area-inset-left)); padding-right: max(8px,env(safe-area-inset-right)); }
+
+/* Fullscreen play: the game fills the screen beside a slim rail that holds the corner button, so
+   the button never covers the game's HUD or touch controls. The rail is at least the safe-area
+   inset (the notch side of a phone held sideways) and at least a 48 px target; other insets pad the
+   game. Phones held upright put the rail on top instead. */
+.play-shell.is-full { --fs-rail: max(48px,env(safe-area-inset-left)); display: grid; grid-template-columns: var(--fs-rail) minmax(0,1fr); grid-template-rows: minmax(0,1fr); width: 100%; height: 100%; }
+.play-shell.is-full > .play-bar, .play-shell.is-full > .device-notice, .play-shell.is-full > .play-message { display: none; }
+.play-shell.is-full > .play-stage { grid-column: 2; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) 0; }
+.fs-rail { position: relative; z-index: 8; grid-column: 1; grid-row: 1; display: flex; flex-direction: column; align-items: center; padding-top: max(6px,env(safe-area-inset-top)); background: #0F1115; }
+.fs-corner { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; color: rgb(241 243 246 / .78); }
+.fs-corner::before { content: ''; position: absolute; width: 38px; height: 38px; border-radius: 12px; background: rgb(255 255 255 / .1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14); }
+.fs-corner svg { position: relative; }
+.fs-corner:hover::before, .fs-corner[aria-expanded="true"]::before { background: rgb(255 255 255 / .2); }
+.fs-corner:focus-visible { outline-color: #F1F3F6; }
+.fs-menu { position: absolute; z-index: 6; top: calc(max(6px,env(safe-area-inset-top)) + 54px); left: 6px; display: grid; gap: 4px; min-width: 200px; padding: 6px; border-radius: 14px; background: rgb(24 27 33 / .96); box-shadow: 0 12px 28px rgb(0 0 0 / .5), inset 0 0 0 1px #2A2E37; }
+.fs-menu button { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border-radius: 10px; color: #F1F3F6; font-weight: 700; text-align: left; }
+.fs-menu button:hover, .fs-menu button:focus-visible { background: #2A2E37; }
+.fs-scrim { position: absolute; inset: 0; z-index: 5; }
+@media (orientation: portrait) {
+  .play-shell.is-full { --fs-rail: max(48px,env(safe-area-inset-top)); grid-template-columns: minmax(0,1fr); grid-template-rows: var(--fs-rail) minmax(0,1fr); }
+  .play-shell.is-full > .play-stage { grid-column: 1; grid-row: 2; padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .fs-rail { flex-direction: row; align-items: flex-end; padding: 0 0 0 max(6px,env(safe-area-inset-left)); }
+  .fs-menu { top: calc(var(--fs-rail) + 6px); left: max(6px,env(safe-area-inset-left)); }
+}
+/* One-time tips: "Play fullscreen?" and the iPhone Home Screen card. */
+.play-tip { position: absolute; z-index: 7; left: 50%; bottom: max(16px,env(safe-area-inset-bottom)); transform: translateX(-50%); display: grid; justify-items: center; gap: 10px; width: min(440px,calc(100% - 32px)); max-height: calc(100% - 32px); overflow-y: auto; padding: 22px; border-radius: var(--radius); background: #181B21; color: #F1F3F6; box-shadow: 0 16px 40px rgb(0 0 0 / .55), inset 0 0 0 1px #2A2E37; text-align: center; }
+.play-tip h2 { font-size: 20px; line-height: 1.3; font-weight: 750; }
+.play-tip p { color: #A2A9B6; font-size: 15px; font-weight: 600; }
+.play-tip ol { display: grid; gap: 6px; padding-left: 22px; list-style: decimal; text-align: left; font-size: 15px; font-weight: 600; }
+.play-tip-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 4px; }
+.play-tip-actions .button { background: #2A2E37; color: #F1F3F6; }
+.play-tip-actions .button.primary { background: #3CCB86; color: #08130D; }
 /* A computer-only game on a touch-only device (src/lib/devices.ts). */
 .touch-gate { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 24px max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left)); overflow-y: auto; text-align: center; }
 .touch-gate .logo { width: min(320px,60vw); height: 84px; object-fit: contain; }

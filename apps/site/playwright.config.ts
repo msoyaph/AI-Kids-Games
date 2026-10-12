@@ -17,6 +17,21 @@ export default defineConfig({
   reporter: [['list'],['json',{ outputFile: process.env.AIKG_QA_REPORT || 'test-results/launch-results.json' }]],
   expect: { timeout: ci ? 30000 : 10000 },
   use: { actionTimeout: 20000,navigationTimeout: 30000,baseURL: remote || 'http://127.0.0.1:4190',storageState: process.env.AIKG_QA_STORAGE_STATE,extraHTTPHeaders: bypass ? { 'x-vercel-protection-bypass': bypass,'x-vercel-set-bypass-cookie': 'true' } : undefined,trace: remote ? 'off' : 'retain-on-failure', launchOptions: { ...(existsSync(chrome) ? { executablePath: chrome } : {}),args: ['--enable-webgl','--enable-unsafe-swiftshader'] } },
-  projects: [{ name: 'desktop',use: { ...devices['Desktop Chrome'],viewport: { width: 1440,height: 1000 } } },{ name: 'tablet',use: { ...devices['iPad Pro 11'],browserName: 'chromium' } },{ name: 'phone',use: { ...devices['iPhone 13'],browserName: 'chromium' } }],
-  webServer: remote ? undefined : { command: 'npx tsx scripts/serve-dist.ts 4190',url: 'http://127.0.0.1:4190',reuseExistingServer: true,timeout: 90000 }
+  projects: [
+    { name: 'desktop',use: { ...devices['Desktop Chrome'],viewport: { width: 1440,height: 1000 } } },
+    { name: 'tablet',use: { ...devices['iPad Pro 11'],browserName: 'chromium' } },
+    { name: 'phone',use: { ...devices['iPhone 13'],browserName: 'chromium' } },
+    // Safari's fullscreen behavior (standard + webkit-prefixed APIs, iPhone, Home Screen) on WebKit.
+    // WebKit refuses port 4190 (on its restricted list), so it gets a second server on 4191.
+    // iPadOS Safari is desktop-class WebKit (Mac user agent, element fullscreen) on a touch screen;
+    // Playwright's mobile WebKit profiles drop the Fullscreen API altogether, as an iPhone does.
+    // Like the GPU play-throughs, these run locally and against the hosted preview before each
+    // release; CI installs Chromium only.
+    ...(ci ? [] : ['webkit-desktop','webkit-tablet','webkit-phone'] as const).map(name => ({ name,testMatch: /fullscreen\.spec\.ts/,use: {
+      ...(name === 'webkit-desktop' ? { ...devices['Desktop Safari'],viewport: { width: 1440,height: 1000 } }
+        : name === 'webkit-tablet' ? { ...devices['iPad Pro 11'],isMobile: false,hasTouch: true,userAgent: devices['Desktop Safari'].userAgent }
+        : devices['iPhone 13']),
+      browserName: 'webkit' as const,launchOptions: {},baseURL: remote || 'http://127.0.0.1:4191' } }))
+  ],
+  webServer: remote ? undefined : [4190,4191].map(port => ({ command: `npx tsx scripts/serve-dist.ts ${port}`,url: `http://127.0.0.1:${port}`,reuseExistingServer: true,timeout: 90000 }))
 });
