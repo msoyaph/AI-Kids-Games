@@ -18,9 +18,10 @@ interface Route { path: string; title: string; description: string; image?: stri
 const routes: Route[] = [
   { path: '/games',title: 'Find a game',description: 'Search the games by name, category or what you love to play, and filter by age.' },
   { path: '/favorites',title: 'Favorites',description: 'Your favorite games, saved on this device.',index: false },
-  { path: '/parents',title: 'For parents',description: 'No ads, no tracking, no accounts. Game progress stays on your device. Age guidance for every game.' },
+  { path: '/parents',title: 'For parents',description: 'No ads, no subscriptions, no sign-ups, no tracking. Game progress stays on your device. Age guidance for every game.' },
   { path: '/privacy',title: 'Privacy',description: 'Ai Kids Games has no accounts, ads, analytics or tracking. Game progress stays on your device.' },
-  { path: '/about',title: 'About',description: 'Ai Kids Games is a small collection of original games for kids.' },
+  { path: '/about',title: 'About',description: 'Ai Kids Games makes free, open-source browser games for kids, with no ads, subscriptions, sign-ups or tracking.' },
+  { path: '/list-your-game',title: 'List your game',description: 'Listing kid-safe games made by others on Ai Kids Games is coming soon. See what a game needs, and get in line on GitHub.' },
   ...categories.map(category => ({ path: `/category/${category.toLowerCase()}`,title: `${category} games`,description: `${category} games for kids at Ai Kids Games. No ads, no tracking, no accounts.` })),
   ...games.flatMap(game => [
     { path: `/game/${game.slug}`,title: game.title,description: `${game.tagline} ${game.ageGuidance}. Play in your browser, with no ads or accounts.`,image: `/og/${game.slug}.jpg` },
@@ -39,7 +40,7 @@ function page({ path,title,description,image = '/og/site.jpg',index = true }: Ro
     .replace(/(<meta name="twitter:image" content=")[^"]*/,(_m,prefix: string) => prefix+escape(origin+image));
 }
 
-writeFileSync('dist/index.html',page({ path: '/',title: 'Ai Kids Games — Little games. Big adventures.',description: 'Five original games for kids. No ads, no tracking, no accounts. Just press Play.' },'Ai Kids Games — Little games. Big adventures.'));
+writeFileSync('dist/index.html',page({ path: '/',title: "Ai Kids Games: The games kids love. None of the stuff parents don't.",description: 'Free, ad-free browser games for kids: kart racing, farming, tower defense, space adventures and more. No subscriptions, no sign-ups, no tracking.' },"Ai Kids Games: The games kids love. None of the stuff parents don't."));
 for (const route of routes) { const dir = resolve('dist','.'+route.path); mkdirSync(dir,{ recursive: true }); writeFileSync(resolve(dir,'index.html'),page(route)); }
 writeFileSync('dist/404.html',page({ path: '/404',title: 'Page not found',description: 'This page wandered off. Head back home to find a game.',index: false }));
 // Play pages stay indexable (they are real pages) but the sitemap lists the details pages instead.

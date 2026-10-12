@@ -22,7 +22,7 @@ export interface Manifest {
   storage: { prefix: string; keys: string[]; probe?: string };
   capture: { route: string; script: string };
   license: string; source: string;
-  site: { featured: boolean; releaseDate: string; accentColor: string; coverLayers: Motion[]; status: 'Ready to play' | 'Coming soon' };
+  site: { featured: boolean; releaseDate: string; accentColor: string; coverLayers: Motion[]; status: 'Ready to play' | 'Coming soon'; order?: number };
 }
 
 /**
@@ -71,6 +71,7 @@ export function validateManifest(m: Manifest,folder = m.slug): string[] {
   if (!/^#[0-9a-fA-F]{6}$/.test(site?.accentColor ?? '')) at('site.accentColor must be a #RRGGBB color.');
   list(site?.coverLayers,'site.coverLayers',0,4,MOTIONS);
   if (!['Ready to play','Coming soon'].includes(site?.status)) at('site.status must be "Ready to play" or "Coming soon".');
+  if (site?.order !== undefined && (!Number.isInteger(site.order) || site.order < 1)) at('site.order must be a whole number from 1.');
   // Never another company's game title or trademark, anywhere in the listing.
   const words = JSON.stringify({ ...m,$schema: undefined,capture: undefined,storage: undefined,source: undefined }).toLowerCase();
   for (const mark of TRADEMARKS) if (new RegExp(`(^|[^a-z])${mark.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^a-z]|$)`).test(words)) at(`uses "${mark}", another company's title or trademark. Describe the game by its genre and features instead.`);

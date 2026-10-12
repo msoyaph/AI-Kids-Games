@@ -26,7 +26,8 @@ real hardware still needs the launch checklist. Build with
 
 ## Catalog and games
 
-Registry: src/data/games.ts. Build validation enforces metadata and local assets.
+Registry: generated from each game's games/<slug>/game.json (npm run manifests at the repo root).
+Build validation enforces metadata and local assets.
 Home features all games; Browse supports search, categories and minimum-age
 filtering. Details list controls, supported devices and age/content guidance.
 TheaBonk is computer-only. Calex Cart touch is solo; split-screen needs keyboard
@@ -34,9 +35,9 @@ or gamepads. Favorites and recent lists persist locally under aikg: keys, with
 migration from previous site keys. Theme stays session-only.
 
 Final game HTML is copied byte-for-byte to public/games/<slug>/index.html.
-BUILD_IMPORTS.json records verified hashes. Rebuild in the original source
-project and import with scripts/import-game-build.ts. There are no adapted
-source copies in this repository. See ADDING_A_GAME.md before adding a build.
+BUILD_IMPORTS.json records verified hashes and a hash of each game's source. Each game's
+source lives in ../../games/<slug>; build and import it with npm run import-game -- <slug> at
+the repo root. See ADDING_A_GAME.md before adding a build.
 
 Game saves/settings remain in this browser under distinct namespaces. No ads,
 accounts, chat, analytics, uploads, cookies or remote fonts/scripts are included.

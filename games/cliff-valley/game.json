@@ -97,6 +97,7 @@
       "drift",
       "bob"
     ],
-    "status": "Ready to play"
+    "status": "Ready to play",
+    "order": 1
   }
 }

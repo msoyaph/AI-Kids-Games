@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Icon, Mark } from './Icon';
 import { usePreferences } from '../lib/preferences';
+import { REPO } from '../lib/links';
 export function Brand() { return <span className="brand"><Mark /><span>Ai Kids Games</span></span>; }
 const themeColor = (dark: boolean) => document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark ? '#181B21' : '#FFFFFF');
 export default function Layout() {
@@ -28,8 +29,8 @@ export default function Layout() {
     </div></header>
     <main id="main-content" tabIndex={-1}><Outlet /></main>
     <footer className="site-footer"><div className="container footer-inner">
-      <p>No ads, no tracking, no accounts.</p>
-      <nav className="footer-links" aria-label="Site information"><Link to="/parents">For parents</Link><Link to="/privacy">Privacy</Link><Link to="/about">About</Link></nav>
+      <p>No ads. No subscriptions. No sign-ups. No tracking.</p>
+      <nav className="footer-links" aria-label="Site information"><Link to="/parents">For parents</Link><Link to="/privacy">Privacy</Link><Link to="/about">About</Link><Link to="/list-your-game">List your game</Link><a href={REPO}>Build your own</a></nav>
       <p>© {new Date().getFullYear()} Ai Kids Games</p>
     </div></footer>
     <nav className="bottom-nav" aria-label="Mobile navigation"><NavLink to="/" end><Icon name="home" />Home</NavLink><NavLink to="/games"><Icon name="grid" />Games</NavLink><NavLink to="/favorites"><Icon name="heart" />Favorites</NavLink><NavLink to="/parents"><Icon name="shield" />Parents</NavLink></nav>

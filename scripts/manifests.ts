@@ -15,8 +15,8 @@ const check = process.argv.includes('--check');
 const manifests = readManifests();
 const errors = manifests.flatMap(m => validateManifest(m));
 if (errors.length) { console.error(`Game manifests are invalid:\n${errors.map(error => `  • ${error}`).join('\n')}`); process.exit(1); }
-// Site order: featured first, then newest, then by title (stable for diffs).
-manifests.sort((a,b) => Number(b.site.featured)-Number(a.site.featured) || b.site.releaseDate.localeCompare(a.site.releaseDate) || a.title.localeCompare(b.title));
+// Site order: site.order first (lower first), then featured, newest, and title (stable for diffs).
+manifests.sort((a,b) => (a.site.order ?? 1e9)-(b.site.order ?? 1e9) || Number(b.site.featured)-Number(a.site.featured) || b.site.releaseDate.localeCompare(a.site.releaseDate) || a.title.localeCompare(b.title));
 
 function registry(list: Manifest[]) {
   const entries = list.map(m => ({

@@ -93,6 +93,7 @@
       "bob",
       "twinkle"
     ],
-    "status": "Ready to play"
+    "status": "Ready to play",
+    "order": 4
   }
 }

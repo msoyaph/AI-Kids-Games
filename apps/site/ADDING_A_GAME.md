@@ -1,6 +1,9 @@
 # Adding a game
 
-The typed catalog in `src/data/games.ts` drives discovery, favorites, details and play.
+The catalog drives discovery, favorites, details and play. It is generated from each game's
+manifest, `games/<slug>/game.json`, by `npm run manifests` at the repo root (into
+`src/data/games.generated.ts`; the `Game` type is in `src/data/games.ts`). Start a new game with
+`npm run new-game -- <slug>` (see `docs/CREATE-A-GAME.md`).
 
 ## Trusted first-party games only
 
@@ -24,15 +27,17 @@ build, not just its registry description.
 
 ## Import and review
 
-1. Build in the original game source project. Do not edit compiled/minified HTML.
+1. Build from the game's source in `games/<slug>`. Never edit compiled/minified HTML.
 2. Audit every localStorage read/write, alias, probe, deletion and key enumeration.
    Use a game-specific namespace. No global clear(), or deletion of unowned keys.
    Stop integration on a collision or unsafe deletion; fix the source and rebuild.
 3. Copy the self-contained final build into `public/games/<slug>/index.html`.
-   `npx tsx scripts/import-game-build.ts <slug> <source-index.html>` copies it
-   unchanged and verifies SHA-256. Keep BUILD_IMPORTS.json current.
+   `npm run import-game -- <slug>` (repo root) builds `games/<slug>` and copies it
+   unchanged, verifies SHA-256 and records it, with a hash of the source, in BUILD_IMPORTS.json
+   (`npm run check:builds` fails when a game's source changes without a re-import).
 4. Remove placeholders and add the art in `public/media/<slug>/` (see "Cover art" below).
-5. Add metadata using Game's actual fields: slug, title, tagline (the hero's one line),
+5. Add metadata in `games/<slug>/game.json` (schema: `docs/game.schema.json`), then run
+   `npm run manifests`. The site's Game fields it fills: slug, title, tagline (the hero's one line),
    description (two short sentences for the details page), categories, tags, minAge,
    ageGuidance, contentNotes, estimatedPlayTime, quickStart (three short first steps),
    controls.types, controls.howToPlay (the exact full guidance, shown under "All
@@ -106,7 +111,7 @@ small script against a game page while you work out a route.
 
 ## Scaffolding and categories
 
-`npm run add-game` makes a Coming soon placeholder without overwriting a slug.
+`npm run new-game -- <slug>` (repo root) scaffolds a new game from `templates/game-starter`.
 Replace its placeholder art and HTML before launch. Launch categories: Action,
 Adventure, Cozy, Strategy, Racing, Learning. New categories need the Category type
 and scaffolder choices updated. The home page shows one balanced "All games" grid;

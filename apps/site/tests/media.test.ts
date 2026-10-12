@@ -4,6 +4,7 @@ import { existsSync,readdirSync,readFileSync,statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { games } from '../src/data/games';
 import media from '../src/data/media.json';
+import { temporaryArt } from '../src/data/temporary-art';
 
 const pub = (path: string) => resolve('public',path);
 const imports = JSON.parse(readFileSync('BUILD_IMPORTS.json','utf8')) as { games: { slug: string; bytes: number; sha256: string }[] };
@@ -27,8 +28,26 @@ describe('game builds',() => {
   });
 });
 
+describe('temporary art (until a game is recaptured)',() => {
+  for (const [slug,art] of Object.entries(temporaryArt)) it(`${slug} has its own screenshots as a cover and 3–6 stills, a logo and an OG image`,async () => {
+    expect(games.some(game => game.slug === slug),`${slug} is a listed game`).toBe(true);
+    expect(art.source.length).toBeGreaterThan(10);
+    expect(existsSync(pub(`media/${slug}/temp/cover.webp`))).toBe(true);
+    expect(art.shots.length).toBeGreaterThanOrEqual(3);
+    expect(art.shots.length).toBeLessThanOrEqual(6);
+    art.shots.forEach((alt,index) => {
+      expect(alt.trim().length).toBeGreaterThan(10);
+      for (const suffix of ['','-thumb']) for (const ext of ['avif','webp','jpg']) expect(existsSync(pub(`media/${slug}/temp/shot-${index+1}${suffix}.${ext}`))).toBe(true);
+    });
+    expect(readFileSync(pub(`media/${slug}/logo.svg`),'utf8')).toContain('aria-label="');
+    const { default: sharp } = await import('sharp');
+    const og = await sharp(pub(`og/${slug}.jpg`)).metadata();
+    expect([og.width,og.height]).toEqual([1200,630]);
+  });
+});
+
 describe('gameplay previews',() => {
-  for (const game of games) describe(game.slug,() => {
+  for (const game of games.filter(game => !temporaryArt[game.slug])) describe(game.slug,() => {
     const entry = (media as Record<string,{ loopSeconds: number; shots: string[] }>)[game.slug];
     it('has a 6–8 second loop as MP4 and WebM, each under 800 KB',() => {
       expect(entry).toBeDefined();
@@ -57,7 +76,7 @@ describe('gameplay previews',() => {
 });
 
 describe('cover art, logos and Open Graph images',() => {
-  for (const game of games) it(`${game.slug} has a text-free cover with its motion layers, a transparent logo and an OG image`,async () => {
+  for (const game of games.filter(game => !temporaryArt[game.slug])) it(`${game.slug} has a text-free cover with its motion layers, a transparent logo and an OG image`,async () => {
     const cover = readFileSync(pub(`media/${game.slug}/cover.svg`),'utf8');
     expect(cover).toContain('viewBox="0 0 1600 900"');
     expect(cover).not.toMatch(/<text\b/); // no baked-in titles: the title is HTML

@@ -10,7 +10,7 @@ export default function Parents() {
   usePageMeta('For parents','No ads, no tracking, no accounts. Game progress stays on your device. Age guidance for every game.');
   const { clearHistory } = usePreferences(); const [cleared,setCleared] = useState(false);
   return <div className="container page">
-    <div className="page-head"><h1 className="display">For parents</h1><p className="muted">A small set of games, made to be simple and safe.</p></div>
+    <div className="page-head"><h1 className="display">For parents</h1><p className="muted">The games kids love. None of the stuff parents don’t.</p></div>
     <ul className="promises">
       <li><Icon name="check" /><div><strong>No ads or tracking</strong><p className="muted">No advertising, analytics, tracking pixels or outside scripts. Everything loads from this site.</p></div></li>
       <li><Icon name="check" /><div><strong>No accounts or chat</strong><p className="muted">No sign-ups, messages, uploads or other players. Kids pick a game and play.</p></div></li>
@@ -23,7 +23,10 @@ export default function Parents() {
     <section className="section prose" aria-labelledby="tips"><h2 id="tips" className="title">Tips for grown-ups</h2>
       <p>Ages are our suggestion, not an official rating. Try a game together and decide what feels right. Take breaks, and help younger players with the controls.</p>
       <p>Saves are kept in this browser only, so clearing browser data removes them. Each game has its own save controls. Links to other websites ask a grown-up first.</p>
-      <p>The 3D games need a modern browser with WebGL. TheaBonk needs a keyboard and mouse or a gamepad.</p>
+      <p>The 3D games need a modern browser with WebGL (Space Sky needs WebGL 2). TheaBonk needs a keyboard and mouse or a gamepad; every other game also plays by touch on phones and tablets.</p>
+    </section>
+    <section className="section prose" aria-labelledby="makers"><h2 id="makers" className="title">Made in the open</h2>
+      <p>Every game here is open source, so you can read exactly what it does. Families and young makers can build their own kid-safe games from the same starter, and listing games made by others is coming soon: see <Link to="/list-your-game">List your game</Link>.</p>
     </section>
     <section className="section panel" aria-labelledby="fresh-start"><div><h2 id="fresh-start" className="heading">Clear saved lists</h2><p>Removes favorites and recently played on this device. Game saves stay.</p></div>
       <button className="button secondary" onClick={() => { clearHistory(); setCleared(true); }}>Clear saved lists</button>

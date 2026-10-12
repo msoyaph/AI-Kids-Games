@@ -12,13 +12,16 @@ import { AgeSelect, CategoryChips, useCatalogFilters } from '../components/Filte
 export const CATEGORY_ROWS_FROM = 12;
 
 export default function Home() {
-  usePageMeta('Little games. Big adventures.','Five original games for kids. No ads, no tracking, no accounts. Just press Play.');
+  usePageMeta("The games kids love. None of the stuff parents don't.",'Free, ad-free browser games for kids: kart racing, farming, tower defense, space adventures and more. No subscriptions, no sign-ups, no tracking.');
   const { recent } = usePreferences();
   const { category,playerAge,results,set,reset } = useCatalogFilters();
   const featured = games.filter(game => game.featured);
   const played = recent.map(slug => games.find(game => game.slug === slug)).filter(game => !!game).slice(0,6);
   return <div className="container home">
-    <h1 className="sr-only">Ai Kids Games</h1>
+    <header className="home-intro">
+      <h1><span className="sr-only">Ai Kids Games: </span>The games kids love. None of the stuff parents don’t.</h1>
+      <p>No ads. No subscriptions. No sign-ups. No tracking. Just play, or build your own.</p>
+    </header>
     <Hero games={featured.length ? featured : games} />
     <section className="section" aria-labelledby="all-games">
       <div className="section-head"><h2 id="all-games" className="title">All games</h2></div>

@@ -1,35 +1,58 @@
 {
-  "importedAt": "2026-10-11",
   "games": [
     {
-      "slug": "theabonk",
-      "source": "games/theabonk/dist/index.html",
-      "bytes": 772361,
-      "sha256": "8bd0050a31bc9c68c5dc6e764a57563dbfa2230668dd5fcf67da772a7ece7cbe"
+      "slug": "calex-cart",
+      "version": "0.2.0",
+      "source": "games/calex-cart/dist/index.html",
+      "bytes": 1245756,
+      "sha256": "f750b8679bed7a9b9b7a4c16765c4002ca5f3106db02989f186116d26e6698f4",
+      "inputsSha256": "052a56d80d9f93daaf02d2e7e1d0ec9da91c717bc2c868daa26ff04f3ed60c7d",
+      "importedAt": "2026-10-12"
+    },
+    {
+      "slug": "cliff-valley",
+      "version": "1.0.0",
+      "source": "games/cliff-valley/dist/index.html",
+      "bytes": 1160055,
+      "sha256": "9948434b38ca174d1fb7dee1778b8df2afefbe110b4ff63e600d1cd6c0aab803",
+      "inputsSha256": "21d0ccafd2e2a57384f0312508f4b313e0da6eddbf36377f8a734fcf00fda59b",
+      "importedAt": "2026-10-12"
     },
     {
       "slug": "light-crossing",
+      "version": "2.0.0",
       "source": "games/light-crossing/dist/index.html",
-      "bytes": 1044486,
-      "sha256": "f48c07ab334b85ae5bca3cf50177a2f84735327fd77036d745fc770e204746c1"
-    },
-    {
-      "slug": "vanex-defense",
-      "source": "games/vanex-defense/dist/index.html",
-      "bytes": 826833,
-      "sha256": "20b1d4163a0832e750e417507c8413ce78d87afcbe46a1b734f617205a97ebaf"
+      "bytes": 1250266,
+      "sha256": "7730e932006a60cc50f2112548c387a97f26ceb650fb7cf279360abea8b732c8",
+      "inputsSha256": "0d32ecc81e1e11c1d80b41619c3eef1516fac32b7b7d42f09a283f0197922232",
+      "importedAt": "2026-10-12"
     },
     {
       "slug": "space-sky",
+      "version": "2.0.0",
       "source": "games/space-sky/dist/index.html",
-      "bytes": 1092239,
-      "sha256": "36d1de90ad549e462f84cac527234ef380a8045fcee248e399cbf74c23b9b7b8"
+      "bytes": 1508694,
+      "sha256": "875e329efd1c8a1d8b40da92d3c358db3b041434ff89f8c9e5e3329f68784718",
+      "inputsSha256": "4c88d5b9a8d151995703473d1b09dde44abbc352d4254bf6f004251abee42e4d",
+      "importedAt": "2026-10-12"
     },
     {
-      "slug": "calex-cart",
-      "source": "games/calex-cart/dist/index.html",
-      "bytes": 1036991,
-      "sha256": "b04cb18693bdf99d52f373ca9c4d2557c0c8ef0b0434d978612cd8aa9f4fb8f7"
+      "slug": "theabonk",
+      "version": "1.0.0",
+      "source": "games/theabonk/dist/index.html",
+      "bytes": 772361,
+      "sha256": "8bd0050a31bc9c68c5dc6e764a57563dbfa2230668dd5fcf67da772a7ece7cbe",
+      "inputsSha256": "dbbe2bee3f2880629916d067181bb44cb84662579eb681ed87725fbab596b81b",
+      "importedAt": "2026-10-12"
+    },
+    {
+      "slug": "vanex-defense",
+      "version": "2.0.0",
+      "source": "games/vanex-defense/dist/index.html",
+      "bytes": 1111865,
+      "sha256": "2f1c45616d99ad68622661922a2563d11ac833dc02adcc497235cd1967163818",
+      "inputsSha256": "ab7299f6d8d922d64755d6e336ba66f7986e10992bfb1b5ac0c641a8fc2a38f3",
+      "importedAt": "2026-10-12"
     }
   ]
 }

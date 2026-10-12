@@ -21,6 +21,9 @@ export default function Details() {
   if (!game) return <NotFound />;
   const media = mediaFor(game);
   const devices = game.supportedDevices.map((device,index) => index ? device.toLowerCase() : device);
+  // How phones and tablets are held comes from the game itself (game.json); the site never adds its own prompt.
+  const handheld = game.supportedDevices.some(device => device !== 'Computer');
+  const hold = !handheld ? '' : game.orientation === 'any' ? ', any way up' : game.orientation === 'landscape' ? ', phones held sideways' : ', phones held upright';
   return <div className="container details">
     <Link className="back-link" to="/games"><Icon name="back" size={20} />All games</Link>
     <div className="details-top">
@@ -34,7 +37,7 @@ export default function Details() {
     <dl className="facts">
       <div className="fact"><dt><Icon name="age" />Age</dt><dd>{game.ageGuidance}</dd></div>
       <div className="fact"><dt><Icon name="clock" />Play time</dt><dd>{game.estimatedPlayTime}</dd></div>
-      <div className="fact"><dt><Icon name={deviceIcon[game.supportedDevices[0]]} />Works on</dt><dd>{list(devices)}</dd></div>
+      <div className="fact"><dt><Icon name={deviceIcon[game.supportedDevices[0]]} />Works on</dt><dd>{list(devices)}{hold}{game.requirements.length > 0 && <span className="fact-note">Needs {list(game.requirements)}</span>}</dd></div>
       <div className="fact"><dt><Icon name="gamepad" />Controls</dt><dd className="fact-icons">{game.controls.types.map(type => <span key={type} title={type} role="img" aria-label={type}><Icon name={controlIcon[type]} /></span>)}</dd></div>
     </dl>
     {media.shots.length > 0 && <section className="section" aria-labelledby="screenshots"><div className="section-head"><h2 id="screenshots" className="title">Screenshots</h2></div>

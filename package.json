@@ -22,7 +22,8 @@
     "check:repo": "tsx scripts/check-repo.ts",
     "check:builds": "tsx scripts/check-builds.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "manifests": "tsx scripts/manifests.ts"
+    "manifests": "tsx scripts/manifests.ts",
+    "audit-storage": "tsx scripts/audit-storage.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

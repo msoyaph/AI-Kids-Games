@@ -1,9 +1,11 @@
 # Ai Kids Games architecture and launch work
 
 Static Vite + React + strict TypeScript site. React Router uses browser paths.
-Registry: src/data/games.ts. Final game builds: public/games/<slug>/index.html.
+Registry: generated from games/<slug>/game.json (npm run manifests at the monorepo root) into
+src/data/games.generated.ts; types in src/data/games.ts. Builds: public/games/<slug>/index.html,
+only via npm run import-game -- <slug> at the root. Monorepo notes: ../../CLAUDE.md.
 All assets and fonts are local; no remote runtime dependencies.
-Commands: npm run dev, npm run build, npm test, npm run test:e2e, npm run add-game.
+Commands: npm run dev, npm run build, npm test, npm run test:e2e (root: new-game, import-game).
 Build generates static route metadata/sitemap. Host routing must serve existing game files first.
 
 ## Hard rules

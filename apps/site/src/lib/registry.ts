@@ -1,4 +1,5 @@
 import type { Game } from '../data/games';
+import { temporaryArt } from '../data/temporary-art';
 export function validateRegistry(registry: readonly Game[], fileExists: (path: string) => boolean): string[] {
   const errors: string[] = [];
   const seen = new Set<string>();
@@ -19,8 +20,12 @@ export function validateRegistry(registry: readonly Game[], fileExists: (path: s
     if (!/^\d{4}-\d{2}-\d{2}$/.test(game.releaseDate) || Number.isNaN(Date.parse(game.releaseDate))) errors.push(`${label}: releaseDate must be YYYY-MM-DD.`);
     if (!/^#[0-9a-f]{6}$/i.test(game.accentColor)) errors.push(`${label}: accentColor must be a six-digit hex color.`);
     if (!fileExists(`games/${game.slug}/index.html`)) errors.push(`${label}: public/games/${game.slug}/index.html does not exist.`);
-    const art = [`media/${game.slug}/cover.svg`,`media/${game.slug}/logo.svg`,...(Array.isArray(game.coverLayers) ? game.coverLayers : []).map(motion => `media/${game.slug}/cover-${motion}.svg`)];
-    if (game.status === 'Ready to play') art.push(`media/${game.slug}/loop.mp4`,`media/${game.slug}/loop.webm`,`media/${game.slug}/poster.jpg`,`og/${game.slug}.jpg`);
+    const temporary = temporaryArt[game.slug];
+    const art = temporary
+      // Temporary art (src/data/temporary-art.ts): the game's own screenshots, until it is recaptured.
+      ? [`media/${game.slug}/temp/cover.webp`,`media/${game.slug}/logo.svg`,`og/${game.slug}.jpg`,...temporary.shots.flatMap((_,i) => [`media/${game.slug}/temp/shot-${i+1}.jpg`,`media/${game.slug}/temp/shot-${i+1}-thumb.jpg`])]
+      : [`media/${game.slug}/cover.svg`,`media/${game.slug}/logo.svg`,...(Array.isArray(game.coverLayers) ? game.coverLayers : []).map(motion => `media/${game.slug}/cover-${motion}.svg`)];
+    if (game.status === 'Ready to play' && !temporary) art.push(`media/${game.slug}/loop.mp4`,`media/${game.slug}/loop.webm`,`media/${game.slug}/poster.jpg`,`og/${game.slug}.jpg`);
     for (const asset of art) if (!fileExists(asset)) errors.push(`${label}: public/${asset} does not exist.`);
   }
   return errors;
