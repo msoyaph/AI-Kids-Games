@@ -1,0 +1,4 @@
+# Custom label of the self-hosted Mac runner (see docs/CI.md).
+self-hosted-runner:
+  labels:
+    - gpu
