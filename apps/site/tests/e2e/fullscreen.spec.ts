@@ -203,6 +203,9 @@ test('Android: entering fullscreen locks the game’s orientation; leaving unloc
 
 test('TheaBonk in fullscreen: pointer lock, Esc and pause still work together, and gamepads keep working',async ({ page },info) => {
   test.skip(info.project.name !== 'desktop','mouse, pointer lock and gamepad: desktop Chromium');
+  // It plays TheaBonk with pointer lock, like interactions.spec: on a real GPU before each release
+  // (GitHub's headless Linux runners refuse to re-take pointer lock after fullscreen ends).
+  test.skip(!!process.env.CI && !process.env.AIKG_FULL,'runs locally on a real GPU before each release');
   test.setTimeout(180_000);
   await instrument(page); const checks = guard(page);
   await page.addInitScript(() => {

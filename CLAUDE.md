@@ -169,3 +169,15 @@ session's uncommitted sizzle-reel work — never touch that checkout's files.
   turns phones to landscape for TheaBonk and answers the "Play fullscreen?" tip; new in-site test
   "TheaBonk 2.0 glass touch controls move Thea and jump" (CDP touches, tablet + phone). Monorepo
   tag for the import: theabonk-v2.0.0.
+- Hosted preview of 2.2.0 (site-2.2.0 branch alias) checked in the in-app browser (signed in to
+  Vercel) at phone size with touch emulation: no keyboard screen for TheaBonk, details "Computer,
+  tablet and phone, phones held sideways", "Play fullscreen?" once (aikg:tips written), Tablet tier
+  + Relaxed preselected. Limits of that pane: it denies page fullscreen ("Permissions check
+  failed") and sends mouse clicks (TheaBonk then switches to desktop mode, as it should for a
+  mouse) — fullscreen and real touches are covered by the local Chromium/WebKit suites.
+- Still to check on real devices (no emulator covers them): iPhone Safari (Home Screen card,
+  Add to Home Screen, standalone launch with safe areas, and that Home Screen progress is indeed
+  separate), iPad Safari fullscreen (incl. older webkit-prefixed iPadOS), Android Chrome fullscreen +
+  the landscape lock + back gesture, real multi-touch feel of TheaBonk's glass controls (stick
+  dead zone, auto camera, haptics on Android), a real gamepad and pointer lock in fullscreen on a
+  computer, and performance / the quality governor on a mid-range phone and tablet.
