@@ -52,7 +52,7 @@ export function donateSlot(g: Game, slot: number): boolean {
   if (wingCount(g, wing) >= WING_TOTAL[wing] && !g.state.flags[`wing_${wing}`]) {
     g.state.flags[`wing_${wing}`] = 1;
     const rw = WING_REWARD[wing];
-    money(g, 0, rw.lumens);
+    money(g, 0, rw.lumens, 'museum');
     learnRecipe(g, rw.recipe, 'museum');
     g.toast(`The ${wing} wing is complete! +${rw.lumens} Lumens`, 'good');
   }

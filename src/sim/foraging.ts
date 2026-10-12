@@ -6,6 +6,7 @@ import { flowerItemId } from '../data/items';
 import { item } from '../data/registry';
 import { DIRS8, Ground, LEVEL_HEIGHT, isWaterGround } from '../world/types';
 import type { Game, InteractCtx, Interaction } from './game';
+import { seasonOf } from './seasons';
 import { give, money, roomFor, stat } from './inventory';
 import { ladderTarget, tileOf } from './player';
 import type { TileObj } from './state';
@@ -101,7 +102,10 @@ function shake(g: Game, i: number, o: TileObj): void {
     } else if (!o.b) {
       o.b = 1;
       const r = rngFor(g, i);
-      if (r.chance(0.04)) {
+      if (o.k === 'pine' && seasonOf(g) === 'winter' && r.chance(0.6)) {
+        dropped = 'snowberry';
+        dropAround(g, i, 'snowberry', 1 + (r.chance(0.35) ? 1 : 0));
+      } else if (r.chance(0.04)) {
         dropped = 'pouch';
         dropAround(g, i, 'pouch', 1);
       } else if (o.k !== 'palm' && r.chance(0.55)) {
@@ -180,7 +184,7 @@ function dig(g: Game, i: number, o: TileObj | undefined): void {
       w.setObj(i, { k: 'hole' });
       if (found === 'pouch') {
         const amt = 1000;
-        money(g, amt);
+        money(g, amt, 0, 'found');
         g.toast(`You dug up a Glint Pouch! +${amt} Glints`, 'good');
       } else {
         give(g, found, 1, 'dig');
@@ -275,9 +279,9 @@ export function foragingResolver(g: Game, ctx: InteractCtx): Interaction | null 
   const { here, front, hereObj, frontObj, tool } = ctx;
   const sameLevel = w.height(front) === w.height(here) || !!w.structure(here);
   // pick up / pluck
-  if (hereObj && hereObj.k === 'item') return { label: `Pick up ${item(hereObj.item ?? '').name}`, priority: 95, run: () => pickUp(g, here) };
+  if (hereObj && hereObj.k === 'item') return { label: `Pick up ${item(hereObj.item ?? '').name}`, priority: 95, tile: here, run: () => pickUp(g, here) };
   if (frontObj && frontObj.k === 'item' && sameLevel) return { label: `Pick up ${item(frontObj.item ?? '').name}`, priority: 92, run: () => pickUp(g, front) };
-  if (hereObj && hereObj.k === 'weed') return { label: 'Pull weeds', priority: 88, run: () => pluck(g, here) };
+  if (hereObj && hereObj.k === 'weed') return { label: 'Pull weeds', priority: 88, tile: here, run: () => pluck(g, here) };
   if (frontObj && frontObj.k === 'weed' && sameLevel) return { label: 'Pull weeds', priority: 86, run: () => pluck(g, front) };
 
   if (tool) {

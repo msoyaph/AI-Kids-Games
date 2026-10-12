@@ -23,6 +23,8 @@ export class CritterView {
   private heldId = '';
   private rain: THREE.InstancedMesh;
   private rainPos: Float32Array;
+  private snow: THREE.InstancedMesh;
+  private snowPos: Float32Array;
   private rainbow: THREE.Group;
   private dummy = new THREE.Object3D();
   private exclaim: THREE.Mesh;
@@ -79,6 +81,18 @@ export class CritterView {
     }
     this.rain.visible = false;
     this.group.add(this.rain);
+    // snow
+    const SNOW = 360;
+    this.snow = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.06, 0), curved(new THREE.MeshBasicMaterial({ color: 0xffffff })), SNOW);
+    this.snow.frustumCulled = false;
+    this.snowPos = new Float32Array(SNOW * 3);
+    for (let k = 0; k < SNOW; k++) {
+      this.snowPos[k * 3] = (Math.random() - 0.5) * 46;
+      this.snowPos[k * 3 + 1] = Math.random() * 12;
+      this.snowPos[k * 3 + 2] = (Math.random() - 0.5) * 40;
+    }
+    this.snow.visible = false;
+    this.group.add(this.snow);
     // rainbow arc (sky)
     this.rainbow = new THREE.Group();
     const cols = [0xf27c7c, 0xffa45c, 0xffe066, 0x8fd18a, 0x7fb2ff, 0xb48cf0];
@@ -231,7 +245,25 @@ export class CritterView {
     }
     // weather
     const w = g.state.weather.today;
-    this.rain.visible = w === 'rain';
+    const winter = (g.state.season?.index ?? 0) === 3;
+    this.rain.visible = w === 'rain' && !winter;
+    // winter: snow when it would rain, light flurries when cloudy
+    const flakes = winter ? (w === 'rain' ? this.snow.instanceMatrix.count : w === 'cloudy' ? 110 : 0) : 0;
+    this.snow.visible = flakes > 0;
+    if (this.snow.visible) {
+      this.snow.count = flakes;
+      for (let k = 0; k < flakes; k++) {
+        let y = this.snowPos[k * 3 + 1]! - dt * 1.4;
+        if (y < -0.3) y += 12;
+        this.snowPos[k * 3 + 1] = y;
+        const sway = Math.sin(this.time * 0.9 + k) * 0.35;
+        this.dummy.position.set(camTarget.x + this.snowPos[k * 3]! + sway, camTarget.y + y, camTarget.z + this.snowPos[k * 3 + 2]! - 6);
+        this.dummy.rotation.set(0, 0, 0);
+        this.dummy.updateMatrix();
+        this.snow.setMatrixAt(k, this.dummy.matrix);
+      }
+      this.snow.instanceMatrix.needsUpdate = true;
+    }
     if (this.rain.visible) {
       for (let k = 0; k < this.rain.count; k++) {
         let y = this.rainPos[k * 3 + 1]! - dt * 16;

@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-11",
+  "profile": "phone",
+  "viewport": "390×844",
+  "deviceScaleFactor": 3,
+  "cpuThrottle": 4,
+  "vsync": true,
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Pro, Unspecified Version)",
+  "memory": {
+    "jsHeapMB": 18,
+    "geometries": 349,
+    "textures": 0,
+    "programs": 17
+  },
+  "results": [
+    {
+      "tier": "low",
+      "seconds": 30,
+      "frames": 1801,
+      "avgFps": 60,
+      "low1Fps": 59.5,
+      "drawCalls": 235,
+      "triangles": 86976,
+      "pixelRatio": 1,
+      "size": "390×844"
+    }
+  ]
+}

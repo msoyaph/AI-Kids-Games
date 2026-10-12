@@ -5,6 +5,7 @@ import { agents } from '../sim/agents';
 import type { Game } from '../sim/game';
 import { curved } from './curve';
 import { animateRig, buildCharacter, type Rig } from './models/character';
+import { approachAngle } from '../core/math';
 
 function lookOf(id: string): CharacterLook | null {
   return VILLAGER_BY_ID[id]?.look ?? NPC_BY_ID[id]?.look ?? null;
@@ -16,6 +17,8 @@ export class AgentView {
   readonly group = new THREE.Group();
   private rigs = new Map<string, Rig>();
   private bubbles = new Map<string, THREE.Group>();
+  /** little one-shot animations: a wave hello when you walk up, a hop when they're happy */
+  private anim = new Map<string, { kind: 'wave' | 'hop'; t: number; cooldown: number; lastEmote: number }>();
 
   constructor(private game: Game) {}
 
@@ -56,7 +59,26 @@ export class AgentView {
       const y = g.world.surfaceY(a.x, a.z);
       rig.root.position.set(a.x, y, a.z);
       rig.root.rotation.y = a.facing;
-      animateRig(rig, dt, { speed: a.speed, action: -1, talking: a.talking });
+      let an = this.anim.get(a.id);
+      if (!an) {
+        an = { kind: 'wave', t: 1, cooldown: 2, lastEmote: 0 };
+        this.anim.set(a.id, an);
+      }
+      an.cooldown -= dt;
+      const p = g.state.player;
+      const near = Math.hypot(p.x - a.x, p.z - a.z) < 2.4;
+      if (a.emote && a.emote.kind === 'heart' && a.emote.t > an.lastEmote) {
+        an.kind = 'hop';
+        an.t = 0;
+      } else if (an.t >= 1 && near && !a.talking && a.speed < 0.1 && an.cooldown <= 0) {
+        an.kind = 'wave';
+        an.t = 0;
+        an.cooldown = 14;
+      }
+      an.lastEmote = a.emote?.t ?? 0;
+      if (an.t < 1) an.t = Math.min(1, an.t + dt / (an.kind === 'wave' ? 1.3 : 0.7));
+      if (an.kind === 'wave' && an.t < 1 && near) a.facing = approachAngle(a.facing, Math.atan2(p.x - a.x, p.z - a.z), dt * 6);
+      animateRig(rig, dt, { speed: a.speed, action: an.t < 1 ? an.t : -1, actionKind: an.t < 1 ? an.kind : '', talking: a.talking });
       let b = this.bubbles.get(a.id);
       if (a.emote) {
         if (!b) {

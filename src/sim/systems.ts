@@ -8,12 +8,15 @@ import { bugResolver, resetBugs, updateBugs } from './bugs';
 import { dailyConstruction, structureResolver } from './structures';
 import { dailyHome } from './housing';
 import { dailyShopReset } from './economy';
-import { interiorResolve, stepInterior } from './interior';
+import { interiorResolve, resumeIndoors, stepInterior } from './interior';
 import { decorResolver } from './decor';
 import { dailyVillagers } from './villagers';
 import { homeResolver, talkResolver, updateAgents } from './agents';
 import { confirmPlacement, placementRT, updatePlacement } from './placement';
 import { installQuests, tryStart } from './quests';
+import { stepHints } from './hints';
+import { dailySeason, installSeasons, seasonalSpawns } from './seasons';
+import { installHappenings } from './happenings';
 import { dailyChallenges, installChallenges } from './challenges';
 import { tileOf } from './player';
 import { Game } from './game';
@@ -22,6 +25,7 @@ import type { GameState } from './state';
 export function installSystems(g: Game): void {
   // Daily rollover — order matters: weather first, garden uses yesterday's watering,
   // spawns reset per-day counters.
+  g.onDay(dailySeason);
   g.onDay(dailyWeather);
   g.onDay(dailyConstruction);
   g.onDay(dailyHome);
@@ -29,6 +33,7 @@ export function installSystems(g: Game): void {
   g.onDay(dailyVillagers);
   g.onDay(dailyGarden);
   g.onDay(dailySpawns);
+  g.onDay(seasonalSpawns);
   g.onDay(resetFishing);
   g.onDay(resetBugs);
   g.addResolver(foragingResolver);
@@ -49,8 +54,11 @@ export function installSystems(g: Game): void {
     fishingPress(game);
     return true;
   });
+  installSeasons(g);
+  installHappenings(g);
   installQuests(g);
   installChallenges(g);
+  g.onUpdate(stepHints);
   g.onUpdate((game) => {
     if (game.state.player.location !== 'island') return;
     const reg = game.world.region(tileOf(game.world, game.state.player.x, game.state.player.z));
@@ -72,11 +80,11 @@ export function installSystems(g: Game): void {
 }
 
 export function createGame(state: GameState): Game {
-  // interiors are runtime-only: a save made indoors resumes outside the door
-  if (state.player.location !== 'island') state.player.location = 'island';
   const g = new Game(state);
   installSystems(g);
   g.ensureDayRolled();
+  // a save made indoors resumes indoors
+  resumeIndoors(g);
   dailyChallenges(g);
   tryStart(g);
   return g;

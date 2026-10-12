@@ -5,7 +5,10 @@ import { ratingBreakdown } from '../sim/rating';
 import { agents } from '../sim/agents';
 import { Ground, REGION_NAMES } from '../world/types';
 import { btn, clear, h, type Panel, type UIManager } from './dom';
-import { questLogBody } from './story';
+import { markerPos, questLogBody } from './story';
+import { playerPortraitURL } from './portraits';
+import { wornVisuals } from '../sim/wardrobe';
+import { trackedMission } from '../sim/hints';
 
 export interface PhoneApp {
   id: string;
@@ -23,6 +26,7 @@ export function registerPhoneApp(a: PhoneApp): void {
 }
 
 export class Phone implements Panel {
+  name = 'phone';
   el: HTMLElement;
   modal = true;
   private body = h('div', { class: 'phone-body scroll' });
@@ -33,7 +37,13 @@ export class Phone implements Panel {
       'div',
       { class: 'screen' },
       h('div', { class: 'dim', onclick: () => ui.pop(this) }),
-      h('div', { class: 'phone panel' }, h('div', { class: 'phone-notch' }), h('div', { class: 'phone-head' }, this.title, h('span', { class: 'spacer' }), btn('✕', () => ui.pop(this), 'small ghost')), this.body),
+      h(
+        'div',
+        { class: 'phone panel' },
+        h('div', { class: 'phone-notch' }),
+        h('div', { class: 'phone-head' }, h('img', { class: 'phone-me', alt: '', src: app.game ? playerPortraitURL(app.game.state.player.look, wornVisuals(app.game.state)) : '' }), this.title, h('span', { class: 'spacer' }), btn('✕', () => ui.pop(this), 'small ghost')),
+        this.body,
+      ),
     );
     const a = PHONE_APPS.find((x) => x.id === start);
     if (a) this.open(a);
@@ -42,10 +52,11 @@ export class Phone implements Panel {
 
   home(): void {
     this.current = null;
+    this.name = 'phone';
     this.title.textContent = 'Glowpad';
     clear(this.body);
     const grid = h('div', { class: 'phone-grid' });
-    const order = ['quests', 'map', 'friends', 'glow', 'catalog', 'journal', 'challenges', 'settings'];
+    const order = ['quests', 'map', 'calendar', 'friends', 'glow', 'catalog', 'journal', 'challenges', 'settings'];
     const apps = [...PHONE_APPS].sort((a, b) => (order.indexOf(a.id) + 99) % 99 - (order.indexOf(b.id) + 99) % 99);
     for (const a of apps) {
       const b = h('button', { class: 'phone-app', 'data-nav': '' }, h('div', { class: 'pa-icon', style: `background:${a.color}` }, a.icon), h('div', { class: 'pa-name' }, a.name));
@@ -58,6 +69,7 @@ export class Phone implements Panel {
 
   open(a: PhoneApp): void {
     this.current = a;
+    this.name = `phone:${a.id}`;
     this.title.textContent = a.name;
     const rerender = () => {
       clear(this.body);
@@ -90,7 +102,7 @@ registerPhoneApp({
   name: 'Missions',
   icon: '★',
   color: '#f6a5b5',
-  render: (_app, g, body, rerender) => body.append(questLogBody(g, rerender)),
+  render: (app, g, body, rerender) => body.append(questLogBody(g, rerender, () => app.ui.closeAll())),
 });
 
 registerPhoneApp({
@@ -101,8 +113,23 @@ registerPhoneApp({
   render: (_app, g, body) => {
     const cv = h('canvas', { class: 'map-canvas' }) as HTMLCanvasElement;
     drawMap(g, cv);
-    const legend = h('div', { class: 'row wrap tiny' }, h('span', { class: 'tag' }, '● You'), h('span', { class: 'tag' }, '■ Buildings'), h('span', { class: 'tag' }, '○ Neighbors'));
-    body.append(cv, legend);
+    const wrap = h('div', { class: 'map-wrap' }, cv);
+    // big pulsing star on the tracked mission's target
+    const m = trackedMission(g);
+    const t = m ? markerPos(g, m, 'island') : null;
+    if (t) {
+      const N = g.world.size;
+      wrap.append(h('div', { class: 'map-star', style: `left:${(t.x / N) * 100}%;top:${(t.z / N) * 100}%` }, '★'));
+    }
+    const legend = h(
+      'div',
+      { class: 'row wrap tiny' },
+      h('span', { class: 'tag' }, '● You'),
+      t ? h('span', { class: 'tag star' }, `★ ${m!.title}`) : null,
+      h('span', { class: 'tag' }, '■ Buildings'),
+      h('span', { class: 'tag' }, '○ Neighbors'),
+    );
+    body.append(wrap, legend);
   },
 });
 
@@ -119,6 +146,7 @@ registerPhoneApp({
       ['Neighbors', b.residents, 'More residents make the island lively.'],
       ['Museum', b.museum, 'Donate fish, bugs and fossils.'],
       ['Decorations', b.decor, 'Place outdoor furniture around the island.'],
+      ['Home décor', b.homeDecor, 'Decorate inside your home — walls and tables too!'],
       ['Flowers', b.flowers, 'Plant and breed flowers.'],
       ['Your home', b.home, 'Upgrade your house.'],
       ['Bridges & ramps', b.paths, 'Connect the island.'],
@@ -127,6 +155,8 @@ registerPhoneApp({
     ];
     for (const [n, v, tip] of rows) body.append(h('div', { class: 'glow-row' }, h('b', null, n), h('span', { class: 'muted tiny' }, tip), h('span', { class: `pts ${v < 0 ? 'neg' : ''}` }, v >= 0 ? `+${v}` : String(v))));
     body.append(h('div', { class: 'tiny muted' }, 'Lantern steps: 20 / 40 / 60 / 80 points.'));
+    const streak = g.state.flags.glowStreak ?? 0;
+    body.append(h('div', { class: 'glow-row' }, h('b', null, '✨ Glow streak'), h('span', { class: 'muted tiny' }, 'Days in a row with 5 lanterns. Rewards at 3, 7 and 14 days!'), h('span', { class: 'pts' }, `${streak}`)));
   },
 });
 

@@ -10,6 +10,7 @@ import { museumPercent } from './museum';
 import { matchFilter } from './quests';
 import { islandStars } from './rating';
 import { hearts, residents } from './villagers';
+import { contestDay } from './happenings';
 
 // ---------------------------------------------------------------- daily challenges
 
@@ -34,7 +35,7 @@ export function onChallengeEvent(g: Game, type: string, payload: unknown): void 
       cp.done = true;
       c.completedTotal++;
       g.state.stats.challengesDone = (g.state.stats.challengesDone ?? 0) + 1;
-      money(g, 0, def.reward);
+      money(g, 0, def.reward, 'challenge');
       g.emit('challengeCompleted', { id: def.id, reward: def.reward });
       g.emit('sfx', { name: 'challenge' });
       g.toast(`Daily challenge complete: ${def.label}! +${def.reward} Lumens`, 'good');
@@ -88,7 +89,7 @@ export function checkAchievements(g: Game): void {
     while (tier < a.tiers.length && v >= a.tiers[tier]!) tier++;
     if (tier > have) {
       g.state.achievements[a.id] = tier;
-      for (let t = have; t < tier; t++) money(g, 0, TIER_LUMENS[t]!);
+      for (let t = have; t < tier; t++) money(g, 0, TIER_LUMENS[t]!, 'achievement');
       g.emit('achievement', { id: a.id, tier });
       g.emit('sfx', { name: 'achievement' });
       g.toast(`Achievement: ${a.name} — ${TIER_NAMES[tier - 1]}!`, 'good');
@@ -111,7 +112,7 @@ export function offerAvailable(g: Game, o: LumenOffer): boolean {
 export function buyOffer(g: Game, id: string): boolean {
   const o = LUMEN_OFFERS.find((x) => x.id === id);
   if (!o || !offerAvailable(g, o) || g.state.player.lumens < o.cost) return false;
-  money(g, 0, -o.cost);
+  money(g, 0, -o.cost, 'exchange');
   if (o.kind === 'pockets') setPocketSize(g, o.value as number);
   else if (o.kind === 'recipe') learnRecipe(g, o.value as string, 'lumen');
   else give(g, o.value as string, o.qty ?? 1, 'lumens');
@@ -157,7 +158,7 @@ export function finishContest(g: Game): void {
   if (medal > 0) {
     const prize = MEDAL_PRIZES[medal - 1]!;
     give(g, prize.trophy, 1, 'contest');
-    money(g, 0, prize.lumens);
+    money(g, 0, prize.lumens, 'contest');
   }
   g.emit('eventFinished', { kind, score: a.score, medal });
   g.emit('sfx', { name: medal >= 3 ? 'fanfareBig' : medal > 0 ? 'fanfare' : 'whistle' });
@@ -177,12 +178,12 @@ export function contestOpen(g: Game, kind: ContestKind): boolean {
   const missionActive = !!g.state.quests.active[kind === 'tournament' ? 'm4_tourney' : 'm4_bugoff'];
   if (missionActive) return true;
   const unlocked = g.state.quests.done.includes(kind === 'tournament' ? 'm4_tourney' : 'm4_bugoff');
-  return unlocked && g.state.flags[`contest_${kind}_day`] !== g.state.clock.day;
+  // after the story mission, contests come back on their own day each season
+  return unlocked && contestDay(g, kind) && g.state.flags[`contest_${kind}_day`] !== g.state.clock.day;
 }
 
 export function installChallenges(g: Game): void {
-  // a contest can't survive a reload
-  g.state.events.active = null;
+  // a contest saved mid-way simply carries on (its time left is in the save)
   g.onDay(dailyChallenges);
   let t = 0;
   g.bus.onAny((type, payload) => {

@@ -12,7 +12,12 @@ export const HOME_TIERS: HomeTier[] = [
   { level: 0, name: 'Canvas Tent', cost: 0, room: { w: 6, d: 5 } },
   { level: 1, name: 'Cozy Cottage', cost: 15000, room: { w: 8, d: 7 } },
   { level: 2, name: 'Lantern House', cost: 48000, room: { w: 10, d: 8 } },
+  // after the story: same house, plus a whole basement to decorate
+  { level: 3, name: 'Lantern House + Basement', cost: 80000, room: { w: 10, d: 8 } },
 ];
+
+/** The basement room (level 3). */
+export const BASEMENT_ROOM = { w: 10, d: 8 };
 
 /** Buy price multiplier over sell price when no explicit price exists. */
 export const BUY_MULT = 4;

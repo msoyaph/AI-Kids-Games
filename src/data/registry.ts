@@ -4,8 +4,9 @@ import { BUGS } from './bugs';
 import { FISH } from './fish';
 import { FOSSILS } from './fossils';
 import { FURNITURE, SURFACES } from './furniture';
-import { FLOWER_ITEMS, FRUIT_ITEMS, LOST_ITEMS, MATERIALS, MISC_ITEMS, SAPLING_ITEMS, SEED_ITEMS, TOOLS } from './items';
+import { EVENT_ITEMS, FLOWER_ITEMS, FRUIT_ITEMS, LOST_ITEMS, MATERIALS, MISC_ITEMS, SAPLING_ITEMS, SEASONAL_ITEMS, SEED_ITEMS, TOOLS } from './items';
 import { RECIPES } from './recipes';
+import { CLOTHING, CLOTH_BY_ID, DYE_COLORS, DYE_NAMES, clothingItem } from './clothing';
 import type { BugDef, FishDef, FossilDef, ItemDef, RecipeDef } from './types';
 
 export const ITEMS: Record<string, ItemDef> = {};
@@ -14,7 +15,7 @@ const add = (d: ItemDef) => {
   ITEMS[d.id] = d;
 };
 
-for (const list of [MATERIALS, TOOLS, FRUIT_ITEMS, FLOWER_ITEMS, SEED_ITEMS, SAPLING_ITEMS, MISC_ITEMS, LOST_ITEMS]) list.forEach(add);
+for (const list of [MATERIALS, TOOLS, FRUIT_ITEMS, FLOWER_ITEMS, SEED_ITEMS, SAPLING_ITEMS, MISC_ITEMS, LOST_ITEMS, SEASONAL_ITEMS, EVENT_ITEMS]) list.forEach(add);
 
 const fishTags = (f: FishDef) => (f.where.includes('sea') ? ['sea'] : ['nature']);
 for (const f of FISH)
@@ -28,6 +29,7 @@ for (const f of FISH)
     icon: { s: f.shape, c: f.colors[0], c2: f.colors[1], c3: f.colors[2] },
     tags: fishTags(f),
     rarity: f.rarity,
+    ...(f.seasons ? { seasons: f.seasons } : {}),
   });
 for (const b of BUGS)
   add({
@@ -40,6 +42,7 @@ for (const b of BUGS)
     icon: { s: b.shape, c: b.colors[0], c2: b.colors[1], c3: b.colors[2] },
     tags: ['nature', b.shape === 'spider' ? 'spooky' : 'cute'],
     rarity: b.rarity,
+    ...(b.seasons ? { seasons: b.seasons } : {}),
   });
 for (const f of FOSSILS)
   add({
@@ -64,6 +67,7 @@ for (const f of FURNITURE)
     tags: f.tags,
     furn: f.furn,
   });
+for (const c of CLOTHING) add(clothingItem(c));
 for (const s of SURFACES)
   add({
     id: s.id,
@@ -71,7 +75,7 @@ for (const s of SURFACES)
     cat: s.kind,
     price: s.price,
     stack: 1,
-    desc: s.kind === 'wallpaper' ? 'Wallpaper for your home.' : 'Flooring for your home.',
+    desc: s.kind === 'wallpaper' ? 'Paper for the walls of your home.' : 'A new floor for your home.',
     icon: { s: s.kind === 'wallpaper' ? 'wall' : 'floor', c: s.c, c2: s.c2 },
     surface: { c: s.c, c2: s.c2, pattern: s.pattern },
     tags: ['cozy'],
@@ -89,13 +93,39 @@ export const BUY_PRICE: Record<string, number> = Object.fromEntries([
 ]);
 
 export { FISH, BUGS, FOSSILS, FURNITURE, SURFACES, RECIPES };
+export { SEED_ITEMS } from './items';
 
 const MISSING: ItemDef = { id: '?', name: 'Unknown', cat: 'misc', price: 0, stack: 1, desc: '', icon: { s: 'mystery', c: 0xcccccc } };
 
+const dyed = new Map<string, ItemDef>();
+
+/** Look up an item. Dyed clothing ("cloth_x#3") resolves to the base piece in that dye color. */
 export function item(id: string): ItemDef {
-  return ITEMS[id] ?? { ...MISSING, id, name: id };
+  const hit = ITEMS[id];
+  if (hit) return hit;
+  const hash = id.indexOf('#');
+  if (hash > 0) {
+    const cached = dyed.get(id);
+    if (cached) return cached;
+    const base = ITEMS[id.slice(0, hash)];
+    const k = Number(id.slice(hash + 1));
+    if (base && CLOTH_BY_ID[base.id] && k >= 0 && k < DYE_COLORS.length) {
+      const d: ItemDef = { ...base, id, name: `${DYE_NAMES[k]} ${base.name}`, icon: { ...base.icon, c: DYE_COLORS[k]! } };
+      dyed.set(id, d);
+      return d;
+    }
+  }
+  return { ...MISSING, id, name: id };
 }
 
 export function hasItemDef(id: string): boolean {
-  return id in ITEMS;
+  return id in ITEMS || (id.includes('#') && item(id) !== undefined && item(id).name !== id);
 }
+
+/** Base clothing id of a (possibly dyed) piece. */
+export function baseId(id: string): string {
+  const k = id.indexOf('#');
+  return k > 0 ? id.slice(0, k) : id;
+}
+
+export { CLOTHING, CLOTH_BY_ID };

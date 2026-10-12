@@ -50,7 +50,10 @@ export class AudioEngine {
   /** Must be called from a user gesture (autoplay policies). */
   unlock(): void {
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') void this.ctx.resume().catch(() => {});
+      if (this.ctx.state !== 'running' && !this.hiddenPause) {
+        void this.ctx.resume().catch(() => {});
+        this.kick();
+      }
       return;
     }
     try {
@@ -90,9 +93,32 @@ export class AudioEngine {
       this.applyVolumes();
       this.startAmbience();
       this.nextBeat = c.currentTime + 0.2;
+      this.kick();
     } catch {
       this.ctx = null;
     }
+  }
+
+  /** iOS only starts audio for real once something plays inside the tap: a silent click. */
+  private kick(): void {
+    try {
+      const c = this.ctx!;
+      const src = c.createBufferSource();
+      src.buffer = c.createBuffer(1, 1, c.sampleRate);
+      src.connect(c.destination);
+      src.start(0);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /** the page went to the background: stay quiet until it's back */
+  private hiddenPause = false;
+  setHidden(hidden: boolean): void {
+    this.hiddenPause = hidden;
+    if (!this.ctx) return;
+    if (hidden) void this.ctx.suspend().catch(() => {});
+    else void this.ctx.resume().catch(() => {});
   }
 
   setVolumes(master: number, music: number, sfx: number): void {

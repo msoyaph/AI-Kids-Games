@@ -9,6 +9,8 @@ import { isDonated } from '../sim/museum';
 import { btn, clear, h, type Panel, type UIManager } from './dom';
 import { iconImg } from './icons';
 import { registerPhoneApp } from './phone';
+import { SEASON_ICON, SEASON_NAME } from '../sim/seasons';
+import type { Season } from '../data/types';
 import { formatPlaytime } from './screens/slots';
 import type { TalkOption } from './conversation';
 import { VILLAGERS } from '../data/villagers';
@@ -40,10 +42,11 @@ function catalogBody(g: Game, body: HTMLElement, rerender: () => void): void {
   const detail = h('div', { class: 'cat-detail' }, h('span', { class: 'muted tiny' }, 'Select an entry for details.'));
   const grid = h('div', { class: 'cat-grid' });
   const c = g.state.catalog;
-  let entries: { id: string; seen: boolean; owned: boolean; extra: string }[] = [];
+  let entries: { id: string; seen: boolean; owned: boolean; extra: string; seasons?: Season[] }[] = [];
+  const when = (seasons?: Season[]) => (seasons ? seasons.map((x) => `${SEASON_ICON[x]} ${SEASON_NAME[x]}`).join(' / ') + ' only' : 'All year');
   if (catalogTab === 'fish')
-    entries = FISH.map((f) => ({ id: f.id, seen: !!c.seen[f.id], owned: !!c.owned[f.id], extra: `${f.where.join(' / ')} · ${hoursText(f.hours)}${f.weather !== 'any' ? ` · ${f.weather}` : ''} · size ${f.size}` }));
-  else if (catalogTab === 'bugs') entries = BUGS.map((b) => ({ id: b.id, seen: !!c.seen[b.id], owned: !!c.owned[b.id], extra: `${b.habitat} · ${hoursText(b.hours)}${b.weather !== 'any' ? ` · ${b.weather}` : ''}` }));
+    entries = FISH.map((f) => ({ id: f.id, seen: !!c.seen[f.id], owned: !!c.owned[f.id], seasons: f.seasons, extra: `${when(f.seasons)} · ${f.where.join(' / ')} · ${hoursText(f.hours)}${f.weather !== 'any' ? ` · ${f.weather}` : ''} · size ${f.size}` }));
+  else if (catalogTab === 'bugs') entries = BUGS.map((b) => ({ id: b.id, seen: !!c.seen[b.id], owned: !!c.owned[b.id], seasons: b.seasons, extra: `${when(b.seasons)} · ${b.habitat} · ${hoursText(b.hours)}${b.weather !== 'any' ? ` · ${b.weather}` : ''}` }));
   else if (catalogTab === 'fossils') entries = FOSSILS.map((f) => ({ id: f.id, seen: !!c.seen[f.id], owned: !!c.owned[f.id], extra: 'Dig up cracks, then have Vesper assess them' }));
   else if (catalogTab === 'furniture') entries = FURNITURE.map((f) => ({ id: f.id, seen: !!c.seen[f.id] || !!c.owned[f.id], owned: !!c.owned[f.id], extra: f.furn.outdoor ? 'Indoors or outdoors' : 'Indoors' }));
   else entries = RECIPES.map((r) => ({ id: r.result, seen: g.state.recipes.includes(r.id), owned: g.state.recipes.includes(r.id), extra: `Recipe · ${r.ingredients.map((i) => `${i.qty} ${item(i.id).name}`).join(', ')}` }));
@@ -54,10 +57,12 @@ function catalogBody(g: Game, body: HTMLElement, rerender: () => void): void {
     if (e.seen) cell.append(iconImg(e.id));
     else cell.append(h('span', null, '?'));
     if ((catalogTab === 'fish' || catalogTab === 'bugs' || catalogTab === 'fossils') && isDonated(g, e.id)) cell.append(h('span', { class: 'cat-badge' }, '✓'));
+    // seasonal creatures show their season, even before you've found them
+    if (e.seasons) cell.append(h('span', { class: 'cat-season', title: e.seasons.map((x) => SEASON_NAME[x]).join(', ') }, e.seasons.map((x) => SEASON_ICON[x]).join('')));
     const show = () => {
       clear(detail);
       if (!e.seen) {
-        detail.append(h('b', null, '???'), h('div', { class: 'muted tiny' }, "You haven't found this yet."));
+        detail.append(h('b', null, '???'), h('div', { class: 'muted tiny' }, e.seasons ? `You haven't found this yet. Look for it in ${e.seasons.map((x) => SEASON_NAME[x]).join(' or ')}!` : "You haven't found this yet."));
         return;
       }
       detail.append(
@@ -138,6 +143,7 @@ registerPhoneApp({ id: 'challenges', name: 'Challenges', icon: '❖', color: '#b
 // ---------------------------------------------------------------- Lumen Exchange
 
 export class LumenPanel implements Panel {
+  name = 'lumens';
   el: HTMLElement;
   modal = true;
   private body = h('div', { class: 'col scroll', style: 'gap:8px;max-height:64vh' });

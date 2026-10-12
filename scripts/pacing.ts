@@ -226,7 +226,7 @@ function objectiveCost(o: Objective, m: MissionDef): Est {
 
 // ---------------------------------------------------------------- simulation
 
-interface ChapterRow {
+export interface ChapterRow {
   chapter: number;
   minutes: number;
   days: [number, number];
@@ -234,92 +234,141 @@ interface ChapterRow {
   missions: number;
 }
 
-const DAY_MIN = REAL_SECONDS_PER_DAY / 60;
-let day = 1;
-let dayUsed = 0; // minutes used today
-let total = 0;
-const done = new Set<string>();
-const rows: ChapterRow[] = [];
+/** Model estimate for one mission (missions that unlock together share a batch). */
+export interface MissionEstimate {
+  id: string;
+  chapter: number;
+  /** active play minutes for this mission's own objectives (incl. free-play share) */
+  activeMin: number;
+  /** in-game days spent waiting (construction, move-ins, growth) after this mission's batch */
+  waitDays: number;
+  startDay: number;
+  endDay: number;
+  /** Glints the mission needs (permits, foreign fruit...) */
+  glints: number;
+}
 
-function spend(minutes: number): void {
-  // play minutes across days; menus/dialogue pause the clock, so a day holds a little more real time
-  total += minutes;
-  let left = minutes * (1 - M.pausedShare);
-  while (left > 0) {
-    const room = DAY_MIN - dayUsed;
-    const use = Math.min(room, left);
-    dayUsed += use;
-    left -= use;
-    if (dayUsed >= DAY_MIN - 1e-6) {
+export interface PacingResult {
+  rows: ChapterRow[];
+  missions: MissionEstimate[];
+  total: number;
+  days: number;
+  incomePerMin: number;
+  model: typeof M;
+}
+
+export const DAY_MIN = REAL_SECONDS_PER_DAY / 60;
+
+/** Run the pacing model over the current mission + economy data. */
+export function estimatePacing(): PacingResult {
+  donatedSoFar = 0;
+  let day = 1;
+  let dayUsed = 0; // minutes used today
+  let total = 0;
+  const done = new Set<string>();
+  const rows: ChapterRow[] = [];
+  const missions: MissionEstimate[] = [];
+
+  const spend = (minutes: number): void => {
+    // play minutes across days; menus/dialogue pause the clock, so a day holds a little more real time
+    total += minutes;
+    let left = minutes * (1 - M.pausedShare);
+    while (left > 0) {
+      const room = DAY_MIN - dayUsed;
+      const use = Math.min(room, left);
+      dayUsed += use;
+      left -= use;
+      if (dayUsed >= DAY_MIN - 1e-6) {
+        day++;
+        dayUsed = 0;
+      }
+    }
+  };
+
+  const waitUntilDay = (target: number): void => {
+    while (day < target) {
+      // play on a bit (free activities), then sleep
+      const idle = Math.max(0, (DAY_MIN - dayUsed) * M.idleBeforeSleep);
+      total += idle;
       day++;
       dayUsed = 0;
     }
-  }
-}
+  };
 
-function waitUntilDay(target: number): void {
-  while (day < target) {
-    // play on a bit (free activities), then sleep
-    const idle = Math.max(0, (DAY_MIN - dayUsed) * M.idleBeforeSleep);
-    total += idle;
-    day++;
-    dayUsed = 0;
-  }
-}
-
-for (const ch of CHAPTERS) {
-  const startTotal = total;
-  const startDay = day;
-  let active = 0;
-  let count = 0;
-  const pending = MISSIONS.filter((m) => m.chapter === ch.n);
-  let guard = 0;
-  while (pending.length && guard++ < 200) {
-    const ready = pending.filter((m) => m.requires.every((r) => done.has(r)));
-    if (!ready.length) break;
-    // missions available now; if none fit today's day gate, sleep until they do
-    const minDay = Math.min(...ready.map((m) => m.minDay ?? 0));
-    if (minDay > day) waitUntilDay(minDay);
-    const now = ready.filter((m) => (m.minDay ?? 0) <= day);
-    let maxWait = 0;
-    let seconds = 0;
-    let glints = 0;
-    for (const m of now) {
-      for (const o of m.objectives) {
-        const e = objectiveCost(o, m);
-        seconds += e.seconds;
-        maxWait = Math.max(maxWait, e.waitDays);
-        glints += e.glints;
+  for (const ch of CHAPTERS) {
+    const startTotal = total;
+    const startDay = day;
+    let active = 0;
+    let count = 0;
+    const pending = MISSIONS.filter((m) => m.chapter === ch.n);
+    let guard = 0;
+    while (pending.length && guard++ < 200) {
+      const ready = pending.filter((m) => m.requires.every((r) => done.has(r)));
+      if (!ready.length) break;
+      // missions available now; if none fit today's day gate, sleep until they do
+      const minDay = Math.min(...ready.map((m) => m.minDay ?? 0));
+      if (minDay > day) waitUntilDay(minDay);
+      const now = ready.filter((m) => (m.minDay ?? 0) <= day);
+      const batchDay = day;
+      let maxWait = 0;
+      let seconds = 0;
+      let glints = 0;
+      const batch: MissionEstimate[] = [];
+      for (const m of now) {
+        let ms = 20 * (m.intro.length + m.outro.length); // dialogue reading
+        let mg = 0;
+        let mw = 0;
+        for (const o of m.objectives) {
+          const e = objectiveCost(o, m);
+          ms += e.seconds;
+          mw = Math.max(mw, e.waitDays);
+          mg += e.glints;
+        }
+        seconds += ms;
+        glints += mg;
+        maxWait = Math.max(maxWait, mw);
+        const est: MissionEstimate = { id: m.id, chapter: m.chapter, activeMin: (ms / 60) * (1 + M.freePlay) + mg / incomePerMin, waitDays: mw, startDay: batchDay, endDay: batchDay, glints: mg };
+        batch.push(est);
+        missions.push(est);
+        done.add(m.id);
+        pending.splice(pending.indexOf(m), 1);
+        count++;
       }
-      seconds += 20 * (m.intro.length + m.outro.length); // dialogue reading
-      done.add(m.id);
-      pending.splice(pending.indexOf(m), 1);
-      count++;
+      const minutes = (seconds / 60) * (1 + M.freePlay) + glints / incomePerMin;
+      active += minutes;
+      spend(minutes);
+      if (maxWait > 0) waitUntilDay(day + maxWait);
+      for (const b of batch) b.endDay = day;
     }
-    const minutes = (seconds / 60) * (1 + M.freePlay) + glints / incomePerMin;
-    active += minutes;
-    spend(minutes);
-    if (maxWait > 0) waitUntilDay(day + maxWait);
+    if (ch.n === 1) {
+      const m = M.firstChapterExplore / 60;
+      active += m;
+      spend(m);
+    }
+    rows.push({ chapter: ch.n, minutes: total - startTotal, days: [startDay, day], activeMin: active, missions: count });
   }
-  if (ch.n === 1) {
-    const m = M.firstChapterExplore / 60;
-    active += m;
-    spend(m);
-  }
-  rows.push({ chapter: ch.n, minutes: total - startTotal, days: [startDay, day], activeMin: active, missions: count });
+  return { rows, missions, total, days: day, incomePerMin, model: M };
 }
 
-const pad = (s: string | number, n: number) => String(s).padEnd(n);
-console.log('\nLight Crossing — pacing estimate');
-console.log(`(day = ${DAY_MIN} min, income ≈ ${Math.round(incomePerMin)} Glints/min, avg fish ${Math.round(avgFish)} / bug ${Math.round(avgBug)})\n`);
-console.log(pad('Chapter', 26) + pad('Missions', 10) + pad('Days', 10) + pad('Active', 10) + 'Total');
-for (const r of rows) {
-  const ch = CHAPTERS.find((c) => c.n === r.chapter)!;
-  console.log(pad(`${r.chapter}. ${ch.title}`, 26) + pad(r.missions, 10) + pad(`${r.days[0]}-${r.days[1]}`, 10) + pad(`${Math.round(r.activeMin)}m`, 10) + `${Math.round(r.minutes)}m`);
+const result = estimatePacing();
+const { rows, total } = result;
+
+function report(): void {
+  const pad = (s: string | number, n: number) => String(s).padEnd(n);
+  console.log('\nLight Crossing — pacing estimate');
+  console.log(`(day = ${DAY_MIN} min, income ≈ ${Math.round(incomePerMin)} Glints/min, avg fish ${Math.round(avgFish)} / bug ${Math.round(avgBug)})\n`);
+  console.log(pad('Chapter', 26) + pad('Missions', 10) + pad('Days', 10) + pad('Active', 10) + 'Total');
+  for (const r of rows) {
+    const ch = CHAPTERS.find((c) => c.n === r.chapter)!;
+    console.log(pad(`${r.chapter}. ${ch.title}`, 26) + pad(r.missions, 10) + pad(`${r.days[0]}-${r.days[1]}`, 10) + pad(`${Math.round(r.activeMin)}m`, 10) + `${Math.round(r.minutes)}m`);
+  }
+  const hours = total / 60;
+  console.log(`\nTotal: ${Math.round(total)} minutes (${hours.toFixed(2)} h) over ${result.days} in-game days`);
+  const ok = hours >= 5.5 && hours <= 6.5;
+  console.log(ok ? 'Within the 5.5–6.5 hour target.' : 'OUTSIDE the 5.5–6.5 hour target — tune data/economy or mission requirements.');
+  if (process.argv.includes('--check') && !ok) process.exit(1);
 }
-const hours = total / 60;
-console.log(`\nTotal: ${Math.round(total)} minutes (${hours.toFixed(2)} h) over ${day} in-game days`);
-const ok = hours >= 5.5 && hours <= 6.5;
-console.log(ok ? 'Within the 5.5–6.5 hour target.' : 'OUTSIDE the 5.5–6.5 hour target — tune data/economy or mission requirements.');
-if (process.argv.includes('--check') && !ok) process.exit(1);
+
+// Print only when run directly (`npm run pacing`), not when imported by tests or the analyzer.
+if (process.argv[1] && /pacing\.ts$/.test(process.argv[1])) report();
 export { rows, total };

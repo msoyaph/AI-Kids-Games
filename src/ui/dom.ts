@@ -51,6 +51,8 @@ export function btn(label: Child, onClick: () => void, cls = '', extra: Props = 
 
 export interface Panel {
   el: HTMLElement;
+  /** short id for playtest menu timings (e.g. 'inventory', 'phone:map') */
+  name?: string;
   /** pauses the game clock + blocks gameplay input */
   modal: boolean;
   /** return true if handled */
@@ -80,7 +82,26 @@ export class UIManager {
     return this.stack.some((p) => p.modal);
   }
 
+  /** name given to panels pushed while running `f` (see App.panels) */
+  private naming: string | null = null;
+  named(name: string, f: () => void): void {
+    const prev = this.naming;
+    this.naming = name;
+    try {
+      f();
+    } finally {
+      this.naming = prev;
+    }
+  }
+
+  /** Name of the top panel (null when no panel is open). */
+  get topName(): string | null {
+    const t = this.top;
+    return t ? (t.name ?? 'other') : null;
+  }
+
   push(p: Panel): void {
+    if (!p.name && this.naming) p.name = this.naming;
     this.root.appendChild(p.el);
     p.el.classList.add('panel-enter');
     requestAnimationFrame(() => p.el.classList.remove('panel-enter'));

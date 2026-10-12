@@ -12,6 +12,14 @@ export interface Settings {
   touch: 'auto' | 'on' | 'off';
   tips: boolean;
   reduceMotion: boolean;
+  /** playtest recording (hidden toggle; also ?playtest=1) */
+  playtest: boolean;
+  /** read dialogue, tips and missions out loud (browser speech) */
+  readAloud: boolean;
+  /** text size multiplier for reading surfaces */
+  textSize: number;
+  /** graphics quality; 'auto' adapts to the device */
+  quality: 'auto' | 'low' | 'medium' | 'high';
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -25,6 +33,10 @@ export const DEFAULT_SETTINGS: Settings = {
   touch: 'auto',
   tips: true,
   reduceMotion: false,
+  playtest: false,
+  readAloud: false,
+  textSize: 1,
+  quality: 'auto',
 };
 
 export const TEXT_CPS: Record<Settings['textSpeed'], number> = { slow: 28, normal: 55, fast: 110, instant: 100000 };

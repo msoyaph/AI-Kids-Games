@@ -213,6 +213,83 @@ export function furnitureGeo(id: string, f: FurnitureInfo): [G, G | null] {
     case 'frame':
       P.push(part(box(0.7, 0.55, 0.06), c, { pos: [0, 1.0, -D / 2 + 0.05] }), part(box(0.58, 0.43, 0.065), c2, { pos: [0, 1.0, -D / 2 + 0.06] }), part(box(0.04, 1.0, 0.04), WOOD, { pos: [0, 0.5, -D / 2 + 0.02] }));
       break;
+    case 'mirror':
+      P.push(part(box(0.62, 1.3, 0.08), c, { pos: [0, 0.85, -0.05] }), part(box(0.5, 1.12, 0.09), c2, { pos: [0, 0.86, -0.04] }));
+      P.push(part(box(0.5, 0.06, 0.36), c, { pos: [0, 0.03, -0.05] }), part(box(0.12, 0.5, 0.02), 0xffffff, { pos: [-0.12, 1.05, 0.005], rot: [0, 0, 0.5] }));
+      break;
+    case 'dyestation':
+      P.push(part(box(0.84, 0.5, 0.6), c, { pos: [0, 0.25, 0] }), part(box(0.88, 0.06, 0.64), darken(c, 0.2), { pos: [0, 0.52, 0] }));
+      for (const [k, col] of [0xf27c7c, c2, 0xffd966].entries()) P.push(part(cyl(0.11, 0.1, 0.16, 8), 0xfdfbf4, { pos: [-0.26 + k * 0.26, 0.62, 0] }), part(cyl(0.09, 0.09, 0.02, 8), col, { pos: [-0.26 + k * 0.26, 0.69, 0] }));
+      break;
+    // ---- wall pieces: back against the wall at z = -D/2, centred around 1.45 high ----
+    case 'painting': {
+      const bz = -D / 2 + 0.04, fw = W * 0.94;
+      P.push(part(box(fw, 0.86, 0.06), 0x9b6a4a, { pos: [0, 1.5, bz] }));
+      P.push(part(box(fw - 0.14, 0.4, 0.065), lighten(c, 0.25), { pos: [0, 1.66, bz + 0.005] }), part(box(fw - 0.14, 0.34, 0.065), c2, { pos: [0, 1.29, bz + 0.005] }));
+      P.push(part(cyl(0.1, 0.1, 0.07, 10), 0xffe27a, { pos: [fw * 0.25, 1.68, bz + 0.01], rot: [Math.PI / 2, 0, 0] }));
+      if (id.includes('sunset')) P.push(part(box(0.24, 0.06, 0.07), 0x5b4a68, { pos: [-fw * 0.15, 1.44, bz + 0.012] }), part(cone(0.1, 0.22, 3), 0xfff6e6, { pos: [-fw * 0.15, 1.58, bz + 0.012] }));
+      else P.push(part(sphere(0.18, 8, 6), darken(c, 0.15), { pos: [-fw * 0.2, 1.3, bz + 0.01], scale: [1.6, 0.6, 0.2] }));
+      break;
+    }
+    case 'poster': {
+      const bz = -D / 2 + 0.03;
+      P.push(part(box(0.62, 0.84, 0.03), c, { pos: [0, 1.5, bz] }));
+      for (let k = 0; k < 5; k++) P.push(part(sphere(0.05 + (k % 2) * 0.02, 6, 4), c2, { pos: [-0.18 + (k * 0.37) % 0.36, 1.25 + k * 0.11, bz + 0.02], scale: [1, 1, 0.3] }));
+      for (const sx of [-1, 1]) P.push(part(box(0.1, 0.04, 0.035), 0xfff6e6, { pos: [sx * 0.27, 1.9, bz + 0.005], rot: [0, 0, sx * 0.6] }));
+      break;
+    }
+    case 'wallclock': {
+      const bz = -D / 2 + 0.05;
+      const cuckoo = id.includes('cuckoo');
+      if (cuckoo) {
+        P.push(part(box(0.5, 0.55, 0.14), c, { pos: [0, 1.45, bz + 0.03] }), part(cone(0.42, 0.26, 4), darken(c, 0.25), { pos: [0, 1.85, bz + 0.03], rot: [0, Math.PI / 4, 0], scale: [1, 1, 0.4] }));
+        P.push(part(cyl(0.15, 0.15, 0.03, 12), c2, { pos: [0, 1.42, bz + 0.11], rot: [Math.PI / 2, 0, 0] }), part(sphere(0.06, 6, 4), 0xffd166, { pos: [0, 1.68, bz + 0.12] }));
+        for (const sx of [-1, 1]) P.push(part(cyl(0.012, 0.012, 0.4, 3), DARK, { pos: [sx * 0.1, 1.0, bz + 0.05] }), part(cone(0.04, 0.12, 5), 0xc9945f, { pos: [sx * 0.1, 0.76, bz + 0.05], rot: [Math.PI, 0, 0] }));
+      } else {
+        P.push(part(cyl(0.3, 0.3, 0.06, 16), c, { pos: [0, 1.5, bz], rot: [Math.PI / 2, 0, 0] }), part(cyl(0.24, 0.24, 0.065, 16), c2, { pos: [0, 1.5, bz + 0.01], rot: [Math.PI / 2, 0, 0] }));
+        for (let k = 0; k < 8; k++) P.push(part(cone(0.06, 0.1, 3), c, { pos: [Math.cos((k / 8) * Math.PI * 2) * 0.38, 1.5 + Math.sin((k / 8) * Math.PI * 2) * 0.38, bz], rot: [0, 0, (k / 8) * Math.PI * 2 - Math.PI / 2] }));
+      }
+      const fz = cuckoo ? bz + 0.13 : bz + 0.05;
+      const cy = cuckoo ? 1.42 : 1.5;
+      P.push(part(box(0.025, 0.14, 0.02), DARK, { pos: [0, cy + 0.06, fz] }), part(box(0.1, 0.022, 0.02), DARK, { pos: [0.04, cy, fz] }));
+      break;
+    }
+    case 'wallshelf': {
+      const bz = -D / 2 + 0.16;
+      P.push(part(box(W * 0.9, 0.06, 0.3), c, { pos: [0, 1.25, bz] }));
+      for (const sx of [-1, 1]) P.push(part(box(0.05, 0.22, 0.22), darken(c, 0.2), { pos: [sx * W * 0.33, 1.12, bz - 0.03] }));
+      const n = Math.max(2, Math.round(W * 2));
+      for (let k = 0; k < n; k++) {
+        const x = -W * 0.36 + (k * W * 0.72) / Math.max(1, n - 1);
+        if (k % 2) P.push(part(cone(0.07, 0.1, 6), c2, { pos: [x, 1.33, bz], rot: [-1.3, 0, 0], scale: [1, 1, 0.6] }));
+        else P.push(part(cyl(0.06, 0.06, 0.16, 7), lighten(c2, 0.3), { pos: [x, 1.36, bz] }), part(cyl(0.065, 0.065, 0.03, 7), darken(c, 0.3), { pos: [x, 1.45, bz] }));
+      }
+      break;
+    }
+    case 'wreath': {
+      const bz = -D / 2 + 0.06;
+      P.push(part(torus(0.24, 0.08, 6, 14), c, { pos: [0, 1.5, bz] }));
+      for (let k = 0; k < 7; k++) {
+        const a = (k / 7) * Math.PI * 2;
+        P.push(part(sphere(0.045, 5, 4), id.includes('berry') ? c2 : lighten(c, 0.3), { pos: [Math.cos(a) * 0.26, 1.5 + Math.sin(a) * 0.26, bz + 0.07] }));
+      }
+      P.push(part(cone(0.08, 0.14, 3), c2, { pos: [-0.07, 1.24, bz + 0.08], rot: [0, 0, Math.PI / 2] }), part(cone(0.08, 0.14, 3), c2, { pos: [0.07, 1.24, bz + 0.08], rot: [0, 0, -Math.PI / 2] }));
+      break;
+    }
+    case 'sconce': {
+      const bz = -D / 2 + 0.05;
+      P.push(part(box(0.18, 0.3, 0.05), c2, { pos: [0, 1.5, bz] }), part(box(0.05, 0.05, 0.28), c2, { pos: [0, 1.62, bz + 0.15] }));
+      P.push(part(box(0.24, 0.05, 0.24), c2, { pos: [0, 1.3, bz + 0.3] }), part(cone(0.18, 0.14, 4), c2, { pos: [0, 1.66, bz + 0.3], rot: [0, Math.PI / 4, 0] }));
+      L.push(part(box(0.18, 0.28, 0.18), lighten(c, 0.4), { pos: [0, 1.46, bz + 0.3] }));
+      break;
+    }
+    case 'kite': {
+      const bz = -D / 2 + 0.04;
+      P.push(part(box(0.5, 0.5, 0.03), c, { pos: [0, 1.6, bz], rot: [0, 0, Math.PI / 4], scale: [0.85, 1.2, 1] }));
+      P.push(part(box(0.03, 0.78, 0.035), c2, { pos: [0, 1.6, bz + 0.01] }), part(box(0.56, 0.03, 0.035), c2, { pos: [0, 1.66, bz + 0.01] }));
+      for (let k = 0; k < 3; k++) P.push(part(cone(0.05, 0.09, 3), [0xffd166, 0x7fb2ff, 0x8fd18a][k]!, { pos: [0.05 * (k % 2 ? 1 : -1), 1.08 - k * 0.14, bz + 0.02], rot: [0, 0, Math.PI / 2] }));
+      break;
+    }
     default:
       P.push(part(box(W * 0.8, 0.6, D * 0.8), c, { pos: [0, 0.3, 0] }));
   }

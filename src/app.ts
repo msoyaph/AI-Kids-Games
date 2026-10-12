@@ -4,9 +4,10 @@ import { GameView } from './render/view';
 import { item } from './data/registry';
 import type { Game } from './sim/game';
 import { newGameState, DEFAULT_LOOK, type Appearance } from './sim/state';
-import { SaveManager } from './sim/save';
+import { SaveManager, type WriteResult } from './sim/save';
 import { createGame } from './sim/systems';
-import { cycleTool, equipKind, putAway, TOOL_ORDER } from './sim/tools';
+import { cycleTool, equipKind, equippedTool, putAway, TOOL_ORDER } from './sim/tools';
+import { interiorFront, interiorRT } from './sim/interior';
 import { DEFAULT_SETTINGS, type Settings } from './settings';
 import { h, UIManager, type Panel } from './ui/dom';
 import { Hud } from './ui/hud';
@@ -15,16 +16,24 @@ import { InventoryPanel } from './ui/inventory';
 import { ReelBar } from './ui/fishing';
 import { CreatorScreen } from './ui/screens/creator';
 import { controlsPanel, PauseMenu } from './ui/screens/pause';
-import { confirmPanel, SlotScreen } from './ui/screens/slots';
+import { confirmPanel, noticePanel, SlotScreen } from './ui/screens/slots';
 import { TitleScreen } from './ui/screens/title';
 import { registerPanels } from './ui/register';
 import { sharedUniforms } from './render/curve';
 import { installStory, pumpInbox, QuestTracker } from './ui/story';
+import { installEventsUI } from './ui/events';
+import { ReadAloud } from './ui/speech';
+import { Governor, guessTier, QUALITY, urlTier, type QualityTier } from './render/quality';
+import { TapMover, pickTile } from './input/tapmove';
+import { actionTarget } from './sim/target';
+import { RecipeTracker } from './ui/recipeTrack';
+import { benchPanel, runBenchmark, type BenchResult } from './ui/bench';
 import { questRT } from './sim/quests';
 import { Phone } from './ui/phone';
 import { settingsBody, settingsPanel } from './ui/settings';
 import { runFinale } from './ui/finale';
 import { AudioEngine } from './audio/engine';
+import { HudLayout } from './ui/hudLayout';
 import { TipManager } from './ui/tips';
 import { TouchControls } from './ui/touch';
 import { toolRing } from './ui/toolring';
@@ -37,6 +46,9 @@ import { MEDAL_PRIZES, CONTESTS } from './data/challenges';
 import { item as itemDef } from './data/registry';
 import type { TalkHooks } from './ui/conversation';
 import { cancelPlacement, placementRT } from './sim/placement';
+import { PlaytestRecorder } from './sim/playtest';
+import { SEASON_ICON, SEASON_NAME, SEASON_NEWS } from './sim/seasons';
+import type { Season } from './data/types';
 
 const AUTOSAVE_SEC = 60;
 const TITLE_SEED = 20261011;
@@ -48,8 +60,11 @@ export class App {
   readonly hud: Hud;
   private reel: ReelBar;
   private tracker: QuestTracker;
+  private recipeTrack: RecipeTracker;
   private contestHud: ContestHud;
   private tips: TipManager;
+  /** keeps HUD pieces apart and inside the safe area */
+  hudLayout!: HudLayout;
   private touch: TouchControls;
   readonly saves = new SaveManager();
   settings: Settings;
@@ -57,16 +72,41 @@ export class App {
   /** the island shown behind title / creator */
   private demo: Game;
   private slot = -1;
-  private mode: 'title' | 'game' = 'title';
+  mode: 'title' | 'game' = 'title';
   private autosaveT = 0;
   private fadeEl = h('div', { class: 'fade' });
   private last = performance.now();
   readonly audio = new AudioEngine();
+  /** WebGL context lost (glLost) and waiting for a tap to carry on (glPaused) */
+  private glLost = false;
+  private glPaused = false;
+  private glCard = h('div', { class: 'gl-card', role: 'button' });
+  /** tap to walk (touch): walks a path to the tapped spot */
+  readonly tapMove = new TapMover();
+  /** benchmark: steers the player instead of the controls (see ui/bench.ts) */
+  benchDriver: ((dt: number) => { x: number; z: number }) | null = null;
+  /** read-aloud (browser speech; silently unavailable where unsupported) */
+  readonly speech = new ReadAloud();
   private stepOdo = 0;
   /** story layer hooks into conversations */
   talkHooks: TalkHooks = { intro: async () => false, options: () => [] };
-  /** panel factories other modules can open via game.ui.open */
-  panels: Record<string, (arg?: unknown) => void> = {};
+  /** panel factories other modules can open via game.ui.open (panels they push get the key as name) */
+  panels: Record<string, (arg?: unknown) => void> = new Proxy({} as Record<string, (arg?: unknown) => void>, {
+    set: (t, k, fn: (arg?: unknown) => void) => {
+      t[String(k)] = (arg?: unknown) => this.ui.named(String(k), () => fn(arg));
+      return true;
+    },
+  });
+  /** on-device playtest log for the current slot (null when playtest mode is off) */
+  playtest: PlaytestRecorder | null = null;
+  private playtestParam = (() => {
+    try {
+      return new URLSearchParams(location.search).get('playtest') === '1';
+    } catch {
+      return false;
+    }
+  })();
+  private ptBadge = h('div', { class: 'pt-badge' }, '● Playtest');
 
   constructor(readonly canvas: HTMLCanvasElement, private root: HTMLElement) {
     this.settings = this.saves.loadSettings(DEFAULT_SETTINGS);
@@ -77,6 +117,7 @@ export class App {
       if (def.cat === 'shell') return { shape: 'shell', color: def.icon.c };
       if (def.cat === 'fruit') return { shape: 'fruit', color: def.icon.c };
       if (id === 'bottle') return { shape: 'bottle', color: 0x9fd9cf };
+      if (id === 'falling_star' || id === 'stardust') return { shape: 'stone', color: id === 'stardust' ? 0xd8c8ff : 0xffe27a };
       if (def.cat === 'material') return { shape: 'stone', color: def.icon.c };
       return { shape: 'bundle', color: def.icon.c };
     });
@@ -84,22 +125,27 @@ export class App {
     this.hud = new Hud(root);
     this.reel = new ReelBar(root);
     this.tracker = new QuestTracker(root);
+    this.recipeTrack = new RecipeTracker(root);
     this.contestHud = new ContestHud(root);
     this.tips = new TipManager(this, root);
     this.touch = new TouchControls(this, root);
     document.body.appendChild(this.fadeEl);
     this.applySettings();
+    this.setupQuality();
     this.demo = createGame(newGameState(TITLE_SEED, 'Demo'));
     this.demo.state.clock.minute = 17.5 * 60;
     this.demo.mode = 'cutscene';
     this.ui.onChange = () => this.syncMode();
     this.ui.sfx = (n) => this.audio.play(n);
-    const unlock = () => this.audio.unlock();
-    window.addEventListener('pointerdown', unlock);
-    window.addEventListener('keydown', unlock);
-    window.addEventListener('touchstart', unlock);
+    // audio and read-aloud may only start inside a tap or key press (iOS wants touchend / click)
+    const unlock = () => {
+      this.audio.unlock();
+      this.speech.prime();
+    };
+    for (const ev of ['pointerdown', 'keydown', 'touchstart', 'touchend', 'click']) window.addEventListener(ev, unlock, { capture: true, passive: true });
     registerPanels(this);
     installStory(this);
+    installEventsUI(this);
     this.panels.phone = (start) => this.game && this.ui.push(new Phone(this.ui, this, start as string | undefined));
     this.panels.settings = () => this.ui.push(settingsPanel(this));
     this.panels.settingsInline = (body) => settingsBody(this, body as HTMLElement);
@@ -122,7 +168,8 @@ export class App {
             }
             this.ui.closeAll();
             startBuildPlacement(g, kind);
-            this.hud.toast(kind === 'bridge' ? 'Stand on a river bank facing the water. E to build, Esc to cancel.' : 'Stand two tiles from a cliff, facing it. E to build, Esc to cancel.');
+            const keys = this.hud.device === 'touch' ? 'Tap ✔ Place to build.' : this.hud.device === 'gamepad' ? 'A to build, B to cancel.' : 'E to build, Esc to cancel.';
+            this.hud.toast(kind === 'bridge' ? `Stand on a river bank facing the water. ${keys}` : `Stand two tiles from a cliff, facing it. ${keys}`);
           },
         };
       };
@@ -130,28 +177,96 @@ export class App {
       if (q.active.m3_ladder || q.done.includes('m3_ladder')) out.push(permit('ramp'));
       return out;
     });
-    this.showTitle();
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') this.saveNow(true);
+    root.appendChild(this.ptBadge);
+    this.hudLayout = new HudLayout(this, root);
+    // the graphics can be lost (low memory, a GPU reset): pause, then continue on a tap
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      this.glLost = true;
+      this.glPaused = true;
+      this.audio.setVolumes(0, 0, 0);
+      this.glCard.textContent = 'Taking a little break… one moment!';
+      this.glCard.style.display = 'flex';
     });
-    window.addEventListener('pagehide', () => this.saveNow(true));
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.glLost = false;
+      this.view.applyQuality(this.view.quality);
+      this.view.interior.invalidate();
+      this.glCard.textContent = 'Tap to continue';
+    });
+    const resumeGl = (e: Event) => {
+      e.preventDefault();
+      if (this.glLost || !this.glPaused) return;
+      this.glPaused = false;
+      this.glCard.style.display = 'none';
+      this.applySettings();
+      this.last = performance.now();
+    };
+    // a tap, a click or a key: whichever comes first
+    for (const ev of ['pointerdown', 'touchend', 'click']) this.glCard.addEventListener(ev, resumeGl);
+    document.body.appendChild(this.glCard);
+    const activity = () => {
+      if (this.game) this.game.idleSec = 0;
+    };
+    window.addEventListener('pointerdown', activity);
+    window.addEventListener('wheel', activity, { passive: true });
+    window.addEventListener('keydown', activity);
+    this.showTitle();
+    // backgrounded or the phone locked: save, pause (the pause menu waits for a tap) and go quiet
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') this.goneAway();
+      else this.cameBack();
+    });
+    window.addEventListener('pagehide', () => this.goneAway());
+    document.addEventListener('freeze', () => this.goneAway());
     requestAnimationFrame((t) => this.loop(t));
   }
 
   applySettings(): void {
     this.audio.setVolumes(this.settings.master, this.settings.music, this.settings.sfx);
+    this.speech.enabled = this.settings.readAloud;
+    if (!this.settings.readAloud) this.speech.stop();
+    document.documentElement.style.setProperty('--ts', String(this.settings.textSize || 1));
     this.view.rig.settings = { ...this.settings.camera };
     sharedUniforms.uCurveK.value = 0.0068 * this.settings.curve;
-    this.view.sky.setShadows(this.settings.shadows);
-    this.view.renderer.shadowMap.enabled = this.settings.shadows;
     this.saves.saveSettings(this.settings);
   }
 
   // ---------------- screen flow ----------------
 
+  get currentSlot(): number {
+    return this.slot;
+  }
+
+  playtestEnabled(): boolean {
+    return this.settings.playtest || this.playtestParam;
+  }
+
+  /** Start/stop the playtest recorder to match the setting for the current game. */
+  syncPlaytest(): void {
+    const want = this.playtestEnabled() && !!this.game && this.slot >= 0;
+    if (want && !this.playtest) {
+      const key = `playtest.slot${this.slot}`;
+      const st = this.saves.storage;
+      this.playtest = new PlaytestRecorder({ load: () => st.get(key), save: (d) => void st.put(key, d) });
+      this.playtest.attach(this.game!);
+    } else if (!want && this.playtest) {
+      this.playtest.flush();
+      this.playtest.detach();
+      this.playtest = null;
+    }
+    this.ptBadge.style.display = this.playtest ? 'block' : 'none';
+  }
+
   showTitle(): void {
     this.mode = 'title';
     this.ui.closeAll();
+    if (this.playtest) {
+      this.playtest.flush();
+      this.playtest.detach();
+      this.playtest = null;
+    }
+    this.ptBadge.style.display = 'none';
     this.game = null;
     this.hud.setVisible(false);
     this.view.attach(this.demo);
@@ -263,27 +378,106 @@ export class App {
     g.ui.open = (panel, arg) => this.panels[panel]?.(arg);
     g.bus.on('toast', (t) => this.hud.toast(t.text, t.kind, t.item));
     g.bus.on('sfx', (e) => this.audio.play(e.name, { vol: e.vol, pitch: e.pitch }));
+    // doors: cut to dark, then fade the new room in
     g.bus.on('location', () => {
-      this.fadeEl.classList.add('quick', 'on');
-      setTimeout(() => this.fadeEl.classList.remove('on'), 160);
-      setTimeout(() => this.fadeEl.classList.remove('quick'), 500);
+      const f = this.fadeEl;
+      f.classList.add('cut', 'on');
+      void f.offsetWidth;
+      f.classList.remove('cut');
+      f.classList.add('door');
+      setTimeout(() => f.classList.remove('on'), 90);
+      setTimeout(() => f.classList.remove('door'), 700);
     });
     g.bus.on('dayStarted', () => this.saveNow(true));
+    g.bus.on('seasonChanged', (e) => {
+      const season = e.season as Season;
+      questRT(g).inbox.push({ speaker: '', title: `${SEASON_ICON[season]} ${SEASON_NAME[season]}`, lines: [] });
+      this.hud.toast(SEASON_NEWS[season], 'good');
+    });
     g.bus.on('fx', (f) => {
       if (f.kind === 'pop' && f.item) this.floatIcon(f.item, f.x, f.y + 1.6, f.z);
     });
     this.autosaveT = 0;
     this.tips.bind(g);
+    if (this.playtest) {
+      this.playtest.detach();
+      this.playtest = null;
+    }
+    this.syncPlaytest();
     this.onEnterGame?.(g);
   }
 
+  /** Play a throwaway island for the benchmark (slot -1: nothing is ever saved). */
+  enterBench(g: Game, tier: QualityTier): void {
+    this.ui.closeAll();
+    this.enterGame(g, -1);
+    questRT(g).inbox.length = 0;
+    this.applyTier(tier);
+  }
+
+  private benchRunning = false;
+
+  /** Run the performance test on the given tiers, then show the results. */
+  async runBench(tiers: QualityTier[]): Promise<BenchResult[]> {
+    if (this.benchRunning) return [];
+    this.benchRunning = true;
+    if (this.game && this.slot >= 0) this.saveNow(true);
+    const results: BenchResult[] = [];
+    for (const t of tiers) results.push(await runBenchmark(this, t));
+    this.benchRunning = false;
+    (window as unknown as { __benchResults?: BenchResult[] }).__benchResults = results;
+    this.ui.push(
+      benchPanel(this, results, () => {
+        this.setupQuality();
+        this.showTitle();
+      }),
+    );
+    return results;
+  }
+
+  /** Last non-ok save result we already told the player about (so autosaves don't nag). */
+  private saveWarned: WriteResult | '' = '';
+
   saveNow(quiet = false): boolean {
     if (!this.game || this.slot < 0 || this.mode !== 'game') return false;
-    const ok = this.saves.write(this.slot, this.game.state);
-    if (!quiet) this.hud.toast(ok ? 'Game saved.' : 'Saving is unavailable here — progress will be lost when the page closes.', ok ? 'good' : 'warn');
+    const r = this.saves.writeResult(this.slot, this.game.state);
+    const ok = r === 'ok';
+    if (ok) {
+      this.saveWarned = '';
+      if (!quiet) this.hud.toast('Game saved.', 'good');
+    } else if (r === 'quota') {
+      if (!quiet || this.saveWarned !== r)
+        noticePanel(
+          this.ui,
+          'Storage is full',
+          'There is no room to save right now. Your last save is safe! Ask a grown-up to clear some space for this site, then save again.',
+        );
+    } else if (!quiet || this.saveWarned !== r) {
+      this.hud.toast(r === 'memory' ? 'Saving is unavailable here — progress will be lost when the page closes.' : 'Could not save just now. Your last save is safe.', 'warn');
+    }
+    if (!ok) this.saveWarned = r;
+    // after the real save: quota recovery may have dropped the old playtest log
+    this.playtest?.flush();
     this.hud.saving.classList.add('on');
     setTimeout(() => this.hud.saving.classList.remove('on'), 900);
     return ok;
+  }
+
+  /** The page is hidden (another app, a locked phone, another tab). */
+  goneAway(): void {
+    this.saveNow(true);
+    this.audio.setHidden(true);
+    this.speech.stop();
+    this.input.touch.action = false;
+    this.input.touch.x = this.input.touch.z = 0;
+    this.tapMove.cancel();
+    const g = this.game;
+    if (g && this.mode === 'game' && !this.ui.modalOpen && !this.benchDriver && g.mode === 'play') this.openPause();
+  }
+
+  cameBack(): void {
+    this.audio.setHidden(false);
+    this.last = performance.now();
   }
 
   quitToTitle(): void {
@@ -304,6 +498,15 @@ export class App {
 
   tip(id: string): void {
     if (this.game) this.tips.trigger(this.game, id);
+  }
+
+  /** A first-time tip about a menu, shown inside it (under its title). */
+  tipInside(panel: { el: HTMLElement }, id: string): void {
+    const t = this.game && this.tips.inline(this.game, id);
+    if (!t) return;
+    const head = panel.el.querySelector('h2');
+    if (head) head.after(t);
+    else panel.el.prepend(t);
   }
 
   titleCredits(): void {
@@ -356,10 +559,12 @@ export class App {
       case 'action':
         g.act();
         break;
-      case 'inventory':
-        this.tip('inventory');
-        this.ui.push(new InventoryPanel(this.ui, g));
+      case 'inventory': {
+        const inv = new InventoryPanel(this.ui, g);
+        this.tipInside(inv, 'inventory');
+        this.ui.push(inv);
         break;
+      }
       case 'pause':
         this.openPause();
         break;
@@ -389,57 +594,122 @@ export class App {
     }
   }
 
+  /** A tap on the game world (touch): use the glowing spot, or walk to what was tapped. */
+  tap(x: number, y: number): void {
+    const g = this.game;
+    if (!g || this.mode !== 'game' || this.ui.modalOpen || g.action) return;
+    if (g.mode !== 'play' && g.mode !== 'placement') return;
+    const pick = pickTile(g, (a, b, c) => this.view.project(a, b, c), x, y);
+    if (!pick) return;
+    this.tapPing(x, y);
+    const p = g.state.player;
+    const rt = interiorRT(g);
+    if (p.location !== 'island' && rt) {
+      const f = interiorFront(g);
+      const here = Math.floor(rt.z) * rt.room.w + Math.floor(rt.x);
+      if ((pick.tile === f.z * rt.room.w + f.x || pick.tile === here) && g.resolve()) {
+        this.input.push('action');
+        return;
+      }
+    } else if (g.mode === 'play') {
+      const t = actionTarget(g);
+      const near = t && (pick.tile === t.tile || Math.hypot(pick.x - t.x, pick.z - t.z) < (equippedTool(g)?.kind === 'rod' ? 1.6 : 0.6));
+      if ((near && t.ok) || (pick.tile === tileOf(g.world, p.x, p.z) && g.resolve())) {
+        this.input.push('action');
+        return;
+      }
+    }
+    if (!this.tapMove.start(g, pick)) this.hud.toast("Can't walk there.", 'warn');
+  }
+
+  private tapPing(x: number, y: number): void {
+    const el = h('div', { class: 'tap-ping', style: `left:${x}px;top:${y}px` });
+    this.root.appendChild(el);
+    setTimeout(() => el.remove(), 500);
+  }
+
   /** Advance the game synchronously (testing / hidden tabs where rAF is paused). */
   debugStep(frames: number, dt = 1 / 60): void {
     for (let k = 0; k < frames; k++) this.tick(dt, k === frames - 1);
   }
 
-  private slowT = 0;
-  private pixelRatio = Math.min(1.5, window.devicePixelRatio || 1);
+  /** graphics tier in use (Auto moves it with the governor) */
+  tier: QualityTier = 'medium';
+  private governor = new Governor('medium');
+  private forcedTier = urlTier();
+
+  /** Pick the starting tier from the setting (or ?quality=), and apply it. */
+  setupQuality(): void {
+    const q = this.settings.quality ?? 'auto';
+    const start = this.forcedTier ?? (q === 'auto' ? guessTier() : q);
+    this.governor = new Governor(start);
+    this.applyTier(start);
+  }
+
+  applyTier(t: QualityTier): void {
+    this.tier = t;
+    const spec = { ...QUALITY[t] };
+    // older settings could turn shadows off on their own
+    if (this.settings.shadows === false) spec.shadows = false;
+    this.view.applyQuality(spec);
+  }
 
   private loop(now: number): void {
     const raw = (now - this.last) / 1000;
     const dt = Math.min(0.05, raw);
     this.last = now;
-    // adaptive resolution: drop pixel ratio if frames stay slow
-    if (raw > 0.024 && raw < 0.25) this.slowT += raw;
-    else this.slowT = Math.max(0, this.slowT - raw * 0.5);
-    if (this.slowT > 3 && this.pixelRatio > 1) {
-      this.pixelRatio = Math.max(1, this.pixelRatio - 0.25);
-      this.view.renderer.setPixelRatio(this.pixelRatio);
-      this.view.resize();
-      this.slowT = 0;
+    // Auto quality: step tiers down when frames stay slow, back up when they stay fast
+    if ((this.settings.quality ?? 'auto') === 'auto' && !this.forcedTier && !this.benchDriver) {
+      const t = this.governor.sample(raw);
+      if (t) this.applyTier(t);
     }
     this.tick(dt, true);
     requestAnimationFrame((t) => this.loop(t));
   }
 
   private tick(dt: number, render: boolean): void {
+    if (this.glPaused) return;
     const f = this.input.poll(dt);
     this.hud.device = this.input.lastDevice;
     const g = this.game;
+    if (g && (f.commands.length || Math.abs(f.moveX) + Math.abs(f.moveZ) > 0.05)) g.idleSec = 0;
     if (this.ui.top) this.ui.handle(f.commands);
     else if (g && this.mode === 'game') for (const c of f.commands) this.gameplayCommand(g, c);
     this.ui.update(dt);
     if (g && this.mode === 'game') {
       const free = !this.ui.modalOpen;
-      g.update(dt, free ? { move: { x: f.moveX, z: f.moveZ, run: f.run }, actionHeld: f.actionHeld } : null);
+      if (this.tapMove.active && (!free || Math.abs(f.moveX) + Math.abs(f.moveZ) > 0.05 || g.action)) this.tapMove.cancel();
+      const tapDrive = free && this.tapMove.active ? this.tapMove.drive(g, dt, (use) => use && g.act()) : null;
+      if (tapDrive) {
+        f.moveX = tapDrive.x;
+        f.moveZ = tapDrive.z;
+      }
+      const drive = this.benchDriver?.(dt);
+      if (drive) {
+        g.idleSec = 0;
+        g.update(dt, { move: { x: drive.x, z: drive.z, run: false }, actionHeld: false });
+      } else g.update(dt, free ? { move: { x: f.moveX, z: f.moveZ, run: f.run, sneak: f.sneak }, actionHeld: f.actionHeld } : null);
+      this.playtest?.tick(dt, this.ui.topName);
       this.autosaveT += dt;
-      if (this.autosaveT > AUTOSAVE_SEC) {
+      if (this.autosaveT > (g.state.events.active ? 15 : AUTOSAVE_SEC)) {
         this.autosaveT = 0;
         this.saveNow(true);
       }
       this.hud.update(g);
       this.reel.update(g);
       this.tracker.update(this);
+      this.recipeTrack.update(this);
       this.contestHud.update(g);
       this.tips.update(dt, g);
       pumpInbox(this);
     } else {
       this.demo.update(dt, null);
+      this.tracker.hide();
     }
     if (render) this.view.frame(dt);
     this.touch.update();
+    this.hudLayout.update();
+    this.hud.pump((n) => this.hudLayout.toastRoom(n));
     this.updateAudio(dt);
   }
 

@@ -9,6 +9,8 @@ import { canUseNow, useSlot, useVerb } from '../sim/use';
 import { isWaterGround } from '../world/types';
 import { btn, clear, h, type Panel, type UIManager } from './dom';
 import { iconImg } from './icons';
+import { isHomeRoom } from '../sim/interior';
+import { sortPockets } from '../sim/inventory';
 
 export interface PickerOpts {
   title: string;
@@ -37,6 +39,7 @@ export function slotButton(g: Game, i: number, s: InvSlot | null | undefined, ex
 }
 
 export class InventoryPanel implements Panel {
+  name = 'inventory';
   el: HTMLElement;
   modal = true;
   private grid = h('div', { class: 'inv-grid' });
@@ -49,7 +52,17 @@ export class InventoryPanel implements Panel {
     this.el = h(
       'div',
       { class: 'panel inv center' },
-      h('h2', null, picker ? picker.title : 'Pockets', h('span', { class: 'spacer' }), btn('✕', () => ui.pop(this), 'small ghost')),
+      h(
+        'h2',
+        null,
+        picker ? picker.title : 'Pockets',
+        h('span', { class: 'spacer' }),
+        picker ? null : btn('↕ Tidy up', () => {
+          sortPockets(g);
+          this.render();
+        }, 'small', { title: 'Sort your pockets' }),
+        btn('✕', () => ui.pop(this), 'small ghost'),
+      ),
       this.grid,
       this.detail,
     );
@@ -160,7 +173,7 @@ export class InventoryPanel implements Panel {
         this.render();
       }, 'small'),
     );
-    if (g.state.player.location === 'home' && !def.key)
+    if (isHomeRoom(g.state.player.location) && !def.key)
       actions.append(
         btn('Store', () => {
           this.menuFor = -1;

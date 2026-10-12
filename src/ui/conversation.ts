@@ -8,6 +8,7 @@ import type { Game } from '../sim/game';
 import { parseLine, topicLine, villagerCtx, type Line } from '../sim/talk';
 import { acceptRequest, canFulfill, declineRequest, dueHeartRewards, fulfillRequest, giveGift, noteTalk, placeDescription, vstate } from '../sim/villagers';
 import { DialogueBox, type Speaker } from './dialogue';
+import { clothingThanks, outfitHash } from '../sim/wardrobe';
 import { InventoryPanel } from './inventory';
 import { TEXT_CPS } from '../settings';
 import { phaseOf } from '../sim/clock';
@@ -33,7 +34,7 @@ export function speakerFor(id: string, playerName = ''): Speaker {
 }
 
 export function makeBox(app: App, id: string): DialogueBox {
-  return new DialogueBox(app.ui, speakerFor(id, app.game?.state.player.name), () => TEXT_CPS[app.settings.textSpeed], (v) => app.audio.blip(v));
+  return new DialogueBox(app.ui, speakerFor(id, app.game?.state.player.name), () => TEXT_CPS[app.settings.textSpeed], (v) => app.audio.blip(v), (t, v, force) => app.speech.speak(t, v, force));
 }
 
 function pickItem(app: App, g: Game, title: string, filter: (id: string) => boolean): Promise<number | null> {
@@ -79,6 +80,13 @@ export async function talkToVillager(app: App, g: Game, id: string): Promise<voi
       }
       await box.say(lines);
     }
+    // they notice new clothes
+    const look = outfitHash(g);
+    if (look && look !== v.outfitSeen) {
+      v.outfitSeen = look;
+      emote(g, id, 'heart');
+      await box.say([L('outfit')]);
+    }
     // heart milestone rewards
     for (const r of dueHeartRewards(g, id)) {
       emote(g, id, 'heart');
@@ -120,6 +128,12 @@ export async function talkToVillager(app: App, g: Game, id: string): Promise<voi
             const topic: DialogueTopic = r === 'love' ? 'giftLove' : r === 'like' ? 'giftLike' : r === 'dislike' ? 'giftDislike' : 'giftNeutral';
             if (r === 'love' || r === 'like') emote(g, id, 'heart');
             await b.say([L(topic, { item: item(iid).name })]);
+            // a loved gift is sometimes returned with clothes in their own style
+            const cloth = r === 'love' ? clothingThanks(g, id) : null;
+            if (cloth) {
+              await b.say([parseLine(`[happy]You are so kind! This is for you: a ${item(cloth).name}. I think it will look great on you!`)]);
+              g.toast(`Received ${item(cloth).name}! Use it from your pockets to wear it.`, 'good', cloth);
+            }
           },
         },
       ];
@@ -174,9 +188,10 @@ export async function talkToNpc(app: App, g: Game, id: string): Promise<void> {
   try {
     if (await app.talkHooks.intro(id, box)) return;
     const greet: Record<string, string> = {
-      pemberly: "[happy]Oh, hello {player}! Lovely day for a wander, isn't it?",
-      fennimore: '[happy]Customer! My favorite kind of visitor. What can I do for you?',
-      vesper: '[surprised]Ah! A fellow enthusiast of the old and the wiggly!',
+      pemberly: '[happy]Oh, hello {player}! It is a lovely day for a walk.',
+      fennimore: '[happy]A customer! My favorite kind of visitor. What can I do for you?',
+      vesper: '[surprised]Ah, hello! Do you love old bones and wiggly bugs too?',
+      wanda: "[happy]Hello, hello! I'm Wanda. I fly from island to island with treasures!",
     };
     let prompt = P(greet[id] ?? '[neutral]Hello!');
     for (;;) {
@@ -184,6 +199,7 @@ export async function talkToNpc(app: App, g: Game, id: string): Promise<void> {
       if (id === 'pemberly') base.push({ label: 'Lantern Hall services', run: async () => (app.panels.hall?.(), 'end') });
       if (id === 'fennimore') base.push({ label: "Let's trade!", run: async () => (app.panels.shop?.(), 'end') });
       if (id === 'vesper') base.push({ label: 'Museum business', run: async () => (app.panels.museumDesk?.(), 'end') });
+      if (id === 'wanda') base.push({ label: "Let's see your treasures!", run: async () => (app.panels.merchant?.(), 'end') });
       const opts = [...app.talkHooks.options(id), ...base, { label: 'Just saying hi!', run: async (b: DialogueBox) => (await b.say([P('[happy]Always nice to see you. Take care out there!')]), 'end' as const) }];
       const i = await box.ask(prompt, opts.map((o) => o.label));
       const res = await opts[i]!.run(box);

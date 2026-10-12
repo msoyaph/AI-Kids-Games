@@ -25,12 +25,16 @@ export type Command =
   | 'rotate'
   | 'store'
   | 'tabNext'
-  | 'tabPrev';
+  | 'tabPrev'
+  | 'undo'
+  | 'fine';
 
 export interface InputFrame {
   moveX: number;
   moveZ: number;
   run: boolean;
+  /** creep quietly (a small push on the touch stick) */
+  sneak: boolean;
   actionHeld: boolean;
   commands: Command[];
 }
@@ -50,6 +54,8 @@ const KEYMAP: Record<string, Command[]> = {
   KeyQ: ['putAway', 'tabPrev'],
   KeyX: ['store'],
   KeyZ: ['tabNext'],
+  KeyU: ['undo'],
+  KeyF: ['fine'],
   BracketRight: ['toolNext', 'tabNext'],
   BracketLeft: ['toolPrev', 'tabPrev'],
   Digit1: ['tool1'],
@@ -76,7 +82,9 @@ const PAD: Record<number, Command[]> = {
   3: ['toolRing'],
   4: ['toolPrev', 'tabPrev'],
   5: ['toolNext', 'tabNext'],
+  6: ['undo'],
   8: ['map'],
+  10: ['fine'],
   9: ['phone', 'pause'],
   12: ['up'],
   13: ['down'],
@@ -90,7 +98,7 @@ export class Input {
   private padPrev: boolean[] = [];
   private padAxesPrev = { x: 0, y: 0 };
   private padRepeat = 0;
-  touch = { x: 0, z: 0, run: false, action: false };
+  touch = { x: 0, z: 0, run: false, action: false, sneak: false };
   mouseAction = false;
   /** set by UI so typing in text fields doesn't move the player */
   textFocus = false;
@@ -100,14 +108,22 @@ export class Input {
     window.addEventListener('keydown', (e) => this.onKey(e, true));
     window.addEventListener('keyup', (e) => this.onKey(e, false));
     window.addEventListener('blur', () => this.keys.clear());
-    target.addEventListener('mousedown', (e) => {
+    // a click on the world is the action button; a finger on it just means "touch is in use"
+    // (pointer events tell them apart: the mouse events a browser fakes after a tap must not count)
+    target.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch') {
+        this.lastDevice = 'touch';
+        return;
+      }
       if (e.button === 0) {
         this.mouseAction = true;
         this.queued.push('action');
         this.lastDevice = 'keyboard';
       }
     });
-    window.addEventListener('mouseup', () => (this.mouseAction = false));
+    window.addEventListener('pointerup', (e) => {
+      if (e.pointerType !== 'touch') this.mouseAction = false;
+    });
     target.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
@@ -197,11 +213,13 @@ export class Input {
       break;
     }
 
-    // touch joystick
+    // touch stick (it decides sneak / walk / run itself)
+    let sneak = false;
     if (Math.hypot(this.touch.x, this.touch.z) > 0.05) {
       mx += this.touch.x;
       mz += this.touch.z;
-      run = run || this.touch.run || Math.hypot(this.touch.x, this.touch.z) > 0.95;
+      sneak = this.touch.sneak;
+      run = run || this.touch.run;
     }
     if (this.touch.action) held = true;
     const m = Math.hypot(mx, mz);
@@ -209,6 +227,6 @@ export class Input {
       mx /= m;
       mz /= m;
     }
-    return { moveX: mx, moveZ: mz, run, actionHeld: held, commands };
+    return { moveX: mx, moveZ: mz, run: run && !sneak, sneak, actionHeld: held, commands };
   }
 }

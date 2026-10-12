@@ -11,6 +11,7 @@ import { RARITY_WEIGHT } from './fishing';
 import { facingVec } from './player';
 import { wearTool } from './tools';
 import { weatherOk } from './weather';
+import { inSeason } from './seasons';
 
 export interface Bug {
   id: number;
@@ -58,7 +59,7 @@ export function availableBugs(g: Game, habitat: BugHabitat): BugDef[] {
   const h = Math.floor(g.state.clock.minute / 60);
   const w = g.state.weather.today;
   return BUGS.filter((b) => {
-    if (b.habitat !== habitat) return false;
+    if (b.habitat !== habitat || !inSeason(g, b.seasons)) return false;
     if (!hourInWindow(h, b.hours[0], b.hours[1]) || !weatherOk(b.weather, w)) return false;
     // most flying bugs shelter from the rain unless they love it
     if (w === 'rain' && FLYERS.has(b.habitat) && b.weather !== 'rain' && b.habitat !== 'water') return false;
@@ -157,27 +158,34 @@ function netPoint(g: Game): { x: number; z: number } {
   return { x: p.x + fx * 0.95, z: p.z + fz * 0.95 };
 }
 
+/** A bug the net would reach right now (closest to the sweep point). */
+function bugInReach(g: Game, rt: BugRuntime, reach = 0.85): Bug | null {
+  const np = netPoint(g);
+  const py = g.world.surfaceY(g.state.player.x, g.state.player.z);
+  let best: Bug | null = null;
+  let bestD = reach;
+  for (const b of rt.bugs) {
+    if (b.state === 'gone') continue;
+    const d = Math.hypot(b.x - np.x, b.z - np.z);
+    const dy = b.y - py;
+    if (dy > 2.1 || dy < -0.6) continue;
+    // fleeing bugs can still be caught in the first moment
+    if (b.state === 'flee' && b.t > 0.3) continue;
+    if (d < bestD) {
+      bestD = d;
+      best = b;
+    }
+  }
+  return best;
+}
+
 export function swingNet(g: Game): void {
   const rt = bugRT(g);
   rt.ready = false;
   g.emit('sfx', { name: 'swish' });
   g.startAction('net', 0.5, 0.26, () => {
     const np = netPoint(g);
-    const py = g.world.surfaceY(g.state.player.x, g.state.player.z);
-    let best: Bug | null = null;
-    let bestD = 0.85;
-    for (const b of rt.bugs) {
-      if (b.state === 'gone') continue;
-      const d = Math.hypot(b.x - np.x, b.z - np.z);
-      const dy = b.y - py;
-      if (dy > 2.1 || dy < -0.6) continue;
-      // fleeing bugs can still be caught in the first moment
-      if (b.state === 'flee' && b.t > 0.3) continue;
-      if (d < bestD) {
-        bestD = d;
-        best = b;
-      }
-    }
+    const best = bugInReach(g, rt);
     if (best) catchBug(g, best);
     else {
       g.emit('toolUsed', { tool: 'net', ok: false });
@@ -219,7 +227,7 @@ export function updateBugs(g: Game, dt: number, held: boolean): void {
   }
   g.sneaking = rt.ready;
   const speed = g.motion.speed;
-  const sneaking = rt.ready && speed < 1.6;
+  const sneaking = (rt.ready || g.creeping) && speed < 1.6;
   for (const b of rt.bugs) {
     b.t += dt;
     b.life -= dt;
@@ -274,9 +282,11 @@ function flee(g: Game, b: Bug, def: BugDef): void {
 
 export function bugResolver(g: Game, ctx: InteractCtx): Interaction | null {
   if (!ctx.tool || ctx.tool.kind !== 'net') return null;
+  // a bug within reach (say, on the tree in front): the net beats shaking the tree
+  const near = !!bugInReach(g, bugRT(g), 1.1);
   return {
     label: 'Swing net (hold to sneak)',
-    priority: 20,
+    priority: near ? 60 : 20,
     run: () => {
       const rt = bugRT(g);
       rt.ready = true;

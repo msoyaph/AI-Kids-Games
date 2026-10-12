@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-11",
+  "profile": "tablet",
+  "viewport": "820×1180",
+  "deviceScaleFactor": 2,
+  "cpuThrottle": 4,
+  "vsync": true,
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Pro, Unspecified Version)",
+  "memory": {
+    "jsHeapMB": 22,
+    "geometries": 372,
+    "textures": 2,
+    "programs": 25
+  },
+  "results": [
+    {
+      "tier": "medium",
+      "seconds": 30,
+      "frames": 1801,
+      "avgFps": 60,
+      "low1Fps": 59.5,
+      "drawCalls": 507,
+      "triangles": 147016,
+      "pixelRatio": 1.25,
+      "size": "1025×1475"
+    }
+  ]
+}

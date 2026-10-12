@@ -16,6 +16,7 @@ export type ItemCategory =
   | 'flooring'
   | 'recipe'
   | 'key'
+  | 'clothing'
   | 'misc';
 
 export type ToolKind = 'net' | 'rod' | 'shovel' | 'axe' | 'can' | 'ladder';
@@ -71,6 +72,10 @@ export type IconShape =
   | 'hat'
   | 'glasses'
   | 'book'
+  | 'shirt'
+  | 'pants'
+  | 'dress'
+  | 'shoes'
   | 'mystery';
 
 export interface IconSpec {
@@ -79,6 +84,10 @@ export interface IconSpec {
   c: number;
   c2?: number;
   c3?: number;
+  /** clothing: the piece's shape (hoodie, beanie, sandals...) */
+  v?: string;
+  /** clothing: its pattern (stripe, dots, stars...) */
+  p?: string;
 }
 
 export type FurnModel =
@@ -127,7 +136,20 @@ export type FurnModel =
   | 'birdhouse'
   | 'cushion'
   | 'stove'
-  | 'frame';
+  | 'frame'
+  // wall decorations
+  | 'painting'
+  | 'poster'
+  | 'wallclock'
+  | 'wallshelf'
+  | 'wreath'
+  | 'sconce'
+  | 'kite'
+  | 'mirror'
+  | 'dyestation';
+
+/** Where a piece goes: on the floor (default), on a wall, or small enough to sit on a table/shelf too. */
+export type FurnLayer = 'floor' | 'wall' | 'small';
 
 export interface FurnitureInfo {
   w: number;
@@ -142,6 +164,8 @@ export interface FurnitureInfo {
   rug?: boolean;
   /** decor points for the island rating */
   decor: number;
+  /** placement layer (default 'floor'). Wall pieces use `w` as their width along the wall. */
+  layer?: FurnLayer;
 }
 
 export interface ItemDef {
@@ -164,11 +188,16 @@ export interface ItemDef {
   /** key/quest items cannot be sold or dropped */
   key?: boolean;
   rarity?: number;
+  /** seasonal: only found / sold in these seasons */
+  seasons?: Season[];
 }
 
 // ---------- creatures ----------
 export type FishWhere = 'river' | 'pond' | 'sea' | 'mouth';
 export type WeatherNeed = 'any' | 'rain' | 'clear' | 'rainbow';
+
+/** The four seasons (7 in-game days each). */
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
 
 export interface FishDef {
   id: string;
@@ -187,6 +216,8 @@ export interface FishDef {
   shape: 'fish' | 'eel' | 'ray' | 'puffer' | 'jelly' | 'crab';
   /** body, fin, accent */
   colors: [number, number, number];
+  /** only around in these seasons (absent = all year) */
+  seasons?: Season[];
 }
 
 export type BugHabitat = 'flowers' | 'air' | 'trees' | 'ground' | 'rocks' | 'beach' | 'water' | 'fruit';
@@ -206,6 +237,8 @@ export interface BugDef {
   speed: 1 | 2 | 3;
   /** how easily it notices you 1..3 */
   wariness: 1 | 2 | 3;
+  /** only around in these seasons (absent = all year) */
+  seasons?: Season[];
 }
 
 export interface FossilDef {
@@ -218,7 +251,7 @@ export interface FossilDef {
 }
 
 // ---------- crafting ----------
-export type RecipeUnlock = 'start' | 'mission' | 'card' | 'friend' | 'lumen' | 'museum';
+export type RecipeUnlock = 'start' | 'mission' | 'card' | 'friend' | 'lumen' | 'museum' | 'season';
 
 export interface RecipeDef {
   id: string;
@@ -229,6 +262,8 @@ export interface RecipeDef {
   unlock: RecipeUnlock;
   /** Lumen price when unlock === 'lumen' */
   lumenCost?: number;
+  /** unlock === 'season': learned when you first gather that season's treasures */
+  season?: Season;
 }
 
 export interface FurnitureDef {

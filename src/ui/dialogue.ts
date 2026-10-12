@@ -14,6 +14,7 @@ export interface Speaker {
 }
 
 export class DialogueBox implements Panel {
+  name = 'dialogue';
   el: HTMLElement;
   modal = true;
   sticky = true;
@@ -29,18 +30,25 @@ export class DialogueBox implements Panel {
   private resolveChoice: ((i: number) => void) | null = null;
   private choiceCount = 0;
   private speaker: Speaker;
+  private replay = h('button', { class: 'dlg-say', 'aria-label': 'Read it again', title: 'Read it again' }, '🔊');
 
   constructor(
     private ui: UIManager,
     speaker: Speaker,
     private cps: () => number,
     private blip: (voice: number) => void,
+    /** read a line aloud (no-op when read-aloud is off or unsupported) */
+    private speak: (text: string, voice: number, force?: boolean) => boolean = () => false,
   ) {
     this.speaker = speaker;
+    this.replay.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.speak(this.full, this.speaker.voice, true);
+    });
     this.el = h(
       'div',
       { class: 'dlg-wrap' },
-      h('div', { class: 'dlg', onclick: () => this.advance() }, h('div', { class: 'dlg-left' }, this.portrait), h('div', { class: 'dlg-body' }, this.nameTag, this.text, this.more)),
+      h('div', { class: 'dlg', onclick: () => this.advance() }, h('div', { class: 'dlg-left' }, this.portrait), h('div', { class: 'dlg-body' }, this.nameTag, this.text, this.more), this.replay),
       this.choices,
     );
     this.setSpeaker(speaker);
@@ -79,6 +87,7 @@ export class DialogueBox implements Panel {
     this.text.textContent = '';
     this.more.style.visibility = 'hidden';
     clear(this.choices);
+    this.speak(l.text, this.speaker.voice);
     return new Promise((res) => (this.resolveLine = res));
   }
 
@@ -91,6 +100,7 @@ export class DialogueBox implements Panel {
     this.acc = 0;
     this.more.style.visibility = 'hidden';
     clear(this.choices);
+    this.speak(prompt.text, this.speaker.voice);
     this.choiceCount = options.length;
     return new Promise((res) => {
       this.resolveChoice = res;

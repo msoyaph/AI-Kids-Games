@@ -30,6 +30,8 @@ export class World {
   readonly gen: IslandGen;
   /** structure index + 1 occupying each tile (0 = none) */
   structAt: Int32Array;
+  /** the pond freezes solid for the Lantern Skate */
+  frozenPond = false;
   constructor(public state: GameState) {
     this.gen = getIsland(state.seed);
     this.structAt = new Int32Array(this.size * this.size);
@@ -70,6 +72,7 @@ export class World {
   /** Water that isn't covered by a bridge/dock. */
   isWater(i: number): boolean {
     if (!isWaterGround(this.ground(i))) return false;
+    if (this.frozenPond && this.ground(i) === Ground.Pond) return false;
     const s = this.structure(i);
     return !(s && (s.type === 'bridge' || s.type === 'dock'));
   }
@@ -174,6 +177,7 @@ export class World {
     if (s && (s.type === 'bridge' || s.type === 'dock')) return 0.16;
     const g = this.ground(i);
     if (g === Ground.Ocean) return -0.4;
+    if (g === Ground.Pond && this.frozenPond) return -0.2;
     if (g === Ground.River || g === Ground.Pond) return -0.6;
     return this.height(i) * LEVEL_HEIGHT;
   }

@@ -61,6 +61,7 @@ function drawIcon(ctx: Ctx, spec: IconSpec): void {
   const S = shade(c, -0.35), S2 = shade(c2, -0.35);
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  if (spec.v && drawClothing(ctx, spec)) return;
   switch (spec.s) {
     case 'fish':
     case 'eel':
@@ -718,6 +719,74 @@ function drawIcon(ctx: Ctx, spec: IconSpec): void {
       ctx.fillStyle = S;
       ctx.fillRect(20, 16, 8, 66);
       break;
+    case 'shirt':
+      blob(ctx, F, S, () => {
+        ctx.moveTo(32, 18);
+        ctx.lineTo(14, 30);
+        ctx.lineTo(22, 44);
+        ctx.lineTo(30, 40);
+        ctx.lineTo(30, 80);
+        ctx.lineTo(66, 80);
+        ctx.lineTo(66, 40);
+        ctx.lineTo(74, 44);
+        ctx.lineTo(82, 30);
+        ctx.lineTo(64, 18);
+        ctx.quadraticCurveTo(48, 30, 32, 18);
+        ctx.closePath();
+      });
+      ctx.fillStyle = F2;
+      for (const [x, y] of [[40, 50], [56, 58], [44, 68]] as const) {
+        ctx.beginPath();
+        ell(ctx, x, y, 4, 4);
+        ctx.fill();
+      }
+      break;
+    case 'pants':
+      blob(ctx, F, S, () => {
+        ctx.moveTo(28, 16);
+        ctx.lineTo(68, 16);
+        ctx.lineTo(72, 82);
+        ctx.lineTo(54, 82);
+        ctx.lineTo(48, 40);
+        ctx.lineTo(42, 82);
+        ctx.lineTo(24, 82);
+        ctx.closePath();
+      });
+      ctx.fillStyle = F2;
+      ctx.fillRect(28, 16, 40, 7);
+      break;
+    case 'dress':
+      blob(ctx, F, S, () => {
+        ctx.moveTo(36, 14);
+        ctx.lineTo(60, 14);
+        ctx.lineTo(62, 38);
+        ctx.lineTo(80, 82);
+        ctx.lineTo(16, 82);
+        ctx.lineTo(34, 38);
+        ctx.closePath();
+      });
+      ctx.fillStyle = F2;
+      ctx.fillRect(33, 36, 30, 6);
+      for (const [x, y] of [[34, 64], [50, 70], [64, 62]] as const) {
+        ctx.beginPath();
+        ell(ctx, x, y, 4, 4);
+        ctx.fill();
+      }
+      break;
+    case 'shoes':
+      for (const [x, y] of [[30, 46], [58, 60]] as const) {
+        blob(ctx, F, S, () => {
+          ctx.moveTo(x - 12, y - 18);
+          ctx.lineTo(x + 2, y - 18);
+          ctx.lineTo(x + 4, y - 4);
+          ctx.quadraticCurveTo(x + 24, y - 2, x + 24, y + 10);
+          ctx.lineTo(x - 12, y + 10);
+          ctx.closePath();
+        });
+        ctx.fillStyle = F2;
+        ctx.fillRect(x - 12, y + 6, 36, 5);
+      }
+      break;
     case 'mystery':
     default:
       blob(ctx, F, S, () => ell(ctx, 48, 50, 32, 28));
@@ -727,6 +796,496 @@ function drawIcon(ctx: Ctx, spec: IconSpec): void {
       ctx.textBaseline = 'middle';
       ctx.fillText('?', 48, 52);
       break;
+  }
+}
+
+// ---------------------------------------------------------------- clothing (shape + pattern)
+
+function starPath(ctx: Ctx, x: number, y: number, R: number, r: number): void {
+  for (let k = 0; k < 10; k++) {
+    const a = -Math.PI / 2 + (k * Math.PI) / 5;
+    const d = k % 2 ? r : R;
+    if (k) ctx.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d);
+    else ctx.moveTo(x + Math.cos(a) * d, y + Math.sin(a) * d);
+  }
+  ctx.closePath();
+}
+
+function heartPath(ctx: Ctx, x: number, y: number, s: number): void {
+  ctx.moveTo(x, y + s * 0.9);
+  ctx.bezierCurveTo(x - s * 1.6, y - s * 0.2, x - s * 0.6, y - s * 1.3, x, y - s * 0.4);
+  ctx.bezierCurveTo(x + s * 0.6, y - s * 1.3, x + s * 1.6, y - s * 0.2, x, y + s * 0.9);
+  ctx.closePath();
+}
+
+function dot(ctx: Ctx, x: number, y: number, r: number, fill: string): void {
+  ctx.beginPath();
+  ell(ctx, x, y, r, r);
+  ctx.fillStyle = fill;
+  ctx.fill();
+}
+
+/** A clothing pattern, drawn inside the current clip around (cx, cy). */
+function clothPattern(ctx: Ctx, p: string | undefined, col: string, cx: number, cy: number): void {
+  if (!p || p === 'plain') return;
+  ctx.fillStyle = col;
+  if (p === 'stripe') for (let y = cy - 44; y < 96; y += 12) ctx.fillRect(0, y, 96, 5);
+  else if (p === 'check') {
+    ctx.globalAlpha = 0.55;
+    for (let y = 0; y < 96; y += 10) for (let x = (y / 10) % 2 ? 10 : 0; x < 96; x += 20) ctx.fillRect(x, y, 10, 10);
+    ctx.globalAlpha = 1;
+  } else if (p === 'heart') {
+    ctx.beginPath();
+    heartPath(ctx, cx, cy, 12);
+    ctx.fill();
+  } else {
+    const spots: [number, number][] = [[-12, -14], [12, -8], [-6, 6], [16, 12], [-16, 22], [6, 26], [26, -22], [-26, 0]];
+    for (const [dx, dy] of spots) {
+      const x = cx + dx, y = cy + dy;
+      if (p === 'dots') dot(ctx, x, y, 3.5, col);
+      else if (p === 'stars') {
+        ctx.beginPath();
+        starPath(ctx, x, y, 5.5, 2.4);
+        ctx.fill();
+      } else if (p === 'flower') {
+        for (let k = 0; k < 5; k++) dot(ctx, x + Math.cos(k * 1.2566) * 3, y + Math.sin(k * 1.2566) * 3, 2.3, col);
+        dot(ctx, x, y, 1.6, '#fff6c2');
+      } else if (p === 'leaf') {
+        ctx.beginPath();
+        ell(ctx, x, y, 5, 2.4, -0.7);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+/** Fill a garment outline, lay its pattern inside it, then outline it again. */
+function garment(ctx: Ctx, spec: IconSpec, path: () => void, cx = 48, cy = 52): void {
+  const F = css(spec.c), S = shade(spec.c, -0.35);
+  blob(ctx, F, S, path);
+  ctx.save();
+  ctx.beginPath();
+  path();
+  ctx.clip();
+  clothPattern(ctx, spec.p, css(spec.c2 ?? spec.c), cx, cy);
+  ctx.restore();
+  ctx.beginPath();
+  path();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = S;
+  ctx.stroke();
+}
+
+function line(ctx: Ctx, pts: number[], col: string, lw: number): void {
+  ctx.beginPath();
+  ctx.moveTo(pts[0]!, pts[1]!);
+  for (let k = 2; k < pts.length; k += 2) ctx.lineTo(pts[k]!, pts[k + 1]!);
+  ctx.strokeStyle = col;
+  ctx.lineWidth = lw;
+  ctx.stroke();
+}
+
+/** Clothing icons drawn by shape, so a hoodie, a raincoat and a tee all look different. */
+function drawClothing(ctx: Ctx, spec: IconSpec): boolean {
+  const F = css(spec.c), F2 = css(spec.c2 ?? spec.c), S = shade(spec.c, -0.35), S2 = shade(spec.c2 ?? spec.c, -0.35), Fd = shade(spec.c, -0.15);
+  const glass = 'rgba(220,240,255,0.7)';
+  const longTop = (hem: number, flare: number) => () => {
+    ctx.moveTo(32, 18);
+    ctx.lineTo(16, 26);
+    ctx.lineTo(10, 72);
+    ctx.lineTo(22, 74);
+    ctx.lineTo(28, 42);
+    ctx.lineTo(28 - flare, hem);
+    ctx.lineTo(68 + flare, hem);
+    ctx.lineTo(68, 42);
+    ctx.lineTo(74, 74);
+    ctx.lineTo(86, 72);
+    ctx.lineTo(80, 26);
+    ctx.lineTo(64, 18);
+    ctx.quadraticCurveTo(48, 30, 32, 18);
+    ctx.closePath();
+  };
+  const tee = () => {
+    ctx.moveTo(32, 18);
+    ctx.lineTo(14, 30);
+    ctx.lineTo(22, 44);
+    ctx.lineTo(30, 40);
+    ctx.lineTo(30, 80);
+    ctx.lineTo(66, 80);
+    ctx.lineTo(66, 40);
+    ctx.lineTo(74, 44);
+    ctx.lineTo(82, 30);
+    ctx.lineTo(64, 18);
+    ctx.quadraticCurveTo(48, 30, 32, 18);
+    ctx.closePath();
+  };
+  const hood = (fill: string) => blob(ctx, fill, S, () => ell(ctx, 48, 20, 17, 9));
+  const collar = (fill: string) => {
+    blob(ctx, fill, S2, () => {
+      ctx.moveTo(33, 18);
+      ctx.lineTo(47, 29);
+      ctx.lineTo(38, 33);
+      ctx.closePath();
+    }, 2);
+    blob(ctx, fill, S2, () => {
+      ctx.moveTo(63, 18);
+      ctx.lineTo(49, 29);
+      ctx.lineTo(58, 33);
+      ctx.closePath();
+    }, 2);
+  };
+  const legs = (top: number, hem: number) => () => {
+    ctx.moveTo(28, top);
+    ctx.lineTo(68, top);
+    ctx.lineTo(72, hem);
+    ctx.lineTo(54, hem);
+    ctx.lineTo(48, top + 24);
+    ctx.lineTo(42, hem);
+    ctx.lineTo(24, hem);
+    ctx.closePath();
+  };
+  const boot = (x: number, y: number, tall: number) => () => {
+    ctx.moveTo(x - 10, y - tall);
+    ctx.lineTo(x + 6, y - tall);
+    ctx.lineTo(x + 6, y - 4);
+    ctx.quadraticCurveTo(x + 24, y - 2, x + 24, y + 10);
+    ctx.lineTo(x - 10, y + 10);
+    ctx.closePath();
+  };
+  switch (spec.v) {
+    // ---- tops
+    case 'tee':
+      garment(ctx, spec, tee, 48, 54);
+      return true;
+    case 'tank':
+      garment(ctx, spec, () => {
+        ctx.moveTo(32, 14);
+        ctx.lineTo(40, 14);
+        ctx.quadraticCurveTo(48, 30, 56, 14);
+        ctx.lineTo(64, 14);
+        ctx.quadraticCurveTo(64, 34, 70, 40);
+        ctx.lineTo(70, 82);
+        ctx.lineTo(26, 82);
+        ctx.lineTo(26, 40);
+        ctx.quadraticCurveTo(32, 34, 32, 14);
+        ctx.closePath();
+      }, 48, 56);
+      return true;
+    case 'hoodie':
+      hood(Fd);
+      garment(ctx, spec, longTop(80, 0), 48, 50);
+      ctx.beginPath();
+      rr(ctx, 36, 58, 24, 12, 4);
+      ctx.strokeStyle = S;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      line(ctx, [44, 27, 43, 42], F2, 3);
+      line(ctx, [52, 27, 53, 42], F2, 3);
+      return true;
+    case 'sweater':
+      garment(ctx, spec, longTop(80, 0), 48, 50);
+      blob(ctx, F2, S2, () => rr(ctx, 28, 72, 40, 8, 3), 2);
+      line(ctx, [32, 18, 40, 26, 48, 28, 56, 26, 64, 18], F2, 4);
+      return true;
+    case 'jacket':
+      garment(ctx, spec, longTop(80, 0), 48, 50);
+      line(ctx, [48, 28, 48, 80], S, 3);
+      collar(F2);
+      for (const x of [36, 60]) line(ctx, [x - 5, 60, x + 5, 60], S, 3);
+      return true;
+    case 'raincoat':
+      hood(F);
+      garment(ctx, spec, longTop(86, 4), 48, 52);
+      line(ctx, [48, 28, 48, 86], S, 2);
+      for (const y of [40, 54, 68]) blob(ctx, F2, S2, () => rr(ctx, 44, y - 2, 8, 5, 2), 2);
+      return true;
+    case 'buttonup':
+      garment(ctx, spec, tee, 48, 54);
+      collar(F2 === F ? '#fdfbf4' : F2);
+      line(ctx, [48, 30, 48, 80], S, 2);
+      for (const y of [40, 52, 64]) dot(ctx, 48, y, 2.6, S);
+      return true;
+    // ---- bottoms
+    case 'pants':
+      garment(ctx, spec, legs(16, 84), 48, 48);
+      blob(ctx, F2, S2, () => rr(ctx, 28, 16, 40, 7, 2), 2);
+      return true;
+    case 'shorts':
+      garment(ctx, spec, legs(24, 64), 48, 44);
+      blob(ctx, F2, S2, () => rr(ctx, 28, 24, 40, 7, 2), 2);
+      return true;
+    case 'skirt':
+      garment(ctx, spec, () => {
+        ctx.moveTo(30, 24);
+        ctx.lineTo(66, 24);
+        ctx.lineTo(82, 74);
+        ctx.quadraticCurveTo(48, 84, 14, 74);
+        ctx.closePath();
+      }, 48, 52);
+      blob(ctx, F2, S2, () => rr(ctx, 29, 22, 38, 7, 2), 2);
+      return true;
+    case 'overalls':
+      line(ctx, [36, 24, 30, 10], F, 5);
+      line(ctx, [60, 24, 66, 10], F, 5);
+      garment(ctx, spec, legs(42, 86), 48, 62);
+      garment(ctx, spec, () => rr(ctx, 34, 20, 28, 26, 4), 48, 32);
+      for (const x of [38, 58]) dot(ctx, x, 25, 3, F2);
+      ctx.beginPath();
+      rr(ctx, 40, 30, 16, 10, 2);
+      ctx.strokeStyle = S;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      return true;
+    // ---- dresses
+    case 'sundress':
+      line(ctx, [39, 26, 37, 10], S, 3);
+      line(ctx, [57, 26, 59, 10], S, 3);
+      garment(ctx, spec, () => {
+        ctx.moveTo(36, 24);
+        ctx.lineTo(60, 24);
+        ctx.lineTo(62, 40);
+        ctx.lineTo(82, 84);
+        ctx.lineTo(14, 84);
+        ctx.lineTo(34, 40);
+        ctx.closePath();
+      }, 48, 60);
+      blob(ctx, F2, S2, () => rr(ctx, 33, 37, 30, 6, 2), 2);
+      return true;
+    case 'puffdress':
+      for (const x of [28, 68]) blob(ctx, F, S, () => ell(ctx, x, 26, 10, 9));
+      garment(ctx, spec, () => {
+        ctx.moveTo(36, 16);
+        ctx.lineTo(60, 16);
+        ctx.lineTo(62, 40);
+        ctx.quadraticCurveTo(90, 66, 86, 86);
+        ctx.lineTo(10, 86);
+        ctx.quadraticCurveTo(6, 66, 34, 40);
+        ctx.closePath();
+      }, 48, 62);
+      blob(ctx, F2, S2, () => rr(ctx, 33, 37, 30, 6, 2), 2);
+      return true;
+    case 'longdress':
+      garment(ctx, spec, () => {
+        ctx.moveTo(38, 10);
+        ctx.lineTo(58, 10);
+        ctx.lineTo(60, 34);
+        ctx.lineTo(74, 90);
+        ctx.lineTo(22, 90);
+        ctx.lineTo(36, 34);
+        ctx.closePath();
+      }, 48, 58);
+      blob(ctx, F2, S2, () => rr(ctx, 35, 31, 26, 6, 2), 2);
+      return true;
+    // ---- hats
+    case 'cap':
+      garment(ctx, spec, () => {
+        ctx.moveTo(20, 62);
+        ctx.quadraticCurveTo(20, 28, 48, 28);
+        ctx.quadraticCurveTo(74, 28, 74, 62);
+        ctx.closePath();
+      }, 46, 46);
+      blob(ctx, F2, S2, () => ell(ctx, 72, 63, 20, 6));
+      dot(ctx, 48, 28, 4, F2);
+      return true;
+    case 'beanie':
+      garment(ctx, spec, () => {
+        ctx.moveTo(24, 64);
+        ctx.quadraticCurveTo(24, 26, 48, 26);
+        ctx.quadraticCurveTo(72, 26, 72, 64);
+        ctx.closePath();
+      }, 48, 46);
+      blob(ctx, F2, S2, () => rr(ctx, 20, 58, 56, 14, 6));
+      for (let x = 28; x <= 68; x += 8) line(ctx, [x, 61, x, 69], S2, 2);
+      blob(ctx, F2, S2, () => ell(ctx, 48, 22, 9, 9));
+      return true;
+    case 'sunhat':
+      blob(ctx, F, S, () => ell(ctx, 48, 62, 44, 12));
+      garment(ctx, spec, () => {
+        ctx.moveTo(28, 62);
+        ctx.quadraticCurveTo(28, 32, 48, 32);
+        ctx.quadraticCurveTo(68, 32, 68, 62);
+        ctx.closePath();
+      }, 48, 46);
+      ctx.fillStyle = F2;
+      ctx.fillRect(29, 50, 38, 7);
+      for (let k = 0; k < 5; k++) dot(ctx, 62 + Math.cos(k * 1.2566) * 3.5, 53 + Math.sin(k * 1.2566) * 3.5, 2.8, '#ff9fb8');
+      dot(ctx, 62, 53, 2, '#ffe27a');
+      return true;
+    case 'bucket':
+      garment(ctx, spec, () => {
+        ctx.moveTo(30, 30);
+        ctx.lineTo(66, 30);
+        ctx.lineTo(72, 60);
+        ctx.lineTo(24, 60);
+        ctx.closePath();
+      }, 48, 44);
+      blob(ctx, F, S, () => {
+        ctx.moveTo(24, 58);
+        ctx.lineTo(72, 58);
+        ctx.lineTo(86, 74);
+        ctx.lineTo(10, 74);
+        ctx.closePath();
+      });
+      ctx.fillStyle = F2;
+      ctx.fillRect(26, 51, 44, 6);
+      return true;
+    case 'beret':
+      blob(ctx, F, S, () => rr(ctx, 45, 26, 6, 8, 2), 3);
+      garment(ctx, spec, () => ell(ctx, 48, 50, 34, 17, -0.12), 48, 50);
+      line(ctx, [22, 60, 74, 54], Fd, 3);
+      return true;
+    case 'crown':
+      blob(ctx, F, S, () => {
+        ctx.moveTo(20, 72);
+        ctx.lineTo(20, 34);
+        ctx.lineTo(34, 52);
+        ctx.lineTo(48, 26);
+        ctx.lineTo(62, 52);
+        ctx.lineTo(76, 34);
+        ctx.lineTo(76, 72);
+        ctx.closePath();
+      });
+      for (const [x, y] of [[20, 32], [48, 24], [76, 32]] as const) dot(ctx, x, y, 4, F2);
+      for (const [x, y] of [[34, 62], [48, 58], [62, 62]] as const) dot(ctx, x, y, 4.5, F2);
+      highlight(ctx, 30, 46, 5);
+      return true;
+    case 'party':
+      garment(ctx, spec, () => {
+        ctx.moveTo(48, 14);
+        ctx.lineTo(72, 78);
+        ctx.quadraticCurveTo(48, 86, 24, 78);
+        ctx.closePath();
+      }, 48, 56);
+      blob(ctx, F2, S2, () => ell(ctx, 48, 13, 7, 7), 3);
+      return true;
+    case 'bow':
+      for (const sx of [-1, 1])
+        blob(ctx, F, S, () => {
+          ctx.moveTo(48, 50);
+          ctx.quadraticCurveTo(48 + sx * 20, 22, 48 + sx * 34, 32);
+          ctx.lineTo(48 + sx * 34, 68);
+          ctx.quadraticCurveTo(48 + sx * 20, 78, 48, 50);
+          ctx.closePath();
+        });
+      blob(ctx, F2, S2, () => rr(ctx, 41, 41, 14, 18, 5), 3);
+      return true;
+    case 'flowercrown':
+      line(ctx, [10, 50, 28, 60, 48, 63, 68, 60, 86, 50], '#6fae5a', 7);
+      for (let k = 0; k < 5; k++) {
+        const x = 14 + k * 17, y = 50 + Math.sin((k / 4) * Math.PI) * 11;
+        if (k < 4) blob(ctx, '#8fd18a', '#5f9a4e', () => ell(ctx, x + 9, y + 7, 7, 3.4, 0.4), 2);
+        for (let a = 0; a < 5; a++) dot(ctx, x + Math.cos(a * 1.2566) * 6.5, y + Math.sin(a * 1.2566) * 6.5, 5.5, k % 2 ? F2 : F);
+        dot(ctx, x, y, 3.6, '#ffe27a');
+      }
+      return true;
+    // ---- glasses
+    case 'round':
+    case 'square':
+    case 'star':
+    case 'heart':
+    case 'shades':
+    case 'goggles': {
+      const lens = spec.v === 'shades' ? '#3b3552' : glass;
+      if (spec.v === 'goggles') line(ctx, [6, 50, 90, 50], F2, 8);
+      for (const x of [30, 66])
+        blob(ctx, lens, F, () => {
+          if (spec.v === 'square' || spec.v === 'shades') rr(ctx, x - 15, 38, 30, 24, 6);
+          else if (spec.v === 'star') starPath(ctx, x, 51, 17, 8);
+          else if (spec.v === 'heart') heartPath(ctx, x, 50, 13);
+          else ell(ctx, x, 50, spec.v === 'goggles' ? 16 : 15, spec.v === 'goggles' ? 16 : 14);
+        }, spec.v === 'goggles' ? 6 : 5);
+      if (spec.v === 'shades') for (const x of [24, 60]) line(ctx, [x, 44, x + 6, 44], 'rgba(255,255,255,0.6)', 3);
+      ctx.beginPath();
+      ctx.moveTo(44, 48);
+      ctx.quadraticCurveTo(48, 42, 52, 48);
+      ctx.strokeStyle = F;
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      return true;
+    }
+    // ---- shoes
+    case 'sneakers':
+      return false;
+    case 'boots':
+    case 'rainboots':
+      for (const [x, y] of [[30, 52], [58, 66]] as const) {
+        garment(ctx, spec, boot(x, y, 34), x + 4, y - 10);
+        ctx.fillStyle = spec.v === 'boots' ? F2 : S;
+        ctx.fillRect(x - 10, y + 6, 34, 5);
+        if (spec.v === 'boots') blob(ctx, F2, S2, () => rr(ctx, x - 12, y - 36, 20, 7, 3), 2);
+        else line(ctx, [x - 5, y - 28, x - 5, y - 10], 'rgba(255,255,255,0.55)', 3);
+      }
+      return true;
+    case 'sandals':
+      for (const [x, y] of [[28, 40], [56, 62]] as const) {
+        for (const dx of [0, 16]) {
+          ctx.beginPath();
+          ctx.ellipse(x + dx, y + 4, 8, 12, 0, Math.PI, 0);
+          ctx.strokeStyle = S;
+          ctx.lineWidth = 9;
+          ctx.stroke();
+          ctx.strokeStyle = F;
+          ctx.lineWidth = 6;
+          ctx.stroke();
+        }
+        blob(ctx, F2, S2, () => rr(ctx, x - 14, y + 2, 46, 12, 6), 3);
+      }
+      return true;
+    case 'slippers':
+      for (const [x, y] of [[30, 46], [60, 62]] as const) {
+        garment(ctx, spec, () => ell(ctx, x + 4, y + 2, 20, 11), x + 4, y + 2);
+        blob(ctx, F2, S2, () => ell(ctx, x - 2, y - 4, 11, 6), 2);
+        dot(ctx, x + 14, y - 4, 5, F2);
+      }
+      return true;
+    // ---- bags
+    case 'backpack':
+      ctx.beginPath();
+      ctx.ellipse(48, 26, 12, 10, 0, Math.PI, 0);
+      ctx.strokeStyle = S;
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      garment(ctx, spec, () => rr(ctx, 22, 24, 52, 60, 16), 48, 50);
+      blob(ctx, F2, S2, () => rr(ctx, 30, 56, 36, 22, 7), 3);
+      line(ctx, [30, 62, 66, 62], S2, 2);
+      return true;
+    case 'satchel':
+      ctx.beginPath();
+      ctx.moveTo(22, 46);
+      ctx.quadraticCurveTo(48, -4, 74, 46);
+      ctx.strokeStyle = F2;
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      garment(ctx, spec, () => rr(ctx, 16, 42, 64, 42, 8), 48, 66);
+      blob(ctx, Fd, S, () => {
+        ctx.moveTo(16, 46);
+        ctx.lineTo(80, 46);
+        ctx.lineTo(80, 60);
+        ctx.quadraticCurveTo(48, 70, 16, 60);
+        ctx.closePath();
+      }, 3);
+      blob(ctx, F2, S2, () => rr(ctx, 43, 58, 10, 9, 2), 2);
+      return true;
+    case 'basket':
+      ctx.beginPath();
+      ctx.moveTo(24, 50);
+      ctx.quadraticCurveTo(48, 0, 72, 50);
+      ctx.strokeStyle = S;
+      ctx.lineWidth = 6;
+      ctx.stroke();
+      blob(ctx, F, S, () => {
+        ctx.moveTo(16, 46);
+        ctx.lineTo(80, 46);
+        ctx.lineTo(70, 84);
+        ctx.lineTo(26, 84);
+        ctx.closePath();
+      });
+      for (const y of [58, 70]) line(ctx, [20, y, 76, y], S, 2);
+      for (let x = 30; x <= 66; x += 12) line(ctx, [x, 48, x - 1, 82], S, 2);
+      blob(ctx, F2, S2, () => rr(ctx, 14, 42, 68, 8, 4), 2);
+      return true;
+    default:
+      return false;
   }
 }
 

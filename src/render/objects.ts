@@ -6,7 +6,7 @@ import { Ground, LEVEL_HEIGHT } from '../world/types';
 import type { World } from '../sim/world';
 import { InstancedLayer } from './instanced';
 import { natureGeo } from './models/nature';
-import { PAL, FLOWER_COLORS } from './palette';
+import { PAL, FLOWER_COLORS, SEASON_PALETTES, type SeasonPalette } from './palette';
 import { vcolMat } from './curve';
 import { furnitureObject } from './interior';
 
@@ -20,10 +20,18 @@ export class ObjectRenderer {
   private decor = new THREE.Group();
   private decorMap = new Map<number, { key: string; obj: THREE.Object3D }>();
   dirty = true;
+  private P: SeasonPalette = SEASON_PALETTES.summer;
+  private season = 'summer';
+  /** quality: share of grass tufts drawn, and whether canopies sway */
+  private grassDensity = 1;
+  private plainMat: THREE.Material;
+  private treeMat: THREE.Material;
 
   constructor(private world: World, private itemVisual: ItemVisual) {
     const mat = vcolMat();
     const sway = vcolMat({ sway: true });
+    this.plainMat = mat;
+    this.treeMat = vcolMat({ swayTree: true });
     const L = (name: string, geo: THREE.BufferGeometry, m: THREE.Material, cap: number, shadow = true) => {
       const layer = new InstancedLayer(geo, m, cap, { shadow });
       this.layers[name] = layer;
@@ -53,21 +61,45 @@ export class ObjectRenderer {
     this.buildGrass();
   }
 
+  /** Quality tier: grass density and canopy sway. */
+  setQuality(grass: number, treeSway: boolean): void {
+    for (const n of ['canopy', 'pineCanopy', 'palm']) this.layers[n]!.setMaterial(treeSway ? this.treeMat : this.plainMat);
+    if (grass !== this.grassDensity) {
+      this.grassDensity = grass;
+      this.buildGrass();
+    }
+  }
+
+  /** Recolor canopies and grass for a season. */
+  setSeason(season: string): void {
+    if (season === this.season) return;
+    this.season = season;
+    this.P = SEASON_PALETTES[season as keyof typeof SEASON_PALETTES] ?? SEASON_PALETTES.summer;
+    this.buildGrass();
+    this.dirty = true;
+  }
+
   private buildGrass(): void {
     const g = this.world.gen;
     const layer = this.layers.grass!;
     layer.begin();
+    const blades = this.P.blades;
+    if (!blades) {
+      // snow covers the grass
+      layer.end();
+      return;
+    }
     for (let z = 0; z < g.size; z++)
       for (let x = 0; x < g.size; x++) {
         const i = z * g.size + x;
         if (g.ground[i] !== Ground.Grass) continue;
         const h = hash01(x, z, 401);
-        if (h > 0.4) continue;
+        if (h > 0.4 * this.grassDensity) continue;
         const n = h < 0.12 ? 2 : 1;
         for (let k = 0; k < n; k++) {
           const ox = hash01(x, z, 402 + k) * 0.8 + 0.1, oz = hash01(x, z, 403 + k) * 0.8 + 0.1;
           const lvl = g.height[i]!;
-          const col = lvl === 0 ? 0x8cc76f : lvl === 1 ? 0x86bf78 : 0x8fc58a;
+          const col = blades[Math.min(2, lvl)]!;
           layer.push(x + ox, lvl * LEVEL_HEIGHT, z + oz, h * 30, 0.8 + hash01(x, z, 404) * 0.5, col);
         }
       }
@@ -94,7 +126,8 @@ export class ObjectRenderer {
         case 'tree':
         case 'fruitTree': {
           Ls.trunk!.push(x, y, z, rot, s, 0xffffff);
-          const leaf = o.k === 'fruitTree' ? 0x8ccf7d : PAL.leaf[(o.v ?? 0) % PAL.leaf.length]!;
+          const P = this.P;
+          const leaf = o.k === 'fruitTree' ? (this.season === 'winter' ? 0xdfe9e2 : this.season === 'autumn' ? 0xc9c46a : 0x8ccf7d) : P.leaf[(o.v ?? 0) % P.leaf.length]!;
           Ls.canopy!.push(x, y, z, rot, s, leaf);
           if (o.k === 'fruitTree' && (o.f ?? 0) > 0) {
             const fc = FRUITS[o.v ?? 0]?.color ?? 0xffffff;
@@ -113,7 +146,7 @@ export class ObjectRenderer {
         }
         case 'pine':
           Ls.pineTrunk!.push(x, y, z, rot, s, 0xffffff);
-          Ls.pineCanopy!.push(x, y, z, rot, s, PAL.pine[(o.v ?? 0) % PAL.pine.length]!);
+          Ls.pineCanopy!.push(x, y, z, rot, s, this.P.pine[(o.v ?? 0) % this.P.pine.length]!);
           break;
         case 'palm': {
           Ls.palm!.push(x, y, z, rot, s, 0xffffff);
@@ -154,7 +187,7 @@ export class ObjectRenderer {
         case 'deco': {
           if (o.tag === 'fill') break;
           seenDecor.add(i);
-          const dk = `${o.item}|${o.r ?? 0}`;
+          const dk = `${o.item}|${o.r ?? 0}|${o.nx ?? 0}|${o.nz ?? 0}`;
           const cur = this.decorMap.get(i);
           if (cur && cur.key === dk) break;
           if (cur) this.decor.remove(cur.obj);
@@ -170,7 +203,7 @@ export class ObjectRenderer {
               maxZ = Math.max(maxZ, Math.floor(+k2 / N));
             }
           }
-          f.position.set((tx + maxX + 1) / 2, y, (tz + maxZ + 1) / 2);
+          f.position.set((tx + maxX + 1) / 2 + (o.nx ?? 0), y, (tz + maxZ + 1) / 2 + (o.nz ?? 0));
           f.rotation.y = -(o.r ?? 0) * (Math.PI / 2);
           this.decor.add(f);
           this.decorMap.set(i, { key: dk, obj: f });

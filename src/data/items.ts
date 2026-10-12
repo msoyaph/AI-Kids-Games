@@ -1,7 +1,7 @@
 // Base items: materials, tools, shells, fruit, flowers, seeds, saplings, misc/key items.
 // Fish, bugs, fossils and furniture live in their own data files and are merged by registry.ts.
 import { COCONUT, FRUITS } from './fruit';
-import type { ItemDef } from './types';
+import type { ItemDef, Season } from './types';
 
 export const MATERIALS: ItemDef[] = [
   { id: 'branch', name: 'Twiggy Branch', cat: 'material', price: 5, stack: 30, desc: 'A bendy branch. Handy for simple crafts.', icon: { s: 'branch', c: 0xa47a52 }, tags: ['nature'] },
@@ -11,7 +11,7 @@ export const MATERIALS: ItemDef[] = [
   { id: 'clay', name: 'Soft Clay', cat: 'material', price: 40, stack: 30, desc: 'Squishy clay, perfect for pots.', icon: { s: 'clay', c: 0xd99a7a } },
   { id: 'fiber', name: 'Weed Fiber', cat: 'material', price: 5, stack: 50, desc: 'Tough stringy fiber pulled from weeds.', icon: { s: 'fiber', c: 0x8fc46a } },
   { id: 'glowstone', name: 'Glow Pebble', cat: 'material', price: 450, stack: 20, desc: 'A pebble that hums with a soft inner light.', icon: { s: 'gem', c: 0xffe27a, c2: 0xfff6c9 }, tags: ['shiny'], rarity: 3 },
-  { id: 'starnugget', name: 'Star Nugget', cat: 'material', price: 2500, stack: 10, desc: 'Rare and twinkly. Rocks very rarely give one.', icon: { s: 'gem', c: 0xffc94d, c2: 0xffffff }, tags: ['shiny', 'fancy'], rarity: 4 },
+  { id: 'starnugget', name: 'Star Nugget', cat: 'material', price: 2500, stack: 10, desc: 'Rare and twinkly. Hit rocks and you may find one!', icon: { s: 'gem', c: 0xffc94d, c2: 0xffffff }, tags: ['shiny', 'fancy'], rarity: 4 },
   { id: 'shell_spiral', name: 'Spiral Shell', cat: 'shell', price: 60, stack: 20, desc: 'A swirly shell washed up on the beach.', icon: { s: 'shell', c: 0xf7d9c4, c2: 0xe0a990 }, tags: ['sea'] },
   { id: 'shell_scallop', name: 'Scallop Fan', cat: 'shell', price: 80, stack: 20, desc: 'A ribbed shell shaped like a little fan.', icon: { s: 'shell', c: 0xffc2b3, c2: 0xf28f7c }, tags: ['sea', 'cute'] },
   { id: 'shell_coral', name: 'Coral Sprig', cat: 'shell', price: 150, stack: 20, desc: 'A branch of pink coral.', icon: { s: 'shell', c: 0xff9fb0, c2: 0xff6f8f }, tags: ['sea', 'cute'] },
@@ -22,17 +22,17 @@ export const MATERIALS: ItemDef[] = [
 const toolIcon = (s: ItemDef['icon']['s'], sturdy: boolean) => ({ s, c: sturdy ? 0xc4a26a : 0xa47a52, c2: sturdy ? 0x9fd3f0 : 0xd9c39a });
 
 export const TOOLS: ItemDef[] = [
-  { id: 'net_flimsy', name: 'Twig Net', cat: 'tool', price: 50, stack: 1, desc: 'A wobbly net for catching bugs. Hold to sneak, release to swing.', icon: toolIcon('net', false), tool: { kind: 'net', durability: 12, sturdy: false } },
+  { id: 'net_flimsy', name: 'Twig Net', cat: 'tool', price: 50, stack: 1, desc: 'A wobbly net for bugs. Hold to sneak, then let go to swing!', icon: toolIcon('net', false), tool: { kind: 'net', durability: 12, sturdy: false } },
   { id: 'net', name: 'Brassloop Net', cat: 'tool', price: 300, stack: 1, desc: 'A reliable net with a brass hoop.', icon: toolIcon('net', true), tool: { kind: 'net', durability: 40, sturdy: true } },
   { id: 'rod_flimsy', name: 'Twig Rod', cat: 'tool', price: 50, stack: 1, desc: 'A simple fishing rod. Cast near a shadow and wait for the bite.', icon: toolIcon('rod', false), tool: { kind: 'rod', durability: 12, sturdy: false } },
-  { id: 'rod', name: 'Willow Rod', cat: 'tool', price: 300, stack: 1, desc: 'A springy rod that rarely snaps.', icon: toolIcon('rod', true), tool: { kind: 'rod', durability: 40, sturdy: true } },
-  { id: 'shovel_flimsy', name: 'Twig Shovel', cat: 'tool', price: 50, stack: 1, desc: 'Dig up cracks in the ground, holes, flowers and saplings.', icon: toolIcon('shovel', false), tool: { kind: 'shovel', durability: 20, sturdy: false } },
-  { id: 'shovel', name: 'Iron Spade', cat: 'tool', price: 300, stack: 1, desc: 'A proper spade for serious digging.', icon: toolIcon('shovel', true), tool: { kind: 'shovel', durability: 70, sturdy: true } },
+  { id: 'rod', name: 'Willow Rod', cat: 'tool', price: 300, stack: 1, desc: 'A bendy rod that hardly ever breaks.', icon: toolIcon('rod', true), tool: { kind: 'rod', durability: 40, sturdy: true } },
+  { id: 'shovel_flimsy', name: 'Twig Shovel', cat: 'tool', price: 50, stack: 1, desc: 'A simple shovel. Dig up cracks, holes, flowers and young trees.', icon: toolIcon('shovel', false), tool: { kind: 'shovel', durability: 20, sturdy: false } },
+  { id: 'shovel', name: 'Iron Spade', cat: 'tool', price: 300, stack: 1, desc: 'A strong spade for lots and lots of digging.', icon: toolIcon('shovel', true), tool: { kind: 'shovel', durability: 70, sturdy: true } },
   { id: 'axe_flimsy', name: 'Stone Hatchet', cat: 'tool', price: 50, stack: 1, desc: 'Chop trees for timber. Each tree gives a little wood every day.', icon: toolIcon('axe', false), tool: { kind: 'axe', durability: 40, sturdy: false } },
   { id: 'axe', name: 'Iron Axe', cat: 'tool', price: 300, stack: 1, desc: 'A sharp axe that lasts and lasts.', icon: toolIcon('axe', true), tool: { kind: 'axe', durability: 120, sturdy: true } },
-  { id: 'can_flimsy', name: 'Gourd Sprinkler', cat: 'tool', price: 50, stack: 1, desc: 'Water flowers so they can cross-breed.', icon: toolIcon('can', false), tool: { kind: 'can', durability: 20, sturdy: false } },
-  { id: 'can', name: 'Copper Sprinkler', cat: 'tool', price: 300, stack: 1, desc: 'Waters a whole cross of flowers at once.', icon: toolIcon('can', true), tool: { kind: 'can', durability: 80, sturdy: true } },
-  { id: 'ladder', name: 'Rope Ladder', cat: 'tool', price: 0, stack: 1, desc: 'Climb up or down a cliff. Never breaks.', icon: { s: 'ladder', c: 0xc9945f, c2: 0xe6d3b0 }, tool: { kind: 'ladder', durability: 0, sturdy: true }, key: true },
+  { id: 'can_flimsy', name: 'Gourd Sprinkler', cat: 'tool', price: 50, stack: 1, desc: 'Water flowers to help new colors grow.', icon: toolIcon('can', false), tool: { kind: 'can', durability: 20, sturdy: false } },
+  { id: 'can', name: 'Copper Sprinkler', cat: 'tool', price: 300, stack: 1, desc: 'Waters five flowers at once, in a plus shape.', icon: toolIcon('can', true), tool: { kind: 'can', durability: 80, sturdy: true } },
+  { id: 'ladder', name: 'Rope Ladder', cat: 'tool', price: 0, stack: 1, desc: 'Climb up or down a cliff. It never breaks.', icon: { s: 'ladder', c: 0xc9945f, c2: 0xe6d3b0 }, tool: { kind: 'ladder', durability: 0, sturdy: true }, key: true },
 ];
 
 export const FRUIT_ITEMS: ItemDef[] = [
@@ -62,6 +62,8 @@ export interface FlowerSpecies {
   id: string;
   name: string;
   colors: string[];
+  /** seasonal species: seeds are sold and wild ones grow only in these seasons */
+  seasons?: Season[];
 }
 
 export const FLOWER_SPECIES: FlowerSpecies[] = [
@@ -71,6 +73,9 @@ export const FLOWER_SPECIES: FlowerSpecies[] = [
   { id: 'star', name: 'Starwort', colors: ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'] },
   { id: 'puff', name: 'Puffcap', colors: ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'] },
   { id: 'lantern', name: 'Lanternflower', colors: ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'] },
+  // seasonal species
+  { id: 'blossom', name: 'Blossomcup', colors: ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'], seasons: ['spring'] },
+  { id: 'frost', name: 'Frostbell', colors: ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'], seasons: ['winter'] },
 ];
 
 export const FLOWER_COLOR_NAMES = ['red', 'yellow', 'white', 'orange', 'pink', 'purple', 'blue', 'black'];
@@ -99,7 +104,7 @@ export const FLOWER_ITEMS: ItemDef[] = FLOWER_SPECIES.flatMap((sp, si) =>
     cat: 'flower' as const,
     price: HYBRID_PRICE[color]!,
     stack: 10,
-    desc: ci < 3 ? `A ${color} ${sp.name}. Water it next to another of its kind and something new may sprout.` : `A rare ${color} ${sp.name}, grown by cross-breeding.`,
+    desc: ci < 3 ? `A ${color} ${sp.name}. Water two of them side by side to grow new ones!` : `A rare ${color} ${sp.name}. It grows when two flowers mix!`,
     icon: { s: 'flower' as const, c: FLOWER_HEX[color]!, c2: 0x7cc475 },
     tags: ci >= 3 ? ['nature', 'cute', 'fancy'] : ['nature', 'cute'],
     plant: { kind: 'flower' as const, v: si * 16 + ci },
@@ -117,31 +122,48 @@ export const SEED_ITEMS: ItemDef[] = FLOWER_SPECIES.flatMap((sp, si) =>
     desc: `Plant to grow a ${color} ${sp.name}.`,
     icon: { s: 'seed' as const, c: FLOWER_HEX[color]!, c2: 0xd9b98a },
     plant: { kind: 'flower' as const, v: si * 16 + ci },
+    ...(sp.seasons ? { seasons: sp.seasons } : {}),
   })),
 );
 
+/** Event finds: festival stars and meteor stardust. */
+export const EVENT_ITEMS: ItemDef[] = [
+  { id: 'falling_star', name: 'Falling Star', cat: 'misc', price: 20, stack: 10, desc: 'A tiny warm star that fell during Star Night. Bring it to the festival host!', icon: { s: 'gem', c: 0xffe27a, c2: 0xfff6d0 }, tags: ['shiny', 'cute'] },
+  { id: 'stardust', name: 'Stardust', cat: 'material', price: 300, stack: 30, desc: 'Sparkly dust left by shooting stars. It glows a little in the dark.', icon: { s: 'gem', c: 0xd8c8ff, c2: 0xfff1a8 }, tags: ['shiny', 'science'] },
+];
+
+/** Seasonal treasures: forage that only appears in its season (and teaches that season's recipes). */
+export const SEASONAL_ITEMS: ItemDef[] = [
+  { id: 'blossom_petals', name: 'Blossom Petals', cat: 'material', price: 40, stack: 30, desc: 'Soft pink petals from the spring trees.', icon: { s: 'flower', c: 0xffc2d4, c2: 0xf28fae }, tags: ['nature', 'cute'], seasons: ['spring'] },
+  { id: 'sea_glass', name: 'Sea Glass', cat: 'material', price: 80, stack: 30, desc: 'Smooth, frosty glass. Summer waves made it shiny.', icon: { s: 'gem', c: 0x9fe0d0, c2: 0xd8f4ee }, tags: ['sea', 'shiny'], seasons: ['summer'] },
+  { id: 'maple_leaves', name: 'Maple Leaves', cat: 'material', price: 30, stack: 30, desc: 'Crunchy red and orange leaves. Fun to jump in!', icon: { s: 'flower', c: 0xe8875a, c2: 0xf5c45e }, tags: ['nature', 'cozy'], seasons: ['autumn'] },
+  { id: 'snow_crystal', name: 'Snow Crystal', cat: 'material', price: 60, stack: 30, desc: 'A snowflake that never melts. Cold to the touch!', icon: { s: 'gem', c: 0xe0f0ff, c2: 0x9fc8f0 }, tags: ['shiny', 'cute'], seasons: ['winter'] },
+  { id: 'hearth_pumpkin', name: 'Hearth Pumpkin', cat: 'fruit', price: 150, stack: 10, desc: 'A round orange pumpkin. It grows wild in autumn fields.', icon: { s: 'fruit', c: 0xf2953c, c2: 0x6aa851 }, tags: ['food', 'cozy'], seasons: ['autumn'] },
+  { id: 'snowberry', name: 'Snowberry', cat: 'fruit', price: 120, stack: 10, desc: 'A tiny white berry. Shake a pine tree in winter to find some.', icon: { s: 'fruit', c: 0xf4f7fb, c2: 0x5fae86 }, tags: ['food', 'sweet'], seasons: ['winter'] },
+];
+
 export const SAPLING_ITEMS: ItemDef[] = [
   { id: 'sapling_round', name: 'Roundleaf Sapling', cat: 'sapling', price: 160, stack: 10, desc: 'Plant it and in a few days a leafy tree will grow.', icon: { s: 'sapling', c: 0x7fc77a }, tags: ['nature'], plant: { kind: 'sapling', v: 0, item: 'tree' } },
-  { id: 'sapling_pine', name: 'Spirepine Sapling', cat: 'sapling', price: 160, stack: 10, desc: 'A tiny conifer that will grow tall and proud.', icon: { s: 'sapling', c: 0x5fae86 }, tags: ['nature'], plant: { kind: 'sapling', v: 0, item: 'pine' } },
+  { id: 'sapling_pine', name: 'Spirepine Sapling', cat: 'sapling', price: 160, stack: 10, desc: 'A tiny pine tree. It will grow tall and proud.', icon: { s: 'sapling', c: 0x5fae86 }, tags: ['nature'], plant: { kind: 'sapling', v: 0, item: 'pine' } },
 ];
 
 export const MISC_ITEMS: ItemDef[] = [
   { id: 'bottle', name: 'Message Bottle', cat: 'misc', price: 0, stack: 10, desc: 'A bottle with a rolled-up recipe inside. Use it to read the recipe.', icon: { s: 'bottle', c: 0x9fd9cf, c2: 0xfff1d0 } },
-  { id: 'fossil_unknown', name: 'Mystery Fossil', cat: 'fossilUnknown', price: 100, stack: 10, desc: 'Something old and stony. Professor Vesper can identify it.', icon: { s: 'mystery', c: 0xd8c3a5, c2: 0x9c8466 } },
+  { id: 'fossil_unknown', name: 'Mystery Fossil', cat: 'fossilUnknown', price: 100, stack: 10, desc: 'An old, stony thing. Professor Vesper can tell you what it is!', icon: { s: 'mystery', c: 0xd8c3a5, c2: 0x9c8466 } },
   { id: 'pouch', name: 'Glint Pouch', cat: 'misc', price: 0, stack: 10, desc: 'A little pouch of Glints. Use it to add them to your wallet.', icon: { s: 'bag', c: 0xffd27a, c2: 0x8a6a3a } },
-  { id: 'lantern_kit', name: 'Festival Lantern', cat: 'key', price: 0, stack: 20, desc: 'A paper lantern for the Lantern Crossing festival.', icon: { s: 'lantern', c: 0xffb3a7, c2: 0xffe27a }, key: true },
-  { id: 'lens', name: 'Old Lighthouse Lens', cat: 'key', price: 0, stack: 1, desc: 'A heavy, cloudy lens from the old lighthouse. It needs polishing.', icon: { s: 'gem', c: 0xbfe3f2, c2: 0xffffff }, key: true },
-  { id: 'lens_polished', name: 'Polished Lens', cat: 'key', price: 0, stack: 1, desc: 'Gleaming once more. Ready to be fitted in the lighthouse.', icon: { s: 'gem', c: 0xe8fbff, c2: 0xffe27a }, key: true },
+  { id: 'lantern_kit', name: 'Festival Lantern', cat: 'key', price: 0, stack: 20, desc: 'A paper lantern. It is for the Lantern Crossing festival!', icon: { s: 'lantern', c: 0xffb3a7, c2: 0xffe27a }, key: true },
+  { id: 'lens', name: 'Old Lighthouse Lens', cat: 'key', price: 0, stack: 1, desc: 'A heavy, cloudy lens from the old lighthouse. It needs a good shine.', icon: { s: 'gem', c: 0xbfe3f2, c2: 0xffffff }, key: true },
+  { id: 'lens_polished', name: 'Polished Lens', cat: 'key', price: 0, stack: 1, desc: 'It shines again! Now it can go back in the lighthouse.', icon: { s: 'gem', c: 0xe8fbff, c2: 0xffe27a }, key: true },
   { id: 'tent_kit', name: 'Camping Tent Kit', cat: 'key', price: 0, stack: 1, desc: 'Pemberly\'s spare tent, rolled up tight.', icon: { s: 'bag', c: 0xf3c57a, c2: 0xd58c5c }, key: true },
-  { id: 'letter', name: 'Sealed Letter', cat: 'key', price: 0, stack: 5, desc: 'A letter waiting to be delivered.', icon: { s: 'letter', c: 0xfff6ea, c2: 0xf27c7c }, key: true },
-  { id: 'pie', name: 'Twin-Fruit Pie', cat: 'key', price: 0, stack: 1, desc: 'Fresh from Tansy\'s oven. Smells incredible.', icon: { s: 'fruit', c: 0xf2c38a, c2: 0xd9784a }, key: true },
+  { id: 'letter', name: 'Sealed Letter', cat: 'key', price: 0, stack: 5, desc: 'Someone is waiting for this letter!', icon: { s: 'letter', c: 0xfff6ea, c2: 0xf27c7c }, key: true },
+  { id: 'pie', name: 'Twin-Fruit Pie', cat: 'key', price: 0, stack: 1, desc: 'Fresh from Tansy\'s oven. It smells so good!', icon: { s: 'fruit', c: 0xf2c38a, c2: 0xd9784a }, key: true },
 ];
 
 // Lost items for villager "find my lost thing" requests.
 export const LOST_ITEMS: ItemDef[] = [
   { id: 'lost_hat', name: 'Lost Sunhat', cat: 'key', price: 0, stack: 1, desc: 'Someone\'s favorite hat. Whose could it be?', icon: { s: 'hat', c: 0xf3d27a, c2: 0xf27c7c }, key: true },
   { id: 'lost_glasses', name: 'Lost Reading Glasses', cat: 'key', price: 0, stack: 1, desc: 'Round little glasses.', icon: { s: 'glasses', c: 0x6f6a8a, c2: 0xbfe3f2 }, key: true },
-  { id: 'lost_book', name: 'Lost Notebook', cat: 'key', price: 0, stack: 1, desc: 'A well-loved notebook full of doodles.', icon: { s: 'book', c: 0x9fd3f0, c2: 0xfff6ea }, key: true },
+  { id: 'lost_book', name: 'Lost Notebook', cat: 'key', price: 0, stack: 1, desc: 'A notebook full of doodles. Someone loves it a lot.', icon: { s: 'book', c: 0x9fd3f0, c2: 0xfff6ea }, key: true },
   { id: 'lost_key', name: 'Lost Key', cat: 'key', price: 0, stack: 1, desc: 'A tiny brass key on a ribbon.', icon: { s: 'key', c: 0xffc94d, c2: 0xf27c7c }, key: true },
-  { id: 'lost_letter', name: 'Lost Letter', cat: 'key', price: 0, stack: 1, desc: 'An unopened letter with a heart sticker.', icon: { s: 'letter', c: 0xfff6ea, c2: 0xff8fa8 }, key: true },
+  { id: 'lost_letter', name: 'Lost Letter', cat: 'key', price: 0, stack: 1, desc: 'A letter with a heart sticker. No one has opened it yet.', icon: { s: 'letter', c: 0xfff6ea, c2: 0xff8fa8 }, key: true },
 ];

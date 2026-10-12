@@ -2,7 +2,7 @@
 import { fmt } from '../core/math';
 import { RECIPE_BY_ID, RECIPES, item } from '../data/registry';
 import type { RecipeDef } from '../data/types';
-import { canCraft, craft, ingredientStatus, knowsRecipe } from '../sim/crafting';
+import { canCraft, craftMany, ingredientStatus, knowsRecipe, maxCraftable } from '../sim/crafting';
 import { buy, canSell, dailyStock, hotItem, sellPrice, sellSlot, type StockEntry } from '../sim/economy';
 import type { Game } from '../sim/game';
 import { canOrderUpgrade, homeTier, nextUpgrade, orderUpgrade, payLoan } from '../sim/housing';
@@ -38,6 +38,7 @@ const CRAFT_TABS: { id: string; label: string; test: (r: RecipeDef) => boolean }
 ];
 
 export class CraftPanel implements Panel {
+  name = 'craft';
   el: HTMLElement;
   modal = true;
   private tab = 'tools';
@@ -106,25 +107,43 @@ export class CraftPanel implements Panel {
         st.map((m) => h('div', { class: `ing ${m.have >= m.need ? 'ok' : 'no'}` }, iconImg(m.id, 'icon sm'), h('span', { style: 'flex:1' }, item(m.id).name), h('b', null, `${m.have}/${m.need}`))),
       ),
     );
-    const b = btn('Craft!', () => {
-      if (craft(this.g, r.id)) {
-        this.sel = r.id;
-        this.render();
-      }
-    }, 'primary');
-    if (!canCraft(this.g, r)) b.disabled = true;
-    this.detail.append(h('div', { style: 'margin-top:12px' }, b));
+    const max = maxCraftable(this.g, r);
+    const make = (n: number) => {
+      const made = craftMany(this.g, r.id, n);
+      if (made > 1) this.g.toast(`Made ${made} × ${def.name}!`, 'good', r.result);
+      if (made > 0 && this.g.state.trackedRecipe === r.id && maxCraftable(this.g, r) === 0) delete this.g.state.trackedRecipe;
+      this.sel = r.id;
+      this.render();
+    };
+    const row = h('div', { class: 'row wrap', style: 'margin-top:12px' });
+    const one = btn('Craft!', () => make(1), 'primary');
+    if (max < 1) one.disabled = true;
+    row.append(one);
+    if (max >= 2) row.append(btn(`×${Math.min(5, max)}`, () => make(Math.min(5, max)), 'small'));
+    if (max > 5) row.append(btn(`All ×${max}`, () => make(max), 'small'));
+    const tracked = this.g.state.trackedRecipe === r.id;
+    row.append(
+      btn(tracked ? '📌 Tracking' : '📌 Track', () => {
+        if (tracked) delete this.g.state.trackedRecipe;
+        else this.g.state.trackedRecipe = r.id;
+        this.showDetail(r);
+      }, `small ${tracked ? 'primary' : ''}`, { title: 'Show what you still need on the screen' }),
+    );
+    this.detail.append(row);
   }
 }
 
 // ---------------- shop ----------------
 
 export class ShopPanel implements Panel {
+  name = 'shop';
   el: HTMLElement;
   modal = true;
   private mode: 'buy' | 'sell' = 'buy';
   private body = h('div', { class: 'col scroll', style: 'gap:8px;min-height:280px' });
   private picked = new Set<number>();
+  /** picked slots where only one of the stack is sold */
+  private justOne = new Set<number>();
   private stock: StockEntry[];
   private off: () => void;
   private buyBtn!: HTMLButtonElement;
@@ -154,6 +173,7 @@ export class ShopPanel implements Panel {
     this.buyBtn.classList.toggle('primary', m === 'buy');
     this.sellBtn.classList.toggle('primary', m === 'sell');
     this.picked.clear();
+    this.justOne.clear();
     this.render();
   }
   render(): void {
@@ -180,12 +200,21 @@ export class ShopPanel implements Panel {
       for (let i = 0; i < p.invSize; i++) {
         const s = p.inv[i];
         const ok = !!s && canSell(s.id) && i !== p.equipped;
+        const one = this.justOne.has(i);
         const b = slotButton(g, i, s, `${this.picked.has(i) ? 'picked' : ''} ${ok ? '' : 'locked'}`);
-        if (s && this.picked.has(i)) total += sellPrice(g, s.id) * s.qty;
+        if (s && this.picked.has(i)) {
+          total += sellPrice(g, s.id) * (one ? 1 : s.qty);
+          if (s.qty > 1) b.append(h('span', { class: 'sell-amt' }, one ? 'Sell 1' : 'Sell all'));
+        }
         b.addEventListener('click', () => {
           if (!ok) return;
-          if (this.picked.has(i)) this.picked.delete(i);
-          else this.picked.add(i);
+          // tap: sell the whole stack → tap again: just one → tap again: don't sell
+          if (!this.picked.has(i)) this.picked.add(i);
+          else if (s && s.qty > 1 && !this.justOne.has(i)) this.justOne.add(i);
+          else {
+            this.picked.delete(i);
+            this.justOne.delete(i);
+          }
           this.render();
           const again = this.body.querySelector(`[data-slot="${i}"]`) as HTMLElement | null;
           if (again) this.ui.focus(again);
@@ -196,8 +225,9 @@ export class ShopPanel implements Panel {
       const sellBtn = btn(`Sell selected for ✦ ${fmt(total)}`, () => {
         const slots = [...this.picked].sort((a, b) => b - a);
         let earned = 0;
-        for (const i of slots) earned += sellSlot(g, i);
+        for (const i of slots) earned += sellSlot(g, i, this.justOne.has(i) ? 1 : undefined);
         this.picked.clear();
+        this.justOne.clear();
         if (earned > 0) g.toast(`Sold for ${fmt(earned)} Glints!`, 'good');
         this.render();
       }, 'primary');
@@ -225,6 +255,7 @@ export class ShopPanel implements Panel {
 // ---------------- Lantern Hall ----------------
 
 export class HallPanel implements Panel {
+  name = 'hall';
   el: HTMLElement;
   modal = true;
   private body = h('div', { class: 'col', style: 'gap:10px' });
@@ -282,6 +313,7 @@ export class HallPanel implements Panel {
 // ---------------- storage ----------------
 
 export class StoragePanel implements Panel {
+  name = 'storage';
   el: HTMLElement;
   modal = true;
   private body = h('div', { class: 'col scroll', style: 'gap:8px' });
@@ -318,6 +350,7 @@ export class StoragePanel implements Panel {
 // ---------------- museum ----------------
 
 export class MuseumPanel implements Panel {
+  name = 'museum';
   el: HTMLElement;
   modal = true;
   private body = h('div', { class: 'col', style: 'gap:10px' });

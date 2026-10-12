@@ -8,8 +8,9 @@ import { hourInWindow } from './clock';
 import type { Game, InteractCtx, Interaction } from './game';
 import { give, markSeen, roomFor, stat } from './inventory';
 import { facingVec } from './player';
-import { wearTool } from './tools';
+import { equippedTool, wearTool } from './tools';
 import { weatherOk } from './weather';
+import { inSeason } from './seasons';
 
 export interface Shadow {
   id: number;
@@ -104,7 +105,7 @@ function nearLand(g: Game, i: number, r: number): boolean {
 
 export function availableFish(g: Game, where: FishWhere): FishDef[] {
   const h = Math.floor(g.state.clock.minute / 60);
-  return FISH.filter((f) => f.where.includes(where) && hourInWindow(h, f.hours[0], f.hours[1]) && weatherOk(f.weather, g.state.weather.today));
+  return FISH.filter((f) => f.where.includes(where) && inSeason(g, f.seasons) && hourInWindow(h, f.hours[0], f.hours[1]) && weatherOk(f.weather, g.state.weather.today));
 }
 
 export function rollFish(g: Game, where: FishWhere, rng: Rng): FishDef | undefined {
@@ -279,6 +280,8 @@ function catchQuip(def: FishDef): string {
 export function updateFishing(g: Game, dt: number, held: boolean, moving: boolean): void {
   const rt = fishingRT(g);
   if (g.state.player.location !== 'island') return;
+  // put the rod away (or swap tools): the line comes in
+  if (rt.cast && equippedTool(g)?.kind !== 'rod') endCast(g);
   // shadows population
   rt.spawnT -= dt;
   rt.shadows = rt.shadows.filter((s) => s.life > 0 && Math.hypot(s.x - g.state.player.x, s.z - g.state.player.z) < SPAWN_RADIUS + 10);

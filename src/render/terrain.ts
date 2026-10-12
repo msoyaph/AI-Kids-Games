@@ -4,8 +4,8 @@ import { hash01 } from '../core/rng';
 import { fbm2 } from '../core/noise';
 import { mixHex } from '../core/math';
 import type { IslandGen } from '../world/worldgen';
-import { DIRS4, Ground, LEVEL_HEIGHT } from '../world/types';
-import { PAL } from './palette';
+import { DIRS4, Ground, LEVEL_HEIGHT, isWaterGround } from '../world/types';
+import { PAL, SEASON_PALETTES, type SeasonPalette } from './palette';
 import { curved } from './curve';
 
 const CHUNK = 16;
@@ -53,10 +53,18 @@ export class TerrainRenderer {
   readonly floor: THREE.Mesh;
   private N: number;
   private seaDist: Uint8Array;
+  /** season-dependent colors */
+  private P: SeasonPalette = SEASON_PALETTES.summer;
+  private season = 'summer';
+  private chunks: { mesh: THREE.Mesh; cx: number; cz: number }[] = [];
+  /** winter: a rim of ice along pond and river banks */
+  private ice: THREE.Mesh | null = null;
 
-  constructor(private gen: IslandGen) {
+  constructor(private gen: IslandGen, season = 'summer') {
     this.N = gen.size;
     this.seaDist = this.computeSeaDist();
+    this.season = season;
+    this.P = SEASON_PALETTES[season as keyof typeof SEASON_PALETTES] ?? SEASON_PALETTES.summer;
     for (let cz = 0; cz < this.N; cz += CHUNK)
       for (let cx = 0; cx < this.N; cx += CHUNK) {
         const mesh = new THREE.Mesh(this.buildChunk(cx, cz), this.material);
@@ -65,12 +73,58 @@ export class TerrainRenderer {
         // the world curve moves geometry, so bounding-sphere culling can drop visible chunks
         mesh.frustumCulled = false;
         this.group.add(mesh);
+        this.chunks.push({ mesh, cx, cz });
       }
+    this.syncIce();
     // Deep sea floor beyond the grid (follows the camera).
     this.floor = new THREE.Mesh(new THREE.PlaneGeometry(220, 220, 24, 24).rotateX(-Math.PI / 2), curved(new THREE.MeshLambertMaterial({ color: PAL.oceanDeep })));
     this.floor.position.set(this.N / 2, OCEAN_FLOOR_Y - 0.02, this.N / 2);
     this.floor.frustumCulled = false;
     this.group.add(this.floor);
+  }
+
+  /** Recolor the island for a new season (rebuilds the chunk geometry once). */
+  setSeason(season: string): void {
+    if (season === this.season) return;
+    this.season = season;
+    this.P = SEASON_PALETTES[season as keyof typeof SEASON_PALETTES] ?? SEASON_PALETTES.summer;
+    for (const c of this.chunks) {
+      const old = c.mesh.geometry;
+      c.mesh.geometry = this.buildChunk(c.cx, c.cz);
+      old.dispose();
+    }
+    this.syncIce();
+  }
+
+  private syncIce(): void {
+    if (this.ice) {
+      this.group.remove(this.ice);
+      this.ice.geometry.dispose();
+      this.ice = null;
+    }
+    if (this.season !== 'winter') return;
+    // strips of ice along every bank of the pond and river
+    const B = new GeoBuilder();
+    const N = this.N, y = WATER_Y + 0.08, wdt = 0.45, up: V3 = [0, 1, 0];
+    const isW = (x: number, z: number) => {
+      const g = this.g(x, z);
+      return g === Ground.River || g === Ground.Pond;
+    };
+    for (let z = 0; z < N; z++)
+      for (let x = 0; x < N; x++) {
+        if (!isW(x, z)) continue;
+        const land = (dx: number, dz: number) => !isW(x + dx, z + dz) && this.g(x + dx, z + dz) !== Ground.Ocean;
+        const c = (k: number) => mixHex(0xf2f9ff, 0xd6eaf6, hash01(x, z, k) * 0.7);
+        if (land(0, -1)) B.quad([x, y, z], [x, y, z + wdt], [x + 1, y, z + wdt], [x + 1, y, z], c(1), up);
+        if (land(0, 1)) B.quad([x, y, z + 1 - wdt], [x, y, z + 1], [x + 1, y, z + 1], [x + 1, y, z + 1 - wdt], c(2), up);
+        if (land(-1, 0)) B.quad([x, y, z], [x, y, z + 1], [x + wdt, y, z + 1], [x + wdt, y, z], c(3), up);
+        if (land(1, 0)) B.quad([x + 1 - wdt, y, z], [x + 1 - wdt, y, z + 1], [x + 1, y, z + 1], [x + 1, y, z], c(4), up);
+      }
+    this.ice = new THREE.Mesh(B.build(), curved(new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.95 })));
+    this.ice.renderOrder = 3;
+    this.ice.frustumCulled = false;
+    this.ice.receiveShadow = true;
+    this.group.add(this.ice);
   }
 
   private computeSeaDist(): Uint8Array {
@@ -150,19 +204,19 @@ export class TerrainRenderer {
     const h1 = hash01(x, z, 3);
     switch (g) {
       case Ground.Grass: {
-        const pal =
-          lvl === 2 ? [PAL.grassTop0, PAL.grassTop1] : lvl === 1 ? [PAL.grassHigh0, PAL.grassHigh1] : [PAL.grass0, PAL.grass1];
+        const P = this.P;
+        const pal = lvl === 2 ? [P.grassTop0, P.grassTop1] : lvl === 1 ? [P.grassHigh0, P.grassHigh1] : [P.grass0, P.grass1];
         const base = mixHex(pal[0]!, pal[1]!, Math.min(1, Math.max(0, n * 1.2 + 0.5)));
-        const c2 = mixHex(base, PAL.grass2, (x + z) % 2 === 0 ? 0.18 : 0.0);
+        const c2 = mixHex(base, P.grass2, (x + z) % 2 === 0 ? 0.18 : 0.0);
         return [c2, mixHex(c2, 0x000000, 0.025 + h1 * 0.02)];
       }
       case Ground.Dirt: {
-        const c2 = mixHex(PAL.dirt, PAL.dirtDark, h1 * 0.35);
-        return [c2, mixHex(c2, PAL.dirtDark, 0.15)];
+        const c2 = mixHex(this.P.dirt, this.P.dirtDark, h1 * 0.35);
+        return [c2, mixHex(c2, this.P.dirtDark, 0.15)];
       }
       case Ground.Sand: {
         const minH = Math.min(a, b, c, d);
-        const c2 = minH < -0.05 ? PAL.sandWet : mixHex(PAL.sand, PAL.sandWet, h1 * 0.25);
+        const c2 = minH < -0.05 ? this.P.sandWet : mixHex(this.P.sand, this.P.sandWet, h1 * 0.25);
         return [c2, mixHex(c2, 0x000000, 0.02)];
       }
       case Ground.River:
@@ -268,11 +322,24 @@ export class TerrainRenderer {
   }
 }
 
+const SUNSET_WATER = new THREE.Color(0xb7a6f0);
+const NIGHT_WATER = new THREE.Color(0x2f5a9e);
+
 export class WaterRenderer {
   readonly mesh: THREE.Mesh;
-  constructor(center: number) {
+  /** shoreline foam (two bands that lap in and out) + ripple rings; off on Low */
+  readonly extras = new THREE.Group();
+  private mat: THREE.MeshLambertMaterial;
+  private foamA: THREE.Mesh;
+  private foamB: THREE.Mesh;
+  private ripples: { m: THREE.Mesh; t: number }[] = [];
+  private rippleT = 0;
+  private col = new THREE.Color();
+  private time = 0;
+
+  constructor(center: number, private gen?: IslandGen) {
     const geo = new THREE.PlaneGeometry(200, 200, 64, 64).rotateX(-Math.PI / 2);
-    const mat = curved(
+    this.mat = curved(
       new THREE.MeshLambertMaterial({
         color: PAL.water,
         transparent: true,
@@ -282,11 +349,45 @@ export class WaterRenderer {
       }),
       { waves: true },
     );
-    this.mesh = new THREE.Mesh(geo, mat);
+    this.mesh = new THREE.Mesh(geo, this.mat);
     this.mesh.position.set(center, WATER_Y, center);
     this.mesh.renderOrder = 2;
     this.mesh.receiveShadow = true;
     this.mesh.frustumCulled = false;
+    this.foamA = this.buildFoam(0.0, 0.3);
+    this.foamB = this.buildFoam(0.32, 0.22);
+    this.extras.add(this.foamA, this.foamB);
+    const rg = new THREE.RingGeometry(0.7, 0.82, 18).rotateX(-Math.PI / 2);
+    for (let k = 0; k < 8; k++) {
+      const m = new THREE.Mesh(rg, curved(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false })));
+      m.renderOrder = 4;
+      m.visible = false;
+      this.ripples.push({ m, t: 1 });
+      this.extras.add(m);
+    }
+  }
+
+  /** White strips just off every sandy/grassy shore tile (offset = distance from the coast). */
+  private buildFoam(offset: number, width: number): THREE.Mesh {
+    const B = new GeoBuilder();
+    const g = this.gen;
+    if (g) {
+      const N = g.size, y = WATER_Y + 0.05, up: V3 = [0, 1, 0];
+      const isSea = (x: number, z: number) => x < 0 || z < 0 || x >= N || z >= N || g.ground[z * N + x] === Ground.Ocean;
+      for (let z = 0; z < N; z++)
+        for (let x = 0; x < N; x++) {
+          if (!isSea(x, z)) continue;
+          const o = offset, w = offset + width;
+          if (!isSea(x, z - 1)) B.quad([x, y, z + o], [x, y, z + w], [x + 1, y, z + w], [x + 1, y, z + o], 0xffffff, up);
+          if (!isSea(x, z + 1)) B.quad([x, y, z + 1 - w], [x, y, z + 1 - o], [x + 1, y, z + 1 - o], [x + 1, y, z + 1 - w], 0xffffff, up);
+          if (!isSea(x - 1, z)) B.quad([x + o, y, z], [x + o, y, z + 1], [x + w, y, z + 1], [x + w, y, z], 0xffffff, up);
+          if (!isSea(x + 1, z)) B.quad([x + 1 - w, y, z], [x + 1 - w, y, z + 1], [x + 1 - o, y, z + 1], [x + 1 - o, y, z], 0xffffff, up);
+        }
+    }
+    const m = new THREE.Mesh(B.build(), curved(new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.5, depthWrite: false })));
+    m.renderOrder = 3;
+    m.frustumCulled = false;
+    return m;
   }
 
   /** Keep the (finite) water plane centered under the camera, snapped to the vertex grid. */
@@ -294,5 +395,45 @@ export class WaterRenderer {
     const step = 200 / 64;
     this.mesh.position.x = Math.round(x / step) * step;
     this.mesh.position.z = Math.round(z / step) * step;
+  }
+
+  /**
+   * Animate foam and ripples and tint the water for the time of day: bright turquoise by day,
+   * warm at sunset, deep blue at night.
+   */
+  frame(dt: number, hour: number, night: number, target: THREE.Vector3, winter = false): void {
+    this.time += dt;
+    const sunset = Math.max(0, 1 - Math.abs(hour - 18.3) / 1.6);
+    this.col.setHex(winter ? 0x9fdbe6 : PAL.water);
+    // a lavender sky reflection at sunset (teal + orange would turn gray), deep blue at night
+    this.col.lerp(SUNSET_WATER, sunset * 0.32);
+    this.col.lerp(NIGHT_WATER, night * 0.7);
+    this.mat.color.copy(this.col);
+    if (!this.extras.visible) return;
+    // foam laps in and out
+    (this.foamA.material as THREE.MeshBasicMaterial).opacity = (0.46 + Math.sin(this.time * 1.3) * 0.16) * (1 - night * 0.6);
+    (this.foamB.material as THREE.MeshBasicMaterial).opacity = (0.32 + Math.sin(this.time * 1.3 + 2.2) * 0.14) * (1 - night * 0.6);
+    // the occasional ripple ring on nearby water
+    this.rippleT -= dt;
+    const g = this.gen;
+    if (g && this.rippleT <= 0) {
+      this.rippleT = 0.35 + Math.random() * 0.5;
+      const x = Math.floor(target.x + (Math.random() - 0.5) * 30), z = Math.floor(target.z + (Math.random() - 0.5) * 22);
+      if (x >= 0 && z >= 0 && x < g.size && z < g.size && isWaterGround(g.ground[z * g.size + x]!)) {
+        const r = this.ripples.find((q) => q.t >= 1);
+        if (r) {
+          r.t = 0;
+          r.m.position.set(x + Math.random(), WATER_Y + 0.06, z + Math.random());
+          r.m.visible = true;
+        }
+      }
+    }
+    for (const r of this.ripples) {
+      if (r.t >= 1) continue;
+      r.t = Math.min(1, r.t + dt / 1.6);
+      r.m.scale.setScalar(0.3 + r.t * 0.9);
+      (r.m.material as THREE.MeshBasicMaterial).opacity = (1 - r.t) * 0.45 * (1 - night * 0.5);
+      if (r.t >= 1) r.m.visible = false;
+    }
   }
 }

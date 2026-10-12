@@ -91,10 +91,31 @@ export class Sky {
     this.sun.castShadow = on;
   }
 
+  /** Quality tier: shadow map size + softness (PCF radius) and how far the fog lets you see. */
+  setQuality(mapSize: number, radius: number, fogFar: number): void {
+    const sh = this.sun.shadow;
+    if (sh.mapSize.x !== mapSize) {
+      sh.mapSize.set(mapSize, mapSize);
+      sh.map?.dispose();
+      sh.map = null;
+    }
+    sh.radius = radius;
+    // softer shadows need a little more blur samples' worth of bias
+    sh.bias = radius > 2 ? -0.0009 : -0.0006;
+    this.fog.far = fogFar;
+  }
+
+  /** 0 spring, 1 summer, 2 autumn, 3 winter */
+  season = 1;
+
   update(minute: number, weather: WeatherT, target: THREE.Vector3, indoor = false): void {
     const h = (minute / 60) % 24;
     const k = sample(h);
     let sky = k.sky;
+    // a cooler, paler sky in winter; a warmer one in autumn; a touch of pink in spring
+    if (this.season === 3) sky = mixHex(sky, 0xd6e2f0, 0.22);
+    else if (this.season === 2) sky = mixHex(sky, 0xffd9b0, 0.12);
+    else if (this.season === 0) sky = mixHex(sky, 0xffe4ee, 0.08);
     let sunI = k.sunI;
     let hemiI = k.hemi;
     if (weather === 'cloudy') {
@@ -107,12 +128,28 @@ export class Sky {
       hemiI *= 0.95;
     }
     this.night = nightFactor(minute);
+    // season light: a low cool winter sun with bright snow bounce, a golden autumn sun, a bright summer
+    let sunC = k.sun;
+    let ground = k.hemiGround;
+    if (this.season === 3) {
+      sunC = mixHex(sunC, 0xdfe8ff, 0.3);
+      sunI *= 0.9;
+      ground = mixHex(ground, 0xdde6ef, 0.55);
+      hemiI *= 1.06;
+    } else if (this.season === 2) {
+      sunC = mixHex(sunC, 0xffd9a0, 0.22);
+      ground = mixHex(ground, 0xc9a87a, 0.25);
+    } else if (this.season === 1) {
+      sunI *= 1.05;
+    } else {
+      ground = mixHex(ground, 0xb7d4a0, 0.2);
+    }
     this.bg.setHex(indoor ? 0x2a2438 : sky);
     this.fog.color.setHex(sky);
     this.hemi.color.setHex(k.hemiSky);
-    this.hemi.groundColor.setHex(k.hemiGround);
+    this.hemi.groundColor.setHex(ground);
     this.hemi.intensity = hemiI;
-    this.sun.color.setHex(k.sun);
+    this.sun.color.setHex(sunC);
     this.sun.intensity = sunI;
     // Sun sweeps east -> west on the camera side of the sky; moon sits high at night.
     const a = ((h - 6) / 12) * Math.PI;

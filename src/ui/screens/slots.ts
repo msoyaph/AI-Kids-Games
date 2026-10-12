@@ -2,6 +2,18 @@
 import { fmt } from '../../core/math';
 import type { SaveManager, SaveMeta } from '../../sim/save';
 import { btn, clear, h, type Panel, type UIManager } from '../dom';
+import { playerPortraitURL } from '../portraits';
+import { visualOf, type ClothVisual } from '../../sim/wardrobe';
+import type { ClothSlot } from '../../data/clothing';
+
+function metaClothes(worn: Record<string, string> | undefined): Partial<Record<ClothSlot, ClothVisual>> {
+  const out: Partial<Record<ClothSlot, ClothVisual>> = {};
+  for (const [slot, id] of Object.entries(worn ?? {})) {
+    const v = visualOf(id);
+    if (v) out[slot as ClothSlot] = v;
+  }
+  return out;
+}
 
 export function formatPlaytime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -53,6 +65,7 @@ export class SlotScreen implements Panel {
       'div',
       { class: 'slotcard' },
       h('div', { class: 'muted tiny' }, `Slot ${slot + 1}`),
+      meta.look ? h('img', { class: 'slot-portrait', alt: '', src: playerPortraitURL(meta.look, metaClothes(meta.worn)) }) : null,
       h('div', { class: 'nm' }, meta.name),
       h('div', null, `Day ${meta.day} · Chapter ${meta.chapter}${meta.finished ? ' ✓' : ''}`),
       h('div', { class: 'muted' }, `Played ${formatPlaytime(meta.playSeconds)}`),
@@ -79,6 +92,7 @@ export class SlotScreen implements Panel {
 /** Generic yes/no confirmation. */
 export function confirmPanel(ui: UIManager, text: string, yes: () => void, no?: () => void, labels: [string, string] = ['Yes', 'No']): void {
   const p: Panel = {
+    name: 'confirm',
     modal: true,
     el: h('div', { class: 'screen', style: 'z-index:10' }, h('div', { class: 'dim' })),
     command(c) {
@@ -108,5 +122,35 @@ export function confirmPanel(ui: UIManager, text: string, yes: () => void, no?: 
     ),
   );
   p.el.appendChild(box);
+  ui.push(p);
+}
+
+/** One-button notice (e.g. storage full). */
+export function noticePanel(ui: UIManager, title: string, text: string, ok = 'OK', onClose?: () => void): void {
+  const close = () => {
+    ui.pop(p);
+    onClose?.();
+  };
+  const p: Panel = {
+    name: 'notice',
+    modal: true,
+    el: h('div', { class: 'screen', style: 'z-index:10' }, h('div', { class: 'dim' })),
+    command(c) {
+      if (c === 'back' || c === 'cancel') {
+        close();
+        return true;
+      }
+      return false;
+    },
+  };
+  p.el.appendChild(
+    h(
+      'div',
+      { class: 'panel center notice', style: 'padding:22px;max-width:440px;text-align:center' },
+      h('div', { style: 'font-weight:800;font-size:20px;margin-bottom:10px' }, title),
+      h('div', { style: 'font-size:16px;line-height:1.45;margin-bottom:18px' }, text),
+      h('div', { class: 'row', style: 'justify-content:center' }, btn(ok, close, 'primary')),
+    ),
+  );
   ui.push(p);
 }

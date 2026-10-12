@@ -195,15 +195,32 @@ export function putInStorage(g: Game, slot: number, qty?: number): boolean {
   return true;
 }
 
-export function money(g: Game, dGlints: number, dLumens = 0): void {
+/** Change the player's Glints / Lumens. `reason` labels the flow for stats and playtest logs. */
+export function money(g: Game, dGlints: number, dLumens = 0, reason = 'other'): void {
   const p = g.state.player;
   p.glints = Math.max(0, p.glints + dGlints);
   p.lumens = Math.max(0, p.lumens + dLumens);
   if (dGlints > 0) g.state.stats.glintsEarned = (g.state.stats.glintsEarned ?? 0) + dGlints;
   if (dLumens > 0) g.state.stats.lumensEarned = (g.state.stats.lumensEarned ?? 0) + dLumens;
-  g.emit('money', { glints: p.glints, lumens: p.lumens, dg: dGlints, dl: dLumens });
+  g.emit('money', { glints: p.glints, lumens: p.lumens, dg: dGlints, dl: dLumens, reason });
 }
 
 export function stat(g: Game, key: string, inc = 1): void {
   g.state.stats[key] = (g.state.stats[key] ?? 0) + inc;
+}
+
+const SORT_ORDER = ['tool', 'material', 'fruit', 'flower', 'seed', 'sapling', 'fish', 'bug', 'fossilUnknown', 'fossil', 'shell', 'furniture', 'wallpaper', 'flooring', 'clothing', 'recipe', 'misc', 'key'];
+
+/** Tidy the pockets: by kind, then name (empty slots go last). The equipped tool stays equipped. */
+export function sortPockets(g: Game): void {
+  const p = g.state.player;
+  const equipped = p.equipped >= 0 ? p.inv[p.equipped] : null;
+  const rank = (id: string) => {
+    const k = SORT_ORDER.indexOf(item(id).cat);
+    return k < 0 ? SORT_ORDER.length : k;
+  };
+  const filled = p.inv.filter((s): s is InvSlot => !!s).sort((a, b) => rank(a.id) - rank(b.id) || item(a.id).name.localeCompare(item(b.id).name));
+  p.inv = [...filled, ...Array.from({ length: p.invSize - filled.length }, () => null)];
+  p.equipped = equipped ? p.inv.indexOf(equipped) : -1;
+  g.emit('inventoryChanged', {});
 }

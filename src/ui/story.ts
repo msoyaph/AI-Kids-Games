@@ -1,16 +1,15 @@
 // Story presentation: quest talk hooks, mission messages, chapter banners, HUD tracker + compass.
 import type { App } from '../app';
-import { MISSION_BY_ID } from '../data/missions';
-import { agents } from '../sim/agents';
 import type { Game } from '../sim/game';
 import { startPlotPlacement } from '../sim/placement';
-import { active, markerTarget, objectiveLive, objectiveValue, questOptions, questRT, talkScene } from '../sim/quests';
-import { findStructure } from '../sim/structures';
+import { active, objectiveLive, objectiveValue, questOptions, questRT, talkScene } from '../sim/quests';
 import { parseLine } from '../sim/talk';
-import { Region } from '../world/types';
 import { makeBox, type TalkOption } from './conversation';
 import { contestOptions } from './journal';
-import { clear, h, type Panel } from './dom';
+import { btn, clear, h, type Panel } from './dom';
+import { sendHint, trackedMission } from '../sim/hints';
+import { markerPos } from '../sim/markers';
+export { markerPos };
 import { fmt } from '../core/math';
 
 const ctxOf = (g: Game) => ({ player: g.state.player.name });
@@ -104,6 +103,13 @@ export class QuestTracker {
   constructor(root: HTMLElement) {
     root.appendChild(this.el);
     root.appendChild(this.arrow);
+    this.hide();
+  }
+
+  /** Title screens: no mission tracker or marker. */
+  hide(): void {
+    this.el.style.display = 'none';
+    this.arrow.style.display = 'none';
   }
 
   update(app: App): void {
@@ -113,8 +119,7 @@ export class QuestTracker {
       this.arrow.style.display = 'none';
       return;
     }
-    const q = g.state.quests;
-    const m = MISSION_BY_ID[q.tracked] ?? active(g)[0];
+    const m = trackedMission(g);
     if (!m) {
       this.el.style.display = 'none';
       this.arrow.style.display = 'none';
@@ -122,27 +127,37 @@ export class QuestTracker {
     }
     this.el.style.display = '';
     const objs = m.objectives.map((_, i) => objectiveValue(g, m, i));
-    const key = `${m.id}|${objs.map((o) => o.value).join(',')}`;
+    // small screens: just the next step (the Glowpad's Missions app has the whole list)
+    const compact = innerWidth < 600 || innerHeight < 500;
+    const key = `${m.id}|${objs.map((o) => o.value).join(',')}|${compact}`;
     if (key !== this.key) {
       this.key = key;
       clear(this.el);
-      this.el.append(h('div', { class: 'tr-title' }, m.title));
-      m.objectives.forEach((o, i) => {
-        const v = objs[i]!;
-        if (!objectiveLive(g, m, i) && !v.done) return;
+      const say = h('button', { class: 'tr-say', 'aria-label': 'Read the mission', title: 'Read the mission' }, '🔊');
+      say.addEventListener('click', () => {
+        const todo = m.objectives.filter((_, i) => objectiveLive(g, m, i) && !objectiveValue(g, m, i).done).map((o) => o.label);
+        app.speech.speak(`${m.title}. ${todo.join('. ')}.`, 1, true);
+      });
+      this.el.append(h('div', { class: 'tr-title' }, m.title, say));
+      const rows = m.objectives.map((o, i) => ({ o, i, v: objs[i]! })).filter(({ i, v }) => objectiveLive(g, m, i) || v.done);
+      const todo = rows.filter((r) => !r.v.done);
+      const show = compact && todo.length > 0 ? todo.slice(0, 1) : rows;
+      for (const { o, v } of show) {
         const count = v.target > 1 ? ` ${fmt(v.value)}/${fmt(v.target)}` : '';
         this.el.append(h('div', { class: `tr-obj ${v.done ? 'done' : ''}` }, v.done ? '✓ ' : '○ ', o.label, count));
-      });
+      }
+      if (show.length < todo.length) this.el.append(h('div', { class: 'tr-obj later' }, `+${todo.length - show.length} more`));
     }
-    // compass arrow toward the marker
+    // compass arrow toward the marker (indoors: toward the person, or the door)
     const t = markerPos(g, m);
-    if (!t || g.state.player.location !== 'island') {
+    if (!t) {
       this.arrow.style.display = 'none';
       return;
     }
     const pr = app.view.project(t.x, t.y, t.z);
     const W = window.innerWidth, H = window.innerHeight;
-    const inside = pr.visible && pr.x > 40 && pr.x < W - 40 && pr.y > 60 && pr.y < H - 60;
+    // on screen only where it doesn't sit on the HUD or the touch buttons
+    const inside = pr.visible && pr.x > 40 && pr.x < W - 40 && pr.y > 60 && pr.y < H - 60 && app.hudLayout.free(pr.x, pr.y - 45, 4);
     this.arrow.style.display = '';
     if (inside) {
       this.arrow.classList.add('onscreen');
@@ -158,7 +173,9 @@ export class QuestTracker {
         dy = -dy;
       }
       const a = Math.atan2(dy, dx);
-      const r = Math.min(W, H) * 0.42;
+      // toward the edge, but pulled in until it's clear of the HUD
+      let r = Math.min(W, H) * 0.42;
+      while (r > 50 && !app.hudLayout.free(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.9, 20)) r -= 8;
       this.arrow.style.left = `${cx + Math.cos(a) * r}px`;
       this.arrow.style.top = `${cy + Math.sin(a) * r * 0.9}px`;
       this.arrow.style.transform = `translate(-50%,-50%) rotate(${a + Math.PI / 2}rad)`;
@@ -166,49 +183,9 @@ export class QuestTracker {
   }
 }
 
-export function markerPos(g: Game, m: ReturnType<typeof active>[number]): { x: number; y: number; z: number } | null {
-  const t = markerTarget(g, m);
-  if (!t) return null;
-  if (t.npc) {
-    const a = agents(g).get(t.npc);
-    if (a && a.visible) return { x: a.x, y: 2.2, z: a.z };
-    if (t.npc === 'pemberly') {
-      const l = g.world.gen.lots.hall;
-      return { x: l.x + l.w / 2, y: 3, z: l.z + l.d };
-    }
-    const home = g.state.world.structures.find((s) => s.owner === t.npc && s.type === 'villagerHome');
-    if (home) return { x: home.x + 1.5, y: 2.5, z: home.z + 3 };
-    if (t.npc === 'fennimore') {
-      const s = findStructure(g, 'shop') ?? findStructure(g, 'shopCart');
-      if (s) return { x: s.x + s.w / 2, y: 2.5, z: s.z + s.d };
-    }
-    if (t.npc === 'vesper') {
-      const s = findStructure(g, 'museum') ?? findStructure(g, 'museumTent');
-      if (s) return { x: s.x + s.w / 2, y: 2.5, z: s.z + s.d };
-    }
-    return null;
-  }
-  if (t.struct) {
-    const s = findStructure(g, t.struct as never);
-    if (s) return { x: s.x + s.w / 2, y: s.level * 1.4 + 3, z: s.z + s.d / 2 };
-    return null;
-  }
-  if (t.lot) {
-    const l = g.world.gen.lots[t.lot as keyof typeof g.world.gen.lots];
-    if (l) return { x: l.x + l.w / 2, y: 2, z: l.z + l.d / 2 };
-  }
-  if (t.region !== undefined) {
-    if (t.region === Region.Summit) {
-      const l = g.world.gen.lots.lighthouse;
-      return { x: l.x + 1, y: 4, z: l.z + 1 };
-    }
-  }
-  return null;
-}
-
 // ---------------------------------------------------------------- quest log
 
-export function questLogBody(g: Game, onTrack: () => void): HTMLElement {
+export function questLogBody(g: Game, onTrack: () => void, onHelp?: () => void): HTMLElement {
   const body = h('div', { class: 'col', style: 'gap:10px' });
   const list = active(g);
   if (!list.length) body.append(h('div', { class: 'muted' }, g.state.quests.finished ? 'The story is complete! Enjoy island life.' : 'No active missions right now. Explore, chat with neighbors, or sleep until tomorrow!'));
@@ -232,6 +209,19 @@ export function questLogBody(g: Game, onTrack: () => void): HTMLElement {
     });
     body.append(card);
   }
+  const tm = trackedMission(g);
+  if (tm && onHelp)
+    body.append(
+      h(
+        'div',
+        { class: 'help-row' },
+        h('span', null, 'Stuck? '),
+        btn('🙋 Ask Pemberly', () => {
+          sendHint(g, tm, undefined, true);
+          onHelp();
+        }, 'small primary'),
+      ),
+    );
   const done = g.state.quests.done.length;
   body.append(h('div', { class: 'tiny muted' }, `${done} missions completed.`));
   return body;

@@ -1,7 +1,9 @@
 // Pause menu.
 import { btn, h, type Panel, type UIManager } from '../dom';
+import { fullscreenSupported, isFullscreen, toggleFullscreen } from '../fullscreen';
 
 export class PauseMenu implements Panel {
+  name = 'pause';
   el: HTMLElement;
   modal = true;
   constructor(ui: UIManager, opts: { onSave: () => void; onSettings: () => void; onControls: () => void; onQuit: () => void }) {
@@ -23,6 +25,12 @@ export class PauseMenu implements Panel {
             close();
           }),
           btn('Settings', opts.onSettings),
+          fullscreenSupported()
+            ? btn(isFullscreen() ? '⛶ Leave full screen' : '⛶ Full screen', () => {
+                toggleFullscreen();
+                close();
+              })
+            : null,
           btn('Controls', opts.onControls),
           btn('Save & quit to title', opts.onQuit),
         ),

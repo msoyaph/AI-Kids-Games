@@ -5,6 +5,7 @@ import { FRUITS } from '../data/fruit';
 import { BUGS, FISH, FURNITURE_SHOP, item } from '../data/registry';
 import { flowerItemId, LOST_ITEMS } from '../data/items';
 import { HEART, VILLAGERS, VILLAGER_BY_ID } from '../data/villagers';
+import { GIFT_SLOTS } from '../data/interiors';
 import { Ground, Region } from '../world/types';
 import { learnRecipe } from './crafting';
 import { sellPrice } from './economy';
@@ -12,6 +13,7 @@ import type { Game } from './game';
 import { countItem, give, money, removeItem, stat } from './inventory';
 import { computeComponents } from './pathfind';
 import type { VillagerRequest, VillagerState } from './state';
+import { isBirthday } from './happenings';
 
 export const FRIEND = {
   talk: 3,
@@ -93,8 +95,10 @@ export function giveGift(g: Game, id: string, slot: number): Reaction | null {
   }
   const itemId = s.id;
   removeItem(g, itemId, 1, 'gift');
+  // furniture gifts show up in their home (most recent first)
+  if (item(itemId).furn) v.gifts = [itemId, ...(v.gifts ?? [])].slice(0, GIFT_SLOTS);
   const r = reactionTo(id, itemId);
-  if (v.giftsToday < FRIEND.giftsPerDay) addFriendship(g, id, FRIEND[r]);
+  if (v.giftsToday < FRIEND.giftsPerDay) addFriendship(g, id, FRIEND[r] * (isBirthday(g, id) && FRIEND[r] > 0 ? 2 : 1));
   v.giftsToday++;
   stat(g, 'gifts');
   g.emit('gifted', { npc: id, item: itemId, reaction: r });
@@ -103,8 +107,8 @@ export function giveGift(g: Game, id: string, slot: number): Reaction | null {
 
 // ---------------- requests ----------------
 
-const SAFE_FISH = () => FISH.filter((f) => f.hours[0] === 0 && f.hours[1] === 24 && f.weather === 'any' && f.rarity <= 2 && (f.where.includes('river') || f.where.includes('sea')));
-const SAFE_BUGS = () => BUGS.filter((b) => b.hours[0] === 0 && b.hours[1] === 24 && b.weather === 'any' && b.rarity <= 2 && ['ground', 'trees', 'rocks'].includes(b.habitat));
+const SAFE_FISH = () => FISH.filter((f) => !f.seasons && f.hours[0] === 0 && f.hours[1] === 24 && f.weather === 'any' && f.rarity <= 2 && (f.where.includes('river') || f.where.includes('sea')));
+const SAFE_BUGS = () => BUGS.filter((b) => !b.seasons && b.hours[0] === 0 && b.hours[1] === 24 && b.weather === 'any' && b.rarity <= 2 && ['ground', 'trees', 'rocks'].includes(b.habitat));
 
 let compCache: { key: string; comp: Int32Array } | null = null;
 /** Tiles reachable from the player's side of the island (home door / dock). */
@@ -279,7 +283,7 @@ export function fulfillRequest(g: Game, id: string): RequestReward | null {
   if (!r || !canFulfill(g, id)) return null;
   removeItem(g, r.target, r.qty, 'request');
   r.done = true;
-  money(g, r.reward);
+  money(g, r.reward, 0, 'request');
   addFriendship(g, id, FRIEND.request);
   stat(g, 'requestsDone');
   g.emit('requestDone', { npc: id, kind: r.kind });
@@ -311,11 +315,11 @@ export function dueHeartRewards(g: Game, id: string): HeartReward[] {
       const rid = def.heartRecipes[m - 2];
       if (rid && learnRecipe(g, rid, 'friend', true)) out.push({ kind: 'recipe', id: rid });
       else {
-        money(g, 0, 300);
+        money(g, 0, 300, 'friendship');
         out.push({ kind: 'lumens', amount: 300 });
       }
     } else if (m === 4) {
-      money(g, 0, 600);
+      money(g, 0, 600, 'friendship');
       out.push({ kind: 'lumens', amount: 600 });
     } else {
       give(g, def.heartGift, 1, 'friend');

@@ -41,6 +41,8 @@ export interface Interaction {
   run: () => void;
   /** optional: shown greyed out, can't run */
   disabled?: boolean;
+  /** the tile it acts on, when that isn't the one in front (e.g. picking up what you stand on) */
+  tile?: number;
 }
 
 export type Resolver = (g: Game, ctx: InteractCtx) => Interaction | null;
@@ -62,6 +64,10 @@ export class Game {
   moveMag = 0;
   /** player is sneaking (net raised) */
   sneaking = false;
+  /** creeping along quietly (a small push on the touch stick) */
+  creeping = false;
+  /** real seconds since the player last moved or pressed anything (the App resets it on input) */
+  idleSec = 0;
   /** last movement intent (interiors use it) */
   moveIntent = { x: 0, z: 0, run: false };
   /** interaction resolver used while inside a building */
@@ -184,11 +190,15 @@ export class Game {
     }
     this.held = !!input?.actionHeld;
     this.moveMag = input ? Math.hypot(input.move.x, input.move.z) : 0;
+    if (this.moveMag > 0.05 || this.held) this.idleSec = 0;
+    else this.idleSec += dt;
     this.moveIntent = input ? { x: input.move.x, z: input.move.z, run: input.move.run } : { x: 0, z: 0, run: false };
     const canMove = (this.mode === 'play' || this.mode === 'placement') && !this.action && input && this.state.player.location === 'island';
     if (canMove) {
-      stepPlayer(this.world, this.state.player, this.motion, { ...input.move, sneak: this.sneaking, run: input.move.run && !this.sneaking }, dt);
+      this.creeping = !!input.move.sneak;
+      stepPlayer(this.world, this.state.player, this.motion, { ...input.move, sneak: this.sneaking || this.creeping, run: input.move.run && !this.sneaking && !this.creeping }, dt);
     } else {
+      this.creeping = false;
       this.motion.speed = 0;
       this.motion.vx = 0;
       this.motion.vz = 0;

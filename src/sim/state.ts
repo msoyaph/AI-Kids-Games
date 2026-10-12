@@ -1,8 +1,9 @@
 // The complete, JSON-serializable game state. Everything persistent lives here.
 import { generateIsland } from '../world/worldgen';
+import { emptyWardrobe, type WardrobeState } from './wardrobe';
 import { WORLD_SIZE } from '../world/types';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export type ObjKind =
   | 'tree'
@@ -42,6 +43,9 @@ export interface TileObj {
   pd?: number;
   /** buried in this tile was an extra (e.g. lost item owner id) */
   tag?: string;
+  /** fine visual offset of an outdoor decoration, in tiles (±0.375) */
+  nx?: number;
+  nz?: number;
 }
 
 export type StructType =
@@ -99,7 +103,17 @@ export interface InvSlot {
   dur?: number;
 }
 
-export type Location = 'island' | 'home' | 'museum';
+/** Where the player is: the island, or inside a room ('home', 'museum', 'shop', 'hall', 'villager:<id>'). */
+export type Location = 'island' | 'home' | 'basement' | 'museum' | 'shop' | 'hall' | `villager:${string}`;
+
+/** Position inside a room (saved so a save made indoors resumes indoors). */
+export interface IndoorPos {
+  x: number;
+  z: number;
+  facing: number;
+  /** island spot to return to when leaving */
+  ret: { x: number; z: number; facing: number };
+}
 
 export interface PlayerState {
   name: string;
@@ -115,6 +129,8 @@ export interface PlayerState {
   glints: number;
   lumens: number;
   location: Location;
+  /** set while indoors */
+  indoor?: IndoorPos;
 }
 
 export interface PlacedFurniture {
@@ -123,6 +139,25 @@ export interface PlacedFurniture {
   x: number;
   z: number;
   rot: number;
+  /** set for small items sitting on another piece: the parent's uid and a tile slot on its top */
+  on?: number;
+  slot?: number;
+}
+
+/** A decoration hanging on a wall: 0 = back wall, 1 = left wall, 2 = right wall; pos = tile along it. */
+export interface WallItem {
+  uid: number;
+  id: string;
+  wall: number;
+  pos: number;
+}
+
+/** One decoratable floor of your home. */
+export interface HomeRoomData {
+  furniture: PlacedFurniture[];
+  walls: WallItem[];
+  wallpaper: string;
+  flooring: string;
 }
 
 export interface HomeState {
@@ -132,10 +167,14 @@ export interface HomeState {
   loanTotal: number;
   upgradeReadyDay: number;
   furniture: PlacedFurniture[];
+  /** wall decorations (paintings, clocks, shelves...) */
+  walls: WallItem[];
   nextUid: number;
   wallpaper: string;
   flooring: string;
   storage: InvSlot[];
+  /** level 3 adds a basement with its own furniture, walls and floor */
+  basement?: HomeRoomData;
 }
 
 export type WeatherT = 'sunny' | 'cloudy' | 'rain' | 'rainbow';
@@ -162,6 +201,11 @@ export interface VillagerState {
   request?: VillagerRequest;
   rewardsGiven: number;
   metDay: number;
+  /** furniture the player gave them, most recent first (shown in their home) */
+  gifts?: string[];
+  /** the outfit they last commented on, and when they last gave you clothes */
+  outfitSeen?: string;
+  clothDay?: number;
 }
 
 export interface MissionProgress {
@@ -212,10 +256,33 @@ export interface GameState {
   challenges: { day: number; list: ChallengeProgress[]; completedTotal: number };
   achievements: Record<string, number>;
   stats: Record<string, number>;
-  events: { best: Record<string, number>; medals: Record<string, number>; active: TimedEventState | null };
+  events: {
+    best: Record<string, number>;
+    medals: Record<string, number>;
+    active: TimedEventState | null;
+    /** today's festival progress */
+    festival?: { id: 'flowerFair' | 'starNight' | 'harvestFeast' | 'lanternSkate'; day: number; progress: number; got: string[]; done: boolean };
+    /** Wanda's sold-out items today */
+    merchant?: { day: number; sold: string[] };
+  };
   shop: { day: number; sold: string[] };
   flags: Record<string, number>;
   tips: Record<string, number>;
+  /** 0 spring, 1 summer, 2 autumn, 3 winter; day 1..7 within the season */
+  season: SeasonState;
+  /** clothes in the closet, what you're wearing, saved outfits */
+  wardrobe: WardrobeState;
+  /** a recipe pinned to the HUD (its materials show live counts) */
+  trackedRecipe?: string;
+}
+
+export interface SeasonState {
+  index: number;
+  day: number;
+  /** "Pause seasons" setting (per island) */
+  paused: boolean;
+  /** clock day the season last advanced on */
+  lastDay: number;
 }
 
 export const DEFAULT_LOOK: Appearance = {
@@ -292,6 +359,7 @@ export function newGameState(seed: number, name: string, look: Appearance = DEFA
       loanTotal: 0,
       upgradeReadyDay: 0,
       furniture: [],
+      walls: [],
       nextUid: 1,
       wallpaper: 'wall_canvas',
       flooring: 'floor_grass',
@@ -309,5 +377,7 @@ export function newGameState(seed: number, name: string, look: Appearance = DEFA
     shop: { day: 0, sold: [] },
     flags: {},
     tips: {},
+    season: { index: 0, day: 1, paused: false, lastDay: 0 },
+    wardrobe: emptyWardrobe(),
   };
 }

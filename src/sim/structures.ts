@@ -1,7 +1,7 @@
 // Building interactions on the island + construction sites that finish overnight.
 import type { Game, InteractCtx, Interaction } from './game';
 import type { Structure, StructType } from './state';
-import { enterInterior } from './interior';
+import { canEnter, enterInterior, type RoomKind } from './interior';
 import { give } from './inventory';
 
 export function structureLabel(s: Structure): string {
@@ -71,26 +71,27 @@ export function structureResolver(g: Game, ctx: InteractCtx): Interaction | null
       return { label: 'Enter home', priority: 85, run: () => enterInterior(g, 'home') };
     case 'workbench':
       return { label: 'Craft at workbench', priority: 85, run: () => g.ui.open('craft') };
-    case 'shop':
     case 'shopCart': {
       const h = g.state.clock.minute / 60;
       const open = h >= 8 && h < 22;
       return {
-        label: s.type === 'shop' ? 'Shop at The Curled Leaf' : "Browse Fennimore's cart",
+        label: "Browse Fennimore's cart",
         priority: 85,
         run: () => (open ? g.ui.open('shop') : g.toast('Closed for the night. Open 8 AM – 10 PM!')),
       };
     }
+    case 'shop':
+      return { label: 'Enter The Curled Leaf', priority: 85, run: () => tryEnter(g, 'shop') };
     case 'hall':
-      return { label: 'Enter Lantern Hall', priority: 85, run: () => g.ui.open('talk', 'pemberly') };
+      return { label: 'Enter Lantern Hall', priority: 85, run: () => tryEnter(g, 'hall') };
     case 'museum':
-      return { label: 'Enter the museum', priority: 85, run: () => enterInterior(g, 'museum') };
+      return { label: 'Enter the museum', priority: 85, run: () => tryEnter(g, 'museum') };
     case 'museumTent':
       return { label: "Visit Vesper's tent", priority: 85, run: () => g.ui.open('talk', 'vesper') };
     case 'lighthouse':
       return { label: 'Inspect the lighthouse', priority: 85, run: () => inspectLighthouse(g) };
     case 'plazaLantern':
-      return { label: 'Admire the Great Lantern', priority: 60, run: () => g.ui.say('', [g.state.flags.lighthouseLit ? '[happy]The Great Lantern glows warmly. Its light reaches all the way to the lighthouse.' : '[neutral]The Great Lantern of the plaza. It has not been lit in years.']) };
+      return { label: 'Look at the Great Lantern', priority: 60, run: () => g.ui.say('', [g.state.flags.lighthouseLit ? '[happy]The Great Lantern glows. Its light shines all the way to the lighthouse.' : '[neutral]This is the Great Lantern. Nobody has lit it in years.']) };
     case 'noticeBoard':
       return { label: 'Read the notice board', priority: 85, run: () => g.ui.open('board') };
     case 'construction':
@@ -100,9 +101,15 @@ export function structureResolver(g: Game, ctx: InteractCtx): Interaction | null
   }
 }
 
+function tryEnter(g: Game, kind: RoomKind): void {
+  const ok = canEnter(g, kind);
+  if (ok.ok) enterInterior(g, kind);
+  else g.toast(ok.reason ?? 'Closed.', 'warn');
+}
+
 export function inspectLighthouse(g: Game): void {
   if (g.state.flags.lighthouseLit) {
-    g.ui.say('', ['[happy]The Driftlight lighthouse sweeps its warm beam across the sea. Every lantern finds its way home.']);
+    g.ui.say('', ['[happy]The lighthouse shines its warm light over the sea. Now every boat can find its way home.']);
     return;
   }
   const first = !g.state.flags.lighthouseSeen;
@@ -111,9 +118,9 @@ export function inspectLighthouse(g: Game): void {
     g.state.flags.lensGiven = 1;
     give(g, 'lens', 1, 'lighthouse');
     g.ui.say('', [
-      '[neutral]The old lighthouse creaks in the wind. Its great lamp is dark and dusty.',
-      '[surprised]Wedged in the lamp frame is a heavy, cloudy lens. You carefully pry it loose.',
-      '[neutral]Got the Old Lighthouse Lens! Pemberly will want to hear about this.',
+      '[neutral]The old lighthouse creaks in the wind. Its big lamp is dark and dusty.',
+      '[surprised]A big, cloudy lens is stuck in the lamp. You pull it out with care.',
+      '[neutral]You got the Old Lighthouse Lens! Go and tell Pemberly.',
     ]);
-  } else g.ui.say('', ['[neutral]The lamp room is empty, waiting for its lens and a reason to shine.']);
+  } else g.ui.say('', ['[neutral]The lamp room is empty. It is waiting for its lens.']);
 }
