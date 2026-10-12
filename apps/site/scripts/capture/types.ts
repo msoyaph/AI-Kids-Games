@@ -39,11 +39,22 @@ export interface Take {
   source?: string;
   /** Zoom into part of the 1920×1080 frame for the loop and stills: [x, y, width, height], 16:9. */
   crop?: [number, number, number, number];
+  /**
+   * Open the page as a phone or tablet (head take of a chain only): CSS viewport, pixel ratio,
+   * touch and a mobile user agent. Record it with source "tab" to include the touch controls.
+   */
+  device?: Device;
+  /** Frame rate for a tab recording (default 60); a costly page records more evenly at 30. */
+  fps?: number;
+  /** Also record the game's own sound (Web Audio output, tapped in the page). Head take only. */
+  audio?: boolean;
   /** Prepare the game until the moment is about to happen. Not recorded. */
   setup(ctx: TakeContext): Promise<void>;
   /** Play the moment while recording. Call ctx.cut() when the best part begins. */
   act(ctx: TakeContext): Promise<void>;
 }
+
+export interface Device { width: number; height: number; scale: number; touch?: boolean; userAgent?: string }
 
 export interface Scenario {
   slug: string;

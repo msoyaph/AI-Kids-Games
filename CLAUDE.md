@@ -110,3 +110,32 @@ recapture, save carry-over, in-site touch tests). Both ship in site release 2.1.
 - Next (owner requests): the sizzle reel with HyperFrames (npx hyperframes@0.8.133, cached,
   telemetry off) in marketing/sizzle/, storyboard first in plan mode; recapture all art in the
   consistent style and drop the temporary art; README showcase; TheaBonk v2 when fixed.
+
+## Sizzle reel v1 (branch sizzle-reel; owner approved the storyboard, end card says aikids.games)
+
+Built as code in `marketing/sizzle/` (workspace @ai-kids-games/sizzle; see its README). HyperFrames
+0.8.133 via npx (telemetry off), GSAP 3.13.0 from npm, ffmpeg-static (Homebrew ffmpeg is broken on
+this Mac: missing libx265) and @ffprobe-installer/ffprobe for HyperFrames' ffprobe.
+1. COMPLETE: storyboard (STORYBOARD.md, storyboard/*.jpg).
+2. Capture (`npm run reel:capture -- <slug>`, routes in capture/games/): Calex, TheaBonk (live v1,
+   the site's route with sound on), Vanex, Space Sky, Light Crossing done except the tablet take;
+   Cliff Valley next. Shared capture lib (apps/site/scripts/capture/lib.ts) gained device sizes,
+   an audio tap (AudioNode.connect → MediaStreamDestination, mixed in a recorder AudioContext whose
+   resume() must not be awaited without a timeout before a user gesture) and an output dir.
+   Pitfalls found:
+   - This Mac's screen is 120 Hz: `canvas.captureStream(60)` samples a 120 fps game unevenly
+     (8/17/25 ms). Record with `captureStream(120)` and resample to 60 in the trim (even).
+     `captureStream()` with no rate gave Light Crossing no frames at all.
+   - A covered or touched capture window stalls frames; run.ts rejects takes with stalls.
+   - Vanex at quality "high" drops to ~46 fps with a full maze; use "medium". Its speed button
+     text is CSS-uppercased ("3X"). Escape with no dialog open pauses the game.
+   - Space Sky: wait ~1.5 s on the title before clicking Play (the intro swallows clicks).
+   - Light Crossing camera.zoom scales the distance (0.7 = closest). Never return dev.start()'s
+     Game object through page.evaluate (serializing it can hang).
+   - Never pgrep/pkill with a pattern that matches the waiting shell's own command line.
+   - Another session works in the worktree ~/Documents/AI-Kids-Games-ship (branch
+     theabonk-touch-gate) and runs browser tests there; the capture waits for them.
+3–6. Written, not yet run: music/ (synth + score from the cut's blocks), compose/build.ts,
+   render/ (media trims and mix, HyperFrames renders, encodes, captions, publish), review/run.ts;
+   site: components/Trailer.tsx (Home button + dialog, About inline), styles, tests
+   (tests/trailer.test.ts, tests/e2e/trailer.spec.ts). Web files go to apps/site/public/trailer/.

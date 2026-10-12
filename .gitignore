@@ -15,3 +15,7 @@ captures/
 .env
 .env.*
 !.env.example
+
+# sizzle reel: generated HyperFrames projects and rendered files
+marketing/sizzle/build/
+marketing/sizzle/out/
