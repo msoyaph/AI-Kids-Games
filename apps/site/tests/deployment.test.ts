@@ -1,8 +1,11 @@
 import { describe,expect,it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 
-const guard = (env: Record<string,string>) => spawnSync('node_modules/.bin/tsx',['scripts/check-deployment.ts'],{ env: { PATH: process.env.PATH ?? '',...env },encoding: 'utf8' });
+// tsx may be hoisted to the monorepo root, so resolve its CLI instead of assuming node_modules/.bin.
+const tsx = createRequire(import.meta.url).resolve('tsx/cli');
+const guard = (env: Record<string,string>) => spawnSync(process.execPath,[tsx,'scripts/check-deployment.ts'],{ env: { PATH: process.env.PATH ?? '',...env },encoding: 'utf8' });
 describe('production approval guard',{ timeout: 30000 },() => {
   it('allows the approved release in a Vercel production build',() => {
     const { version } = JSON.parse(readFileSync('package.json','utf8'));

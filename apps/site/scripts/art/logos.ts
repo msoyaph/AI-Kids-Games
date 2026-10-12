@@ -2,6 +2,7 @@
 // (SIL OFL), outlined to paths so the SVG needs no font. Styles echo each game's own title screen.
 // Usage: npx tsx scripts/art/logos.ts [slug...]
 import { readFileSync,writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import opentype from 'opentype.js';
 
@@ -21,7 +22,7 @@ const styles: Record<string,LogoStyle> = {
   'calex-cart': { lines: [[...'CALEX'].map((text,i) => ({ text,fill: ['#ffd23f','#4ce0d2','#ff6fae','#8cff6b'][i % 4] })),[...'CART'].map((text,i) => ({ text,fill: ['#ff6fae','#8cff6b','#ffd23f','#4ce0d2'][i % 4] }))],outline: '#2a2140',outlineWidth: 14,shadow: '#2a2140',depth: 15,tracking: 6,lineGap: -18 }
 };
 
-const woff = readFileSync(resolve(import.meta.dirname,'../../node_modules/@fontsource/nunito/files/nunito-latin-900-normal.woff'));
+const woff = readFileSync(createRequire(import.meta.url).resolve('@fontsource/nunito/files/nunito-latin-900-normal.woff'));
 const font = opentype.parse(woff.buffer.slice(woff.byteOffset,woff.byteOffset+woff.byteLength));
 const size = 200, pad = 40;
 // Lay out plain glyphs with kerning ourselves: opentype.js cannot apply some of Nunito's

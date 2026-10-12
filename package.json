@@ -1,0 +1,31 @@
+{
+  "name": "ai-kids-games",
+  "private": true,
+  "description": "Free, open-source browser games for kids, and the aikids.games website that hosts them.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "games/*",
+    "templates/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace apps/site",
+    "build": "npm run build --workspace apps/site",
+    "test": "npm test --workspace apps/site",
+    "test:e2e": "npm run test:e2e --workspace apps/site",
+    "import-game": "tsx scripts/import-game.ts",
+    "check": "tsx scripts/check-repo.ts && tsx scripts/check-builds.ts",
+    "check:repo": "tsx scripts/check-repo.ts",
+    "check:builds": "tsx scripts/check-builds.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3"
+  }
+}

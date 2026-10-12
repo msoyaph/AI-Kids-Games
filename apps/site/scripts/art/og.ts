@@ -2,6 +2,7 @@
 // public/og/<slug>.jpg for each game and public/og/site.jpg for the home page.
 // Usage: npx tsx scripts/art/og.ts
 import { mkdirSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 import sharp from 'sharp';
@@ -29,7 +30,7 @@ server.removeAllListeners('request');
 const { createReadStream,existsSync } = await import('node:fs');
 server.on('request',(req,res) => {
   const url = new URL(req.url || '/','http://x');
-  const file = url.pathname === '/og-font.woff2' ? resolve(import.meta.dirname,'../../node_modules/@fontsource/nunito/files/nunito-latin-800-normal.woff2') : resolve(import.meta.dirname,'../../public',`.${decodeURIComponent(url.pathname)}`);
+  const file = url.pathname === '/og-font.woff2' ? createRequire(import.meta.url).resolve('@fontsource/nunito/files/nunito-latin-800-normal.woff2') : resolve(import.meta.dirname,'../../public',`.${decodeURIComponent(url.pathname)}`);
   if (!existsSync(file)) { res.writeHead(404).end(); return; }
   res.writeHead(200,{ 'Content-Type': file.endsWith('.svg') ? 'image/svg+xml' : file.endsWith('.woff2') ? 'font/woff2' : 'application/octet-stream','Access-Control-Allow-Origin': '*' });
   createReadStream(file).pipe(res);
