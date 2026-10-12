@@ -1,0 +1,14 @@
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
+const [slug, build] = process.argv.slice(2);
+if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || !build) throw new Error('Usage: npx tsx scripts/import-game-build.ts <slug> <path-to-built-index.html>');
+if (!existsSync(build)) throw new Error(`Game build not found: ${build}`);
+const source = readFileSync(build);
+if (!source.toString('utf8').includes('<head>')) throw new Error('Expected a complete HTML game build.');
+const target = resolve('public/games', slug, 'index.html');
+mkdirSync(resolve('public/games', slug), { recursive: true });
+copyFileSync(build, target);
+const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
+if (hash(source) !== hash(readFileSync(target))) throw new Error(`Hash mismatch for ${slug}`);
+console.log(`Imported ${slug} unchanged: ${hash(source)}`);

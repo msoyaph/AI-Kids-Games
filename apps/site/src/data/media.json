@@ -1,0 +1,64 @@
+{
+  "calex-cart": {
+    "loopSeconds": 7.2,
+    "mp4Bytes": 719379,
+    "webmBytes": 744248,
+    "shots": [
+      "Calex glides across the forest gorge on Canyon Run",
+      "Landing back on the track in the canyon",
+      "Calex drifts around a canyon bend with sparks flying",
+      "A Bumper Ball sends a rival kart spinning on the beach"
+    ],
+    "capturedAt": "2026-10-11"
+  },
+  "light-crossing": {
+    "loopSeconds": 8,
+    "mp4Bytes": 725368,
+    "webmBytes": 730187,
+    "shots": [
+      "Lanterns rise from the plaza at the Lantern Crossing festival",
+      "Running along the beach at sunset",
+      "Reeling in a fish off the dock",
+      "The lighthouse shines again as lanterns drift out to sea"
+    ],
+    "capturedAt": "2026-10-11"
+  },
+  "space-sky": {
+    "loopSeconds": 8,
+    "mp4Bytes": 699733,
+    "webmBytes": 744488,
+    "shots": [
+      "Your rocket zooms past Saturn and its rings",
+      "Gently landing the rocket on Mars",
+      "Exploring Zephyra Village with friendly aliens",
+      "Sliding across the ice on Europa"
+    ],
+    "capturedAt": "2026-10-11"
+  },
+  "theabonk": {
+    "loopSeconds": 8,
+    "mp4Bytes": 711440,
+    "webmBytes": 747074,
+    "shots": [
+      "A huge crowd of cartoon monsters rushes at Thea",
+      "Thea and her glowing Bonk Ring in a ring of pink Blobbins",
+      "Level up: choose one of three new powers",
+      "Thea faces Grumblecap, the giant mushroom boss"
+    ],
+    "capturedAt": "2026-10-11"
+  },
+  "vanex-defense": {
+    "loopSeconds": 7.2,
+    "mp4Bytes": 740737,
+    "webmBytes": 738780,
+    "shots": [
+      "King Gloop, the wave-10 boss, arrives with his crown",
+      "Towers bombard King Gloop as he marches through the maze",
+      "A full tower maze fires at a big wave",
+      "A steaming combo tower mixes fire and water",
+      "Little towers fire at a wave of Grumblewumps",
+      "A maze of towers guards the crystal castle"
+    ],
+    "capturedAt": "2026-10-11"
+  }
+}

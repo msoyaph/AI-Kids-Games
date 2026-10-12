@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.sites-runtime/
+playwright-report/
+test-results/
+.DS_Store
+*.tar.gz
+.vercel
+captures/

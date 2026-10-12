@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (bob): Calex drifting toward us (red #ff4d6d cap and visor, blue #3fa7ff suit) with Pip (#ff9f1c / #4ce0d2) behind. -->
+  <!-- Pip -->
+  <g transform="translate(1110 560) scale(.55)">
+    <ellipse cy="120" rx="150" ry="22" fill="#2b5d2a" opacity=".3"/>
+    <rect x="-150" y="60" width="54" height="64" rx="16" fill="#2a2a33"/><rect x="96" y="60" width="54" height="64" rx="16" fill="#2a2a33"/>
+    <path d="M-120 50h240l20 60h-280z" fill="#4ce0d2"/><path d="M-120 50h120v60h-140z" fill="#7ae9de"/><rect x="-150" y="96" width="300" height="24" rx="10" fill="#ff9f1c"/>
+    <path d="M-60 50c0-60 26-90 60-90s60 30 60 90z" fill="#ff9f1c"/>
+    <circle cy="-60" r="52" fill="#f2c6a0"/><path d="M-54-66a54 54 0 0 1 108 0z" fill="#ff9f1c"/>
+    <rect x="-46" y="-74" width="92" height="22" rx="11" fill="#4ce0d2"/><circle cx="-20" cy="-63" r="9" fill="#c9fff4"/><circle cx="20" cy="-63" r="9" fill="#c9fff4"/>
+    <path d="M-10-30q10 8 20 0" fill="none" stroke="#3a2a2a" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <!-- Calex -->
+  <g transform="translate(860 690) rotate(-8)">
+    <ellipse cx="0" cy="108" rx="190" ry="26" fill="#2b5d2a" opacity=".35"/>
+    <!-- rear wheels -->
+    <rect x="-176" y="-6" width="58" height="76" rx="18" fill="#2a2a33"/><rect x="118" y="-6" width="58" height="76" rx="18" fill="#2a2a33"/>
+    <!-- chassis -->
+    <path d="M-150 10h300l26 80h-352z" fill="#ff4d6d"/><path d="M-150 10H0v80h-176z" fill="#ff6f88"/>
+    <rect x="-46" y="-26" width="92" height="44" rx="10" fill="#8d93a3"/><rect x="-46" y="-26" width="46" height="44" rx="10" fill="#a3a9b8"/>
+    <!-- driver -->
+    <path d="M-70 10c0-70 30-104 70-104s70 34 70 104z" fill="#3fa7ff"/><path d="M-70 10c0-70 30-104 70-104v104z" fill="#66baff"/>
+    <path d="M-60-40-92 4M60-40 92 4" stroke="#3fa7ff" stroke-width="26" stroke-linecap="round"/>
+    <circle cx="-96" cy="10" r="16" fill="#f2c6a0"/><circle cx="96" cy="10" r="16" fill="#e8b58e"/>
+    <path d="M-60 6h120" stroke="#2a2a33" stroke-width="12" stroke-linecap="round"/>
+    <circle cy="-150" r="70" fill="#f2c6a0"/><path d="M0-220a70 70 0 0 1 0 140z" fill="#e8b58e" opacity=".5"/>
+    <path d="M-72-158a72 72 0 0 1 144 0c-22-10-46-14-72-14s-50 4-72 14z" fill="#ff4d6d"/><path d="M-72-158a72 72 0 0 1 72-72v58c-26 0-50 4-72 14z" fill="#ff7590"/>
+    <path d="M-64-160c-30 4-52 14-62 28 32 6 70 2 98-12z" fill="#e0405d"/>
+    <circle cy="-226" r="8" fill="#ffd23f"/>
+    <ellipse cx="-24" cy="-140" rx="9" ry="12" fill="#2a2030"/><ellipse cx="24" cy="-140" rx="9" ry="12" fill="#2a2030"/><circle cx="-21" cy="-144" r="3.5" fill="#fff"/><circle cx="27" cy="-144" r="3.5" fill="#fff"/>
+    <ellipse cx="-44" cy="-116" rx="12" ry="7" fill="#ff8f8f" opacity=".55"/><ellipse cx="44" cy="-116" rx="12" ry="7" fill="#ff8f8f" opacity=".55"/>
+    <path d="M-16-110q16 14 32 0" fill="#fff" stroke="#2a2030" stroke-width="5" stroke-linecap="round"/>
+    <!-- front wheels and bumper -->
+    <rect x="-196" y="52" width="66" height="80" rx="20" fill="#24242c"/><rect x="130" y="52" width="66" height="80" rx="20" fill="#24242c"/>
+    <circle cx="-163" cy="92" r="16" fill="#8d93a3"/><circle cx="163" cy="92" r="16" fill="#8d93a3"/>
+    <rect x="-150" y="84" width="300" height="34" rx="14" fill="#ffd23f"/><rect x="-150" y="84" width="150" height="34" rx="14" fill="#ffe170"/>
+    <circle cx="-110" cy="101" r="9" fill="#fff6c2"/><circle cx="110" cy="101" r="9" fill="#fff6c2"/>
+  </g>
+</svg>

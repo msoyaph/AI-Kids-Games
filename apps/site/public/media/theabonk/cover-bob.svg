@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (bob): Blobbins and Gloomlings closing in on Thea. -->
+  <defs>
+    <g id="eyes"><ellipse cx="-16" cy="-8" rx="13" ry="15" fill="#fff"/><ellipse cx="16" cy="-8" rx="13" ry="15" fill="#fff"/><circle cx="-12" cy="-6" r="6" fill="#231c2e"/><circle cx="20" cy="-6" r="6" fill="#231c2e"/></g>
+  </defs>
+  <!-- Blobbins (pink) -->
+  <g transform="translate(456 700)"><ellipse cy="46" rx="70" ry="14" fill="#1f4a22" opacity=".35"/><path d="M-70 30c-6-56 30-86 70-86s76 30 70 86c-2 14-20 20-70 20s-68-6-70-20z" fill="#ff7ab8"/><path d="M-70 30c-6-56 30-86 70-86l-22 70z" fill="#ff9fcd"/><path d="M70 30c2-30-8-52-26-68L22 14z" fill="#e05a9a"/><use href="#eyes" y="0"/></g>
+  <g transform="translate(372 616) scale(.62)"><ellipse cy="46" rx="70" ry="14" fill="#1f4a22" opacity=".35"/><path d="M-70 30c-6-56 30-86 70-86s76 30 70 86c-2 14-20 20-70 20s-68-6-70-20z" fill="#ff7ab8"/><path d="M-70 30c-6-56 30-86 70-86l-22 70z" fill="#ff9fcd"/><use href="#eyes"/></g>
+  <g transform="translate(1156 690) scale(1.08)"><ellipse cy="46" rx="70" ry="14" fill="#1f4a22" opacity=".35"/><path d="M-70 30c-6-56 30-86 70-86s76 30 70 86c-2 14-20 20-70 20s-68-6-70-20z" fill="#ff7ab8"/><path d="M-70 30c-6-56 30-86 70-86l-22 70z" fill="#ff9fcd"/><path d="M70 30c2-30-8-52-26-68L22 14z" fill="#e05a9a"/><use href="#eyes"/></g>
+  <g transform="translate(1268 612) scale(.6)"><ellipse cy="46" rx="70" ry="14" fill="#1f4a22" opacity=".35"/><path d="M-70 30c-6-56 30-86 70-86s76 30 70 86c-2 14-20 20-70 20s-68-6-70-20z" fill="#ff7ab8"/><path d="M-70 30c-6-56 30-86 70-86l-22 70z" fill="#ff9fcd"/><use href="#eyes"/></g>
+  <!-- Gloomlings (purple, one big eye) -->
+  <g transform="translate(612 612)"><ellipse cy="34" rx="40" ry="9" fill="#1f4a22" opacity=".35"/><path d="M-26-28-34-52-10-34zM26-28 34-52 10-34z" fill="#5a3fd6"/><circle r="40" fill="#7b5cff"/><path d="M-40 0a40 40 0 0 1 40-40v40z" fill="#9378ff"/><circle cx="2" cy="-2" r="17" fill="#fff"/><circle cx="5" cy="0" r="8" fill="#231c2e"/></g>
+  <g transform="translate(1012 604) scale(.85)"><ellipse cy="34" rx="40" ry="9" fill="#1f4a22" opacity=".35"/><path d="M-26-28-34-52-10-34zM26-28 34-52 10-34z" fill="#5a3fd6"/><circle r="40" fill="#7b5cff"/><path d="M-40 0a40 40 0 0 1 40-40v40z" fill="#9378ff"/><circle cx="-3" cy="-2" r="17" fill="#fff"/><circle cx="-6" cy="0" r="8" fill="#231c2e"/></g>
+</svg>

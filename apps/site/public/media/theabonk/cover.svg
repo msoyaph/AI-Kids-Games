@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- TheaBonk cover: Thea and her Bonk Ring at dusk. Colors from the game (characters.ts, Sky.ts, worldMesh.ts). Safe area: top 22% and side 6% are background only. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34478f"/>
+      <stop offset=".45" stop-color="#7a63ad"/>
+      <stop offset=".78" stop-color="#e48fa6"/>
+      <stop offset="1" stop-color="#ffb08a"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".35" stop-color="#ffd6ef" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffd6ef" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#ffe680" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <path d="M352 0h22l-40 600h-22z" fill="url(#beam)"/>
+  <path d="M1236 0h18l26 560h-18z" fill="url(#beam)" opacity=".8"/>
+  <!-- distant hills and plateaus -->
+  <path d="M0 540 120 488 250 520 400 470 540 512 700 478 860 515 1020 470 1180 508 1340 466 1480 500 1600 478V640H0z" fill="#5b5c9f"/>
+  <path d="M0 575 180 540 330 562 480 532 640 560 780 540 940 566 1120 534 1280 560 1440 536 1600 556V660H0z" fill="#3f6f5a"/>
+  <path d="M150 560h250l12 34H138z" fill="#a15f42"/><path d="M150 548h250l-2 14H152z" fill="#5fa94e"/>
+  <path d="M1180 552h220l14 40h-246z" fill="#a15f42"/><path d="M1180 540h220l-2 14h-216z" fill="#5fa94e"/>
+  <!-- meadow -->
+  <path d="M0 600C280 572 560 590 800 584S1320 566 1600 596V900H0z" fill="#4a9440"/>
+  <path d="M0 600 260 586 120 700zM420 588l300 0-180 120zM900 586l320-10-120 150zM1300 580l300 18-90 110z" fill="#57a24a"/>
+  <path d="M0 760 300 700 180 900H0zM1600 740l-260 40 120 120h140zM560 820l240-60 220 140H520z" fill="#3f8838"/>
+  <path d="M260 700 520 680 400 790zM1060 690l260 20-170 90z" fill="#68b356"/>
+  <!-- low-poly pines -->
+  <g>
+    <path d="M232 612h14v34h-14z" fill="#6b4a32"/><path d="M239 452 296 618H182z" fill="#2c6a46"/><path d="M239 452 296 618h-57z" fill="#235a3b"/>
+    <path d="M308 600h12v30h-12z" fill="#6b4a32"/><path d="M314 492 360 606h-92z" fill="#327a4f"/><path d="M314 492 360 606h-46z" fill="#286642"/>
+    <path d="M1346 606h14v36h-14z" fill="#6b4a32"/><path d="M1353 440 1414 614h-122z" fill="#2c6a46"/><path d="M1353 440 1414 614h-61z" fill="#235a3b"/>
+    <path d="M1438 600h12v30h-12z" fill="#6b4a32"/><path d="M1444 498 1488 604h-88z" fill="#327a4f"/><path d="M1444 498 1488 604h-44z" fill="#286642"/>
+  </g>
+  <!-- Bonk Ring: back half -->
+  <ellipse cx="800" cy="724" rx="300" ry="96" fill="url(#glow)"/>
+  <path d="M550 724a250 66 0 0 1 500 0" fill="none" stroke="#ffb347" stroke-width="34" opacity=".45" filter="url(#soft)"/>
+  <path d="M550 724a250 66 0 0 1 500 0" fill="none" stroke="#ffe680" stroke-width="14" stroke-linecap="round"/>
+  <!-- mallet heads behind Thea -->
+  <g><path d="M622 668l30-12 26 12-30 12z" fill="#f2b04b"/><path d="M622 668l26 12v30l-26-12z" fill="#d9603b"/><path d="M648 680l30-12v30l-30 12z" fill="#b84a2c"/></g>
+  <g><path d="M934 662l28-11 24 11-28 11z" fill="#f2b04b"/><path d="M934 662l24 11v28l-24-11z" fill="#d9603b"/><path d="M958 673l28-11v28l-28 11z" fill="#b84a2c"/></g>
+  <!-- Thea -->
+  <ellipse cx="800" cy="742" rx="78" ry="18" fill="#1f4a22" opacity=".45"/>
+  <g>
+    <!-- mallet on her back -->
+    <path d="M884 432 812 612" stroke="#8a5a3b" stroke-width="16" stroke-linecap="round"/>
+    <g transform="rotate(-22 896 430)"><rect x="852" y="404" width="92" height="54" rx="8" fill="#d9603b"/><rect x="852" y="404" width="92" height="20" rx="8" fill="#e8784f"/><rect x="886" y="404" width="22" height="54" fill="#f2b04b"/></g>
+    <!-- legs -->
+    <rect x="766" y="668" width="26" height="70" rx="9" fill="#3a3550"/><rect x="808" y="668" width="26" height="70" rx="9" fill="#3a3550"/>
+    <rect x="760" y="724" width="36" height="18" rx="8" fill="#2a2540"/><rect x="804" y="724" width="36" height="18" rx="8" fill="#2a2540"/>
+    <!-- dress -->
+    <path d="M748 566h104l30 122H718z" fill="#2fb8a6"/><path d="M748 566h52v122h-82z" fill="#3fc8b5"/><path d="M852 566l30 122h-30z" fill="#239a8a"/>
+    <path d="M772 592h56l12 96h-80z" fill="#f4f0e6"/><path d="M772 592h28v96h-40z" fill="#fffaf1"/>
+    <!-- arms -->
+    <path d="M750 576 712 648" stroke="#2fb8a6" stroke-width="26" stroke-linecap="round"/><circle cx="706" cy="658" r="15" fill="#f2c6a0"/>
+    <path d="M850 576 890 640" stroke="#239a8a" stroke-width="26" stroke-linecap="round"/><circle cx="896" cy="650" r="15" fill="#e8b58e"/>
+    <!-- head -->
+    <rect x="734" y="420" width="132" height="128" rx="36" fill="#f2c6a0"/><path d="M800 420h30a36 36 0 0 1 36 36v56a36 36 0 0 1-36 36h-30z" fill="#e8b58e" opacity=".55"/>
+    <!-- hair and bun -->
+    <path d="M728 470c0-44 32-66 72-66s72 22 72 66c-20-18-40-26-72-26s-52 8-72 26z" fill="#ff8a3d"/>
+    <path d="M728 470c0-44 32-66 72-66v40c-32 0-52 8-72 26z" fill="#ff9d57"/>
+    <path d="M728 468c-6 24-4 50 6 70l16-6c-6-22-6-42 2-58z" fill="#ff8a3d"/><path d="M872 468c6 24 4 50-6 70l-16-6c6-22 6-42-2-58z" fill="#e8742a"/>
+    <circle cx="800" cy="388" r="36" fill="#ff8a3d"/><path d="M800 352a36 36 0 0 0-30 56l30-20z" fill="#ffa86a"/><rect x="778" y="414" width="44" height="10" rx="5" fill="#e8742a"/>
+    <!-- face -->
+    <ellipse cx="777" cy="494" rx="9" ry="12" fill="#231c2e"/><ellipse cx="823" cy="494" rx="9" ry="12" fill="#231c2e"/>
+    <circle cx="780" cy="489" r="3.5" fill="#fff"/><circle cx="826" cy="489" r="3.5" fill="#fff"/>
+    <ellipse cx="758" cy="518" rx="13" ry="7" fill="#ff8f8f" opacity=".55"/><ellipse cx="842" cy="518" rx="13" ry="7" fill="#ff8f8f" opacity=".55"/>
+    <path d="M790 522q10 10 20 0" fill="none" stroke="#231c2e" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <!-- Bonk Ring: front half -->
+  <path d="M550 724a250 66 0 0 0 500 0" fill="none" stroke="#ffb347" stroke-width="40" opacity=".5" filter="url(#soft)"/>
+  <path d="M550 724a250 66 0 0 0 500 0" fill="none" stroke="#fff0a0" stroke-width="16" stroke-linecap="round"/>
+  <!-- mallet heads in front -->
+  <g><path d="M590 752l36-14 32 14-36 14z" fill="#f2b04b"/><path d="M590 752l32 14v36l-32-14z" fill="#d9603b"/><path d="M622 766l36-14v36l-36 14z" fill="#b84a2c"/></g>
+  <g><path d="M780 782l38-15 34 15-38 15z" fill="#f2b04b"/><path d="M780 782l34 15v38l-34-15z" fill="#d9603b"/><path d="M814 797l38-15v38l-38 15z" fill="#b84a2c"/></g>
+  <g><path d="M962 750l36-14 32 14-36 14z" fill="#f2b04b"/><path d="M962 750l32 14v36l-32-14z" fill="#d9603b"/><path d="M994 764l36-14v36l-36 14z" fill="#b84a2c"/></g>
+  <!-- grass tufts -->
+  <g fill="#3a8034"><path d="M200 840l10-36 8 36zM214 840l14-28 4 28zM1380 830l8-34 10 34zM1396 830l12-24 2 24zM1100 860l8-30 8 30zM470 870l9-32 7 32z"/></g>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (twinkle): drift sparks from Calex's back wheels. -->
+  <defs><path id="s" d="M0-18 5-5 18 0 5 5 0 18-5 5-18 0-5-5z"/></defs>
+  <g fill="#ffd23f"><use href="#s" x="650" y="790"/><use href="#s" x="610" y="750" transform="translate(610 750) scale(.6) translate(-610 -750)"/><use href="#s" x="1060" y="740" transform="translate(1060 740) scale(.8) translate(-1060 -740)"/></g>
+  <g fill="#4cc9ff"><use href="#s" x="690" y="830" transform="translate(690 830) scale(.7) translate(-690 -830)"/><use href="#s" x="1100" y="780"/><use href="#s" x="1130" y="730" transform="translate(1130 730) scale(.5) translate(-1130 -730)"/></g>
+  <g fill="#fff"><circle cx="630" cy="820" r="5"/><circle cx="1090" cy="810" r="5"/><circle cx="580" cy="790" r="4"/></g>
+</svg>

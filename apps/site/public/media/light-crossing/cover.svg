@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Light Crossing cover: Driftlight Isle on festival night. Colors from the game (palette.ts, buildings.ts, character.ts, sky.ts). Safe area: top 22% and side 6% are background only. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7f6fbd"/>
+      <stop offset=".5" stop-color="#d9a2cb"/>
+      <stop offset=".85" stop-color="#ffd3b0"/>
+      <stop offset="1" stop-color="#ffe6c4"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fc9c4"/>
+      <stop offset="1" stop-color="#5aa3a6"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#fff2b8" stop-opacity=".75"/>
+      <stop offset="1" stop-color="#fff2b8" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff2b8"/><stop offset=".4" stop-color="#ffd27a" stop-opacity=".7"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient>
+    <radialGradient id="held" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe2a8" stop-opacity=".9"/><stop offset="1" stop-color="#ffc27a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <!-- lighthouse beam sweeping left -->
+  <path d="M1168 262 300 160v190z" fill="url(#beam)" opacity=".8"/>
+  <!-- sea -->
+  <rect y="480" width="1600" height="420" fill="url(#sea)"/>
+  <path d="M0 520h420l-140 30zM900 506h360l-120 22zM120 640l300-20-100 40zM1240 660l300-24-80 50zM300 800l340-30-120 60z" fill="#a8dad3" opacity=".6"/>
+  <path d="M0 860 420 820 300 900H0zM1600 820l-380 40 60 40h320z" fill="#4c9598" opacity=".6"/>
+  <!-- island -->
+  <path d="M620 560 760 470 980 444 1210 452 1380 500 1440 560 1360 600 1100 618 820 612z" fill="#e6bf86"/>
+  <path d="M640 548 770 470 980 444 1200 452 1360 500 1410 548 1100 586 840 584z" fill="#f2d3a0"/>
+  <path d="M700 520 800 462 990 440 1190 446 1320 488 1350 520 1120 548 860 548z" fill="#9ed18b"/>
+  <path d="M800 462 990 440l-60 70zM1190 446l130 42-150 20z" fill="#b2dd9c"/><path d="M860 548l140-50 120 50zM1240 530l110-10-100 24z" fill="#86c27a"/>
+  <!-- trees -->
+  <g><rect x="772" y="470" width="10" height="34" fill="#8b6a48"/><path d="M777 404l38 34-6 44h-64l-6-44z" fill="#6fae6a"/><path d="M777 404l38 34-6 44h-32z" fill="#5b9c5c"/>
+     <rect x="846" y="452" width="10" height="36" fill="#8b6a48"/><path d="M851 380l42 38-6 48h-72l-6-48z" fill="#7cba73"/><path d="M851 380l42 38-6 48h-36z" fill="#64a463"/>
+     <rect x="1262" y="462" width="10" height="34" fill="#8b6a48"/><path d="M1267 398l36 32-6 42h-60l-6-42z" fill="#6fae6a"/><path d="M1267 398l36 32-6 42h-30z" fill="#5b9c5c"/>
+     <rect x="1320" y="482" width="9" height="28" fill="#8b6a48"/><path d="M1324 430l30 28-5 34h-50l-5-34z" fill="#7cba73"/><path d="M1324 430l30 28-5 34h-25z" fill="#64a463"/></g>
+  <!-- Lantern Hall -->
+  <g><path d="M930 470h120v58H930z" fill="#fff3df"/><path d="M930 470h60v58h-60z" fill="#fffaf0"/><path d="M916 472l74-46 74 46z" fill="#4f9fa0"/><path d="M990 426l74 46h-74z" fill="#3e8a8c"/><rect x="976" y="494" width="28" height="34" rx="4" fill="#8b6a48"/><rect x="944" y="488" width="20" height="16" fill="#ffd27a"/><rect x="1016" y="488" width="20" height="16" fill="#ffd27a"/></g>
+  <!-- lighthouse -->
+  <g>
+    <circle cx="1168" cy="262" r="70" fill="url(#lamp)"/>
+    <path d="M1132 470h72l-8-34h-56z" fill="#f27c7c"/><path d="M1140 436h56l-6-36h-44z" fill="#fff6ea"/><path d="M1146 400h44l-5-36h-34z" fill="#f27c7c"/><path d="M1151 364h34l-4-34h-26z" fill="#fff6ea"/><path d="M1155 330h26l-3-26h-20z" fill="#f27c7c"/>
+    <path d="M1168 470h36l-8-34-6-36-5-36-4-34-3-26h-10z" fill="#000" opacity=".08"/>
+    <rect x="1144" y="296" width="48" height="10" rx="3" fill="#6f6a8a"/><rect x="1152" y="268" width="32" height="28" rx="4" fill="#ffd27a"/><rect x="1152" y="268" width="16" height="28" fill="#fff2b8"/>
+    <path d="M1146 270l22-30 22 30z" fill="#f27c7c"/><path d="M1168 240l22 30h-22z" fill="#d9605f"/>
+  </g>
+  <!-- dock -->
+  <g><path d="M716 576h86l-150 214h-120z" fill="#b77a48"/><path d="M716 576h40l-170 214h-54z" fill="#c98a55"/>
+     <g stroke="#9a6438" stroke-width="5" opacity=".7"><path d="M700 598h88M676 632h92M650 668h96M622 708h98M594 748h100"/></g>
+     <rect x="520" y="776" width="16" height="70" fill="#9a6438"/><rect x="636" y="776" width="16" height="64" fill="#9a6438"/><rect x="700" y="590" width="12" height="40" fill="#9a6438"/><rect x="790" y="590" width="12" height="40" fill="#9a6438"/></g>
+  <!-- the islander on the dock, holding a lantern -->
+  <ellipse cx="616" cy="738" rx="50" ry="12" fill="#6b4a32" opacity=".35"/>
+  <g>
+    <rect x="596" y="690" width="16" height="44" rx="7" fill="#5b4a6a"/><rect x="620" y="690" width="16" height="44" rx="7" fill="#5b4a6a"/>
+    <path d="M584 616h64l14 82h-92z" fill="#a9e3a1"/><path d="M584 616h32v82h-46z" fill="#bdeeb4"/>
+    <path d="M648 626 682 590" stroke="#a9e3a1" stroke-width="18" stroke-linecap="round"/><circle cx="686" cy="584" r="11" fill="#f7d0aa"/>
+    <path d="M586 628 566 676" stroke="#94d18c" stroke-width="18" stroke-linecap="round"/><circle cx="564" cy="682" r="11" fill="#eec29a"/>
+    <circle cx="616" cy="566" r="56" fill="#f7d0aa"/>
+    <path d="M560 560a56 56 0 0 1 112 0c-14-8-30-12-56-12s-42 4-56 12z" fill="#f1d27a"/><path d="M560 560a56 56 0 0 1 56-56v44c-26 0-42 4-56 12z" fill="#f7df98"/>
+    <path d="M556 562c-2 10 0 20 4 28l10-8c-2-6-2-14 0-20z" fill="#e9c35f"/><path d="M676 562c2 10 0 20-4 28l-10-8c2-6 2-14 0-20z" fill="#e9c35f"/>
+    <circle cx="598" cy="578" r="7" fill="#3b2f4a"/><circle cx="634" cy="578" r="7" fill="#3b2f4a"/><circle cx="600" cy="575" r="2.5" fill="#fff"/><circle cx="636" cy="575" r="2.5" fill="#fff"/>
+    <ellipse cx="584" cy="596" rx="10" ry="6" fill="#ff9aa5" opacity=".6"/><ellipse cx="648" cy="596" rx="10" ry="6" fill="#ff9aa5" opacity=".6"/>
+    <path d="M608 598q8 7 16 0" fill="none" stroke="#3b2f4a" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- held lantern -->
+    <circle cx="700" cy="560" r="46" fill="url(#held)"/>
+    <path d="M686 538h28l6 40h-40z" fill="#ffc27a"/><path d="M686 538h14v40h-20z" fill="#ffd9a3"/><rect x="684" y="532" width="32" height="8" rx="3" fill="#b77a48"/><path d="M700 532v-8" stroke="#8b6a48" stroke-width="3"/>
+  </g>
+</svg>

@@ -1,0 +1,65 @@
+{
+  "provider": "Vercel",
+  "project": "real-tours/ai-kids-games",
+  "release": "2.0.0",
+  "commit": "783c343",
+  "production": {
+    "url": "https://ai-kids-games-fawn.vercel.app",
+    "deploymentId": "dpl_Ae5DWvTurreEjNvT3kkqeRdw8dVp",
+    "deploymentUrl": "https://ai-kids-games-bj5vqqp5g-real-tours.vercel.app",
+    "readyState": "READY",
+    "publishedAt": "2026-10-11",
+    "public": true,
+    "smokeTest": "Logged-out Playwright suite against production: 84 passed, 21 intentional device skips, 0 failed (all five games run 20 s clean, saves survive reload, favorites persist, no console errors, no other-origin requests).",
+    "lighthouseMobile": {
+      "home": {
+        "performance": 99,
+        "accessibility": 100,
+        "bestPractices": 100,
+        "seo": 100
+      },
+      "details": {
+        "performance": 98,
+        "accessibility": 100,
+        "bestPractices": 100,
+        "seo": 100
+      },
+      "play": {
+        "performance": 45,
+        "performanceExempt": true,
+        "accessibility": 100,
+        "bestPractices": 100,
+        "seo": 100
+      }
+    },
+    "homeInitialLoadKB": {
+      "phone": 193.5,
+      "desktop": 196.5
+    }
+  },
+  "verifiedPreview": {
+    "url": "https://ai-kids-games-pxkrj9q0w-real-tours.vercel.app",
+    "deploymentId": "dpl_DWu2jmi131Kg1wJekZnq3sA3ouqC",
+    "hostedSuite": "84 passed, 21 skipped, 0 failed",
+    "temporaryBypass": "created for hosted QA and revoked afterwards"
+  },
+  "deploymentProtection": {
+    "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",
+    "changedOn": "2026-10-11",
+    "previously": "all_except_custom_domains"
+  },
+  "productionApproved": true,
+  "productionPublished": true,
+  "productionApproval": {
+    "approved": true,
+    "release": "2.0.0",
+    "date": "2026-10-11",
+    "approvedBy": "Owner (brien-7221)",
+    "scope": "Redesign release: gameplay previews, new cover art, Privacy page and launch metadata",
+    "note": "Owner wrote: \"I approve a production deployment for this release.\" Guard: scripts/check-deployment.ts allows production builds only for this version."
+  },
+  "gameHashesVerified": true,
+  "gameCacheControl": "public, max-age=0, must-revalidate",
+  "hashedAssetCacheControl": "public, max-age=31536000, immutable",
+  "olderSitesPublish": "ChatGPT Sites publish (.openai/hosting.json) left untouched"
+}

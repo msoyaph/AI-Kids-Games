@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (twinkle): stars and star coins. -->
+  <defs><path id="s" d="M0-14 4-4 14 0 4 4 0 14-4 4-14 0-4-4z"/><g id="coin"><circle r="20" fill="#ffe066"/><circle r="15" fill="#ffd23f"/><path d="M0-9 2.6-3 9-2.8 4 1.4 5.6 8 0 4.4-5.6 8-4 1.4-9-2.8-2.6-3z" fill="#fff6c2"/></g></defs>
+  <g fill="#fff"><circle cx="140" cy="90" r="3"/><circle cx="300" cy="200" r="2"/><circle cx="470" cy="70" r="2.5"/><circle cx="640" cy="160" r="3"/><circle cx="800" cy="60" r="2"/><circle cx="930" cy="190" r="2.5"/><circle cx="1110" cy="80" r="3"/><circle cx="1300" cy="200" r="2"/><circle cx="1440" cy="120" r="2.5"/><circle cx="1530" cy="300" r="2"/><circle cx="200" cy="420" r="2"/><circle cx="1460" cy="560" r="3"/><circle cx="700" cy="480" r="2"/><circle cx="1540" cy="720" r="2"/></g>
+  <g fill="#fff6c2"><use href="#s" x="260" y="300"/><use href="#s" x="1380" y="420"/><use href="#s" x="760" y="300" transform="translate(760 300) scale(.7) translate(-760 -300)"/></g>
+  <use href="#coin" x="1360" y="640"/><use href="#coin" x="1420" y="600"/><use href="#coin" x="640" y="520"/><use href="#coin" x="1120" y="250"/>
+</svg>
