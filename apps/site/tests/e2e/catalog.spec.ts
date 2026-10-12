@@ -1,6 +1,6 @@
 import { expect,test } from '@playwright/test';
 import { games } from '../../src/data/games';
-import { gameFrame,guard } from './games';
+import { gameFrame,guard,pastTouchGate } from './games';
 
 // The catalog comes from the game manifests: every listed game has a card, a details page and a
 // play page that boots its build, with no console errors and no requests to other websites.
@@ -19,6 +19,7 @@ test('home shows every game; each details and play page opens',async ({ page }) 
     await expect(page.locator('.facts')).toContainText(game.ageGuidance);
     await expect(page.locator('.facts')).toContainText(game.estimatedPlayTime);
     await page.goto(`/play/${game.slug}`);
+    await pastTouchGate(page);
     await expect(page.locator('.game-loading')).toBeHidden({ timeout: 60_000 });
     await expect(page.frameLocator('iframe').locator('canvas').first()).toBeAttached({ timeout: 60_000 });
   }
