@@ -1,0 +1,43 @@
+name: Game idea
+description: Suggest a new game, or something to add to an existing one.
+title: "[Idea] "
+labels: [idea]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We love ideas! Remember: every game here is **original** (no other companies' characters, names or worlds) and **kid-safe** (no ads, purchases, chat or accounts).
+        Please don't include personal information.
+  - type: input
+    id: pitch
+    attributes:
+      label: Your idea in one sentence
+      placeholder: e.g. A cozy underwater garden where you grow coral and help sea creatures.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Is this a new game or an addition?
+      options:
+        - A new game
+        - An addition to TheaBonk
+        - An addition to Light Crossing
+        - An addition to Vanex Defense
+        - An addition to Space Sky
+        - An addition to Calex Cart
+        - An addition to Cliff Valley
+    validations:
+      required: true
+  - type: input
+    id: ages
+    attributes:
+      label: Who is it for?
+      placeholder: e.g. Ages 6–10
+  - type: textarea
+    id: fun
+    attributes:
+      label: What makes it fun?
+      description: What do players do again and again? What do they look forward to?
+    validations:
+      required: true

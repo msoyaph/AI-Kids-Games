@@ -10,12 +10,14 @@ ideas, fixes, new games and better docs are all welcome.
 
 ## Ways to help
 
-- **Report a bug:** open an issue. Say which game, which device and browser, and what happened.
-- **Suggest a game or a feature:** open an issue or start a Discussion.
+- **Report a bug:** open an issue with the *Bug report* form. Say which game, which device and
+  browser, and what happened.
+- **Suggest a game or a feature:** use the *Game idea* form, or start a Discussion.
 - **Fix something:** pick an issue, comment that you're on it, and open a pull request.
 - **Build a game:** a starter template and a step-by-step guide are on the way. Until then, any
   game in `games/` shows the contract in practice.
-- **List your game on aikids.games:** coming soon (see the README).
+- **List your game on aikids.games:** coming soon. Open a *Game listing request* issue to get in
+  line.
 
 ## Kid-safety checklist (every pull request)
 
@@ -59,7 +61,7 @@ npm test && npm run check                     # site unit tests, repo and build 
 ## Pull requests
 
 - Keep each pull request focused on one change, and describe what you changed and how you tested it.
-- Go through the kid-safety checklist above.
+- Fill in the checklist in the pull request template.
 - Pull requests from forks need a maintainer's approval before CI and preview deployments run.
 - By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE)
   and that you follow our [Code of Conduct](CODE_OF_CONDUCT.md).

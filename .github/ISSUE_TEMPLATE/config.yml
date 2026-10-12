@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question or share an idea
+    url: https://github.com/msoyaph/AI-Kids-Games/discussions
+    about: Questions, ideas and show-and-tell go in Discussions.
+  - name: Report a security or privacy problem
+    url: https://github.com/msoyaph/AI-Kids-Games/security/advisories/new
+    about: Please report these privately, not in a public issue.

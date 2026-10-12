@@ -1,0 +1,52 @@
+name: Bug report
+description: Something in a game or on the website doesn't work as it should.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping! GitHub accounts are for people **13 or older**; younger players can ask a grown-up to report for them.
+        **Please don't include personal information** (real names, ages, schools, photos, addresses or contact details).
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did it happen?
+      options:
+        - The website (aikids.games)
+        - TheaBonk
+        - Light Crossing
+        - Vanex Defense
+        - Space Sky
+        - Calex Cart
+        - Cliff Valley
+        - Somewhere else in this repo
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we make it happen again?
+      placeholder: |
+        1. Open …
+        2. Tap …
+        3. See …
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: e.g. iPad (10th gen), Safari 18 · Windows laptop, Chrome 140
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: A screenshot helps. Make sure it shows no personal information.
