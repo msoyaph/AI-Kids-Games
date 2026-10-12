@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import type { CharacterDef, ProjectileVisual } from '../config/types';
-import type { PropKind } from '../sim/terrain';
+import type { CharacterDef, EnemyDef, ProjectileVisual, PropKind } from '../config/types';
 import { GeoBuilder, P } from './geo';
 
 /**
@@ -56,6 +55,61 @@ export function characterGeometry(c: CharacterDef): THREE.BufferGeometry {
     b.add(P.box(0.14, 0.32, 0.06), accent, [0.22, 0.78, -0.3], [0.3, 0, 0.3]);
     b.add(P.cone(0.1, 0.18, 4), primary, [-0.22, 1.12, 0.18], [0, 0, 0.3]);
     b.add(P.cone(0.1, 0.18, 4), primary, [0.22, 1.12, 0.18], [0, 0, -0.3]);
+  } else if (c.id === 'ottie') {
+    // Ottie — river otter standing tall, tail out behind, a disc slung on the back
+    const dark = new THREE.Color(primary).multiplyScalar(0.7).getHex();
+    b.add(P.box(0.17, 0.24, 0.3), dark, [-0.15, 0.12, 0.04]);
+    b.add(P.box(0.17, 0.24, 0.3), dark, [0.15, 0.12, 0.04]);
+    b.add(P.cyl(0.27, 0.36, 0.85, 7), primary, [0, 0.66, 0], [0.08, 0, 0], 1, 0.05);
+    b.add(P.ico(0.25, 0), secondary, [0, 0.7, 0.2], [0, 0, 0], [1, 1.3, 0.7]);
+    b.add(P.cone(0.17, 1.1, 5), dark, [0, 0.35, -0.55], [-1.15, 0, 0]);
+    b.add(P.cyl(0.06, 0.07, 0.45, 5), dark, [-0.3, 0.82, 0.12], [0.5, 0, 0.35]);
+    b.add(P.cyl(0.06, 0.07, 0.45, 5), dark, [0.3, 0.82, 0.12], [0.5, 0, -0.35]);
+    b.add(P.torus(0.24, 0.07, 4, 8), accent, [0, 1.08, 0.02], [Math.PI / 2, 0, 0]);
+    b.add(P.ico(0.3, 1), primary, [0, 1.36, 0.02], [0, 0, 0], [1.05, 0.95, 1]);
+    b.add(P.ico(0.16, 0), secondary, [0, 1.3, 0.24], [0, 0, 0], [1.3, 0.9, 1]);
+    b.add(P.box(0.09, 0.06, 0.05), DARK, [0, 1.34, 0.4]);
+    b.add(P.ico(0.08, 0), dark, [-0.24, 1.55, -0.02]);
+    b.add(P.ico(0.08, 0), dark, [0.24, 1.55, -0.02]);
+    eyes(b, 1.44, 0.27, 0.11, 0.065);
+    for (const sd of [-1, 1]) b.add(P.box(0.28, 0.015, 0.015), 0xf4ead6, [sd * 0.2, 1.3, 0.3], [0, 0, sd * 0.15]);
+    b.add(P.cyl(0.3, 0.3, 0.07, 8), 0x8ff0e8, [0, 0.82, -0.36], [Math.PI / 2 - 0.2, 0, 0]);
+    b.add(P.cyl(0.13, 0.13, 0.09, 6), 0x2a8a84, [0, 0.82, -0.37], [Math.PI / 2 - 0.2, 0, 0]);
+  } else if (c.id === 'bramble') {
+    // Bramble — beetle knight: horned helm, glossy shell, round shield
+    b.add(P.box(0.2, 0.42, 0.24), skin, [-0.17, 0.21, 0]);
+    b.add(P.box(0.2, 0.42, 0.24), skin, [0.17, 0.21, 0]);
+    b.add(P.cyl(0.3, 0.36, 0.7, 7), skin, [0, 0.76, 0.05]);
+    b.add(P.dodeca(0.55), primary, [0, 0.95, -0.2], [0.2, 0, 0], [1.05, 1.1, 0.75], 0.06);
+    b.add(P.box(0.03, 0.9, 0.05), 0x1c3a2c, [0, 0.98, -0.6], [0.2, 0, 0]);
+    b.add(P.ico(0.3, 1), secondary, [0, 1.38, 0.08], [0, 0, 0], [1, 0.95, 1.05]);
+    b.add(P.cone(0.09, 0.55, 5), secondary, [0, 1.75, 0.3], [0.7, 0, 0]);
+    b.add(P.cone(0.06, 0.25, 4), secondary, [0, 1.98, 0.5], [1.4, 0, 0]);
+    b.add(P.box(0.4, 0.09, 0.05), DARK, [0, 1.38, 0.36]);
+    b.add(P.box(0.08, 0.05, 0.03), accent, [-0.1, 1.38, 0.39]);
+    b.add(P.box(0.08, 0.05, 0.03), accent, [0.1, 1.38, 0.39]);
+    b.add(P.cyl(0.07, 0.08, 0.5, 5), skin, [-0.38, 0.88, 0.08], [0, 0, 0.4]);
+    b.add(P.cyl(0.07, 0.08, 0.5, 5), skin, [0.38, 0.88, 0.08], [0, 0, -0.4]);
+    b.add(P.cyl(0.3, 0.3, 0.07, 8), secondary, [-0.5, 0.82, 0.18], [0, 0, Math.PI / 2 - 0.25]);
+    b.add(P.ico(0.09, 0), accent, [-0.55, 0.82, 0.19]);
+    b.add(P.box(0.18, 0.2, 0.12), 0x8a5a36, [0.38, 0.62, 0.2]);
+  } else if (c.id === 'nova') {
+    // Nova — owl stargazer: round body, huge eyes, ear tufts, a starry little telescope
+    b.add(P.box(0.14, 0.12, 0.2), 0xffa23d, [-0.15, 0.06, 0.1]);
+    b.add(P.box(0.14, 0.12, 0.2), 0xffa23d, [0.15, 0.06, 0.1]);
+    b.add(P.ico(0.5, 1), primary, [0, 0.62, 0], [0, 0, 0], [1, 1.12, 0.95], 0.04);
+    b.add(P.ico(0.33, 1), secondary, [0, 0.52, 0.26], [0, 0, 0], [1, 1.2, 0.6]);
+    b.add(P.ico(0.42, 1), primary, [0, 1.22, 0.02], [0, 0, 0], [1.1, 0.95, 1]);
+    b.add(P.cone(0.09, 0.32, 4), skin, [-0.27, 1.58, 0], [0, 0, 0.35]);
+    b.add(P.cone(0.09, 0.32, 4), skin, [0.27, 1.58, 0], [0, 0, -0.35]);
+    for (const sd of [-1, 1]) {
+      b.add(P.cyl(0.15, 0.15, 0.05, 10), secondary, [sd * 0.16, 1.26, 0.35], [Math.PI / 2, 0, 0]);
+      b.add(P.cyl(0.07, 0.07, 0.06, 8), DARK, [sd * 0.16, 1.26, 0.38], [Math.PI / 2, 0, 0]);
+      b.add(P.ico(0.26, 0), new THREE.Color(primary).multiplyScalar(0.75).getHex(), [sd * 0.5, 0.7, -0.02], [0, 0, sd * 0.2], [0.45, 1.1, 0.8]);
+    }
+    b.add(P.cone(0.06, 0.16, 4), accent, [0, 1.14, 0.42], [Math.PI / 2 + 0.4, 0, 0]);
+    for (let k = 0; k < 4; k++) b.add(P.octa(0.06), accent, [Math.sin(k * 1.7) * 0.3, 0.45 + k * 0.17, -0.42 + Math.cos(k) * 0.05]);
+    b.add(P.cyl(0.05, 0.08, 0.5, 6), 0xb07a3a, [0.42, 0.55, 0.25], [0.4, 0, -0.9]);
   } else {
     // Brindle — tortoise sage with a lantern staff
     for (const [x, z] of [[-0.42, 0.35], [0.42, 0.35], [-0.42, -0.35], [0.42, -0.35]] as const) {
@@ -79,8 +133,17 @@ export function characterGeometry(c: CharacterDef): THREE.BufferGeometry {
 
 // ───────────────────────────── enemies ─────────────────────────────
 
-export function enemyGeometry(id: string, color: number): THREE.BufferGeometry {
+const ICE = 0xe6fbff;
+const SNOW = 0xf6faff;
+
+/** Radius of the Snowball Roller's body (its model is centred so it can spin while rolling). */
+export const ROLLER_BODY = 0.85;
+
+/** An enemy's model: its base model (variants reuse one) in its colour, plus variant trim. */
+export function enemyGeometry(def: EnemyDef): THREE.BufferGeometry {
   const b = new GeoBuilder();
+  const id = def.model ?? def.id;
+  const color = def.color;
   const darker = new THREE.Color(color).multiplyScalar(0.62).getHex();
   const lighter = new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.35).getHex();
   switch (id) {
@@ -199,10 +262,100 @@ export function enemyGeometry(id: string, color: number): THREE.BufferGeometry {
       b.add(P.cyl(0.25, 0.4, 2.2, 6), darker, [1.6, 3.6, 0.6], [0.3, 0, -0.9]);
       b.add(P.box(0.5, 0.65, 0.5), 0xffd34d, [2.4, 3.0, 1.0]);
       break;
+    case 'snowRoller': {
+      // a grumpy snowball: pebbles and twigs show it spinning as it rolls
+      const r = ROLLER_BODY;
+      b.add(P.ico(r, 1), color, [0, 0, 0], [0, 0, 0], 1, 0.05);
+      // packed-snow bands: contrast on white ground, and they make the spin readable
+      b.add(P.torus(r * 0.98, 0.11, 4, 12), darker, [0, 0, 0], [0, Math.PI / 2, 0]);
+      b.add(P.torus(r * 0.98, 0.09, 4, 12), darker, [0, 0, 0], [0, Math.PI / 2, Math.PI / 2]);
+      b.add(P.ico(0.16, 0), WHITE, [-0.26, 0.2, r * 0.86]);
+      b.add(P.ico(0.16, 0), WHITE, [0.26, 0.2, r * 0.86]);
+      b.add(P.ico(0.08, 0), DARK, [-0.26, 0.2, r * 0.98]);
+      b.add(P.ico(0.08, 0), DARK, [0.26, 0.2, r * 0.98]);
+      b.add(P.box(0.28, 0.06, 0.05), DARK, [-0.26, 0.38, r * 0.9], [0, 0, -0.35]);
+      b.add(P.box(0.28, 0.06, 0.05), DARK, [0.26, 0.38, r * 0.9], [0, 0, 0.35]);
+      b.add(P.cone(0.09, 0.3, 4), 0xff8a3d, [0, 0.02, r * 1.02], [Math.PI / 2, 0, 0]);
+      for (let k = 0; k < 9; k++) {
+        const a = k * 2.4;
+        const y = Math.cos(k * 1.7) * 0.8;
+        const q = Math.sqrt(1 - y * y);
+        b.add(P.ico(0.09, 0), 0x6a7488, [Math.sin(a) * q * r, y * r, -Math.abs(Math.cos(a)) * q * r]);
+      }
+      b.add(P.cyl(0.04, 0.05, 0.9, 4), 0x7a5a3a, [-r - 0.25, 0.1, 0], [0, 0, 1.2]);
+      b.add(P.cyl(0.04, 0.05, 0.9, 4), 0x7a5a3a, [r + 0.25, 0.1, 0], [0, 0, -1.2]);
+      break;
+    }
+    case 'oldRime': {
+      // Old Rime, the Frost Stag
+      const hoof = 0x3a4a6a;
+      const antler = 0xcfeaff;
+      b.add(P.box(1.9, 1.7, 3.6), color, [0, 3.3, -0.2], [0, 0, 0], 1, 0.06);
+      b.add(P.box(1.6, 1.2, 1.2), lighter, [0, 3.1, 1.2], [0.2, 0, 0], 1, 0.05);
+      for (const [x, z] of [[-0.65, 1.2], [0.65, 1.2], [-0.65, -1.5], [0.65, -1.5]] as const) {
+        b.add(P.cyl(0.26, 0.2, 2.6, 6), darker, [x, 1.3, z]);
+        b.add(P.box(0.42, 0.3, 0.5), hoof, [x, 0.15, z + 0.05]);
+      }
+      b.add(P.box(0.9, 1.9, 0.9), color, [0, 4.4, 1.7], [-0.5, 0, 0], 1, 0.05);
+      // frost mane
+      for (let k = 0; k < 7; k++) b.add(P.cone(0.22, 0.8, 4), SNOW, [(k - 3) * 0.14, 4.6 - k * 0.12, 1.25 - k * 0.12], [-1.1, 0, (k - 3) * 0.2]);
+      b.add(P.box(0.95, 0.85, 1.5), color, [0, 5.25, 2.5], [0.15, 0, 0], 1, 0.05);
+      b.add(P.box(0.6, 0.55, 0.7), lighter, [0, 5.05, 3.35]);
+      b.add(P.box(0.24, 0.16, 0.12), DARK, [0, 5.15, 3.72]);
+      b.add(P.box(0.2, 0.14, 0.06), 0x5ff2ff, [-0.4, 5.5, 2.95]);
+      b.add(P.box(0.2, 0.14, 0.06), 0x5ff2ff, [0.4, 5.5, 2.95]);
+      b.add(P.cone(0.18, 0.5, 4), color, [-0.6, 5.85, 2.2], [0, 0, 0.9]);
+      b.add(P.cone(0.18, 0.5, 4), color, [0.6, 5.85, 2.2], [0, 0, -0.9]);
+      // antlers: a beam each side with tines tipped in ice
+      for (const side of [-1, 1]) {
+        b.add(P.cyl(0.1, 0.16, 2.2, 5), antler, [side * 0.9, 6.6, 2.2], [0.25, 0, -side * 0.7]);
+        b.add(P.cyl(0.08, 0.12, 1.8, 5), antler, [side * 1.9, 7.6, 1.9], [-0.2, 0, -side * 0.25]);
+        for (let t = 0; t < 4; t++) {
+          const y = 6.7 + t * 0.55;
+          const x = side * (1.05 + t * 0.3);
+          b.add(P.cone(0.07, 0.75, 4), antler, [x, y + 0.3, 2.35 + t * 0.05], [-0.35, 0, -side * 0.3]);
+          b.add(P.octa(0.16), 0x8fe3ff, [x, y + 0.75, 2.45], [0, 0, 0], [0.7, 1.5, 0.7]);
+        }
+        b.add(P.octa(0.24), 0x8fe3ff, [side * 2.05, 8.55, 1.7], [0, 0, 0], [0.7, 1.6, 0.7]);
+      }
+      b.add(P.cone(0.35, 0.8, 5), SNOW, [0, 3.7, -2.2], [-2.2, 0, 0]);
+      // icicles hanging from the belly
+      for (let k = 0; k < 6; k++) b.add(P.cone(0.1, 0.55, 4), ICE, [-0.7 + (k % 3) * 0.7, 2.25, -1.2 + Math.floor(k / 3) * 1.6], [Math.PI, 0, 0]);
+      break;
+    }
     default:
       b.add(P.ico(0.6, 0), color, [0, 0.6, 0]);
   }
+  frostTrim(b, def.id);
   return b.build();
+}
+
+/** Rimewood variants: the same creatures, iced over. */
+function frostTrim(b: GeoBuilder, id: string): void {
+  switch (id) {
+    case 'frostling':
+      for (let k = 0; k < 3; k++) b.add(P.octa(0.13), ICE, [(k - 1) * 0.22, 1.12 + (k === 1 ? 0.1 : 0), -0.2], [0, 0, (k - 1) * 0.35], [0.7, 1.8, 0.7]);
+      b.add(P.box(0.5, 0.08, 0.1), SNOW, [0, 0.98, 0.42]);
+      break;
+    case 'icicap':
+      b.add(P.ico(0.55, 0), SNOW, [0, 1.38, 0], [0, 0, 0], [1, 0.32, 1]);
+      for (let k = 0; k < 7; k++) {
+        const a = (k / 7) * Math.PI * 2;
+        b.add(P.cone(0.06, 0.32, 4), ICE, [Math.sin(a) * 0.68, 0.7, Math.cos(a) * 0.68], [Math.PI, 0, 0]);
+      }
+      break;
+    case 'grumblecapFrost':
+      b.add(P.ico(2.4, 0), SNOW, [0, 4.75, 0], [0, 0.3, 0], [1, 0.28, 1]);
+      for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2;
+        b.add(P.cone(0.16, 0.9, 4), ICE, [Math.sin(a) * 3.0, 2.75, Math.cos(a) * 3.0], [Math.PI, 0, 0]);
+      }
+      break;
+    case 'clockjawFrost':
+      b.add(P.box(3.5, 0.3, 3.9), SNOW, [0, 3.45, -0.3]);
+      for (let k = 0; k < 8; k++) b.add(P.cone(0.12, 0.6, 4), ICE, [-1.6 + k * 0.46, 1.2, -2.2], [Math.PI, 0, 0]);
+      break;
+  }
 }
 
 // ───────────────────────────── projectiles ─────────────────────────────
@@ -298,14 +451,92 @@ export function propGeometry(kind: PropKind): THREE.BufferGeometry {
       b.add(P.box(0.22, 1.2, 0.22), 0x8a6a4a, [0, 0.6, 0]);
       b.add(P.box(0.08, 0.12, 2.6), 0xa07a52, [0, 0.9, 0]);
       break;
+    // ── Rimewood ──
+    case 'frostPine':
+      b.add(P.cyl(0.18, 0.25, 1.2, 5), 0x6a4a35, [0, 0.6, 0]);
+      b.add(P.cone(1.5, 2.0, 6), 0x24584a, [0, 1.9, 0], [0, 0, 0], 1, 0.08);
+      b.add(P.cone(1.25, 0.7, 6), SNOW, [0, 2.45, 0], [0, 0.3, 0], 1, 0.03);
+      b.add(P.cone(1.15, 1.7, 6), 0x2c6654, [0, 2.9, 0], [0, 0.4, 0], 1, 0.08);
+      b.add(P.cone(0.95, 0.6, 6), SNOW, [0, 3.35, 0], [0, 0.7, 0], 1, 0.03);
+      b.add(P.cone(0.75, 1.3, 6), 0x36745f, [0, 3.8, 0], [0, 0.2, 0], 1, 0.08);
+      b.add(P.cone(0.5, 0.55, 6), SNOW, [0, 4.25, 0], [0, 0.5, 0], 1, 0.03);
+      break;
+    case 'birch':
+      b.add(P.cyl(0.16, 0.22, 3.4, 6), 0xeeeae2, [0, 1.7, 0]);
+      for (let k = 0; k < 5; k++) b.add(P.box(0.2, 0.06, 0.24), 0x3a3540, [0, 0.5 + k * 0.62, 0], [0, k * 1.3, 0.2]);
+      b.add(P.cyl(0.05, 0.07, 1.2, 4), 0xeeeae2, [0.45, 2.8, 0], [0, 0, -0.8]);
+      b.add(P.cyl(0.05, 0.07, 1.0, 4), 0xeeeae2, [-0.4, 3.2, 0.1], [0.2, 0, 0.9]);
+      b.add(P.ico(0.75, 0), 0xb8d8c0, [0.15, 3.9, 0], [0.3, 0.2, 0], [1.2, 0.8, 1.1], 0.1);
+      b.add(P.ico(0.5, 0), SNOW, [0.15, 4.35, 0], [0, 0, 0], [1.1, 0.45, 1]);
+      break;
+    case 'snowRock':
+      b.add(P.dodeca(1.0), 0x7d8698, [0, 0.45, 0], [0.3, 0.5, 0.1], [1.2, 0.75, 1], 0.1);
+      b.add(P.dodeca(0.55), 0x6e7788, [0.75, 0.25, 0.3], [0.1, 0.2, 0.6], 1, 0.1);
+      b.add(P.dodeca(0.95), SNOW, [0, 0.82, 0], [0.3, 0.5, 0.1], [1.15, 0.32, 0.95], 0.03);
+      break;
+    case 'iceCrystal':
+      b.add(P.octa(0.5), 0xbff0ff, [0, 0.9, 0], [0, 0, 0.15], [0.6, 2.0, 0.6]);
+      b.add(P.octa(0.35), 0x8fd8ff, [0.45, 0.55, 0.15], [0, 0, -0.5], [0.6, 1.6, 0.6]);
+      b.add(P.octa(0.3), 0xe6fbff, [-0.35, 0.45, -0.2], [0.3, 0, 0.5], [0.6, 1.5, 0.6]);
+      break;
+    case 'frostShrub':
+      b.add(P.ico(0.4, 0), 0x5a8a7a, [0, 0.3, 0], [0, 0, 0], [1.2, 0.8, 1.1], 0.1);
+      b.add(P.ico(0.32, 0), SNOW, [0.05, 0.5, 0], [0, 0, 0], [1.1, 0.45, 1]);
+      b.add(P.ico(0.06, 0), 0xe0483e, [0.3, 0.38, 0.2]);
+      b.add(P.ico(0.06, 0), 0xe0483e, [-0.25, 0.42, 0.18]);
+      break;
+    case 'snowTuft':
+      b.add(P.cone(0.07, 0.45, 3), 0xa8c0b8, [0, 0.22, 0], [0, 0, 0.2]);
+      b.add(P.cone(0.07, 0.38, 3), 0xc4d8d0, [0.1, 0.19, 0.05], [0.2, 0, -0.3]);
+      b.add(P.cone(0.07, 0.34, 3), 0x98b2aa, [-0.08, 0.17, -0.06], [-0.2, 0, 0.35]);
+      break;
   }
   return b.build();
 }
 
+/** A falling icicle (tip down, centred). */
+export function icicleGeometry(): THREE.BufferGeometry {
+  return new GeoBuilder()
+    .add(P.cone(0.32, 1.6, 5), ICE, [0, 0, 0], [Math.PI, 0, 0])
+    .add(P.cone(0.2, 0.5, 5), 0xffffff, [0, 0.9, 0])
+    .build();
+}
+
+/** An ice spike bursting from the ground (base at y = 0). */
+export function iceSpikeGeometry(): THREE.BufferGeometry {
+  return new GeoBuilder()
+    .add(P.cone(0.45, 1.8, 5), 0xbff0ff, [0, 0.9, 0], [0.12, 0, 0.08])
+    .add(P.cone(0.25, 1.1, 4), ICE, [0.35, 0.55, 0.1], [0, 0, -0.5])
+    .add(P.cone(0.22, 0.9, 4), 0x8fd8ff, [-0.3, 0.45, -0.15], [0.3, 0, 0.5])
+    .build();
+}
+
+/** Ice shard enemy shot. */
+export function shardGeometry(): THREE.BufferGeometry {
+  return new GeoBuilder()
+    .add(P.octa(0.3), 0xbff0ff, [0, 0, 0], [0, 0, 0], [0.7, 0.7, 1.9])
+    .add(P.octa(0.16), 0xffffff, [0, 0, 0], [0, 0, 0], [0.7, 0.7, 1.9])
+    .build();
+}
+
 // ───────────────────────────── pickups ─────────────────────────────
 
-export function gemGeometry(): THREE.BufferGeometry {
-  return new GeoBuilder().add(P.octa(0.28), 0xffffff, [0, 0, 0], [0, 0, 0], [1, 1.5, 1]).build();
+/**
+ * XP gem. Shape 0 is the classic crystal; 1–3 (cube, pyramid, star) tell tiers apart by
+ * shape as well as colour in colour-blind mode.
+ */
+export function gemGeometry(shape = 0): THREE.BufferGeometry {
+  const b = new GeoBuilder();
+  switch (shape) {
+    case 1:
+      return b.add(P.box(0.34, 0.34, 0.34), 0xffffff, [0, 0, 0], [0.6, 0, 0.6]).build();
+    case 2:
+      return b.add(P.tetra(0.38), 0xffffff, [0, 0, 0], [0.6, 0, 0.8]).build();
+    case 3:
+      return b.add(P.octa(0.3), 0xffffff, [0, 0, 0], [0, 0, 0], [1, 1.5, 1]).add(P.octa(0.3), 0xffffff, [0, 0, 0], [0, 0, Math.PI / 2], [1, 1.5, 1]).build();
+    default:
+      return b.add(P.octa(0.28), 0xffffff, [0, 0, 0], [0, 0, 0], [1, 1.5, 1]).build();
+  }
 }
 
 export function coinGeometry(): THREE.BufferGeometry {

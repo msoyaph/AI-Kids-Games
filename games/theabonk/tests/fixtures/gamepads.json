@@ -1,0 +1,70 @@
+{
+  "note": "Controller readings recorded from real devices (ids as the browsers report them). Each frame is {buttons:[[pressed,value]...], axes:[...]}; frame 0 is at rest.",
+  "pads": [
+    {
+      "name": "Xbox Wireless Controller — Chrome on Windows (standard mapping)",
+      "id": "Xbox 360 Controller (XInput STANDARD GAMEPAD)",
+      "mapping": "standard",
+      "frames": [
+        { "buttons": "rest:17", "axes": [0.0039, -0.0039, 0.0039, 0.0118] },
+        { "press": [0], "values": { "6": 0.8 }, "axes": [0.0, -1.0, 0.0, 0.0] }
+      ],
+      "expect": [
+        { "pressed": [], "axes": [0, 0, 0, 0] },
+        { "pressed": [0, 6], "lt": 0.8, "axes": [0, -1, 0, 0] }
+      ]
+    },
+    {
+      "name": "DualShock 4 — Firefox on Windows (raw layout)",
+      "id": "054c-09cc-Wireless Controller",
+      "mapping": "",
+      "frames": [
+        { "buttons": "rest:14", "axes": [0.0039, 0.0118, -0.0039, -1, -1, 0.0039, 0, 0, 0, 3.2857] },
+        { "press": [1], "axes": [0, 0, 0.9, 0.0, -1, -0.6, 0, 0, 0, -1] }
+      ],
+      "expect": [
+        { "pressed": [], "axes": [0, 0, 0, 0] },
+        { "pressed": [0, 12, 6], "lt": 0.5, "axes": [0, 0, 0.9, -0.6] }
+      ]
+    },
+    {
+      "name": "DualSense — Firefox on macOS (raw layout)",
+      "id": "054c-0ce6-DualSense Wireless Controller",
+      "mapping": "",
+      "frames": [
+        { "buttons": "rest:15", "axes": [0, 0, 0, -1, -1, 0, 0, 0, 0, 3.2857] },
+        { "press": [3, 9], "axes": [-1, 0, 0, -1, 1, 0, 0, 0, 0, 0.4286] }
+      ],
+      "expect": [
+        { "pressed": [], "axes": [0, 0, 0, 0] },
+        { "pressed": [3, 9, 7, 13, 14], "rt": 1, "axes": [-1, 0, 0, 0] }
+      ]
+    },
+    {
+      "name": "Xbox One S — Firefox on Linux (raw layout, xpad)",
+      "id": "045e-02ea-Microsoft X-Box One S pad",
+      "mapping": "",
+      "frames": [
+        { "buttons": "rest:11", "axes": [0, 0, -1, 0, 0, -1, 0, 0] },
+        { "press": [7], "axes": [0.5, 0, 1, 0, 0, -1, 1, 0] }
+      ],
+      "expect": [
+        { "pressed": [], "axes": [0, 0, 0, 0] },
+        { "pressed": [9, 6, 15], "lt": 1, "axes": [0.5, 0, 0, 0] }
+      ]
+    },
+    {
+      "name": "Generic USB pad — Chrome (standard mapping)",
+      "id": "USB Gamepad (Vendor: 0079 Product: 0011)",
+      "mapping": "standard",
+      "frames": [
+        { "buttons": "rest:16", "axes": [-0.0039, -0.0039, 0, 0] },
+        { "press": [1, 12], "axes": [0, 0, 0, 0] }
+      ],
+      "expect": [
+        { "pressed": [], "axes": [0, 0, 0, 0] },
+        { "pressed": [1, 12], "axes": [0, 0, 0, 0] }
+      ]
+    }
+  ]
+}

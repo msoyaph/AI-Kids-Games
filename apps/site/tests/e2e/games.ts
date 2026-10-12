@@ -45,10 +45,13 @@ export async function pastTouchGate(page: Page) {
 export async function boot(page: Page,slug: string) {
   const size = page.viewportSize();
   // These finished games intentionally require landscape on touch screens.
-  if (size && size.height > size.width && ['space-sky','calex-cart'].includes(slug) && await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) await page.setViewportSize({ width:size.height,height:size.width });
+  if (size && size.height > size.width && ['space-sky','calex-cart','theabonk'].includes(slug) && await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) await page.setViewportSize({ width:size.height,height:size.width });
   await page.goto(`/play/${slug}`);
   await pastTouchGate(page);
   await expect(page.locator('.game-loading')).toBeHidden({ timeout: 30000 });
+  // first play on a phone or tablet asks "Play fullscreen?" once (tests/e2e/fullscreen.spec.ts covers it)
+  const tip = page.getByRole('dialog',{ name: 'Play fullscreen?' });
+  if (await tip.isVisible()) await tip.getByRole('button',{ name: 'Not now' }).click();
   const f = await gameFrame(page,slug);
   await expect(f.locator('canvas').first()).toBeAttached({ timeout: 30000 });
   if (await page.getByRole('button',{ name: 'Play anyway' }).isVisible()) await page.getByRole('button',{ name: 'Play anyway' }).click();

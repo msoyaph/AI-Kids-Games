@@ -6,6 +6,7 @@ import { nearbyShrine } from '../sim/shrines';
 import type { World } from '../sim/world';
 import { h, img, setText, setWidth } from './dom';
 import { iconUrl } from './icons';
+import { minInterval } from '../render/flash';
 
 interface Slot {
   root: HTMLElement;
@@ -32,6 +33,10 @@ export class Hud {
   private bossWrap: HTMLElement;
   private bossName: HTMLElement;
   private bossFill: HTMLElement;
+  private bossTicks: HTMLElement;
+  private bossType = -1;
+  private intro: HTMLElement;
+  private introT = 0;
   private buffs: HTMLElement;
   private banner: HTMLElement;
   private bannerT = 0;
@@ -41,6 +46,13 @@ export class Hud {
   private lastBuffKey = '';
   private hurtVignette: HTMLElement;
   private prompt: HTMLElement;
+  /** Wind warning: an arrow showing which way a gust / blizzard will shove you. */
+  private gust: HTMLElement;
+  private gustArrow: HTMLElement;
+  private gustLabel: HTMLElement;
+  private gustKey = '';
+  /** Camera forward on the ground plane (set by the game each frame) for screen-relative arrows. */
+  camFwd = { x: 0, z: 1 };
 
   constructor() {
     const slot = (): Slot => {
@@ -65,19 +77,24 @@ export class Hud {
     this.speed = h('div', { class: 'speedo' }, '0');
     this.bossName = h('div', { class: 'boss-name' });
     this.bossFill = h('div', { class: 'bar-fill boss' });
-    this.bossWrap = h('div', { class: 'boss-bar hidden' }, this.bossName, h('div', { class: 'bar' }, this.bossFill));
+    this.bossTicks = h('div', { class: 'boss-ticks' });
+    this.bossWrap = h('div', { class: 'boss-bar hidden' }, this.bossName, h('div', { class: 'bar' }, this.bossFill, this.bossTicks));
+    this.intro = h('div', { class: 'boss-intro hidden' });
     this.buffs = h('div', { class: 'buffs' });
     this.banner = h('div', { class: 'banner hidden' });
     this.toasts = h('div', { class: 'toasts' });
     this.hurtVignette = h('div', { class: 'hurt-vignette' });
     this.prompt = h('div', { class: 'prompt hidden' });
+    this.gustArrow = h('div', { class: 'gust-arrow' });
+    this.gustLabel = h('div', { class: 'gust-label' });
+    this.gust = h('div', { class: 'gust hidden' }, this.gustArrow, this.gustLabel);
 
     this.root = h(
       'div',
       { class: 'hud hidden' },
       this.hurtVignette,
       h('div', { class: 'hud-tl' }, h('div', { class: 'slots' }, ...this.weaponSlots.map((s) => s.root)), h('div', { class: 'slots small' }, ...this.passiveSlots.map((s) => s.root))),
-      h('div', { class: 'hud-tc' }, this.timer, h('div', { class: 'dawn' }, this.dawn, ...marks), this.bossWrap),
+      h('div', { class: 'hud-tc' }, this.timer, h('div', { class: 'dawn' }, this.dawn, ...marks), this.bossWrap, this.gust),
       h(
         'div',
         { class: 'hud-tr' },
@@ -93,6 +110,7 @@ export class Hud {
       ),
       h('div', { class: 'hud-br' }, this.speed, h('div', { class: 'speedo-label' }, 'speed')),
       this.banner,
+      this.intro,
       this.prompt,
     );
   }
@@ -119,6 +137,35 @@ export class Hud {
     this.bannerT = 3.2;
   }
 
+  private updateGust(w: World): void {
+    const wt = w.weather;
+    const blizzard = wt.blizzardT > 0;
+    const state = blizzard ? 'blizzard' : wt.warnT > 0 ? `warn${Math.ceil(wt.warnT)}` : wt.gustT > 0 ? 'gust' : '';
+    if (state !== this.gustKey) {
+      this.gustKey = state;
+      this.gust.classList.toggle('hidden', state === '');
+      this.gust.classList.toggle('swirl', blizzard);
+      setText(this.gustLabel, blizzard ? 'Blizzard!' : wt.warnT > 0 ? `Gust in ${Math.ceil(wt.warnT)}` : 'Gust!');
+    }
+    if (state === '' || blizzard) return;
+    // arrow points where the wind pushes, relative to the camera (up = away from you)
+    const f = this.camFwd;
+    const fwd = wt.dirX * f.x + wt.dirZ * f.z;
+    const right = wt.dirX * -f.z + wt.dirZ * f.x;
+    this.gustArrow.style.transform = `rotate(${Math.round((Math.atan2(right, fwd) * 180) / Math.PI)}deg)`;
+  }
+
+  /** Boss intro card: portrait, name, epithet and the boss's line, for a couple of seconds. */
+  bossIntro(icon: string, name: string, epithet: string, line: string): void {
+    this.intro.innerHTML = '';
+    this.intro.append(img(icon, 'boss-intro-icon'), h('div', null, h('div', { class: 'boss-intro-tag' }, 'Boss'), h('div', { class: 'boss-intro-name' }, name), epithet ? h('div', { class: 'boss-intro-epithet' }, epithet) : null, line ? h('div', { class: 'boss-intro-line' }, line) : null));
+    this.intro.classList.remove('hidden', 'pop');
+    void this.intro.offsetWidth;
+    this.intro.classList.add('pop');
+    this.introT = 3.4;
+    this.bossType = -1;
+  }
+
   toast(title: string, body: string): void {
     const t = h('div', { class: 'toast' }, h('div', { class: 'toast-title' }, title), h('div', { class: 'toast-body' }, body));
     this.toasts.append(t);
@@ -126,7 +173,13 @@ export class Hud {
     setTimeout(() => t.remove(), 4800);
   }
 
+  private lastHurtFlash = -1e9;
+
+  /** Red edge flash on taking damage, rate-limited for flash safety (≤ 2.5 a second). */
   hurt(): void {
+    const now = performance.now() / 1000;
+    if (now - this.lastHurtFlash < minInterval('hurtVignette')) return;
+    this.lastHurtFlash = now;
     this.hurtVignette.classList.remove('flash');
     void this.hurtVignette.offsetWidth;
     this.hurtVignette.classList.add('flash');
@@ -149,6 +202,7 @@ export class Hud {
   update(w: World, dt: number, gold: number): void {
     const p = w.player;
     const L = this.last;
+    this.updateGust(w);
     const hpFrac = p.hp / p.stats.maxHp;
     this.ghostHp = Math.max(hpFrac, this.ghostHp - dt * 0.6);
     // only touch the DOM when a displayed value actually changes
@@ -217,8 +271,18 @@ export class Hud {
       this.bossHint = bi;
       if (bi >= 0) {
         this.bossWrap.classList.remove('hidden');
-        setText(this.bossName, ENEMIES[w.enemies.type[bi]].name);
-        setWidth(this.bossFill, w.enemies.hp[bi] / w.enemies.maxHp[bi]);
+        const type = w.enemies.type[bi];
+        const def = ENEMIES[type];
+        if (type !== this.bossType) {
+          this.bossType = type;
+          setText(this.bossName, def.name);
+          // phase ticks where the fight changes
+          this.bossTicks.innerHTML = '';
+          for (const f of def.phases ?? (def.enrageAt ? [def.enrageAt] : [])) this.bossTicks.append(h('div', { class: 'boss-tick', style: `left:${f * 100}%` }));
+        }
+        const frac = w.enemies.hp[bi] / w.enemies.maxHp[bi];
+        setWidth(this.bossFill, frac);
+        this.bossWrap.classList.toggle('enraged', w.mods.bossEnraged || (def.enrageAt !== undefined && frac < def.enrageAt));
       } else this.bossWrap.classList.add('hidden');
     } else this.bossWrap.classList.add('hidden');
 
@@ -250,6 +314,10 @@ export class Hud {
       this.prompt.classList.remove('hidden');
     } else this.prompt.classList.add('hidden');
 
+    if (this.introT > 0) {
+      this.introT -= dt;
+      if (this.introT <= 0) this.intro.classList.add('hidden');
+    }
     if (this.bannerT > 0) {
       this.bannerT -= dt;
       if (this.bannerT <= 0) this.banner.classList.add('hidden');

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { BAYER_GLSL } from './occlusion';
 
 /**
  * Writes a column-major matrix = T(x,y,z) · Ry(yaw) · Rz(roll) · S(sx,sy,sz)
@@ -53,6 +54,11 @@ export function writeTRSFrom(a: Float32Array, o: number): void {
   writeTRS(a, o, TRS[0], TRS[1], TRS[2], TRS[3], TRS[4], TRS[5], TRS[6], TRS[7]);
 }
 
+/** writeTRSPitch from the TRS scratch (TRS[4] holds the pitch). */
+export function writeTRSPitchFrom(a: Float32Array, o: number): void {
+  writeTRSPitch(a, o, TRS[0], TRS[1], TRS[2], TRS[3], TRS[4], TRS[5], TRS[6], TRS[7]);
+}
+
 /** T · Ry(yaw) · Rx(pitch) · S — for projectiles pointing along a 3D direction. */
 export function writeTRSPitch(a: Float32Array, o: number, x: number, y: number, z: number, yaw: number, pitch: number, sx: number, sy: number, sz: number): void {
   const c = Math.cos(yaw);
@@ -100,6 +106,8 @@ export function uploadPrefix(attr: THREE.BufferAttribute, count: number): void {
 /** Marks only the used part of instanced attributes for upload. */
 export function commitInstances(mesh: THREE.InstancedMesh, count: number, extra?: THREE.InstancedBufferAttribute[]): void {
   mesh.count = count;
+  // empty meshes are skipped entirely (no draw call)
+  mesh.visible = count > 0;
   if (count === 0) return;
   uploadPrefix(mesh.instanceMatrix, count);
   if (mesh.instanceColor) uploadPrefix(mesh.instanceColor, count);
@@ -119,6 +127,75 @@ export function makeInstanced(geo: THREE.BufferGeometry, mat: THREE.Material, ca
 }
 
 /**
+ * Unlit material with a per-instance `aAlpha` attribute (telegraph discs / shockwave walls):
+ * additive glow on dark maps, solid see-through colour on bright ones (snow), where an
+ * additive white-on-white warning would vanish.
+ */
+export function alphaBasic(params: THREE.MeshBasicMaterialParameters): THREE.MeshBasicMaterial {
+  const mat = new THREE.MeshBasicMaterial({ ...params, transparent: true, depthWrite: false });
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float aAlpha;\nvarying float vAlpha;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvAlpha = aAlpha;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vAlpha;')
+      .replace('#include <opaque_fragment>', '#include <opaque_fragment>\ngl_FragColor.a *= vAlpha;');
+  };
+  return mat;
+}
+
+/**
+ * Warning-circle material: alphaBasic plus a per-instance `aPattern` (0 none, 1 stripes,
+ * 2 dots, 3 rings, 4 crosshatch) and a bright outline, so every attack type has its own look
+ * that doesn't rely on colour. Pattern is drawn in the disc's local space (radius 1).
+ */
+export function telegraphBasic(params: THREE.MeshBasicMaterialParameters): THREE.MeshBasicMaterial {
+  const mat = new THREE.MeshBasicMaterial({ ...params, transparent: true, depthWrite: false });
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float aAlpha;\nattribute float aPattern;\nvarying float vAlpha;\nvarying float vPattern;\nvarying vec2 vLocal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvAlpha = aAlpha;\nvPattern = aPattern;\nvLocal = position.xz;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vAlpha;\nvarying float vPattern;\nvarying vec2 vLocal;')
+      .replace(
+        '#include <opaque_fragment>',
+        `#include <opaque_fragment>
+{
+  float r = length(vLocal);
+  float pat = 1.0;
+  if (vPattern > 0.5) {
+    if (vPattern < 1.5) pat = step(0.5, fract((vLocal.x + vLocal.y) * 2.6));
+    else if (vPattern < 2.5) { vec2 g = fract(vLocal * 3.0) - 0.5; pat = step(length(g), 0.24); }
+    else if (vPattern < 3.5) pat = step(0.5, fract(r * 3.5));
+    else pat = max(step(0.78, fract(vLocal.x * 3.0)), step(0.78, fract(vLocal.y * 3.0)));
+    float rim = smoothstep(0.84, 0.9, r);
+    gl_FragColor.a *= mix(0.4, 1.0, max(pat, rim));
+    gl_FragColor.rgb *= mix(0.75, 1.0, max(pat, rim)) + rim * 0.35;
+  }
+  gl_FragColor.a *= vAlpha;
+}`,
+      );
+  };
+  return mat;
+}
+
+/** Adds the per-instance `aPattern` attribute telegraphBasic() reads. */
+export function addPatternAttribute(mesh: THREE.InstancedMesh, cap: number): THREE.InstancedBufferAttribute {
+  const a = new THREE.InstancedBufferAttribute(new Float32Array(cap), 1);
+  a.setUsage(THREE.DynamicDrawUsage);
+  mesh.geometry.setAttribute('aPattern', a);
+  return a;
+}
+
+/** Adds the per-instance `aAlpha` attribute alphaBasic() reads. */
+export function addAlphaAttribute(mesh: THREE.InstancedMesh, cap: number): THREE.InstancedBufferAttribute {
+  const a = new THREE.InstancedBufferAttribute(new Float32Array(cap).fill(1), 1);
+  a.setUsage(THREE.DynamicDrawUsage);
+  mesh.geometry.setAttribute('aAlpha', a);
+  return a;
+}
+
+/**
  * Lambert material with a per-instance `aFlash` attribute (0..1) that blends the final
  * colour toward white — the hit flash.
  */
@@ -129,7 +206,9 @@ export function flashLambert(): THREE.MeshLambertMaterial {
       .replace('#include <common>', '#include <common>\nattribute float aFlash;\nvarying float vFlash;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFlash = aFlash;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vFlash;')
+      .replace('#include <common>', `#include <common>\nvarying float vFlash;\n${BAYER_GLSL}`)
+      // creatures right in front of the lens dissolve so they never hide the player
+      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n  float camD = length(vViewPosition);\n  if (camD < 4.5 && bonkBayer4(gl_FragCoord.xy) < 1.0 - camD / 4.5) discard;')
       .replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0), clamp(vFlash, 0.0, 1.0));');
   };
   mat.customProgramCacheKey = () => 'flashLambert';

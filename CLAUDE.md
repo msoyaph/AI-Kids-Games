@@ -128,3 +128,56 @@ session's uncommitted sizzle-reel work — never touch that checkout's files.
   e2e `boot()` presses through the screen. The copy promises touch "soon": only TheaBonk is
   computer-only; make that sentence conditional if a computer-only game without touch plans
   is ever added.
+- 2.1.1 LIVE 2026-10-12 (PR #4, rebase-merged; dpl_6rR17ZwcTwAc6aufd9rarH7KmPWW): guard log
+  "approved by the owner"; AIKG_ALLOW_PRODUCTION=2.1.1 (set with `vercel env update … production`
+  from a scratch link dir). Production smoke 41/0 (4 device skips); local full suite 103/0.
+  Hosted-preview QA: creating a protection-bypass secret was refused by the session's safety
+  classifier; the in-app browser (signed in to Vercel) checked the preview instead.
+- CI facts: any change to package-lock.json, package.json, scripts/ or ci.yml runs every game's
+  browser suite, and Space Sky's (and often Light Crossing's) have never passed on GitHub's
+  GPU-less runners; TheaBonk v1's file:// smoke flakes there too. Keep release PRs off those paths
+  (2.1.1 kept the lockfile as on main: npm ci ignores the workspace version field).
+- Step 3 (fullscreen play, ships with TheaBonk v2 as 2.2.0): src/lib/fullscreen.ts (standard +
+  webkit-prefixed API, `fullscreenSupported`, Android `lockOrientation(game.orientation)` /
+  `unlockOrientation`, `standaloneDisplay`, `iPhoneSafari` = iPhone/iPod UA + navigator.standalone
+  + no element fullscreen). Play page: top-bar button only where supported (iPhone: hidden);
+  fullscreen = `.play-shell.is-full` grid with a rail (max(48px, safe-area inset) on the left, on
+  top when portrait) holding the "Game menu" corner button → Back / Exit fullscreen, so it never
+  covers the game; other insets pad the game. Any exit (Esc, swipe, back gesture) just updates
+  state; iframe refocused after site buttons. One-time tips in `aikg:tips` (["fullscreen",
+  "home-screen"]): "Play fullscreen?" on touch-first devices that can, the Home Screen card on
+  iPhone (says plainly that Home Screen progress is separate from Safari's — WebKit by design).
+  Head: viewport-fit=cover, mobile/apple-mobile-web-app-capable, apple title, status bar default;
+  manifest id/scope/orientation; .container/.site-header/.play-bar pad safe areas.
+  Tests: tests/fullscreen.test.ts; tests/e2e/fullscreen.spec.ts on Chromium desktop/tablet/phone
+  and WebKit desktop/iPad (desktop-class WebKit, touch, Mac UA)/iPhone (no Fullscreen API, as on
+  a real iPhone). WebKit refuses port 4190 (restricted), so a second server runs on 4191; WebKit
+  projects are local + hosted-preview only (CI installs Chromium). Four games have their own
+  fullscreen button (Calex Cart, Light Crossing, Space Sky, Vanex Defense): all work in the site,
+  alone and on top of the site's fullscreen; TheaBonk and Cliff Valley have none.
+- Step 2 (TheaBonk v2, ships as 2.2.0): fixed in TheaBonk's own project (test-only ?slowframe /
+  ?nodamage / ?gputier; deterministic governor and 5-minute touch playthrough; headless
+  touch-vs-keyboard comparison: touch is not worse, heading lock kept as an off-by-default switch);
+  full verification green; merged to its main and tagged v2.0.0 (6155347). Pulled here with
+  `git subtree pull --prefix=games/theabonk ~/Documents/TheaBonk main` (full history), then
+  removed its per-game lockfile, .claude/launch.json and nested .github workflows (one used a
+  self-hosted runner); its docs/CI.md says the root workflow replaces them. Its Playwright config
+  runs the projects whose browsers are installed (root CI: Chromium only). Import: sha256
+  f1a627e9…d2aa372 (byte-identical to its own build). Manifest 2.0.0: Computer/Tablet/Phone +
+  Touch → the 2.1.1 keyboard screen and labels vanish for it. Storage audit redone (theabonk.save,
+  .save.bak, .playtest/.tuning in test modes; origin worst case ≈ 3.5 MB). Site tests: boot()
+  turns phones to landscape for TheaBonk and answers the "Play fullscreen?" tip; new in-site test
+  "TheaBonk 2.0 glass touch controls move Thea and jump" (CDP touches, tablet + phone). Monorepo
+  tag for the import: theabonk-v2.0.0.
+- Hosted preview of 2.2.0 (site-2.2.0 branch alias) checked in the in-app browser (signed in to
+  Vercel) at phone size with touch emulation: no keyboard screen for TheaBonk, details "Computer,
+  tablet and phone, phones held sideways", "Play fullscreen?" once (aikg:tips written), Tablet tier
+  + Relaxed preselected. Limits of that pane: it denies page fullscreen ("Permissions check
+  failed") and sends mouse clicks (TheaBonk then switches to desktop mode, as it should for a
+  mouse) — fullscreen and real touches are covered by the local Chromium/WebKit suites.
+- Still to check on real devices (no emulator covers them): iPhone Safari (Home Screen card,
+  Add to Home Screen, standalone launch with safe areas, and that Home Screen progress is indeed
+  separate), iPad Safari fullscreen (incl. older webkit-prefixed iPadOS), Android Chrome fullscreen +
+  the landscape lock + back gesture, real multi-touch feel of TheaBonk's glass controls (stick
+  dead zone, auto camera, haptics on Android), a real gamepad and pointer lock in fullscreen on a
+  computer, and performance / the quality governor on a mid-range phone and tablet.

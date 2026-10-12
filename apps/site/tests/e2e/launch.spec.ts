@@ -51,7 +51,9 @@ test('fullscreen works in the embedding browser',async ({ page },info) => {
     const f = await boot(page,game.slug); expect(await f.evaluate(() => document.fullscreenEnabled)).toBe(true);
     await page.getByRole('button',{ name:'Enter fullscreen' }).click();
     await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-    await page.getByRole('button',{ name:'Exit fullscreen' }).click();
+    // in fullscreen the top bar hides; the corner button's menu leaves it (tests/e2e/fullscreen.spec.ts)
+    await page.getByRole('button',{ name:'Game menu' }).click();
+    await page.getByRole('group',{ name:'Game menu' }).getByRole('button',{ name:'Exit fullscreen' }).click();
     await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
   }
 });

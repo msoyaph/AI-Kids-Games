@@ -108,6 +108,10 @@ export class EnemyPool extends SoAPool {
   readonly state = this.u8a();
   readonly elite = this.u8a();
   readonly uid = this.i();
+  /** Boss: instance id of the attack in progress (playtest hit attribution). */
+  readonly atk = this.i();
+  /** Hero passive hit cooldown (Ottie's bowling): may be bowled again after this time. */
+  readonly bonkT = this.f();
   /** Per weapon-slot immunity end time (persistent damage sources). */
   readonly immune: Float32Array;
   private nextUid = 1;
@@ -140,6 +144,8 @@ export class EnemyPool extends SoAPool {
     this.stC[i] = 0;
     this.state[i] = 0;
     this.elite[i] = 0;
+    this.atk[i] = 0;
+    this.bonkT[i] = 0;
     this.age[i] = 0;
     this.scale[i] = 1;
     const o = i * WEAPON_SLOTS;
@@ -266,11 +272,16 @@ export class EnemyProjectilePool extends SoAPool {
   readonly damage = this.f();
   readonly radius = this.f();
   readonly visual = this.u8a();
+  /** Damage source code + boss attack instance (playtest attribution). */
+  readonly src = this.i();
+  readonly inst = this.i();
 
   alloc(): number {
     const i = this.allocSlot();
     if (i < 0) return -1;
     this.vy[i] = 0;
+    this.src[i] = 0;
+    this.inst[i] = 0;
     return i;
   }
 }
@@ -366,10 +377,15 @@ export class HazardPool extends SoAPool {
   readonly kind = this.u8a();
   readonly slot = this.u8a();
   readonly color = this.i();
+  /** Damage source code + boss attack instance (enemy hazards). */
+  readonly src = this.i();
+  readonly inst = this.i();
 
   alloc(): number {
     const i = this.allocSlot();
     if (i < 0) return -1;
+    this.src[i] = 0;
+    this.inst[i] = 0;
     this.a0[i] = 0;
     this.a1[i] = 0;
     this.tickT[i] = 0;

@@ -1,29 +1,23 @@
-export type UiAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'debug';
+import { inIframe, isTypingTarget } from '../core/env';
+import { defaultBindings, FIXED_KEYS, lookup, type Bindings, type GameAction, type PadFamily } from './actions';
+import { chooseActivePad, normalizePad, PadCalibration, padActive, rumblePad, type StdPad } from './gamepad';
+import type { TouchControls } from './touch';
+import { InputModeTracker } from './mode';
 
-const MOVE_KEYS: Record<string, [number, number]> = {
-  KeyW: [0, 1],
-  ArrowUp: [0, 1],
-  KeyS: [0, -1],
-  ArrowDown: [0, -1],
-  KeyA: [-1, 0],
-  ArrowLeft: [-1, 0],
-  KeyD: [1, 0],
-  ArrowRight: [1, 0],
-};
+export type UiAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'debug';
 
 const GAMEPAD_DEADZONE = 0.18;
 
-function inIframe(): boolean {
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
-}
+/** Menus always understand these, whatever the gameplay bindings are. */
+const UI_KEYS: Record<string, UiAction> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+
+/** What a remap capture got. */
+export type Captured = { key: string } | { pad: number } | null;
 
 /**
- * Collects keyboard, mouse and gamepad input. Gameplay reads continuous state
- * (move vector, look delta, slide) plus edge-triggered jump; menus receive UiActions.
+ * The one input system. A single keyboard listener routes every key: to the open menu
+ * (navigation / hotkeys via `uiKey`) or to gameplay actions through the remappable bindings.
+ * Mouse look, gamepads (analog sticks + bound buttons) and remap capture live here too.
  */
 export class InputManager {
   sensitivity = 1;
@@ -32,7 +26,18 @@ export class InputManager {
   mouseMode: 'lock' | 'drag';
   gameplay = false;
   onAction: ((a: UiAction) => void) | null = null;
+  /** A menu is open: it gets first look at keys (return true = handled). */
+  uiKey: ((e: KeyboardEvent) => boolean) | null = null;
+  /** Pointer lock was refused (we switched to drag-to-look). */
+  onLockFailed: (() => void) | null = null;
+  /** Slide key toggles (latched until the slide ends) instead of hold. */
+  slideToggle = false;
+  /** Holding jump keeps hopping. */
+  autoHop = false;
 
+  private bindings: Bindings = defaultBindings();
+  private keyActions = new Map<string, GameAction[]>();
+  private padActions = new Map<number, GameAction[]>();
   private keys = new Set<string>();
   private lookX = 0;
   private lookY = 0;
@@ -41,18 +46,75 @@ export class InputManager {
   private padPrev: boolean[] = [];
   private padMove = { x: 0, y: 0 };
   private padLook = { x: 0, y: 0 };
-  private padSlide = false;
+  private padHeld = new Set<GameAction>();
   private padNavT = 0;
   private padNavDir = '';
   private gamepadOk = true;
+  private slideLatched = false;
+  private capture: ((c: Captured) => void) | null = null;
+  private cal = new PadCalibration();
+  /** Index of the controller used most recently (several can be plugged in). */
+  private activeIndex = -1;
+  /** The active controller, normalised to the standard layout (null = none). */
+  pad: StdPad | null = null;
+  /** Every connected controller, normalised (controller test screen). */
+  pads: StdPad[] = [];
+  /** A controller has ever been seen (Firefox only reveals them after a button press). */
+  padSeen = false;
+  rumbleEnabled = true;
+  /** On-screen touch controls (phones / tablets), merged with everything else. */
+  touch: TouchControls | null = null;
+  /** Touch ↔ keyboard / mouse / gamepad: whichever the player used last. */
+  readonly mode = new InputModeTracker();
+  /** The player switched between touch and keyboard / mouse / gamepad. */
+  onModeChange: ((touch: boolean) => void) | null = null;
+  /** Touch is the active input: on-screen controls, no pointer lock. */
+  get touchMode(): boolean {
+    return this.mode.touch;
+  }
+  set touchMode(on: boolean) {
+    this.mode.touch = on;
+  }
+  private mouseX = NaN;
+  private mouseY = NaN;
+  private touchLook = { x: 0, y: 0 };
   usingGamepad = false;
   wheel = 0;
 
   constructor(private canvas: HTMLCanvasElement) {
     this.mouseMode = inIframe() ? 'drag' : 'lock';
+    this.setBindings(this.bindings);
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
-    window.addEventListener('blur', () => this.keys.clear());
+    window.addEventListener('blur', () => {
+      this.keys.clear();
+      this.slideLatched = false;
+    });
+    this.mode.onChange = (touch) => this.onModeChange?.(touch);
+    // which hands are on the device (capture phase: before any control handles the event)
+    window.addEventListener(
+      'pointerdown',
+      (e) => {
+        if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+          this.mouseX = NaN;
+          this.mode.touched(performance.now());
+        } else if (e.pointerType === 'mouse') this.mode.mousePressed(performance.now());
+      },
+      true,
+    );
+    window.addEventListener(
+      'pointermove',
+      (e) => {
+        if (e.pointerType !== 'mouse' || !this.mode.touch) {
+          this.mouseX = NaN;
+          return;
+        }
+        if (Number.isFinite(this.mouseX)) this.mode.mouseMoved(e.clientX - this.mouseX, e.clientY - this.mouseY, performance.now());
+        this.mouseX = e.clientX;
+        this.mouseY = e.clientY;
+      },
+      { passive: true },
+    );
     canvas.addEventListener('mousedown', this.onMouseDown);
     window.addEventListener('mouseup', this.onMouseUp);
     window.addEventListener('mousemove', this.onMouseMove);
@@ -61,6 +123,62 @@ export class InputManager {
       this.wheel += Math.sign(e.deltaY);
       e.preventDefault();
     }, { passive: false });
+    window.addEventListener('gamepadconnected', () => (this.padSeen = true));
+    // Some browser / OS setups refuse pointer lock outright: look by dragging for this session
+    // instead. A refusal after lock has worked before is just Chrome's re-lock cooldown
+    // (clicking right after Escape) — ignore it, the next click retries.
+    let lockedOnce = false;
+    document.addEventListener('pointerlockchange', () => {
+      if (this.pointerLocked) lockedOnce = true;
+    });
+    document.addEventListener('pointerlockerror', () => {
+      if (this.mouseMode !== 'lock' || lockedOnce) return;
+      this.mouseMode = 'drag';
+      this.onLockFailed?.();
+    });
+    window.addEventListener('gamepaddisconnected', () => this.cal.forget());
+  }
+
+  /** Button names for the active controller. */
+  get padFamily(): PadFamily {
+    return this.pad?.family ?? 'generic';
+  }
+
+  /** Rumble the active controller (only while playing with it, if enabled). */
+  rumble(strong: number, weak: number, ms: number): void {
+    if (!this.rumbleEnabled || !this.usingGamepad || this.activeIndex < 0) return;
+    try {
+      const raw = navigator.getGamepads?.()[this.activeIndex] ?? null;
+      rumblePad(raw, strong, weak, ms);
+    } catch {
+      /* no gamepad access */
+    }
+  }
+
+  setBindings(b: Bindings): void {
+    this.bindings = b;
+    const t = lookup(b);
+    this.keyActions = t.keyActions;
+    this.padActions = t.padActions;
+  }
+
+  /**
+   * Remapping: the next key (not Escape / F3) or gamepad button goes to `cb` instead of the
+   * game. Escape cancels (cb(null)).
+   */
+  captureNext(cb: (c: Captured) => void): void {
+    this.capture = cb;
+    this.padPrev = [];
+  }
+
+  cancelCapture(): void {
+    const cb = this.capture;
+    this.capture = null;
+    cb?.(null);
+  }
+
+  get capturing(): boolean {
+    return this.capture !== null;
   }
 
   /** 'auto' picks drag-to-look inside iframes (pointer lock is often sandboxed away). */
@@ -73,17 +191,34 @@ export class InputManager {
     return document.pointerLockElement === this.canvas;
   }
 
+  /**
+   * Pointer lock. Chromium supports raw (unaccelerated) mouse input, which also avoids the
+   * huge movement spikes Windows Chrome can report; Firefox and Safari use the default.
+   */
   requestLock(): void {
-    if (this.mouseMode !== 'lock' || this.pointerLocked) return;
+    if (this.mouseMode !== 'lock' || this.pointerLocked || this.touchMode) return;
+    const plain = (): void => {
+      try {
+        const r = this.canvas.requestPointerLock() as unknown;
+        if (r && typeof (r as Promise<void>).catch === 'function') {
+          (r as Promise<void>).catch(() => {
+            /* user gesture / cooldown — stay unlocked; drag still works */
+          });
+        }
+      } catch {
+        /* not allowed here */
+      }
+    };
     try {
-      const r = this.canvas.requestPointerLock() as unknown;
+      const r = (this.canvas.requestPointerLock as (o?: { unadjustedMovement?: boolean }) => unknown)({ unadjustedMovement: true });
       if (r && typeof (r as Promise<void>).catch === 'function') {
-        (r as Promise<void>).catch(() => {
-          /* user gesture / cooldown — fall back to drag silently */
+        (r as Promise<void>).catch((err: unknown) => {
+          // raw input unsupported (e.g. some OS / browser combos): plain lock instead
+          if ((err as { name?: string })?.name === 'NotSupportedError') plain();
         });
       }
     } catch {
-      /* not allowed here */
+      plain();
     }
   }
 
@@ -95,25 +230,60 @@ export class InputManager {
     }
   }
 
+  private has(action: GameAction, code: string): boolean {
+    return this.keyActions.get(code)?.includes(action) ?? false;
+  }
+
   private onKeyDown = (e: KeyboardEvent): void => {
     this.usingGamepad = false;
+    this.mode.keyPressed(e.code);
+    if (this.capture) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (e.repeat) return;
+      const cb = this.capture;
+      this.capture = null;
+      cb(e.code === 'Escape' || FIXED_KEYS.has(e.code) ? null : { key: e.code });
+      return;
+    }
+    // typing into a text box (tuning panel number fields, copy/import boxes)
+    if (isTypingTarget(e.target) && e.code !== 'F3') return;
+    // a focused slider keeps its own arrow keys
+    if (e.target instanceof HTMLInputElement && e.target.type === 'range' && e.code.startsWith('Arrow')) return;
     if (e.code === 'F3') {
       e.preventDefault();
       if (!e.repeat) this.onAction?.('debug');
       return;
     }
     if (this.gameplay) {
-      if (e.code === 'Space' || e.code.startsWith('Arrow') || e.code === 'Tab') e.preventDefault();
-      if (e.code === 'Escape' || e.code === 'KeyP') {
-        // consume it so the UI's own Escape handler doesn't immediately resume
-        e.preventDefault();
-        e.stopImmediatePropagation();
+      if (e.code === 'Space' || e.code.startsWith('Arrow') || e.code === 'Tab' || this.keyActions.has(e.code)) e.preventDefault();
+      if (e.code === 'Escape' || this.has('pause', e.code)) {
         if (!e.repeat) this.onAction?.('pause');
         return;
       }
-      if (e.code === 'Space' && !e.repeat) this.jumpQueued = true;
+      if (!e.repeat) {
+        if (this.has('jump', e.code)) this.jumpQueued = true;
+        if (this.slideToggle && this.has('slide', e.code)) this.slideLatched = !this.slideLatched;
+      }
+      this.keys.add(e.code);
+      return;
     }
+    // menus: the open screen first (hotkeys, Escape), then arrow / bound-move navigation
     this.keys.add(e.code);
+    if (this.uiKey?.(e)) return;
+    let a: UiAction | undefined = UI_KEYS[e.code];
+    if (!a) {
+      if (this.has('moveUp', e.code)) a = 'up';
+      else if (this.has('moveDown', e.code)) a = 'down';
+      else if (this.has('moveLeft', e.code)) a = 'left';
+      else if (this.has('moveRight', e.code)) a = 'right';
+      // Escape with no screen open (e.g. the performance test) still means "back"
+      else if (e.code === 'Escape' && !e.repeat) a = 'back';
+    }
+    if (a) {
+      e.preventDefault();
+      this.onAction?.(a);
+    }
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
@@ -121,6 +291,8 @@ export class InputManager {
   };
 
   private onMouseDown = (e: MouseEvent): void => {
+    // the mouse events a browser emulates after a tap are not the player using a mouse
+    if (this.mode.emulatedMouse(performance.now())) return;
     this.usingGamepad = false;
     if (!this.gameplay) return;
     if (this.mouseMode === 'lock') this.requestLock();
@@ -147,45 +319,74 @@ export class InputManager {
   poll(dt: number): void {
     this.padMove.x = this.padMove.y = 0;
     this.padLook.x = this.padLook.y = 0;
-    this.padSlide = false;
+    this.padHeld.clear();
+    this.pad = null;
+    this.pads = [];
     if (!this.gamepadOk) return;
-    let pads: (Gamepad | null)[] = [];
+    let raw: (Gamepad | null)[] = [];
     try {
-      pads = typeof navigator.getGamepads === 'function' ? Array.from(navigator.getGamepads()) : [];
+      raw = typeof navigator.getGamepads === 'function' ? Array.from(navigator.getGamepads()) : [];
     } catch {
       this.gamepadOk = false; // blocked by permissions policy (e.g. sandboxed iframe)
       return;
     }
-    const pad = pads.find((p) => p && p.connected) ?? null;
+    for (const g of raw) {
+      if (!g || !g.connected) continue;
+      this.padSeen = true;
+      this.pads.push(normalizePad(g, this.cal));
+    }
+    // the last controller someone touched is the one we listen to
+    const active = chooseActivePad(this.pads, this.activeIndex);
+    if (active !== this.activeIndex) this.padPrev = [];
+    this.activeIndex = active;
+    const pad = this.pads.find((p) => p.index === active) ?? null;
     if (!pad) return;
-    const ax = (i: number): number => {
-      const v = pad.axes[i] ?? 0;
-      return Math.abs(v) < GAMEPAD_DEADZONE ? 0 : (v - Math.sign(v) * GAMEPAD_DEADZONE) / (1 - GAMEPAD_DEADZONE);
-    };
-    const btn = (i: number): boolean => !!pad.buttons[i]?.pressed;
+    this.pad = pad;
+    const dz = (v: number): number => (Math.abs(v) < GAMEPAD_DEADZONE ? 0 : (v - Math.sign(v) * GAMEPAD_DEADZONE) / (1 - GAMEPAD_DEADZONE));
+    const btn = (i: number): boolean => pad.pressed[i] === true;
     const pressed = (i: number): boolean => btn(i) && !this.padPrev[i];
-    this.padMove.x = ax(0);
-    this.padMove.y = -ax(1);
-    this.padLook.x = ax(2);
-    this.padLook.y = ax(3);
-    if (btn(12)) this.padMove.y = 1;
-    if (btn(13)) this.padMove.y = -1;
-    if (btn(14)) this.padMove.x = -1;
-    if (btn(15)) this.padMove.x = 1;
-    this.padSlide = btn(1) || btn(7) || btn(6) || btn(10);
-    const anyInput = pad.buttons.some((b) => b.pressed) || pad.axes.some((a) => Math.abs(a) > 0.4);
-    if (anyInput) this.usingGamepad = true;
+    if (this.capture) {
+      for (let i = 0; i < pad.pressed.length; i++) {
+        if (!pressed(i)) continue;
+        const cb = this.capture;
+        this.capture = null;
+        cb({ pad: i });
+        break;
+      }
+      this.padPrev = pad.pressed.slice();
+      return;
+    }
+    for (let i = 0; i < pad.pressed.length; i++) {
+      if (!btn(i)) continue;
+      const acts = this.padActions.get(i);
+      if (acts) for (const a of acts) this.padHeld.add(a);
+    }
+    this.padMove.x = dz(pad.axes[0]);
+    this.padMove.y = -dz(pad.axes[1]);
+    this.padLook.x = dz(pad.axes[2]);
+    this.padLook.y = dz(pad.axes[3]);
+    if (this.padHeld.has('moveUp')) this.padMove.y = 1;
+    if (this.padHeld.has('moveDown')) this.padMove.y = -1;
+    if (this.padHeld.has('moveLeft')) this.padMove.x = -1;
+    if (this.padHeld.has('moveRight')) this.padMove.x = 1;
+    if (padActive(pad)) {
+      this.usingGamepad = true;
+      this.mode.padUsed();
+    }
 
-    if (pressed(9) || pressed(8)) this.onAction?.('pause');
+    const padPressed = (a: GameAction): boolean => this.bindings[a].pad.some((i) => pressed(i));
+    if (padPressed('pause')) this.onAction?.('pause');
     if (this.gameplay) {
-      if (pressed(0)) this.jumpQueued = true;
+      if (padPressed('jump')) this.jumpQueued = true;
+      if (this.slideToggle && padPressed('slide')) this.slideLatched = !this.slideLatched;
     } else {
+      // menus: A / B are fixed so a remap can never lock you out of the menus
       if (pressed(0)) this.onAction?.('confirm');
       if (pressed(1)) this.onAction?.('back');
-      // directional navigation with repeat
+      // directional navigation with repeat (stick or d-pad)
       let dir = '';
-      const mx = this.padMove.x;
-      const my = this.padMove.y;
+      const mx = this.padMove.x || (btn(15) ? 1 : btn(14) ? -1 : 0);
+      const my = this.padMove.y || (btn(12) ? 1 : btn(13) ? -1 : 0);
       if (Math.abs(my) > 0.5 && Math.abs(my) >= Math.abs(mx)) dir = my > 0 ? 'up' : 'down';
       else if (Math.abs(mx) > 0.5) dir = mx > 0 ? 'right' : 'left';
       if (dir && dir !== this.padNavDir) {
@@ -200,22 +401,29 @@ export class InputManager {
       }
       this.padNavDir = dir;
     }
-    this.padPrev = pad.buttons.map((b) => b.pressed);
+    this.padPrev = pad.pressed.slice();
   }
 
-  /** Local move intent: x = strafe right, y = forward. Length ≤ 1. */
+  private keyHeld(a: GameAction): boolean {
+    for (const k of this.bindings[a].keys) if (this.keys.has(k)) return true;
+    return false;
+  }
+
+  private held(a: GameAction): boolean {
+    return this.keyHeld(a) || this.padHeld.has(a);
+  }
+
+  /** Local move intent: x = strafe right, y = forward. Length ≤ 1 (sticks stay analog). */
   move(out: { x: number; y: number }): void {
     let x = 0;
     let y = 0;
-    for (const k of this.keys) {
-      const m = MOVE_KEYS[k];
-      if (m) {
-        x += m[0];
-        y += m[1];
-      }
-    }
-    x = Math.max(-1, Math.min(1, x)) + this.padMove.x;
-    y = Math.max(-1, Math.min(1, y)) + this.padMove.y;
+    // keyboard here; the pad's stick / d-pad arrive in padMove
+    if (this.keyHeld('moveUp')) y += 1;
+    if (this.keyHeld('moveDown')) y -= 1;
+    if (this.keyHeld('moveLeft')) x -= 1;
+    if (this.keyHeld('moveRight')) x += 1;
+    x = Math.max(-1, Math.min(1, x)) + this.padMove.x + (this.touch?.moveX ?? 0);
+    y = Math.max(-1, Math.min(1, y)) + this.padMove.y + (this.touch?.moveY ?? 0);
     const l = Math.hypot(x, y);
     if (l > 1) {
       x /= l;
@@ -226,16 +434,26 @@ export class InputManager {
   }
 
   slideHeld(): boolean {
-    return this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') || this.keys.has('KeyC') || this.padSlide;
+    return (this.slideToggle ? this.slideLatched : this.held('slide')) || (this.touch?.slideHeld ?? false);
+  }
+
+  /** The game reports that a slide ended: a toggled slide switches itself off. */
+  slideEnded(): void {
+    this.slideLatched = false;
+    this.touch?.slideEnded();
+  }
+
+  jumpHeld(): boolean {
+    return this.held('jump') || (this.touch?.jumpHeld ?? false);
   }
 
   consumeJump(): boolean {
-    const j = this.jumpQueued;
+    const j = this.jumpQueued || (this.touch?.consumeJump() ?? false);
     this.jumpQueued = false;
     return j;
   }
 
-  /** Look delta in radians since last call (mouse + gamepad + Q/E keys). */
+  /** Look delta in radians since last call (mouse + right stick + turn keys / bumpers). */
   consumeLook(dt: number, out: { x: number; y: number }): void {
     const s = 0.0024 * this.sensitivity;
     let x = this.lookX * s;
@@ -243,15 +461,29 @@ export class InputManager {
     this.lookX = this.lookY = 0;
     x += this.padLook.x * 2.8 * dt * this.sensitivity;
     y += this.padLook.y * 2.0 * dt * this.sensitivity;
-    if (this.keys.has('KeyQ')) x -= 2.2 * dt;
-    if (this.keys.has('KeyE')) x += 2.2 * dt;
+    if (this.held('lookLeft')) x -= 2.2 * dt;
+    if (this.held('lookRight')) x += 2.2 * dt;
+    if (this.touch) {
+      this.touch.consumeLook(this.touchLook);
+      x += this.touchLook.x;
+      y += this.touchLook.y;
+    }
     out.x = x;
     out.y = this.invertY ? -y : y;
+  }
+
+  /** Forget held keys / latched slide (touch took over). */
+  clearKeys(): void {
+    this.keys.clear();
+    this.jumpQueued = false;
+    this.slideLatched = false;
   }
 
   clearTransient(): void {
     this.lookX = this.lookY = 0;
     this.jumpQueued = false;
+    this.slideLatched = false;
     this.wheel = 0;
+    this.touch?.reset();
   }
 }

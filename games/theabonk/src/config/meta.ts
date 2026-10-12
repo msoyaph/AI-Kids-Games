@@ -15,6 +15,8 @@ export const SHOP: ShopDef[] = [
   { id: 'greed', name: 'Coin Purse', description: '+8% gold per rank.', stat: 'greed', perRank: 0.08, maxRank: 5, baseCost: 40, costGrowth: 1.55 },
   { id: 'luck', name: 'Lucky Acorn', description: '+5% luck per rank.', stat: 'luck', perRank: 0.05, maxRank: 4, baseCost: 90, costGrowth: 1.7 },
   { id: 'reroll', name: 'Second Thoughts', description: '+1 upgrade reroll per run per rank.', stat: 'reroll', perRank: 1, maxRank: 3, baseCost: 150, costGrowth: 1.8 },
+  { id: 'skip', name: 'Fresh Page', description: '+1 level-up skip per run per rank (you always get one).', stat: 'skip', perRank: 1, maxRank: 3, baseCost: 120, costGrowth: 1.8 },
+  { id: 'banish', name: 'Cross It Off', description: '+1 banish per run per rank: remove an offer for the rest of the run.', stat: 'banish', perRank: 1, maxRank: 3, baseCost: 160, costGrowth: 1.8 },
   { id: 'revival', name: 'Spare Heart', description: 'Revive once per run.', stat: 'revival', perRank: 1, maxRank: 1, baseCost: 600, costGrowth: 1 },
   { id: 'amount', name: 'Twin Spirits', description: '+1 projectile / orb / bolt.', stat: 'amount', perRank: 1, maxRank: 1, baseCost: 1200, costGrowth: 1 },
 ];

@@ -1,10 +1,19 @@
-import { BASE_STATS, CAPS, MAP_HALF, xpToNext } from '../config/balance';
+import { BASE_STATS, CAPS, MAP_HALF } from '../config/balance';
+import { mergeTuning, TUNING_DEFAULTS, xpToNextWith, type Tuning, type TuningOverrides } from '../config/tuning';
 import { characterDef } from '../config/characters';
+import { mapDef, type MapDef, type MapId } from '../config/maps';
+import { runMods, type DifficultyId, type RunMods } from '../config/difficulty';
 import type { WeaponConfig } from '../config/weapons';
 import type { CharacterDef, PassiveDef, PlayerStats, ShrineKind, WeaponStats } from '../config/types';
 import { EventBuffer } from '../core/events';
 import { Rng } from '../core/rng';
 import { EnemyPool, EnemyProjectilePool, GemPool, HazardPool, PickupPool, ProjectilePool } from './pools';
+import { BOSS_ATTACKS, SOURCE_SLOTS } from './sources';
+import { ENEMIES } from '../config/enemies';
+
+const ENEMY_COUNT = ENEMIES.length;
+import { FlowField } from './flowField';
+import { passiveCode } from './heroes';
 import { SpatialHash } from './spatialHash';
 import { Terrain } from './terrain';
 
@@ -16,10 +25,12 @@ export interface SimInput {
   jump: boolean;
   /** Slide held. */
   slide: boolean;
+  /** This jump is an automatic hop (hold-to-hop): no bunny-hop speed bonus. */
+  autoHop: boolean;
 }
 
 export function emptyInput(): SimInput {
-  return { moveX: 0, moveZ: 0, jump: false, slide: false };
+  return { moveX: 0, moveZ: 0, jump: false, slide: false, autoHop: false };
 }
 
 export interface WeaponInstance {
@@ -80,6 +91,9 @@ export interface Player {
   alive: boolean;
   revivals: number;
   rerolls: number;
+  /** Level-up skips / banishes left this run. */
+  skips: number;
+  banishes: number;
   /** Final stats (base + passives + buffs). */
   stats: PlayerStats;
   /** Character + permanent shop bonuses. */
@@ -89,6 +103,12 @@ export interface Player {
   hurtFlash: number;
   /** Max HP at the last stat recompute (to heal by the delta when max HP rises). */
   hpMaxCache: number;
+  /** Seconds left chilled (slowed) by frost attacks. */
+  chill: number;
+  /** Signature passive code (HeroPassive). */
+  passive: number;
+  /** Ottie's slide is bowling Gloom over this tick (their touch can't hurt). */
+  bowling: boolean;
 }
 
 export type WorldState = 'playing' | 'levelup' | 'chest' | 'dead' | 'won';
@@ -114,6 +134,21 @@ export interface Shrine {
   shake: number;
 }
 
+export interface PickRecord {
+  t: number;
+  level: number;
+  offered: string[];
+  picked: string | null;
+}
+
+export interface BossFight {
+  id: string;
+  spawnedAt: number;
+  /** -1 while still alive. */
+  killedAt: number;
+  damageTaken: number;
+}
+
 export interface RunStats {
   kills: number;
   damageTaken: number;
@@ -124,6 +159,33 @@ export interface RunStats {
   chestsOpened: number;
   topSpeed: number;
   elitesKilled: number;
+  /** Damage taken / hits taken per source code (see sim/sources.ts). */
+  damageBy: Float64Array;
+  hitsBy: Uint32Array;
+  /** Source of the most recent hit (cause of death when the run ends). */
+  lastSource: number;
+  /** Boss attack activations and activations that hit at least once (by BOSS_ATTACKS index). */
+  bossAttackUsed: Uint32Array;
+  bossAttackHits: Uint32Array;
+  bossAttackLastHit: Int32Array;
+  bossAttackSeq: number;
+  bossFights: BossFight[];
+  /** Seconds spent sliding on the ground / airborne, and jumps made. */
+  slideTime: number;
+  airTime: number;
+  jumps: number;
+  picks: PickRecord[];
+  chests: Array<{ t: number; rewards: string[] }>;
+  /** Level-up skips and banishes used. */
+  skips: number;
+  banishes: number;
+  /** Ground distance covered while sliding (units ≈ metres). */
+  slideDistance: number;
+  /** Kills per enemy type (bestiary). */
+  killsByType: Uint32Array;
+  /** Weapons (incl. evolutions) / items held at any point this run (collection). */
+  acquiredWeapons: Set<string>;
+  acquiredPassives: Set<string>;
 }
 
 export interface DirectorState {
@@ -137,22 +199,71 @@ export interface DirectorState {
   /** Counts down to the victory screen once the run is won. */
   victoryT: number;
   dawn: boolean;
+  /** Highest health phase the current boss has entered (phase-change attacks fire once). */
+  bossPhase: number;
+}
+
+/** Map weather / hazards (Rimewood gusts and icicles). Driven by `w.hazardRng`. */
+export interface Weather {
+  /** Time of the next icicle volley. */
+  nextIcicle: number;
+  /** Time the next gust warning starts. */
+  nextGust: number;
+  /** Seconds of warning left before the current gust pushes (0 = none pending). */
+  warnT: number;
+  /** Seconds of push left. */
+  gustT: number;
+  /** Unit push direction and strength (u/s) of the current / announced gust. */
+  dirX: number;
+  dirZ: number;
+  push: number;
+  enemyPush: number;
+  /** Boss blizzard: seconds left, and its centre (pushes swirl around it). */
+  blizzardT: number;
+  blizzardX: number;
+  blizzardZ: number;
 }
 
 export interface WorldOptions {
   seed: number;
   characterId: string;
+  /** Map to play (default Gloam Meadow). */
+  map?: MapId;
+  difficulty?: DifficultyId;
+  /** Hard only: tier 1–5. */
+  tier?: number;
+  /** Daily run (recorded separately; shop bonuses are left out by the caller). */
+  daily?: boolean;
+  /** Tablet tier: fewer, tougher Gloom (see TABLET_CROWD). */
+  tablet?: boolean;
   /** Permanent bonuses from the shop (added to base stats). */
   meta?: Partial<PlayerStats>;
   unlockedWeapons?: string[];
   /** Stress-test mode: keep N enemies alive, player invulnerable. */
   stress?: number;
   god?: boolean;
+  /** Tuning overrides for this run (live panel / experiments). Defaults when omitted. */
+  tuning?: TuningOverrides;
+  /** Run played with non-default tuning: never counts for records or achievements. */
+  tuned?: boolean;
 }
 
 export interface World {
   seed: number;
   rng: Rng;
+  /**
+   * Separate stream for map hazards (icicles, gusts): adding hazards to a map never shifts
+   * the main stream, so other maps' spawn sequences stay identical.
+   */
+  hazardRng: Rng;
+  map: MapDef;
+  weather: Weather;
+  difficulty: DifficultyId;
+  tier: number;
+  /** Difficulty / tier multipliers for this run. */
+  mods: RunMods;
+  /** Upgrade ids banished this run (never offered again). */
+  banished: Set<string>;
   terrain: Terrain;
   time: number;
   tick: number;
@@ -167,6 +278,8 @@ export interface World {
   pickups: PickupPool;
   hazards: HazardPool;
   grid: SpatialHash;
+  /** Distance field toward the player for enemy pathing. */
+  flow: FlowField;
   shrines: Shrine[];
   events: EventBuffer;
   pendingLevels: number;
@@ -176,7 +289,9 @@ export interface World {
   director: DirectorState;
   stats: RunStats;
   unlockedWeapons: Set<string>;
-  options: { stress: number; god: boolean };
+  options: { stress: number; god: boolean; tuned: boolean; daily: boolean };
+  /** This run's tuning (a private copy — the live panel edits it in place). */
+  tuning: Tuning;
   /** Shared query scratch buffers (never hold across calls). */
   scratch: Int32Array;
   scratch2: Int32Array;
@@ -192,12 +307,18 @@ export function makeStats(): PlayerStats {
 
 export function createWorld(opts: WorldOptions): World {
   const rng = new Rng(opts.seed);
-  const terrain = new Terrain(opts.seed);
+  const tuning = mergeTuning(TUNING_DEFAULTS, opts.tuning);
+  const map = mapDef(opts.map ?? 'meadow');
+  const terrain = new Terrain(opts.seed, map.terrain);
+  const difficulty = opts.difficulty ?? 'normal';
+  const tier = difficulty === 'hard' ? Math.max(0, Math.min(5, Math.floor(opts.tier ?? 0))) : 0;
+  const mods = runMods(difficulty, tier, !!opts.tablet, map.mods);
   const character = characterDef(opts.characterId);
 
   const baseStats = makeStats();
   for (const [k, v] of Object.entries(character.stats)) baseStats[k as keyof PlayerStats] += v as number;
   if (opts.meta) for (const [k, v] of Object.entries(opts.meta)) baseStats[k as keyof PlayerStats] += v as number;
+  baseStats.maxHp *= mods.playerHp;
 
   const y = terrain.height(0, 0);
   const player: Player = {
@@ -221,22 +342,46 @@ export function createWorld(opts: WorldOptions): World {
     iframes: 0,
     level: 1,
     xp: 0,
-    xpNext: xpToNext(1),
+    xpNext: xpToNextWith(1, tuning.xp),
     alive: true,
     revivals: baseStats.revival,
-    rerolls: baseStats.reroll,
+    rerolls: baseStats.reroll + mods.rerolls,
+    skips: baseStats.skip + mods.skips,
+    banishes: baseStats.banish + mods.banishes,
     stats: { ...baseStats },
     baseStats,
     buffs: { might: 0, haste: 0, ward: 0, fortune: 0 },
     character,
     hurtFlash: 0,
     hpMaxCache: baseStats.maxHp,
+    chill: 0,
+    passive: passiveCode(character.passive.id),
+    bowling: false,
   };
 
   const stress = opts.stress ?? 0;
   const world: World = {
     seed: opts.seed,
     rng,
+    hazardRng: new Rng((opts.seed ^ 0x2c1b3c6d) >>> 0),
+    map,
+    difficulty,
+    tier,
+    mods,
+    banished: new Set(),
+    weather: {
+      nextIcicle: map.hazards.icicles?.start ?? Infinity,
+      nextGust: map.hazards.gusts?.start ?? Infinity,
+      warnT: 0,
+      gustT: 0,
+      dirX: 0,
+      dirZ: 0,
+      push: 0,
+      enemyPush: 0,
+      blizzardT: 0,
+      blizzardX: 0,
+      blizzardZ: 0,
+    },
     terrain,
     time: 0,
     tick: 0,
@@ -251,16 +396,47 @@ export function createWorld(opts: WorldOptions): World {
     pickups: new PickupPool(CAPS.pickups),
     hazards: new HazardPool(CAPS.hazards),
     grid: new SpatialHash(MAP_HALF, 4, Math.max(CAPS.enemies, stress + 200)),
+    flow: new FlowField(terrain),
     shrines: [],
     events: new EventBuffer(8192),
     pendingLevels: 0,
     pendingChests: 0,
     choices: [],
     chestRewards: [],
-    director: { spawnAcc: 0, eventIndex: 0, bossUid: 0, bossType: -1, bossMaxHp: 0, finalBossDefeated: false, lastSegment: -1, victoryT: 0, dawn: false },
-    stats: { kills: 0, damageTaken: 0, coins: 0, bossKills: {}, evolutions: 0, shrinesBroken: 0, chestsOpened: 0, topSpeed: 0, elitesKilled: 0 },
+    director: { spawnAcc: 0, eventIndex: 0, bossUid: 0, bossType: -1, bossMaxHp: 0, finalBossDefeated: false, lastSegment: -1, victoryT: 0, dawn: false, bossPhase: 0 },
+    stats: {
+      kills: 0,
+      damageTaken: 0,
+      coins: 0,
+      bossKills: {},
+      evolutions: 0,
+      shrinesBroken: 0,
+      chestsOpened: 0,
+      topSpeed: 0,
+      elitesKilled: 0,
+      damageBy: new Float64Array(SOURCE_SLOTS),
+      hitsBy: new Uint32Array(SOURCE_SLOTS),
+      lastSource: 0,
+      bossAttackUsed: new Uint32Array(BOSS_ATTACKS.length),
+      bossAttackHits: new Uint32Array(BOSS_ATTACKS.length),
+      bossAttackLastHit: new Int32Array(BOSS_ATTACKS.length).fill(-1),
+      bossAttackSeq: 0,
+      bossFights: [],
+      slideTime: 0,
+      airTime: 0,
+      jumps: 0,
+      picks: [],
+      chests: [],
+      skips: 0,
+      banishes: 0,
+      slideDistance: 0,
+      killsByType: new Uint32Array(ENEMY_COUNT),
+      acquiredWeapons: new Set(),
+      acquiredPassives: new Set(),
+    },
     unlockedWeapons: new Set(opts.unlockedWeapons ?? []),
-    options: { stress, god: !!opts.god || stress > 0 },
+    options: { stress, god: !!opts.god || stress > 0, tuned: !!opts.tuned, daily: !!opts.daily },
+    tuning,
     scratch: new Int32Array(2048),
     scratch2: new Int32Array(512),
     areaScratch: new Int32Array(2048),
