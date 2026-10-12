@@ -244,9 +244,12 @@ nicknames that stay on the device).
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on GitHub-hosted runners: typecheck, unit tests, bot playthrough
-+ pacing, the single-file build, and Playwright on desktop/tablet/phone in low-quality mode with
-software WebGL. `.github/workflows/mac-gpu.yml` is an **optional** manual workflow for a
-self-hosted Mac runner (real GPU benchmark). ⚠️ Use it **only with a private repository** — a
-self-hosted runner on a public repo can be made to run other people's code; the workflow refuses
-to run on public repos and never runs on pull requests.
+Cliff Valley lives in the Ai Kids Games monorepo. Its checks run in the root workflow
+(`.github/workflows/ci.yml`, job **Cliff Valley**) on GitHub's standard runners for every pull
+request and every push to `main` that touches `games/cliff-valley/` or shared files: typecheck,
+unit tests, bot playthrough + pacing, the single-file build, and Playwright on desktop/tablet/phone
+in low-quality mode with software WebGL. The real-GPU benchmark runs by hand on your own computer
+(`docs/BENCHMARKS.md` at the repo root). Never connect a self-hosted runner to this public repository.
+
+After changing the game, run `npm run import-game -- cliff-valley` at the repo root so the website
+gets the new build; CI fails if the game's source changes without a re-import.

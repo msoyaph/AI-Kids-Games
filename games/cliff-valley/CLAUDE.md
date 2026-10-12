@@ -51,3 +51,14 @@ session; condensed plan in `docs/PLAN.md`. Ships as ONE self-contained `dist/ind
 - Bot notes: `new Bot(seed).playDay()`; debug with `bot.missing()`, `bot.did`, `bot.skillLevels()`. When changing balance, rerun `npm run test:sim` (several seeds) — the bot is the soft-lock detector.
 - Phase 15 ✅ `?playtest=1`: game/playtest-log.ts (pure recorder: play/paused/title seconds, per-day rows, milestone events, FPS; key `cliffvalley.playtest`, capped) + game/playtest.ts (rAF timing, sim event hooks — skips the title backdrop sim via a microtask check, 🧪 badge, export modal: Download (standalone) / Copy box (iframe) / Clear). scripts/analyze-playtests.mjs (`loadLogs`, `summarize` exported; → reports/playtests.md). CI: .github/workflows/ci.yml (ubuntu, Node 22, typecheck → unit → sim → build → Playwright), mac-gpu.yml (manual, self-hosted macOS, refuses public repos). README.md (play, controls, build, registry entry, storage keys + measured sizes, capture URLs, adding content). Preview capture: `?scene=<name>&zoom=-2&hud=0`, `npm run capture` → docs/screenshots. Polish found on the way: modal width on phones (`.modal` max-width calc), festival banner vs toasts, warmer golden hour (lighting.ts), capture scenes skip repair cutscenes.
 - All phases done. Remaining ideas live in the final report (known issues / next steps).
+
+## In the Ai Kids Games monorepo
+
+This project lives at `games/cliff-valley/` in the public Ai Kids Games monorepo (msoyaph/AI-Kids-Games),
+imported with its full history. Run its scripts from this folder or from the repo root with
+`--workspace games/cliff-valley`. There is one root lockfile (no per-game lockfile). CI is the root
+`.github/workflows/ci.yml`; this game's job runs on GitHub's standard runners in low-quality mode.
+Self-hosted runners are never used with this public repo; GPU runs are in docs/BENCHMARKS.md.
+After changing the game, run `npm run import-game -- cliff-valley` at the root to update the site's copy
+(CI fails if the source changes without a re-import). Release tags: `cliff-valley-v<version>`.
+Don't create a separate GitHub repo for this game.
