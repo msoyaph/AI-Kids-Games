@@ -7,16 +7,21 @@ import { usePageMeta } from '../lib/meta';
 import { mediaFor } from '../lib/media';
 import { Icon } from '../components/Icon';
 import Cover from '../components/Cover';
+import { computerOnly, touchOnlyDevice } from '../lib/devices';
+
+/** "I have a keyboard or controller" holds for this visit; nothing is stored. */
+let keyboardConfirmed = false;
 
 /**
  * Stream the game's HTML from our own origin to show real progress (measured against its
  * recorded size; the stream may be compressed in transit), then let the iframe load it from
  * the browser cache. Falls back to an indeterminate bar if streaming is unavailable.
  */
-function useGameDownload(slug: string,attempt: number) {
+function useGameDownload(slug: string,attempt: number,enabled: boolean) {
   const [progress,setProgress] = useState<number | null>(0); const [src,setSrc] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false; setProgress(0); setSrc(null);
+    if (!enabled) return;
     const url = `/games/${slug}/index.html`, total = (sizes as Record<string,number>)[slug];
     (async () => {
       try {
@@ -28,7 +33,7 @@ function useGameDownload(slug: string,attempt: number) {
       if (!cancelled) setSrc(url);
     })();
     return () => { cancelled = true; };
-  },[slug,attempt]);
+  },[slug,attempt,enabled]);
   return { progress,src };
 }
 
@@ -40,13 +45,31 @@ export default function Play() {
   const [full,setFull] = useState(false); const [fullscreenError,setFullscreenError] = useState('');
   const [notice,setNotice] = useState(() => window.innerWidth <= 768 || matchMedia('(pointer: coarse)').matches);
   const stage = useRef<HTMLDivElement>(null); const frame = useRef<HTMLIFrameElement>(null);
-  const { progress,src } = useGameDownload(slug,attempt);
-  useEffect(() => { setLoaded(false); setSlow(false); const timer = setTimeout(() => setSlow(true),12000); return () => clearTimeout(timer); },[slug,attempt]);
+  // A computer-only game on a touch-only device: explain instead of loading it (driven by the manifest).
+  const [confirmed,setConfirmed] = useState(keyboardConfirmed);
+  const gate = !!game && computerOnly(game) && !confirmed && touchOnlyDevice();
+  const { progress,src } = useGameDownload(slug,attempt,!gate);
+  useEffect(() => { setLoaded(false); setSlow(false); if (gate) return; const timer = setTimeout(() => setSlow(true),12000); return () => clearTimeout(timer); },[slug,attempt,gate]);
   useEffect(() => { document.body.classList.add('is-playing'); const change = () => setFull(!!document.fullscreenElement); document.addEventListener('fullscreenchange',change); return () => { document.body.classList.remove('is-playing'); document.removeEventListener('fullscreenchange',change); }; },[]);
   if (!game) return <div className="container page"><div className="empty"><h1 className="title">This game wandered off.</h1><Link className="button primary" to="/games">Find a game</Link></div></div>;
   const media = mediaFor(game);
   const toggleFullscreen = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else await stage.current?.requestFullscreen(); setFullscreenError(''); } catch { setFullscreenError('Fullscreen isn’t available in this browser. You can still play here.'); } };
   const percent = progress === null ? null : Math.round((loaded ? 1 : progress)*100);
+  if (gate) return <div className="play-shell">
+    <header className="play-bar"><Link to={`/game/${game.slug}`}><Icon name="back" />Back</Link><h1><strong>{game.title}</strong></h1><span className="play-bar-spacer" aria-hidden="true" /></header>
+    <main className="play-stage" id="main-content">
+      <div className="touch-gate">
+        <img className="logo" src={media.logo} alt="" width={360} height={96} />
+        <div className="touch-gate-icons" aria-hidden="true"><Icon name="keyboard" size={34} /><Icon name="mouse" size={34} /><Icon name="gamepad" size={34} /></div>
+        <h2>{game.title} needs a keyboard and mouse or a game controller for now.</h2>
+        <p>Touch controls are coming soon!</p>
+        <div className="touch-gate-actions">
+          <Link className="button" to={`/game/${game.slug}`}><Icon name="back" />Back</Link>
+          <button className="button primary" onClick={() => { keyboardConfirmed = true; setConfirmed(true); setNotice(false); }}>I have a keyboard or controller</button>
+        </div>
+      </div>
+    </main>
+  </div>;
   return <div className="play-shell" ref={stage}>
     <header className="play-bar"><Link to={`/game/${game.slug}`}><Icon name="back" />Back</Link><h1><strong>{game.title}</strong></h1><button onClick={toggleFullscreen} aria-label={full ? 'Exit fullscreen' : 'Enter fullscreen'}><Icon name={full ? 'shrink' : 'expand'} /><span className="label">{full ? 'Exit fullscreen' : 'Fullscreen'}</span></button></header>
     {fullscreenError && <p className="play-message" role="status">{fullscreenError}</p>}

@@ -111,6 +111,24 @@ recapture, save carry-over, in-site touch tests). Both ship in site release 2.1.
   telemetry off) in marketing/sizzle/, storyboard first in plan mode; recapture all art in the
   consistent style and drop the temporary art; README showcase; TheaBonk v2 when fixed.
 
+## Ship TheaBonk's touch controls + fullscreen play (owner task, 2026-10-12)
+Release rule from the owner: 2.1.0 is live, so step 1 ships at once as patch 2.1.1; steps 2–3
+(TheaBonk v2 + fullscreen play) ship together as the next release once preview checks pass.
+"I approve both. Record the approvals so the production guard allows them." Work happens in a
+second worktree (~/Documents/AI-Kids-Games-ship) because the main checkout holds another
+session's uncommitted sizzle-reel work — never touch that checkout's files.
+- Step 1 (2.1.1): src/lib/devices.ts `computerOnly(game)` = no Touch in controls.types, or
+  only Computer in supportedDevices (straight from game.json); `touchOnlyDevice()` = no fine
+  pointer + coarse pointer / touch points. Play page: computer-only game on a touch-only device
+  → "<title> needs a keyboard and mouse or a game controller for now. Touch controls are coming
+  soon!" with Back (to details) and "I have a keyboard or controller" (holds for the visit, no
+  storage); the game is not downloaded meanwhile. Cards add "· Computer game", details add a
+  note under Works on. All of it disappears when the manifest lists Touch + phone/tablet.
+  tests/devices.test.ts, tests/e2e/touch-gate.spec.ts (skips once no game is computer-only);
+  e2e `boot()` presses through the screen. The copy promises touch "soon": only TheaBonk is
+  computer-only; make that sentence conditional if a computer-only game without touch plans
+  is ever added.
+
 ## Sizzle reel v1 (branch sizzle-reel; owner approved the storyboard, end card says aikids.games)
 
 Built as code in `marketing/sizzle/` (workspace @ai-kids-games/sizzle; see its README). HyperFrames

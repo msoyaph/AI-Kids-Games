@@ -40,7 +40,7 @@ test('home filters: category and player age',async ({ page }) => {
   await allGames(page).getByLabel('Player age').selectOption('7');
   await expect(allGames(page).locator('.card-title')).toHaveText(['Light Crossing','Space Sky']);
 });
-test('theme, parental clearing, privacy, mobile notice and 404',async ({ page },testInfo) => {
+test('theme, parental clearing, privacy and 404',async ({ page }) => {
   await page.goto('/'); await page.getByRole('button',{ name: 'Switch to dark mode' }).click(); await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
   await page.getByRole('button',{ name: 'Switch to light mode' }).click();
   await page.getByRole('contentinfo').getByRole('link',{ name: 'Privacy' }).click(); await expect(page.getByRole('heading',{ level: 1,name: 'Privacy' })).toBeVisible();
@@ -49,7 +49,6 @@ test('theme, parental clearing, privacy, mobile notice and 404',async ({ page },
   await page.goto('/parents'); await expect(page.locator('main').getByRole('link',{ name: 'privacy page' })).toHaveAttribute('href','/privacy');
   await page.getByRole('button',{ name: 'Clear saved lists' }).click(); await expect(page.getByRole('status')).toHaveText('Your saved lists have been cleared.');
   await page.goto('/not-a-page'); await expect(page.getByRole('heading',{ name: 'This page wandered off.' })).toBeVisible();
-  if (testInfo.project.name === 'phone') { await page.goto('/play/theabonk'); await expect(page.getByRole('note')).toContainText('This game works best on a computer'); await page.getByRole('button',{ name: 'Play anyway' }).click(); await expect(page.getByRole('note')).toHaveCount(0); }
 });
 test('layout, touch targets and reduced motion',async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });

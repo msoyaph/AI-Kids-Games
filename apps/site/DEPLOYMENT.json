@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.1.0",
+  "release": "2.1.1",
   "productionApproval": {
     "approved": true,
-    "release": "2.1.0",
-    "date": "2026-10-11",
+    "release": "2.1.1",
+    "date": "2026-10-12",
     "approvedBy": "Owner",
-    "scope": "Six games from the monorepo: Cliff Valley 1.0.0 (new), Light Crossing 2.0.0, Vanex Defense 2.0.0, Space Sky 2.0.0 (3D), Calex Cart 0.2.0, TheaBonk 1.0.0 (live build); temporary screenshot art for Cliff Valley, Vanex Defense, Space Sky and Calex Cart; branding, List your game, structured data.",
-    "note": "Owner wrote: \"once done, deploy the updates to live production https://ai-kids-games-fawn.vercel.app/ so my kids can play\". Guard: scripts/check-deployment.ts needs this record for 2.1.0, AIKG_ALLOW_PRODUCTION=2.1.0 in Vercel's Production environment only, and a build from main."
+    "scope": "Patch while TheaBonk v1 is live: on a touch-only device, Play on a computer-only game shows \"TheaBonk needs a keyboard and mouse or a game controller for now. Touch controls are coming soon!\" with Back and \"I have a keyboard or controller\" instead of loading the game; its card and details page show it as a computer game. Driven by game.json devices and controls, so it disappears when a game lists touch controls. No game build changes.",
+    "note": "Owner wrote: \"If 2.1.0 is live, ship Step 1 straight away as a patch … I approve both. Record the approvals so the production guard allows them.\" Both = this patch and the next release (TheaBonk v2 touch controls + fullscreen play), recorded when that release is prepared. Guard: scripts/check-deployment.ts needs this record for 2.1.1, AIKG_ALLOW_PRODUCTION=2.1.1 in Vercel's Production environment only, and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
@@ -40,7 +40,8 @@
         "bestPractices": 100,
         "seo": 100
       }
-    }
+    },
+    "note": "Still release 2.1.0 until 2.1.1 is deployed and recorded."
   },
   "deploymentProtection": {
     "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",
@@ -51,6 +52,57 @@
   "gameCacheControl": "public, max-age=0, must-revalidate",
   "hashedAssetCacheControl": "public, max-age=31536000, immutable",
   "history": [
+    {
+      "release": "2.1.0",
+      "commit": "dc4a5f7",
+      "production": {
+        "url": "https://ai-kids-games-fawn.vercel.app",
+        "deploymentId": "dpl_565CFC3FJtQh2oMy2m4mGboRM9r3",
+        "deploymentUrl": "https://ai-kids-games-81eqv7ogy-real-tours.vercel.app",
+        "readyState": "READY",
+        "publishedAt": "2026-10-12",
+        "public": true,
+        "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+        "smokeTest": "Logged-out Playwright suite against production: 94 passed, 23 intentional device skips, 0 failed (all six games played 20 s on desktop, tablet and phone, saves survive reload, favorites and recently played persist, games keep one another's saves, no console errors, no other-origin requests).",
+        "lighthouseMobile": {
+          "home": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "details": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "play": {
+            "performance": 73,
+            "performanceExempt": true,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          }
+        }
+      },
+      "verifiedPreview": {
+        "url": "https://ai-kids-games-me4wlq58h-real-tours.vercel.app",
+        "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/2",
+        "hostedSuite": "94 passed, 23 skipped, 0 failed",
+        "temporaryBypass": "created for hosted QA and revoked afterwards"
+      },
+      "localSuite": "Full site suite on a real GPU before release: 94 passed, 23 skipped, 0 failed; every game's own suite passed inside the monorepo.",
+      "ci": "Released by the owner's request before PR #2's CI finished: Light Crossing and Space Sky were still running, and TheaBonk's v1 smoke test missed its game-time target on a slow runner (same build as already live; made robust afterwards).",
+      "productionApproval": {
+        "approved": true,
+        "release": "2.1.0",
+        "date": "2026-10-11",
+        "approvedBy": "Owner",
+        "scope": "Six games from the monorepo: Cliff Valley 1.0.0 (new), Light Crossing 2.0.0, Vanex Defense 2.0.0, Space Sky 2.0.0 (3D), Calex Cart 0.2.0, TheaBonk 1.0.0 (live build); temporary screenshot art for Cliff Valley, Vanex Defense, Space Sky and Calex Cart; branding, List your game, structured data.",
+        "note": "Owner wrote: \"once done, deploy the updates to live production https://ai-kids-games-fawn.vercel.app/ so my kids can play\". Guard: scripts/check-deployment.ts needs this record for 2.1.0, AIKG_ALLOW_PRODUCTION=2.1.0 in Vercel's Production environment only, and a build from main."
+      }
+    },
     {
       "release": "2.0.0",
       "commit": "783c343",
@@ -103,14 +155,5 @@
         "note": "Owner wrote: \"I approve a production deployment for this release.\" Guard: scripts/check-deployment.ts allows production builds only for this version."
       }
     }
-  ],
-  "commit": "dc4a5f7",
-  "verifiedPreview": {
-    "url": "https://ai-kids-games-me4wlq58h-real-tours.vercel.app",
-    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/2",
-    "hostedSuite": "94 passed, 23 skipped, 0 failed",
-    "temporaryBypass": "created for hosted QA and revoked afterwards"
-  },
-  "localSuite": "Full site suite on a real GPU before release: 94 passed, 23 skipped, 0 failed; every game's own suite passed inside the monorepo.",
-  "ci": "Released by the owner's request before PR #2's CI finished: Light Crossing and Space Sky were still running, and TheaBonk's v1 smoke test missed its game-time target on a slow runner (same build as already live; made robust afterwards)."
+  ]
 }
