@@ -66,3 +66,24 @@ recapture, save carry-over, in-site touch tests). Both ship in site release 2.1.
   At release: bump apps/site to 2.1.0 + record approval, set AIKG_ALLOW_PRODUCTION=2.1.0
   (Production only), switch the production branch to main (PATCH /v9/projects/:id/branch),
   push main, then delete the release branch (remove its protection first).
+- Step 2 (manifests): games/<slug>/game.json for all six (schema docs/game.schema.json, validator
+  scripts/lib/manifest.ts with a trademark list; site.order sets list order). npm run manifests
+  generates apps/site/src/data/games.generated.ts, llms.txt (root + apps/site/public); README table
+  between GAMES markers once the showcase exists. TheaBonk's manifest describes live v1.
+- Step 3 (visible part, owner asked to show it on the preview first): new builds imported
+  (byte-identical to each game's own verified build), Cliff Valley added (Farming category, logo
+  via scripts/art/logos.ts). TEMPORARY ART for cliff-valley, vanex-defense, space-sky,
+  calex-cart (src/data/temporary-art.ts + public/media/<slug>/temp/, OG regenerated from it):
+  replace with consistent covers/loops after the capture work, then delete the entries.
+  STORAGE_AUDIT.md redone (npm run audit-storage): ≈3.4 MB at every cap, ≈1.2 MB heavy play.
+  Branding on home/About/meta; /list-your-game (collects nothing; GitHub form behind ExitGuard).
+- Step 7 done early: templates/game-starter (Star Catch), npm run new-game, docs/CREATE-A-GAME.md,
+  docs/prompts (six original briefs, other titles replaced by genre words), issue forms, PR
+  template, CONTRIBUTING/SECURITY/CODE_OF_CONDUCT/BRAND/LICENSE, AGENTS.md, CITATION.cff.
+- Monorepo verification (all six games' own tests inside the monorepo): TheaBonk v1 80 unit +
+  5 e2e; Light Crossing 222 + 191 (3 workers; 6 workers plus Docker load caused 4 real-time
+  touch flakes); Vanex 281 + 68; Space Sky 230 + 42 (a rerun on a quiet machine; one failure
+  came from my image encoding during its run); Calex 244 + 124 + track validator; Cliff Valley
+  79 + 4 sim + 18. Lesson: never run CPU/GPU-heavy work (sharp AVIF, captures) during e2e runs.
+- Pitfall: commit helper scripts cd into the monorepo, but the session shell's cwd is the old
+  site folder (no remote): always cd ~/Documents/AI-Kids-Games before git push.

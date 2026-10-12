@@ -20,7 +20,9 @@ for (const file of files) {
   if (!TEXT.test(file) || size > 4 * 1024 * 1024) continue;
   const text = readFileSync(full,'utf8');
   if (file !== 'scripts/check-repo.ts' && LOCAL_PATH.test(text)) errors.push(`${file}: contains a local machine path (${text.match(LOCAL_PATH)![0]}…). Use a repo-relative path.`);
-  if (/(^|\/)\.github\/workflows\/[^/]+\.ya?ml$/.test(file) && /self-hosted/i.test(text)) errors.push(`${file}: self-hosted runners must never be used with this public repository.`);
+  // What every job runs on (runs-on: x, [a, b], or a list on the following lines), comments removed.
+  const runsOn = /(^|\/)\.github\/workflows\/[^/]+\.ya?ml$/.test(file) ? [...text.replace(/(^|\s)#.*$/gm,'').matchAll(/runs-on:([^\n]*(?:\n\s+-[^\n]*)*)/g)].map(match => match[1]!) : [];
+  if (runsOn.some(value => /self-hosted/i.test(value))) errors.push(`${file}: self-hosted runners must never be used with this public repository.`);
 }
 if (files.some(file => /^(?:apps|games|templates)\/[^/]+\/\.github\/workflows\//.test(file))) errors.push('Workflows belong in the root .github/workflows; GitHub ignores nested ones.');
 

@@ -1,0 +1,19 @@
+# Weekly dependency updates, grouped so each week brings at most one pull request per ecosystem.
+# Every update goes through CI like any other pull request; game builds are re-imported by hand.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      npm-dependencies:
+        patterns: ['*']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
