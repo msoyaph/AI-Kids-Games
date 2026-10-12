@@ -205,3 +205,14 @@ user's approval before anything is merged to `main`.
 All 10 phases done: scaffold, grid/pathing, towers/economy, elements/combos, waves/bosses, campaign/endless,
 tutorial/book/badges/settings/editor, audio/polish, perf pass, tests/balance/docs. 157 unit tests + 33 E2E pass.
 Perf (`npm run perf`): 60 fps on 4×-throttled phone profile with 300 creatures / ~440 shots.
+
+## In the Ai Kids Games monorepo
+
+This project lives at `games/vanex-defense/` in the public Ai Kids Games monorepo (msoyaph/AI-Kids-Games),
+imported with its full history. Run its scripts from this folder or from the repo root with
+`--workspace games/vanex-defense`. There is one root lockfile (no per-game lockfile). CI is the root
+`.github/workflows/ci.yml`; this game's job runs on GitHub's standard runners in low-quality mode.
+Self-hosted runners are never used with this public repo; GPU runs are in docs/BENCHMARKS.md.
+After changing the game, run `npm run import-game -- vanex-defense` at the root to update the site's copy
+(CI fails if the source changes without a re-import). Release tags: `vanex-defense-v<version>`.
+Don't create a separate GitHub repo for this game.

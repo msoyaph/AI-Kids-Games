@@ -206,3 +206,14 @@ Vite + TypeScript (strict) + Three.js 0.186.1 (WebGL2) + postprocessing 6.39.5, 
 - Port 5173 is used by another project on this machine; use 5391/4391/4392.
 - Don't put two surfaces at the same depth (the hangar wall touched the back panel → z-fighting line).
 - zsh: don't start an `echo` argument with `=` (equals expansion) and quote `--include='*.ts'` globs.
+
+## In the Ai Kids Games monorepo
+
+This project lives at `games/space-sky/` in the public Ai Kids Games monorepo (msoyaph/AI-Kids-Games),
+imported with its full history. Run its scripts from this folder or from the repo root with
+`--workspace games/space-sky`. There is one root lockfile (no per-game lockfile). CI is the root
+`.github/workflows/ci.yml`; this game's job runs on GitHub's standard runners in low-quality mode.
+Self-hosted runners are never used with this public repo; GPU runs are in docs/BENCHMARKS.md.
+After changing the game, run `npm run import-game -- space-sky` at the root to update the site's copy
+(CI fails if the source changes without a re-import). Release tags: `space-sky-v<version>`.
+Don't create a separate GitHub repo for this game.

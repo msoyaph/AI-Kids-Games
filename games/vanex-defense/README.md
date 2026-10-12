@@ -242,7 +242,7 @@ Identity in `src/data/enemies.ts`, numbers in `TUNING.enemies` (health, speed, a
 `npm run perf` (`?stress=300`: every tower type, 300 constructs, ~440 projectiles, ~1,400 particles, plus the hero
 special and meteor / chrono abilities firing) on the production build with CPU throttling; results in
 `perf-results/perf.json`. Measured 2026-10-11 on an M3 Pro **while other projects kept the machine busy**
-(load average 30–45), so treat these as lower bounds and re-run on an idle machine (or the self-hosted Mac CI job):
+(load average 30–45), so treat these as lower bounds and re-run on an idle machine ([docs/BENCHMARKS.md](../../docs/BENCHMARKS.md) at the repo root):
 
 | Profile | v2 FPS | p95 frame | sim / draw per frame | v1 at the same time |
 |---|---|---|---|---|
@@ -260,9 +260,9 @@ Test performance**.
 
 ## Continuous integration
 
-GitHub Actions: `ci.yml` checks every push and pull request on Ubuntu (typecheck, unit tests + balance sims, build,
-dist checks, all Playwright tests); `selfhosted-mac.yml` runs the same plus the real-GPU benchmark on your own Mac,
-by hand, for private repositories only. Setup, including putting the project on GitHub: [docs/CI.md](docs/CI.md).
+The Ai Kids Games monorepo's root workflow checks every pull request and push on Ubuntu (typecheck, unit tests +
+balance sims, build, dist checks, all Playwright tests). The real-GPU benchmark runs by hand on your own computer.
+Details: [docs/CI.md](docs/CI.md).
 
 ## Testing on real devices
 
