@@ -97,3 +97,14 @@ hops shockwave rings and un-sticks itself; it never slides, so humans can do bet
 8. [x] Performance pass (1000-enemy stress test)
 9. [x] Unit tests + Playwright smoke test
 10. [x] Balance pass with simulated runs
+
+## In the Ai Kids Games monorepo
+
+This project lives at `games/theabonk/` in the public Ai Kids Games monorepo (msoyaph/AI-Kids-Games),
+imported with its full history. Run its scripts from this folder or from the repo root with
+`--workspace games/theabonk`. There is one root lockfile (no per-game lockfile). CI is the root
+`.github/workflows/ci.yml`; this game's job runs on GitHub's standard runners in low-quality mode.
+Self-hosted runners are never used with this public repo; GPU runs are in docs/BENCHMARKS.md.
+After changing the game, run `npm run import-game -- theabonk` at the root to update the site's copy
+(CI fails if the source changes without a re-import). Release tags: `theabonk-v<version>`.
+Don't create a separate GitHub repo for this game.

@@ -33,6 +33,24 @@ Commands (root): `npm run dev | build | test | test:e2e` (site), `npm run import
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
 
 Owner decisions: TheaBonk and Light Crossing are pulled in last (their own sessions were
-active); commit emails stay as they are.
+active); commit emails stay as they are. Two later owner tasks are folded into this release:
+"Release TheaBonk v2" (merge theabonk-upgrade if its full verification passes, tag v2.0.0,
+touch listing, recapture, save carry-over, in-site touch tests) and "Release Light Crossing
+v2.0.0" (import tag v2.0.0, SHA-256 7730e932…b732c8, listing from docs/registry-entry.json,
+recapture, save carry-over, in-site touch tests). Both ship in site release 2.1.0.
 
-- Step 0: COMPLETE (see below for per-game merges and tags).
+- Step 0 (merges and tags in each game's own project, after its full verification):
+  Vanex Defense v2.0.0 (281 unit, 68 e2e), Space Sky v2.0.0 (230 unit, 42 e2e), Calex Cart
+  v0.2.0 (244 unit, 124 e2e), Cliff Valley v1.0.0 (79 unit, 4 sim, 18 e2e), Light Crossing
+  v2.0.0 (already merged and tagged by its session; rebuild matches the reported hash).
+  TheaBonk: theabonk-upgrade had 2 of 61 e2e failing on chromium-phone (5-minute touch
+  playthrough: the touch bot is defeated at 3:30–4:00 on Relaxed; quality governor: Auto stays
+  on Tablet at 24× CPU throttle), reproducible in isolation; NOT merged, owner told (2026-10-11).
+  The monorepo has TheaBonk at its live version (main 9f10c36, rebuilds byte-for-byte to the
+  live build); when its project passes, bring the upgrade in with
+  `git subtree pull --prefix=games/theabonk <TheaBonk project> main`. Light Crossing's live v1
+  build came from b9bd99e (also byte-for-byte).
+- Step 1: monorepo at ~/Documents/AI-Kids-Games, subtree imports with full history (monorepo
+  tags <slug>-v<version>), workspaces + one lockfile, site on Vite 8, import-game,
+  check-builds, check-repo, clean-up (nested/self-hosted workflows, launch configs, lockfiles,
+  .openai, local paths). Builds in the site are still the live ones until step 3 re-imports.

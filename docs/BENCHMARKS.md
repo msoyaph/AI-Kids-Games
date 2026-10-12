@@ -23,10 +23,8 @@ Each game's Playwright config already uses the Metal GPU on macOS (ANGLE flags) 
 
 ```bash
 npm run build --workspace games/theabonk
-npm run check-size --workspace games/theabonk
-npm exec --workspace games/theabonk -- playwright test          # every project, full quality
-npm run audio-report --workspace games/theabonk         # loudness and peaks
-npm run bench-browser --workspace games/theabonk -- 30  # in-browser benchmark matrix
+npm exec --workspace games/theabonk -- playwright test   # full quality on the Metal GPU
+npm run bench --workspace games/theabonk                  # headless simulation benchmark
 ```
 
 ## Light Crossing
