@@ -3,31 +3,31 @@
   "games": [
     {
       "slug": "theabonk",
-      "source": "/Users/cliffsumalpong/Documents/TheaBonk/dist/index.html",
+      "source": "games/theabonk/dist/index.html",
       "bytes": 772361,
       "sha256": "8bd0050a31bc9c68c5dc6e764a57563dbfa2230668dd5fcf67da772a7ece7cbe"
     },
     {
       "slug": "light-crossing",
-      "source": "/Users/cliffsumalpong/Light Crossing/dist/index.html",
+      "source": "games/light-crossing/dist/index.html",
       "bytes": 1044486,
       "sha256": "f48c07ab334b85ae5bca3cf50177a2f84735327fd77036d745fc770e204746c1"
     },
     {
       "slug": "vanex-defense",
-      "source": "/Users/cliffsumalpong/Documents/Vanex Defense/dist/index.html",
+      "source": "games/vanex-defense/dist/index.html",
       "bytes": 826833,
       "sha256": "20b1d4163a0832e750e417507c8413ce78d87afcbe46a1b734f617205a97ebaf"
     },
     {
       "slug": "space-sky",
-      "source": "/Users/cliffsumalpong/Documents/Space Sky/dist/index.html",
+      "source": "games/space-sky/dist/index.html",
       "bytes": 1092239,
       "sha256": "36d1de90ad549e462f84cac527234ef380a8045fcee248e399cbf74c23b9b7b8"
     },
     {
       "slug": "calex-cart",
-      "source": "/Users/cliffsumalpong/Documents/Calex Kart/dist/index.html",
+      "source": "games/calex-cart/dist/index.html",
       "bytes": 1036991,
       "sha256": "b04cb18693bdf99d52f373ca9c4d2557c0c8ef0b0434d978612cd8aa9f4fb8f7"
     }

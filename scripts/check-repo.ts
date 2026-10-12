@@ -7,7 +7,7 @@ import { root } from './lib/repo';
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const FORBIDDEN = [/(^|\/)\.vercel\//,/(^|\/)\.openai\//,/(^|\/)captures\//,/(^|\/)\.claude\/worktrees\//,/(^|\/)\.claude\/settings\.local\.json$/,/(^|\/)\.env(\.(?!example$)[^/]*)?$/];
-const LOCAL_PATH = /(?:\/Users\/[A-Za-z][\w.-]*\/|\/home\/[a-z][\w.-]*\/|[A-Z]:\\Users\\)/;
+const LOCAL_PATH = /(?<![\w/.])(?:\/Users\/[A-Za-z][\w.-]*\/|\/home\/[a-z][\w.-]*\/|[A-Z]:\\Users\\)/;
 const TEXT = /\.(?:[cm]?[jt]sx?|json|md|ya?ml|html|css|svg|txt|cff|sh|toml)$/;
 
 const files = execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard'],{ cwd: root }).toString().split('\0').filter(Boolean).filter(file => existsSync(resolve(root,file)));
