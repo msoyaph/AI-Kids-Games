@@ -9,6 +9,7 @@ import Lightbox from '../components/Lightbox';
 import Preview, { Still } from '../components/Preview';
 import { Icon, type IconName } from '../components/Icon';
 import NotFound from './NotFound';
+import { computerOnly } from '../lib/devices';
 
 const deviceIcon: Record<Device,IconName> = { Computer: 'computer',Tablet: 'tablet',Phone: 'phone' };
 const controlIcon: Record<Control,IconName> = { Keyboard: 'keyboard',Mouse: 'mouse',Gamepad: 'gamepad',Touch: 'touch' };
@@ -37,7 +38,7 @@ export default function Details() {
     <dl className="facts">
       <div className="fact"><dt><Icon name="age" />Age</dt><dd>{game.ageGuidance}</dd></div>
       <div className="fact"><dt><Icon name="clock" />Play time</dt><dd>{game.estimatedPlayTime}</dd></div>
-      <div className="fact"><dt><Icon name={deviceIcon[game.supportedDevices[0]]} />Works on</dt><dd>{list(devices)}{hold}{game.requirements.length > 0 && <span className="fact-note">Needs {list(game.requirements)}</span>}</dd></div>
+      <div className="fact"><dt><Icon name={deviceIcon[game.supportedDevices[0]]} />Works on</dt><dd>{list(devices)}{hold}{computerOnly(game) && <span className="fact-note">Needs a keyboard and mouse or a game controller. Touch controls are coming soon.</span>}{game.requirements.length > 0 && <span className="fact-note">Needs {list(game.requirements)}</span>}</dd></div>
       <div className="fact"><dt><Icon name="gamepad" />Controls</dt><dd className="fact-icons">{game.controls.types.map(type => <span key={type} title={type} role="img" aria-label={type}><Icon name={controlIcon[type]} /></span>)}</dd></div>
     </dl>
     {media.shots.length > 0 && <section className="section" aria-labelledby="screenshots"><div className="section-head"><h2 id="screenshots" className="title">Screenshots</h2></div>

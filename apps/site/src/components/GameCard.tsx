@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import type { Game } from '../data/games';
 import { usePreferences } from '../lib/preferences';
+import { computerOnly } from '../lib/devices';
 import { Icon } from './Icon';
 import Preview from './Preview';
 
@@ -25,7 +26,7 @@ export default function GameCard({ game,eager = false,span }: { game: Game; eage
         <Preview game={game} still="cover" active={active} eager={eager} />
         <span className="card-badge">{game.ageGuidance}</span>
       </div>
-      <div className="card-text"><h3 className="card-title">{game.title}</h3><p className="card-meta">{game.status === 'Coming soon' ? 'Coming soon' : game.categories[0]}</p></div>
+      <div className="card-text"><h3 className="card-title">{game.title}</h3><p className="card-meta">{game.status === 'Coming soon' ? 'Coming soon' : game.categories[0]}{computerOnly(game) && <span className="card-device"><Icon name="computer" size={16} />Computer game</span>}</p></div>
     </Link>
     <FavoriteButton game={game} />
   </article>;
