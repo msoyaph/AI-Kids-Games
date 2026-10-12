@@ -8,7 +8,7 @@
 import type { Quality } from '../render/Renderer';
 
 /** Shown on result cards (bump with releases). */
-export const GAME_VERSION = '1.1.0';
+export { GAME_VERSION } from '../config/version';
 
 export const BENCH = {
   seconds: 60,
