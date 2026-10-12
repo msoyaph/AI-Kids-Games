@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#140d3a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="description" content="Space Sky: fly your own rocket, explore planets and learn real space facts!" />
+    <title>Space Sky</title>
+    <style>
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #140d3a; touch-action: none; overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+      #boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vmin;
+        background: radial-gradient(ellipse at 50% 40%, #3b2a8f 0%, #1d1456 55%, #120b33 100%); color: #fff; z-index: 50;
+        font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Nunito", "Varela Round", "Trebuchet MS", system-ui, sans-serif; transition: opacity .5s; }
+      #boot.done { opacity: 0; pointer-events: none; }
+      #boot .stars { position: absolute; inset: 0; overflow: hidden; }
+      #boot .stars i { position: absolute; width: 1vmin; height: 1vmin; border-radius: 50%; background: #fff; animation: tw 1.6s ease-in-out infinite alternate; }
+      @keyframes tw { from { opacity: .2; transform: scale(.6); } to { opacity: 1; transform: scale(1.2); } }
+      #boot .rocket { width: 22vmin; height: 30vmin; animation: bob 1.2s ease-in-out infinite alternate; position: relative; }
+      @keyframes bob { from { transform: translateY(-1.5vmin) rotate(-4deg); } to { transform: translateY(1.5vmin) rotate(4deg); } }
+      #boot .flame { transform-origin: 50% 0; animation: fl .12s linear infinite alternate; }
+      @keyframes fl { from { transform: scaleY(.8) scaleX(.9); } to { transform: scaleY(1.15) scaleX(1.05); } }
+      #boot h1 { margin: 0; font-size: 8vmin; letter-spacing: .05em; color: #ffe066; text-shadow: 0 .6vmin 0 #e8590c, 0 1.2vmin 2vmin rgba(0,0,0,.4); }
+      #boot .bar { width: 50vmin; height: 3.5vmin; border-radius: 2vmin; background: #0d0830; border: .6vmin solid #fff; overflow: hidden; }
+      #boot .fill { height: 100%; width: 5%; border-radius: 2vmin; background: linear-gradient(90deg, #4dd4ff, #8cff66); transition: width .2s; }
+      #boot .msg { font-size: 3.6vmin; opacity: .9; }
+      #nogl { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5vmin; padding: 6vmin; text-align: center;
+        background: radial-gradient(ellipse at 50% 40%, #3b2a8f 0%, #1d1456 55%, #120b33 100%); color: #fff; z-index: 60;
+        font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Nunito", "Varela Round", "Trebuchet MS", system-ui, sans-serif; }
+      #nogl svg { width: 26vmin; height: 26vmin; }
+      #nogl h1 { margin: 0; font-size: 6.5vmin; color: #ffe066; text-shadow: 0 .5vmin 0 #e8590c; }
+      #nogl p { margin: 0; max-width: 34em; font-size: 3.6vmin; line-height: 1.35; opacity: .92; }
+      #nogl button { font: inherit; font-weight: 800; font-size: 3.6vmin; padding: 1.6vmin 4vmin; border-radius: 3vmin; border: .7vmin solid #20124d; background: #ffe066; color: #20124d; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div id="boot" role="status" aria-live="polite">
+      <div class="stars">
+        <i style="left:8%;top:12%"></i><i style="left:22%;top:70%;animation-delay:.4s"></i><i style="left:35%;top:25%;animation-delay:.9s"></i>
+        <i style="left:62%;top:15%;animation-delay:.2s"></i><i style="left:78%;top:60%;animation-delay:.7s"></i><i style="left:90%;top:30%;animation-delay:1.1s"></i>
+        <i style="left:15%;top:45%;animation-delay:1.3s"></i><i style="left:50%;top:85%;animation-delay:.5s"></i><i style="left:85%;top:85%;animation-delay:.1s"></i>
+      </div>
+      <svg class="rocket" viewBox="0 0 100 140" aria-hidden="true">
+        <g class="flame"><path d="M38 104 Q50 140 62 104 Z" fill="#ffb43b"/><path d="M43 104 Q50 126 57 104 Z" fill="#fff36b"/></g>
+        <path d="M30 70 L12 100 L32 96 Z" fill="#ff5d73" stroke="#20124d" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M70 70 L88 100 L68 96 Z" fill="#ff5d73" stroke="#20124d" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M50 6 C72 26 74 70 68 104 L32 104 C26 70 28 26 50 6 Z" fill="#f4f7ff" stroke="#20124d" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M50 6 C60 15 65 26 67 36 L33 36 C35 26 40 15 50 6 Z" fill="#ff5d73" stroke="#20124d" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="50" cy="60" r="11" fill="#4dd4ff" stroke="#20124d" stroke-width="4"/>
+        <circle cx="46" cy="56" r="3.5" fill="#fff"/>
+      </svg>
+      <h1>Space Sky</h1>
+      <div class="bar"><div class="fill" id="boot-fill"></div></div>
+      <div class="msg" id="boot-msg">Fueling up the rocket...</div>
+    </div>
+    <div id="game"></div>
+    <script>
+      // Space Sky needs WebGL 2. Check before the game loads and show a friendly screen if it is missing.
+      (function () {
+        var ok = false;
+        try {
+          var c = document.createElement('canvas');
+          var gl = window.WebGL2RenderingContext ? c.getContext('webgl2') : null;
+          ok = !!gl;
+          var lose = gl && gl.getExtension('WEBGL_lose_context');
+          if (lose) lose.loseContext();
+        } catch (e) { ok = false; }
+        if (ok) return;
+        window.__noWebGL2 = true;
+        var boot = document.getElementById('boot');
+        if (boot) boot.remove();
+        var box = document.createElement('div');
+        box.id = 'nogl';
+        box.setAttribute('role', 'alert');
+        box.setAttribute('data-testid', 'no-webgl');
+        box.innerHTML =
+          '<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="64" r="44" fill="#2b1f73"/>' +
+          '<g transform="rotate(-28 60 60)"><path d="M60 14 C76 30 78 64 72 88 L48 88 C42 64 44 30 60 14 Z" fill="#f4f7ff" stroke="#20124d" stroke-width="4" stroke-linejoin="round"/>' +
+          '<path d="M60 14 C68 22 72 30 73 38 L47 38 C48 30 52 22 60 14 Z" fill="#ff5d73" stroke="#20124d" stroke-width="4" stroke-linejoin="round"/>' +
+          '<path d="M46 68 L32 92 L48 88 Z M74 68 L88 92 L72 88 Z" fill="#ff5d73" stroke="#20124d" stroke-width="4" stroke-linejoin="round"/>' +
+          '<circle cx="60" cy="56" r="8" fill="#4dd4ff" stroke="#20124d" stroke-width="4"/>' +
+          '<path d="M55 55 q2.5 2.5 5 0 M60 55 q2.5 2.5 5 0" stroke="#20124d" stroke-width="2" fill="none"/></g>' +
+          '<text x="88" y="30" font-size="16" fill="#ffe066" font-weight="800">z</text><text x="98" y="18" font-size="12" fill="#ffe066" font-weight="800">z</text></svg>' +
+          '<h1>This device can\u2019t run Space Sky</h1>' +
+          '<p>Space Sky needs 3D graphics (WebGL 2), and this browser can\u2019t do that right now.</p>' +
+          '<p>Try a different browser, or ask a grown-up to update this device. Then come fly with us!</p>' +
+          '<button type="button" onclick="location.reload()">Try again</button>';
+        document.body.appendChild(box);
+      })();
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
