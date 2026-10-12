@@ -16,7 +16,7 @@ const list = (items: string[]) => items.length < 2 ? items.join('') : `${items.s
 
 export default function Details() {
   const { slug } = useParams(); const game = findGame(slug);
-  usePageMeta(game?.title || 'Game not found',game?.tagline || 'This game could not be found.',game ? mediaFor(game).og : undefined);
+  usePageMeta(game ? `${game.title}: a free ${game.categories[0]!.toLowerCase()} game for kids` : 'Game not found',game ? `${game.description} ${game.ageGuidance}. Free, no ads or sign-ups.` : 'This game could not be found.',game ? mediaFor(game).og : undefined);
   const [shot,setShot] = useState<number | null>(null);
   if (!game) return <NotFound />;
   const media = mediaFor(game);

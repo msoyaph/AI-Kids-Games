@@ -12,7 +12,7 @@ import { AgeSelect, CategoryChips, useCatalogFilters } from '../components/Filte
 export const CATEGORY_ROWS_FROM = 12;
 
 export default function Home() {
-  usePageMeta("The games kids love. None of the stuff parents don't.",'Free, ad-free browser games for kids: kart racing, farming, tower defense, space adventures and more. No subscriptions, no sign-ups, no tracking.');
+  usePageMeta("The games kids love. None of the stuff parents don’t.",'Free, ad-free browser games for kids: kart racing, farming, tower defense, space adventures and more. No subscriptions, no sign-ups, no tracking.');
   const { recent } = usePreferences();
   const { category,playerAge,results,set,reset } = useCatalogFilters();
   const featured = games.filter(game => game.featured);
