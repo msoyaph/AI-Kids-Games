@@ -1,4 +1,4 @@
-# Shared-origin storage audit (release 2.1.0, 2026-10-11)
+# Shared-origin storage audit (release 2.2.0, 2026-10-12)
 
 Result: **CLEAN.** All six games and the website keep their data under their own keys. No build
 calls `localStorage.clear()`, uses sessionStorage, IndexedDB, cookies or Cache Storage, or reads,
@@ -14,7 +14,7 @@ read by hand.
 | Owner | Persistent keys | Only in special modes | Availability probe (written and removed at once) |
 |---|---|---|---|
 | Ai Kids Games (site) | `aikg:favorites`, `aikg:recent`, `aikg:tips` (one-time play-page tips answered, ≤ 40 bytes) | none | none |
-| TheaBonk 1.0.0 | `theabonk.save` | none | `__theabonk_probe__` |
+| TheaBonk 2.0.0 | `theabonk.save`, `theabonk.save.bak` (written once when a 1.0 save is upgraded) | `theabonk.playtest` (`?playtest=1`), `theabonk.tuning` (`?tune=1`) | `__theabonk_probe__` |
 | Light Crossing 2.0.0 | `lightcrossing.slot0`–`slot2`, `lightcrossing.settings` | `lightcrossing.playtest.slot0`–`slot2` (`?playtest=1`) | `lightcrossing.__probe` |
 | Vanex Defense 2.0.0 | `vanex-defense-save`, `vanex-defense-save-backup` (written once when an older save is upgraded) | `vanex-defense-playtest` (`?playtest=1`) | `__vanex_probe__` |
 | Space Sky 2.0.0 | `spacesky.slot.0`–`slot.2`, `spacesky.settings` | none | `__spacesky_probe__` |
@@ -36,8 +36,13 @@ game.
   Screen card), merges the legacy `aikidsgames.favorites` / `aikidsgames.recent` lists once and
   removes them only after a successful migration. "Clear saved lists" removes only the site's own
   lists (the tips stay answered).
-- **TheaBonk:** `src/core/storage.ts` wraps a probed `Storage`; `src/meta/save.ts` uses the single
-  `theabonk.save` key. No enumeration or removal of other keys.
+- **TheaBonk 2.0.0:** `src/core/storage.ts` wraps a probed `Storage` (in-memory fallback); every key
+  starts with `theabonk.`: `theabonk.save` (1.5 KB new, 6.6 KB fully maxed, settings and touch
+  layout included), a one-time `theabonk.save.bak` copy of a 1.0 save before its first v2 write,
+  and `theabonk.playtest` (≤ 60 KB) / `theabonk.tuning` (≤ 2 KB) only in their test modes, which
+  the site never turns on. The build's other `theabonk-…` strings are export file names, format
+  tags and a hash seed, not keys. No enumeration or removal of other keys; its own storage test
+  keeps everything under 100 KB.
 - **Light Crossing:** `src/sim/save.ts` prefixes every access with `lightcrossing.`. Its `keys()`
   enumerates storage but keeps only keys starting with that prefix (used to measure its own
   usage); slot deletion removes its exact key.
@@ -58,18 +63,18 @@ allow about 5 MB (5,242,880 characters) per origin.
 
 | Owner | Every key at its cap (incl. special modes) | Heavy normal play (all three slots used) | Basis |
 |---|---|---|---|
-| Site | < 1 KB | < 1 KB | two short lists of game slugs |
-| TheaBonk 1.0.0 | 7 KB | 7 KB | v2's fully maxed save is 6.6 KB; v1 stores less |
+| Site | < 1 KB | < 1 KB | two short lists of game slugs and the answered tips |
+| TheaBonk 2.0.0 | 75 KB | 13 KB | fully maxed save 6.6 KB and its one-time 1.0 backup (both measured by the game's storage test), playtest ≤ 60 KB, tuning ≤ 2 KB |
 | Light Crossing 2.0.0 | 1,093 KB | 70 KB | 300 KB cap per slot (enforced), 64 KB per playtest slot; a finished story is about 23 KB per slot |
 | Vanex Defense 2.0.0 | 160 KB | 10 KB | save < 50 KB worst case (tested), one-time backup of an older save, playtest ≤ 60 KB |
 | Space Sky 2.0.0 | 92 KB | 30 KB | real chapter-3 save 2.6 KB; ≤ 30 KB per slot for a finished game |
 | Calex Cart 0.2.0 | 1,106 KB | 1,000 KB | the game's own worst case, 1.08 MB: a ghost on all 20 tracks in all 3 slots, a full playtest log and settings |
 | Cliff Valley 1.0.0 | 1,051 KB | 100 KB | 300 KB budget per slot, playtest ≤ 150 KB; a year-one finale save measured 32 KB |
-| **Total** | **≈ 3.4 MB** | **≈ 1.2 MB** | |
+| **Total** | **≈ 3.5 MB** | **≈ 1.2 MB** | |
 
 Even with every key of every game at its cap (which no real player reaches: Light Crossing's and
 Cliff Valley's slot caps are about 10 times their largest real saves), the origin stays about
-1.6 MB under the 5 MB limit. Heavy normal play uses about a quarter of it, and most of that is
+1.5 MB under the 5 MB limit. Heavy normal play uses about a quarter of it, and most of that is
 Calex Cart's optional time-trial ghosts. If a browser ever runs out of room, every game keeps the
 previous save intact and tells the player (Calex Cart first frees its own playtest log).
 
