@@ -64,11 +64,12 @@ test('Light Crossing touch joystick moves the islander inside the site',async ({
   const f = await startGame(page,'light-crossing',true);
   const position = () => f.evaluate(() => { const p = (window as any).__lc.game.state.player; return { x:p.x,z:p.z }; });
   const before = await position();
-  const zone = await f.locator('.tc-pad').boundingBox();
+  // Light Crossing 2.0: drag anywhere on the play area and a stick appears under the finger.
+  const zone = await f.locator('.tc-zone').boundingBox();
   const cdp = await context.newCDPSession(page);
-  const x = zone!.x+zone!.width*.5,y = zone!.y+zone!.height*.6;
+  const x = zone!.x+zone!.width*.35,y = zone!.y+zone!.height*.6;
   await cdp.send('Input.dispatchTouchEvent',{ type:'touchStart',touchPoints:[{ x,y,id:2 }] });
-  await cdp.send('Input.dispatchTouchEvent',{ type:'touchMove',touchPoints:[{ x:x+65,y:y-25,id:2 }] });
+  for (let step = 1; step <= 6; step++) await cdp.send('Input.dispatchTouchEvent',{ type:'touchMove',touchPoints:[{ x:x+15*step,y:y-6*step,id:2 }] });
   await page.waitForTimeout(1200);
   await cdp.send('Input.dispatchTouchEvent',{ type:'touchEnd',touchPoints:[] });
   const after = await position(); expect(Math.hypot(after.x-before.x,after.z-before.z)).toBeGreaterThan(.1);

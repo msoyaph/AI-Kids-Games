@@ -1,6 +1,6 @@
 import { expect,type Frame,type Locator,type Page } from '@playwright/test';
 export const launchGames = [
-  { slug: 'cliff-valley',title: 'Cliff Valley',key: 'cliffvalley.slot.1',prefix: /^cliffvalley\./ },
+  { slug: 'cliff-valley',title: 'Cliff Valley',key: 'cliffvalley.slot.1',prefix: /^cliffvalley\./ }, // gitleaks:allow (a storage key name, not a secret)
   { slug: 'light-crossing',title: 'Light Crossing',key: 'lightcrossing.slot0',prefix: /^lightcrossing\./ },
   { slug: 'theabonk',title: 'TheaBonk',key: 'theabonk.save',prefix: /^theabonk\.save$|^__theabonk_probe__$/ },
   { slug: 'vanex-defense',title: 'Vanex Defense',key: 'vanex-defense-save',prefix: /^vanex-defense-|^__vanex_probe__$/ },
@@ -143,22 +143,31 @@ export async function startGame(page: Page,slug: string,touch: boolean): Promise
     await press(f.locator('.ui-root [data-nav]').filter({ hasText:'Seashell Boardwalk' }).first(),touch);
     // the first race on a device explains its controls first
     await expect(f.locator('.controls-card')).toBeVisible();
-    await press(f.getByRole('button',{ name:/Got it/ }),touch);
+    await press(f.locator('.ui-root [data-nav]').filter({ hasText:/Got it/ }).first(),touch);
     await expect(f.locator('.hud')).toBeVisible();
     await f.waitForFunction(() => (window as any).__calex.app.session?.world.phase === 'race');
     if (touch) {
       await expect(f.locator('.touch-controls')).toBeVisible();
+      // Calex Cart 0.2's glass controller: each control is [data-ctl=<id>]; real touches through CDP.
       const cdp = await page.context().newCDPSession(page);
-      for (const [selector,field] of [['.tc-right','steer'],['.tc-drift','drift'],['.tc-brake','brake'],['.tc-item','item']]) {
-        const box = await f.locator(selector).boundingBox();
-        await cdp.send('Input.dispatchTouchEvent',{ type:'touchStart',touchPoints:[{ x:box!.x+box!.width/2,y:box!.y+box!.height/2,id:4 }] });
+      const centre = async (id: string) => { const box = await f.locator(`.touch-controls [data-ctl="${id}"]`).boundingBox(); return { x:box!.x+box!.width/2,y:box!.y+box!.height/2 }; };
+      for (const field of ['drift','brake','item']) {
+        await cdp.send('Input.dispatchTouchEvent',{ type:'touchStart',touchPoints:[{ ...await centre(field),id:4 }] });
         await expect.poll(() => f.evaluate(field => !!(window as any).__calex.app.input.touch.state[field],field)).toBe(true);
         await cdp.send('Input.dispatchTouchEvent',{ type:'touchEnd',touchPoints:[] });
       }
+      // With the beginner assist the kart drives itself and there is no GO button; otherwise hold GO.
+      const go = f.locator('.touch-controls [data-ctl="accel"]');
+      const holding = await go.isVisible();
+      if (holding) await cdp.send('Input.dispatchTouchEvent',{ type:'touchStart',touchPoints:[{ ...await centre('accel'),id:5 }] });
+      await expect.poll(() => f.evaluate(() => (window as any).__calex.app.session.world.karts[0].progress),{ timeout:20000 }).toBeGreaterThan(2);
+      if (holding) await cdp.send('Input.dispatchTouchEvent',{ type:'touchEnd',touchPoints:[] });
       await cdp.detach();
     }
-    else await f.locator('canvas').first().press('ArrowUp',{ delay: 1200 });
-    await expect.poll(() => f.evaluate(() => (window as any).__calex.app.session.world.karts[0].progress),{ timeout:15000 }).toBeGreaterThan(2);
+    else {
+      await f.locator('canvas').first().press('ArrowUp',{ delay: 1200 });
+      await expect.poll(() => f.evaluate(() => (window as any).__calex.app.session.world.karts[0].progress),{ timeout:15000 }).toBeGreaterThan(2);
+    }
   }
   await expect(f.locator('canvas').first()).toBeVisible();
   await checkAudio(f);

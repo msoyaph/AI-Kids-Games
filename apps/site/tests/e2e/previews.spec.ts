@@ -15,8 +15,8 @@ test('previews never play or download under reduced motion',async ({ page },info
     expect(await page.locator('video source').count(),path).toBe(0);
   }
   expect(requests).toEqual([]);
-  // The still is shown instead: poster for the hero, cover art for cards.
-  await page.goto('/'); await expect(page.locator('.hero-media picture img')).toBeVisible();
+  // The still is shown instead: the hero's poster (or cover, for a game with temporary art), cover art for cards.
+  await page.goto('/'); await expect(page.locator('.hero-media img').first()).toBeVisible();
   await expect(page.locator('.card .cover img').first()).toBeVisible();
 });
 
@@ -49,11 +49,18 @@ test('only one preview plays at a time on touch devices',async ({ page },info) =
   await page.goto('/');
   // the first featured game may show a still (temporary art), so at most one plays at the top
   await expect.poll(async () => (await playing(page)).length <= 1,{ timeout: 10000 }).toBe(true);
-  const seen = new Set<string>();
+  // Sweep the page: never more than one preview at a time.
   const height = await page.evaluate(() => document.body.scrollHeight);
   for (let y = 0; y < height; y += 180) {
-    await page.evaluate(top => scrollTo(0,top),y); await page.waitForTimeout(450);
-    const now = await playing(page); expect(now.length,`at scroll ${y}`).toBeLessThanOrEqual(1); now.forEach(slug => seen.add(slug!));
+    await page.evaluate(top => scrollTo(0,top),y); await page.waitForTimeout(300);
+    expect((await playing(page)).length,`at scroll ${y}`).toBeLessThanOrEqual(1);
   }
-  expect(seen.size).toBeGreaterThan(1);
+  // Each card with a captured loop plays when it is the one in the middle of the screen.
+  const videos = page.locator('.card video[data-game]');
+  const slugs = await videos.evaluateAll(list => list.map(video => (video as HTMLVideoElement).dataset.game!));
+  expect(slugs.length).toBeGreaterThan(1);
+  for (const slug of slugs) {
+    await page.locator(`.card video[data-game="${slug}"]`).evaluate(video => video.closest('.preview')!.scrollIntoView({ block: 'center' }));
+    await expect.poll(() => playing(page),{ timeout: 15000 }).toEqual([slug]);
+  }
 });

@@ -7,7 +7,7 @@ for (const game of launchGames) test(`${game.slug}: home → details → play, 2
   await card.click();
   await expect(page.getByRole('heading',{ level:1,name:game.title })).toBeVisible();
   await expect(page.getByRole('link',{ name:'Play',exact:true })).toHaveAttribute('href',`/play/${game.slug}`);
-  if (game.slug === 'calex-cart') await expect(page.getByText(/Split-screen needs a keyboard or gamepads/)).toBeVisible();
+  if (game.slug === 'calex-cart') await expect(page.locator('p',{ hasText: /Split-screen needs a keyboard or gamepads/ })).toBeVisible();
   const f = await startGame(page,game.slug,!!info.project.use.hasTouch);
   await expect(page.locator('iframe')).toHaveAttribute('sandbox','allow-scripts allow-same-origin allow-pointer-lock');
   await expect(page.locator('iframe')).toHaveAttribute('allow','fullscreen; gamepad');
