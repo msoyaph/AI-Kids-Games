@@ -54,3 +54,15 @@ recapture, save carry-over, in-site touch tests). Both ship in site release 2.1.
   tags <slug>-v<version>), workspaces + one lockfile, site on Vite 8, import-game,
   check-builds, check-repo, clean-up (nested/self-hosted workflows, launch configs, lockfiles,
   .openai, local paths). Builds in the site are still the live ones until step 3 re-imports.
+- Pushed 2026-10-11 (owner OK before the remaining test runs finished): main + 5 game tags to
+  github.com/msoyaph/AI-Kids-Games (public). Description, homepage (current live address until
+  aikids.games), 20 topics, Discussions, Dependabot alerts, secret scanning + push protection,
+  private vulnerability reporting.
+- Vercel (project ai-kids-games, team real-tours) is linked to the repo with Root Directory
+  apps/site. Until release 2.1.0: production branch = `release`, a locked placeholder branch at
+  the root commit (only .gitignore), so every push to main is a Preview. Second key: the guard
+  needs AIKG_ALLOW_PRODUCTION = the version, set only in Vercel's Production environment, plus
+  the DEPLOYMENT.json approval and branch main. Fork PRs need approval (gitForkProtection).
+  At release: bump apps/site to 2.1.0 + record approval, set AIKG_ALLOW_PRODUCTION=2.1.0
+  (Production only), switch the production branch to main (PATCH /v9/projects/:id/branch),
+  push main, then delete the release branch (remove its protection first).
