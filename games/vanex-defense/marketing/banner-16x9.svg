@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" role="img" aria-labelledby="t d">
+  <title id="t">Vanex Defense</title>
+  <desc id="d">A glowing crystal citadel on a dark tech grid. Elemental defense towers fire energy beams at angular crystal constructs marching along a route.</desc>
+  <defs>
+    <radialGradient id="sky" cx="0.7" cy="0.35" r="0.9">
+      <stop offset="0" stop-color="#1d2d55"/>
+      <stop offset="0.55" stop-color="#0f1730"/>
+      <stop offset="1" stop-color="#070b16"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#3ee6ff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#3ee6ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="spire" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8fdff"/>
+      <stop offset="0.45" stop-color="#7ff3ff"/>
+      <stop offset="1" stop-color="#1aa6c8"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5a6b8f"/>
+      <stop offset="1" stop-color="#232d48"/>
+    </linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1a2440"/>
+      <stop offset="1" stop-color="#25335a"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff6c8"/>
+      <stop offset="1" stop-color="#ffc845" stop-opacity="0.2"/>
+    </linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#2a3a5c" stroke-width="1" opacity="0.55"/>
+    </pattern>
+    <g id="tower">
+      <path d="M-34 18 L-26 -6 L26 -6 L34 18 Z" fill="url(#metal)" stroke="#0a0f1d" stroke-width="3"/>
+      <circle r="22" cy="-14" fill="#141b2e" stroke="#0a0f1d" stroke-width="3"/>
+    </g>
+    <g id="beetle">
+      <path d="M-26 8 L-16 -14 L10 -18 L28 -2 L20 14 L-14 16 Z" fill="#2c6f7a" stroke="#081018" stroke-width="3"/>
+      <path d="M-16 -14 L10 -18 L4 2 Z" fill="#7ff3d8" opacity="0.85"/>
+      <circle cx="18" cy="-4" r="4" fill="#ff4d6a"/>
+    </g>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#sky)"/>
+  <rect width="1280" height="720" fill="url(#grid)"/>
+
+  <!-- route -->
+  <path d="M-20 560 L300 560 L300 440 L640 440 L640 580 L960 580" fill="none" stroke="url(#road)" stroke-width="70" stroke-linejoin="round"/>
+  <path d="M-20 560 L300 560 L300 440 L640 440 L640 580 L960 580" fill="none" stroke="#3ee6ff" stroke-width="2" stroke-dasharray="6 18" opacity="0.5"/>
+
+  <!-- citadel -->
+  <circle cx="1060" cy="470" r="240" fill="url(#glow)"/>
+  <path d="M930 640 L960 560 L1160 560 L1190 640 Z" fill="url(#metal)" stroke="#0a0f1d" stroke-width="4"/>
+  <path d="M975 560 L995 470 L1125 470 L1145 560 Z" fill="#1b2542" stroke="#0a0f1d" stroke-width="4"/>
+  <path d="M1060 170 L1112 300 L1092 470 L1028 470 L1008 300 Z" fill="url(#spire)" stroke="#0a3b4a" stroke-width="4"/>
+  <path d="M1060 170 L1112 300 L1060 330 Z" fill="#ffffff" opacity="0.45"/>
+  <path d="M990 330 L1012 380 L1000 470 L974 470 L968 380 Z" fill="url(#spire)" stroke="#0a3b4a" stroke-width="3" opacity="0.9"/>
+  <path d="M1130 330 L1152 380 L1146 470 L1120 470 L1108 380 Z" fill="url(#spire)" stroke="#0a3b4a" stroke-width="3" opacity="0.9"/>
+  <ellipse cx="1060" cy="600" rx="150" ry="26" fill="none" stroke="#3ee6ff" stroke-width="3" opacity="0.6"/>
+  <ellipse cx="1060" cy="600" rx="110" ry="18" fill="none" stroke="#3ee6ff" stroke-width="2" opacity="0.35" stroke-dasharray="10 8"/>
+
+  <!-- towers + beams -->
+  <g transform="translate(220 380)"><use href="#tower"/><circle cy="-14" r="11" fill="#ff7a3d"/><path d="M0 -40 L8 -24 L0 -18 L-8 -24 Z" fill="#ffb347"/></g>
+  <g transform="translate(470 360)"><use href="#tower"/><circle cy="-14" r="11" fill="#ffc845"/><path d="M0 -42 L5 -24 L0 -20 L-5 -24 Z" fill="#fff3b0"/></g>
+  <g transform="translate(560 650)"><use href="#tower"/><circle cy="-14" r="11" fill="#3ec8ff"/></g>
+  <g transform="translate(800 500)"><use href="#tower"/><circle cy="-14" r="11" fill="#b07cff"/></g>
+  <path d="M470 346 L380 432" stroke="url(#beam)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M800 486 L720 570" stroke="#c49bff" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+  <path d="M560 636 L600 590" stroke="#7fd8ff" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <path d="M224 372 L284 474" stroke="#ff7a3d" stroke-width="4" stroke-linecap="round" opacity="0.45" stroke-dasharray="2 10"/>
+  <circle cx="288" cy="480" r="9" fill="#ffb347"/>
+  <circle cx="288" cy="480" r="16" fill="#ff7a3d" opacity="0.35"/>
+
+  <!-- constructs on the route -->
+  <g transform="translate(130 560)"><use href="#beetle"/></g>
+  <g transform="translate(300 500) scale(0.9)"><use href="#beetle"/></g>
+  <g transform="translate(390 440)"><use href="#beetle"/></g>
+  <g transform="translate(720 580) scale(1.15)"><use href="#beetle"/></g>
+  <!-- shards (a construct shattering) -->
+  <g fill="#9ff3ff">
+    <path d="M600 580 l10 -14 l6 12 z"/><path d="M612 600 l14 -4 l-6 12 z"/><path d="M588 600 l-10 6 l2 -12 z"/>
+  </g>
+
+  <!-- element row -->
+  <g transform="translate(78 230)">
+    <circle r="16" fill="#ff7a3d"/><circle cx="44" r="16" fill="#3ec8ff"/><circle cx="88" r="16" fill="#3fd77a"/>
+    <circle cx="132" r="16" fill="#ffc845"/><circle cx="176" r="16" fill="#b07cff"/><circle cx="220" r="16" fill="#c98a4a"/>
+  </g>
+
+  <!-- title -->
+  <text x="72" y="130" font-family="'Avenir Next Condensed','Bahnschrift','DIN Alternate','Roboto Condensed','Arial Narrow',system-ui,sans-serif" font-size="96" font-weight="800" letter-spacing="6" fill="#ffffff">VANEX DEFENSE</text>
+  <text x="76" y="182" font-family="system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans',sans-serif" font-size="30" fill="#9fb0cf">Command the elements. Hold the line.</text>
+  <rect x="76" y="198" width="320" height="3" fill="#3ee6ff"/>
+</svg>

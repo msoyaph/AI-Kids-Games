@@ -1,0 +1,64 @@
+{
+  "version": 3,
+  "settings": {
+    "music": 0.3,
+    "sfx": 0.8,
+    "quality": "medium",
+    "shake": false,
+    "speed": 2,
+    "damageNumbers": true,
+    "rotateHintSeen": false
+  },
+  "maps": {
+    "w1m1": {
+      "stars": {
+        "normal": 3,
+        "easy": 2
+      }
+    },
+    "w1m2": {
+      "stars": {
+        "hard": 1
+      }
+    },
+    "w1m3": {
+      "stars": {
+        "normal": 3
+      }
+    },
+    "w2m1": {
+      "stars": {
+        "normal": 2
+      }
+    }
+  },
+  "endlessBest": {
+    "w1m1": 27,
+    "w1m2": 14
+  },
+  "tutorialDone": true,
+  "achievements": {
+    "first_steps": 1791730431904,
+    "boss": 1791730431909,
+    "king": 1791730431909,
+    "max_power": 1791730431909,
+    "first_win": 1791730432511,
+    "perfect": 1791730432511,
+    "only_water": 1791730432511,
+    "only_fire": 1791730432511,
+    "no_basic": 1791730432511,
+    "poof1k": 1791730432511,
+    "hard_win": 1791730433741,
+    "endless25": 1791730437038
+  },
+  "lifetime": {
+    "kills": 8746,
+    "bossKills": 54,
+    "towersBuilt": 24,
+    "wins": 10,
+    "combos": [
+      "steam"
+    ]
+  },
+  "lastDifficulty": "hard"
+}

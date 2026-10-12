@@ -1,0 +1,35 @@
+{
+  "name": "vanex-defense",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Vanex Defense — a kid-friendly elemental tower defense game.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "sim": "vite-node scripts/simulate.ts",
+    "e2e": "npm run build && playwright test",
+    "perf": "node scripts/perf.mjs",
+    "check:dist": "node scripts/check-dist.mjs",
+    "test:all": "npm run typecheck && npm test && npm run e2e",
+    "audio:levels": "node scripts/audio-levels.mjs",
+    "analyze-playtests": "vite-node scripts/analyze-playtests.ts",
+    "balance-report": "vite-node scripts/balance-report.ts"
+  },
+  "dependencies": {
+    "pixi.js": "^8.22.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vite-node": "^6.0.0",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^5.0.3"
+  }
+}

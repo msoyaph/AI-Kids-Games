@@ -1,0 +1,65 @@
+# Optional: the same checks on your own Mac, with its real GPU, plus the
+# performance benchmark (npm run perf). Started by hand from the Actions tab.
+#
+# ⚠️  PRIVATE REPOSITORIES ONLY. GitHub advises using self-hosted runners only
+# with private repositories: on a public one, anyone can fork it and open a
+# pull request whose workflow would run their code on your Mac. The job below
+# refuses to run if this repository is public. Setup steps: docs/CI.md.
+name: Self-hosted Mac (real GPU)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mac:
+    if: ${{ github.event.repository.private }}
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests + balance sims
+        run: npm test
+
+      - name: Build single-file game
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Dist checks (size, file:// + http, no requests)
+        run: npm run check:dist
+
+      # not CI=true here on purpose: the Mac has a real GPU, so the normal (stricter) timings apply
+      - name: End-to-end tests (incl. real-GPU flash audit)
+        run: npx playwright test
+        env:
+          CI: ''
+
+      - name: Performance benchmark (300 constructs, throttled phone profiles)
+        run: npm run perf
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-results
+          path: |
+            perf-results/
+            playwright-report/
+            test-results/
+          retention-days: 14
