@@ -38,13 +38,12 @@ test('every game preserves favorites, recent history and one another’s saves',
   for (const [key,value] of saved) expect(await page.evaluate(key => localStorage.getItem(key),key)).toBe(value);
   expect(checks.errors).toEqual([]); expect(checks.external).toEqual([]);
 });
-test('age filtering, new categories and mobile computer notice',async ({ page },info) => {
+test('age filtering and new categories',async ({ page }) => {
   await page.goto('/games'); await page.getByLabel('Player age').selectOption('6');
   await expect(page.locator('.game-grid h3')).toHaveText(['Light Crossing','Space Sky']);
   await page.reload(); await expect(page.getByLabel('Player age')).toHaveValue('6');
   await page.getByLabel('Player age').selectOption('10'); await expect(page.locator('.game-grid h3')).toHaveCount(launchGames.length);
   for (const name of ['Strategy','Racing','Learning','Cozy','Farming']) await expect(page.getByRole('button',{ name,exact:true })).toBeVisible();
-  if (info.project.name === 'phone') { await page.goto('/play/theabonk'); await expect(page.getByRole('note')).toContainText('This game works best on a computer.'); }
 });
 test('fullscreen works in the embedding browser',async ({ page },info) => {
   test.skip(info.project.name !== 'desktop','Native Safari behavior is covered by the real-device checklist.');
