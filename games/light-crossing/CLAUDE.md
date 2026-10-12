@@ -353,3 +353,14 @@ Build 1,250 kB (1.19 MiB); pacing 5.86 h.)
   - Verified on main: typecheck, 222 unit tests (+1 skipped), build 1,250,266 bytes (reproducible; SHA-256
     7730e932006a60cc50f2112548c387a97f26ceb650fb7cf279360abea8b732c8), size, pacing 5.86 h, 191/191 e2e.
   - Any later change to `src/` changes the hash: rebuild, rerun `scripts/registry-entry.ts`, update REPORT/README.
+
+## In the Ai Kids Games monorepo
+
+This project lives at `games/light-crossing/` in the public Ai Kids Games monorepo (msoyaph/AI-Kids-Games),
+imported with its full history. Run its scripts from this folder or from the repo root with
+`--workspace games/light-crossing`. There is one root lockfile (no per-game lockfile). CI is the root
+`.github/workflows/ci.yml`; this game's job runs on GitHub's standard runners in low-quality mode.
+Self-hosted runners are never used with this public repo; GPU runs are in docs/BENCHMARKS.md.
+After changing the game, run `npm run import-game -- light-crossing` at the root to update the site's copy
+(CI fails if the source changes without a re-import). Release tags: `light-crossing-v<version>`.
+Don't create a separate GitHub repo for this game.

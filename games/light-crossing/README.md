@@ -176,12 +176,8 @@ CPU, not how a phone's GPU copes. On a real device, use Settings → **Test perf
 
 ### Continuous integration
 
-GitHub Actions workflows live in `.github/workflows/`:
-- `ci.yml` runs on GitHub's standard runners: typecheck, build, size, tests, pacing, and Low-quality e2e.
-- `gpu-e2e.yml` runs on a self-hosted Mac: e2e on the GPU plus the benchmark. It never runs for pull requests.
-
-[docs/CI.md](docs/CI.md) explains, step by step, how to put the project on GitHub, which repository settings to check, and how to
-install the self-hosted runner safely.
+The Ai Kids Games monorepo's root workflow runs typecheck, build, size, tests, pacing and Low-quality e2e on
+GitHub's standard runners. GPU e2e and the benchmark run by hand on your own computer. Details: [docs/CI.md](docs/CI.md).
 
 ---
 
