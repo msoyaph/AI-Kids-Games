@@ -20,9 +20,12 @@ describe('quality tiers', () => {
   });
 
   it('guesses a starting tier from the device', () => {
-    expect(guessTier({ maxTouchPoints: 5, hardwareConcurrency: 4, userAgent: 'iPad' })).toBe('low');
-    expect(guessTier({ maxTouchPoints: 5, hardwareConcurrency: 8, userAgent: 'Android' })).toBe('medium');
-    expect(guessTier({ maxTouchPoints: 0, hardwareConcurrency: 10, userAgent: 'Mac' })).toBe('high');
+    expect(guessTier({ maxTouchPoints: 5, hardwareConcurrency: 4, userAgent: 'iPad' }, { width: 820, height: 1180 })).toBe('low');
+    expect(guessTier({ maxTouchPoints: 5, hardwareConcurrency: 8, userAgent: 'Android' }, { width: 800, height: 1280 })).toBe('medium');
+    expect(guessTier({ maxTouchPoints: 0, hardwareConcurrency: 10, userAgent: 'Mac' }, { width: 1512, height: 982 })).toBe('high');
+    // every phone starts on Low, even with 8 cores
+    expect(guessTier({ maxTouchPoints: 5, hardwareConcurrency: 8, userAgent: 'Android Mobile' }, { width: 412, height: 915 })).toBe('low');
+    expect(guessTier({ maxTouchPoints: 5, hardwareConcurrency: 6, userAgent: 'iPhone' }, { width: 393, height: 852 })).toBe('low');
     expect(urlTier('?quality=low')).toBe('low');
     expect(urlTier('?quality=ultra')).toBeNull();
     expect(urlTier('')).toBeNull();

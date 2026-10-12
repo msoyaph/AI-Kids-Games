@@ -14,12 +14,14 @@ export function registerPanels(app: App): void {
   const P = app.panels;
   const g = () => app.game!;
   P.craft = () => {
-    app.tip('craft');
-    app.ui.push(new CraftPanel(app.ui, g()));
+    const p = new CraftPanel(app.ui, g());
+    app.tipInside(p, 'craft');
+    app.ui.push(p);
   };
   P.shop = () => {
-    app.tip('shop');
-    app.ui.push(new ShopPanel(app.ui, g()));
+    const p = new ShopPanel(app.ui, g());
+    app.tipInside(p, 'shop');
+    app.ui.push(p);
   };
   P.hall = () => app.ui.push(new HallPanel(app.ui, g(), app.hallExtras()));
   P.storage = () => app.ui.push(new StoragePanel(app.ui, g()));

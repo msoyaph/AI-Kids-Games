@@ -22,12 +22,9 @@ export class Fingers {
 
   /** Tap the middle of an element. */
   async tapEl(selector: string): Promise<void> {
-    const el = this.page.locator(selector).first();
-    // (a child would scroll the menu with a finger; the test scrolls it for them)
-    await el.scrollIntoViewIfNeeded();
-    const box = await el.boundingBox();
-    if (!box) throw new Error(`nothing to tap: ${selector}`);
-    await this.tap(box.x + box.width / 2, box.y + box.height / 2);
+    // a real touch tap on the element (Playwright scrolls a menu to it first, as a child's finger would,
+    // and waits for it to stop moving)
+    await this.page.locator(selector).first().tap();
   }
 
   private points(): { id: number; x: number; y: number }[] {

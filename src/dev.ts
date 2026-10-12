@@ -21,13 +21,14 @@ import { FESTIVAL_BY_ID, type FestivalId } from './data/festivals';
 import { Ground, Region } from './world/types';
 import type { Game } from './sim/game';
 import { bugRT } from './sim/bugs';
-import { findPath } from './sim/pathfind';
+import { computeComponents, findPath } from './sim/pathfind';
 import { tileOf } from './sim/player';
 import { interiorRT } from './sim/interior';
 import { countItem } from './sim/inventory';
 import { equippedTool } from './sim/tools';
 import { BUGS, FISH } from './data/registry';
 import { actionTarget } from './sim/target';
+import { pickTile } from './input/tapmove';
 import { festivalState, skateRings } from './sim/happenings';
 import { agents } from './sim/agents';
 
@@ -191,6 +192,36 @@ export function devTools(app: App) {
       const pl = g().world.gen.lots.plaza;
       dev.goto(pl.x + pl.w / 2 + 0.5, pl.z + pl.d + 2.5, Math.PI);
     },
+    /** Stand in the middle of a clear 7×7 meadow (nothing to bump into in any direction). */
+    toOpen(): boolean {
+      const gm = g();
+      const w = gm.world;
+      const p = gm.state.player;
+      let best = -1;
+      let bd = Infinity;
+      for (let i = 0; i < w.size * w.size; i++) {
+        const x = i % w.size, z = Math.floor(i / w.size);
+        if (w.region(i) !== Region.West) continue;
+        let clear = true;
+        for (let dz = -3; dz <= 3 && clear; dz++)
+          for (let dx = -3; dx <= 3 && clear; dx++) {
+            if (!w.inb(x + dx, z + dz)) clear = false;
+            else {
+              const j = w.idx(x + dx, z + dz);
+              clear = w.standable(j) && !w.obj(j) && !w.structure(j) && w.height(j) === w.height(i);
+            }
+          }
+        if (!clear) continue;
+        const d = Math.hypot(x - p.x, z - p.z);
+        if (d < bd) {
+          bd = d;
+          best = i;
+        }
+      }
+      if (best < 0) return false;
+      dev.goto((best % w.size) + 0.5, Math.floor(best / w.size) + 0.5, Math.PI);
+      return true;
+    },
     /** Where a home plot fits (position + facing), found without moving anyone. */
     plotSpot(owner = 'bellamy'): { x: number; z: number; facing: number } | null {
       const gm = g();
@@ -281,11 +312,18 @@ export function devTools(app: App) {
       const p = gm.state.player;
       let best: { x: number; z: number; tile: number } | null = null;
       let bd = Infinity;
+      // only what you can walk to (same island part, no bridge needed)
+      const comp = computeComponents(w);
+      const mine = comp[tileOf(w, p.x, p.z)];
+      const reach = (i: number) => {
+        const x = i % w.size, z = Math.floor(i / w.size);
+        return [[0, 0], [0, 1], [1, 0], [-1, 0], [0, -1]].some(([dx, dz]) => w.inb(x + dx!, z + dz!) && comp[w.idx(x + dx!, z + dz!)] === mine);
+      };
       for (const key in gm.state.world.objects) {
         const i = Number(key);
         const o = gm.state.world.objects[i]!;
         if (!kind.split(',').includes(o.k) || (item && o.item !== item) || skip.includes(i)) continue;
-        if (w.height(i) !== w.height(tileOf(w, p.x, p.z))) continue;
+        if (w.height(i) !== w.height(tileOf(w, p.x, p.z)) || !reach(i)) continue;
         const x = (i % w.size) + 0.5, z = Math.floor(i / w.size) + 0.5;
         const d = Math.hypot(x - p.x, z - p.z);
         if (d < bd) {
@@ -335,6 +373,13 @@ export function devTools(app: App) {
     /** Where a world point is on screen. */
     screen(x: number, y: number, z: number): { x: number; y: number; visible: boolean } {
       return app.view.project(x, y, z);
+    },
+    /** What a tap at a screen point would hit (as the game sees it), and whether that's the tile at (x, z). */
+    pickAt(sx: number, sy: number, x?: number, z?: number): { x: number; z: number; thing: boolean; same: boolean } | null {
+      const p = pickTile(g(), (a, b, c) => app.view.project(a, b, c), sx, sy);
+      if (!p) return null;
+      const same = x !== undefined && z !== undefined && Math.floor(p.x) === Math.floor(x) && Math.floor(p.z) === Math.floor(z);
+      return { x: p.x, z: p.z, thing: p.thing, same };
     },
     groundY(x: number, z: number): number {
       return g().world.surfaceY(x, z);
@@ -400,11 +445,17 @@ export function devTools(app: App) {
     shadows(): { x: number; z: number; size: number }[] {
       return fishingRT(g()).shadows.filter((s) => s.state !== 'gone').map((s) => ({ x: s.x, z: s.z, size: s.size }));
     },
-    bugs(): { x: number; z: number; y: number; state: string; id: string }[] {
-      return bugRT(g()).bugs.filter((b) => b.state !== 'gone').map((b) => ({ x: b.x, z: b.z, y: b.y, state: b.state, id: b.bug }));
+    bugs(): { x: number; z: number; y: number; state: string; id: string; habitat: string; alert: number; reachable: boolean }[] {
+      const gm = g();
+      const w = gm.world;
+      const comp = computeComponents(w);
+      const mine = comp[tileOf(w, gm.state.player.x, gm.state.player.z)];
+      const near = (x: number, z: number) =>
+        [[0, 0], [0, 1], [1, 0], [-1, 0], [0, -1]].some(([dx, dz]) => w.inb(Math.floor(x) + dx!, Math.floor(z) + dz!) && comp[w.idx(Math.floor(x) + dx!, Math.floor(z) + dz!)] === mine);
+      return bugRT(gm).bugs.filter((b) => b.state !== 'gone').map((b) => ({ x: b.x, z: b.z, y: b.y, state: b.state, id: b.bug, habitat: b.habitat, alert: b.alert, reachable: near(b.x, b.z) }));
     },
     /** A beetle on the ground a few steps in front of the player (for the bug-catching check). */
-    bug(dist = 3): boolean {
+    bug(dist = 3): { x: number; z: number } | null {
       const gm = g();
       const p = gm.state.player;
       const w = gm.world;
@@ -415,9 +466,9 @@ export function devTools(app: App) {
         const i = w.idx(Math.floor(x), Math.floor(z));
         if (!w.standable(i) || w.obj(i) || w.height(i) !== w.height(tileOf(w, p.x, p.z))) continue;
         rt.bugs.push({ id: rt.nextId++, bug: def.id, habitat: 'ground', x: Math.floor(x) + 0.5, y: w.surfaceY(x, z) + 0.05, z: Math.floor(z) + 0.5, tile: i, alert: 0, state: 'idle', vx: 0, vz: 0, vy: 0, t: 0, phase: 0, life: 120 });
-        return true;
+        return { x: Math.floor(x) + 0.5, z: Math.floor(z) + 0.5 };
       }
-      return false;
+      return null;
     },
     residents(): string[] {
       return VILLAGERS.map((v) => v.id);

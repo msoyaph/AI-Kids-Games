@@ -500,6 +500,15 @@ export class App {
     if (this.game) this.tips.trigger(this.game, id);
   }
 
+  /** A first-time tip about a menu, shown inside it (under its title). */
+  tipInside(panel: { el: HTMLElement }, id: string): void {
+    const t = this.game && this.tips.inline(this.game, id);
+    if (!t) return;
+    const head = panel.el.querySelector('h2');
+    if (head) head.after(t);
+    else panel.el.prepend(t);
+  }
+
   titleCredits(): void {
     const p: Panel = {
       modal: true,
@@ -550,10 +559,12 @@ export class App {
       case 'action':
         g.act();
         break;
-      case 'inventory':
-        this.tip('inventory');
-        this.ui.push(new InventoryPanel(this.ui, g));
+      case 'inventory': {
+        const inv = new InventoryPanel(this.ui, g);
+        this.tipInside(inv, 'inventory');
+        this.ui.push(inv);
         break;
+      }
       case 'pause':
         this.openPause();
         break;

@@ -257,8 +257,13 @@ West (start, plaza/hall/shop/museum/home lots, dock), NE, SE. Regions only conne
 
 ## Verification checklist
 `npm run typecheck && npm test && npm run build && npm run size && npm run e2e && npm run pacing`
-(220 unit tests incl. full new-game → festival playthroughs, one per season, a year after the story, and the readability
-check; 3 e2e tests. Build 1,207 kB (1.15 MiB); pacing 5.86 h.)
+- `npm run e2e` runs every Playwright project: `desktop` (smoke: keyboard/mouse, file://, iframe, save indoors),
+  `{chromium,webkit}-{phone,tablet}-{portrait,landscape}` (e2e/touch.spec.ts spot checks + e2e/playthrough.spec.ts:
+  Chapter 1 with touch only — long), `layout-{chromium,webkit}` (every screen × 10 viewports). Subsets: `e2e:touch`,
+  `e2e:layout`, `e2e:ci`. Pass `--trace=off` when iterating (traces are large; the disk is often nearly full).
+(222 unit tests + 1 skipped, incl. full new-game → festival playthroughs, one per season, a year after the story, and the
+readability check; 191 e2e tests: 3 desktop, 8 touch projects × (20 spot checks + the Chapter 1 playthrough), 20 layout.
+Build 1,250 kB (1.19 MiB); pacing 5.86 h.)
 
 ## Known issues / limitations
 - Pacing is a model estimate (scripts/pacing.ts), not measured with real players.
@@ -315,3 +320,28 @@ check; 3 e2e tests. Build 1,207 kB (1.15 MiB); pacing 5.86 h.)
     the melting pond puts you on land at the ice's level; the tool ring sizes itself to the safe area.
   - `?preview=<scene>` (`src/preview.ts`): cover/spring/summer/autumn/winter/festival/home/shop/villager — a staged,
     UI-free scene for the site's previews (slot -1, never saved; sets `window.__previewReady`).
+- Step 5 done: tests.
+  - `e2e/lib/touch.ts` `Fingers`: taps via `page.touchscreen` / `locator.tap()` (real touches); holds and drags via CDP
+    `Input.dispatchTouchEvent` (Chromium) or Playwright TouchEvent dispatch on the element under the finger (WebKit).
+  - `e2e/lib/play.ts` `Player`: plays like a child — looks through read-only `__lc.dev` helpers (`peek`, `nearest`
+    (reachable only), `route`, `screen`, `pickAt` (what a tap there would hit), `target`, `shadows`, `castSpot`, `bugs`
+    (+ `reachable`), `person`, `door`, `room`) and acts only by touch (`walkTo` taps the farthest on-screen route point
+    — never within 2 tiles of a tool's ring or on your own tile, which would use the tool — else steers along the route;
+    `approach` taps a thing only where the game would pick it, skipping things hidden behind buildings; `steerTo`,
+    `fishOnce`, `talkThrough`, `ready` (answers anyone who calls), `equip` via the ring, retried if a call interrupts).
+    A spot is tappable only if a finger there reaches the game.
+  - `e2e/touch.spec.ts` (20 spot checks) and `e2e/playthrough.spec.ts` (Chapter 1 with touch only; `PT_LOG=1` logs
+    progress) run in 8 projects; `e2e/layout.spec.ts` checks every screen × viewport. Staging helpers `toOpen` (a clear
+    7×7 meadow), `toPlaza`, `bug(dist)` (returns its spot), `learn`, `plotSpot`.
+  - Bugs found by the touch tests and fixed in the game: indoor taps on people behind counters walk to the counter;
+    putting the rod away reels the line in (touch no longer stuck in "hold to reel"); the compact tracker on small
+    screens (next step + "+N more"); building walls/roofs count as the building for taps; with the net out, a bug in
+    reach beats "Shake tree" (`bugResolver` priority 60 via `bugInReach`, else 20 — any input, not just touch); menu
+    tips (craft / shop / inventory) show inside the menu (`App.tipInside` → `TipManager.inline`, class `menu-tip`)
+    instead of after it closes; `pickTile` picks a building (DOORS types, `HEIGHT` table) when the tap is inside its
+    projected outline and the ground it would otherwise pick is behind it (tests/tapmove.test.ts).
+    `playwright.config.ts` sets `actionTimeout` (15 s) so a stuck tap fails fast.
+  - Results: Chapter 1 by touch passes on all 8 projects (5–7 min each; 12.6 min for all 8 with 4 workers), 160/160 spot
+    checks, 20/20 layout runs, 3/3 desktop. Throttled bench (`--profile phone|tablet`, CPU 4×, vsync): phone → Low,
+    tablet → Medium, both 60 avg / 59.5 1%-low (docs/bench/2026-10-11-{phone,tablet}-profile.json). Before/after phone
+    screenshots: docs/touch/before, docs/touch/after, docs/touch/compare-phone-{portrait,landscape}.jpg.

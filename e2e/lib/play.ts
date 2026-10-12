@@ -15,7 +15,7 @@ export interface Peek {
   action: string | null;
   tool: string | null;
   cast: string | null;
-  reel: { progress: number; cursor: number; zone: number; zoneW: number } | null;
+  reel: { progress: number; cursor: number; cursorV: number; zone: number; zoneW: number } | null;
   walking: boolean;
   panel: string | null;
   prompt: string | null;
@@ -66,11 +66,19 @@ export class Player {
   async spot(x: number, z: number, lift = 0): Promise<{ x: number; y: number; ok: boolean }> {
     return this.page.evaluate(
       ([wx, wz, up]) => {
-        const app = (window as unknown as { __lc: { dev: Dev; hudLayout: { free(x: number, y: number, pad: number): boolean } } }).__lc;
+        const app = (window as unknown as { __lc: { dev: Dev } }).__lc;
         const d = app.dev;
         const y = (d.peek() as { location: string }).location === 'island' ? (d.groundY!(wx, wz) as number) : 0;
         const p = d.screen!(wx, y + up, wz) as { x: number; y: number; visible: boolean };
-        return { x: p.x, y: p.y, ok: p.visible && app.hudLayout.free(p.x, p.y, 6) };
+        // tappable = a finger there reaches the game (toasts let touches through; buttons and menus don't),
+        // with a little margin from anything else you could hit by mistake
+        const reaches = (x: number, y2: number) => {
+          if (x < 2 || y2 < 2 || x > innerWidth - 2 || y2 > innerHeight - 2) return false;
+          const e = document.elementFromPoint(x, y2);
+          return !!e && (e.matches('.tc-zone, #game') || !!e.closest('.toasts'));
+        };
+        const ok = p.visible && [[0, 0], [10, 0], [-10, 0], [0, 10], [0, -10]].every(([dx, dy]) => reaches(p.x + dx!, p.y + dy!));
+        return { x: p.x, y: p.y, ok };
       },
       [x, z, lift] as const,
     );
@@ -96,12 +104,36 @@ export class Player {
     for (let tries = 0; tries < 30; tries++) {
       const p = await this.peek();
       if (Math.hypot(p.x - x, p.z - z) <= near) return;
+      // a line in the water: reel it in first (while fishing, a tap is the A button)
+      if (p.cast) {
+        await this.a();
+        await this.idle();
+      }
       const route = await this.dev<{ x: number; z: number }[] | null>('route', x, z);
       if (!route) throw new Error(`no way to ${x},${z}`);
       if (route.length === 0) return;
+      // with a tool in hand, a tap on or near its ring uses it (within 1.6 tiles for the rod, App.tap):
+      // walk via points away from the ring
+      const ring = p.tool ? await this.dev<{ x: number; z: number } | null>('target') : null;
       let tapped = false;
-      for (let k = Math.min(route.length - 1, 14); k >= 0 && !tapped; k--) tapped = await this.tapWorld(route[k]!.x, route[k]!.z);
-      if (!tapped) throw new Error('route not on screen');
+      for (let k = Math.min(route.length - 1, 14); k >= 0 && !tapped; k--) {
+        if (ring && Math.hypot(route[k]!.x - ring.x, route[k]!.z - ring.z) < 2) continue;
+        // tapping your own tile is the A button too
+        if (Math.floor(route[k]!.x) === Math.floor(p.x) && Math.floor(route[k]!.z) === Math.floor(p.z)) continue;
+        // only ground you can see (a tap where a building stands in front walks you into the building)
+        const s = await this.spot(route[k]!.x, route[k]!.z);
+        if (!s.ok || !(await this.dev<{ same: boolean } | null>('pickAt', s.x, s.y, route[k]!.x, route[k]!.z))?.same) continue;
+        await this.f.tap(s.x, s.y);
+        tapped = true;
+      }
+      if (!tapped) {
+        // every route point is under the HUD or on the tool's ring (a tap there would use the tool):
+        // nudge along with the stick instead
+        const before = await this.peek();
+        for (let k = 0; k < Math.min(route.length, 5); k++) await this.steerTo(route[k]!.x, route[k]!.z, 0.45);
+        const after = await this.peek();
+        if (Math.hypot(after.x - before.x, after.z - before.z) < 0.2) throw new Error('route not on screen');
+      }
       await this.wait(150);
       await this.idle();
     }
@@ -112,9 +144,60 @@ export class Player {
   async approach(x: number, z: number, lift = 0.4): Promise<void> {
     const p = await this.peek();
     if (p.location === 'island' && Math.hypot(p.x - x, p.z - z) > 6) await this.walkTo(x, z, 3.5);
-    if (!(await this.tapWorld(x, z, lift)) && !(await this.tapWorld(x, z, 0))) throw new Error('target not on screen');
+    // already standing at it with the ring on it: a tap now would use it, so don't
+    const ring = await this.dev<{ x: number; z: number } | null>('target');
+    if (ring && Math.floor(ring.x) === Math.floor(x) && Math.floor(ring.z) === Math.floor(z)) {
+      if (!p.tool) await this.a(); // empty hands: use it, as tapping it would
+      await this.idle();
+      return;
+    }
+    // outdoors, tap it only where a tap would really land on it (not on a building standing in front)
+    const tapIt = async (up: number) => {
+      const s = await this.spot(x, z, up);
+      if (!s.ok) return false;
+      if (p.location === 'island') {
+        const hit = await this.dev<{ same: boolean; thing: boolean } | null>('pickAt', s.x, s.y, x, z);
+        if (!hit?.same) return false;
+      }
+      await this.f.tap(s.x, s.y);
+      return true;
+    };
+    if (!(await tapIt(lift)) && !(await tapIt(0))) {
+      if (p.location === 'island') {
+        const s = await this.spot(x, z, 0);
+        const hit = s.ok ? await this.dev<{ same: boolean; thing: boolean } | null>('pickAt', s.x, s.y, x, z) : null;
+        if (hit && !hit.same && hit.thing) throw new Error(`hidden behind something at ${x},${z}`);
+      }
+      // hidden under the HUD: steer toward it with the stick until it's right in front, then (with empty
+      // hands, like a tap would) press A; with a tool in hand the next tap / A is up to the caller
+      await this.steerTo(x, z, 1.0);
+      if (!(await this.peek()).tool) await this.a();
+    }
     await this.wait(150);
     await this.idle();
+  }
+
+  /** Walk toward a world point with the stick (watching the screen) until within `near` tiles. */
+  async steerTo(x: number, z: number, near: number): Promise<void> {
+    const p0 = await this.peek();
+    // already there: don't touch the screen at all (a touch that doesn't move is a tap)
+    if (Math.hypot(p0.x - x, p0.z - z) <= near) return;
+    const vp = this.page.viewportSize()!;
+    const sx = vp.width * 0.3, sy = vp.height * 0.62;
+    await this.f.start(sx, sy);
+    try {
+      for (let k = 0; k < 80; k++) {
+        const p = await this.peek();
+        if (Math.hypot(p.x - x, p.z - z) <= near) break;
+        const me = await this.spot(p.x, p.z), it = await this.spot(x, z);
+        const dx = it.x - me.x, dy = it.y - me.y, len = Math.hypot(dx, dy) || 1;
+        await this.f.move(sx + (dx / len) * 40, sy + (dy / len) * 40);
+        await this.wait(80);
+      }
+    } finally {
+      await this.f.end();
+    }
+    await this.wait(200);
   }
 
   /** Is a conversation open? */
@@ -161,18 +244,36 @@ export class Player {
   async button(text: string | RegExp): Promise<void> {
     const b = this.page.locator('button:visible', { hasText: text }).first();
     await expect(b).toBeVisible();
-    await b.scrollIntoViewIfNeeded();
-    const box = (await b.boundingBox())!;
-    await this.f.tap(box.x + box.width / 2, box.y + box.height / 2);
+    await b.tap();
     await this.wait(200);
+  }
+
+  /** Back in free play: tap through anyone still talking, close menus, until the touch buttons show. */
+  async ready(ms = 20_000): Promise<void> {
+    const t0 = Date.now();
+    while (Date.now() - t0 < ms) {
+      if (await this.talking()) await this.talkThrough();
+      else if ((await this.peek()).panel) await this.closeMenus();
+      else if ((await this.page.locator('.tc-tool:visible').count()) > 0) return;
+      await this.wait(250);
+    }
+    throw new Error('the touch controls never came back');
   }
 
   /** The tool ring by touch: tap Tools, then the tool. */
   async equip(label: string): Promise<void> {
-    await this.f.tapEl('.tc-tool');
-    await this.wait(250);
     const b = this.page.locator('.ring-btn', { hasText: label }).first();
-    await expect(b).toBeVisible();
+    // someone may call just as you reach for the button (the controls hide while they talk): answer, try again
+    for (let k = 0; ; k++) {
+      await this.ready();
+      try {
+        await this.page.locator('.tc-tool').first().tap({ timeout: 4000 });
+        await expect(b).toBeVisible({ timeout: 3000 });
+        break;
+      } catch (e) {
+        if (k >= 4) throw e;
+      }
+    }
     const box = (await b.boundingBox())!;
     await this.f.tap(box.x + box.width / 2, box.y + box.height / 2);
     await this.wait(200);
@@ -216,7 +317,8 @@ export class Player {
       for (let k = 0; k < 1200; k++) {
         const q = await this.peek();
         if (!q.reel) break;
-        const want = q.reel.cursor < q.reel.zone;
+        // where the hook will be in a moment (it keeps moving): hold if that's below the green
+        const want = q.reel.cursor + q.reel.cursorV * 0.25 < q.reel.zone;
         if (want && !holding) await this.f.start(hx, hy);
         if (!want && holding) await this.f.end();
         holding = want;
@@ -253,6 +355,6 @@ export async function newGameByTouch(pl: Player): Promise<void> {
   // a random name with the dice button (no typing needed), then sail
   await pl.f.tapEl('button:has-text("🎲")');
   await pl.button('Set sail!');
-  await page.waitForFunction(() => !!(window as unknown as { __lc: { game: unknown } }).__lc.game);
+  await page.waitForFunction(() => !!(window as unknown as { __lc: { game: unknown } }).__lc.game, null, { timeout: 20_000 });
   await pl.wait(1200);
 }

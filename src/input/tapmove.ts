@@ -25,6 +25,8 @@ const TALL = new Set(['tree', 'pine', 'palm', 'fruitTree', 'rock', 'sapling', 'd
 const DOORS = new Set(['hall', 'shop', 'shopCart', 'museum', 'museumTent', 'home', 'villagerHome', 'workbench', 'noticeBoard', 'lighthouse']);
 const RADIUS = 14;
 const PICK_PX = 56;
+/** about how tall each building stands (for its outline on screen) */
+const HEIGHT: Record<string, number> = { workbench: 0.8, noticeBoard: 1.3, shopCart: 1.5, museumTent: 1.9, lighthouse: 5 };
 
 /** Which tile is under screen point (sx, sy)? */
 export function pickTile(g: Game, project: Project, sx: number, sy: number): TapPick | null {
@@ -63,10 +65,44 @@ export function pickTile(g: Game, project: Project, sx: number, sy: number): Tap
       const i = w.idx(x, z);
       const o = w.obj(i);
       const y = w.surfaceY(x + 0.5, z + 0.5);
-      const thing = !!o || !!w.structure(i) || w.isWater(i);
-      consider(i, x + 0.5, z + 0.5, y, thing && !!o);
+      const st = w.structure(i);
+      consider(i, x + 0.5, z + 0.5, y, !!o);
       if (o && TALL.has(o.k)) consider(i, x + 0.5, z + 0.5, y + 1.1, true, 0.75);
+      // a building's walls and roof count as the building (a child taps what they see)
+      if (st && DOORS.has(st.type)) {
+        consider(i, x + 0.5, z + 0.5, y + 0.6, false, 0.8);
+        if (st.type !== 'workbench' && st.type !== 'noticeBoard') consider(i, x + 0.5, z + 0.5, y + 1.5, false, 0.8);
+      }
     }
+  // a tap inside a building's outline (its walls, the workbench top) picks the building, not the ground
+  // hidden behind it: tile centres crowd together on screen at this camera angle
+  const cur = best as TapPick | null;
+  if (!cur || (!cur.thing && !w.structure(cur.tile))) {
+    let front = -Infinity;
+    for (const st of g.state.world.structures) {
+      if (!DOORS.has(st.type) || Math.abs(st.x - cx) > RADIUS || Math.abs(st.z - cz) > RADIUS) continue;
+      // the picked ground is in front of this building: keep it
+      if (cur && Math.floor(cur.z) >= st.z + st.d) continue;
+      const y = w.surfaceY(st.x + st.w / 2, st.z + st.d / 2);
+      const top = y + (HEIGHT[st.type] ?? 2.2);
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const [x, z] of [[st.x, st.z], [st.x + st.w, st.z], [st.x, st.z + st.d], [st.x + st.w, st.z + st.d]])
+        for (const h of [y, top]) {
+          const q = project(x!, h, z!);
+          if (!q.visible) continue;
+          x0 = Math.min(x0, q.x);
+          x1 = Math.max(x1, q.x);
+          y0 = Math.min(y0, q.y);
+          y1 = Math.max(y1, q.y);
+        }
+      // the front-most building whose outline holds the tap
+      if (sx < x0 || sx > x1 || sy < y0 || sy > y1 || st.z + st.d <= front) continue;
+      front = st.z + st.d;
+      const fx = st.x + Math.floor(st.w / 2), fz = st.z + st.d - 1;
+      best = { tile: w.idx(fx, fz), x: fx + 0.5, z: fz + 0.5, thing: false };
+      bestD = Math.min(bestD, 24);
+    }
+  }
   for (const a of agents(g).values()) {
     if (!a.visible) continue;
     const x = Math.floor(a.x), z = Math.floor(a.z);
@@ -144,6 +180,18 @@ export class TapMover {
         }
       if (goals.has(from)) path = [];
       else path = roomPath(solid, w, d, from, goals);
+      // someone behind a counter: walk up to the counter in front of them instead
+      if (!path && toThing) {
+        const far = new Set<number>();
+        const tx = pick.tile % w, tz = Math.floor(pick.tile / w);
+        for (let dz = -2; dz <= 2; dz++)
+          for (let dx = -2; dx <= 2; dx++) {
+            if (Math.max(Math.abs(dx), Math.abs(dz)) !== 2 || (dx !== 0 && dz !== 0)) continue;
+            const x = tx + dx, z = tz + dz;
+            if (x >= 0 && z >= 0 && x < w && z < d && solid[z * w + x] !== 1) far.add(z * w + x);
+          }
+        path = far.has(from) ? [] : roomPath(solid, w, d, from, far);
+      }
     } else {
       const wd = g.world;
       size = wd.size;

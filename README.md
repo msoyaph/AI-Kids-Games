@@ -48,19 +48,31 @@ If you're stuck on a mission for a while, Pemberly sends a hint, and the Map sho
 
 | Action | Keyboard / mouse | Gamepad | Touch |
 |---|---|---|---|
-| Move | WASD / arrows | Left stick | Drag on the left half |
-| Run | Shift (hold) | B / RT (hold) | B (hold) or push the stick fully |
-| Interact / use tool | E / Space / click | A | A |
-| Sneak with net | Hold E | Hold A | Hold A |
-| Cycle tools | `[` `]` | LB / RB | Tool |
+| Move | WASD / arrows | Left stick | Drag anywhere (a stick appears under your finger), or tap the ground to walk there |
+| Run | Shift (hold) | B / RT (hold) | Push the stick to its edge, or hold 💨 Run |
+| Sneak | Hold E with the net | Hold A with the net | A small push on the stick (🐾 Sneak) |
+| Interact / use tool | E / Space / click | A | The big A button (it says what it will do), or tap the glowing ring |
+| Walk up and use | — | — | Tap a person, door, tree or item (with empty hands) |
+| Cycle tools | `[` `]` | LB / RB | — |
 | Tool hotkeys | 1–6 | — | — |
-| Tool ring | R | Y | — |
-| Put tool away | Q | — | — |
-| Pockets | I | X | Bag |
-| Glowpad | Tab / P | Start | Pad |
-| Map | M | Select | — |
-| Pause / back | Esc | B | B |
-| Decorate (at home) | E on an empty spot; arrows move, E place/pick, R turn, X put away, U undo, F walls | D-pad, A, Y turn, X put away | big on-screen buttons |
+| Tool ring | R | Y | Tools |
+| Put tool away | Q | — | Tools → Hands |
+| Pockets | I | X | 🎒 Bag |
+| Glowpad | Tab / P | Start | 📱 |
+| Map | M | Select | 📱 → Map |
+| Pause / back | Esc | B | ☰ |
+| Fishing | E to cast / hook, hold to reel | A | Tap A to cast; when it bites, tap anywhere; hold anywhere to reel |
+| Placing a home, bridge or ramp | E / Esc | A / B | ✔ Place / ✕ Cancel |
+| Decorate (at home) | E on an empty spot; arrows move, E place/pick, R turn, X put away, U undo, F walls | D-pad, A, Y turn, X put away | drag pieces; ＋ Add, Turn, On table, Put away, Walls, Undo buttons |
+
+A soft ring always marks the tile the action will touch: green when something will happen there.
+
+**Phones and tablets** play by touch alone, in portrait or landscape:
+- The HUD keeps clear of notches, rounded corners and the home bar.
+- Menus scroll, and every button is at least 48 px.
+- There's no page zoom, pull-to-refresh or long-press menu while playing.
+- Plugging in a keyboard or gamepad tucks the touch buttons away until the next touch.
+- When the phone locks or the app goes to the background, the game saves and pauses.
 
 Saves: 3 slots with autosave (every minute, at every new day, and when the tab is hidden). Saves are versioned and migrated
 automatically. If storage is unavailable, for example in a sandboxed iframe, the game still runs and warns that progress won't persist.
@@ -89,10 +101,14 @@ npm run dev        # local dev server (http://127.0.0.1:5173, or $PORT)
 npm run build      # -> dist/index.html (one self-contained file)
 npm run size       # fails if dist/index.html is over 2 MB
 npm test           # vitest: unit tests, full story playthroughs (one per season), a year after the story, reading level
-npm run e2e        # Playwright: smoke test, file:// + sandboxed iframe, save indoors + reload (GPU on macOS)
-npm run e2e:low    # the same at Low quality with longer waits (what CI runs on machines without a GPU)
+npm run e2e        # Playwright: desktop smoke, touch play on phones/tablets (Chromium + WebKit), every layout (GPU on macOS)
+npm run e2e:touch  # just the touch suites: spot checks + Chapter 1 played with touch only
+npm run e2e:layout # just the layout suites: every screen on every phone / tablet size
+npm run e2e:ci     # what the no-GPU CI runner does (Low quality, a subset)
+npm run touch-audit -- --out <dir>   # screenshots + layout report of every screen (scripts/touch-audit.ts)
 npm run pacing     # pacing simulation (minutes per chapter; add -- --check to fail outside 5.5–6.5 h)
 npm run bench      # performance benchmark of Low / Medium / High in headless Chromium -> bench-results.json
+npm run bench -- --profile phone    # a phone (CPU 4× slower) at Auto quality; also --profile tablet
 npm run readability            # reading-level report for every line a player reads
 npm run analyze-playtests -- <folder>   # compare exported playtest logs with the pacing model
 npm run typecheck
@@ -107,7 +123,7 @@ and what they earned and spent. **Nothing personal is recorded and nothing is ev
 browser (`lightcrossing.playtest.slotN`, at most 64 KB) until you export it.
 
 1. Turn it on: open the game with `?playtest=1` added to the address, or go to Settings, tap the version line
-   ("Light Crossing 1.1") 5 times, and set **Recording** to **On**. A small "● Playtest" badge shows while it's recording.
+   ("Light Crossing 2.0") 5 times, and set **Recording** to **On**. A small "● Playtest" badge shows while it's recording.
 2. Play normally. If a tracked mission makes no progress for 6 minutes of active play, Pemberly sends a hint to the Glowpad
    (this happens for everyone, not just in playtest mode).
 3. Export: in the same hidden Settings section, press **Export file** to download a `.json` file. Inside an iframe (like a
@@ -141,6 +157,18 @@ Measured on an Apple M3 Pro, headless Chromium on Metal, 1280×800 at 2×, frame
 
 With vsync on, all three tiers hold 60 FPS on that machine.
 
+Phone and tablet profiles (`npm run bench -- --profile phone` / `tablet`): touch, a mobile user agent, the CPU slowed 4×,
+vsync on, and Auto quality, which picks the tier that device would start on
+([phone](docs/bench/2026-10-11-phone-profile.json), [tablet](docs/bench/2026-10-11-tablet-profile.json)):
+
+| Profile | Viewport | Auto tier | Average FPS | 1% low FPS | Draw calls | Triangles | JS heap |
+|---|---|---|---|---|---|---|---|
+| Phone | 390×844 at 3× | Low | 60 | 59.5 | 235 | 87k | 18 MB |
+| Tablet | 820×1180 at 2× | Medium | 60 | 59.5 | 507 | 147k | 22 MB |
+
+Only the CPU is slowed; the GPU is still the M3 Pro's. So these show that the game logic and the draw calls fit a slow
+CPU, not how a phone's GPU copes. On a real device, use Settings → **Test performance**.
+
 **Robustness:**
 - If the browser loses the WebGL context (common on iOS when memory is tight), the game pauses with a "Tap to continue" card and rebuilds.
 - Furniture thumbnails are drawn by the main renderer, so there is no second WebGL context.
@@ -173,6 +201,11 @@ install the self-hosted runner safely.
   | `lightcrossing.__probe` | written and removed at start to test whether storage works | 0 |
 
   The save format is now version 3 with compact world objects. Version 2 saves from the first release upgrade automatically and keep everything.
+- **Preview capture route:** open the built file with `?preview=<scene>` for a staged, UI-free picture that's the same every time
+  (nothing is saved). Scenes: `cover` (default), `spring`, `summer`, `autumn`, `winter`, `festival`, `home`, `shop`, `villager`.
+  `window.__previewReady` becomes `true` when the scene is set; wait about a second more for the first frames.
+- **Registry entry:** [docs/registry-entry.json](docs/registry-entry.json) (slug, version, file hash and size, storage keys,
+  devices and orientations, preview route).
 - **Please recapture the site's preview images and cover art.** The island, interiors, seasons and HUD have all changed.
   Current screenshots are in [docs/screenshots/after/](docs/screenshots/after/), with the first release's in
   [docs/screenshots/before/](docs/screenshots/before/). Run `npx tsx scripts/screenshots.ts --out <folder>` to capture fresh ones

@@ -35,6 +35,21 @@ export class TipManager {
     this.queue.push(id);
   }
 
+  /**
+   * A first-time tip about a menu, as a box inside that menu (the floating tip waits until no menu is open,
+   * which would be after you've left it). Null when it was already seen or tips are off.
+   */
+  inline(g: Game, id: string): HTMLElement | null {
+    const tip = TIPS[id];
+    if (!tip || g.state.tips[id] || !this.app.settings.tips) return null;
+    g.state.tips[id] = 1;
+    this.queue = this.queue.filter((q) => q !== id);
+    this.app.speech.speak(`${tip.title}. ${tip.text}`);
+    const el = h('div', { class: 'menu-tip', title: 'Tap to hide' }, h('div', { class: 'tip-title' }, `Tip · ${tip.title}`), h('div', null, tip.text));
+    el.addEventListener('click', () => el.remove());
+    return el;
+  }
+
   dismiss(): void {
     this.el.style.display = 'none';
     this.shownT = 0;

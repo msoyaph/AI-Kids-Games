@@ -127,7 +127,9 @@ export class QuestTracker {
     }
     this.el.style.display = '';
     const objs = m.objectives.map((_, i) => objectiveValue(g, m, i));
-    const key = `${m.id}|${objs.map((o) => o.value).join(',')}`;
+    // small screens: just the next step (the Glowpad's Missions app has the whole list)
+    const compact = innerWidth < 600 || innerHeight < 500;
+    const key = `${m.id}|${objs.map((o) => o.value).join(',')}|${compact}`;
     if (key !== this.key) {
       this.key = key;
       clear(this.el);
@@ -137,12 +139,14 @@ export class QuestTracker {
         app.speech.speak(`${m.title}. ${todo.join('. ')}.`, 1, true);
       });
       this.el.append(h('div', { class: 'tr-title' }, m.title, say));
-      m.objectives.forEach((o, i) => {
-        const v = objs[i]!;
-        if (!objectiveLive(g, m, i) && !v.done) return;
+      const rows = m.objectives.map((o, i) => ({ o, i, v: objs[i]! })).filter(({ i, v }) => objectiveLive(g, m, i) || v.done);
+      const todo = rows.filter((r) => !r.v.done);
+      const show = compact && todo.length > 0 ? todo.slice(0, 1) : rows;
+      for (const { o, v } of show) {
         const count = v.target > 1 ? ` ${fmt(v.value)}/${fmt(v.target)}` : '';
         this.el.append(h('div', { class: `tr-obj ${v.done ? 'done' : ''}` }, v.done ? '✓ ' : '○ ', o.label, count));
-      });
+      }
+      if (show.length < todo.length) this.el.append(h('div', { class: 'tr-obj later' }, `+${todo.length - show.length} more`));
     }
     // compass arrow toward the marker (indoors: toward the person, or the door)
     const t = markerPos(g, m);

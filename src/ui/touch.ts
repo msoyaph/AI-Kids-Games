@@ -131,7 +131,7 @@ export class TouchControls {
   /** Fishing: while a line is out, the whole screen is the A button. */
   private fishing(): boolean {
     const g = this.app.game;
-    return !!g && g.state.player.location === 'island' && !!fishingRT(g).cast;
+    return !!g && g.state.player.location === 'island' && !!fishingRT(g).cast && equippedTool(g)?.kind === 'rod';
   }
 
   private start(e: TouchEvent): void {

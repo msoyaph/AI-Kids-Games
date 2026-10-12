@@ -139,6 +139,26 @@ describe('bugs', () => {
     for (let k = 0; k < 60 && g.action; k++) g.update(1 / 60, null);
     expect(g.state.stats.bugsCaught).toBe(1);
   });
+
+  it('with the net out, a bug on the tree in front gets the swing (not a shake)', () => {
+    const g = makeGame(62);
+    give(g, 'net_flimsy');
+    equipKind(g, 'net');
+    const w = g.world;
+    const p = g.state.player;
+    // stand south of a tree, facing it (north)
+    const tx = Math.floor(p.x), tz = Math.floor(p.z) - 1;
+    const tree = w.idx(tx, tz);
+    w.setObj(tree, { k: 'tree' });
+    p.x = tx + 0.5;
+    p.z = tz + 1.5;
+    p.facing = Math.PI;
+    const base = w.surfaceY(tx + 0.5, tz + 0.5);
+    expect(g.resolve()?.label).toBe('Shake tree');
+    const rt = bugRT(g);
+    rt.bugs = [{ id: 1, bug: 'bug_clover_hopper', habitat: 'trees', x: tx + 0.5, y: base + 0.8, z: tz + 0.68, tile: tree, alert: 0, state: 'idle', vx: 0, vz: 0, vy: 0, t: 0, phase: 0, life: 100 }];
+    expect(g.resolve()?.label).toMatch(/^Swing net/);
+  });
 });
 
 describe('museum', () => {

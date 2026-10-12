@@ -41,6 +41,8 @@ export default defineConfig({
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
+    // a tap on something that never becomes tappable fails instead of waiting out the whole test
+    actionTimeout: LOW ? 60_000 : 15_000,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },

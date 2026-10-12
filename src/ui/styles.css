@@ -250,6 +250,7 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6
 /* ---------- tips / touch / ring ---------- */
 .tip { position: absolute; left: 12px; bottom: max(70px, calc(env(safe-area-inset-bottom) + 70px)); max-width: min(360px, 80vw); padding: 12px 16px; border-radius: 18px; background: #fffdf2; border: 3px solid var(--gold); box-shadow: var(--shadow); font-size: 14px; font-weight: 600; z-index: 6; cursor: pointer; animation: toastIn 0.35s cubic-bezier(.3,1.5,.5,1); }
 .tip-title { font-weight: 900; color: #c98a1a; margin-bottom: 4px; }
+.menu-tip { margin: 0 0 10px; padding: 10px 14px; border-radius: 16px; background: #fffdf2; border: 3px solid var(--gold); font-size: calc(15px * var(--ts, 1)); font-weight: 600; cursor: pointer; }
 .touch { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
 .tc-pad { position: absolute; left: 0; bottom: 0; width: 50%; height: 60%; pointer-events: auto; }
 .tc-stick { position: absolute; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; background: rgba(255,255,255,0.25); border: 3px solid rgba(255,255,255,0.6); display: none; pointer-events: none; }

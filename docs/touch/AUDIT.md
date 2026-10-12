@@ -133,3 +133,56 @@
    - a layout suite (every screen × every viewport × both engines);
    - a throttled benchmark;
    - all existing tests.
+
+## After the touch pass
+
+Every item above is now ✅ on phones and tablets, in portrait and landscape, in Chromium and WebKit.
+The layout checker finds 0 issues on every screen × viewport × engine (`e2e/layout.spec.ts`).
+
+Before / after on a phone (390×844 and 844×390): [portrait](compare-phone-portrait.jpg),
+[landscape](compare-phone-landscape.jpg) (each pair: before on the left, after on the right; single shots in
+`before/` and `after/`).
+
+| Was | Now |
+|---|---|
+| ❌ Pause / save / quit | ☰ button: Resume, Save, Settings, Full screen (where supported), Controls, Save & quit |
+| ❌ Tool ring | The Tools button (it shows what's in your hand) opens the ring, which sizes itself to the safe area |
+| ❌ Reel on portrait phones | Hold anywhere on the screen to reel. The reel bar sits in the HUD lane and never catches touches |
+| ❌ Creator / closet in landscape | Every menu scrolls inside the safe area. "Set sail!" and the outfits are always reachable |
+| ❌ Editor on portrait phones | Drag pieces. The pieces list is a drawer (＋ Add). One toolbar: nudge, Turn, On table/floor, Put away, Walls, Undo |
+| ⚠️ Walking / running / sneaking | Floating stick anywhere: a small push sneaks (🐾), a bigger push walks, the edge runs. Or tap to walk there |
+| ⚠️ Which tile will I dig? | A ring on the exact tile the action touches (green when something will happen) |
+| ⚠️ Small tap targets, 🔊 over choices | 48 px minimum on touch devices. 🔊 moved inside the dialogue box |
+| ⚠️ Placement "Esc to cancel" | ✔ Place / ✕ Cancel buttons, and prompts worded for the input in use |
+| ⚠️ HUD overlaps, toasts over menus | HUD layout pass: nothing overlaps, toasts queue and only use free space, HUD buttons sit above the touch layer |
+| ⚠️ Notch / home bar | Everything sits inside the safe area (tested with simulated notches) |
+| ⚠️ iOS zoom, pull-to-refresh, callouts | Blocked during play. Menus still scroll |
+| ⚠️ iOS audio / read-aloud | Unlocked on the first tap (touchend + a silent buffer; speech primed) |
+| ⚠️ Background / lock | Saves, pauses (pause menu), silences audio; resumes cleanly |
+| ⚠️ Auto quality on phones | Phones start on Low |
+
+### Bugs found while testing by touch
+
+- `<html>` got the class `touch`, which is also the touch layer's class. The page became `pointer-events: none`, so
+  the editor and the "Tap to continue" card couldn't be tapped on touch devices. The class is now `touch-ui`.
+- The mission tracker's 🔊 and the recipe tracker's ✕ sat under the full-screen touch layer: tapping them walked
+  you somewhere instead.
+- After a Bluetooth keyboard was used, the browser's fake mouse click that follows a tap made the game think the
+  mouse was in use, so the touch buttons never came back.
+- A fast skater could pass through a Lantern Skate ring between checks (now checked every frame along the path).
+- The ring showed the tile in front while A would pick up the branch underfoot (the ring now follows the action).
+- Tapping a building's walls or roof didn't count as tapping the building.
+- WebKit draws buttons without a font size at 11 px; they now default to 15 px.
+- Putting the rod away left the line in the water, so touch stayed in "hold anywhere to reel" mode. Swapping
+  tools now reels the line in.
+- Tapping Fennimore behind the shop counter did nothing (no path to him). Taps on someone behind a counter now
+  walk you up to the counter.
+- With the net out and a bug sitting on a tree, A shook the tree instead of swinging the net (with every input,
+  not just touch). The net wins now when a bug is in reach.
+- Tapping the workbench could walk you to the ground behind it: at this camera angle a low object covers the
+  tile behind it, and picking went by the nearest tile centre. A tap inside a building's (or the workbench's)
+  outline on screen now picks it; ground in front of it, trees and people still win where they're in front.
+- The Crafting, Shop and Pockets tips waited until no menu was open, so they appeared after you'd left that
+  menu. They now show inside the menu, under its title (`TipManager.inline` / `App.tipInside`).
+- On small phones the full mission list covered part of the room (the tent's bed). Small screens show just the
+  next step and "+N more"; the Glowpad's Missions app has the whole list.

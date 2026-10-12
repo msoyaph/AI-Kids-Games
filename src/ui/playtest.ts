@@ -4,7 +4,7 @@ import type { App } from '../app';
 import { MISSION_BY_ID } from '../data/missions';
 import { btn, clear, h, type Panel } from './dom';
 
-export const GAME_VERSION = '1.1';
+export const GAME_VERSION = '2.0';
 
 /** Running inside an iframe (cross-origin access to window.top throws, which also means yes). */
 export function inIframe(): boolean {
