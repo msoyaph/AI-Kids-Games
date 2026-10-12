@@ -85,7 +85,7 @@ Original 3D kart racer for ages 10–14. Vite + TypeScript (strict) + Three.js. 
 - Playwright: projects ending in `desktop` run the "once" tests; WebKit needs `npx playwright install webkit`.
 
 ## Glass touch controller (in progress on `calex-upgrade` — do NOT merge into main without user approval)
-Plan: `/Users/cliffsumalpong/.claude/plans/modular-herding-pancake.md` (approved). Design: `docs/touch/design.md`.
+Plan: the approved upgrade plan (kept outside the repo). Design: `docs/touch/design.md`.
 Steps 1–7, commit per step. Must not change keyboard / gamepad / tilt behaviour; new settings live inside
 `calexcart.settings` (no new keys); single-file build < 2 MB; 60 fps on the throttled tablet profile.
 Decisions: tablets may race in portrait, phones keep the rotate screen; vibration on/off = existing
@@ -136,7 +136,7 @@ Decisions: tablets may race in portrait, phones keep the rotate screen; vibratio
   screenshots, FPS table from `npm run bench-controls -- --runs 3`).
 
 ## Upgrade in progress (branch `calex-upgrade` — do NOT merge into main without user approval)
-Plan: `/Users/cliffsumalpong/.claude/plans/modular-herding-pancake.md` (approved). Work Phase 0→10, commit per phase.
+Plan: the approved upgrade plan (kept outside the repo). Work Phase 0→10, commit per phase.
 Stop and ask ONLY if a change would break existing saves, push the build over 2 MB, make a definition-of-done
 item impossible, or need a gameplay decision beyond the plan. Otherwise decide, note it below, keep going.
 
@@ -268,3 +268,14 @@ every class, normal + mirror, using corrected layout markers (no compatibility f
   Worst-case storage (16 tracks) 0.89 MB (ghost 15.6 KB per 240 s max run). Medium/High gained a few draws
   (chunked meshes) but lost 20–35 % triangles.
 - Baseline storage: ghosts ≈ 180 chars/s (≈ 23 K chars per run); 16 tracks × 3 slots ≈ 2.4 MB UTF-16 → must compress.
+
+## In the Ai Kids Games monorepo
+
+This project lives at `games/calex-cart/` in the public Ai Kids Games monorepo (msoyaph/AI-Kids-Games),
+imported with its full history. Run its scripts from this folder or from the repo root with
+`--workspace games/calex-cart`. There is one root lockfile (no per-game lockfile). CI is the root
+`.github/workflows/ci.yml`; this game's job runs on GitHub's standard runners in low-quality mode.
+Self-hosted runners are never used with this public repo; GPU runs are in docs/BENCHMARKS.md.
+After changing the game, run `npm run import-game -- calex-cart` at the root to update the site's copy
+(CI fails if the source changes without a re-import). Release tags: `calex-cart-v<version>`.
+Don't create a separate GitHub repo for this game.

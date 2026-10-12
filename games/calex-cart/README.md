@@ -183,57 +183,17 @@ Developer tools (dev server only, stripped from production builds):
 
 ## Continuous integration (GitHub Actions)
 
-`.github/workflows/ci.yml` runs on every push to `main` / `calex-upgrade`, on pull requests and on demand:
-typecheck → single-file build (**fails if `dist/index.html` reaches 2 MB**) → unit + simulation tests → track
-validator → Playwright in **Chromium and WebKit** on desktop, tablet and phone. GitHub's runners have no GPU, so the
-browser tests run in the game's **test mode** (`?testmode=1`, set for every page by `CALEX_TESTMODE=1`: Low quality,
-reduced effects) with longer timeouts and one retry. On failure the HTML report, traces and screenshots are uploaded
-as the `playwright-report-…` artifact; on success the built `index.html` is uploaded.
+Calex Cart lives in the Ai Kids Games monorepo. Its checks run in the root workflow
+(`.github/workflows/ci.yml`, job **Calex Cart**) on GitHub's standard Ubuntu runners for every pull request and
+every push to `main` that touches `games/calex-cart/` or shared files: typecheck, single-file build with the 2 MB
+size check, unit and simulation tests, the track validator, and the Chromium + WebKit browser tests in the game's
+low-quality test mode (`CALEX_TESTMODE=1`, software WebGL).
 
-### Put the project on GitHub (first time)
+Full-quality runs on a real GPU and the Low/Medium/High benchmark are run by hand on your own computer: see
+`docs/BENCHMARKS.md` at the repo root. Never connect a self-hosted runner to this public repository.
 
-With the [GitHub CLI](https://cli.github.com) (`gh auth login` once):
-
-```bash
-cd "Calex Kart"
-gh repo create calex-cart --private --source . --remote origin
-git push -u origin main
-git push -u origin calex-upgrade
-```
-
-Or in the browser: go to github.com/new, name it `calex-cart`, choose **Private**, and click **Create repository**
-(leave README/.gitignore/licence unticked). Then:
-
-```bash
-git remote add origin https://github.com/<your-user>/calex-cart.git
-git push -u origin main
-git push -u origin calex-upgrade
-```
-
-Open the repository's **Actions** tab to watch the first run (about 25–40 minutes; most of it is the simulation
-tests and software-rendered browser tests). To stop broken code reaching `main`: **Settings → Branches → Add rule**
-for `main` → tick *Require status checks to pass* → choose **CI / test**.
-
-### Optional: full-quality tests on your Mac (self-hosted runner)
-
-`.github/workflows/mac-gpu.yml` runs the same tests on your own Mac with its real GPU (Metal) at full quality, plus
-the Low/Medium/High benchmark (`sim-report/bench-*.json` in the run's artifact).
-
-> ⚠️ **Use this only with a private repository, and make sure untrusted pull requests can't run code on your
-> machine.** A self-hosted runner executes the workflow's code directly on your Mac with your user's access.
-> The workflow never runs for pull requests (only *Run workflow* clicks and pushes by people with write access) and
-> refuses to start unless the repository is private and the run was started by its owner. Also set
-> **Settings → Actions → General → Fork pull request workflows → Require approval for all outside collaborators**,
-> and don't give outside collaborators write access. If the repository ever becomes public, remove the runner
-> first (**Settings → Actions → Runners → … → Remove**) and delete `mac-gpu.yml`.
-
-1. **Settings → Actions → Runners → New self-hosted runner → macOS** (pick ARM64 on Apple silicon). Run the
-   download and `./config.sh …` commands it shows in a new folder (e.g. `~/actions-runner-calex`), and when asked
-   for extra labels type **`calex-mac`**.
-2. Start it with `./run.sh` (only while that Terminal window is open) or install it as a background service with
-   `./svc.sh install && ./svc.sh start`.
-3. **Actions → Mac GPU (self-hosted) → Run workflow.** Node 24 is installed by the workflow; Playwright downloads
-   its own Chromium and WebKit the first time.
+After changing the game, run `npm run import-game -- calex-cart` at the repo root so the website gets the new build;
+CI fails if the game's source changes without a re-import.
 
 ---
 
