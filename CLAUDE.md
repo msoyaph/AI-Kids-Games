@@ -87,3 +87,26 @@ recapture, save carry-over, in-site touch tests). Both ship in site release 2.1.
   79 + 4 sim + 18. Lesson: never run CPU/GPU-heavy work (sharp AVIF, captures) during e2e runs.
 - Pitfall: commit helper scripts cd into the monorepo, but the session shell's cwd is the old
   site folder (no remote): always cd ~/Documents/AI-Kids-Games before git push.
+
+## Release 2.1.0 — LIVE 2026-10-12 at https://ai-kids-games-fawn.vercel.app
+- Owner asked to ship the passed games now ("once done, deploy the updates to live production …
+  so my kids can play"; then "deploy the live vercel production the passed games"). dc4a5f7 =
+  PR #2, fast-forwarded to main; production dpl_565CFC3FJtQh2oMy2m4mGboRM9r3. Local full suite
+  (GPU) 94/0, hosted suite on the PR preview 94/0, logged-out production suite 94/0 (23 device
+  skips each); Lighthouse mobile home 99/100/100/100, details 99/100/100/100, play 73 (exempt).
+- Vercel now: production branch main; Production-only env AIKG_ALLOW_PRODUCTION=2.1.0 and
+  SITE_ORIGIN=https://ai-kids-games-fawn.vercel.app (switch to https://aikids.games once that domain
+  is registered and verified). The release placeholder branch is deleted.
+- main is protected ("CI passed" required, admins included): every change goes through a PR, and
+  every merge to main deploys production (a new release needs a version bump + approval).
+- aikids.games is NOT registered (registry RDAP 404, NXDOMAIN). The domains are attached to the
+  project; owner must register it, then add A 216.150.1.1 + 216.150.16.1 (apex) and CNAME
+  b958b7994f87b614.vercel-dns-016.com (www), then set SITE_ORIGIN and the vercel.app → apex 308.
+- TheaBonk v2 stays out: quiet-machine rerun → quality governor passes (earlier failures = busy
+  machine); 5-minute touch playthrough still fails (bonked at 4:09 on Relaxed). Diagnosis: test
+  assumption after the phase 13 balance sweep made Relaxed harder (playerHp 1.5→1.18, damageTaken
+  0.7→0.92, hearts 1.6→1.3, Landing Bonk 2.5→2.0, Meadow map mods); the touch bot taps the first
+  card with input latency. Owner to fix in TheaBonk's project.
+- Next (owner requests): the sizzle reel with HyperFrames (npx hyperframes@0.8.133, cached,
+  telemetry off) in marketing/sizzle/, storyboard first in plan mode; recapture all art in the
+  consistent style and drop the temporary art; README showcase; TheaBonk v2 when fixed.

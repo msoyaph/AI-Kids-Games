@@ -10,7 +10,7 @@ const gpuArgs = process.platform === 'darwin' ? ['--use-angle=metal', '--ignore-
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 120_000,
-  retries: 0,
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: [['list']],
   use: {
