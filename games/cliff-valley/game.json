@@ -1,0 +1,102 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "cliff-valley",
+  "title": "Cliff Valley",
+  "tagline": "Grow a farm, make friends, fix the valley.",
+  "shortDescription": "Great-Aunt Rosemary’s old farm is yours! Grow crops, raise animals, fish, cook, explore a 40-floor mine and help the villagers repair Cliff Valley after the big storm.",
+  "longDescription": "Cliff Valley is a cozy pixel-art farming life-sim. Great-Aunt Rosemary left you her old farm, but a big storm knocked the valley about. Grow crops, raise animals, explore a 40-floor mine, fish, cook, craft and make friends with 14 villagers. Fill the six restoration boards in the Valley Hall to fix the bridge, the mine lift, the pier, the greenhouse and the valley train, and celebrate the grand reopening at the end of year one. After the credits the farm keeps going.",
+  "version": "1.0.0",
+  "minAge": 8,
+  "ageRange": "8–14",
+  "genres": [
+    "Farming",
+    "Cozy",
+    "Adventure"
+  ],
+  "tags": [
+    "Farming",
+    "Animals",
+    "Mining",
+    "Fishing",
+    "Friends",
+    "Pixel art"
+  ],
+  "keywords": [
+    "farming sim",
+    "pixel art",
+    "crops and animals",
+    "mining",
+    "friendships",
+    "seasons",
+    "cozy",
+    "cooking",
+    "fishing",
+    "kids farming game",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "Four seasons with a festival each, and villagers’ birthdays on the calendar",
+    "Crops, fruit trees, a greenhouse and animals: chickens, ducks, rabbits, cows, goats and sheep",
+    "A 40-floor mine with an elevator and cartoon critters that just bounce away",
+    "Fishing with 35 fish, crab pots, 38 dishes to cook and 63 things to craft",
+    "14 villagers to befriend, with friendship scenes, letters and recipes",
+    "A story about repairing the valley, then year-two goals and a farm evaluation",
+    "Read-aloud, text size, gentle hints, reduced motion and left-handed touch buttons"
+  ],
+  "contentNotes": "Farming and friendship with mild cartoon cave critters that bounce away. No harsh penalties: fainting or staying up late just sends you home with nothing lost. No romance. Three farm save slots and settings stay in this browser.",
+  "controls": {
+    "types": [
+      "Keyboard",
+      "Mouse",
+      "Gamepad",
+      "Touch"
+    ],
+    "quickStart": [
+      "Move with WASD or the arrow keys, a gamepad stick, or tap the ground.",
+      "Use your tool with Space, a click, gamepad A or the big yellow button.",
+      "Grow crops, ship them in the bin and fill the Valley Hall boards."
+    ],
+    "howToPlay": [
+      "Move with WASD or the arrow keys. Use your tool or item with Space, C or a left-click; talk, pick up and open with E, X, Enter or a right-click.",
+      "Pick a tool with 1–0, Q and R or by clicking a slot. Open the bag with I or Tab, the map with M and the journal with J. Escape opens the menu.",
+      "With a gamepad, move with the left stick, use tools with A, talk with B, aim with the right stick, switch tools with LB/RB and open the bag with X.",
+      "On touch screens, tap the ground to walk (or turn on the joystick), tap the big yellow button to use a tool and tap a villager or object to talk or pick it up."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "any",
+  "requirements": [],
+  "playTime": "About 8 hours, plus endless farming",
+  "storage": {
+    "prefix": "cliffvalley.",
+    "keys": [
+      "cliffvalley.slot.1",
+      "cliffvalley.slot.2",
+      "cliffvalley.slot.3",
+      "cliffvalley.settings",
+      "cliffvalley.playtest"
+    ],
+    "probe": "cliffvalley.__probe"
+  },
+  "capture": {
+    "route": "?scene=farmHarvest&hud=0",
+    "script": "apps/site/scripts/capture/cliff-valley.ts"
+  },
+  "license": "MIT",
+  "source": "games/cliff-valley",
+  "site": {
+    "featured": true,
+    "releaseDate": "2026-10-11",
+    "accentColor": "#d8ecc4",
+    "coverLayers": [
+      "drift",
+      "bob"
+    ],
+    "status": "Ready to play"
+  }
+}

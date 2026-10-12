@@ -1,0 +1,104 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "light-crossing",
+  "title": "Light Crossing",
+  "tagline": "Make a little island shine.",
+  "shortDescription": "Build a cozy life on Driftlight Isle. Befriend your neighbors, fish, catch bugs, decorate a walk-in home and light the old lighthouse for the Lantern Crossing festival.",
+  "longDescription": "Light Crossing is a cozy island life-sim. Arrive on sleepy Driftlight Isle, pitch a tent and make friends with eight neighbors. Fish, catch bugs, dig up fossils for the museum, grow flowers, dress up and decorate your home inside and out, then make the island glow bright enough to light the old lighthouse. The story takes about six hours; after it the island keeps going through four seasons, festivals and events. Read-aloud and bigger text make it friendly for early readers, and it plays by touch on phones and tablets in any orientation.",
+  "version": "2.0.0",
+  "minAge": 6,
+  "ageRange": "6+",
+  "genres": [
+    "Cozy",
+    "Adventure"
+  ],
+  "tags": [
+    "Island",
+    "Fishing",
+    "Bugs",
+    "Decorating",
+    "Neighbors",
+    "Seasons"
+  ],
+  "keywords": [
+    "cozy life sim",
+    "island life",
+    "fishing",
+    "bug catching",
+    "crafting",
+    "villagers",
+    "decorating",
+    "seasons",
+    "festivals",
+    "read-aloud",
+    "kids cozy game",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "Walk-in homes and shop: visit the shop, the museum, Lantern Hall and every neighbor’s home",
+    "Decorate with furniture, wallpaper, shelves, wall pieces and outdoor decorations",
+    "Four seasons, each with its own fish, bugs, flowers, forage and recipes",
+    "46 clothing pieces, a closet with saved outfits and a dye station that uses flowers",
+    "A festival every season, plus fishing tournaments, bug-offs, meteor nights and birthdays",
+    "Read-aloud and larger text for young readers",
+    "Plays by touch on phones and tablets in portrait or landscape, or with keyboard, mouse or gamepad"
+  ],
+  "contentNotes": "Peaceful island life with no combat. Reading helps with conversations and missions, and read-aloud can speak them. Three save slots and automatic saves stay in this browser.",
+  "controls": {
+    "types": [
+      "Touch",
+      "Keyboard",
+      "Mouse",
+      "Gamepad"
+    ],
+    "quickStart": [
+      "Walk with WASD or the arrow keys, or drag anywhere on a touch screen.",
+      "Press E, Space, gamepad A or the big A button to talk, dig, fish and catch bugs.",
+      "Help your neighbors and light the lighthouse for the festival."
+    ],
+    "howToPlay": [
+      "Move with WASD or the arrow keys; hold Shift to run. E, Space or a click interacts or uses your tool.",
+      "Use [ and ] to cycle tools, R for the tool ring, I for pockets, Tab or P for your Glowpad, M for the map and Escape to pause.",
+      "On a gamepad, use the left stick to move, B or RT to run, A to interact, LB/RB to cycle tools, X for pockets and Start for the Glowpad.",
+      "On phones and tablets, in portrait or landscape: drag anywhere to move, tap the big A button to interact, Tools to switch tools, Bag for pockets and ☰ for the menu. Tap a person, door or tree to walk up and use it."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "any",
+  "requirements": [],
+  "playTime": "About 6 hours of story, then endless island life",
+  "storage": {
+    "prefix": "lightcrossing.",
+    "keys": [
+      "lightcrossing.slot0",
+      "lightcrossing.slot1",
+      "lightcrossing.slot2",
+      "lightcrossing.settings",
+      "lightcrossing.playtest.slot0",
+      "lightcrossing.playtest.slot1",
+      "lightcrossing.playtest.slot2"
+    ],
+    "probe": "lightcrossing.__probe"
+  },
+  "capture": {
+    "route": "?preview=cover",
+    "script": "apps/site/scripts/capture/light-crossing.ts"
+  },
+  "license": "MIT",
+  "source": "games/light-crossing",
+  "site": {
+    "featured": true,
+    "releaseDate": "2026-10-11",
+    "accentColor": "#c7f1dd",
+    "coverLayers": [
+      "float",
+      "twinkle"
+    ],
+    "status": "Ready to play"
+  }
+}

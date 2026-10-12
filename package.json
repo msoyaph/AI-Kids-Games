@@ -21,7 +21,8 @@
     "check": "tsx scripts/check-repo.ts && tsx scripts/check-builds.ts",
     "check:repo": "tsx scripts/check-repo.ts",
     "check:builds": "tsx scripts/check-builds.ts",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "manifests": "tsx scripts/manifests.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

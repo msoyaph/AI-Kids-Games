@@ -1,0 +1,100 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "space-sky",
+  "title": "Space Sky",
+  "tagline": "Your rocket. A universe of wonder.",
+  "shortDescription": "Build your own rocket and fly through the solar system in 3D. Land on planets and moons, meet friendly aliens, learn real space facts and collect space badges.",
+  "longDescription": "Space Sky is a 3D space exploration adventure. Join the Space Sky Academy as a young cadet, build and upgrade your own rocket, fly through the solar system, land on planets and moons, solve gentle puzzles, meet friendly aliens and learn real space facts. The story runs through five chapters and ends with a trip through a wormhole to the made-up world of Zephyra. Mistakes are always gentle: there is no game over.",
+  "version": "2.0.0",
+  "minAge": 6,
+  "ageRange": "6–10",
+  "genres": [
+    "Adventure",
+    "Learning"
+  ],
+  "tags": [
+    "Space",
+    "Rockets",
+    "Planets",
+    "Science",
+    "Aliens",
+    "3D"
+  ],
+  "keywords": [
+    "space exploration",
+    "3d flight",
+    "solar system",
+    "real space facts",
+    "stem",
+    "learning game",
+    "rocket builder",
+    "planets",
+    "kids science game",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "Fly a rocket you build yourself through a 3D solar system with true-color planets",
+    "27 story missions, 16 side missions, races and daily challenges",
+    "Land on planets and moons and explore 20 places with gentle puzzles",
+    "A 51-page Space Codex of real space facts, 40 badges and 34 stickers",
+    "Rocket parts, outfits and room decorations to collect",
+    "Read-aloud, Easy and Normal, and no game over"
+  ],
+  "contentNotes": "Friendly aliens, real space facts and no scary content. There is no game over. Three save slots and settings stay in this browser. Needs WebGL 2, which current browsers on computers, tablets and phones support.",
+  "controls": {
+    "types": [
+      "Touch",
+      "Keyboard",
+      "Mouse",
+      "Gamepad"
+    ],
+    "quickStart": [
+      "Make your astronaut, then press Go! at the Academy.",
+      "Steer with the arrow keys, a gamepad stick or the left half of the screen. Boost with Space or the orange button.",
+      "Land, explore and collect space badges."
+    ],
+    "howToPlay": [
+      "Turn a phone sideways to play. Steer with WASD or the arrow keys, a gamepad’s left stick or d-pad, or by dragging on the left half of a touch screen. Your rocket flies forward by itself.",
+      "Press Space, gamepad A or the big orange button to boost, jump or thrust.",
+      "Press E or Enter, gamepad B, X or Y, or the blue button to land, scan, talk and grab.",
+      "Pause with Escape or P, gamepad Start or the pause button. Menus work with touch, mouse, keyboard and gamepad."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "landscape",
+  "requirements": [
+    "WebGL 2"
+  ],
+  "playTime": "About 5–6 hours",
+  "storage": {
+    "prefix": "spacesky.",
+    "keys": [
+      "spacesky.slot.0",
+      "spacesky.slot.1",
+      "spacesky.slot.2",
+      "spacesky.settings"
+    ],
+    "probe": "__spacesky_probe__"
+  },
+  "capture": {
+    "route": "?debug",
+    "script": "apps/site/scripts/capture/space-sky.ts"
+  },
+  "license": "MIT",
+  "source": "games/space-sky",
+  "site": {
+    "featured": true,
+    "releaseDate": "2026-10-11",
+    "accentColor": "#d9d4f6",
+    "coverLayers": [
+      "float",
+      "twinkle"
+    ],
+    "status": "Ready to play"
+  }
+}

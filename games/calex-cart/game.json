@@ -1,0 +1,102 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "calex-cart",
+  "title": "Calex Cart",
+  "tagline": "Drift, boost and chase the finish.",
+  "shortDescription": "Drift, boost and glide through 20 bright tracks in an original 3D kart racer. Win five cups, including the snowy Frost Cup, earn Driving School medals, chase ghosts or race a friend.",
+  "longDescription": "Calex Cart is a bright, original 3D kart racer. Drift for sparks, glide over canyons, skid across ice and dodge paper planes and goo puddles across 20 tracks in five cups, including the winter Frost Cup, with 13 racers. There is Time Trial with your own ghost and staff ghosts, Versus, balloon Battle and Coin Rush, a six-lesson Driving School, instant replays and two-player split-screen. On phones and tablets it has frosted-glass touch controls.",
+  "version": "0.2.0",
+  "minAge": 10,
+  "ageRange": "10–14",
+  "genres": [
+    "Racing",
+    "Action"
+  ],
+  "tags": [
+    "Karts",
+    "Drift",
+    "Split-screen",
+    "Trophies",
+    "Time Trial",
+    "Battle"
+  ],
+  "keywords": [
+    "kart racing",
+    "3d racing",
+    "drifting",
+    "local split-screen",
+    "battle mode",
+    "time trials",
+    "driving school",
+    "winter tracks",
+    "kids racing game",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "20 tracks in five cups, including the snowy Frost Cup",
+    "13 racers, kart parts, paints and decals to unlock",
+    "Driving School: six lessons with medals that teach drifting and items",
+    "Time Trial with your ghost and staff ghosts, and instant replays",
+    "Battle mode with balloons and Coin Rush",
+    "Two-player split-screen with a keyboard or gamepads",
+    "Frosted-glass touch controls with an adjustable layout on phones and tablets"
+  ],
+  "contentNotes": "Cartoon kart battles and silly spin-outs. Three save slots, settings and Time Trial ghosts stay in this browser. Split-screen needs a keyboard or gamepads; touch controls are for solo play.",
+  "controls": {
+    "types": [
+      "Keyboard",
+      "Gamepad",
+      "Touch"
+    ],
+    "quickStart": [
+      "Turn your phone sideways, or use the keyboard or a gamepad.",
+      "Steer, hold Drift around corners and let go for a boost.",
+      "Grab item boxes and race to the finish line."
+    ],
+    "howToPlay": [
+      "Steer with A/D or the arrow keys. W/Up accelerates, S/Down brakes, Shift or Space drifts, E uses an item and R looks behind. Escape or P pauses.",
+      "With a gamepad, steer with the left stick or d-pad. A/RT accelerates, B/LT brakes, RB/X drifts and LB/Y uses an item.",
+      "On touch screens, steer with the glass stick or tilt and use GO, Brake, Drift and ITEM. Phones race sideways; tablets can race upright. Settings → Touch changes the size and layout.",
+      "Split-screen needs a keyboard or gamepads. With two gamepads, use one each; with one gamepad, player 1 uses the keyboard and player 2 the gamepad. With a shared keyboard, player 1 uses WASD, left Shift/Space and E; player 2 uses arrows, right Shift and Enter. Touch is solo only."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "landscape",
+  "requirements": [],
+  "playTime": "About 7–8 hours, plus replay",
+  "storage": {
+    "prefix": "calexcart.",
+    "keys": [
+      "calexcart.slot.1",
+      "calexcart.slot.2",
+      "calexcart.slot.3",
+      "calexcart.settings",
+      "calexcart.lastSlot",
+      "calexcart.ghost.<slot>.<track>",
+      "calexcart.playtest"
+    ],
+    "probe": "calexcart.__probe"
+  },
+  "capture": {
+    "route": "",
+    "script": "apps/site/scripts/capture/calex-cart.ts"
+  },
+  "license": "MIT",
+  "source": "games/calex-cart",
+  "site": {
+    "featured": true,
+    "releaseDate": "2026-10-11",
+    "accentColor": "#f7e3ac",
+    "coverLayers": [
+      "drift",
+      "bob",
+      "twinkle"
+    ],
+    "status": "Ready to play"
+  }
+}

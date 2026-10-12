@@ -1,0 +1,88 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "theabonk",
+  "title": "TheaBonk",
+  "tagline": "Small hero. Mighty big bonks.",
+  "shortDescription": "Help Thea push back the Gloom with her glowing Bonk Ring. Dodge waves of cartoon monsters, pick new powers as you level up and survive until dawn.",
+  "longDescription": "TheaBonk is a 3D action roguelite. Thea the Bonkwright and her friends hold a moonlit meadow against the Gloom from dusk until dawn. Weapons attack on their own, so your job is to move, jump and slide well enough to survive 20 minutes and three bosses. Level up to pick new weapons and items, evolve them into stronger forms, and spend gold between runs on permanent upgrades. It plays on computers with a keyboard and mouse or a gamepad.",
+  "version": "1.0.0",
+  "minAge": 8,
+  "ageRange": "8+",
+  "genres": [
+    "Action",
+    "Adventure"
+  ],
+  "tags": [
+    "Monsters",
+    "Power-ups",
+    "3D",
+    "Survival"
+  ],
+  "keywords": [
+    "roguelite",
+    "3d action",
+    "wave survival",
+    "arena survival",
+    "auto-attack",
+    "heroes",
+    "power-ups",
+    "kids action game",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "Three heroes: Thea, plus Pip and Brindle to unlock, each with a starting weapon",
+    "Nine weapons with five levels each that evolve into stronger forms, plus 13 items",
+    "Bosses at 5, 10 and 15 minutes, and a win at dawn after 20",
+    "Shrines with six kinds of temporary blessing, and ramps for momentum jumps",
+    "A Workshop for permanent upgrades between runs, and achievements that unlock heroes and weapons"
+  ],
+  "contentNotes": "Fantasy combat against cartoon monsters, fast movement and colorful effects. No realistic blood or gore. Action may feel intense. Unlocks and settings save in this browser. A keyboard and mouse or gamepad is required.",
+  "controls": {
+    "types": [
+      "Keyboard",
+      "Mouse",
+      "Gamepad"
+    ],
+    "quickStart": [
+      "Move Thea with WASD, the arrow keys or a gamepad stick.",
+      "Her Bonk Ring bonks monsters all by itself. Stay on the move!",
+      "When you level up, pick a new power with 1–4."
+    ],
+    "howToPlay": [
+      "Move with WASD or the arrow keys. Your Bonk Ring attacks automatically. Press Space to jump and Shift or C to slide.",
+      "Drag the mouse or use Q/E to look. Choose pointer lock in Settings → Camera control, then click the game to lock the mouse. Escape or P pauses.",
+      "Choose upgrades with 1–4, a click or the arrow keys and Enter.",
+      "With a gamepad, use the left stick to move and the right stick to look. A jumps, B or a trigger slides, and Start or Select pauses."
+    ]
+  },
+  "devices": [
+    "Computer"
+  ],
+  "orientation": "landscape",
+  "requirements": [],
+  "playTime": "10–20 minutes per run",
+  "storage": {
+    "prefix": "theabonk.",
+    "keys": [
+      "theabonk.save"
+    ],
+    "probe": "__theabonk_probe__"
+  },
+  "capture": {
+    "route": "?seed=11",
+    "script": "apps/site/scripts/capture/theabonk.ts"
+  },
+  "license": "MIT",
+  "source": "games/theabonk",
+  "site": {
+    "featured": true,
+    "releaseDate": "2026-10-11",
+    "accentColor": "#e1dafa",
+    "coverLayers": [
+      "bob",
+      "twinkle"
+    ],
+    "status": "Ready to play"
+  }
+}

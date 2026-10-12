@@ -1,0 +1,98 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "vanex-defense",
+  "title": "Vanex Defense",
+  "tagline": "Build the maze. Hold the line.",
+  "shortDescription": "Command an elemental defense grid. Build and maze towers, counter each wave’s elements, specialize, field a hero and hold the line across six worlds, or build your own map.",
+  "longDescription": "Vanex Defense is an elemental tower-defense strategy game. As Commander of the Vanex Defense Grid you face the Shardbound, crystal constructs breaking through a rift. Build towers and make a maze, read each wave’s intel, counter its elements with combo towers and specializations, field a commander hero and call down abilities, while PIP, the grid’s tactical AI, keeps you briefed. There are six worlds and 18 hand-made sectors, plus a Daily challenge, Endless mode and a Map Workshop for building and sharing your own sectors.",
+  "version": "2.0.0",
+  "minAge": 10,
+  "ageRange": "10–14",
+  "genres": [
+    "Strategy",
+    "Action"
+  ],
+  "tags": [
+    "Towers",
+    "Elements",
+    "Maze",
+    "Robots",
+    "Heroes",
+    "Map editor"
+  ],
+  "keywords": [
+    "tower defense",
+    "mazing",
+    "strategy",
+    "elemental towers",
+    "specializations",
+    "map editor",
+    "commander heroes",
+    "sci-fi",
+    "kids strategy game",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "6 worlds and 18 hand-made sectors with gates, drawbridges, sky lanes and shifting ground",
+    "23 towers, including 15 combo towers, and 42 specializations",
+    "17 crystal constructs and 4 multi-phase bosses with telegraphed attacks",
+    "4 commander heroes, 3 abilities and a research lab",
+    "Story, Normal, Hard and Expert, challenge medals, a Daily challenge and Endless mode",
+    "Map Workshop: build your own sector, test it with bots and share it as a code",
+    "English and Filipino, colour-blind-friendly elements and remappable keys"
+  ],
+  "contentNotes": "Sci-fi battles against crystal robots: towers fire energy beams and constructs shatter into crystal shards. No blood, gore or scary horror. Campaign progress and settings save in this browser.",
+  "controls": {
+    "types": [
+      "Touch",
+      "Mouse",
+      "Keyboard"
+    ],
+    "quickStart": [
+      "Tap or click a tower card, then an open square, to build.",
+      "Make a maze so the constructs walk past your towers.",
+      "Read the wave intel, then start the next wave."
+    ],
+    "howToPlay": [
+      "Tap or click a tower card, then a square and the checkmark to build. Keys 1–0 pick towers.",
+      "Select a tower to upgrade, sell or change targeting (U, S and T). At level 3, pick one of two specializations.",
+      "Move your commander with the hero button or H, use its special with Q, and use abilities with Z, X and C.",
+      "Drag and pinch, or drag and use the mouse wheel, to move and zoom the map. Press and hold anything to learn about it.",
+      "Start or call the next wave with N or Enter, change speed with F and pause with P or Space. Keys can be changed in Settings."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "any",
+  "requirements": [],
+  "playTime": "15–25 minutes per sector; 8–12 hours for the campaign",
+  "storage": {
+    "prefix": "vanex-defense-",
+    "keys": [
+      "vanex-defense-save",
+      "vanex-defense-save-backup",
+      "vanex-defense-playtest"
+    ],
+    "probe": "__vanex_probe__"
+  },
+  "capture": {
+    "route": "?map=w1m1&diff=easy",
+    "script": "apps/site/scripts/capture/vanex-defense.ts"
+  },
+  "license": "MIT",
+  "source": "games/vanex-defense",
+  "site": {
+    "featured": true,
+    "releaseDate": "2026-10-11",
+    "accentColor": "#dbe7c8",
+    "coverLayers": [
+      "bob",
+      "twinkle"
+    ],
+    "status": "Ready to play"
+  }
+}
