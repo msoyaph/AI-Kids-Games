@@ -1,0 +1,23 @@
+import { chromium } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
+const root = process.argv[2];
+const out = process.argv[3];
+const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const page = await browser.newPage({ viewport: { width: 900, height: 600 } });
+const errors = [], requests = [];
+page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+page.on('pageerror', (e) => errors.push(String(e)));
+page.on('request', (r) => { if (!r.url().startsWith('file:') && !r.url().startsWith('data:') && !r.url().startsWith('blob:')) requests.push(r.url()); });
+await page.goto('file://' + root + '/dist/index.html');
+await page.waitForTimeout(2500);
+await page.screenshot({ path: out + '/file.png' });
+// sandboxed iframe (opaque origin, scripts only)
+writeFileSync(root + '/iframe-test.html', `<iframe sandbox="allow-scripts" src="dist/index.html" style="width:800px;height:500px;border:0"></iframe>`);
+const p2 = await browser.newPage({ viewport: { width: 900, height: 600 } });
+p2.on('console', (m) => { if (m.type() === 'error') errors.push('[iframe] ' + m.text()); });
+p2.on('pageerror', (e) => errors.push('[iframe] ' + String(e)));
+await p2.goto('file://' + root + '/iframe-test.html');
+await p2.waitForTimeout(2500);
+await p2.screenshot({ path: out + '/iframe.png' });
+console.log(JSON.stringify({ errors, requests }, null, 1));
+await browser.close();

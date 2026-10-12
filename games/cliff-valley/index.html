@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#2b3a2a" />
+    <title>Cliff Valley</title>
+    <style>
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1c2419; }
+      body { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; }
+      #game { position: fixed; inset: 0; }
+      #game canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
+      #boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #f4e9c8; font: 600 20px/1.3 "Trebuchet MS", Verdana, system-ui, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="ui"></div>
+    <div id="boot">Loading Cliff Valley…</div>
+    <noscript>Cliff Valley needs JavaScript to play.</noscript>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
