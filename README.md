@@ -10,6 +10,10 @@ No ads. No subscriptions. No sign-ups. No tracking. Just play, or build your own
   <img alt="No ads · No tracking" src="https://img.shields.io/badge/no%20ads%20%C2%B7%20no%20tracking-%E2%9C%93-0B7A50?style=flat-square">
 </p>
 
+https://github.com/user-attachments/assets/f1431061-d5cf-4e1d-9841-77659cb9cbc4
+
+<p align="center"><sub>▶ The 60-second trailer: real gameplay from all six games, made entirely from code. Full quality and a vertical version: <a href="https://github.com/msoyaph/AI-Kids-Games/releases/tag/sizzle-reel-v1">Sizzle reel v1</a>.</sub></p>
+
 Kids deserve the same fun as everyone else: racing, building, exploring and defending, without ads, loot boxes, subscriptions or strangers in chat. Ai Kids Games takes the kinds of games kids already love and rebuilds them from scratch to be kid-safe by design. Every game is free, runs offline in a single file, and is open source, so anyone can learn from it, remix it, or make their own.
 
 ## The games
