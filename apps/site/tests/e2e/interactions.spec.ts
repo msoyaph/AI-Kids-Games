@@ -75,3 +75,26 @@ test('Light Crossing touch joystick moves the islander inside the site',async ({
   const after = await position(); expect(Math.hypot(after.x-before.x,after.z-before.z)).toBeGreaterThan(.1);
   expect(checks.errors).toEqual([]); expect(checks.external).toEqual([]);
 });
+test('TheaBonk 2.0 glass touch controls move Thea and jump inside the site',async ({ page,context },info) => {
+  test.skip(!info.project.use.hasTouch,'Touch check runs on tablet and phone.');
+  await instrument(page); const checks = guard(page);
+  const f = await startGame(page,'theabonk',true);
+  // phones and tablets start in touch mode on the Tablet tier, with the glass stick and buttons
+  expect(await f.evaluate(() => ({ touch: (window as any).__theabonk.input.touchMode,quality: (window as any).__theabonk.renderer.quality }))).toEqual({ touch: true,quality: 'tablet' });
+  await expect(f.locator('.touch-ui')).toBeVisible();
+  const position = () => f.evaluate(() => { const p = (window as any).__theabonk.world.player; return { x: p.x,z: p.z }; });
+  const before = await position();
+  const zone = (await f.locator('.tzone-stick').boundingBox())!;
+  const cdp = await context.newCDPSession(page);
+  const x = zone.x+zone.width*.4,y = zone.y+zone.height*.6;
+  await cdp.send('Input.dispatchTouchEvent',{ type:'touchStart',touchPoints:[{ x,y,id:3 }] });
+  for (let step = 1; step <= 6; step++) await cdp.send('Input.dispatchTouchEvent',{ type:'touchMove',touchPoints:[{ x,y:y-12*step,id:3 }] });
+  await page.waitForTimeout(1200);
+  await cdp.send('Input.dispatchTouchEvent',{ type:'touchEnd',touchPoints:[] });
+  const after = await position(); expect(Math.hypot(after.x-before.x,after.z-before.z)).toBeGreaterThan(1);
+  const jumps = await f.evaluate(() => (window as any).__theabonk.world.stats.jumps);
+  await f.locator('.gbtn-jump').tap();
+  await expect.poll(() => f.evaluate(() => (window as any).__theabonk.world.stats.jumps)).toBeGreaterThan(jumps);
+  await page.screenshot({ path: `test-results/theabonk-touch-${info.project.name}.png` });
+  expect(checks.errors).toEqual([]); expect(checks.external).toEqual([]);
+});

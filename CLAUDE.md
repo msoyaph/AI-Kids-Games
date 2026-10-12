@@ -155,3 +155,17 @@ session's uncommitted sizzle-reel work — never touch that checkout's files.
   projects are local + hosted-preview only (CI installs Chromium). Four games have their own
   fullscreen button (Calex Cart, Light Crossing, Space Sky, Vanex Defense): all work in the site,
   alone and on top of the site's fullscreen; TheaBonk and Cliff Valley have none.
+- Step 2 (TheaBonk v2, ships as 2.2.0): fixed in TheaBonk's own project (test-only ?slowframe /
+  ?nodamage / ?gputier; deterministic governor and 5-minute touch playthrough; headless
+  touch-vs-keyboard comparison: touch is not worse, heading lock kept as an off-by-default switch);
+  full verification green; merged to its main and tagged v2.0.0 (6155347). Pulled here with
+  `git subtree pull --prefix=games/theabonk ~/Documents/TheaBonk main` (full history), then
+  removed its per-game lockfile, .claude/launch.json and nested .github workflows (one used a
+  self-hosted runner); its docs/CI.md says the root workflow replaces them. Its Playwright config
+  runs the projects whose browsers are installed (root CI: Chromium only). Import: sha256
+  f1a627e9…d2aa372 (byte-identical to its own build). Manifest 2.0.0: Computer/Tablet/Phone +
+  Touch → the 2.1.1 keyboard screen and labels vanish for it. Storage audit redone (theabonk.save,
+  .save.bak, .playtest/.tuning in test modes; origin worst case ≈ 3.5 MB). Site tests: boot()
+  turns phones to landscape for TheaBonk and answers the "Play fullscreen?" tip; new in-site test
+  "TheaBonk 2.0 glass touch controls move Thea and jump" (CDP touches, tablet + phone). Monorepo
+  tag for the import: theabonk-v2.0.0.
