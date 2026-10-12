@@ -202,11 +202,12 @@ test('slide-jumping by touch keeps the slide speed, as on a keyboard', async ({ 
   // slide (held), then jump out of it with another finger
   const slide = (await page.locator('.gbtn-slide').boundingBox())!;
   await f.down(2, slide.x + slide.width / 2, slide.y + slide.height / 2);
-  await page.waitForTimeout(220);
+  // wait for the slide's boost (a fixed pause is too short on a slow runner)
+  await expect.poll(async () => { const m = await move(); return m.sliding && m.speed > m.walk * 1.1; }, { timeout: 5000 }).toBe(true);
   const sliding = await move();
   const jump = (await page.locator('.gbtn-jump').boundingBox())!;
   await f.down(3, jump.x + jump.width / 2, jump.y + jump.height / 2);
-  await page.waitForTimeout(120);
+  await expect.poll(async () => !(await move()).onGround, { timeout: 5000 }).toBe(true);
   const air = await move();
   await f.up(3);
   await f.up(2);
@@ -243,10 +244,10 @@ test('menus and the level-up screen are easy to tap; the controls come back afte
   await expect(page.locator('.touch-ui')).toBeVisible();
   // a level-up with every option available
   await page.evaluate(() => {
-    const g = (window as unknown as { __theabonk: { world: { player: { rerolls: number; skips: number; banishes: number; xp: number; xpNext: number } } } }).__theabonk;
-    const p = g.world.player;
-    // just enough for one level-up
-    Object.assign(p, { rerolls: 2, skips: 2, banishes: 2, xp: p.xpNext });
+    const g = (window as unknown as { __theabonk: { world: { pendingLevels: number; player: { rerolls: number; skips: number; banishes: number } } } }).__theabonk;
+    // one level-up now (not "whenever the next gem lands", which a slow runner may not reach)
+    Object.assign(g.world.player, { rerolls: 2, skips: 2, banishes: 2 });
+    g.world.pendingLevels = 1;
   });
   await expect(page.locator('.screen-levelup')).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('.touch-ui')).toBeHidden();

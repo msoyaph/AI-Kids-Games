@@ -108,18 +108,34 @@ test('a 5-minute run on a phone, touch only: every direction, jump, slide, slide
   const home: [number, number] = [vp.width * 0.18, vp.height * 0.68];
   const reach = 52;
 
-  // 1. the stick, in all eight directions (a fresh press each; Thea goes where it points)
+  // 1. the stick, in all eight directions (a fresh press each; Thea goes where it points). Natural
+  // level-ups wait until the checks are done (a slow runner would otherwise pop them mid-press).
+  const holdLevels = (hold: boolean): Promise<void> =>
+    page.evaluate((h) => {
+      const p = (window as unknown as { __theabonk: { world: { player: { xpNext: number; __xpNext?: number } } } }).__theabonk.world.player;
+      if (h) {
+        p.__xpNext = p.xpNext;
+        p.xpNext = 1e9;
+      } else if (p.__xpNext) p.xpNext = p.__xpNext;
+    }, hold);
+  while (await screens()) await page.waitForTimeout(300);
+  await holdLevels(true);
   const directions: Record<number, boolean> = {};
   for (let deg = 0; deg < 360; deg += 45) {
     const a = (deg * Math.PI) / 180;
-    for (let attempt = 0; attempt < 4 && !directions[deg]; attempt++) {
+    for (let attempt = 0; attempt < 6 && !directions[deg]; attempt++) {
       while (await screens()) await page.waitForTimeout(300);
       await f.down(1, home[0], home[1]);
       await f.drag(1, home[0] + Math.sin(a) * reach, home[1] - Math.cos(a) * reach);
-      await page.waitForTimeout(550);
+      // up to speed (a slow runner takes longer in real time)
+      await expect.poll(async () => { const s = await snap(page); return s.state !== 'playing' || Math.hypot(s.p.vx, s.p.vz) > s.walk * 0.6; }, { timeout: 4000 }).toBe(true).catch(() => undefined);
+      await page.waitForTimeout(150);
       const s = await snap(page);
       await f.up(1);
-      if (s.state !== 'playing') continue;
+      if (s.state !== 'playing') {
+        attempt--;
+        continue;
+      }
       const speed = Math.hypot(s.p.vx, s.p.vz);
       const off = Math.abs(Math.atan2(Math.sin(Math.atan2(s.p.vx, s.p.vz) - worldDir(a, s.steerYaw)), Math.cos(Math.atan2(s.p.vx, s.p.vz) - worldDir(a, s.steerYaw))));
       // a tree or cliff can deflect a try; another fresh press settles it
@@ -132,27 +148,28 @@ test('a 5-minute run on a phone, touch only: every direction, jump, slide, slide
   while (await screens()) await page.waitForTimeout(300);
   const j0 = (await snap(page)).jumps;
   await tapEl('.gbtn-jump');
-  await page.waitForTimeout(500);
-  const jumped = (await snap(page)).jumps > j0;
+  const jumped = await expect.poll(async () => (await snap(page)).jumps > j0, { timeout: 4000 }).toBe(true).then(() => true, () => false);
 
   // 3. Slide (held while running), then 4. a slide-jump: Jump with a third finger mid-slide
   while (await screens()) await page.waitForTimeout(300);
   await f.down(1, home[0], home[1]);
   await f.drag(1, home[0], home[1] - reach);
-  await page.waitForTimeout(700);
+  await expect.poll(async () => { const s = await snap(page); return Math.hypot(s.p.vx, s.p.vz) > s.walk * 0.9; }, { timeout: 4000 }).toBe(true).catch(() => undefined);
   const [sx, sy] = await centre('.gbtn-slide');
   await f.down(2, sx, sy);
-  await page.waitForTimeout(220);
+  await expect.poll(async () => (await snap(page)).p.sliding, { timeout: 4000 }).toBe(true).catch(() => undefined);
   const sliding = await snap(page);
   const [jx, jy] = await centre('.gbtn-jump');
   await f.down(3, jx, jy);
-  await page.waitForTimeout(120);
+  await expect.poll(async () => !(await snap(page)).p.onGround, { timeout: 4000 }).toBe(true).catch(() => undefined);
   const air = await snap(page);
   await f.up(3);
   await f.up(2);
   await f.up(1);
   const slid = sliding.p.sliding;
   const slideJumped = slid && !air.p.onGround && air.jumps > sliding.jumps && Math.hypot(air.p.vx, air.p.vz) > sliding.walk * 1.05;
+
+  await holdLevels(false);
 
   // 5. Pause and Resume by touch
   while (await screens()) await page.waitForTimeout(300);
