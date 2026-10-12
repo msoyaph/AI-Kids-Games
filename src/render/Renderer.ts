@@ -1,21 +1,36 @@
 import * as THREE from 'three';
 import { RUN_LENGTH } from '../config/balance';
+import { mapDef, type MapDef } from '../config/maps';
 import type { CharacterDef } from '../config/types';
 import { lerp } from '../core/math';
 import type { Terrain } from '../sim/terrain';
+import { playerWind } from '../sim/weather';
 import type { World } from '../sim/world';
 import { CameraRig } from './CameraRig';
 import { EnemyRenderer } from './EnemyRenderer';
 import { Fx } from './Fx';
 import { Particles } from './Particles';
 import { PickupRenderer } from './PickupRenderer';
+import { OCCLUSION_UNIFORMS } from './occlusion';
 import { PlayerView } from './PlayerView';
 import { ProjectileRenderer } from './ProjectileRenderer';
 import { ShrineRenderer } from './ShrineRenderer';
 import { Sky } from './Sky';
+import { Snowfall } from './Snowfall';
+import { setFlashSteady } from './flash';
+import { Bloom } from './Bloom';
 import { buildWorldMesh } from './worldMesh';
+import { ENEMIES } from '../config/enemies';
+import { lowPolyMaterial } from './geo';
+import { enemyGeometry, ROLLER_BODY } from './models';
 
-export type Quality = 'low' | 'medium' | 'high';
+/**
+ * Render tier. 'tablet' is for phones / tablets: device-pixel ratio 1, no shadows, fewer
+ * particles and decorative props (its runs also field fewer, tougher enemies — WorldOptions).
+ * 'low' is for integrated / old GPUs: 0.75 pixel ratio, no shadows / blob shadows / bloom,
+ * no grass or flowers, a shorter draw distance and fewer particles.
+ */
+export type Quality = 'low' | 'medium' | 'high' | 'tablet';
 
 const FOG = 0xd9e9ef;
 
@@ -32,13 +47,25 @@ export class GameRenderer {
   readonly fx: Fx;
   readonly projectiles: ProjectileRenderer;
   readonly shrines = new ShrineRenderer();
+  readonly snow = new Snowfall();
   private sun: THREE.DirectionalLight;
   private sky: Sky;
   private worldGroup: THREE.Group | null = null;
-  private worldSeed = -1;
+  /** Map + seed of the built world meshes (two maps can share a seed). */
+  private worldKey = '';
   terrain: Terrain | null = null;
+  map: MapDef = mapDef('meadow');
+  private wind = new Float32Array(2);
+  private clock = 0;
+  /** Bestiary preview: an enemy model shown in the menu instead of the hero. */
+  private showcase: THREE.Mesh | null = null;
+  private showcaseGeos = new Map<string, THREE.BufferGeometry>();
+  private showcaseMat = lowPolyMaterial();
+  private showcaseId: string | null = null;
   quality: Quality = 'high';
   private menuT = 0;
+  /** Fog / far-plane scale (Low draws less of the distance). */
+  private drawScale = 1;
 
   constructor(canvas: HTMLCanvasElement, overlay: HTMLCanvasElement, quality: Quality) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', stencil: false });
@@ -72,15 +99,25 @@ export class GameRenderer {
     this.scene.add(this.playerView.root);
     this.fx = new Fx(this.particles, overlay, this.rig);
     this.projectiles = new ProjectileRenderer(this.particles);
-    this.scene.add(this.enemies.group, this.pickups.group, this.projectiles.group, this.shrines.group, this.fx.group);
+    this.pickups.particles = this.particles;
+    this.scene.add(this.enemies.group, this.pickups.group, this.projectiles.group, this.shrines.group, this.fx.group, this.snow.points);
     this.setQuality(quality);
   }
 
   setQuality(q: Quality): void {
     this.quality = q;
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-    const ratio = q === 'low' ? Math.min(dpr, 1) * 0.75 : q === 'medium' ? Math.min(dpr, 1.5) : Math.min(dpr, 2);
+    const ratio = q === 'low' ? Math.min(dpr, 1) * 0.75 : q === 'tablet' ? Math.min(dpr, 1) : q === 'medium' ? Math.min(dpr, 1.5) : Math.min(dpr, 2);
     this.renderer.setPixelRatio(ratio);
+    const wantBloom = q === 'medium' || q === 'high';
+    if (wantBloom && !this.bloom) {
+      this.bloom = new Bloom();
+      this.bloom.threshold = this.map.sky.bloomThreshold;
+    } else if (!wantBloom && this.bloom) {
+      this.bloom.dispose();
+      this.bloom = null;
+    }
+    this.sizeBloom();
     const shadows = q === 'high';
     this.renderer.shadowMap.enabled = shadows;
     this.sun.castShadow = shadows;
@@ -88,11 +125,17 @@ export class GameRenderer {
     this.enemies.setCastShadows(shadows);
     this.shrines.setShadows(shadows);
     this.enemies.shadowsEnabled = q !== 'low';
-    this.particles.density = q === 'low' ? 0.4 : q === 'medium' ? 0.7 : 1;
+    this.particles.density = q === 'low' ? 0.4 : q === 'tablet' ? 0.35 : q === 'medium' ? 0.7 : 1;
+    // Low: everything past ~110 m is fog anyway — stop drawing it (the sky shrinks to fit)
+    this.drawScale = q === 'low' ? 0.72 : 1;
+    this.camera.far = q === 'low' ? 150 : 600;
+    this.camera.updateProjectionMatrix();
+    this.sky.setScale(q === 'low' ? 0.2 : 1);
+    this.setFog(1);
     if (this.terrain) {
       // rebuild static meshes with the right shadow flags
-      this.worldSeed = -1;
-      this.setTerrain(this.terrain);
+      this.worldKey = '';
+      this.setTerrain(this.terrain, this.map);
     }
     this.scene.traverse((o) => {
       const m = (o as THREE.Mesh).material as THREE.Material | undefined;
@@ -100,9 +143,16 @@ export class GameRenderer {
     });
   }
 
-  setTerrain(t: Terrain): void {
+  setTerrain(t: Terrain, map: MapDef): void {
     this.terrain = t;
-    if (this.worldSeed === t.seed && this.worldGroup) return;
+    this.map = map;
+    this.sky.setMap(map);
+    this.setFog(1);
+    this.snow.density = map.sky.snow;
+    this.projectiles.setTelegraphStyle(map.palette.telegraphs === 'solid');
+    if (this.bloom) this.bloom.threshold = map.sky.bloomThreshold;
+    const key = `${map.id}:${t.seed}`;
+    if (this.worldKey === key && this.worldGroup) return;
     if (this.worldGroup) {
       this.scene.remove(this.worldGroup);
       this.worldGroup.traverse((o) => {
@@ -112,17 +162,73 @@ export class GameRenderer {
         if (mat) mat.dispose();
       });
     }
-    this.worldGroup = buildWorldMesh(t, this.quality === 'high');
+    // decoration: none on Low, thinned on Tablet
+    this.worldGroup = buildWorldMesh(t, map, this.quality === 'high', this.quality === 'low' ? 0 : this.quality === 'tablet' ? 0.45 : 1);
     this.scene.add(this.worldGroup);
-    this.worldSeed = t.seed;
+    this.worldKey = key;
+  }
+
+  /** Reduced motion (no shake / FOV kick / bob / streaks, steady blinks) and colour-blind palette. */
+  reducedMotion = false;
+  setAccess(reducedMotion: boolean, colorblind: boolean): void {
+    this.reducedMotion = reducedMotion;
+    this.rig.reducedMotion = reducedMotion;
+    this.playerView.reducedMotion = reducedMotion;
+    setFlashSteady(reducedMotion);
+    this.projectiles.colorblind = colorblind;
+    this.pickups.setColorblind(colorblind);
+  }
+
+  /** Show an enemy (or null: the hero again) in the menu backdrop. */
+  showcaseEnemy(id: string | null): void {
+    this.showcaseId = id;
+    if (!this.showcase) {
+      this.showcase = new THREE.Mesh(new THREE.BufferGeometry(), this.showcaseMat);
+      this.showcase.castShadow = true;
+      this.scene.add(this.showcase);
+    }
+    const def = id ? ENEMIES.find((e) => e.id === id) : undefined;
+    this.showcase.visible = !!def;
+    this.playerView.root.visible = !def;
+    if (!def) return;
+    let g = this.showcaseGeos.get(def.id);
+    if (!g) {
+      g = enemyGeometry(def);
+      this.showcaseGeos.set(def.id, g);
+    }
+    this.showcase.geometry = g;
+    // big bosses are shown smaller so they fit beside the menu
+    const s = Math.min(1.6, 2.6 / def.height);
+    this.showcase.scale.setScalar(s);
+    this.showcase.userData.lift = def.roll ? ROLLER_BODY * s : 0;
   }
 
   setCharacter(def: CharacterDef): void {
     this.playerView.setCharacter(def, this.quality === 'high');
   }
 
+  /** Bloom post-process on Medium / High (null on Low / Tablet). */
+  private bloom: Bloom | null = null;
+  private size = { w: 1, h: 1 };
+
+  private draw(): void {
+    // count draw calls / triangles across all passes of the frame (bloom renders several)
+    this.renderer.info.autoReset = false;
+    this.renderer.info.reset();
+    if (this.bloom) this.bloom.render(this.renderer, this.scene, this.camera);
+    else this.renderer.render(this.scene, this.camera);
+  }
+
+  private sizeBloom(): void {
+    const pr = this.renderer.getPixelRatio();
+    this.bloom?.setSize(this.size.w * pr, this.size.h * pr);
+  }
+
   resize(w: number, h: number): void {
+    this.size.w = w;
+    this.size.h = h;
     this.renderer.setSize(w, h, false);
+    this.sizeBloom();
     this.fx.numbers.resize(w, h, typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.updateProjectionMatrix();
@@ -155,8 +261,8 @@ export class GameRenderer {
     const speed = Math.hypot(p.vx, p.vz);
     const gy = w.terrain.height(x, z);
     this.playerView.update(x, y, z, gy, p.yaw, speed, p.onGround, p.sliding, p.vy, dt, w.time, p.iframes > 0 || p.buffs.ward > 0);
-    // momentum feedback: wind streaks when moving fast, sparks when sliding
-    if (dt > 0 && speed > 11) {
+    // momentum feedback: wind streaks when moving fast (not with reduced motion), sparks when sliding
+    if (dt > 0 && speed > 11 && !this.reducedMotion) {
       const n = Math.min(3, (speed - 11) * 0.15 + Math.random());
       for (let k = 0; k < n; k++) {
         const side = (Math.random() - 0.5) * 1.6;
@@ -173,14 +279,39 @@ export class GameRenderer {
       this.particles.emit(x + Math.cos(a) * 1.1, y + Math.random() * 2, z + Math.sin(a) * 1.1, 0, 1.5, 0, 0.5, 0.14, 0xfff2a8, 0);
     }
     this.rig.update(this.camera, x, y, z, speed, dt, w.terrain);
+    this.updateWeather(w, x, z, dt);
+    OCCLUSION_UNIFORMS.uCamPos.value.copy(this.camera.position);
+    OCCLUSION_UNIFORMS.uFocus.value.set(x, y + 1.1, z);
+    this.playerView.showGhost = true;
     this.followSun(x, z);
     const time = w.time + alpha / 60;
     this.enemies.update(w, alpha, time);
     this.pickups.update(w, alpha, time);
+    this.projectiles.setCamera(this.camera.position);
     this.projectiles.update(w, alpha, time, x, y, z);
     this.shrines.update(w, time);
     this.fx.update(dt, this.camera);
-    this.renderer.render(this.scene, this.camera);
+    this.draw();
+  }
+
+  /** Snowfall + blizzard haze follow the sim's weather. */
+  private updateWeather(w: World, x: number, z: number, dt: number): void {
+    this.clock += dt;
+    this.sky.tick(this.clock);
+    const wt = w.weather;
+    const blizzard = wt.blizzardT > 0 ? Math.min(1, wt.blizzardT / 0.6, (5.5 - wt.blizzardT) / 0.6) : 0;
+    if (wt.gustT > 0 || wt.blizzardT > 0) playerWind(w, x, z, this.wind);
+    else this.wind[0] = this.wind[1] = 0;
+    this.snow.density = this.map.sky.snow * (1 + blizzard * 1.5);
+    this.snow.update(dt, this.camera.position, this.wind[0], this.wind[1]);
+    this.setFog(1 - blizzard * 0.55, 1 - blizzard * 0.5);
+  }
+
+  /** Map fog × blizzard haze × the tier's draw distance. */
+  private setFog(nearMul: number, farMul = nearMul): void {
+    const fog = this.scene.fog as THREE.Fog;
+    fog.near = this.map.sky.fog[0] * nearMul * this.drawScale;
+    fog.far = this.map.sky.fog[1] * farMul * this.drawScale;
   }
 
   /** Clear all transient visuals (new run / back to menu). */
@@ -192,9 +323,15 @@ export class GameRenderer {
   renderMenu(dt: number): void {
     this.setDynamicVisible(false);
     this.sky.setMenu();
+    OCCLUSION_UNIFORMS.uFocus.value.set(0, -1e5, 0);
+    this.playerView.showGhost = false;
     this.menuT += dt;
     const t = this.terrain;
     const y = t ? t.height(0, 0) : 0;
+    if (this.showcase && this.showcaseId) {
+      this.showcase.position.set(0, y + (this.showcase.userData.lift as number), 0);
+      this.showcase.rotation.y = Math.PI * 0.15 + this.menuT * 0.5;
+    }
     this.playerView.update(0, y, 0, y, Math.PI * 0.15 + Math.sin(this.menuT * 0.4) * 0.3, 0, true, false, 0, dt, this.menuT, false);
     const a = Math.sin(this.menuT * 0.12) * 0.5;
     this.camera.position.set(Math.sin(a) * 8, y + 2.6, Math.cos(a) * 8);
@@ -206,6 +343,11 @@ export class GameRenderer {
       this.camera.updateProjectionMatrix();
     }
     this.followSun(0, 0);
-    this.renderer.render(this.scene, this.camera);
+    this.clock += dt;
+    this.sky.tick(this.clock);
+    this.setFog(1);
+    this.snow.density = this.map.sky.snow * 0.6;
+    this.snow.update(dt, this.camera.position, 0, 0);
+    this.draw();
   }
 }

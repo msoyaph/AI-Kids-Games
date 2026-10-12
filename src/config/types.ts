@@ -17,7 +17,9 @@ export type StatKey =
   | 'greed'
   | 'revival'
   | 'crit'
-  | 'reroll';
+  | 'reroll'
+  | 'skip'
+  | 'banish';
 
 /**
  * Player stats. Everything except maxHp/regen/armor/magnet/amount/revival/reroll is a
@@ -45,6 +47,9 @@ export type ProjectileVisual =
   | 'seed'
   | 'enemyOrb'
   | 'enemySpore';
+
+/** Enemy shot looks (EnemyProjectilePool.visual). */
+export const ShotVisual = { Orb: 0, Spore: 1, Shard: 2 } as const;
 
 export interface WeaponStats {
   /** Damage per hit before player might. */
@@ -129,6 +134,8 @@ export type EnemyBehavior =
 export interface EnemyDef {
   id: string;
   name: string;
+  /** Model to build (another enemy's id): variants reuse a base model in their own colour. */
+  model?: string;
   behavior: EnemyBehavior;
   hp: number;
   speed: number;
@@ -152,8 +159,26 @@ export interface EnemyDef {
   fuse?: number;
   explodeRadius?: number;
   explodeDamage?: number;
-  /** Boss only: index into boss pattern table. */
-  bossPattern?: 'grumblecap' | 'clockjaw' | 'regent';
+  /** How it bursts when defeated (render only): pop, shards, puff, splat. */
+  deathFx?: 'pop' | 'shards' | 'puff' | 'splat';
+  /** Flies: ignores walls, pathing and ground effects (ice, snow). */
+  flying?: boolean;
+  /** Hover bob amplitude (render only). */
+  bob?: number;
+  /** Seconds the player is chilled (slowed) by this enemy's touch or shots. */
+  chill?: number;
+  /** Charger only: rolls, growing up to this size multiplier and speeding up as it goes. */
+  roll?: number;
+  /** Shot look (ShotVisual); defaults to Orb. */
+  shotVisual?: number;
+  /** Boss only: intro-card subtitle. */
+  epithet?: string;
+  /** Boss only: health fractions where its fight changes (ticks on the boss bar). */
+  phases?: number[];
+  /** Boss only: health fraction below which it is enraged (bar turns red). */
+  enrageAt?: number;
+  /** Boss only: which attack pattern drives it. */
+  bossPattern?: 'grumblecap' | 'clockjaw' | 'regent' | 'oldRime';
   /** Render capacity hint. */
   maxCount?: number;
 }
@@ -180,6 +205,24 @@ export interface WaveEvent {
   banner?: number;
 }
 
+export type PropKind =
+  | 'pine'
+  | 'oak'
+  | 'rock'
+  | 'mushroom'
+  | 'crystal'
+  | 'stump'
+  | 'flower'
+  | 'tuft'
+  | 'post'
+  // Rimewood
+  | 'frostPine'
+  | 'birch'
+  | 'snowRock'
+  | 'iceCrystal'
+  | 'frostShrub'
+  | 'snowTuft';
+
 export interface CharacterDef {
   id: string;
   name: string;
@@ -191,6 +234,8 @@ export interface CharacterDef {
   move: { speed: number; jump: number; slideBoost: number; slideFriction: number };
   unlock?: string;
   colors: { primary: number; secondary: number; accent: number; skin: number };
+  /** Signature passive (sim/heroes.ts). */
+  passive: { id: string; name: string; description: string };
 }
 
 export interface ShopDef {

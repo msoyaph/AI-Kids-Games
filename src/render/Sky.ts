@@ -1,30 +1,5 @@
 import * as THREE from 'three';
-
-/** A lighting mood: sky gradient, fog, ambient and key light. */
-interface Mood {
-  top: number;
-  horizon: number;
-  fog: number;
-  hemiSky: number;
-  hemiGround: number;
-  hemiI: number;
-  key: number;
-  keyI: number;
-  /** Key light elevation (0 = horizon, 1 = overhead). */
-  elev: number;
-  stars: number;
-}
-
-/** The run starts at dusk, sinks into moonlit night and ends at dawn (20:00). */
-const RUN_KEYS: Array<[number, Mood]> = [
-  [0.0, { top: 0x3b4f9e, horizon: 0xffa982, fog: 0xa79bb8, hemiSky: 0xd6c8ff, hemiGround: 0x5a4a50, hemiI: 1.45, key: 0xffb27a, keyI: 2.3, elev: 0.25, stars: 0.1 }],
-  [0.22, { top: 0x141e50, horizon: 0x4f4890, fog: 0x3f4078, hemiSky: 0x93a4ff, hemiGround: 0x353150, hemiI: 1.15, key: 0xbccaff, keyI: 1.55, elev: 0.7, stars: 0.8 }],
-  [0.6, { top: 0x0c1440, horizon: 0x363a78, fog: 0x33366a, hemiSky: 0x8a9cff, hemiGround: 0x312e48, hemiI: 1.1, key: 0xb4c4ff, keyI: 1.5, elev: 0.8, stars: 1 }],
-  [0.86, { top: 0x2a2f76, horizon: 0xe08aa8, fog: 0x8a7aa8, hemiSky: 0xe0c0ff, hemiGround: 0x4a3e52, hemiI: 1.4, key: 0xffa8b0, keyI: 2.0, elev: 0.3, stars: 0.4 }],
-  [1.0, { top: 0x6cb2f0, horizon: 0xffd6a0, fog: 0xf2dcc4, hemiSky: 0xfff0dc, hemiGround: 0x6a5a48, hemiI: 1.45, key: 0xffe2b4, keyI: 2.7, elev: 0.35, stars: 0 }],
-];
-
-const MENU: Mood = { top: 0x5aa8e8, horizon: 0xffe0b6, fog: 0xe4dccf, hemiSky: 0xeaf4ff, hemiGround: 0x6a5a4a, hemiI: 1.3, key: 0xfff0d8, keyI: 2.6, elev: 0.6, stars: 0 };
+import { mapDef, type MapDef, type SkyMood as Mood } from '../config/maps';
 
 const ca = new THREE.Color();
 const cb = new THREE.Color();
@@ -35,9 +10,37 @@ function mixHex(a: number, b: number, t: number, out: THREE.Color): THREE.Color 
   return out.copy(ca).lerp(cb, t);
 }
 
+const AURORA_VERT = `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+
+const AURORA_FRAG = `
+uniform float uTime;
+uniform float uStrength;
+uniform vec3 uColA;
+uniform vec3 uColB;
+uniform float uSeed;
+varying vec2 vUv;
+void main() {
+  // soft vertical curtain with drifting folds, fading at both ends and the top
+  float folds = 0.55 + 0.45 * sin(vUv.x * 18.0 + uTime * 0.6 + uSeed) * sin(vUv.x * 7.0 - uTime * 0.35 + uSeed * 2.0);
+  float vert = smoothstep(0.0, 0.25, vUv.y) * (1.0 - smoothstep(0.35, 1.0, vUv.y));
+  float ends = smoothstep(0.0, 0.15, vUv.x) * (1.0 - smoothstep(0.85, 1.0, vUv.x));
+  float a = folds * vert * ends * uStrength;
+  vec3 col = mix(uColA, uColB, vUv.y);
+  gl_FragColor = vec4(col * a, a);
+}`;
+
 export class Sky {
   readonly mesh: THREE.Mesh;
   readonly stars: THREE.Points;
+  /** Aurora curtains (Rimewood nights). */
+  readonly aurora: THREE.Group;
+  private auroraUniforms: Array<{ uTime: { value: number }; uStrength: { value: number } }> = [];
+  private map: MapDef = mapDef('meadow');
   private uniforms: { top: { value: THREE.Color }; horizon: { value: THREE.Color } };
   private fogColor = new THREE.Color();
 
@@ -87,6 +90,53 @@ export class Sky {
     this.stars.renderOrder = -9;
     this.stars.frustumCulled = false;
     scene.add(this.stars);
+
+    this.aurora = new THREE.Group();
+    this.aurora.name = 'aurora';
+    const curtains: Array<[number, number, number, number, number]> = [
+      // [angle, distance, height, width, seed]
+      [0.4, 300, 120, 520, 0],
+      [1.6, 320, 140, 460, 2.3],
+      [2.9, 290, 110, 480, 4.1],
+    ];
+    for (const [a, d, y, wdt, seed] of curtains) {
+      const uniforms = {
+        uTime: { value: 0 },
+        uStrength: { value: 0 },
+        uColA: { value: new THREE.Color(0x2affb0) },
+        uColB: { value: new THREE.Color(0x9a6aff) },
+        uSeed: { value: seed },
+      };
+      const geo = new THREE.PlaneGeometry(wdt, 160, 48, 1);
+      // bend the curtain into a gentle arc
+      const pos = geo.getAttribute('position') as THREE.BufferAttribute;
+      for (let k = 0; k < pos.count; k++) {
+        const x = pos.getX(k);
+        pos.setZ(k, Math.cos((x / wdt) * Math.PI) * -60 + Math.sin(x * 0.02 + seed) * 12);
+      }
+      const m = new THREE.Mesh(
+        geo,
+        new THREE.ShaderMaterial({ uniforms, vertexShader: AURORA_VERT, fragmentShader: AURORA_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }),
+      );
+      m.position.set(Math.sin(a) * d, y, Math.cos(a) * d);
+      m.lookAt(0, y * 0.6, 0);
+      m.renderOrder = -8;
+      m.frustumCulled = false;
+      this.aurora.add(m);
+      this.auroraUniforms.push(uniforms);
+    }
+    this.aurora.visible = false;
+    scene.add(this.aurora);
+  }
+
+  /** Switch to a map's sky (moods, aurora). */
+  setMap(map: MapDef): void {
+    this.map = map;
+  }
+
+  /** Animate (aurora drift). */
+  tick(time: number): void {
+    for (const u of this.auroraUniforms) u.uTime.value = time;
   }
 
   private apply(a: Mood, b: Mood, t: number): void {
@@ -103,6 +153,9 @@ export class Sky {
     this.key.intensity = a.keyI + (b.keyI - a.keyI) * t;
     this.elev = a.elev + (b.elev - a.elev) * t;
     (this.stars.material as THREE.PointsMaterial).opacity = a.stars + (b.stars - a.stars) * t;
+    const au = a.aurora + (b.aurora - a.aurora) * t;
+    this.aurora.visible = au > 0.01;
+    for (const u of this.auroraUniforms) u.uStrength.value = au * 0.55;
   }
 
   /** Key light elevation for the renderer to position the sun/moon. */
@@ -110,7 +163,7 @@ export class Sky {
 
   /** Run progress 0 (dusk) → 1 (dawn). */
   setRunProgress(p: number): void {
-    const k = RUN_KEYS;
+    const k = this.map.sky.run;
     let i = 0;
     while (i < k.length - 2 && p > k[i + 1][0]) i++;
     const [t0, a] = k[i];
@@ -120,11 +173,20 @@ export class Sky {
   }
 
   setMenu(): void {
-    this.apply(MENU, MENU, 0);
+    const m = this.map.sky.menu;
+    this.apply(m, m, 0);
+  }
+
+  /** Shrink the dome, stars and aurora to fit a shorter camera far plane (Low tier). */
+  setScale(s: number): void {
+    this.mesh.scale.setScalar(s);
+    this.stars.scale.setScalar(s);
+    this.aurora.scale.setScalar(s);
   }
 
   follow(x: number, z: number): void {
     this.mesh.position.set(x, 0, z);
     this.stars.position.set(x, 0, z);
+    this.aurora.position.set(x, 0, z);
   }
 }

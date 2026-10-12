@@ -1,4 +1,4 @@
-import { DT, MOVE } from '../config/balance';
+import { DT, PLAYER_RADIUS } from '../config/balance';
 import { Ev } from '../core/events';
 import { healPlayer } from './combat';
 import { gainXp } from './leveling';
@@ -104,7 +104,7 @@ export function updatePickups(w: World): void {
     pk.x[i] = x;
     pk.y[i] = y;
     pk.z[i] = z;
-    if (d < COLLECT_R + MOVE.radius * 0.5) {
+    if (d < COLLECT_R + PLAYER_RADIUS * 0.5) {
       collect(w, i);
     }
   }

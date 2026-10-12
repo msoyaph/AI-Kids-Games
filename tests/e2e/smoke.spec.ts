@@ -12,13 +12,22 @@ type Ctx = Page | Frame;
  */
 const SWIFTSHADER_COMPOSITOR_NOISE = /GL Driver Message \(OpenGL, Performance, GL_CLOSE_PATH_NV, High\): GPU stall due to ReadPixels/;
 const usingSwiftShader = process.platform !== 'darwin';
+/**
+ * Firefox-only browser notices, not game errors: a one-time note that hardware shadow-map
+ * filtering is "implementation-defined" (three.js PCF shadows), headless Firefox refusing
+ * pointer lock (the game falls back to drag-to-look), and its anti-tracking note about the
+ * test server (a long test on localhost without clicks looks like a "bounce tracker").
+ */
+const FIREFOX_NOTICES = [/Depth texture comparison requests .* Filtering, but behavior is implementation-defined/, /Request for pointer lock was denied/, /has been classified as a bounce tracker/];
 
 /** Collect every console error/warning and uncaught page error. */
 function watchConsole(page: Page): string[] {
   const problems: string[] = [];
+  const firefox = page.context().browser()?.browserType().name() === 'firefox';
   page.on('console', (msg) => {
     if (msg.type() !== 'error' && msg.type() !== 'warning') return;
     if (usingSwiftShader && SWIFTSHADER_COMPOSITOR_NOISE.test(msg.text())) return;
+    if (firefox && FIREFOX_NOTICES.some((r) => r.test(msg.text()))) return;
     problems.push(`[${msg.type()}] ${msg.text()}`);
   });
   page.on('pageerror', (err) => problems.push(`[pageerror] ${err.message}`));
@@ -59,9 +68,41 @@ test('loads, starts a run and plays 30s without console errors', async ({ page }
   await expect(page.locator('.logo')).toContainText('TheaBonk');
   await startRun(page);
   await babysit(page, 30);
-  expect(await gameTime(page)).toBeGreaterThan(5);
+  // the run clock advances (software WebGL on CI's 2-core runners can play well under real time)
+  expect(await gameTime(page)).toBeGreaterThan(process.env.CI ? 1 : 5);
   // the HUD is alive
   await expect(page.locator('.timer')).not.toHaveText('0:00');
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('an old save with a win unlocks Rimewood, which plays without console errors', async ({ page }) => {
+  const problems = watchConsole(page);
+  const fs = await import('node:fs');
+  const v1 = JSON.parse(fs.readFileSync('tests/fixtures/save-v1.json', 'utf8'));
+  v1.stats.wins = 1;
+  const raw = JSON.stringify(v1);
+  await page.addInitScript((s) => {
+    if (!localStorage.getItem('theabonk.save')) localStorage.setItem('theabonk.save', s);
+  }, raw);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await page.locator('.map-tab', { hasText: 'Rimewood' }).click();
+  await page.getByRole('button', { name: 'Start run' }).click();
+  await expect(page.locator('.hud')).toBeVisible();
+  await babysit(page, 20);
+  const info = await page.evaluate(() => {
+    const g = (window as unknown as { __theabonk: { world: { map: { id: string }; time: number } } }).__theabonk;
+    return { map: g.world.map.id, time: g.world.time, backup: localStorage.getItem('theabonk.save.bak'), save: JSON.parse(localStorage.getItem('theabonk.save') ?? '{}') };
+  });
+  expect(info.map).toBe('rimewood');
+  expect(info.time).toBeGreaterThan(5);
+  // the upgrade kept a copy of the original save and wrote the new format
+  expect(info.backup).toBe(raw);
+  expect(info.save.version).toBe(2);
+  expect(info.save.lastMap).toBe('rimewood');
+  // nothing lost (a live achievement — 'Dawnbringer' for the existing win — may add gold)
+  expect(info.save.gold).toBeGreaterThanOrEqual(v1.gold);
+  expect(info.save.achievements).toEqual(expect.arrayContaining(v1.achievements));
   expect(problems, problems.join('\n')).toEqual([]);
 });
 
@@ -80,14 +121,115 @@ test('Escape pauses and stays paused; Escape again resumes', async ({ page }) =>
   expect(problems, problems.join('\n')).toEqual([]);
 });
 
+test('the tuning panel only exists with ?tune=1', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/');
+  await expect(page.locator('.logo')).toBeVisible();
+  await expect(page.locator('.tune-panel')).toHaveCount(0);
+  await page.goto('/?tune=1');
+  await expect(page.locator('.tune-panel')).toBeVisible();
+  // F2 hides and shows it
+  await page.keyboard.press('F2');
+  await expect(page.locator('.tune-panel')).toBeHidden();
+  await page.keyboard.press('F2');
+  await expect(page.locator('.tune-panel')).toBeVisible();
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('?playtest=1 records a run on the device and offers export', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/?playtest=1');
+  await expect(page.locator('.playtest-badge')).toBeVisible();
+  await expect(page.locator('.playtest-row')).toContainText('Playtest runs on this device: 0');
+  await startRun(page);
+  await babysit(page, 4);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Quit run' }).click();
+  await page.getByRole('button', { name: 'Yes' }).click();
+  await expect(page.locator('.playtest-row')).toContainText('Playtest runs on this device: 1');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('theabonk.playtest') ?? '{}'));
+  expect(stored.runs[0].player).toBe('human');
+  expect(stored.runs[0].result).toBe('quit');
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
 test('menus open and close without errors', async ({ page }) => {
   const problems = watchConsole(page);
   await page.goto('/');
-  for (const name of ['Workshop', 'Records', 'How to play', 'Settings']) {
+  for (const name of ['Workshop', 'Collection', 'Records', 'How to play', 'Settings']) {
     await page.getByRole('button', { name, exact: true }).click();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
   }
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('the performance test: ?bench=1 shows a result card, Settings starts it, Escape stops it, nothing is saved', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/?bench=1&seconds=6');
+  await expect(page.locator('.bench-badge')).toBeVisible();
+  await expect(page.locator('.modal.bench')).toBeVisible({ timeout: 180_000 });
+  await expect(page.locator('.bench-fps')).toContainText('FPS average');
+  const r = await page.evaluate(() => (window as unknown as { __benchResult: { frames: number; avgFps: number; drawCalls: { max: number }; gpu: string } }).__benchResult);
+  expect(r.frames).toBeGreaterThan(10);
+  expect(r.avgFps).toBeGreaterThan(0);
+  expect(r.drawCalls.max).toBeGreaterThan(5);
+  await page.getByRole('button', { name: 'Done' }).click();
+  // from Settings (the Performance row), then cancelled with Escape
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.locator('.setting', { hasText: 'Performance' }).getByRole('button').click();
+  await expect(page.locator('.hud')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
+  await expect(page.locator('.bench-badge')).toBeHidden();
+  const runs = await page.evaluate(() => JSON.parse(localStorage.getItem('theabonk.save') ?? '{}')?.stats?.runsPlayed ?? 0);
+  expect(runs).toBe(0);
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('the daily run starts the day’s hero and map with no shop bonuses', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: /Daily run/ }).click();
+  await expect(page.locator('.hud')).toBeVisible();
+  await babysit(page, 6);
+  const info = await page.evaluate(() => {
+    const g = (window as unknown as { __theabonk: { world: { options: { daily: boolean }; difficulty: string; player: { character: { id: string } }; map: { id: string } } } }).__theabonk;
+    return { daily: g.world.options.daily, difficulty: g.world.difficulty, hero: g.world.player.character.id, map: g.world.map.id };
+  });
+  expect(info.daily).toBe(true);
+  expect(info.difficulty).toBe('normal');
+  expect(problems, problems.join('\n')).toEqual([]);
+});
+
+test('remapped keys work in a run; accessibility options apply', async ({ page }) => {
+  const problems = watchConsole(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  // larger text applies at once — and really makes the interface 25% bigger
+  const rootPx = (): Promise<number> => page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
+  const before = await rootPx();
+  await page.locator('.setting', { hasText: 'Larger text' }).getByRole('button').click();
+  await expect(page.locator('html')).toHaveClass(/large-text/);
+  expect(await rootPx()).toBeCloseTo(before * 1.25, 1);
+  // remap: add J to Jump
+  await page.getByRole('button', { name: 'Remap…' }).click();
+  await page.locator('.remap-row', { hasText: 'Jump' }).locator('.chip.add').click();
+  await page.keyboard.press('KeyJ');
+  await expect(page.locator('.remap-row', { hasText: 'Jump' })).toContainText('J');
+  await page.getByRole('button', { name: 'Done' }).click();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await startRun(page);
+  // press J until a jump registers (a slow machine may still be warming up)
+  await expect
+    .poll(
+      async () => {
+        await page.keyboard.press('KeyJ');
+        return page.evaluate(() => (window as unknown as { __theabonk: { world: { stats: { jumps: number } } } }).__theabonk.world.stats.jumps);
+      },
+      { timeout: 15_000, intervals: [400] },
+    )
+    .toBeGreaterThan(0);
   expect(problems, problems.join('\n')).toEqual([]);
 });
 
@@ -121,6 +263,7 @@ test('the single-file build works from file://', async ({ page }) => {
   await expect(page.locator('.logo')).toContainText('TheaBonk');
   await startRun(page);
   await babysit(page, 12);
-  expect(await gameTime(page)).toBeGreaterThan(1);
+  // from file:// on CI's software WebGL the clock only has to move: this checks the build loads
+  expect(await gameTime(page)).toBeGreaterThan(process.env.CI ? 0 : 1);
   expect(problems, problems.join('\n')).toEqual([]);
 });

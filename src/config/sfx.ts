@@ -15,6 +15,11 @@ export const SFX_NAMES = [
   'slam',
   'roar',
   'spores',
+  // upgrade (append only: ids are indices)
+  'icicle',
+  'gust',
+  'shatter',
+  'bonk',
 ] as const;
 
 export type SfxName = (typeof SFX_NAMES)[number];

@@ -6,40 +6,87 @@ asset files, CDN links or web fonts.
 
 ## Commands
 - `npm run dev` — dev server (http://localhost:5173). URL params: `?seed=123` (fixed run
-  seed), `?stress=1000` (stress test: keeps N enemies + 0.4·N projectiles alive, player
-  invulnerable). F3 toggles the debug overlay. `window.__theabonk` is the Game instance
+  seed), `?map=rimewood` (force a map), `?stress=1000` (stress test: keeps N enemies +
+  0.4·N projectiles alive, player invulnerable). F3 toggles the debug overlay. `window.__theabonk` is the Game instance
   (`advance(seconds)` steps frames synchronously — handy when rAF is throttled).
 - `npm run build` — typecheck + single-file build → `dist/index.html` (works from file:// and in a
   sandboxed iframe).
 - `npm test` — Vitest unit tests (`tests/unit`).
-- `npm run test:e2e` — Playwright smoke tests (`tests/e2e`), builds first via webServer config.
-- `npm run simulate -- [seeds] [skill]` — headless balance simulation (bot plays full runs
-  per character). `VERBOSE=1` prints every run.
-- `npm run bench -- [enemies] [seconds]` — headless sim performance benchmark.
-- E2E needs `npx playwright install chromium` once. On macOS it uses the real GPU via
-  ANGLE/Metal; elsewhere SwiftShader (see tests/e2e/smoke.spec.ts for the one tolerated
-  browser-internal compositor message).
+- `npm run test:e2e` — Playwright smoke tests (`tests/e2e`), builds + serves on a dedicated port
+  (47413, `E2E_PORT` overrides; never reuses a foreign server).
+- `npm run simulate -- [seeds] [skill] [--map rimewood]` — headless balance simulation (bot
+  plays full runs per character). `VERBOSE=1` prints every run.
+- `npm run bench -- [enemies] [seconds] [--map rimewood]` — headless sim performance benchmark
+  (also prints CPU ms/tick, steadier than wall time on a busy machine).
+- `npm run check-size` — after build: single file, ≤1.5 MB, no external references.
+- `npm run audio-report` — builds, renders every sound + song offline (OfflineAudioContext in
+  headless Chromium, through the real mix chain) and prints loudness / peaks vs the targets
+  in src/audio/mix.ts; exits 1 if anything is out of range or clips. `--json` for raw rows.
+  tests/e2e/audio.spec.ts runs the same check.
+- `?playtest=1` — records each run on the device (`theabonk.playtest`, ≤20 runs/60 KB):
+  damage by source, cause of death, picks, build, slide/jump time, boss attack hit rates.
+  Export from the title / game-over screen. `npm run analyze-playtests -- <folder>` compares
+  exports with the simulator and prints suggestions (never edits files).
+- `?bench=1` — performance test (also Settings → Performance → Test…): fixed seed, bot-played
+  invulnerable Thea, 800-enemy horde (Tablet ×0.65), final boss at 20 s, orbiting camera,
+  3 s warm-up. Params `seconds`, `quality`, `map`, `enemies`. Result card (Copy) +
+  `window.__benchResult`; never touches the save. `npm run bench-browser -- [seconds]
+  [profile…]` runs the headless matrix (native tiers, SwiftShader, 4× CPU throttle, tablet,
+  1000-enemy stress on both maps). Logic in src/game/benchmark.ts (budgets per tier).
+- `?quality=low|medium|high|tablet` forces a render tier for the session (not saved). Auto
+  quality = Tablet on touch devices, else `tierForGpu(gpuName)` (software / old Intel → Low,
+  Iris / Radeon iGPU / mobile → Medium, else High).
+- `?tune=1` — live tuning panel (F2 hides). Export → `npm run apply-tuning -- file.json`
+  (validates + rewrites the generated block in src/config/tuning.ts);
+  `npm run simulate -- 8 0.7 --tuning file.json` tests an export headlessly.
+- Real multi-touch in e2e: tests/e2e/touchHelpers.ts `Fingers` (CDP Input.dispatchTouchEvent,
+  Chromium only) and `emulateTouchLaptop` (stubs matchMedia: Chromium's touch emulation
+  always reports a coarse primary pointer). tests/e2e/hybrid.spec.ts runs on desktop
+  Chromium with `hasTouch`.
+- E2E needs `npx playwright install chromium firefox webkit` once. Projects: chromium,
+  firefox (desktop specs) and webkit-tablet, webkit-phone, chromium-tablet (tests/e2e/
+  touch.spec.ts only — synthetic touch Pointer Events drive the on-screen controls). On
+  macOS Chromium uses the real GPU via ANGLE/Metal; elsewhere SwiftShader. Tolerated
+  browser-internal notices (never game errors) are listed in tests/e2e/smoke.spec.ts:
+  SwiftShader's ReadPixels stall, Firefox's "implementation-defined" shadow filtering note
+  and headless Firefox refusing pointer lock. `npx playwright test --project=firefox`.
 
 ## Architecture
 ```
 src/
   core/      rng (seeded), math helpers, event ring buffer, safe storage
-  config/    ALL tuning data (typed): weapons, passives, enemies, waves, characters, evolutions,
-             shop, achievements, balance constants
+  config/    ALL tuning data (typed): tuning.ts (every feel/balance knob, ranges, defaults
+             block), maps.ts (MapDef per map), difficulty.ts (Relaxed/Normal/Hard + tiers →
+             RunMods), weapons, passives, enemies (+ bestiary.ts notes), waves, characters
+             (with signature passives), evolutions, shop, achievements; balance.ts keeps
+             structural constants only
   sim/       Pure game logic — NO three.js / DOM imports. Deterministic given seed + inputs.
-             world.ts (state), pools.ts (SoA typed-array pools), spatialHash.ts, terrain.ts,
-             player.ts (momentum movement), enemyAI.ts, director.ts (waves/bosses), combat.ts,
+             world.ts (state), pools.ts (SoA typed-array pools), spatialHash.ts, terrain.ts
+             (+ walkability lattice `pass`, ice/snow `surface`), flowField.ts (enemy
+             pathing), weather.ts (icicles, gusts, blizzard wind), heroes.ts (signature
+             passives), player.ts (momentum movement), enemyAI.ts, director.ts (waves/bosses), combat.ts,
              weapons/*.ts (one behavior fn per weapon behavior), pickups.ts, leveling.ts,
              upgrades.ts, shrines.ts, sim.ts (fixed-step orchestration), bot.ts (AI player)
   render/    three.js only reads sim state: instanced meshes per enemy/projectile kind, gems,
-             particles, terrain/props, camera rig, damage numbers (2D canvas overlay)
+             particles, terrain/props, camera rig, damage numbers (2D canvas overlay),
+             occlusion.ts (GPU dithered fade of props between camera and player),
+             Sky.ts (per-map moods + aurora), Snowfall.ts, Bloom.ts (Medium / High),
+             flash.ts (≤ 3 Hz blink helper), Particles (chunks, stretched sparks, puffs)
   audio/     Web Audio synth SFX + procedural music
-  input/     keyboard/mouse/pointer-lock/gamepad (+ drag-look fallback in iframes)
+  input/     InputManager (the ONE keyboard listener: routes keys to the open menu via
+             ui.handleKey, else to gameplay through remappable bindings), actions.ts
+             (GameAction bindings, labels, conflicts), gamepad.ts (raw → standard layout,
+             learned calibration, last-used pad, rumble), touch.ts (twin-stick on-screen
+             controls), mouse/pointer-lock
   ui/        DOM screens (title, select, shop, settings, pause, level-up, chest, game over),
              HUD, procedural canvas icons, menu focus navigation
-  meta/      save schema + migration, gold/achievements/unlocks
+  meta/      save schema + migration, gold/achievements/unlocks, daily.ts (UTC date →
+             seed/map/hero), playtest.ts
   game/      Game.ts — app state machine + fixed-timestep loop (60 Hz sim, interpolated render)
-  audio/     Audio.ts (synth SFX), Music.ts (sequencer), bindAudio.ts (events → sounds)
+  audio/     Audio.ts (synth SFX; build(ctx) works on live or offline contexts; master chain
+             glue compressor → limiter → soft clip at −1 dBFS), Music.ts (named songs, layered
+             by intensity), mix.ts (per-sound gain trims, categories, loudness targets),
+             report.ts (offline measurements), bindAudio.ts (events → sounds, song choice)
 scripts/     simulate.ts (balance), bench.ts (perf)
 tests/       unit/ (Vitest), e2e/ (Playwright)
 ```
@@ -55,7 +102,76 @@ Key rules:
 - Adding a weapon = add a `WeaponDef` in `config/weapons.ts` (+ optional evolution) and, if it
   needs new behavior, one function in `sim/weapons/` registered in `sim/weapons/index.ts`.
 - Use `world.rng` (seeded) for anything gameplay-affecting; `Math.random` only for cosmetic FX.
+- Feel/balance numbers live in `config/tuning.ts`. Sim code reads the run's copy `w.tuning`
+  (never `TUNING_DEFAULTS` directly) and applies it at use time so live panel edits take
+  effect immediately; the camera reads `rig.tuning`. Runs with changed tuning are flagged
+  `w.options.tuned` and never touch the save.
+- Maps are data (`config/maps.ts`): terrain spec, props, palette, sky, hazards, waves/events,
+  `variants` (base enemy → map variant; summons go through `variantOf`), `finalBoss`, music,
+  banners, unlock rule. Sim reads `w.map`; Renderer.setTerrain(t, map) caches by map+seed.
+  Map hazards use `w.hazardRng` only, so adding hazards never shifts the main stream.
+- Difficulty lives in `w.mods` (RunMods from config/difficulty.ts), applied where it matters
+  (spawnEnemy HP, damagePlayer, speedMul, director rate/maxAlive/elites, heal, hearts, boss
+  enrage, gold) — never folded into `w.tuning`, so tuning exports stay clean.
+- Hero passives: CharacterDef.passive.id → `p.passive` code (HeroPassive); checks are integer
+  compares (Thea landing bonk, Brindle shell guard in damagePlayer, Bramble thorns in
+  enemyContacts, Ottie bowling in updateHero, Nova's 4 cards in rollChoices).
+- Level-up charges: `p.rerolls / p.skips / p.banishes` (BASE_STATS.skip = 1 free per run;
+  shop ranks + Relaxed add). `w.banished` filters upgradeCandidates for the rest of the run.
+- Daily runs: Game.startDaily → Normal, no shop bonuses / unlocked weapons; the day's hero
+  and map are playable even if locked. Records: best per date, newest 30 (`save.daily`).
+- Enemy data fields replace id checks: `model` (variants reuse a base model + `frostTrim`),
+  `flying`, `bob`, `chill`, `roll`, `shotVisual`; bosses by `bossPattern`.
+- Flash safety: every blink / pulse goes through `render/flash.ts` (≤ 3 Hz, registered in
+  FLASH_EFFECTS — a test samples each; steady with reduced motion). Don't add raw
+  `Math.sin(time * k) > 0` blinks.
+- Accessibility (settings.access): reduced motion (auto/on/off → rig, PlayerView, flash
+  helper, CSS `html.reduced-motion`), colour-blind (Okabe-Ito warnings/gems + gem shapes),
+  larger text (`html.large-text` = 125% rem), high contrast. Warning circles always carry a
+  per-attack pattern + outline (telegraphBasic) and a "!" marker; so do wind-ups.
+- Remapping: settings.controls.bindings (Escape / F3 fixed; menus also always take arrows,
+  Enter, Escape, gamepad A/B/d-pad). Slide toggle and hold-to-hop (`SimInput.autoHop` → no
+  bunny-hop bonus) are options.
+- Gamepads are always read through `normalizePad` (standard layout): recorded raw layouts
+  (Firefox PlayStation pads, xpad Xbox) are replayed by tests/unit/gamepad.test.ts from
+  tests/fixtures/gamepads.json — add a recording there when supporting a new controller.
+  Check Xbox ids before PlayStation ("Xbox Wireless Controller" vs DS4 "Wireless Controller").
+- Pointer lock asks for raw input (unadjustedMovement) and falls back to a plain lock; if
+  lock never works in a session (pointerlockerror before any success) look switches to drag.
+- Touch: `html.touch` shows the on-screen controls during runs, enlarges tap targets, and
+  hides the speedometer; portrait shows the rotate hint and pauses. Touch-first devices
+  (`touchFirstDevice()` = primary pointer coarse: phones / tablets) start in touch mode with
+  Quality 'auto' = Tablet and Relaxed preselected. Everything else (incl. touchscreen
+  laptops) starts in desktop mode on its GPU tier. `input.mode` (InputModeTracker,
+  input/mode.ts) flips modes mid-run: a touch/pen pointerdown → touch; a real key, mouse
+  click or >6 px of mouse travel, or gamepad input → desktop. Mouse events within 800 ms of
+  a touch are the browser's emulation and never count. Game.setTouchMode drops the other
+  side's held state; releasing pointer lock for touch never auto-pauses. The tablet tier renders
+  lighter (DPR 1, no shadows, thinned decoration) and its runs field ~65% of the Gloom with
+  HP / XP / coins ×1/0.65 (`mods.crowd / crowdHp / enemyXp / coinValue`; bosses untouched).
+- The last BOSS_RESERVE enemy-pool slots are bosses-only (a packed field never blocks one).
+- Bloom (Medium / High only): the scene renders to the screen as usual (native MSAA, tone
+  mapping, in-material hit flashes), then the frame is copied (`copyFramebufferToTexture`),
+  bright parts are blurred at 1/4 and 1/8 res and added back. Threshold is per map
+  (`sky.bloomThreshold`, higher on snow). ≈2 ms at 2.5 MP on an M-series GPU. Renderer
+  resets `renderer.info` once per frame so draw-call counts include every pass.
+- Feel: level-up has a short hit-stop before the picker (`levelUpAt`), evolution swings the
+  camera (`rig.orbit`, sim held while it plays; skipped with reduced motion), bosses get an
+  intro card + phase ticks / enrage cue on the bar (EnemyDef `epithet`, `phases`, `enrageAt`),
+  enemies squash on hit and burst per `deathFx`, damage numbers merge per target.
+- Audio: every sound plays at its MIX gain trim (set from the audio report: re-run it after
+  adding or changing a sound and adjust the trim until it's inside its category window).
+  New SFX names are appended to SFX_NAMES (ids are indices). Songs: runA/B/C (Meadow, dusk →
+  deep night → before dawn), rimeA/B/C (Rimewood, bells), boss / rimeBoss (mid-bosses),
+  final / oldRime (final bosses), menu, collection — chosen per frame in bindAudio.
+- Interface scale: root font = (8 px + 0.9 vmin) × `--ui-scale` (1.25 with Larger text; set
+  on :root in styles.css — an `html` rule would lose to :root). Use rem everywhere. Touch
+  screens add px floors: buttons / tabs / setting rows ≥ 48 px, small text ≥ 13 px.
 - localStorage access only through `core/storage.ts` (try/catch, in-memory fallback).
+  Save v2 (`meta/save.ts`): older saves are migrated in sanitizeSave and copied once to
+  `theabonk.save.bak` just before the first write in the new format. v2 adds maps, difficulty
+  + tiers, per-map/difficulty stats, daily records, collection (keeps unknown ids, capped).
+  Game runs checkAchievements at startup so unlocks earned by past progress apply at once.
 
 ## Performance notes
 - `npx tsx scripts/bench.ts 1000 20` — headless sim benchmark (stress mode keeps N enemies +
@@ -65,28 +181,206 @@ Key rules:
   `terrain.heightAt` (cached bilinear) not `height()` for non-player entities, walk
   `grid.cellStart/items` inline or use `queryCells` (integer args), and write instance
   transforms via the `TRS` scratch + `writeTRSFrom(array, offset)`.
+- `updateEnemies` is at V8's inlining budget: new per-enemy logic goes in a small helper
+  taking only ints/objects (doubles via typed scratch, see `flowSteer`/`walkerStep`). Adding
+  it inline made V8 stop inlining `resolveColliders` etc. → boxed doubles, 4× GC, +60% tick.
+- Flow field: ≈0.1 ms/tick at 1000 enemies (incremental Dial build, 9000 nodes/tick budget).
 - Instanced attribute uploads use `uploadPrefix` (only the used prefix, no per-frame range
   object allocation).
 
 ## Balance notes
-`npm run simulate -- 16 0.7` (16 seeds/hero, bot skill 0.7 ≈ "decent player", no meta):
-Thea ~12:35, Pip ~11:30, Brindle ~15:00 average survival (overall ~13:00); ~25% first-run
-wins. Deaths
-cluster at the boss gates (5:00 Grumblecap, 10:00 Clockjaw, 15:00+ Regent). Skill 0.45 →
-~11:10, 0.9 → ~13:10. Main knobs: `enemyHpScale`/`enemyDamageScale` (balance.ts), wave
-`rate/minAlive/maxAlive` (waves.ts), boss hp/projectileDamage (enemies.ts + bosses.ts),
-`PLAYER_IFRAMES`, `LEVEL_HEAL` (leveling.ts), heart drop chance.
+`npm run balance-sweep -- 12` (every map × difficulty, Hard tiers, bot skill 0.7 "decent" and
+0.9 "expert", 6 heroes × N seeds per cell, parallel; `--only meadow-normal-0.7,...`) compares
+with the targets and flags heroes more than 1:30 from the cell average. Upgrade phase 13
+results (12 seeds, decent bot): Relaxed Meadow 14:11 / 44% wins, Rimewood 16:01 / 51%;
+Normal Meadow 13:21 / 29%, Rimewood 12:24 / 21% (≈ 1 min shorter, as intended); Hard Meadow
+8:43 / 0%, Rimewood 8:04 / 3%. The 0.9 bot is barely stronger than 0.7 (Normal wins 35 / 36%),
+so the "expert" Relaxed / Hard / tier win targets are out of reach without making the game
+easier for everyone — treat them as bot-limited. Hero averages carry ±1:10 of noise at 12
+seeds; use 24+ seeds (`--only` the Normal cells) before touching a hero.
+Knobs: difficulty multipliers (config/difficulty.ts DIFFICULTIES / TIERS), per-map `mods` on
+MapDef (Meadow enemyHp 1.09 · damageTaken 1.04; Rimewood damageTaken 0.9 · enemyHp 0.97),
+hero stats / passives (config/characters.ts, sim/heroes.ts SHELL_GUARD_MULT, thorns ×2),
+wave `rate/minAlive/maxAlive` (waves.ts), boss hp/projectileDamage, `tuning.combat.*`,
+`tuning.spawns.*`. `npm run simulate -- 16 0.7 --map rimewood --difficulty hard --tier 2`.
 The bot (sim/bot.ts) kites, dodges shots predictively, sidesteps telegraphed charges,
-hops shockwave rings and un-sticks itself; it never slides, so humans can do better.
+hops shockwave rings, un-sticks itself, slides for travel/downhill, chains slide boosts,
+bunny-hops on open ground, escapes encirclements through the widest gap and climbs ramps
+to plateau shrines. `new Bot(seed, skill, false)` = the v1 bot (used by the golden "sim"
+fingerprints). Damage sources: sim/sources.ts codes passed to
+`damagePlayer(w, raw, source, inst)`; boss attacks call `beginAttack()` for used/hit counts.
 
 ## Gotchas
 - `Terrain.height()` is exact (player physics); `heightAt()` is the cached approximation.
 - Enemy pool is compacted at end of tick → never keep raw indices across ticks (use uid).
 - Bosses live in the enemy pool (`behavior: 'boss'`); `director.bossUid` tracks the latest.
+- Pathing: `terrain.pass` (1-unit lattice = hcache, 8-bit masks) treats plateau/ramp edges
+  taller than `WALL_STEP` as walls both ways (ramp↔plateau joins use `JOIN_STEP`). Walkers
+  follow `w.flow` when the path is much longer than the straight line, have wall-crossing
+  steps undone, and use `heightOnLevel` (no riding up walls). Flyers (`FLYING` in combat.ts)
+  and bosses are exempt. `spawnEnemy` snaps ground spawns to reachable cells and returns -1
+  when there is none within 6 units. Player on an unreachable island → `flow.island` and
+  everyone chases directly.
+- Warning circles / shockwaves use `alphaBasic` with a per-map style: additive glow on dark
+  ground, solid see-through colour on bright ground (`palette.telegraphs: 'solid'`, snow) —
+  additive white-on-white vanishes.
+- Prop materials patched by `fadeProps` need `OCCLUSION_UNIFORMS` set each frame (Renderer
+  does it); `uFocus` far away in menus disables the fade. The player's ghost silhouette
+  (`GreaterDepth`) renders before the player mesh (renderOrder 1 → 2).
 - AudioContext is created only inside a user-gesture handler (no autoplay warnings).
 - Icon canvases use `willReadFrequently` so `toDataURL` doesn't trigger GPU readbacks.
 
-## Phase plan / status
+## Upgrade branch (`theabonk-upgrade`)
+Plan: phases 0–14 (safety nets → tuning → playtest/bot → pathing/camera → maps/Rimewood →
+content → input/accessibility → gamepads → touch → visuals → audio → bench/low tier → CI →
+balance → screenshots/handoff). Baselines in docs/BASELINES.md. Guards: `npm run check-size`
+(≤1.5 MB, single file, no external refs), golden determinism test (update hashes only for
+intentional sim changes), storage budget test (<100 KB across all `theabonk.*` keys).
+Benchmarks are load-sensitive: compare A/B against a `main` worktree.
+- [x] 0. Safety nets
+- [x] 1. Tuning file + live panel + apply-tuning
+- [x] 2. Playtest recording, damage sources, analyze-playtests, sliding bot
+- [x] 3. Flow-field pathing + camera occlusion fade / player silhouette
+- [x] 4. Map system (MapDef) + Rimewood (ice, drifts, icicles, gusts, variants, Old Rime),
+  save v2 with backup, map picker
+- [x] 5. Difficulty + Hard tiers, Ottie / Bramble / Nova + signature passives for all six,
+  skip (1 free) / banish / reroll charges, daily run, collection (bestiary 3D preview),
+  15 achievements
+- [x] 6. One input system + remapping, slide toggle / hold-to-hop, flash safety (3 Hz),
+  reduced motion, colour-blind palette + patterned telegraphs + "!" markers, larger text,
+  high contrast
+- [x] 7. Gamepad layer (standard + raw layouts, calibration, last-used), controller test +
+  quick setup, rumble, raw-input pointer lock + fallback, 125%/150% scaling e2e, Firefox e2e
+- [x] 8. Touch twin-stick controls, touch-sized menus, rotate hint, safe areas, Relaxed
+  preselected on touch, Tablet tier (render + crowd), boss slots reserved, WebKit e2e
+- [x] 9. Feel + visuals: hit squash, per-enemy defeat bursts, sparks / puffs, merged damage
+  numbers, level-up hit-stop + light pillar, evolution card (A + B → C) + camera swing,
+  stronger-looking weapons, gem trails, boss intro cards + phase ticks + enrage, bloom
+- [x] 10. Audio: song sets (3 run songs per map, boss / final themes incl. Old Rime, menu,
+  collection), new SFX (icicle, gust, shatter, bonk), pentatonic gem chimes, gain table +
+  −1 dBFS limiter, offline audio report + test
+- [x] 11. Benchmark (`?bench=1`, Settings → Test…, result card, bench-browser matrix), Low
+  tier (no decor, 0.72× fog + 150 far plane with the sky scaled to fit), GPU-based auto quality
+- [x] 14. Screenshot review (scripts/screenshot-review.ts → shots/review-final: menus, six
+  heroes, both maps at dusk / night, Grumblecap, Clockjaw, Gloam Regent, Old Rime, HUD at
+  Low / Medium / High / Tablet; fixes: tablet Pause scales with the screen, phone hero
+  select fits one screen), README handoff (slug, storage keys + measured sizes, devices,
+  controls, accessibility, recapture previews), storage test covers daily / collection /
+  touch layout.
+- [x] 13. Balance sweep (scripts/balance-sweep.ts, simulate --difficulty / --tier / --json):
+  Relaxed toned down, Hard eased, per-map MapDef.mods (Meadow a little harder, Rimewood
+  easier), hero pass (Thea / Ottie / Nova up; Brindle / Bramble / Pip down). Golden
+  fingerprints updated for the intentional balance change.
+- [x] 12. CI: .github/workflows/ci.yml (Ubuntu: typecheck, build, size, unit, short
+  simulate, e2e matrix per project; CI=true → longer timeouts, 1 retry, HTML report +
+  failure screenshots / traces uploaded), gpu.yml (self-hosted Mac, manual or pushes to
+  main / theabonk-upgrade only, never pull requests), docs/CI.md (repo + runner setup,
+  security). Nothing is pushed: the user creates the private repo.
+
+## Glass touch controller (on `theabonk-upgrade`, before upgrade phases 13–14)
+Plan: design → default on phones/tablets + hybrid switching → joystick → camera/buttons/
+haptics → touch-friendly screens → customisation + layout editor → performance (glass rule,
+quality governor) → accessibility → tests → handoff. `npx tsx scripts/glass-mockups.ts`
+(after a build) renders design contact sheets into shots/glass-mockups (git-ignored; test-results/ is wiped by every Playwright run).
+- [x] 1. Design: src/ui/glass.css (fake glass layers + optional real-blur ::before that
+  cross-fades; opacity per layer — an ancestor with opacity < 1 would become a backdrop root
+  and the blur would stop seeing the canvas), glassGlyphs.ts, glassLayout.ts
+- [x] 2. Touch-first detection, InputModeTracker hybrid switching, no pause on lock release
+- [x] 3. Glass joystick (input/touch.ts rewrite): floating (default) or fixed stick on the
+  stick half below the top HUD band (ZONE_TOP 22%); input/stick.ts response (10% dead
+  zone, full speed at 90% travel, ^1.25 curve, analog 360°); each control owns its pointerId
+  (captured; up / cancel / lostpointercapture release — never pointerleave); DOM writes
+  batched into one rAF (transform + CSS vars only). Feedback: hurt() rim flash (≤ 3 Hz via
+  flash.ts `stickHurt`), setFast() glow + chevrons from Game.touchFeedback (sliding faster
+  than 1.35 × walkSpeed, angle in camera space). setGlass('fake' | 'blur') cross-fades.
+  main.ts shows a "couldn't start" card (and sets window.__theabonkError) if Game throws.
+- [x] 4. Auto camera (render/autoCamera.ts + `tuning.camera.autoCam*`; Game.autoCamera):
+  eases yaw behind Thea's velocity — full rate within 60° of straight ahead, a third when
+  sideways, never past 120° (retreating). Rate is low (0.6 rad/s) on purpose: holding a
+  diagonal makes camera and movement chase each other, so the rate sets how tight Thea's
+  circle is. A camera finger blocks it; it resumes `autoCamDelay` (1.2 s) after the lift
+  with a 0.6 s ease-in. Haptics: TouchControls.buzz (navigator.vibrate where present, after
+  user activation, ≥ 70 ms apart): hurt 25, level-up 40, boss spawn [30, 60, 30], hostile
+  blast within 6 m 35. Real-touch e2e (Chromium CDP): multi-touch, auto camera, slide-jump.
+  CDP gotcha: only touchEnd lifts fingers and it lifts all of them — Fingers.up re-presses
+  the rest (new pointers), so tests holding the stick across it use the fixed stick.
+- [x] 5. Touch-friendly screens: 48 px minimum targets (html.touch), 13 px text floor,
+  level-up on phones = one-line header + cards with Reroll / Skip beside them + full-width
+  Banish under equal-height cards, tap hints instead of key hints (.hint-keys / .hint-touch),
+  hero select keeps Back / Start run pinned at the bottom (.select-actions), How to play
+  explains touch. Fixed "Larger text" (it never applied). glassLayout: the default stick /
+  Slide rise above the bottom HUD band (bottomHudBand, uiRem) at big sizes; resolveLayout /
+  toLayoutItem / layoutProblems for the editor (unit-tested on phone + tablet sizes,
+  both hands, all three sizes).
+- [x] 6. Customisation: save `settings.touch` (size, opacity, leftHanded, fixedStick,
+  autoCamera, lookSensitivity, haptics, highContrast, layout — sanitizeTouch; layout items are
+  corner-anchored offsets in short-side units + scale 0.8–1.25, stored right-handed).
+  Settings → Touch controls (Menus.touchSettings; shown when the device has a touchscreen)
+  previews the real controls around a narrow panel (TouchControls.setMode('preview')).
+  Edit layout (ui/layoutEditor.ts): drag to move, round handle or Smaller / Bigger to
+  resize, Reset to default; a move that would leave the safe area, overlap another control
+  or cover the HUD (hudRects: live HUD + room for the boss bar / warnings) is refused with a
+  reason. TouchControls: setLayout / placement / showPlacement / setMode('play' | 'preview' |
+  'edit'); setVisible only affects play mode.
+- [x] 7. Performance: `?bench=1&controls=none|fake|blur` shows the controls with a scripted
+  thumb (TouchControls.demo); `npm run bench-browser -- 15 touch` = Chromium phone / tablet
+  at 4× CPU × every tier × none / fake / blur + WebKit iPhone / iPad (`BENCH_FILE=` benches
+  a frozen copy of a build; `--repeat N` interleaves and reports medians). Glass rule:
+  `glassFor(quality, touchFirst)` — real blur only on High on non-touch-first devices
+  (touchscreen laptops: measured free there); phones / tablets and every other tier use fake
+  glass (blur cost frames on throttled phones / tablets even at High). Per-frame stick
+  updates are compositor-only (transforms on their own layers: stick, rotated wedge, knob,
+  .gstick-shine highlight); a press fades in the pre-painted .g-lit layer and replays one
+  .g-ripple via the Web Animations API — no repaints (the first version dropped a frame per
+  press at 4× CPU). Real blur sits only on the stick base and Jump / Slide. Quality governor (game/governor.ts, Auto only, never
+  in the benchmark or with ?quality=): median frame slower than 48 fps over 4 s (after a 5 s
+  warm-up / 3 s settle; ≥ 3 frames, > 5 s gaps ignored, reset when the tab comes back) → one step down (High → Medium → Low, Tablet
+  → Low), applied behind the next level-up / chest screen or after 8 s; sticks for the
+  session (`sessionTier`), never steps up mid-run, glass cross-fades. Touch devices on Low
+  keep the tablet crowd (`lightCrowd`).
+- [x] 8. Accessibility: reduced motion (no ripple / pulse / spring, slower auto camera),
+  high-contrast controls (also on with the high-contrast HUD), ≥ 48 px targets at Small,
+  thumb zones below the top HUD band, defaults + editor never cover the HUD.
+- [x] 9. Tests: touch e2e on chromium-tablet / chromium-phone (real CDP touches) and WebKit
+  (synthetic pointers), tests/e2e/touch-playthrough.spec.ts (5-minute touch-only run on
+  the Pixel 7 profile, steered by `Game.botHint()` — read-only bot advice converted to stick
+  angles; taps level-ups and chests), governor e2e (24× CPU throttle → Auto steps to Low),
+  `scripts/touch-shots.ts` visual review. Playtest runs record `input: 'touch'` and
+  `controls` (size, auto camera, stick mode, hand, glass, governor steps).
+- [x] 10. Handoff: README touch section + Ai Kids Games registry notes (devices, controls,
+  quick start, remove the keyboard-required note), BASELINES controls table.
+  Screenshots: scripts/touch-shots.ts (GLASS=fake|blur env), scripts/glass-mockups.ts and
+  scripts/screenshot-review.ts write into the git-ignored shots/ folder.
+
+## Shipping v2 (owner task "Ship TheaBonk's touch controls", 2026-10-12)
+The two phone tests that held v2 back are now deterministic, and touch steering is fixed:
+- Test-only URL options (never touch the save): `?slowframe=ms` (Game.frame busy-waits that long
+  per rendered frame — a slow device on any machine), `?nodamage=1` (run with `god`, flagged
+  `tuned`: "Test run (no damage) — not recorded"), `?gputier=high|medium|low` (what Auto picks
+  for a GPU of that tier).
+- Governor e2e: touch.spec `slowframe=45` → Auto Tablet → Low in one step, fake glass (blocking);
+  hybrid.spec touchscreen laptop `gputier=high&slowframe=45` → High → Medium → Low, real blur
+  cross-fades to fake (blocking); the 24× CPU-throttle run only reports (annotation) — a fast Mac
+  holds 60 fps there.
+- touch-playthrough.spec: `?nodamage=1`, then by real CDP touches: the stick in 8 directions
+  (Thea's velocity within 35° of the stick read against `Game.steer.yaw(rig.yaw)`), Jump, Slide,
+  a slide-jump (third finger), Pause / Resume, level-ups and a chest, ≥ 5:00 of play.
+- Heading lock (input/touchSteer.ts, `tuning.camera.autoCamHeadingLock`, OFF by default): the
+  auto camera's turns don't steer Thea while the thumb holds still (a held diagonal circles 273° in
+  8 s and ends 16 m from the start instead of 57 m without it); a deliberate thumb move (beyond a
+  6° deadband) re-reads the stick against the view (1.5° of camera turn per degree of thumb),
+  lifting resets it, and a camera drag still turns Thea. Off because touch survival already matches
+  keyboard (Relaxed, paired vs keyboard — Meadow 24 seeds: auto cam +1:28 ± 0:40, lock +0:34,
+  auto cam off +0:22; Rimewood 48 seeds: auto cam −0:51 ± 0:28, lock −0:25, off −0:24, auto cam
+  slowed on diagonals −0:29) and without it the stick always means "that way on screen". Game: `steer.thumb()` each running frame, `steer.autoTurned()` in
+  autoCamera, buildSimInput reads the stick against `steer.yaw(rig.yaw)`.
+- `npx tsx scripts/touch-compare.ts [seeds] [skill] [--map] [--difficulty] [--casual] [--circle]`:
+  headless, deterministic survival with the same bot / seeds / picks through ideal, keyboard
+  (8-way, still camera), touch-off, touch-on (auto camera, no lock) and touch-lock; a "thumb"
+  holds its direction and re-aims when the wish turns > 12° (casual 20°) or Thea drifts > 30°
+  (casual 50°), after 0.1 s (casual 0.2 s). `--circle` = the held-diagonal check.
+
+## Phase plan / status (v1)
 1. [x] Scaffold, single-file build, 3D scene, player movement + camera
 2. [x] Enemies, spawning, collision, HP, death
 3. [x] Weapons, XP, leveling, upgrade picker

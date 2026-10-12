@@ -1,0 +1,71 @@
+name: CI
+
+# Runs on every push and pull request on GitHub's standard Ubuntu runners.
+# Rendering uses SwiftShader (software WebGL) there: the game's Auto quality picks Low on it,
+# and playwright.config.ts gives every test more time when CI is set. Reports and screenshots
+# are uploaded when something fails.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Build (single file)
+        run: npm run build
+      - name: Size / single-file check (≤ 1.5 MB, no external references)
+        run: npm run check-size
+      - name: Unit tests
+        run: npm test
+      - name: Short balance simulation (smoke)
+        run: npx tsx scripts/simulate.ts 2 0.7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/index.html
+          retention-days: 7
+
+  e2e:
+    needs: build-and-unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit-tablet, webkit-phone, chromium-tablet, chromium-phone]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install the browser
+        run: npx playwright install --with-deps ${{ startsWith(matrix.project, 'webkit') && 'webkit' || startsWith(matrix.project, 'firefox') && 'firefox' || 'chromium' }}
+      - name: Playwright (${{ matrix.project }})
+        run: npx playwright test --project=${{ matrix.project }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
