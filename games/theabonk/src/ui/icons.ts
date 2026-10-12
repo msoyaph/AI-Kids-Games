@@ -421,6 +421,85 @@ const GLYPHS: Record<string, (ctx: Ctx) => void> = {
     ctx.lineWidth = 4;
     ctx.stroke();
   },
+  skip: (ctx) => {
+    // a page with a fast-forward arrow
+    roundRect(ctx, 20, 18, 46, 60, 6);
+    fillStroke(ctx, '#f4ecd8');
+    ctx.beginPath();
+    ctx.moveTo(42, 34);
+    ctx.lineTo(60, 48);
+    ctx.lineTo(42, 62);
+    ctx.closePath();
+    fillStroke(ctx, '#2fb8a6', 4);
+    ctx.beginPath();
+    ctx.moveTo(58, 34);
+    ctx.lineTo(76, 48);
+    ctx.lineTo(58, 62);
+    ctx.closePath();
+    fillStroke(ctx, '#2fb8a6', 4);
+  },
+  banish: (ctx) => {
+    // a card crossed out
+    roundRect(ctx, 24, 16, 48, 64, 8);
+    fillStroke(ctx, '#8a70d0');
+    ctx.beginPath();
+    ctx.moveTo(28, 24);
+    ctx.lineTo(68, 72);
+    ctx.moveTo(68, 24);
+    ctx.lineTo(28, 72);
+    ctx.lineWidth = 12;
+    ctx.strokeStyle = '#231c2e';
+    ctx.stroke();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#ff5a5f';
+    ctx.stroke();
+  },
+  reroll: (ctx) => {
+    ctx.beginPath();
+    ctx.arc(48, 48, 24, 0.3, Math.PI * 1.6);
+    ctx.lineWidth = 12;
+    ctx.strokeStyle = '#231c2e';
+    ctx.stroke();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#ffcc33';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(56, 14);
+    ctx.lineTo(70, 26);
+    ctx.lineTo(52, 32);
+    ctx.closePath();
+    fillStroke(ctx, '#ffcc33', 4);
+  },
+  daily: (ctx) => {
+    // calendar page with a sun
+    roundRect(ctx, 18, 22, 60, 56, 8);
+    fillStroke(ctx, '#f4ecd8');
+    roundRect(ctx, 18, 22, 60, 16, 8);
+    fillStroke(ctx, '#ff5a5f');
+    star(ctx, 48, 58, 14, 8, 0.6);
+    fillStroke(ctx, '#ffcc33', 3);
+  },
+  collection: (ctx) => {
+    // an open field guide
+    ctx.beginPath();
+    ctx.moveTo(48, 28);
+    ctx.lineTo(16, 22);
+    ctx.lineTo(16, 74);
+    ctx.lineTo(48, 80);
+    ctx.lineTo(80, 74);
+    ctx.lineTo(80, 22);
+    ctx.closePath();
+    fillStroke(ctx, '#f4ecd8');
+    ctx.beginPath();
+    ctx.moveTo(48, 28);
+    ctx.lineTo(48, 80);
+    outline(ctx, 4);
+    ctx.stroke();
+    circle(ctx, 32, 50, 9);
+    fillStroke(ctx, '#7b5cff', 3);
+    star(ctx, 64, 50, 10, 5, 0.5);
+    fillStroke(ctx, '#ffcc33', 3);
+  },
   kills: (ctx) => {
     star(ctx, 48, 50, 34, 6, 0.5);
     fillStroke(ctx, '#ffd34d');
@@ -535,6 +614,82 @@ export function portraitUrl(id: string, colors: { primary: number; secondary: nu
         ctx.fill();
         roundRect(ctx, 24, 76, 48, 8, 4);
         fillStroke(ctx, hex(colors.accent), 3);
+      } else if (id === 'ottie') {
+        // river otter: round head, small ears, whisker snout
+        circle(ctx, 28, 30, 7);
+        fillStroke(ctx, hex(colors.primary), 4);
+        circle(ctx, 68, 30, 7);
+        fillStroke(ctx, hex(colors.primary), 4);
+        circle(ctx, 48, 52, 28);
+        fillStroke(ctx, hex(colors.primary));
+        ctx.beginPath();
+        ctx.ellipse(48, 64, 18, 13, 0, 0, Math.PI * 2);
+        fillStroke(ctx, hex(colors.secondary), 4);
+        circle(ctx, 48, 57, 5);
+        ctx.fillStyle = '#231c2e';
+        ctx.fill();
+        circle(ctx, 37, 44, 4);
+        ctx.fill();
+        circle(ctx, 59, 44, 4);
+        ctx.fill();
+        ctx.beginPath();
+        for (const s of [-1, 1]) {
+          ctx.moveTo(48 + s * 10, 64);
+          ctx.lineTo(48 + s * 28, 60);
+          ctx.moveTo(48 + s * 10, 67);
+          ctx.lineTo(48 + s * 28, 70);
+        }
+        outline(ctx, 2);
+        ctx.stroke();
+        roundRect(ctx, 30, 80, 36, 8, 4);
+        fillStroke(ctx, hex(colors.accent), 3);
+      } else if (id === 'bramble') {
+        // beetle knight: horned helm over a shiny shell
+        ctx.beginPath();
+        ctx.ellipse(48, 76, 38, 20, 0, Math.PI, 0);
+        fillStroke(ctx, hex(colors.primary));
+        circle(ctx, 48, 52, 22);
+        fillStroke(ctx, hex(colors.secondary));
+        ctx.beginPath();
+        ctx.moveTo(44, 34);
+        ctx.quadraticCurveTo(46, 10, 60, 6);
+        ctx.quadraticCurveTo(54, 18, 54, 34);
+        ctx.closePath();
+        fillStroke(ctx, hex(colors.secondary), 4);
+        roundRect(ctx, 30, 48, 36, 10, 4);
+        fillStroke(ctx, '#231c2e', 3);
+        ctx.fillStyle = hex(colors.accent);
+        ctx.fillRect(36, 51, 6, 4);
+        ctx.fillRect(54, 51, 6, 4);
+      } else if (id === 'nova') {
+        // owl stargazer: tufts, big eyes, a starry hood
+        ctx.beginPath();
+        ctx.moveTo(22, 30);
+        ctx.lineTo(30, 10);
+        ctx.lineTo(40, 28);
+        ctx.moveTo(56, 28);
+        ctx.lineTo(66, 10);
+        ctx.lineTo(74, 30);
+        fillStroke(ctx, hex(colors.skin), 4);
+        circle(ctx, 48, 52, 30);
+        fillStroke(ctx, hex(colors.primary));
+        circle(ctx, 36, 48, 11);
+        fillStroke(ctx, hex(colors.secondary), 4);
+        circle(ctx, 60, 48, 11);
+        fillStroke(ctx, hex(colors.secondary), 4);
+        circle(ctx, 36, 48, 5);
+        ctx.fillStyle = '#231c2e';
+        ctx.fill();
+        circle(ctx, 60, 48, 5);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(44, 60);
+        ctx.lineTo(48, 70);
+        ctx.lineTo(52, 60);
+        ctx.closePath();
+        fillStroke(ctx, hex(colors.accent), 3);
+        star(ctx, 70, 74, 8, 5, 0.5);
+        fillStroke(ctx, hex(colors.accent), 3);
       } else {
         ctx.beginPath();
         ctx.ellipse(48, 74, 40, 20, 0, Math.PI, 0);
@@ -565,6 +720,71 @@ export function portraitUrl(id: string, colors: { primary: number; secondary: nu
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('?', 48, 50);
+      }
+      url = c.toDataURL('image/png');
+    }
+  } catch {
+    url = '';
+  }
+  cache.set(key, url);
+  return url;
+}
+
+/** Bestiary tile: a little critter face in the enemy's colour (bosses wear a crown). */
+export function enemyIconUrl(id: string, color: number, boss: boolean, discovered: boolean): string {
+  const key = `enemy:${id}:${discovered}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  let url = '';
+  try {
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    if (ctx) {
+      if (!discovered) bg(ctx, '#3a3350', '#241e36', '#5a5070');
+      else if (boss) bg(ctx, '#7a3a5a', '#3a1a30', '#d07090');
+      else bg(ctx, '#4a3f66', '#2a2140', '#7a6aa0');
+      ctx.save();
+      if (!discovered) ctx.filter = 'brightness(0) opacity(0.5)';
+      // seeded wobble so every critter's blob looks a little different
+      let h = 0;
+      for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+      ctx.beginPath();
+      for (let k = 0; k <= 12; k++) {
+        const a = (k / 12) * Math.PI * 2;
+        const r = 26 + (((h >> (k % 16)) & 3) - 1.5) * 2;
+        ctx.lineTo(48 + Math.cos(a) * r, 56 + Math.sin(a) * r * 0.85);
+      }
+      ctx.closePath();
+      fillStroke(ctx, hex(color));
+      circle(ctx, 38, 52, 7);
+      fillStroke(ctx, '#f8f4ea', 3);
+      circle(ctx, 58, 52, 7);
+      fillStroke(ctx, '#f8f4ea', 3);
+      ctx.fillStyle = '#231c2e';
+      circle(ctx, 39, 53, 3);
+      ctx.fill();
+      circle(ctx, 59, 53, 3);
+      ctx.fill();
+      if (boss) {
+        ctx.beginPath();
+        ctx.moveTo(30, 34);
+        ctx.lineTo(34, 16);
+        ctx.lineTo(42, 28);
+        ctx.lineTo(48, 12);
+        ctx.lineTo(54, 28);
+        ctx.lineTo(62, 16);
+        ctx.lineTo(66, 34);
+        ctx.closePath();
+        fillStroke(ctx, '#ffcc33', 4);
+      }
+      ctx.restore();
+      if (!discovered) {
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = '900 40px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', 48, 52);
       }
       url = c.toDataURL('image/png');
     }

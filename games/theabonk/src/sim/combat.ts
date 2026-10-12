@@ -1,26 +1,43 @@
-import { DROPS, PLAYER_IFRAMES, enemyDamageScale, enemyHpScale, gemTier } from '../config/balance';
+import { DROPS, gemTier } from '../config/balance';
+import { enemyDamageScaleWith, enemyHpScaleWith } from '../config/tuning';
 import { ELITE, ENEMIES, enemyIndex } from '../config/enemies';
 import { Ev } from '../core/events';
 import { damageAfterArmor, hitDamage, isCrit, knockbackImpulse } from './damage';
 import { PickupKind, type PickupKindT } from './pools';
+import { HeroPassive, SHELL_GUARD_HP, SHELL_GUARD_MULT } from './heroes';
+import { CHILL_BY_SOURCE, SrcKind } from './sources';
 import { goldMult } from './stats';
 import type { World } from './world';
 
 // ───────────────────────────── spawning ─────────────────────────────
 
+const snap = new Float32Array(2);
+/** Enemy-pool slots only bosses may use. */
+export const BOSS_RESERVE = 4;
+/** Creatures that ignore ground pathing and surfaces. */
+export const FLYING = Uint8Array.from(ENEMIES.map((d) => (d.flying ? 1 : 0)));
+
 export function spawnEnemy(w: World, type: number, x: number, z: number, elite = false): number {
   const e = w.enemies;
-  if (e.count >= w.maxEnemies) return -1;
-  const i = e.alloc();
-  if (i < 0) return -1;
   const def = ENEMIES[type];
-  const minutes = w.time / 60;
   const boss = def.behavior === 'boss';
-  const hpScale = boss ? 1 + w.player.level * 0.03 : enemyHpScale(minutes);
-  const hp = def.hp * hpScale * (elite ? ELITE.hpMult : 1);
+  // regular Gloom respect the soft cap and leave the last pool slots free: a packed field
+  // can never block a boss fight
+  if (boss ? e.count >= e.cap : e.count >= w.maxEnemies || e.count >= e.cap - BOSS_RESERVE) return -1;
   const t = w.terrain;
   x = t.clampToMap(x);
   z = t.clampToMap(z);
+  // walkers must spawn where the ground connects to the player (not inside walls / on islands)
+  if (!boss && !FLYING[type] && !w.flow.reachable(x, z)) {
+    if (!w.flow.nearestReachable(x, z, 6, snap)) return -1;
+    x = snap[0];
+    z = snap[1];
+  }
+  const i = e.alloc();
+  if (i < 0) return -1;
+  const minutes = w.time / 60;
+  const hpScale = boss ? 1 + w.player.level * 0.03 : enemyHpScaleWith(minutes, w.tuning.combat);
+  const hp = def.hp * hpScale * (elite ? ELITE.hpMult : 1) * w.mods.enemyHp * (boss ? 1 : w.mods.crowdHp);
   const y = t.height(x, z);
   e.type[i] = type;
   e.x[i] = e.px[i] = x;
@@ -28,10 +45,10 @@ export function spawnEnemy(w: World, type: number, x: number, z: number, elite =
   e.z[i] = e.pz[i] = z;
   e.hp[i] = e.maxHp[i] = hp;
   e.speed[i] = def.speed * (elite ? ELITE.speedMult : 1) * (0.92 + w.rng.next() * 0.16);
-  e.damage[i] = def.damage * (boss ? 1 : enemyDamageScale(minutes)) * (elite ? ELITE.damageMult : 1);
+  e.damage[i] = def.damage * (boss ? 1 : enemyDamageScaleWith(minutes, w.tuning.combat)) * (elite ? ELITE.damageMult : 1);
   e.scale[i] = elite ? ELITE.scale : 1;
   e.radius[i] = def.radius * e.scale[i];
-  e.xp[i] = def.xp * (elite ? ELITE.xpMult : 1);
+  e.xp[i] = def.xp * (elite ? ELITE.xpMult : 1) * (boss ? 1 : w.mods.enemyXp);
   e.elite[i] = elite ? 1 : 0;
   e.yaw[i] = Math.atan2(w.player.x - x, w.player.z - z);
   // desync behaviour timers so groups don't act in lockstep
@@ -145,6 +162,7 @@ export function killEnemy(w: World, i: number, slot: number): void {
   const z = e.z[i];
   const elite = e.elite[i] === 1;
   w.stats.kills++;
+  w.stats.killsByType[type]++;
   const wi = w.weapons[slot];
   if (wi && slot >= 0) wi.kills++;
   w.events.push(Ev.EnemyDie, x, y, z, type, e.scale[i], elite ? 1 : 0);
@@ -162,9 +180,10 @@ export function killEnemy(w: World, i: number, slot: number): void {
     for (let k = 0; k < 4; k++) spawnPickup(w, PickupKind.Coin, x + (w.rng.next() - 0.5) * 2, y, z + (w.rng.next() - 0.5) * 2, Math.round((DROPS.eliteGold / 4) * goldMult(w.player.stats)));
   } else {
     const r = w.rng.next();
-    if (r < DROPS.magnetChance * luck) spawnPickup(w, PickupKind.Magnet, x, y, z);
-    else if (r < (DROPS.magnetChance + DROPS.heartChance) * luck) spawnPickup(w, PickupKind.Heart, x, y, z, DROPS.heartHeal);
-    else if (r < (DROPS.magnetChance + DROPS.heartChance + DROPS.coinChance) * luck) spawnPickup(w, PickupKind.Coin, x, y, z, Math.max(1, Math.round(DROPS.coinValue * goldMult(w.player.stats))));
+    const c = w.tuning.combat;
+    if (r < c.magnetChance * luck) spawnPickup(w, PickupKind.Magnet, x, y, z);
+    else if (r < (c.magnetChance + c.heartChance * w.mods.hearts) * luck) spawnPickup(w, PickupKind.Heart, x, y, z, c.heartHeal);
+    else if (r < (c.magnetChance + c.heartChance * w.mods.hearts + c.coinChance) * luck) spawnPickup(w, PickupKind.Coin, x, y, z, Math.max(1, Math.round(DROPS.coinValue * goldMult(w.player.stats) * w.mods.coinValue)));
   }
 
   if (def.splitInto) {
@@ -189,14 +208,34 @@ export function setBossKilledHandler(fn: (w: World, i: number) => void): void {
 
 // ───────────────────────────── hurting the player ─────────────────────────────
 
-export function damagePlayer(w: World, raw: number): boolean {
+/**
+ * Hurt the player. `source` is a code from sim/sources.ts (who did it); `inst` identifies a
+ * boss attack activation so hit rates can be measured. Returns false if the hit was ignored.
+ */
+export function damagePlayer(w: World, raw: number, source = 0, inst = 0): boolean {
   const p = w.player;
   if (!p.alive || p.iframes > 0 || p.buffs.ward > 0 || w.options.god) return false;
-  const dmg = damageAfterArmor(raw, p.stats.armor);
+  // Brindle's Shell Guard
+  if (p.passive === HeroPassive.ShellGuard && p.hp < p.stats.maxHp * SHELL_GUARD_HP) raw *= SHELL_GUARD_MULT;
+  const dmg = damageAfterArmor(raw * w.mods.damageTaken, p.stats.armor);
   p.hp -= dmg;
-  p.iframes = PLAYER_IFRAMES;
+  p.iframes = w.tuning.combat.playerIframes;
   p.hurtFlash = 1;
-  w.stats.damageTaken += dmg;
+  const st = w.stats;
+  st.damageTaken += dmg;
+  st.damageBy[source] += dmg;
+  st.hitsBy[source]++;
+  st.lastSource = source;
+  if (source >> 8 === SrcKind.Boss) {
+    const a = source & 255;
+    if (inst !== st.bossAttackLastHit[a]) {
+      st.bossAttackLastHit[a] = inst;
+      st.bossAttackHits[a]++;
+    }
+  }
+  for (let k = 0; k < st.bossFights.length; k++) if (st.bossFights[k].killedAt < 0) st.bossFights[k].damageTaken += dmg;
+  const chill = CHILL_BY_SOURCE[source];
+  if (chill > p.chill) p.chill = chill;
   w.events.push(Ev.PlayerHurt, dmg);
   if (p.hp <= 0) {
     if (p.revivals > 0) revivePlayer(w);

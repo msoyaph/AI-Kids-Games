@@ -14,6 +14,7 @@ export default defineConfig({
     modulePreload: false,
     reportCompressedSize: false,
   },
-  server: { port: 5173, strictPort: false },
+  // PORT lets tooling assign a free port (another dev server may own 5173)
+  server: { port: Number(process.env.PORT) || 5173, strictPort: false },
   preview: { port: 4173, strictPort: false },
 });

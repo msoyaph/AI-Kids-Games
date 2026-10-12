@@ -1,0 +1,491 @@
+/*
+ * Glass touch controls (TheaBonk; self-contained so sibling games can adopt it).
+ *
+ * Every glass piece is `.glass`: an isolated stack of
+ *   ::before  — real blur (backdrop-filter), only with .blur-layer / .blur-on on the root
+ *   ::after   — the "fake glass" paint: ink tint + frost gradient + rims + glow + shadow
+ *   children  — knob / glyph / label / ripple
+ * Opacity is applied per layer (--g-o), never on an ancestor: an ancestor with opacity < 1
+ * becomes a backdrop root and the blur would stop seeing the game canvas.
+ */
+
+.glass-ui {
+  /* the player's opacity setting; --g-o is what each layer uses */
+  --g-o-base: 1;
+  --g-o: var(--g-o-base);
+  --g-tint: 42, 33, 64;
+  --g-a: 0.34;
+  --g-rim: 255, 248, 236;
+  --g-cool: 140, 246, 228;
+  --g-hurt: 255, 112, 98;
+  --g-k: 1;
+  /* stick base diameter: scales with the screen's short side */
+  --g-b: calc(clamp(112px, 30vmin, 172px) * var(--g-k));
+  --g-jump: max(56px, calc(var(--g-b) * 0.64));
+  --g-slide: max(52px, calc(var(--g-b) * 0.52));
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.glass-ui[data-size='s'] {
+  --g-k: 0.84;
+}
+
+.glass-ui[data-size='l'] {
+  --g-k: 1.18;
+}
+
+.glass {
+  position: absolute;
+  border-radius: 50%;
+  isolation: isolate;
+}
+
+.glass::before,
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* real blur: present while fading in / out, opaque only with .blur-on */
+.glass::before {
+  z-index: -2;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.glass-ui.blur-layer .gstick::before,
+.glass-ui.blur-layer .gbtn-jump::before,
+.glass-ui.blur-layer .gbtn-slide::before {
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+}
+
+.glass-ui.blur-on .gstick::before,
+.glass-ui.blur-on .gbtn-jump::before,
+.glass-ui.blur-on .gbtn-slide::before {
+  opacity: var(--g-o);
+}
+
+/* fake glass: always painted (the blur only adds to it) */
+.glass::after {
+  z-index: -1;
+  opacity: var(--g-o);
+  background:
+    radial-gradient(90% 70% at 32% 16%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.03) 72%),
+    rgba(var(--g-tint), var(--g-a));
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.6),
+    inset 0 0 0 1.5px rgba(var(--g-rim), 0.42),
+    inset 0 0 18px rgba(var(--g-rim), 0.14),
+    0 0 0 1px rgba(16, 10, 32, 0.42),
+    0 6px 16px rgba(12, 8, 24, 0.32);
+  transition: background-color 0.12s, box-shadow 0.12s;
+}
+
+.glass-ui.hidden {
+  display: none;
+}
+
+/* settings preview / layout editor: on screen, but not live */
+.glass-ui.preview .tzone,
+.glass-ui.preview .gbtn {
+  pointer-events: none;
+}
+
+/* thumb zones (placed by TouchControls.relayout: stick side / camera side, below the HUD) */
+.tzone {
+  position: absolute;
+  bottom: 0;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* reads the safe-area insets for the layout */
+.g-safe-probe {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ───────────── stick ───────────── */
+
+.gstick {
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  will-change: transform;
+  width: var(--g-b);
+  height: var(--g-b);
+  margin: calc(var(--g-b) / -2) 0 0 calc(var(--g-b) / -2);
+  transform: translate3d(var(--sx, -999px), var(--sy, -999px), 0);
+  opacity: 1;
+}
+
+.gstick.idle {
+  --g-o: calc(var(--g-o-base) * 0.6);
+}
+
+.gstick.gone {
+  visibility: hidden;
+}
+
+.gstick-chev {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: calc(var(--g-o) * 0.32);
+}
+
+/* rim overlay: the lit wedge points where you push; hurt / fast restyle it */
+.gstick-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0;
+  /* a fixed wedge pointing up, rotated to the push direction (transform: compositor only) */
+  background: conic-gradient(from -44deg, rgba(255, 255, 255, 0.25) 0deg, #fff 22deg 66deg, rgba(255, 255, 255, 0.25) 88deg, transparent 88deg 360deg);
+  transform: rotate(var(--ang, 0deg));
+  will-change: transform, opacity;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7.5px), #000 calc(100% - 7px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 7.5px), #000 calc(100% - 7px));
+  transition: opacity 0.12s;
+}
+
+.gstick.active .gstick-ring {
+  opacity: calc(var(--g-o) * var(--mag, 0));
+}
+
+.gstick.active::after {
+  background:
+    radial-gradient(90% 70% at 32% 16%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05) 72%),
+    rgba(var(--g-tint), calc(var(--g-a) + 0.06));
+}
+
+/* fast slide: a thick teal-white rim + glow, chevrons along the way you're going */
+.gstick-halo {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  opacity: 0;
+  box-shadow:
+    0 0 0 3px rgba(var(--g-cool), 0.95),
+    0 0 16px 3px rgba(var(--g-cool), 0.55);
+  transition: opacity 0.15s;
+}
+
+.gstick.fast .gstick-halo {
+  opacity: var(--g-o);
+}
+
+.gstick-speed {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16%;
+  height: 24%;
+  margin: -12% 0 0 -8%;
+  opacity: 0;
+  transform: rotate(var(--mang, 0deg)) translateY(calc(var(--g-b) * -0.68));
+  color: rgb(var(--g-cool));
+  filter: drop-shadow(0 1px 2px rgba(10, 6, 20, 0.6));
+  transition: opacity 0.15s;
+}
+
+.gstick.fast .gstick-speed {
+  opacity: var(--g-o);
+}
+
+/* hurt: the rim breaks into bright notched segments for a moment (shape + brightness) */
+.gstick.hurt .gstick-ring {
+  opacity: 1;
+  background: repeating-conic-gradient(rgba(var(--g-hurt), 1) 0deg 33deg, transparent 33deg 45deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 7.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 7.5px));
+  animation: g-hurt 0.26s ease-out;
+}
+
+@keyframes g-hurt {
+  0% {
+    transform: scale(1.12);
+    filter: brightness(1.6);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* the bead */
+.gstick-knob {
+  left: 50%;
+  top: 50%;
+  width: 44%;
+  height: 44%;
+  margin: -22% 0 0 -22%;
+  transform: translate3d(var(--kx, 0px), var(--ky, 0px), 0);
+  will-change: transform;
+}
+
+/* the bead's specular highlight: its own layer, slid the other way as the knob moves */
+.gstick-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: max(0.75, var(--g-o));
+  background: radial-gradient(42% 36% at 38% 30%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.38) 38%, rgba(255, 255, 255, 0) 72%);
+  transform: translate3d(var(--shx, 0px), var(--shy, 0px), 0);
+  will-change: transform;
+}
+
+.glass-ui.hc .gstick-shine {
+  display: none;
+}
+
+.gstick-knob.back {
+  transition: transform 0.16s cubic-bezier(0.3, 1.5, 0.55, 1);
+}
+
+.gstick-knob::after {
+  opacity: max(0.75, var(--g-o));
+  background:
+    radial-gradient(farthest-side at 50% 62%, rgba(var(--g-rim), 0.4), rgba(var(--g-rim), 0.18) 58%, rgba(var(--g-tint), 0.6) 100%);
+  box-shadow:
+    inset 0 -6px 10px rgba(12, 8, 24, 0.32),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.65),
+    0 0 0 1px rgba(16, 10, 32, 0.45),
+    0 5px 10px rgba(8, 4, 18, 0.38);
+}
+
+/* ───────────── buttons ───────────── */
+
+.gbtn {
+  --d: var(--g-jump);
+  --g-a: 0.38;
+  left: var(--x, 0px);
+  top: var(--y, 0px);
+  width: var(--d);
+  height: var(--d);
+  margin: calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
+  padding: 0;
+  border: none;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--d) * 0.03);
+  color: rgb(var(--g-rim));
+  font: 900 max(11px, calc(var(--d) * 0.15)) / 1 'Trebuchet MS', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 2px rgba(10, 6, 20, 0.75);
+  pointer-events: auto;
+  touch-action: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease-out;
+}
+
+.gbtn-slide {
+  --d: var(--g-slide);
+}
+
+.gbtn-pause {
+  --d: max(48px, calc(clamp(112px, 30vmin, 172px) * 0.34));
+  --g-a: 0.42;
+}
+
+/* the pause visual is 40 px inside its 48 px target */
+.gbtn-pause::before,
+.gbtn-pause::after {
+  inset: 4px;
+}
+
+/* the glyph + label; a second, dark copy shows while lit (cross-fade = compositor only) */
+.g-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--d) * 0.03);
+  opacity: max(0.8, var(--g-o));
+  transition: opacity 0.06s;
+}
+
+.g-face > svg {
+  width: 40%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 1px 1.5px rgba(10, 6, 20, 0.7));
+}
+
+.gbtn-pause .g-face > svg {
+  width: 34%;
+}
+
+.g-face-lit {
+  opacity: 0;
+  color: #2a2140;
+  text-shadow: none;
+}
+
+.g-face-lit > svg {
+  filter: none;
+}
+
+.gbtn.down .g-face {
+  opacity: 0;
+}
+
+.gbtn.down .g-face-lit {
+  opacity: 1;
+}
+
+.gbtn.down {
+  transform: translateY(2px) scale(0.96);
+}
+
+/* the lit (pressed) look is pre-painted on its own layer and only fades in: pressing a
+   button costs no repaint of the glass */
+.g-lit {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.06s;
+  background:
+    radial-gradient(90% 70% at 32% 16%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, rgba(var(--g-rim), 0.82), rgba(var(--g-rim), 0.62) 72%);
+  box-shadow:
+    inset 0 3px 9px rgba(12, 8, 24, 0.35),
+    inset 0 0 0 2.5px #fff,
+    0 0 0 1px rgba(16, 10, 32, 0.5),
+    0 0 14px rgba(var(--g-rim), 0.5),
+    0 2px 6px rgba(12, 8, 24, 0.3);
+}
+
+.gbtn.down .g-lit {
+  opacity: max(0.85, var(--g-o));
+}
+
+/* toggled slide stays lit: teal rim + a small lock dot */
+.gbtn.latched::after {
+  box-shadow:
+    inset 0 0 0 2.5px rgba(var(--g-cool), 0.95),
+    inset 0 0 18px rgba(var(--g-cool), 0.3),
+    0 0 0 1px rgba(16, 10, 32, 0.42),
+    0 0 14px rgba(var(--g-cool), 0.45);
+}
+
+.g-dot {
+  position: absolute;
+  top: 9%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(var(--g-cool));
+  box-shadow: 0 0 0 1px rgba(16, 10, 32, 0.5);
+  opacity: 0;
+}
+
+.gbtn.latched .g-dot {
+  opacity: 1;
+}
+
+/* soft ripple from the touch point (clipped to the button) */
+.g-clip {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* one ripple element per button, replayed with the Web Animations API (transform + opacity) */
+.g-ripple {
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  margin: -70% 0 0 -70%;
+  border-radius: 50%;
+  opacity: 0;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.25) 70%, rgba(255, 255, 255, 0));
+}
+
+/* ───────────── high contrast: solid, no frost or blur ───────────── */
+
+.glass-ui.hc .glass::before {
+  display: none;
+}
+
+.glass-ui.hc .glass::after {
+  opacity: 1;
+  background: rgba(16, 10, 32, 0.84);
+  box-shadow:
+    inset 0 0 0 3px rgb(var(--g-rim)),
+    0 0 0 1.5px #000,
+    0 4px 10px rgba(0, 0, 0, 0.45);
+}
+
+.glass-ui.hc .gstick-knob::after {
+  background: rgb(var(--g-rim));
+  box-shadow:
+    inset 0 0 0 3px #1a1030,
+    0 0 0 1.5px #000,
+    0 4px 8px rgba(0, 0, 0, 0.45);
+}
+
+.glass-ui.hc .gstick-chev {
+  opacity: 0.8;
+}
+
+.glass-ui.hc .g-face:not(.g-face-lit) {
+  opacity: 1;
+}
+
+.glass-ui.hc .gbtn.down .g-face:not(.g-face-lit) {
+  opacity: 0;
+}
+
+.glass-ui.hc .g-lit {
+  background: rgb(var(--g-rim));
+  box-shadow:
+    inset 0 0 0 3px #1a1030,
+    0 0 0 1.5px #000;
+}
+
+/* ───────────── reduced motion: no ripple, pulse or spring ───────────── */
+
+.glass-ui.rm .g-ripple {
+  display: none;
+}
+
+.glass-ui.rm .gstick.hurt .gstick-ring {
+  animation: none;
+}
+
+.glass-ui.rm .gstick-knob.back,
+.glass-ui.rm .gbtn,
+.glass-ui.rm .glass::before,
+.glass-ui.rm .glass::after,
+.glass-ui.rm .gstick-ring,
+.glass-ui.rm .gstick-halo,
+.glass-ui.rm .gstick-speed {
+  transition: none;
+}

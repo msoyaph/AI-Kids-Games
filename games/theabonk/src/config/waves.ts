@@ -12,6 +12,8 @@ export const BANNERS = [
   'A horde surges!',
   'The Gloam Regent is vanquished!',
   'They surround you!',
+  'A blizzard gust is coming!',
+  'Old Rime calls a blizzard!',
 ] as const;
 
 export const BANNER = {
@@ -23,9 +25,14 @@ export const BANNER = {
   elite: 5,
   dawn: 6,
   horde: 7,
-  regentDown: 8,
+  /** The map's final boss falls. */
+  finalDown: 8,
   ring: 9,
+  gust: 10,
+  blizzard: 11,
 } as const;
+
+export type BannerKey = keyof typeof BANNER;
 
 /**
  * Continuous spawning. Each segment runs from `start` until the next one.

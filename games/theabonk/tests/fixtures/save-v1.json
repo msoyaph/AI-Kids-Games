@@ -1,0 +1,67 @@
+{
+    "version": 1,
+    "gold": 66,
+    "shop": {
+        "magnet": 4,
+        "might": 4,
+        "maxHp": 4,
+        "greed": 3,
+        "regen": 3,
+        "moveSpeed": 3,
+        "reroll": 2
+    },
+    "unlockedCharacters": [
+        "thea",
+        "pip",
+        "brindle"
+    ],
+    "unlockedWeapons": [
+        "frostFan",
+        "wispBees"
+    ],
+    "achievements": [
+        "kills1000",
+        "survive10",
+        "beatGrumblecap",
+        "level25",
+        "firstEvolve",
+        "shrines10",
+        "beatClockjaw",
+        "kills10000",
+        "gold2000"
+    ],
+    "stats": {
+        "runsPlayed": 6,
+        "wins": 0,
+        "totalKills": 16889,
+        "bestTime": 948.2666666661329,
+        "bestTimeByChar": {
+            "thea": 948.2666666661329,
+            "pip": 636.1833333330834,
+            "brindle": 318.2166666667059
+        },
+        "highestLevel": 57,
+        "bossKills": {
+            "grumblecap": 2,
+            "clockjaw": 1
+        },
+        "evolutions": 7,
+        "shrinesBroken": 21,
+        "topSpeed": 9.720000000000002,
+        "totalGold": 2807,
+        "playtime": 2682.633333332817
+    },
+    "settings": {
+        "masterVolume": 0.8,
+        "musicVolume": 0.4,
+        "sfxVolume": 0.8,
+        "sensitivity": 1.3,
+        "invertY": false,
+        "quality": "high",
+        "showFps": true,
+        "screenShake": true,
+        "damageNumbers": true,
+        "mouseMode": "auto"
+    },
+    "lastCharacter": "pip"
+}

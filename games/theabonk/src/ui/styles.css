@@ -12,8 +12,10 @@
   --panel-2: rgba(52, 40, 84, 0.92);
   --edge: rgba(255, 248, 236, 0.16);
   --shadow: rgba(18, 12, 30, 0.55);
-  /* scales smoothly from 1280x720 to 4K */
-  font-size: calc(8px + 0.9vmin);
+  /* "Larger text" (accessibility) multiplies the interface size */
+  --ui-scale: 1;
+  /* scales smoothly with the screen (≈ 11.5 px on a phone in landscape, 17.7 px at 1080p) */
+  font-size: calc((8px + 0.9vmin) * var(--ui-scale));
 }
 
 * {
@@ -217,6 +219,27 @@ body {
   flex-wrap: wrap;
 }
 
+/* equal-height cards, so the Banish buttons under them line up */
+.card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.card-wrap > .card {
+  flex: 1;
+}
+
+.btn.tiny {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.7rem;
+}
+
+.btn.banish {
+  color: #ffb3b8;
+}
+
 .card {
   pointer-events: auto;
   position: relative;
@@ -313,6 +336,26 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--gold);
+}
+
+.card-recipe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-weight: 900;
+  font-size: 1.3rem;
+  margin: 0.4rem 0 0.2rem;
+}
+
+.recipe-icon {
+  width: 2.6rem;
+  height: 2.6rem;
+}
+
+.recipe-icon.big {
+  width: 4rem;
+  height: 4rem;
 }
 
 .card.evolve .card-tag {
@@ -488,6 +531,151 @@ body {
   width: 32rem;
   max-width: 60vw;
   text-align: center;
+}
+
+.gust {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.8rem 0.3rem 0.4rem;
+  border-radius: 2rem;
+  background: rgba(20, 40, 70, 0.72);
+  box-shadow: inset 0 0 0 0.12rem rgba(190, 235, 255, 0.5);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #e6fbff;
+}
+
+.gust-arrow {
+  width: 1.9rem;
+  height: 1.9rem;
+  background: #bff0ff;
+  clip-path: polygon(50% 0, 100% 55%, 66% 55%, 66% 100%, 34% 100%, 34% 55%, 0 55%);
+  transition: transform 0.15s linear;
+}
+
+.gust.swirl .gust-arrow {
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: gust-spin 1.6s linear infinite;
+}
+
+@keyframes gust-spin {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.boss-bar .bar {
+  overflow: visible;
+}
+
+.boss-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.boss-tick {
+  position: absolute;
+  top: -0.25rem;
+  bottom: -0.25rem;
+  width: 0.2rem;
+  margin-left: -0.1rem;
+  border-radius: 0.1rem;
+  background: #fff8ec;
+  box-shadow: 0 0 0 0.08rem #2a1d4d;
+}
+
+.boss-bar.enraged .bar-fill.boss {
+  background: linear-gradient(#ff6a5a, #c4202c);
+  animation: enrage 1.2s ease-in-out infinite;
+}
+
+.boss-bar.enraged .boss-name::after {
+  content: ' · ENRAGED';
+  color: #ff8a7a;
+}
+
+@keyframes enrage {
+  50% {
+    filter: brightness(1.35);
+  }
+}
+
+.boss-intro {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.6rem 0.9rem 0.9rem;
+  border-radius: 1.4rem;
+  background: rgba(30, 14, 30, 0.86);
+  box-shadow: inset 0 0 0 0.16rem rgba(255, 140, 160, 0.55), 0 1rem 2.5rem rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.boss-intro.hidden {
+  display: none;
+}
+
+.boss-intro.pop {
+  animation: boss-intro 3.4s ease-out forwards;
+}
+
+@keyframes boss-intro {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-1rem) scale(1.15);
+  }
+  10% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+html.reduced-motion .boss-intro.pop {
+  animation: none !important;
+}
+
+.boss-intro-icon {
+  width: 5rem;
+  height: 5rem;
+}
+
+.boss-intro-tag {
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #ff9aaa;
+}
+
+.boss-intro-name {
+  font-size: 1.9rem;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.boss-intro-epithet {
+  font-size: 1rem;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.boss-intro-line {
+  margin-top: 0.3rem;
+  font-size: 0.95rem;
+  opacity: 0.75;
 }
 
 .boss-name {
@@ -684,7 +872,11 @@ body {
   font-size: 2.3rem;
   font-weight: 900;
   white-space: nowrap;
-  text-shadow: 0 0.15rem 0 #2a1d4d, 0 0.3rem 1.2rem rgba(0, 0, 0, 0.6);
+  /* a soft plate keeps it readable on bright ground (snow, dawn) */
+  padding: 0.15rem 1.2rem 0.3rem;
+  border-radius: 1.4rem;
+  background: rgba(30, 22, 50, 0.42);
+  text-shadow: 0 0.15rem 0 #2a1d4d, 0 0 0.35rem #2a1d4d, 0 0.3rem 1.2rem rgba(0, 0, 0, 0.6);
 }
 
 .banner.boss {
@@ -856,9 +1048,10 @@ body {
   inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding-left: 8vw;
+  justify-content: safe center;
+  padding: 1rem 0 1rem max(8vw, env(safe-area-inset-left));
   gap: 1.2rem;
+  overflow-y: auto;
 }
 
 .logo {
@@ -1029,15 +1222,260 @@ body {
   inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* safe: on short screens start at the top and scroll instead of clipping the title */
+  justify-content: safe center;
   align-items: flex-start;
-  padding-left: 6vw;
+  padding: 1rem 0 1rem 6vw;
   gap: 1.1rem;
+  overflow-y: auto;
 }
 
 .char-row {
   display: flex;
   gap: 1rem;
+}
+
+.map-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.map-tab {
+  font: inherit;
+  color: var(--paper);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 0.9rem;
+  padding: 0.45rem 0.9rem 0.5rem;
+  background: rgba(40, 30, 66, 0.85);
+  box-shadow: inset 0 0 0 0.15rem var(--edge), 0 0.3rem 0 #1b1236;
+  outline: none;
+}
+
+.map-tab:focus,
+.map-tab:hover {
+  transform: translateY(-0.15rem);
+}
+
+.map-tab.sel {
+  box-shadow: inset 0 0 0 0.15rem var(--edge), 0 0 0 0.22rem var(--accent-2), 0 0.3rem 0 #1b1236;
+}
+
+.map-tab.locked {
+  opacity: 0.7;
+}
+
+.map-name {
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+.map-sub {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.map-note {
+  max-width: 34rem;
+  font-size: 0.95rem;
+  opacity: 0.9;
+  text-shadow: 0 0.1rem 0.3rem rgba(0, 0, 0, 0.5);
+}
+
+.collection-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  align-items: flex-start;
+  padding: 1rem 0 1rem 5vw;
+  gap: 0.8rem;
+  overflow-y: auto;
+}
+
+.col-count {
+  font-size: 1.2rem;
+  opacity: 0.75;
+}
+
+.col-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.col-tab {
+  font: inherit;
+  font-weight: 900;
+  color: var(--paper);
+  border: none;
+  cursor: pointer;
+  border-radius: 2rem;
+  padding: 0.35rem 1rem;
+  background: rgba(40, 30, 66, 0.85);
+  box-shadow: inset 0 0 0 0.15rem var(--edge);
+  outline: none;
+}
+
+.col-tab.sel,
+.col-tab:focus {
+  box-shadow: inset 0 0 0 0.15rem var(--edge), 0 0 0 0.22rem var(--accent);
+}
+
+.col-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  max-width: min(58rem, 62vw);
+}
+
+.col-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.2rem, 1fr));
+  gap: 0.5rem;
+  flex: 1 1 28rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0.3rem;
+}
+
+.col-tile {
+  font: inherit;
+  color: var(--paper);
+  border: none;
+  cursor: pointer;
+  border-radius: 0.9rem;
+  padding: 0.4rem 0.3rem 0.5rem;
+  background: rgba(40, 30, 66, 0.85);
+  box-shadow: inset 0 0 0 0.12rem var(--edge);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  outline: none;
+}
+
+.col-tile:focus,
+.col-tile:hover {
+  box-shadow: inset 0 0 0 0.12rem var(--edge), 0 0 0 0.2rem var(--accent);
+}
+
+.col-tile.locked .col-icon,
+.col-tile.locked .col-name {
+  opacity: 0.6;
+}
+
+.col-icon {
+  width: 3.6rem;
+  height: 3.6rem;
+}
+
+.col-name {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.col-details {
+  flex: 0 1 18rem;
+  min-height: 8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.diff-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.diff-tab,
+.tier-tab {
+  font: inherit;
+  font-weight: 900;
+  color: var(--paper);
+  border: none;
+  cursor: pointer;
+  border-radius: 2rem;
+  padding: 0.35rem 1rem;
+  background: rgba(40, 30, 66, 0.85);
+  box-shadow: inset 0 0 0 0.15rem var(--edge);
+  outline: none;
+}
+
+.tier-tab {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.75rem;
+}
+
+.diff-tab:focus,
+.diff-tab:hover,
+.tier-tab:focus,
+.tier-tab:hover {
+  transform: translateY(-0.12rem);
+}
+
+.diff-tab.sel,
+.tier-tab.sel {
+  box-shadow: inset 0 0 0 0.15rem var(--edge), 0 0 0 0.22rem var(--accent);
+}
+
+.diff-tab.diff-relaxed.sel {
+  box-shadow: inset 0 0 0 0.15rem var(--edge), 0 0 0 0.22rem #6dd6a0;
+}
+
+.diff-tab.diff-hard.sel,
+.tier-tab.sel {
+  box-shadow: inset 0 0 0 0.15rem var(--edge), 0 0 0 0.22rem var(--danger);
+}
+
+.tier-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-left: 0.4rem;
+}
+
+.tier-lock {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.char-passive {
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
+.daily-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: left;
+}
+
+.daily-sub {
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.go-mode {
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.subtitle.unlock {
+  color: #9ff0ff;
+  font-weight: 900;
 }
 
 .char-card {
@@ -1273,6 +1711,166 @@ body {
   min-width: 46rem;
 }
 
+.modal.settings {
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.settings-head {
+  grid-column: 1 / -1;
+  margin-top: 0.4rem;
+  font-weight: 900;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  border-bottom: 0.1rem solid var(--edge);
+  padding-bottom: 0.2rem;
+}
+
+.pad-info {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  max-width: 44rem;
+}
+
+.pad-buttons {
+  display: grid;
+  grid-template-columns: repeat(9, auto);
+  gap: 0.35rem;
+  justify-content: start;
+}
+
+.pad-btn {
+  min-width: 2.6rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.3rem 0.3rem;
+  border-radius: 0.6rem;
+  background: rgba(255, 248, 236, 0.1);
+  box-shadow: inset 0 0 0 0.12rem var(--edge);
+}
+
+.pad-btn.on {
+  background: var(--accent);
+  color: var(--ink);
+}
+
+.pad-axes {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin: 0.4rem 0;
+}
+
+.pad-stick {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 50%;
+  background: rgba(255, 248, 236, 0.08);
+  box-shadow: inset 0 0 0 0.14rem var(--edge);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pad-dot {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--accent-2);
+}
+
+.pad-stick-label {
+  position: absolute;
+  bottom: -1.3rem;
+  font-size: 0.7rem;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.pad-trigs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 10rem;
+}
+
+.pad-trig {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pad-trig .bar {
+  flex: 1;
+}
+
+.pad-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.remap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: min(46rem, 90vw);
+}
+
+.remap-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.remap-label {
+  flex: 0 0 11rem;
+  font-weight: 800;
+}
+
+.remap-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--ink);
+  border: none;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  background: var(--paper);
+  box-shadow: 0 0.18rem 0 #b8a383;
+  outline: none;
+}
+
+.chip:focus,
+.chip:hover {
+  box-shadow: 0 0.18rem 0 #b8a383, 0 0 0 0.2rem var(--accent);
+}
+
+.chip.clash {
+  background: #ffd0c4;
+  box-shadow: 0 0.18rem 0 #c0503a;
+}
+
+.chip.add {
+  background: rgba(255, 248, 236, 0.15);
+  color: var(--paper);
+  box-shadow: inset 0 0 0 0.12rem var(--edge);
+}
+
 .setting {
   display: flex;
   align-items: center;
@@ -1351,6 +1949,66 @@ body {
   font-size: 1rem;
 }
 
+/* performance test result card */
+
+.bench {
+  width: min(46rem, 94vw);
+  max-height: 96vh;
+  overflow-y: auto;
+}
+
+.bench-fps {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+}
+
+.bench-fps > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bench-fps b {
+  font-size: 3.2rem;
+  line-height: 1;
+  color: var(--gold);
+}
+
+.bench-fps span {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.bench-stats {
+  width: 100%;
+}
+
+.bench-stats .stat-row {
+  font-size: 0.95rem;
+}
+
+.bench-stats .stat-row b {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.bench-json {
+  width: 100%;
+  height: 6rem;
+}
+
+.bench-badge {
+  color: #a8ecff;
+}
+
+.bench-badge.hidden {
+  display: none;
+}
+
 /* game over */
 
 .gameover {
@@ -1420,4 +2078,634 @@ body {
     grid-template-columns: 1fr;
     min-width: 0;
   }
+}
+
+/* ───────────────────────── developer tools (?tune=1, playtest export) ───────────────────────── */
+
+.tune-panel {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  width: 25rem;
+  max-width: 45vw;
+  display: flex;
+  flex-direction: column;
+  background: rgba(18, 12, 32, 0.92);
+  border-radius: 0.8rem;
+  box-shadow: inset 0 0 0 0.1rem var(--edge), 0 0.6rem 1.6rem var(--shadow);
+  font-size: 0.8rem;
+  pointer-events: auto;
+  z-index: 50;
+}
+
+.tune-head {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 0.08rem solid var(--edge);
+}
+
+.tune-head b {
+  font-size: 1rem;
+  flex: 1;
+}
+
+.tune-hint {
+  opacity: 0.6;
+}
+
+.tune-head .btn.small {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+}
+
+.tune-body {
+  overflow-y: auto;
+  padding: 0.3rem 0.6rem 0.8rem;
+}
+
+.tune-group summary {
+  cursor: pointer;
+  font-weight: 900;
+  color: var(--gold);
+  padding: 0.4rem 0 0.2rem;
+}
+
+.tune-row {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr 4.2rem;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.12rem 0;
+}
+
+.tune-row.changed span {
+  color: #ffd56b;
+}
+
+.tune-row input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.tune-num {
+  width: 100%;
+  font: inherit;
+  color: var(--paper);
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.3rem;
+}
+
+.tune-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 0.4rem;
+  transform: translateX(-50%);
+  padding: 0.2rem 0.7rem;
+  border-radius: 0.6rem;
+  background: #b4541c;
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  z-index: 49;
+}
+
+.copy-box {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(44rem, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(18, 12, 32, 0.97);
+  box-shadow: inset 0 0 0 0.12rem var(--edge), 0 1rem 3rem var(--shadow);
+  pointer-events: auto;
+  z-index: 60;
+}
+
+.copy-title {
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+.copy-text {
+  height: 18rem;
+  font: 0.8rem/1.4 ui-monospace, Menlo, Consolas, monospace;
+  color: var(--paper);
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem;
+  resize: vertical;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.copy-status {
+  align-self: center;
+  font-weight: 800;
+  color: #a8ecff;
+}
+
+.playtest-badge,
+.bench-badge {
+  position: absolute;
+  left: 50%;
+  top: 0.15rem;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #ff9a9a;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.playtest-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.title-screen .playtest-row {
+  position: absolute;
+  left: 8vw;
+  bottom: 3.2rem;
+}
+
+/* ───────────────────────── accessibility ───────────────────────── */
+
+/*
+ * Interface size: everything is in rem; the root size follows the screen (see :root) and
+ * "Larger text" multiplies it by 1.25.
+ */
+html.large-text {
+  --ui-scale: 1.25;
+}
+
+@media (max-height: 440px) {
+  .title-screen {
+    gap: 0.5rem;
+  }
+
+  .logo {
+    font-size: 4.6rem;
+  }
+
+  .tagline {
+    font-size: 1.2rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .menu-col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 15rem));
+    gap: 0.5rem 0.8rem;
+  }
+
+  .menu-col .btn.big {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Reduced motion: no animated movement or flashing in the interface */
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+  animation-duration: 0.001s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001s !important;
+  scroll-behavior: auto !important;
+}
+
+/* banners stay put (no zoom / drift) and are hidden by the HUD's own timer */
+html.reduced-motion .banner.pop {
+  animation: none !important;
+}
+
+html.reduced-motion .hurt-vignette.flash {
+  animation: none !important;
+  opacity: 0.35;
+}
+
+html.reduced-motion .gust.swirl .gust-arrow {
+  animation: none !important;
+}
+
+/* High contrast: solid backings and stronger outlines on everything you read in a run */
+html.high-contrast .hud .timer,
+html.high-contrast .hud .speedo,
+html.high-contrast .hud .speedo-label,
+html.high-contrast .hud .boss-name {
+  text-shadow: 0 0 0.25rem #000, 0 0 0.25rem #000, 0 0.1rem 0 #000;
+}
+
+html.high-contrast .hud .stat,
+html.high-contrast .hud .slot,
+html.high-contrast .hud .gust,
+html.high-contrast .banner {
+  background: rgba(8, 4, 16, 0.92);
+  box-shadow: inset 0 0 0 0.16rem #fff;
+}
+
+html.high-contrast .bar {
+  background: #000;
+  box-shadow: inset 0 0 0 0.16rem #fff;
+}
+
+html.high-contrast .bar-fill.hp {
+  background: #ff3b3b;
+}
+
+html.high-contrast .bar-fill.xp {
+  background: #2fd0ff;
+}
+
+html.high-contrast .panel,
+html.high-contrast .card,
+html.high-contrast .modal {
+  background: #120c22;
+  box-shadow: inset 0 0 0 0.16rem #fff;
+}
+
+/* ───────────────────────── touch (phones / tablets) ───────────────────────── */
+
+.touch-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  touch-action: none;
+}
+
+.touch-ui.hidden {
+  display: none;
+}
+
+/* HUD out of the thumbs' way, inside the notch / rounded corners */
+html.touch .hud-br {
+  display: none;
+}
+
+html.touch .hud-tl {
+  left: max(0.8rem, env(safe-area-inset-left));
+  top: max(0.8rem, env(safe-area-inset-top));
+}
+
+html.touch .hud-tr {
+  /* the glass Pause button owns the top-right corner (10 px + its size + an 8 px gap) */
+  right: calc(max(0.8rem, env(safe-area-inset-right)) + 18px + max(48px, calc(clamp(112px, 30vmin, 172px) * 0.34)));
+  top: max(0.8rem, env(safe-area-inset-top));
+}
+
+html.touch .hud-bc {
+  bottom: max(0.6rem, env(safe-area-inset-bottom));
+}
+
+/* touch-sized menus: every button, tab and row is at least 48 px tall; no tiny text */
+html.touch .btn {
+  min-height: 48px;
+}
+
+html.touch .btn.small,
+html.touch .btn.tiny {
+  min-height: 48px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-size: max(1rem, 14px);
+}
+
+html.touch .card {
+  min-height: 15rem;
+}
+
+html.touch .map-tab,
+html.touch .diff-tab,
+html.touch .tier-tab,
+html.touch .col-tab,
+html.touch .chip {
+  min-height: 48px;
+}
+
+html.touch .setting {
+  min-height: 48px;
+}
+
+html.touch .setting input[type='range'] {
+  width: 11rem;
+  height: 36px;
+}
+
+html.touch .hint,
+html.touch .card-tag,
+html.touch .small-desc,
+html.touch .map-sub,
+html.touch .map-note,
+html.touch .tier-tab,
+html.touch .tier-lock,
+html.touch .char-passive,
+html.touch .daily-sub,
+html.touch .ach-reward,
+html.touch .settings-head,
+html.touch .chip,
+html.touch .wk,
+html.touch .playtest-row,
+html.touch .panel-title,
+html.touch .go-mode {
+  font-size: max(0.95rem, 13px);
+}
+
+/* keyboard hints on touch screens become tap hints */
+.hint-touch,
+html.touch .hint-keys {
+  display: none;
+}
+
+html.touch .hint-touch {
+  display: block;
+}
+
+.levelup-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+@media (max-height: 520px) {
+  html.touch .levelup-head {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 1rem;
+  }
+}
+
+/* level-up: Reroll / Skip / Banish are big, clear buttons */
+html.touch .levelup .banish {
+  width: 100%;
+}
+
+html.touch .levelup-actions .btn {
+  min-width: 10rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* phones in landscape: title on one line, the cards with the actions beside them */
+@media (max-height: 520px) {
+  html.touch .levelup {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas: 'head head' 'cards actions';
+    align-items: center;
+    column-gap: 1.2rem;
+    row-gap: 0.6rem;
+  }
+
+  html.touch .levelup-head {
+    grid-area: head;
+  }
+
+  html.touch .levelup-head .title {
+    font-size: 2.3rem;
+  }
+
+  html.touch .levelup > .cards {
+    grid-area: cards;
+  }
+
+  html.touch .levelup-actions {
+    grid-area: actions;
+    flex-direction: column;
+  }
+
+  html.touch .levelup > .hint {
+    display: none;
+  }
+
+  html.touch .card {
+    min-height: 0;
+  }
+}
+
+.select-picks {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.1rem;
+}
+
+/* phones in landscape: everything on one screen — nothing under the Start run bar */
+@media (max-height: 520px) {
+  html.touch .select-screen {
+    gap: 0.55rem;
+    padding-top: 0.5rem;
+  }
+
+  html.touch .select-screen > .title.small {
+    font-size: 2rem;
+  }
+
+  html.touch .select-picks {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+
+  html.touch .select-picks .map-note {
+    display: none;
+  }
+
+  html.touch .char-row {
+    gap: 0.6rem;
+  }
+
+  html.touch .char-card {
+    padding: 0.4rem 0.4rem 0.5rem;
+  }
+
+  html.touch .char-card .portrait {
+    width: 4.6rem;
+    height: 4.6rem;
+  }
+
+  /* just the name and the hero's signature move */
+  html.touch .char-details {
+    width: auto;
+    max-width: 70vw;
+    padding: 0.5rem 0.9rem;
+    gap: 0.2rem;
+  }
+
+  html.touch .char-details .char-name {
+    font-size: 1.4rem;
+  }
+
+  html.touch .char-details .char-desc,
+  html.touch .char-details .char-weapon,
+  html.touch .char-details .char-stats,
+  html.touch .char-details .char-best {
+    display: none;
+  }
+}
+
+/* hero select: Back / Start run always reachable (the details can scroll under them) */
+html.touch .select-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  align-self: stretch;
+  justify-content: flex-start;
+  /* a dark strip across the screen, so the buttons never float over the hero cards */
+  margin: auto 0 -1rem calc(-1 * max(1rem, env(safe-area-inset-left)));
+  padding: 0.7rem 0 max(0.7rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: linear-gradient(to top, rgba(16, 10, 28, 0.92), rgba(16, 10, 28, 0.78) 70%, rgba(16, 10, 28, 0));
+}
+
+html.touch .select-screen,
+html.touch .collection-screen {
+  padding-left: max(1rem, env(safe-area-inset-left));
+}
+
+/* landscape only on phones / tablets */
+.rotate-hint {
+  display: none;
+}
+
+@media (orientation: portrait) {
+  html.touch .rotate-hint {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.4rem;
+    background: #1c1530;
+    color: var(--paper);
+    font-weight: 900;
+    font-size: 1.3rem;
+    text-align: center;
+    padding: 2rem;
+    pointer-events: auto;
+  }
+}
+
+.rotate-phone {
+  width: 3.6rem;
+  height: 6rem;
+  border-radius: 0.7rem;
+  box-shadow: inset 0 0 0 0.35rem var(--paper);
+  animation: rotate-phone 2.4s ease-in-out infinite;
+}
+
+@keyframes rotate-phone {
+  0%,
+  30% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+
+/* ───────────────────────── touch controls settings + layout editor ───────────────────────── */
+
+/* narrow and centred, so the previewed controls stay visible around it */
+.modal.touch-settings {
+  width: min(30rem, 52vw);
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+}
+
+.settings-list .btn.toggle {
+  min-width: 8.5rem;
+}
+
+.layout-editor {
+  position: absolute;
+  inset: 0;
+}
+
+.le-surface {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  touch-action: none;
+  background: rgba(16, 10, 28, 0.25);
+}
+
+.le-ring,
+.le-handle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.le-ring {
+  box-shadow: 0 0 0 3px var(--accent), 0 0 0 5px rgba(16, 10, 28, 0.6);
+}
+
+.le-ring.bad {
+  box-shadow: 0 0 0 3px var(--danger), 0 0 0 5px rgba(16, 10, 28, 0.6);
+}
+
+/* the resize handle: a big round grip on the ring (48 px to touch) */
+.le-handle {
+  width: 48px;
+  height: 48px;
+  background: radial-gradient(circle, var(--paper) 0 9px, var(--accent) 10px 15px, transparent 16px);
+}
+
+.le-ring.hidden,
+.le-handle.hidden {
+  display: none;
+}
+
+.le-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(26rem, 46vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  pointer-events: auto;
+  text-align: center;
+}
+
+.le-status {
+  min-height: 2.6em;
+  font-weight: 700;
+  font-size: max(1rem, 14px);
+}
+
+.le-status.bad {
+  color: #ffb3b8;
 }

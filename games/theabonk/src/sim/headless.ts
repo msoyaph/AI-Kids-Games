@@ -1,3 +1,7 @@
+import type { DifficultyId } from '../config/difficulty';
+import type { MapId } from '../config/maps';
+import type { TuningOverrides } from '../config/tuning';
+import { recordRun, type PlaytestRun } from '../meta/playtest';
 import type { PlayerStats } from '../config/types';
 import { Bot } from './bot';
 import { newRun } from './run';
@@ -18,21 +22,30 @@ export interface HeadlessResult {
   damageTaken: number;
   maxEnemies: number;
   evolutions: number;
+  /** Same schema as human playtest records, for analyze-playtests comparisons. */
+  record: PlaytestRun;
 }
 
 /** Play a full run with the bot, no rendering. Deterministic for (character, seed, skill). */
 export function simulateRun(opts: {
   characterId: string;
   seed: number;
+  map?: MapId;
+  difficulty?: DifficultyId;
+  /** Hard only: tier 1–5. */
+  tier?: number;
   skill?: number;
   maxSeconds?: number;
   meta?: Partial<PlayerStats>;
   unlockedWeapons?: string[];
+  tuning?: TuningOverrides;
+  /** Bot slides / slide-jumps / gap escapes (default true). */
+  botMovement?: boolean;
   onWorld?: (w: World) => void;
 }): HeadlessResult {
-  const w = newRun({ seed: opts.seed, characterId: opts.characterId, meta: opts.meta, unlockedWeapons: opts.unlockedWeapons });
+  const w = newRun({ seed: opts.seed, characterId: opts.characterId, map: opts.map, difficulty: opts.difficulty, tier: opts.tier, meta: opts.meta, unlockedWeapons: opts.unlockedWeapons, tuning: opts.tuning });
   opts.onWorld?.(w);
-  const bot = new Bot(opts.seed, opts.skill ?? 0.7);
+  const bot = new Bot(opts.seed, opts.skill ?? 0.7, opts.botMovement ?? true);
   const input = emptyInput();
   const maxT = opts.maxSeconds ?? 20 * 60 + 5;
   let maxEnemies = 0;
@@ -61,5 +74,6 @@ export function simulateRun(opts: {
     damageTaken: Math.round(w.stats.damageTaken),
     maxEnemies,
     evolutions: w.stats.evolutions,
+    record: recordRun(w, { player: 'bot', input: 'bot', quality: 'headless', result: w.state === 'won' ? 'won' : w.state === 'dead' ? 'dead' : 'quit', now: new Date(0) }),
   };
 }

@@ -12,7 +12,7 @@ export const Ev = {
   Coin: 6, // x y z value
   LevelUp: 7, // level
   Sfx: 8, // x y z ; i = sfx id
-  Explosion: 9, // x y z radius ; i = color
+  Explosion: 9, // x y z radius hostile(0/1) ; i = color
   Lightning: 10, // x1 y1 z1 x2 y2 z2
   Ring: 11, // x y z radius ; i = color  (expanding visual ring)
   Chest: 12, // x y z
@@ -30,6 +30,7 @@ export const Ev = {
   Revive: 24, // x y z
   Buff: 25, // i = buff kind
   Achievement: 26, // i = achievement index
+  Gust: 27, // dirX dirZ warnSeconds durationSeconds
 } as const;
 
 export type EvType = (typeof Ev)[keyof typeof Ev];

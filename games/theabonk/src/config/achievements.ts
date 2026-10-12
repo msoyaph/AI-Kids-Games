@@ -9,6 +9,17 @@ export interface AchievementContext {
   topSpeed: number;
   wins: number;
   totalGold: number;
+  winsByMap: Record<string, number>;
+  winsByDifficulty: Record<string, number>;
+  /** Highest Hard tier won (-1 = none, 0 = plain Hard). */
+  bestHardTier: number;
+  bossKillsNormalPlus: Record<string, number>;
+  slideDistance: number;
+  banishes: number;
+  dailyRuns: number;
+  /** Collection entries discovered / total. */
+  collected: number;
+  collectable: number;
 }
 
 export interface AchievementDef {
@@ -20,6 +31,15 @@ export interface AchievementDef {
   progress: (c: AchievementContext) => number;
   reward: { gold?: number; character?: string; weapon?: string };
 }
+
+const tierWin = (t: number): AchievementDef => ({
+  id: `tier${t}`,
+  name: `Tier ${t} Cleared`,
+  description: `Win on Hard, Tier ${t}.`,
+  check: (c) => c.bestHardTier >= t,
+  progress: (c) => (c.bestHardTier >= t ? 1 : 0),
+  reward: { gold: 150 + t * 100 },
+});
 
 const frac = (v: number, t: number): number => Math.min(1, v / t);
 
@@ -67,6 +87,54 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'gold2000', name: 'Magpie', description: 'Earn 2,000 gold in total.',
     check: (c) => c.totalGold >= 2000, progress: (c) => frac(c.totalGold, 2000), reward: { gold: 150 },
+  },
+  // ── upgrade: heroes ──
+  {
+    id: 'slide3k', name: 'Slip ’n’ Slide', description: 'Slide 3,000 m in total.',
+    check: (c) => c.slideDistance >= 3000, progress: (c) => frac(c.slideDistance, 3000), reward: { character: 'ottie' },
+  },
+  {
+    id: 'clockjawNormal', name: 'Gears Stripped', description: 'Defeat Clockjaw on Normal or harder.',
+    check: (c) => (c.bossKillsNormalPlus.clockjaw ?? 0) + (c.bossKillsNormalPlus.clockjawFrost ?? 0) > 0,
+    progress: (c) => frac((c.bossKillsNormalPlus.clockjaw ?? 0) + (c.bossKillsNormalPlus.clockjawFrost ?? 0), 1), reward: { character: 'bramble' },
+  },
+  {
+    id: 'level40', name: 'Star Pupil', description: 'Reach level 40 in a single run.',
+    check: (c) => c.highestLevel >= 40, progress: (c) => frac(c.highestLevel, 40), reward: { character: 'nova' },
+  },
+  // ── upgrade: maps, difficulty, daily, collection ──
+  {
+    id: 'rimewoodWin', name: 'The Thaw', description: 'Win a run in the Rimewood.',
+    check: (c) => (c.winsByMap.rimewood ?? 0) > 0, progress: (c) => frac(c.winsByMap.rimewood ?? 0, 1), reward: { gold: 400 },
+  },
+  {
+    id: 'oldRime', name: 'Antlers Shattered', description: 'Defeat Old Rime, the Frost Stag.',
+    check: (c) => (c.bossKills.oldRime ?? 0) > 0, progress: (c) => frac(c.bossKills.oldRime ?? 0, 1), reward: { gold: 300 },
+  },
+  {
+    id: 'hardWin', name: 'Hard as Nails', description: 'Win a run on Hard (unlocks Hard tiers).',
+    check: (c) => (c.winsByDifficulty.hard ?? 0) > 0, progress: (c) => frac(c.winsByDifficulty.hard ?? 0, 1), reward: { gold: 500 },
+  },
+  tierWin(1),
+  tierWin(2),
+  tierWin(3),
+  tierWin(4),
+  tierWin(5),
+  {
+    id: 'daily', name: 'Daily Bonker', description: 'Play a daily run.',
+    check: (c) => c.dailyRuns >= 1, progress: (c) => frac(c.dailyRuns, 1), reward: { gold: 100 },
+  },
+  {
+    id: 'banish', name: 'Not Today', description: 'Banish an offer at a level-up.',
+    check: (c) => c.banishes >= 1, progress: (c) => frac(c.banishes, 1), reward: { gold: 50 },
+  },
+  {
+    id: 'collect25', name: 'Naturalist', description: 'Discover 25 entries in the collection.',
+    check: (c) => c.collected >= 25, progress: (c) => frac(c.collected, 25), reward: { gold: 150 },
+  },
+  {
+    id: 'collectAll', name: 'Encyclopedist', description: 'Discover every entry in the collection.',
+    check: (c) => c.collectable > 0 && c.collected >= c.collectable, progress: (c) => frac(c.collected, Math.max(1, c.collectable)), reward: { gold: 1000 },
   },
 ];
 

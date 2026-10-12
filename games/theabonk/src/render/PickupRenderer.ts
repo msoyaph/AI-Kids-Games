@@ -2,26 +2,46 @@ import * as THREE from 'three';
 import { CAPS, GEM_TIERS } from '../config/balance';
 import { PickupKind } from '../sim/pools';
 import type { World } from '../sim/world';
+import type { Particles } from './Particles';
 import { lowPolyMaterial } from './geo';
 import { commitInstances, makeInstanced, TRS, writeTRSFrom } from './instancing';
-import { chestGeometry, coinGeometry, gemGeometry, heartGeometry, magnetGeometry, projectileGeometry } from './models';
+import { chestGeometry, coinGeometry, gemGeometry, heartGeometry, magnetGeometry, projectileGeometry, shardGeometry } from './models';
 
 /** Gems, coins, hearts, magnets, chests and hostile projectiles. */
 export class PickupRenderer {
   readonly group = new THREE.Group();
-  private gems: THREE.InstancedMesh;
+  private gems: THREE.InstancedMesh[];
   private kinds: THREE.InstancedMesh[];
   private shots: THREE.InstancedMesh[];
   private beams: THREE.InstancedMesh;
   private tierColors: THREE.Color[];
   private kindCounts = new Int32Array(4);
-  private shotCounts = new Int32Array(2);
+  private shotCounts = new Int32Array(3);
+
+  private gemCounts = new Int32Array(GEM_TIERS.length);
+
+  /** Colour-blind mode: Okabe-Ito tier colours and a distinct shape per tier. */
+  setColorblind(on: boolean): void {
+    const cb = [0x56b4e9, 0x009e73, 0xcc79a7, 0xe69f00];
+    this.gems.forEach((m, k) => {
+      m.geometry.dispose();
+      m.geometry = gemGeometry(on ? k : 0);
+      this.tierColors[k].setHex(on ? cb[k] : GEM_TIERS[k].color);
+    });
+  }
+
+  /** For gem trails (set by the renderer). */
+  particles: Particles | null = null;
 
   constructor() {
     this.group.name = 'pickups';
-    this.gems = makeInstanced(gemGeometry(), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a2a2a, flatShading: true }), CAPS.gems, true);
-    this.gems.name = 'gems';
-    this.group.add(this.gems);
+    const gemMat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x2a2a2a, flatShading: true });
+    this.gems = GEM_TIERS.map((_, k) => {
+      const m = makeInstanced(gemGeometry(), gemMat, CAPS.gems, true);
+      m.name = `gems:${k}`;
+      this.group.add(m);
+      return m;
+    });
     this.tierColors = GEM_TIERS.map((t) => new THREE.Color(t.color));
 
     const geos = [coinGeometry(), heartGeometry(), magnetGeometry(), chestGeometry()];
@@ -39,7 +59,8 @@ export class PickupRenderer {
     this.beams = makeInstanced(bg, new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }), 32, false);
     this.group.add(this.beams);
 
-    this.shots = [projectileGeometry('enemyOrb'), projectileGeometry('enemySpore')].map((g) => {
+    // indexed by ShotVisual: orb, spore, ice shard
+    this.shots = [projectileGeometry('enemyOrb'), projectileGeometry('enemySpore'), shardGeometry()].map((g) => {
       const m = makeInstanced(g, new THREE.MeshBasicMaterial({ vertexColors: true }), CAPS.enemyProjectiles, false);
       this.group.add(m);
       return m;
@@ -47,17 +68,22 @@ export class PickupRenderer {
   }
 
   update(w: World, alpha: number, time: number): void {
-    // gems
+    // gems (one mesh per tier: colour-blind mode gives each tier its own shape)
     const g = w.gems;
-    const ga = this.gems.instanceMatrix.array as Float32Array;
-    const gc = this.gems.instanceColor!.array as Float32Array;
-    let n = 0;
+    const gn = this.gemCounts;
+    gn.fill(0);
     for (let i = 0; i < g.count; i++) {
       if (!g.alive[i]) continue;
       const x = g.px[i] + (g.x[i] - g.px[i]) * alpha;
       const y = g.py[i] + (g.y[i] - g.py[i]) * alpha;
       const z = g.pz[i] + (g.z[i] - g.pz[i]) * alpha;
       const tier = g.tier[i];
+      const mesh = this.gems[tier];
+      // gems being pulled in zip with a little trail
+      if (g.magnet[i] && this.particles && Math.random() < 0.35 * this.particles.density) this.particles.emit(x, y, z, 0, 0.3, 0, 0.22, 0.13, this.tierColors[tier].getHex(), 0);
+      const n = gn[tier]++;
+      const ga = mesh.instanceMatrix.array as Float32Array;
+      const gc = mesh.instanceColor!.array as Float32Array;
       const s = GEM_TIERS[tier].scale;
       const bob = g.grounded[i] && !g.magnet[i] ? Math.sin(time * 3 + i) * 0.08 : 0;
       TRS[0] = x;
@@ -73,9 +99,8 @@ export class PickupRenderer {
       gc[n * 3] = c.r;
       gc[n * 3 + 1] = c.g;
       gc[n * 3 + 2] = c.b;
-      n++;
     }
-    commitInstances(this.gems, n);
+    for (let k = 0; k < this.gems.length; k++) commitInstances(this.gems[k], gn[k]);
 
     // pickups
     const pk = w.pickups;
@@ -125,7 +150,7 @@ export class PickupRenderer {
     sc.fill(0);
     for (let i = 0; i < s.count; i++) {
       if (!s.alive[i]) continue;
-      const v = s.visual[i] > 0 ? 1 : 0;
+      const v = s.visual[i] < 3 ? s.visual[i] : 0;
       const mesh = this.shots[v];
       const k = sc[v]++;
       const x = s.px[i] + (s.x[i] - s.px[i]) * alpha;
@@ -135,14 +160,14 @@ export class PickupRenderer {
       TRS[0] = x;
       TRS[1] = y;
       TRS[2] = z;
-      TRS[3] = time * 5;
+      // shards point where they fly; orbs and spores tumble
+      TRS[3] = v === 2 ? Math.atan2(s.vx[i], s.vz[i]) : time * 5;
       TRS[4] = 0;
       TRS[5] = pulse;
       TRS[6] = pulse;
       TRS[7] = pulse;
       writeTRSFrom(mesh.instanceMatrix.array as Float32Array, k * 16);
     }
-    commitInstances(this.shots[0], sc[0]);
-    commitInstances(this.shots[1], sc[1]);
+    for (let v = 0; v < this.shots.length; v++) commitInstances(this.shots[v], sc[v]);
   }
 }

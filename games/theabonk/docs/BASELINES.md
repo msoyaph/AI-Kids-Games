@@ -1,0 +1,175 @@
+# Baselines (v1 / `main` @ 9f10c36)
+
+Recorded at the start of the `theabonk-upgrade` branch so every later phase can be compared.
+
+## Build
+- `dist/index.html`: 772,361 bytes (754 KB), single file, no external references.
+
+## Simulation performance (`npx tsx scripts/bench.ts 1000 20`)
+- Quiet machine (M3 Pro): ~0.28 ms/tick avg at 1000 enemies + ~470 projectiles.
+- Under heavy background load (load average ~15): 0.64–0.88 ms/tick avg.
+- **Absolute timings are load-sensitive.** Compare A/B back-to-back against a `main`
+  worktree (`git worktree add <dir> main`) rather than against these numbers.
+
+## Render performance (in-browser, `?stress=1000`, gl.finish() per frame)
+- M3 Pro, 1780×1808: High 1.43 ms · Medium 1.00 ms · Low 0.89 ms per frame;
+  ~50 draw calls, ~315k triangles.
+
+## Balance (`npm run simulate -- 16 0.7`, bot skill 0.7, no meta, never slides)
+| Hero | Avg survival | Wins |
+| --- | --- | --- |
+| Thea | 12:35 | 3/16 |
+| Pip | 11:32 | 3/16 |
+| Brindle | 14:59 | 6/16 |
+| All | 13:02 | 12/48 |
+
+## Saves
+- Real v1 save fixture: `tests/fixtures/save-v1.json` (1.5 KB pretty-printed), produced by
+  the v1 code paths (6 bot runs, shop purchases, settings changes).
+
+## Golden determinism fingerprints (tests/unit/golden.test.ts)
+- thea/4242 → `2055916a`, brindle/9001 → `f4beddb6` (120 s bot runs).
+
+## Upgrade phase 3 (pathing + occlusion), A/B vs main
+- Sim bench 1000 enemies: main 0.28 ms/tick → branch 0.39 ms/tick (flow field + wall
+  checks; p99 1.3 → 1.5 ms).
+- In-browser `?stress=1000` (fixed one-tick frames, median with GPU sync): main
+  1.2 ms CPU / 3.0 ms synced → branch 1.2 ms / 3.3 ms (within noise; load average ~9).
+- Balance after pathing (16 seeds, 0.7): Thea 8:45, Pip 15:16, Brindle 13:51, all 12:37 —
+  hero spread re-tuned in phase 13.
+
+## Upgrade phase 4 (maps + Rimewood)
+- Gloam Meadow is bit-identical (golden fingerprints unchanged through the MapDef conversion).
+- Rimewood 1000-enemy stress (in-browser): 55 draw calls, ~408k triangles (Meadow ~50 /
+  ~315k) — variant models + snowy props; aurora + snowfall are 4 extra draw calls.
+- Sim profiles (1000 enemies): GC < 3% on both maps, no new hot spots; Rimewood spends a
+  little more in flow-field rebuilds (gusts move the player).
+- Build: 814 KB.
+
+## Upgrade phase 11 (benchmark + Low tier)
+- `?bench=1&seconds=12`, High, M3 Pro (pane, DPR 2, 1780×1434, load average ~50 from other
+  work): 97 fps average (120 Hz display), 38 fps 1% low, CPU 2.65 ms/frame, sim 0.5 ms,
+  57 draw calls avg / 65 max, 274k triangles avg / 300k max (budget 90 / 900k: ok).
+- Low tier at run start (Meadow): 23 draw calls, 64k triangles (no grass / flowers / small
+  decoration, fog ×0.72, far plane 150, pixel ratio 0.75).
+- Auto quality guesses: SwiftShader / llvmpipe / Intel HD & UHD → Low; Iris Xe, Radeon iGPU,
+  Mali / Adreno / PowerVR → Medium; others → High (touch devices → Tablet).
+- The `npm run bench-browser` matrix (software renderer, 4× CPU laptop, throttled tablet,
+  1000-enemy stress on both maps) is recorded with the touch-controller measurements below.
+
+## Glass touch controller (performance, step 7)
+All numbers: `npm run bench-browser` on an M3 Pro (Metal), 800-enemy benchmark (520 on the
+Tablet tier), avg FPS / 1% low FPS. "4× CPU" = CDP CPU throttling (a phone-class CPU); the
+GPU is not throttled, so GPU-side costs (real blur) are lower bounds. The machine was shared
+with other work (load average 8–30), so rows were run interleaved, 3 times, and medians kept.
+
+**Desktop / laptop matrix (30 s, no controls)**
+
+| Profile | Avg / 1% low | CPU ms/frame | Draw calls | Triangles |
+| --- | --- | --- | --- | --- |
+| Native High (1600×900) | 60 / 60 | 2.7 | 68 | 305k |
+| Native Medium | 60 / 60 | 1.6 | 61 | 272k |
+| Native Low | 60 / 60 | 1.4 | 50 | 218k |
+| SwiftShader Low (worst case, software WebGL) | 8 / 2 | 6.6 | 49 | 216k |
+| Laptop 4× CPU, Medium | 52 / 23 | 10.1 | 61 | 272k |
+| Laptop 4× CPU, Medium, **1000-enemy stress** | 51 / 23 | 11.4 | 62 | 312k |
+| 1000-enemy stress, Meadow, High | 60 / 56 | 2.9 | 70 | 339k |
+| 1000-enemy stress, Rimewood, High | 60 / 60 | 2.7 | 72 | 433k |
+
+**What the controls cost, and the glass rule** (12 s runs, medians of 3)
+
+First pass (before optimising): fake glass cost a dropped frame per button press at 4× CPU
+(the press repainted the button's gradients and added a ripple element); per-frame stick
+updates restyled the whole stick. After making every per-frame and per-press change a
+compositor-only change (transforms / opacity on their own layers, a pre-painted lit layer
+and glyph face that cross-fade, ripples via the Web Animations API, writes only on change,
+the chevron angle on the chevrons rather than inherited from the stick):
+
+| Profile | No controls | Fake glass | Real blur |
+| --- | --- | --- | --- |
+| Phone (Pixel 7) 4× CPU, Tablet tier (= Auto) | 60 / 51 | 59 / 30 | 60 / 45 |
+| Tablet (Galaxy Tab S9) 4× CPU, Tablet tier (= Auto) | 60 / 45 | 59 / 30 | 60 / 51 |
+| Phone 4× CPU, High | 58 / 30 | 57 / 30 | 55 / 27 |
+| Tablet 4× CPU, High | 58 / 30 | 55 / 30 | 56 / 30 |
+| Laptop (touchscreen), High, full GPU | 60 / 60 | 60 / 60 | 60 / 60 |
+| WebKit iPhone 15, Tablet tier (unthrottled) | 60 / 48 | 60 / 48 | 60 / 53 |
+| WebKit iPad Pro 11, Tablet tier (unthrottled) | 60 / 45 | 60 / 44 | 60 / 41 |
+
+- Average FPS at Auto on the throttled phone and tablet: 60 → 59–60 with the controls (within
+  run-to-run noise). The 1% low (the slowest ~5 frames of a 9 s window) is noise-dominated
+  here — real blur, which does strictly more work than fake glass, scored *better* — so treat
+  those columns as ±15 fps.
+- A Chromium trace (Galaxy Tab, 4× CPU, 5 s) puts the controls' main-thread cost at ~0.7 ms
+  of style recalculation + ~0.3 ms of layer updates per frame with a thumb moving every frame
+  (≈ 0.25 ms at full speed); paint and raster are unchanged.
+- Real blur cost 2–3 fps at High on the throttled phone / tablet and nothing on the laptop.
+  Rule (`glassFor`): **real blur only on High on non-touch-first devices** (touchscreen
+  laptops); phones, tablets and every other tier use fake glass.
+
+**Final matrix, every tier** (finished build, quiet machine — load average ~3; 12 s runs,
+medians of 2 interleaved; avg / 1% low FPS)
+
+| Profile | Tier | No controls | Fake glass | Real blur |
+| --- | --- | --- | --- | --- |
+| Phone (Pixel 7) 4× CPU | Low | 59 / 30 | 59 / 29 | 58 / 28 |
+| | Medium | 60 / 46 | 60 / 41 | 60 / 35 |
+| | High | 60 / 33 | 59 / 30 | 58 / 30 |
+| | **Tablet (= Auto)** | **60 / 53** | **60 / 45** | 60 / 51 |
+| Tablet (Galaxy Tab S9) 4× CPU | Low | 59 / 30 | 58 / 30 | 58 / 30 |
+| | Medium | 60 / 38 | 60 / 37 | 60 / 35 |
+| | High | 60 / 33 | 60 / 33 | 59 / 29 |
+| | **Tablet (= Auto)** | **60 / 60** | **60 / 48** | 60 / 50 |
+| Touchscreen laptop, full GPU | High | 60 / 60 | 60 / 60 | 60 / 60 |
+| WebKit iPhone 15 | Tablet (= Auto) | 60 / 36 | 60 / 46 | 60 / 54 |
+| WebKit iPad Pro 11 | Tablet (= Auto) | 60 / 49 | 60 / 50 | 60 / 51 |
+
+No average-FPS loss at Auto on the throttled phone and tablet with the glass controls; the
+1% lows move within run-to-run noise (WebKit iPhone's "no controls" scored lowest).
+
+## Upgrade phase 13: balance sweep (`npm run balance-sweep -- 12`)
+12 seeds per hero per cell (72 runs per cell), first-run (no shop bonuses), sliding bot.
+
+| Cell | Avg survival | Wins | Target |
+| --- | --- | --- | --- |
+| Meadow · Relaxed · decent | 14:11 | 44% | ~15:00, 40–55% |
+| Meadow · Normal · decent | 13:21 | 29% | 10–15 min, 15–30% |
+| Meadow · Hard · decent | 8:43 | 0% | 7–11 min, ≤10% |
+| Rimewood · Relaxed · decent | 16:01 | 51% | ~15:00, 40–55% |
+| Rimewood · Normal · decent | 12:24 | 21% | ~1 min under Meadow, 10–25% |
+| Rimewood · Hard · decent | 8:04 | 3% | 7–11 min, ≤10% |
+| Meadow · Normal · expert | 13:38 | 35% | 30–45% ✓ |
+| Rimewood · Normal · expert | 14:08 | 36% | 25–40% ✓ |
+| Meadow / Rimewood · Relaxed · expert | 15:18 / 15:51 | 53% / 51% | 60%+ ✗ (bot-limited) |
+| Meadow / Rimewood · Hard · expert | 7:32 / 8:28 | 1% / 4% | 15–25% ✗ (bot-limited) |
+| Meadow · Hard tiers 1→5 · expert | 8:48 → 5:00 | 3, 1, 0, 0, 0% | ~15% → 2% (tiers 4–5 ✓) |
+
+Before the sweep (same bot, 8 seeds): Relaxed Meadow 18:45 / 88% wins, Normal Meadow
+15:44 / 42%, Normal Rimewood 10:20, Hard Rimewood 4:25 — Relaxed far too easy, Rimewood
+five minutes shorter than Meadow instead of one. Hero spread at 24 seeds on Normal: within
+±1:30 for most heroes after the hero pass (single 12-seed cells still swing ±2 min).
+
+## Touch vs keyboard survival (2026-10-12, before release v2.0.0)
+
+`npx tsx scripts/touch-compare.ts <seeds> 0.7 --map <map> --difficulty relaxed` — headless and
+deterministic (machine load can't change it): the same bot, seeds and level-up picks; only the
+path from the bot's wish to Thea differs, through the game's real stick response, auto camera
+and heading-lock code. A "thumb" holds its direction and re-aims when the wish turns > 12° or
+Thea drifts > 30° (0.1 s reaction). Relaxed, six heroes, paired differences vs keyboard (± SE):
+
+| Scheme | Gloam Meadow (24 seeds, 144 runs) | Rimewood (48 seeds, 288 runs) |
+| --- | --- | --- |
+| keyboard (8-way, still camera) | 13:45 ± 0:30 | 14:27 ± 0:20 |
+| touch, auto camera off | 14:08 (+0:22 ± 0:41) | 14:02 (−0:24 ± 0:27) |
+| touch, auto camera on (shipping) | 15:14 (+1:28 ± 0:40) | 13:35 (−0:51 ± 0:28) |
+| touch, auto camera + heading lock | 14:19 (+0:34 ± 0:40) | 14:02 (−0:25 ± 0:28) |
+| touch, auto camera slowed on diagonals | — | 13:58 (−0:29 ± 0:28) |
+
+A looser "casual" thumb (re-aims at 20° / 50°, 0.2 s; Meadow, 12 seeds): keyboard 11:53, touch
+auto camera off 14:42, on 13:26, heading lock 12:23. Touch play is not worse than keyboard; the
+auto camera helps on the meadow (its gentle curve doubles as kiting) and costs a little on the
+ice. A held diagonal does circle with the auto camera (`--circle`: 273° in 8 s, 16 m from the
+start instead of 57 m; 137° with the diagonal slow-down; 0° with the heading lock), so the lock
+exists as `tuning.camera.autoCamHeadingLock` (off by default) for playtests with real players.
+Before v2: the 5-minute touch playthrough died at 3:30–4:09 on Relaxed because its bot read the
+advice only when the test polled (≈ 10× slower re-planning), tapped the first card and lived with
+input latency — now the playthrough checks the controls with `?nodamage=1`.
