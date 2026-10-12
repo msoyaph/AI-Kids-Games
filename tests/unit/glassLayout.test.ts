@@ -7,6 +7,7 @@ import {
   insideSafe,
   layoutProblems,
   MIN_TARGET,
+  pauseSize,
   resolveLayout,
   stickBase,
   toLayoutItem,
@@ -25,7 +26,7 @@ const SCREENS: Array<[string, number, number, Insets]> = [
 function hudRects(w: number, h: number, safe: Insets): Rect[] {
   const rem = 8 + 0.009 * Math.min(w, h);
   // on touch the counters sit left of the Pause corner: max(0.8rem, inset) + 66 px from the edge
-  const trRight = w - (Math.max(0.8 * rem, safe.r) + 66);
+  const trRight = w - (Math.max(0.8 * rem, safe.r) + 18 + pauseSize(w, h));
   return [
     { l: w / 2 - Math.min(16 * rem, 0.3 * w), t: 0, r: w / 2 + Math.min(16 * rem, 0.3 * w), b: 9 * rem },
     { l: 0, t: 0, r: Math.max(0.8 * rem, safe.l) + 22 * rem, b: 7 * rem },

@@ -28,6 +28,11 @@ export function maximalSave(): ReturnType<typeof defaultSave> {
     d.stats.winsByMap[m.id] = 99999;
     d.stats.bestTimeByMap[m.id] = 1203.123456789;
   }
+  // 30 daily records, a full collection, every touch control moved
+  d.daily = Array.from({ length: 30 }, (_, k) => ({ date: `2026-${String(1 + (k % 12)).padStart(2, '0')}-${String(1 + k).padStart(2, '0')}`, map: 'rimewood', hero: 'bramble', time: 1203.123456, won: true, kills: 99999, level: 99 }));
+  for (const e of ENEMIES) d.collection.kills[e.id] = 99999;
+  d.collection.weapons = WEAPONS.map((w) => w.id);
+  d.settings.touch.layout = { stick: { ax: 0, ay: 1, dx: 0.123456, dy: 0.234567, s: 1.234 }, jump: { ax: 1, ay: 1, dx: 0.123456, dy: 0.234567, s: 1.234 }, slide: { ax: 1, ay: 1, dx: 0.323456, dy: 0.134567, s: 0.834 }, pause: { ax: 1, ay: 0, dx: 0.023456, dy: 0.034567, s: 1 } };
   return sanitizeSave(JSON.parse(JSON.stringify(d)));
 }
 
@@ -47,6 +52,7 @@ function maximalTuning(): string {
 describe('storage budget', () => {
   it('a fully filled save stays far below the shared storage budget', () => {
     const bytes = new TextEncoder().encode(JSON.stringify(maximalSave())).length;
+    console.info(`storage: default save ${JSON.stringify(defaultSave()).length} B, maximal save ${bytes} B, maximal tuning ${maximalTuning().length} B, playtest cap ${PLAYTEST_MAX_BYTES} B`);
     expect(bytes).toBeLessThan(STORAGE_BUDGET_BYTES / 4);
   });
 

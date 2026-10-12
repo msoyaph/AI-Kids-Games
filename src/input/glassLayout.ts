@@ -37,6 +37,14 @@ export function buttonSizes(base: number): { jump: number; slide: number; pause:
   return { jump: Math.max(56, base * 0.64), slide: Math.max(52, base * 0.52), pause: 48 };
 }
 
+/**
+ * Pause: a corner button away from the thumbs — 48 px on phones, a little bigger on tablets.
+ * Independent of the size setting, so the HUD counters' CSS offset can follow it (styles.css).
+ */
+export function pauseSize(w: number, h: number): number {
+  return Math.max(48, 0.34 * Math.min(172, Math.max(112, 0.3 * Math.min(w, h))));
+}
+
 /** The interface's root font size for a screen (ui/styles.css :root), times Larger text. */
 export function uiRem(w: number, h: number, uiScale = 1): number {
   return (8 + 0.009 * Math.min(w, h)) * uiScale;
@@ -64,7 +72,8 @@ export function defaultLayout(w: number, h: number, size: GlassSize, safe: Inset
   const stick = { x: safe.l + b * 0.8, y: h - safe.b - b * 0.72 };
   const jump = { x: w - safe.r - s.jump / 2 - b * 0.24, y: h - safe.b - s.jump / 2 - b * 0.42 };
   const slide = { x: jump.x - s.jump / 2 - s.slide / 2 - b * 0.12, y: h - safe.b - s.slide / 2 - b * 0.14 };
-  const pause = { x: w - safe.r - 10 - s.pause / 2, y: safe.t + 10 + s.pause / 2 };
+  const ps = pauseSize(w, h);
+  const pause = { x: w - safe.r - 10 - ps / 2, y: safe.t + 10 + ps / 2 };
   const band = bottomHudBand(w, h, safe, rem);
   for (const [c, d] of [[stick, b], [slide, s.slide]] as const) {
     if (coversRect({ x: c.x, y: c.y, d }, band)) c.y = Math.min(c.y, band.t - d / 2 - 6);
@@ -115,7 +124,7 @@ export function resolveLayout(w: number, h: number, size: GlassSize, safe: Inset
   const base = stickBase(w, h, size);
   const bs = buttonSizes(base);
   const def = defaultLayout(w, h, size, safe, false, rem);
-  const diam: Record<ControlId, number> = { stick: base, jump: bs.jump, slide: bs.slide, pause: bs.pause };
+  const diam: Record<ControlId, number> = { stick: base, jump: bs.jump, slide: bs.slide, pause: pauseSize(w, h) };
   const short = Math.min(w, h);
   const out = {} as Placement;
   for (const id of CONTROL_IDS) {

@@ -2364,8 +2364,8 @@ html.touch .hud-tl {
 }
 
 html.touch .hud-tr {
-  /* the glass Pause button owns the top-right corner (10 px + 48 px + an 8 px gap) */
-  right: calc(max(0.8rem, env(safe-area-inset-right)) + 66px);
+  /* the glass Pause button owns the top-right corner (10 px + its size + an 8 px gap) */
+  right: calc(max(0.8rem, env(safe-area-inset-right)) + 18px + max(48px, calc(clamp(112px, 30vmin, 172px) * 0.34)));
   top: max(0.8rem, env(safe-area-inset-top));
 }
 

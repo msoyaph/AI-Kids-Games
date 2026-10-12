@@ -34,8 +34,17 @@ host anywhere, or embed in a sandboxed iframe.
   red shockwave rings and leave glowing circles.
 - **Bosses** arrive at **5:00** (Grumblecap), **10:00** (Clockjaw) and **15:00** (the
   Gloam Regent). Defeat the Regent, or survive until **20:00** (dawn), to win.
+- **Two maps.** Gloam Meadow, and **Rimewood** (unlocked by winning on the Meadow): frozen
+  ponds you slide further on, snowdrifts that slow everyone, falling icicles, blizzard gusts,
+  frost versions of the Gloom, and **Old Rime, the Frost Stag** as the final boss.
+- **Difficulty:** Relaxed (suggested on phones and tablets), Normal, or Hard — and Hard
+  Tiers 1–5 once you've won on Hard. Rerolls, skips and banishes at level-up are earned in
+  the Workshop (every run starts with 1 free skip; Relaxed adds one of each).
+- **Daily run:** today's map, hero and seed, the same for everyone, on Normal with no shop
+  bonuses. **Collection:** a bestiary with 3D previews, and every weapon, item and evolution
+  you've found.
 - **Spend gold between runs** in the Workshop on permanent upgrades. Achievements unlock
-  new heroes (Pip, Brindle) and weapons (Frost Fan, Wisp Bees).
+  new heroes and weapons (Frost Fan, Wisp Bees).
 
 ### Controls
 
@@ -78,11 +87,14 @@ controls appear; use a key, the mouse or a gamepad and they hide again.
 
 ### Heroes
 
-| Hero | Start weapon | Personality | Unlock |
+| Hero | Start weapon | Signature | Unlock |
 | --- | --- | --- | --- |
-| **Thea**, the Bonkwright | Bonk Ring (melee aura) | +10% damage, balanced | Available from the start |
-| **Pip**, the Thistle Scout | Thistle Darts (projectiles) | Fast, slightly fragile, super slides | Defeat 1,000 Gloom in total |
-| **Brindle**, the Lantern Sage | Firefly Lanterns (orbit) | Tanky: HP, armor, regen, area | Survive 10 minutes in one run |
+| **Thea**, the Bonkwright | Bonk Ring (melee aura) | *Landing Bonk*: landing from a jump bonks the Gloom around her | Available from the start |
+| **Pip**, the Thistle Scout | Thistle Darts (projectiles) | *Greased Lightning*: bigger slide boosts, slides that hardly slow down | Defeat 1,000 Gloom in total |
+| **Brindle**, the Lantern Sage | Firefly Lanterns (orbit) | *Shell Guard*: below 30% health, takes 30% less damage | Survive 10 minutes in one run |
+| **Ottie**, the River Otter | Wobble Disc (boomerang) | *Slipstream*: longer slides; sliding fast bowls the Gloom over | Slide 3,000 m in total |
+| **Bramble**, the Beetle Knight | Ember Seeds (ground fire) | *Thornshell*: Gloom that hurt him by touch take thorns damage | Defeat Clockjaw on Normal or harder |
+| **Nova**, the Owl Stargazer | Zap Jar (chain lightning) | *Wise Eyes*: four cards at every level-up | Reach level 40 in one run |
 
 ### Arsenal
 
@@ -129,8 +141,8 @@ Dev server at http://localhost:5173. URL options:
 npm run build
 ```
 
-Typechecks, then writes the single file `dist/index.html` (about 770 KB, no external
-requests). It works when double-clicked (`file://`) and inside
+Typechecks, then writes the single file `dist/index.html` (about 950 KB, no external
+requests; `npm run check-size` enforces ≤ 1.5 MB, one file, no external references). It works when double-clicked (`file://`) and inside
 `<iframe sandbox="allow-scripts">`. When storage is unavailable, progress lasts for the
 session only, and the title screen says so.
 
@@ -142,15 +154,19 @@ Runs the Vitest unit tests: damage math, leveling, upgrade selection, evolutions
 shrines, bosses, save/load, movement physics, and determinism.
 
 ```bash
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 ```
 
 ```bash
 npm run test:e2e
 ```
 
-Playwright smoke tests against the production build: a 30 s run with no console errors or
-warnings, menus, a sandboxed iframe, and `file://`.
+Playwright against the production build, six projects: desktop Chromium and Firefox
+(runs, menus, remapping, accessibility, the performance test, a sandboxed iframe,
+`file://`, a touchscreen laptop switching between touch and keyboard), WebKit iPhone and
+iPad, and Chromium tablet and phone (real multi-touch through the DevTools protocol: stick,
+camera, jump and slide together, auto camera, slide-jumps, the layout editor, the quality
+governor, and a 5-minute touch-only run). CI setup: `docs/CI.md`.
 
 ```bash
 npm run simulate -- 16 0.7
@@ -163,11 +179,44 @@ reports survival times.
 npm run bench -- 1000 20
 ```
 
-Headless simulation benchmark (enemies, seconds).
+Headless simulation benchmark (enemies, seconds). More tools:
+
+- `npm run balance-sweep -- 12` — every map × difficulty × Hard tier with the bot.
+- `npm run bench-browser -- 30 [desktop|touch]` — the in-browser benchmark matrix
+  (`?bench=1` in the game, or Settings → Performance → Test…).
+- `npm run audio-report` — loudness and peaks of every sound and song.
+- `?tune=1` (live tuning panel) and `?playtest=1` (record runs on this device; export them
+  for `npm run analyze-playtests`).
 
 ---
 
-## Ai Kids Games registry notes
+## Ai Kids Games handoff
+
+- **Slug:** `theabonk`. Ship `dist/index.html` (single file, ~950 KB). It runs from
+  `file://` and in `<iframe sandbox="allow-scripts">`, makes no network requests, and keeps
+  working (session-only progress) when storage is blocked.
+- **Storage** (localStorage, every key prefixed `theabonk.`; ~75 KB worst case together,
+  under the 100 KB budget, checked by `tests/unit/storage-budget.test.ts`):
+
+  | Key | What | Size |
+  | --- | --- | --- |
+  | `theabonk.save` | Progress, records, unlocks, collection, daily records, settings (incl. controls, accessibility and touch layout). Older saves are migrated. | 1.5 KB new · 6.6 KB fully maxed |
+  | `theabonk.save.bak` | One-time copy of an old-format save, written just before the first save in the new format | ≤ 6.6 KB, only for players with a v1 save |
+  | `theabonk.playtest` | Recorded runs — only with `?playtest=1` | ≤ 60 KB (20 runs) |
+  | `theabonk.tuning` | Tuning panel overrides — only with `?tune=1` | ≤ 2 KB |
+
+- **Devices and controls:** computers (keyboard + mouse with pointer lock, or drag-to-look
+  in iframes; remappable keys), gamepads (Xbox, PlayStation and generic, in Chrome, Edge and
+  Firefox; rumble), and phones and tablets in landscape with the glass touch controls.
+  Graphics quality: Auto picks Tablet on phones / tablets and a tier from the graphics card
+  on computers, and steps down by itself if a device struggles.
+- **Accessibility:** reduced motion, colour-blind-friendly warnings and pickups, larger text,
+  high-contrast HUD and touch controls, flash rate capped at 3 Hz, remappable controls.
+- **Recapture the site previews and cover art.** The game gained a second map (Rimewood),
+  three heroes, new bosses, bloom, a new HUD layout and the touch controls, so the current
+  previews show an older look.
+
+### Registry notes
 
 TheaBonk now supports phones and tablets with touch. Changes for the site's entry
 (`src/data/games.ts`, slug `theabonk`):
@@ -216,10 +265,12 @@ That's it. If you need a genuinely new *kind* of weapon, write one function
 | Hero | `CHARACTERS` in `src/config/characters.ts` plus a model in `characterGeometry` and a portrait in `portraitUrl` |
 | Shop upgrade | `SHOP` in `src/config/meta.ts` |
 | Achievement | `ACHIEVEMENTS` in `src/config/achievements.ts` (check, progress, reward) |
-| Global tuning | `src/config/balance.ts` (XP curve, enemy scaling, drops, movement) |
+| Map | A `MapDef` in `src/config/maps.ts` (terrain, props, palette, sky, hazards, waves, variants, final boss, music, unlock, difficulty `mods`) |
+| Difficulty / tier | `DIFFICULTIES` / `TIERS` in `src/config/difficulty.ts` |
+| Global tuning | `src/config/tuning.ts` (movement, camera, XP curve, scaling, spawns, telegraphs) — live with `?tune=1`, saved with `npm run apply-tuning` |
 
-After changing numbers, run `npm run simulate` to check survival times stay in the
-intended 10–15 minute band for a first run.
+After changing numbers, run `npm run balance-sweep` (or `npm run simulate -- 16 0.7`) to
+check the survival and win-rate targets in `docs/BASELINES.md`.
 
 ---
 

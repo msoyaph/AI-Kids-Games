@@ -304,7 +304,7 @@
 }
 
 .gbtn-pause {
-  --d: 48px;
+  --d: max(48px, calc(clamp(112px, 30vmin, 172px) * 0.34));
   --g-a: 0.42;
 }
 

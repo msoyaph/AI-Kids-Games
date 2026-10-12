@@ -261,6 +261,12 @@ Benchmarks are load-sensitive: compare A/B against a `main` worktree.
   −1 dBFS limiter, offline audio report + test
 - [x] 11. Benchmark (`?bench=1`, Settings → Test…, result card, bench-browser matrix), Low
   tier (no decor, 0.72× fog + 150 far plane with the sky scaled to fit), GPU-based auto quality
+- [x] 14. Screenshot review (scripts/screenshot-review.ts → shots/review-final: menus, six
+  heroes, both maps at dusk / night, Grumblecap, Clockjaw, Gloam Regent, Old Rime, HUD at
+  Low / Medium / High / Tablet; fixes: tablet Pause scales with the screen, phone hero
+  select fits one screen), README handoff (slug, storage keys + measured sizes, devices,
+  controls, accessibility, recapture previews), storage test covers daily / collection /
+  touch layout.
 - [x] 13. Balance sweep (scripts/balance-sweep.ts, simulate --difficulty / --tier / --json):
   Relaxed toned down, Hard eased, per-map MapDef.mods (Meadow a little harder, Rimewood
   easier), hero pass (Thea / Ottie / Nova up; Brindle / Bramble / Pip down). Golden

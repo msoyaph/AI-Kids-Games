@@ -425,7 +425,14 @@ test('the quality governor steps Auto down on a struggling device, behind a cove
   // a very slow device: well under 48 fps for seconds on end
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 24 });
-  await expect.poll(async () => (await quality()).q, { timeout: 150_000, intervals: [2000] }).toBe('low');
+  // keep playing (take level-ups, as a player would) until the governor steps down
+  const end = Date.now() + 150_000;
+  while ((await quality()).q !== 'low' && Date.now() < end) {
+    const card = page.locator('.screen-levelup .card, .screen-chest .btn').first();
+    if (await card.isVisible().catch(() => false)) await card.dispatchEvent('click').catch(() => undefined);
+    await page.waitForTimeout(2000);
+  }
+  expect((await quality()).q).toBe('low');
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   const after = await quality();
   expect(after.glass, 'stepped-down tiers use fake glass').toBe('fake');
