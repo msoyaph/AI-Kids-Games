@@ -52,8 +52,8 @@ export const REEL: Record<Slug, { shots: [Shot, Shot, Shot]; describe: string }>
     describe: 'Thea swings her glowing Bonk Ring through a crowd of cartoon monsters, levels up and meets Grumblecap.',
     shots: [
       shot('theabonk', 'horde', { from: 0.2, focus: [0.5, 0.5], sfx: 0.55, sound: 'bonk, bonk, bonk' }),
-      shot('theabonk', 'level-up', { from: 0.9, zoom: 1.5, focus: [0.5, 0.42], sfx: 0.5, sound: 'a level-up chime' }),
-      shot('theabonk', 'boss', { from: 1.4, focus: [0.5, 0.42] })
+      shot('theabonk', 'level-up', { from: 0.9, zoom: 1.2, focus: [0.5, 0.5], sfx: 0.5, sound: 'a level-up chime' }),
+      shot('theabonk', 'boss', { from: 1.25, focus: [0.5, 0.42] })
     ]
   },
   'vanex-defense': {
@@ -67,8 +67,8 @@ export const REEL: Record<Slug, { shots: [Shot, Shot, Shot]; describe: string }>
   'space-sky': {
     describe: 'A rocket flies past a ringed planet, lands on the Moon\'s glowing pad and explores icy Europa.',
     shots: [
-      shot('space-sky', 'saturn', { from: 0.6, focus: [0.5, 0.5] }),
-      shot('space-sky', 'moon-landing', { from: 0, focus: [0.5, 0.55], sfx: 0.55, sound: 'a landing chime' }),
+      shot('space-sky', 'saturn', { from: 0.2, focus: [0.5, 0.5], sfx: 0.45, sound: 'a rocket boost' }),
+      shot('space-sky', 'moon-landing', { from: 0, focus: [0.5, 0.55] }),
       shot('space-sky', 'europa', { from: 0.4, focus: [0.5, 0.6] })
     ]
   },
@@ -77,7 +77,7 @@ export const REEL: Record<Slug, { shots: [Shot, Shot, Shot]; describe: string }>
     shots: [
       shot('light-crossing', 'skate', { from: 0.4, focus: [0.5, 0.55], sfx: 0.45, sound: 'skates swish' }),
       shot('light-crossing', 'autumn', { from: 0.2, focus: [0.5, 0.55] }),
-      shot('light-crossing', 'home', { from: 0.2, focus: [0.5, 0.55] })
+      shot('light-crossing', 'home', { from: 0.2, zoom: 1.6, focus: [0.5, 0.58] })
     ]
   },
   'cliff-valley': {

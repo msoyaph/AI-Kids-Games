@@ -2,11 +2,11 @@
 // (headed Chromium on the real GPU, 1920×1080 at 60 fps, the games' own sound tapped).
 // Usage: npm run reel:capture -- <slug> [--only=<take-id>]
 // Raw takes land in marketing/sizzle/captures/<slug>/ (git-ignored).
-import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { launch, openSession, recordTake, root as site, serve } from '../../../apps/site/scripts/capture/lib';
 import type { Scenario } from '../../../apps/site/scripts/capture/types';
+import { idle } from '../guard';
 
 export const sizzle = resolve(import.meta.dirname, '..');
 export const takeDir = (slug: string) => join(sizzle, 'captures', slug);
@@ -18,8 +18,6 @@ if (!slug || !existsSync(join(sizzle, 'capture/games', `${slug}.ts`))) throw new
 if (!existsSync(join(site, 'public/games', slug, 'index.html'))) throw new Error(`apps/site/public/games/${slug}/index.html does not exist.`);
 
 // Never capture while browser or unit tests run: both need the whole GPU and CPU.
-const busy = () => { try { return execFileSync('pgrep', ['-fl', 'playwright test|vitest|test-server|playwright/lib/runner|hyperframes render'], { encoding: 'utf8' }).trim(); } catch { return ''; } };
-const idle = () => { const running = busy(); if (running) throw new Error(`Tests or a render are running; capture later.\n${running}`); };
 idle();
 
 const { scenario } = await import(`./games/${slug}.ts`) as { scenario: Scenario };

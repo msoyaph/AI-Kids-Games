@@ -102,3 +102,22 @@ from `ffmpeg-static`). A `beats.json` lists every bar start; the review checks e
 **The end card says aikids.games, but that domain isn't registered yet** (the registry has no
 record of it). The reel can show it as planned if you register it before publishing; otherwise the
 end card can show the current address, ai-kids-games-fawn.vercel.app, until it is.
+
+## Changes made during production
+
+- **Tablet shot:** Cliff Valley played by touch (harvesting with the Interact button), not Light
+  Crossing. Recording the whole browser tab, which is needed to include the on-screen touch
+  controls, was too costly on Light Crossing's page: it couldn't hold a smooth frame rate.
+- **Light Crossing:** the decorated home is Tansy's house (a villager's home the game decorates).
+  The island in autumn and the Lantern Skate are live play with the closest camera a player can
+  pick. The Harvest Feast is a blurred background under the tagline.
+- **Vanex Defense:** the Prism Matriarch arrives at wave 10 on Sky Lane (Skyforge Ruins), where
+  the road runs through the middle of the frame. The towers stay in Frostspire Peaks for the maze
+  shot.
+- **Cliff Valley:** Starlight Night is a walk through the decorated, snowy square. The festival's
+  sky lanterns need a present to give, and the scene's fresh farmer has none.
+- **Game sounds:** Space Sky's sound is the rocket's boost (the Moon landing chime falls outside
+  the shot). There are 9 game sounds in all, each about 10 LU under the music.
+- **Quality settings:** Vanex Defense and Space Sky are recorded at their "medium" tier, and the
+  Cliff Valley tablet at its normal size. At "high", busy scenes dropped below 60 fps on the
+  capture Mac.
