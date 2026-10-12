@@ -1,3 +1,8 @@
+> **In the Ai Kids Games monorepo** this game's CI is the root `.github/workflows/ci.yml` (GitHub's
+> standard runners, Chromium only: Playwright runs the projects whose browsers are installed). The
+> two workflows below belong to TheaBonk's own private repository and are not included here, and a
+> self-hosted runner must never be attached to the public monorepo.
+
 # CI for TheaBonk
 
 Two GitHub Actions workflows:
