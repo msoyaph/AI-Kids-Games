@@ -13,7 +13,34 @@
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
-    "status": "pending"
+    "deploymentId": "dpl_565CFC3FJtQh2oMy2m4mGboRM9r3",
+    "deploymentUrl": "https://ai-kids-games-81eqv7ogy-real-tours.vercel.app",
+    "readyState": "READY",
+    "publishedAt": "2026-10-12",
+    "public": true,
+    "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+    "smokeTest": "Logged-out Playwright suite against production: 94 passed, 23 intentional device skips, 0 failed (all six games played 20 s on desktop, tablet and phone, saves survive reload, favorites and recently played persist, games keep one another's saves, no console errors, no other-origin requests).",
+    "lighthouseMobile": {
+      "home": {
+        "performance": 99,
+        "accessibility": 100,
+        "bestPractices": 100,
+        "seo": 100
+      },
+      "details": {
+        "performance": 99,
+        "accessibility": 100,
+        "bestPractices": 100,
+        "seo": 100
+      },
+      "play": {
+        "performance": 73,
+        "performanceExempt": true,
+        "accessibility": 100,
+        "bestPractices": 100,
+        "seo": 100
+      }
+    }
   },
   "deploymentProtection": {
     "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",
@@ -76,5 +103,14 @@
         "note": "Owner wrote: \"I approve a production deployment for this release.\" Guard: scripts/check-deployment.ts allows production builds only for this version."
       }
     }
-  ]
+  ],
+  "commit": "dc4a5f7",
+  "verifiedPreview": {
+    "url": "https://ai-kids-games-me4wlq58h-real-tours.vercel.app",
+    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/2",
+    "hostedSuite": "94 passed, 23 skipped, 0 failed",
+    "temporaryBypass": "created for hosted QA and revoked afterwards"
+  },
+  "localSuite": "Full site suite on a real GPU before release: 94 passed, 23 skipped, 0 failed; every game's own suite passed inside the monorepo.",
+  "ci": "Released by the owner's request before PR #2's CI finished: Light Crossing and Space Sky were still running, and TheaBonk's v1 smoke test missed its game-time target on a slow runner (same build as already live; made robust afterwards)."
 }
