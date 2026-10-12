@@ -36,15 +36,18 @@ export async function gameFrame(page: Page,slug: string): Promise<Frame> {
   if (!frame) throw new Error(`Missing ${slug} frame`);
   return frame;
 }
+/** A computer-only game on a touch-only device explains first (src/lib/devices.ts); test runs press on. */
+export async function pastTouchGate(page: Page) {
+  await expect(page.locator('.touch-gate, .game-loading, iframe').first()).toBeAttached();
+  const gate = page.getByRole('button',{ name: 'I have a keyboard or controller' });
+  if (await gate.isVisible()) await gate.click();
+}
 export async function boot(page: Page,slug: string) {
   const size = page.viewportSize();
   // These finished games intentionally require landscape on touch screens.
   if (size && size.height > size.width && ['space-sky','calex-cart'].includes(slug) && await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) await page.setViewportSize({ width:size.height,height:size.width });
   await page.goto(`/play/${slug}`);
-  // A computer-only game on a touch-only device explains first (src/lib/devices.ts); these runs press on.
-  await expect(page.locator('.touch-gate, .game-loading, iframe').first()).toBeAttached();
-  const gate = page.getByRole('button',{ name: 'I have a keyboard or controller' });
-  if (await gate.isVisible()) await gate.click();
+  await pastTouchGate(page);
   await expect(page.locator('.game-loading')).toBeHidden({ timeout: 30000 });
   const f = await gameFrame(page,slug);
   await expect(f.locator('canvas').first()).toBeAttached({ timeout: 30000 });
