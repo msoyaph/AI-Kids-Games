@@ -14,8 +14,8 @@ ideas, fixes, new games and better docs are all welcome.
   browser, and what happened.
 - **Suggest a game or a feature:** use the *Game idea* form, or start a Discussion.
 - **Fix something:** pick an issue, comment that you're on it, and open a pull request.
-- **Build a game:** a starter template and a step-by-step guide are on the way. Until then, any
-  game in `games/` shows the contract in practice.
+- **Build a game:** start from `templates/game-starter` (`npm run new-game -- <slug>`) and read
+  [docs/CREATE-A-GAME.md](docs/CREATE-A-GAME.md).
 - **List your game on aikids.games:** coming soon. Open a *Game listing request* issue to get in
   line.
 
@@ -44,7 +44,8 @@ Every game and every change to the site must keep all of these true:
 ## How the repo works
 
 - `apps/site/` is the aikids.games website (Vite, React, TypeScript).
-- `games/<slug>/` is each game's full project.
+- `games/<slug>/` is each game's full project. Its `game.json` is the single source of truth for
+  its listing; run `npm run manifests` after changing it.
 - The site ships each game as one committed file, `apps/site/public/games/<slug>/index.html`.
   **Never edit it by hand.** After changing a game, run `npm run import-game -- <slug>`; CI fails
   if a game's source changed without a re-import.

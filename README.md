@@ -60,8 +60,18 @@ The games are moving to **[aikids.games](https://aikids.games)**, launching soon
 ## Build your own game
 
 Every game here follows the same simple contract: one self-contained HTML file, no network
-requests, its own storage prefix, kid-safe content, and tests. A starter template and a
-step-by-step guide, including how to build a game with an AI coding assistant, are on the way.
+requests, its own storage prefix, kid-safe content, and tests. Start from the starter game:
+
+```bash
+npm ci
+npm run new-game -- my-game --title "My Game"
+npm install
+npm run dev --workspace games/my-game
+```
+
+[docs/CREATE-A-GAME.md](docs/CREATE-A-GAME.md) walks through the whole path, including how to
+build a game with an AI coding assistant, and [AGENTS.md](AGENTS.md) tells the assistant how this
+repo works.
 
 ## List your game on aikids.games
 
@@ -105,10 +115,11 @@ Each game's own README lists its controls, tests and tools.
 ## Repo structure
 
 ```
-apps/site/          the website (Vite + React): pages, the committed game builds, art and previews
-games/<slug>/       each game's complete project, with its full history
-docs/               guides for the whole repo
-scripts/            repo tooling: import-game, build and repo checks
+apps/site/                the website (Vite + React): pages, the committed game builds, art and previews
+games/<slug>/             each game's complete project, with its full history and its game.json
+templates/game-starter/   Star Catch, the smallest complete game that follows the contract
+docs/                     guides, the game.json schema and the example briefs
+scripts/                  repo tooling: new-game, import-game, manifests, storage audit, checks
 ```
 
 The website ships each game as one committed file, `apps/site/public/games/<slug>/index.html`.

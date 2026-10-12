@@ -23,7 +23,8 @@
     "check:builds": "tsx scripts/check-builds.ts",
     "typecheck": "tsc -p tsconfig.json",
     "manifests": "tsx scripts/manifests.ts",
-    "audit-storage": "tsx scripts/audit-storage.ts"
+    "audit-storage": "tsx scripts/audit-storage.ts",
+    "new-game": "tsx scripts/new-game.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
