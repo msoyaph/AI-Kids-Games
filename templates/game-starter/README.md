@@ -1,6 +1,6 @@
-# Star Catch: the Ai Kids Games starter
+# Star Catch: the AI Kids Games starter
 
-A tiny, complete browser game that follows the Ai Kids Games **game contract**. Fly a firefly
+A tiny, complete browser game that follows the AI Kids Games **game contract**. Fly a firefly
 around the night sky and catch as many stars as you can in 60 seconds. It's small on purpose:
 replace the rules, the art and the name with your own game, and keep the plumbing.
 

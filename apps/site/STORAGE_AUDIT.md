@@ -13,7 +13,7 @@ read by hand.
 
 | Owner | Persistent keys | Only in special modes | Availability probe (written and removed at once) |
 |---|---|---|---|
-| Ai Kids Games (site) | `aikg:favorites`, `aikg:recent`, `aikg:tips` (one-time play-page tips answered, ≤ 40 bytes) | none | none |
+| AI Kids Games (site) | `aikg:favorites`, `aikg:recent`, `aikg:tips` (one-time play-page tips answered, ≤ 40 bytes) | none | none |
 | TheaBonk 2.0.0 | `theabonk.save`, `theabonk.save.bak` (written once when a 1.0 save is upgraded) | `theabonk.playtest` (`?playtest=1`), `theabonk.tuning` (`?tune=1`) | `__theabonk_probe__` |
 | Light Crossing 2.0.0 | `lightcrossing.slot0`–`slot2`, `lightcrossing.settings` | `lightcrossing.playtest.slot0`–`slot2` (`?playtest=1`) | `lightcrossing.__probe` |
 | Vanex Defense 2.0.0 | `vanex-defense-save`, `vanex-defense-save-backup` (written once when an older save is upgraded) | `vanex-defense-playtest` (`?playtest=1`) | `__vanex_probe__` |
@@ -83,6 +83,20 @@ Cliff Valley's slot caps are about 10 times their largest real saves), the origi
 1.5 MB under the 5 MB limit. Heavy normal play uses about a quarter of it, and most of that is
 Calex Cart's optional time-trial ghosts. If a browser ever runs out of room, every game keeps the
 previous save intact and tells the player (Calex Cart first frees its own playtest log).
+
+## Community games (not on this origin)
+
+Community games (`community/<slug>/`, SUBMITTING.md) never share this origin. Each plays from its own
+address (`aikg-<slug>.vercel.app`, a separate site), so it can't read or change the website's
+`aikg:` keys or any first-party game's saves, and other community games can't read its saves. In
+an iframe, browsers also keep its storage separate per top-level site. They are still held to the
+same rules, checked by `npm run check-submission`:
+- every key starts with the game's own prefix, which no other game (first-party or community) may
+  share or overlap;
+- no `clear()`, sessionStorage, IndexedDB, cookies or Cache Storage;
+- a static scan of the source, plus a 20-second browser run that records every storage call.
+
+They are left out of the size budget above, because their storage belongs to their own origin.
 
 ## Method
 

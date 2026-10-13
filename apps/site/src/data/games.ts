@@ -34,6 +34,22 @@ export interface Game {
   featured: boolean;
   accentColor: string;
   status: 'Ready to play' | 'Coming soon';
+  /** Where the game saves in this browser (localStorage keys; <slot> marks a placeholder). */
+  storage: { prefix: string; keys: string[] };
+  /** What the game never does, from its manifest: all false for every listed game. */
+  safety: { ads: false; purchases: false; chat: false; accounts: false; network: false };
+  license: string;
+  /** Community games only (community/<slug>/, src/data/community.ts): played from their own origin. */
+  community?: {
+    /** The creator's nickname, e.g. "@star-maker". */
+    handle: string;
+    /** The game's address on the play origin (its own host in production). */
+    playUrl: string;
+    /** Not reviewed yet: shown only on preview builds, marked "Preview". */
+    preview: boolean;
+    longDescription: string;
+    cover: string; shots: string[]; og: string;
+  };
 }
 /**
  * The catalog comes from each game's manifest, games/<slug>/game.json. Edit those, then run

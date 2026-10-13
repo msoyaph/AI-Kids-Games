@@ -8,7 +8,7 @@ import Preview from './Preview';
 
 const REDUCED = '(prefers-reduced-motion: reduce)';
 function useReducedMotion() {
-  const [reduced,setReduced] = useState(() => matchMedia(REDUCED).matches);
+  const [reduced,setReduced] = useState(() => typeof matchMedia === 'function' && matchMedia(REDUCED).matches);
   useEffect(() => { const media = matchMedia(REDUCED); const change = (event: MediaQueryListEvent) => setReduced(event.matches); media.addEventListener('change',change); return () => media.removeEventListener('change',change); },[]);
   return reduced;
 }

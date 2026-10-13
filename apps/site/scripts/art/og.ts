@@ -1,12 +1,15 @@
 // Generates 1200×630 Open Graph images from the cover art and logos:
-// public/og/<slug>.jpg for each game and public/og/site.jpg for the home page.
+// public/og/<slug>.jpg for each game (with the brand mark) and public/og/site.jpg for the home page
+// (the owner's wordmark, docs/brand/wordmark.png, from scripts/art/icons.ts). Run icons.ts first.
 // Usage: npx tsx scripts/art/og.ts
-import { mkdirSync } from 'node:fs';
+import { mkdirSync,readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 import sharp from 'sharp';
-import { games } from '../../src/data/games';
+import { games,type Game } from '../../src/data/games';
+import { BRAND,TAGLINE } from '../../src/data/site';
+import { mediaFor } from '../../src/lib/media';
 import { serve } from '../capture/lib';
 
 const out = resolve(import.meta.dirname,'../../public/og'); mkdirSync(out,{ recursive: true });
@@ -14,8 +17,9 @@ const { server,origin } = await serve();
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1200,height: 630 },deviceScaleFactor: 1 });
 const font = `@font-face{font-family:Nunito;src:url(${origin}/og-font.woff2)}`;
-const layers = (slug: string,list: string[]) => ['cover.svg',...list.map(name => `cover-${name}.svg`)].map(src => `<img src="${origin}/media/${slug}/${src}" style="position:absolute;inset:0;width:100%;height:100%">`).join('');
-const brand = `<div style="position:absolute;left:28px;bottom:24px;padding:10px 18px;border-radius:999px;background:#fff;color:#16191F;font:800 24px Nunito">Ai Kids Games</div>`;
+// A game's cover: the drawn cover and its layers, or the game's own screenshot while it has temporary art.
+const cover = (game: Game) => { const media = mediaFor(game); return [media.cover,...media.layers.map(layer => layer.src)].map(src => `<img src="${origin}${src}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`).join(''); };
+const brand = `<div style="position:absolute;left:28px;bottom:24px;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 8px;border-radius:999px;background:#fff;color:#16191F;font:800 26px Nunito;box-shadow:0 4px 16px #16191f33"><img src="${origin}/brand/mark-96.png" width="44" height="44" style="border-radius:11px">${BRAND}</div>`;
 
 async function shoot(html: string,file: string) {
   await page.setContent(`<style>${font}body{margin:0}</style>${html}`);
@@ -38,12 +42,14 @@ server.on('request',(req,res) => {
 
 for (const game of games) {
   // 16:9 cover is 1200×675; crop 45 px off the bottom. The logo sits in the cover's empty sky band.
-  await shoot(`<div style="position:relative;width:1200px;height:630px;overflow:hidden"><div style="position:absolute;inset:0 0 auto 0;height:675px">${layers(game.slug,game.coverLayers)}</div>
+  await shoot(`<div style="position:relative;width:1200px;height:630px;overflow:hidden"><div style="position:absolute;inset:0 0 auto 0;height:675px">${cover(game)}</div>
     <img src="${origin}/media/${game.slug}/logo.svg" style="position:absolute;left:50%;top:22px;transform:translateX(-50%);max-width:640px;max-height:150px">${brand}</div>`,resolve(out,`${game.slug}.jpg`));
 }
-const tile = (slug: string,list: string[],x: number,y: number,w: number) => `<div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${w*9/16}px;border-radius:18px;overflow:hidden;box-shadow:0 6px 20px #16191f22">${layers(slug,list)}</div>`;
-const [a,b,c,d,e] = games;
+const wordmark = `data:image/png;base64,${readFileSync(resolve(import.meta.dirname,'../../../../docs/brand/wordmark.png')).toString('base64')}`;
+const tile = (game: Game,x: number,y: number) => `<div style="position:absolute;left:${x}px;top:${y}px;width:270px;height:152px;border-radius:16px;overflow:hidden;box-shadow:0 6px 20px #16191f22">${cover(game)}</div>`;
 await shoot(`<div style="position:relative;width:1200px;height:630px;background:#F5F6F8;font-family:Nunito;color:#16191F">
-  <div style="position:absolute;left:60px;top:200px;width:430px"><div style="font:800 60px/1.05 Nunito">Ai Kids Games</div><div style="margin-top:22px;font:700 27px/1.4 Nunito;color:#5A6272">Five original games.<br>No ads. No tracking.<br>No accounts.</div></div>
-  ${tile(a.slug,a.coverLayers,520,48,320)}${tile(b.slug,b.coverLayers,856,48,320)}${tile(c.slug,c.coverLayers,520,246,320)}${tile(d.slug,d.coverLayers,856,246,320)}${tile(e.slug,e.coverLayers,688,444,320)}</div>`,resolve(out,'site.jpg'));
+  <img src="${wordmark}" style="position:absolute;left:44px;top:150px;width:540px">
+  <div style="position:absolute;left:56px;top:300px;width:520px;font:800 31px/1.3 Nunito">${TAGLINE}</div>
+  <div style="position:absolute;left:56px;top:404px;width:520px;font:700 23px/1.45 Nunito;color:#5A6272">${games.length} free games for phones, tablets<br>and computers. No ads, purchases or tracking.</div>
+  ${games.slice(0,6).map((game,index) => tile(game,620+(index % 2)*286,71+Math.floor(index/2)*168)).join('')}</div>`,resolve(out,'site.jpg'));
 await browser.close(); server.close();

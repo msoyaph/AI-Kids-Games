@@ -1,4 +1,4 @@
-# Ai Kids Games
+# AI Kids Games
 
 A responsive catalog of five original first-party browser games: TheaBonk,
 Light Crossing, Vanex Defense, Space Sky and Calex Cart. This launch work targets

@@ -19,3 +19,9 @@ captures/
 # sizzle reel: generated HyperFrames projects and rendered files
 marketing/sizzle/build/
 marketing/sizzle/out/
+
+# community games: check reports and builds, and the owner's review worktrees
+community/*/.check/
+.review/
+apps/site/src/data/community.generated.ts
+apps/site/tests/fixtures/community/*/.check/

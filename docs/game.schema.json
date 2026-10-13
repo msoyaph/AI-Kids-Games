@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://aikids.games/game.schema.json",
-  "title": "Ai Kids Games manifest (games/<slug>/game.json)",
+  "$id": "https://raw.githubusercontent.com/msoyaph/AI-Kids-Games/main/docs/game.schema.json",
+  "title": "AI Kids Games manifest (games/<slug>/game.json)",
   "description": "The single source of truth for a game's listing. The website's registry, the README game table, llms.txt and the structured data are generated from it with `npm run manifests`.",
   "type": "object",
   "additionalProperties": false,
@@ -24,6 +24,7 @@
     "orientation",
     "playTime",
     "storage",
+    "safety",
     "capture",
     "license",
     "source",
@@ -36,7 +37,7 @@
     "slug": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
-      "description": "Folder name under games/ and the URL slug on aikids.games."
+      "description": "Folder name under games/ and the URL slug on the AI Kids Games website."
     },
     "title": {
       "type": "string",
@@ -227,6 +228,40 @@
         "probe": {
           "type": "string",
           "description": "The short-lived availability-check key, written and removed at once."
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ads",
+        "purchases",
+        "chat",
+        "accounts",
+        "network"
+      ],
+      "description": "What the game never does. Every listed game must have all five false; the website shows them in each game's \"Safety and privacy\" section.",
+      "properties": {
+        "ads": {
+          "const": false,
+          "description": "No advertising of any kind, including rewarded ads."
+        },
+        "purchases": {
+          "const": false,
+          "description": "No purchases, currencies bought with money, or paid unlocks."
+        },
+        "chat": {
+          "const": false,
+          "description": "No chat, messages, uploads or contact with other players."
+        },
+        "accounts": {
+          "const": false,
+          "description": "No accounts, sign-ups, names or emails."
+        },
+        "network": {
+          "const": false,
+          "description": "Makes no network requests: nothing is sent anywhere, and it keeps running offline once loaded."
         }
       }
     },

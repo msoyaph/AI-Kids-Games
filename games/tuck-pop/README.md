@@ -1,11 +1,11 @@
 # Tuck Pop
 
-A bright, friendly block puzzle for ages 6 and up, for Ai Kids Games. Drag chunky pieces onto an
+A bright, friendly block puzzle for ages 6 and up, for AI Kids Games. Drag chunky pieces onto an
 8×8 board, fill rows and columns to clear them, and chain clears into streaks. Classic, Relax,
 Adventure (60 levels) and a Daily puzzle; helpers you earn by playing, never buy; six themes to
 unlock.
 
-Play it on the Ai Kids Games website, or open the built `dist/index.html` directly: it's one
+Play it on the AI Kids Games website, or open the built `dist/index.html` directly: it's one
 self-contained file that works offline. Notes, plan and status are in [CLAUDE.md](CLAUDE.md); the
 brief is in [docs/prompts](../../docs/prompts/tuck-pop.md); the balance report is
 [reports/sim.md](reports/sim.md).

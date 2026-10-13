@@ -11,6 +11,15 @@ export const site = resolve(root,'apps/site');
 export const gameDir = (slug: string) => resolve(root,'games',slug);
 export const SLUG = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
+/** Community games (community/<slug>/): source only, built and checked by tooling/community-kit, hosted on their own origin. */
+/** AIKG_COMMUNITY_ROOT (absolute, or relative to the repo) points at another community/ folder: the owner's review kit checks a pull request's worktree with these trusted tools, and the website's tests use apps/site/tests/fixtures/community. */
+export const communityRoot = process.env.AIKG_COMMUNITY_ROOT ? resolve(root,process.env.AIKG_COMMUNITY_ROOT) : resolve(root,'community');
+export const communityDir = (slug: string) => resolve(communityRoot,slug);
+/** Every folder under community/ that has a game.json manifest, sorted. */
+export function communitySlugs() {
+  return existsSync(communityRoot) ? readdirSync(communityRoot).filter(name => SLUG.test(name) && existsSync(resolve(communityRoot,name,'game.json'))).sort() : [];
+}
+
 /** Every folder under games/ that has a game.json manifest, sorted. */
 export function gameSlugs() {
   const dir = resolve(root,'games');

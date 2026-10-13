@@ -192,7 +192,7 @@ Headless simulation benchmark (enemies, seconds). More tools:
 
 ---
 
-## Ai Kids Games handoff
+## AI Kids Games handoff
 
 - **Slug:** `theabonk`. Ship `dist/index.html` (single file, ~950 KB). It runs from
   `file://` and in `<iframe sandbox="allow-scripts">`, makes no network requests, and keeps

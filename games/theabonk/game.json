@@ -78,6 +78,13 @@
     ],
     "probe": "__theabonk_probe__"
   },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
   "capture": {
     "route": "?seed=11",
     "script": "apps/site/scripts/capture/theabonk.ts"

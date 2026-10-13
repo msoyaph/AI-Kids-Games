@@ -2,7 +2,7 @@
   "name": "game-starter",
   "private": true,
   "version": "0.1.0",
-  "description": "A tiny, complete game that follows the Ai Kids Games game contract. Copy it with npm run new-game -- <slug>.",
+  "description": "A tiny, complete game that follows the AI Kids Games game contract. Copy it with npm run new-game -- <slug>.",
   "type": "module",
   "license": "MIT",
   "scripts": {

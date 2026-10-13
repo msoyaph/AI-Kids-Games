@@ -147,7 +147,7 @@ test('iPhone Safari: no fullscreen button; a one-time Home Screen card instead',
   await page.addInitScript(iPhoneSafari);
   await openPlay(page,'light-crossing');
   await expect(page.getByRole('button',{ name: /fullscreen/i })).toHaveCount(0);
-  const card = page.getByRole('dialog',{ name: 'Add Ai Kids Games to your Home Screen to play full screen' });
+  const card = page.getByRole('dialog',{ name: 'Add AI Kids Games to your Home Screen to play full screen' });
   await expect(card).toBeVisible();
   await expect(card).toContainText('Add to Home Screen');
   await expect(card).toContainText('keep their own progress');
@@ -167,7 +167,7 @@ test('opened from the Home Screen (standalone): no card, no prompt, safe areas i
   await expect(page.getByRole('button',{ name: /fullscreen/i })).toHaveCount(0);
   expect(await page.locator('meta[name="viewport"]').getAttribute('content')).toContain('viewport-fit=cover');
   expect(await page.locator('meta[name="apple-mobile-web-app-capable"]').getAttribute('content')).toBe('yes');
-  expect(await page.locator('meta[name="apple-mobile-web-app-title"]').getAttribute('content')).toBe('Ai Kids Games');
+  expect(await page.locator('meta[name="apple-mobile-web-app-title"]').getAttribute('content')).toBe('AI Kids Games');
   const manifest = await (await page.request.get('/manifest.webmanifest')).json();
   expect(manifest).toMatchObject({ display: 'standalone',start_url: '/',scope: '/' });
   // the play bar pads itself with the safe-area insets

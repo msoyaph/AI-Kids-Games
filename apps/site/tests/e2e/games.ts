@@ -22,11 +22,12 @@ export async function instrument(page: Page) {
     }
   });
 }
-export function guard(page: Page,origin = new URL(process.env.AIKG_BASE_URL || 'http://127.0.0.1:4190').origin) {
+/** Records page errors and every request to another origin. `allow` adds exactly one more: a community game's play origin. */
+export function guard(page: Page,origin = new URL(process.env.AIKG_BASE_URL || 'http://127.0.0.1:4190').origin,allow?: string) {
   const errors: string[] = [],external: string[] = [];
   page.on('pageerror',e => errors.push(e.message));
   page.on('console',m => { if (m.type() === 'error') errors.push(m.text()); });
-  page.on('request',r => { const url = r.url(); if (/^https?:/.test(url) && new URL(url).origin !== origin) external.push(url); });
+  page.on('request',r => { const url = r.url(); if (/^https?:/.test(url) && new URL(url).origin !== origin && new URL(url).origin !== allow) external.push(url); });
   return { errors,external };
 }
 export async function gameFrame(page: Page,slug: string): Promise<Frame> {

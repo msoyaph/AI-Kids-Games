@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { findGame } from '../data/games';
+import { findAnyGame } from '../data/community';
 import sizes from '../data/build-sizes.json';
 import { usePreferences } from '../lib/preferences';
-import { usePageMeta } from '../lib/meta';
 import { mediaFor } from '../lib/media';
 import { Icon } from '../components/Icon';
+import { usePageMeta } from '../lib/meta';
 import Cover from '../components/Cover';
 import { computerOnly, touchOnlyDevice } from '../lib/devices';
 import { enterFullscreen, exitFullscreen, fullscreenElement, fullscreenSupported, iPhoneSafari, lockOrientation, onFullscreenChange, standaloneDisplay, touchFirst, unlockOrientation } from '../lib/fullscreen';
@@ -31,11 +31,13 @@ let keyboardConfirmed = false;
  * recorded size; the stream may be compressed in transit), then let the iframe load it from
  * the browser cache. Falls back to an indeterminate bar if streaming is unavailable.
  */
-function useGameDownload(slug: string,attempt: number,enabled: boolean) {
+function useGameDownload(slug: string,attempt: number,enabled: boolean,remote?: string) {
   const [progress,setProgress] = useState<number | null>(0); const [src,setSrc] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false; setProgress(0); setSrc(null);
     if (!enabled) return;
+    // A community game loads from its own play-origin address: no same-origin stream, so the bar is indeterminate.
+    if (remote) { setProgress(null); setSrc(remote); return; }
     const url = `/games/${slug}/index.html`, total = (sizes as Record<string,number>)[slug];
     (async () => {
       try {
@@ -47,26 +49,26 @@ function useGameDownload(slug: string,attempt: number,enabled: boolean) {
       if (!cancelled) setSrc(url);
     })();
     return () => { cancelled = true; };
-  },[slug,attempt,enabled]);
+  },[slug,attempt,enabled,remote]);
   return { progress,src };
 }
 
 export default function Play() {
-  const { slug = '' } = useParams(); const game = findGame(slug);
-  usePageMeta(game ? `Play ${game.title}` : 'Game not found',game?.tagline || 'Choose another game.',game ? mediaFor(game).og : undefined);
+  const { slug = '' } = useParams(); const game = findAnyGame(slug);
   const { rememberGame } = usePreferences();
+  usePageMeta();
   const [loaded,setLoaded] = useState(false); const [slow,setSlow] = useState(false); const [attempt,setAttempt] = useState(0);
   const navigate = useNavigate();
   const [canFullscreen] = useState(fullscreenSupported);
   const [full,setFull] = useState(false); const [menu,setMenu] = useState(false); const [fullscreenError,setFullscreenError] = useState('');
   const [tip,setTip] = useState(firstTip);
   const locked = useRef(false);
-  const [notice,setNotice] = useState(() => window.innerWidth <= 768 || matchMedia('(pointer: coarse)').matches);
+  const [notice,setNotice] = useState(() => typeof window !== 'undefined' && (window.innerWidth <= 768 || matchMedia('(pointer: coarse)').matches));
   const stage = useRef<HTMLDivElement>(null); const frame = useRef<HTMLIFrameElement>(null);
   // A computer-only game on a touch-only device: explain instead of loading it (driven by the manifest).
   const [confirmed,setConfirmed] = useState(keyboardConfirmed);
   const gate = !!game && computerOnly(game) && !confirmed && touchOnlyDevice();
-  const { progress,src } = useGameDownload(slug,attempt,!gate);
+  const { progress,src } = useGameDownload(slug,attempt,!gate,game?.community?.playUrl);
   useEffect(() => { setLoaded(false); setSlow(false); if (gate) return; const timer = setTimeout(() => setSlow(true),12000); return () => clearTimeout(timer); },[slug,attempt,gate]);
   useEffect(() => {
     document.body.classList.add('is-playing');
@@ -140,11 +142,11 @@ export default function Play() {
       </div>}
       {tip === 'home-screen' && <div className="play-tip" role="dialog" aria-labelledby="tip-title">
         <Icon name="share" size={30} />
-        <h2 id="tip-title">Add Ai Kids Games to your Home Screen to play full screen</h2>
+        <h2 id="tip-title">Add AI Kids Games to your Home Screen to play full screen</h2>
         <ol>
           <li>In Safari, tap <strong>Share</strong> (on newer iPhones it’s in the <strong>•••</strong> menu).</li>
           <li>Choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>
-          <li>Open <strong>Ai Kids Games</strong> from your Home Screen.</li>
+          <li>Open <strong>AI Kids Games</strong> from your Home Screen.</li>
         </ol>
         <p>Games on the Home Screen keep their own progress: saves from Safari don’t carry over there, and saves made there stay there.</p>
         <div className="play-tip-actions"><button className="button primary" autoFocus onClick={() => { answerTip('home-screen'); focusGame(); }}>Got it</button></div>

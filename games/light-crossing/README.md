@@ -176,12 +176,12 @@ CPU, not how a phone's GPU copes. On a real device, use Settings → **Test perf
 
 ### Continuous integration
 
-The Ai Kids Games monorepo's root workflow runs typecheck, build, size, tests, pacing and Low-quality e2e on
+The AI Kids Games monorepo's root workflow runs typecheck, build, size, tests, pacing and Low-quality e2e on
 GitHub's standard runners. GPU e2e and the benchmark run by hand on your own computer. Details: [docs/CI.md](docs/CI.md).
 
 ---
 
-## Handoff notes (Ai Kids Games)
+## Handoff notes (AI Kids Games)
 
 - **Slug:** `light-crossing`.
 - **Build:**

@@ -13,5 +13,6 @@
     "noEmit": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "scripts", "tests", "*.ts"]
+  "include": ["src", "scripts", "tests", "*.ts"],
+  "exclude": ["tests/fixtures", "tests/community-pipeline.test.ts"]
 }
