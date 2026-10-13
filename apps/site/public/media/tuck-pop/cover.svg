@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+<!-- Tuck Pop cover: the Sunny board, a row popping with sparkles, a piece about to tuck in. Colors from the game (src/data/themes.ts, Sunny). No text. Safe area: top 22% and side 6% are background only. -->
+<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3dc"/><stop offset=".7" stop-color="#ffe4c4"/><stop offset="1" stop-color="#ffd2a8"/></linearGradient>
+<radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fffbe6" stop-opacity=".95"/><stop offset=".55" stop-color="#ffe9a8" stop-opacity=".45"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
+<pattern id="dots" width="46" height="92" patternUnits="userSpaceOnUse"><circle cx="10" cy="20" r="5" fill="#ffd2a8" opacity=".55"/><circle cx="33" cy="66" r="5" fill="#ffd2a8" opacity=".55"/></pattern>
+<g id="b0"><rect x="0.0" y="6.0" width="100.0" height="100.0" rx="20.0" fill="#ba5345" opacity=".35"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="#ff6f61"/><path d="M20.0 84.0h60.0a20.0 20.0 0 0 0 20.0-4.0v-10.0" fill="none"/><rect x="0.0" y="82.0" width="100.0" height="18.0" rx="12.0" fill="#d45d50" opacity=".55"/><rect x="6.0" y="5.0" width="88.0" height="12.0" rx="6.0" fill="#fff" opacity=".28"/><ellipse cx="36.0" cy="28.0" rx="24.0" ry="11.0" fill="#fff" opacity=".45" transform="rotate(-20 36.0 28.0)"/><circle cx="19.0" cy="20.0" r="5.0" fill="#fff" opacity=".85"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="none" stroke="#a64b3d" stroke-opacity=".45" stroke-width="3.0"/></g>
+<g id="b1"><rect x="0.0" y="6.0" width="100.0" height="100.0" rx="20.0" fill="#ba8024" opacity=".35"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="#ffb52e"/><path d="M20.0 84.0h60.0a20.0 20.0 0 0 0 20.0-4.0v-10.0" fill="none"/><rect x="0.0" y="82.0" width="100.0" height="18.0" rx="12.0" fill="#d49428" opacity=".55"/><rect x="6.0" y="5.0" width="88.0" height="12.0" rx="6.0" fill="#fff" opacity=".28"/><ellipse cx="36.0" cy="28.0" rx="24.0" ry="11.0" fill="#fff" opacity=".45" transform="rotate(-20 36.0 28.0)"/><circle cx="19.0" cy="20.0" r="5.0" fill="#fff" opacity=".85"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="none" stroke="#a67221" stroke-opacity=".45" stroke-width="3.0"/></g>
+<g id="b2"><rect x="0.0" y="6.0" width="100.0" height="100.0" rx="20.0" fill="#4a8e56" opacity=".35"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="#52c97a"/><path d="M20.0 84.0h60.0a20.0 20.0 0 0 0 20.0-4.0v-10.0" fill="none"/><rect x="0.0" y="82.0" width="100.0" height="18.0" rx="12.0" fill="#4da463" opacity=".55"/><rect x="6.0" y="5.0" width="88.0" height="12.0" rx="6.0" fill="#fff" opacity=".28"/><ellipse cx="36.0" cy="28.0" rx="24.0" ry="11.0" fill="#fff" opacity=".45" transform="rotate(-20 36.0 28.0)"/><circle cx="19.0" cy="20.0" r="5.0" fill="#fff" opacity=".85"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="none" stroke="#477c4b" stroke-opacity=".45" stroke-width="3.0"/></g>
+<g id="b3"><rect x="0.0" y="6.0" width="100.0" height="100.0" rx="20.0" fill="#3d77a6" opacity=".35"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="#3fa7f5"/><path d="M20.0 84.0h60.0a20.0 20.0 0 0 0 20.0-4.0v-10.0" fill="none"/><rect x="0.0" y="82.0" width="100.0" height="18.0" rx="12.0" fill="#3e89c3" opacity=".55"/><rect x="6.0" y="5.0" width="88.0" height="12.0" rx="6.0" fill="#fff" opacity=".28"/><ellipse cx="36.0" cy="28.0" rx="24.0" ry="11.0" fill="#fff" opacity=".45" transform="rotate(-20 36.0 28.0)"/><circle cx="19.0" cy="20.0" r="5.0" fill="#fff" opacity=".85"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="none" stroke="#3d6a8f" stroke-opacity=".45" stroke-width="3.0"/></g>
+<g id="b4"><rect x="0.0" y="6.0" width="100.0" height="100.0" rx="20.0" fill="#795ba6" opacity=".35"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="#9b7cf6"/><path d="M20.0 84.0h60.0a20.0 20.0 0 0 0 20.0-4.0v-10.0" fill="none"/><rect x="0.0" y="82.0" width="100.0" height="18.0" rx="12.0" fill="#8668c4" opacity=".55"/><rect x="6.0" y="5.0" width="88.0" height="12.0" rx="6.0" fill="#fff" opacity=".28"/><ellipse cx="36.0" cy="28.0" rx="24.0" ry="11.0" fill="#fff" opacity=".45" transform="rotate(-20 36.0 28.0)"/><circle cx="19.0" cy="20.0" r="5.0" fill="#fff" opacity=".85"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="none" stroke="#6f528f" stroke-opacity=".45" stroke-width="3.0"/></g>
+<g id="b5"><rect x="0.0" y="6.0" width="100.0" height="100.0" rx="20.0" fill="#ba5d82" opacity=".35"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="#ff7fbf"/><path d="M20.0 84.0h60.0a20.0 20.0 0 0 0 20.0-4.0v-10.0" fill="none"/><rect x="0.0" y="82.0" width="100.0" height="18.0" rx="12.0" fill="#d46a99" opacity=".55"/><rect x="6.0" y="5.0" width="88.0" height="12.0" rx="6.0" fill="#fff" opacity=".28"/><ellipse cx="36.0" cy="28.0" rx="24.0" ry="11.0" fill="#fff" opacity=".45" transform="rotate(-20 36.0 28.0)"/><circle cx="19.0" cy="20.0" r="5.0" fill="#fff" opacity=".85"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="none" stroke="#a65471" stroke-opacity=".45" stroke-width="3.0"/></g>
+</defs>
+<rect width="1600" height="900" fill="url(#bg)"/><rect width="1600" height="900" fill="url(#dots)"/>
+<circle cx="250" cy="760" r="210" fill="#ffc98f" opacity=".35"/><circle cx="1380" cy="700" r="250" fill="#ffc98f" opacity=".3"/><circle cx="1290" cy="200" r="150" fill="#fff8ea" opacity=".6"/>
+<use href="#b3" transform="translate(150.0 640.0) scale(0.880) rotate(-12 50 50)"/>
+<use href="#b0" transform="translate(250.0 720.0) scale(0.720) rotate(8 50 50)"/>
+<use href="#b1" transform="translate(1340.0 650.0) scale(0.920) rotate(10 50 50)"/>
+<use href="#b2" transform="translate(1260.0 760.0) scale(0.700) rotate(-6 50 50)"/>
+<g transform="rotate(-4 800 560)">
+<rect x="531" y="303" width="557" height="557" rx="30" fill="#c98f52" opacity=".28"/>
+<rect x="521" y="285" width="557" height="557" rx="30" fill="#f6dcb4" stroke="#e8c391" stroke-width="5"/>
+<pattern id="cells" x="536" y="300" width="132" height="132" patternUnits="userSpaceOnUse"><rect x="4.0" y="4.0" width="58.1" height="58.1" rx="11.9" fill="#e9c692"/><rect x="70.0" y="4.0" width="58.1" height="58.1" rx="11.9" fill="#efcf9f"/><rect x="4.0" y="70.0" width="58.1" height="58.1" rx="11.9" fill="#efcf9f"/><rect x="70.0" y="70.0" width="58.1" height="58.1" rx="11.9" fill="#e9c692"/></pattern>
+<rect x="536" y="300" width="528" height="528" fill="url(#cells)"/>
+<ellipse cx="800" cy="597.0" rx="343.2" ry="85.8" fill="url(#glow)"/>
+<use href="#b4" transform="translate(934.0 368.0) scale(0.620)"/>
+<use href="#b1" transform="translate(802.0 434.0) scale(0.620)"/>
+<use href="#b4" transform="translate(934.0 434.0) scale(0.620)"/>
+<use href="#b4" transform="translate(1000.0 434.0) scale(0.620)"/>
+<use href="#b0" transform="translate(538.0 500.0) scale(0.620)"/>
+<use href="#b0" transform="translate(604.0 500.0) scale(0.620)"/>
+<use href="#b1" transform="translate(802.0 500.0) scale(0.620)"/>
+<use href="#b1" transform="translate(868.0 500.0) scale(0.620)"/>
+<use href="#b5" transform="translate(1000.0 500.0) scale(0.620)"/>
+<use href="#b3" transform="translate(534.3 553.8) scale(0.695) rotate(6 50 50)"/>
+<use href="#b0" transform="translate(598.4 550.9) scale(0.732) rotate(-9 50 50)"/>
+<use href="#b1" transform="translate(666.7 559.4) scale(0.685) rotate(12 50 50)"/>
+<use href="#b5" transform="translate(734.0 569.3) scale(0.660) rotate(-6 50 50)"/>
+<use href="#b2" transform="translate(797.3 571.3) scale(0.713) rotate(9 50 50)"/>
+<use href="#b4" transform="translate(862.8 567.8) scale(0.725) rotate(-12 50 50)"/>
+<use href="#b1" transform="translate(931.6 562.4) scale(0.669) rotate(6 50 50)"/>
+<use href="#b3" transform="translate(997.4 554.9) scale(0.672) rotate(-9 50 50)"/>
+<use href="#b2" transform="translate(538.0 632.0) scale(0.620)"/>
+<use href="#b2" transform="translate(604.0 632.0) scale(0.620)"/>
+<use href="#b3" transform="translate(736.0 632.0) scale(0.620)"/>
+<use href="#b5" transform="translate(934.0 632.0) scale(0.620)"/>
+<use href="#b0" transform="translate(1000.0 632.0) scale(0.620)"/>
+<use href="#b2" transform="translate(538.0 698.0) scale(0.620)"/>
+<use href="#b2" transform="translate(604.0 698.0) scale(0.620)"/>
+<use href="#b3" transform="translate(670.0 698.0) scale(0.620)"/>
+<use href="#b3" transform="translate(736.0 698.0) scale(0.620)"/>
+<use href="#b0" transform="translate(802.0 698.0) scale(0.620)"/>
+<use href="#b5" transform="translate(868.0 698.0) scale(0.620)"/>
+<use href="#b0" transform="translate(1000.0 698.0) scale(0.620)"/>
+<use href="#b4" transform="translate(538.0 764.0) scale(0.620)"/>
+<use href="#b3" transform="translate(670.0 764.0) scale(0.620)"/>
+<use href="#b3" transform="translate(736.0 764.0) scale(0.620)"/>
+<use href="#b5" transform="translate(802.0 764.0) scale(0.620)"/>
+<use href="#b5" transform="translate(868.0 764.0) scale(0.620)"/>
+<use href="#b0" transform="translate(1000.0 764.0) scale(0.620)"/>
+<rect x="607.3" y="305.3" width="55.4" height="55.4" rx="11.9" fill="#fff" opacity=".55" stroke="#fff" stroke-width="4"/>
+<rect x="607.3" y="371.3" width="55.4" height="55.4" rx="11.9" fill="#fff" opacity=".55" stroke="#fff" stroke-width="4"/>
+<rect x="607.3" y="437.3" width="55.4" height="55.4" rx="11.9" fill="#fff" opacity=".55" stroke="#fff" stroke-width="4"/>
+<rect x="673.3" y="437.3" width="55.4" height="55.4" rx="11.9" fill="#fff" opacity=".55" stroke="#fff" stroke-width="4"/>
+</g>
+</svg>

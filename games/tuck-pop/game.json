@@ -1,0 +1,91 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "tuck-pop",
+  "title": "Tuck Pop",
+  "tagline": "Fit the blocks, fill a line, watch it pop.",
+  "shortDescription": "A bright, friendly block puzzle. Drag chunky pieces onto an 8×8 board, fill rows and columns to make them pop, and chain clears into streaks. Classic, Relax, 60 Adventure levels and a Daily puzzle.",
+  "longDescription": "Drag chunky, colorful pieces onto an 8×8 board. Fill a whole row or column and it pops; fill several at once, or keep clearing move after move, for bigger scores. Play Classic at your own pace on Easy or Normal, unwind in Relax, solve 60 Adventure levels across four worlds with gems, fruit and stones, or try the Daily puzzle. Helpers like Undo and Shuffle are earned by playing, never bought. Six themes to unlock, colorblind symbols, high contrast, read-aloud and full keyboard and gamepad play.",
+  "version": "1.0.0",
+  "minAge": 6,
+  "ageRange": "6+",
+  "genres": [
+    "Puzzle",
+    "Casual"
+  ],
+  "tags": [
+    "Blocks",
+    "Puzzle",
+    "Relaxing",
+    "Brain game"
+  ],
+  "keywords": [
+    "block puzzle",
+    "line clear",
+    "brain game",
+    "relaxing",
+    "puzzle game for kids",
+    "grid puzzle",
+    "offline game",
+    "browser game"
+  ],
+  "features": [
+    "Classic, Relax, Adventure (60 levels) and a Daily puzzle",
+    "A fair dealer: bad luck alone never ends a game",
+    "Helpers you earn by playing, never buy",
+    "Six themes to unlock, each with its own music",
+    "Colorblind symbols, high contrast, larger text and read-aloud",
+    "Plays with touch, mouse, keyboard or gamepad"
+  ],
+  "contentNotes": "A calm puzzle with no violence, ads, purchases or chat. No timers, except an optional clock badge in the last Adventure worlds. Progress and best scores save in this browser only.",
+  "controls": {
+    "types": [
+      "Touch",
+      "Mouse",
+      "Keyboard",
+      "Gamepad"
+    ],
+    "quickStart": [
+      "Drag a piece from the tray onto the board.",
+      "Fill a whole row or column to clear it.",
+      "Keep clearing to build a streak and a bigger score."
+    ],
+    "howToPlay": [
+      "Drag a piece onto the board with a finger or the mouse, or tap a piece and then tap where it should go.",
+      "Keyboard: 1, 2 or 3 picks a piece, the arrow keys move it, Enter places it, Escape puts it back and U undoes.",
+      "Gamepad: the d-pad moves, A places, B puts the piece back, LB and RB switch pieces and Start pauses."
+    ]
+  },
+  "devices": [
+    "Phone",
+    "Tablet",
+    "Computer"
+  ],
+  "orientation": "any",
+  "requirements": [],
+  "playTime": "A few minutes a game, plus 60 Adventure levels",
+  "storage": {
+    "prefix": "tuckpop.",
+    "keys": [
+      "tuckpop.save",
+      "tuckpop.run"
+    ],
+    "probe": "tuckpop.__probe"
+  },
+  "capture": {
+    "route": "?scene=combo&seed=7",
+    "script": "apps/site/scripts/capture/tuck-pop.ts"
+  },
+  "license": "MIT",
+  "source": "games/tuck-pop",
+  "site": {
+    "featured": false,
+    "releaseDate": "2026-10-13",
+    "accentColor": "#ffe0b8",
+    "coverLayers": [
+      "float",
+      "twinkle"
+    ],
+    "status": "Ready to play",
+    "order": 7
+  }
+}

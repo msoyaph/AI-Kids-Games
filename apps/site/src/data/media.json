@@ -49,6 +49,19 @@
     ],
     "capturedAt": "2026-10-12"
   },
+  "tuck-pop": {
+    "loopSeconds": 8,
+    "mp4Bytes": 720381,
+    "webmBytes": 709390,
+    "shots": [
+      "Two lines pop with sparkles, and the word shows the exact points",
+      "A fresh set of pieces to fit on the board, with room to set up the next clear",
+      "The last piece clears the whole board: confetti, rings and \"Board clear!\"",
+      "An Adventure level in the Candy world: collect the gems and get past the stones",
+      "The Star Trip theme, one of six themes earned by playing"
+    ],
+    "capturedAt": "2026-10-13"
+  },
   "vanex-defense": {
     "loopSeconds": 7.2,
     "mp4Bytes": 740737,

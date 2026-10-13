@@ -84,9 +84,11 @@
         "enum": [
           "Action",
           "Adventure",
+          "Casual",
           "Cozy",
           "Farming",
           "Learning",
+          "Puzzle",
           "Racing",
           "Strategy"
         ]
@@ -290,8 +292,10 @@
         "status": {
           "enum": [
             "Ready to play",
-            "Coming soon"
-          ]
+            "Coming soon",
+            "In development"
+          ],
+          "description": "\"In development\" games are validated but stay off the website, the README and llms.txt."
         },
         "order": {
           "type": "integer",

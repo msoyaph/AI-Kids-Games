@@ -2,8 +2,11 @@
 # with this public repository (scripts/check-repo.ts fails the build if one ever appears).
 #
 # The repo checks and the website always run. Each game (and the starter template) runs its own
-# typecheck, unit tests, build and browser tests only when its folder or shared files change,
-# in the game's low-quality test mode on software WebGL. "CI passed" is the one required check.
+# typecheck, unit tests, build and browser tests only when its folder or shared files change
+# (.github/scripts/what-changed.mjs), in the game's low-quality test mode on software WebGL.
+# Space Sky's and Light Crossing's browser suites need a real GPU, so they run on the release
+# machine instead (npm run release:local), and the production guard requires that recorded run.
+# "CI passed" is the one required check.
 name: CI
 
 on:
@@ -37,17 +40,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD: ${{ github.sha }}
-        run: |
-          all='["theabonk","light-crossing","vanex-defense","space-sky","calex-cart","cliff-valley","game-starter"]'
-          if [ "$EVENT" = "workflow_dispatch" ] || [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-            echo "games=$all" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          changed=$(git diff --name-only "$BASE" "$HEAD")
-          if echo "$changed" | grep -qE '^(package\.json|package-lock\.json|\.nvmrc|scripts/|\.github/workflows/ci\.yml)'; then
-            echo "games=$all" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          picked=$(echo "$changed" | sed -nE 's#^games/([a-z0-9-]+)/.*#\1#p; s#^templates/(game-starter)/.*#\1#p' | sort -u | jq -R . | jq -cs .)
-          echo "games=${picked:-[]}" >> "$GITHUB_OUTPUT"
+        run: node .github/scripts/what-changed.mjs >> "$GITHUB_OUTPUT"
 
   checks:
     name: Repo checks
@@ -65,6 +58,8 @@ jobs:
       - run: npm ci
       - name: Typecheck the repo tooling
         run: npm run typecheck
+      - name: Tests of the CI game picker
+        run: node --test ".github/scripts/*.test.mjs"
       - name: No files over 10 MB, no local paths, no self-hosted runners
         run: npm run check:repo
       - name: Every game's committed build matches its source
@@ -146,24 +141,28 @@ jobs:
             space-sky)      npm run typecheck && npm test && npm run build ;;
             calex-cart)     npm run typecheck && npm run build && npm test && npm run validate ;;
             cliff-valley)   npm run typecheck && npm test && npm run test:sim && npm run build:only ;;
-            game-starter)   npm run typecheck && npm test && npm run build ;;
+            *)              npm run typecheck && npm test && npm run build ;;
           esac
       - name: Install browsers
+        if: matrix.game != 'space-sky' && matrix.game != 'light-crossing'
         working-directory: ${{ matrix.game == 'game-starter' && 'templates/game-starter' || format('games/{0}', matrix.game) }}
         run: |
           case "${{ matrix.game }}" in
-            light-crossing|calex-cart) npx playwright install --with-deps chromium webkit ;;
-            *)                         npx playwright install --with-deps chromium ;;
+            theabonk|vanex-defense|cliff-valley|game-starter) npx playwright install --with-deps chromium ;;
+            *) npx playwright install --with-deps chromium webkit ;; # calex-cart, and new games test Safari's engine too
           esac
       - name: Browser tests (low quality, software WebGL)
+        if: matrix.game != 'space-sky' && matrix.game != 'light-crossing'
         working-directory: ${{ matrix.game == 'game-starter' && 'templates/game-starter' || format('games/{0}', matrix.game) }}
         run: |
           case "${{ matrix.game }}" in
-            light-crossing) npm run e2e:ci ;;
             vanex-defense)  npm run check:dist && npx playwright test ;;
             cliff-valley)   npm run test:e2e ;;
             *)              npx playwright test ;;
           esac
+      - name: Browser tests on the release machine
+        if: matrix.game == 'space-sky' || matrix.game == 'light-crossing'
+        run: echo "This suite needs a real GPU. It runs before each release with npm run release:local, recorded in apps/site/DEPLOYMENT.json (localSuites)."
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:

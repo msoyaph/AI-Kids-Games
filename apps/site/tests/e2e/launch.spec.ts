@@ -40,10 +40,10 @@ test('every game preserves favorites, recent history and one another’s saves',
 });
 test('age filtering and new categories',async ({ page }) => {
   await page.goto('/games'); await page.getByLabel('Player age').selectOption('6');
-  await expect(page.locator('.game-grid h3')).toHaveText(['Light Crossing','Space Sky']);
+  await expect(page.locator('.game-grid h3')).toHaveText(['Light Crossing','Space Sky','Tuck Pop']);
   await page.reload(); await expect(page.getByLabel('Player age')).toHaveValue('6');
   await page.getByLabel('Player age').selectOption('10'); await expect(page.locator('.game-grid h3')).toHaveCount(launchGames.length);
-  for (const name of ['Strategy','Racing','Learning','Cozy','Farming']) await expect(page.getByRole('button',{ name,exact:true })).toBeVisible();
+  for (const name of ['Strategy','Racing','Learning','Cozy','Farming','Puzzle','Casual']) await expect(page.getByRole('button',{ name,exact:true })).toBeVisible();
 });
 test('fullscreen works in the embedding browser',async ({ page },info) => {
   test.skip(info.project.name !== 'desktop','Native Safari behavior is covered by the real-device checklist.');

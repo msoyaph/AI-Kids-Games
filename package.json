@@ -24,7 +24,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "manifests": "tsx scripts/manifests.ts",
     "audit-storage": "tsx scripts/audit-storage.ts",
-    "new-game": "tsx scripts/new-game.ts"
+    "new-game": "tsx scripts/new-game.ts",
+    "release:local": "tsx scripts/release-local.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

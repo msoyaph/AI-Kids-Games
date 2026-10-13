@@ -71,6 +71,10 @@ Then play it on a phone, a tablet and a computer, and go through the kid-safety 
 
 ## 5. Try it on the website locally
 
+A new game starts with `site.status` set to `"In development"` in its `game.json`: it is checked
+like every other game but stays off the website, the README and `llms.txt`. When it is ready to
+appear, set the status to `"Ready to play"` (or `"Coming soon"`), then:
+
 ```bash
 npm run import-game -- my-game      # builds it and copies the one file into the site
 npm run manifests                   # adds it to the site's game list
