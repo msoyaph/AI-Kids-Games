@@ -260,6 +260,14 @@ Ports: dev 5246, preview 4246.
 - 2026-10-13 Spark Ring arcs start a new path for each arc (Pixi joins consecutive arcs with a
   line otherwise); the friend above the ring is sized to stay on screen.
 
+- 2026-10-13 Test fix (a race in the helpers, not the game): CI failed the two keyboard tests (the
+  opening and the Lighthouse Trial) because the helpers let go of an arrow key only after a round
+  trip from the test, and on CI's software rendering one round trip can outlast a whole step, so the
+  game took two steps (the Trial counted 5 moves where 4 were expected). `holdUntil` in
+  tests/e2e/helpers.ts now watches inside the page and lets go (a `keyup` on `window`, which the
+  game listens to) on the very frame the step starts; `oneStep` and the Trial's `step` use it. The
+  full matrix passed 41/41, and a CI rehearsal (`E2E_SOFTWARE=1 CI=1`) of both tests 6/6.
+
 ## IP log (names or designs changed after a check)
 Franchise creatures and characters are described here, not named (this is a public repo).
 - Manatee stage 1 "Seabun" → **Lullakin**: an upcoming indie creature-collecting game is called Seabun.

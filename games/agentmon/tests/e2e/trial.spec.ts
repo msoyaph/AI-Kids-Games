@@ -2,22 +2,18 @@ import { expect, test, type Page } from '@playwright/test';
 import { parseRoom } from '../../src/core/puzzle/puzzle';
 import { solve } from '../../src/core/puzzle/solver';
 import { TRIAL_BY_ID } from '../../src/data/trials';
-import { advance, snap, talk, walk, watch } from './helpers';
+import { advance, holdUntil, snap, talk, walk, watch } from './helpers';
 
 const KEY = ['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'];
 
 /**
- * One step in a Trial room: hold the arrow until the move counts, let go, and wait for the move to
- * finish. Exactly one move: letting go as soon as it counts means a slow device can't add a second.
+ * One step in a Trial room: hold the arrow until the move counts, let go on that frame (holdUntil,
+ * inside the page), and wait for the move to finish. Exactly one move: letting go as soon as it
+ * counts means a slow device can't add a second.
  */
 async function step(page: Page, dir: number) {
   const before = (await snap(page)).moves ?? 0;
-  await page.keyboard.down(KEY[dir]!);
-  try {
-    await expect.poll(async () => ((await snap(page)).moves ?? 0) > before, { timeout: 8000, intervals: [10] }).toBe(true);
-  } finally {
-    await page.keyboard.up(KEY[dir]!);
-  }
+  await holdUntil(page, KEY[dir]!, { moves: before });
   await expect.poll(async () => !(await snap(page)).moving, { timeout: 8000, intervals: [30] }).toBe(true);
   expect((await snap(page)).moves).toBe(before + 1);
 }
