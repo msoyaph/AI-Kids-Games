@@ -70,6 +70,27 @@ Ports: dev 5246, preview 4246.
 - 2026-10-13 Playwright projects: chromium/webkit × desktop (1280×720), tablet (Galaxy Tab S4 /
   iPad gen 7), phone (Pixel 7 / iPhone 13); traces and screenshots only on failure, no video.
 - 2026-10-13 Trademark list gains other monster-taming and RPG franchise names (manifest validator).
+- 2026-10-13 Battles: no misses and no critical hits (fewer frustrating dice); a seeded 0.9–1.1 spread only.
+  Only one status at a time; statuses never outlast a battle. Boost stages −2…+2.
+- 2026-10-13 Sleepy counts the turns it actually makes the sleeper skip (2), so it lasts the same
+  however fast the sleeper is; a bump wakes it. Other statuses count down at each turn's end.
+- 2026-10-13 A move can't leave its user below 1 energy (never self-tucker); the free move always works.
+  A shield can't be used two turns in a row. Shields/quick moves have priority 1.
+- 2026-10-13 Energy carries between battles (Rest Stops matter); awake friends regain 5% after a
+  battle; tuckered-out friends nap until a Rest Stop or a Wake Berry. A new friend joins at full energy.
+- 2026-10-13 Experience: participants full, bench 75% with shared XP on (default); +50% catch-up for
+  friends below the team's average level. Coins: wild 3×level, Keepers 8×top level×team size.
+- 2026-10-13 Personalities only lift one stat (+8%), never lower one: every friend is good.
+- 2026-10-13 Befriend: no hidden roll. Spark Ring arc size and spark speed come from tiredness,
+  snack, mood (happy/calm/grumpy), friendliness and difficulty; 3 sparks, 2 hits fill the heart,
+  near misses count half. Mood Match: 4 moods → kind actions (play/pet/snack/hum). 3 missed tries
+  and a wild one wanders off; guardians never wander.
+- 2026-10-13 AI: Easy picks any sensible option 45% of the time; Normal picks among options within 6%
+  of the best; Hard looks one reply ahead and switches out of bad matchups. Wasteful finishers
+  (a big move when a free one would finish) are penalised. The hint uses Normal scoring.
+- 2026-10-13 Saves: JSON with 23-character packed creatures; flags/quests by name (robust to content
+  changes). Our own per-slot budget 64 KB (brief: 300 KB); stored bytes counted as UTF-16 (2/char).
+  slotN.bak is written only when an older save is migrated. A newer-version save is never overwritten.
 
 ## IP log (names or designs changed after a check)
 _(none yet)_
@@ -78,8 +99,8 @@ _(none yet)_
 | Phase | Status |
 |---|---|
 | 0 Scaffold, budget, RPG genre, CLAUDE.md | done |
-| 1 Core rules (battle, energy, status, xp, AI, befriend, save codec) | next |
-| 2 Content data + balance sim + level curve | |
+| 1 Core rules (battle, energy, status, xp, AI, befriend, save codec) | done (72 unit tests) |
+| 2 Content data + balance sim + level curve | next |
 | 3 Art foundation (renderer, atlas, 52 creature recipes, tiles, characters, sheet) | |
 | 4 Overworld (maps, movement, NPCs, dialogue + read-aloud, encounters, inputs, Rest Stops, shops) | |
 | 5 Battle + befriend scenes, evolution | |
@@ -92,5 +113,13 @@ _(none yet)_
 | 12 Visual + IP review | |
 | 13 Site, previews, art, PR (stop before production) | |
 
-**Next:** phase 1. The starter's Star Catch files (`src/sim.ts`, `render.ts`, `main.ts`, the smoke
-test) are still in place and get replaced as the real game lands.
+**Phase 1 notes:** rules live in `src/core/` (`battle/engine.ts`, `battle/ai.ts`, `befriend.ts`,
+`creature.ts`, `elements.ts`, `save/codec.ts`, `save/save.ts`, `state.ts`), storage in
+`src/game/store.ts`, numbers in `src/tuning.ts`. Unit tests use a made-up fixture dex
+(`tests/unit/fixtures.ts`), independent of the real content.
+
+**Next:** phase 2: real content in `src/data/` (species.ts with all 52, moves.ts ≈90, items.ts,
+names.ts, facts.ts, trainers), web name checks (log in the IP log), then `tests/sim/balance.test.ts`
+(AI-vs-AI) and the level-curve check. The starter's Star Catch files (`src/sim.ts`, `render.ts`,
+`main.ts`, `storage.ts`, `audio.ts`, `input.ts`, and their tests) are still in place and get replaced
+in phases 3–4.
