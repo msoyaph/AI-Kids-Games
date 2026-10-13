@@ -1,13 +1,24 @@
 import { expect, test, type Page } from '@playwright/test';
 import { watch } from './helpers';
 
-type Snap = { scene: string; map?: string; x?: number; y?: number; busy?: boolean; moving?: boolean; dialogue?: boolean; flags?: string[]; team?: { species: string }[] };
+type Spark = { index: number; angle: number; arcAt: number; arc: number };
+type Snap = { scene: string; spark?: Spark | null; battle?: { turn: number; outcome: string | null } | null; map?: string; x?: number; y?: number; busy?: boolean; moving?: boolean; dialogue?: boolean; flags?: string[]; team?: { species: string }[] };
 const snap = (page: Page) => page.evaluate(() => (window as unknown as { __agentmon: { snapshot(): Snap } }).__agentmon.snapshot());
 
-/** Press A (Z) until no dialogue or card is open and the world is free. */
-async function advance(page: Page, max = 80) {
-  for (let i = 0; i < max; i++) {
+/** How far the spark is from the middle of the glow, in degrees. */
+const offGlow = (sp: Spark) => Math.abs((((sp.angle - sp.arcAt) % 360) + 540) % 360 - 180);
+
+/** Press A (Z) until no dialogue or card is open and the world is free. In battles, A picks the
+ *  hinted move (it has the focus). In the Spark Ring, wait until the spark is in the glow, then tap. */
+async function advance(page: Page, seconds = 20) {
+  const until = Date.now() + seconds * 1000;
+  while (Date.now() < until) {
     const s = await snap(page);
+    if (s.spark) {
+      if (offGlow(s.spark) < s.spark.arc * 0.25) { await page.keyboard.press('Space'); await page.waitForTimeout(300); }
+      else await page.waitForTimeout(8);
+      continue;
+    }
     // tutorial cards and Yes/No choices: the first button has the keyboard focus, Enter presses it
     const card = page.locator('.tutorial button, .dlg-choices button').first();
     if (await card.isVisible().catch(() => false)) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); continue; }
@@ -83,7 +94,7 @@ test('keyboard: wake up, meet Chief Nell, choose a partner and spar with Juno', 
   await walk(page, 'ArrowUp', 3);
   expect(await snap(page)).toMatchObject({ map: 'academy-garden', x: 6, y: 4 });
   await talk(page);
-  await advance(page, 200);
+  await advance(page, 120);
   const s = await snap(page);
   expect(s.flags).toEqual(expect.arrayContaining(['got-partner', 'juno-1', 'mission-1']));
   expect(s.team?.[0]?.species).toBe('spinnet');

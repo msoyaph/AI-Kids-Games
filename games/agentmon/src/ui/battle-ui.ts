@@ -115,9 +115,12 @@ export class BattleUI {
   /** Show buttons and wait for one. B goes back if `back` is given. */
   private choose<T>(title: string, buttons: { label: Node | string; value: T; disabled?: boolean; cls?: string; hint?: string }[], back?: () => T | null): Promise<T> {
     return new Promise(resolve => {
+      // the keyboard/gamepad focus starts on the ★ suggestion (with hints on), else the first button
+      const suggested = buttons.findIndex(b => !b.disabled && (b.cls ?? '').includes('suggested'));
+      const first = suggested >= 0 ? suggested : buttons.findIndex(b => !b.disabled);
       this.panel.replaceChildren(
         title ? h('div.ptitle', {}, title) : '',
-        h('div.pgrid', {}, ...buttons.map((b, i) => h('button', { type: 'button', class: b.cls ?? '', disabled: !!b.disabled, title: b.hint, ...(i === 0 && !b.disabled ? { 'data-autofocus': true } : {}), onclick: () => done(b.value) }, b.label))),
+        h('div.pgrid', {}, ...buttons.map((b, i) => h('button', { type: 'button', class: b.cls ?? '', disabled: !!b.disabled, title: b.hint, ...(i === first ? { 'data-autofocus': true } : {}), onclick: () => done(b.value) }, b.label))),
       );
       const done = (v: T) => {
         this.backHandler = null;

@@ -129,6 +129,11 @@ Ports: dev 5246, preview 4246.
 - 2026-10-13 Field Guide facts live in `src/data/facts.ts` with a "check" source per fact; facts
   verified by web search where unsure (popcorn 6,700 years, capybara ~5 min, manatee ~20 min, lemons).
 
+- 2026-10-13 Battle menus put the keyboard/gamepad focus on the ★ suggested move when hints are on
+  (else the first usable button), so pressing A picks a sensible move.
+- 2026-10-13 Spark Ring arcs start a new path for each arc (Pixi joins consecutive arcs with a
+  line otherwise); the friend above the ring is sized to stay on screen.
+
 ## IP log (names or designs changed after a check)
 Franchise creatures and characters are described here, not named (this is a public repo).
 - Manatee stage 1 "Seabun" → **Lullakin**: an upcoming indie creature-collecting game is called Seabun.
@@ -173,8 +178,8 @@ Franchise creatures and characters are described here, not named (this is a publ
 | 2 Content data + balance sim + level curve | done |
 | 3 Art foundation (renderer, atlas, 52 creature recipes, tiles, characters, sheet) | done |
 | 4 Overworld (maps, movement, NPCs, dialogue + read-aloud, encounters, inputs, Rest Stops, shops) | done (153 unit tests; keyboard opening + smoke e2e on desktop Chromium) |
-| 5 Battle + befriend scenes, evolution | next |
-| 6 Puzzles + 6 Trials + solver tests + field abilities | |
+| 5 Battle + befriend scenes, evolution | done (capture routes battle/befriend/evolution; opening e2e plays the real Spark Ring and spar) |
+| 6 Puzzles + 6 Trials + solver tests + field abilities | next |
 | 7 World + story content, post-game | |
 | 8 Menus, Agent Base, save slots, tutorials, stuck helper, reading level | |
 | 9 Audio | |
@@ -227,8 +232,13 @@ BFS solver), `data/trials.ts` (36 rooms, all solved by `tests/unit/trials.test.t
 `art/trial-art.ts`, `game/scenes/trial.ts`. Review helpers: `scripts/backdrop-sheet.ts`,
 `scripts/room-sheet.ts`, `scripts/rooms.ts` (solve/print rooms).
 
-**Next:** phase 5, battles and befriending on screen. The real battle host is drafted in
-`reports/tmp/battle-host.phase5.ts` (git-ignored; if it is gone, rebuild it from `game/battle.ts`:
-`playBattle` + `playSparkRing`/`playMoodMatch` + `BattleView` + `BattleUI`). Swap it in as
-`src/game/scenes/battle-host.ts`, add capture routes `?scene=battle|befriend|evolution&seed=`
-(never save), lose → Rest Stop, evolution after battles, then browser-check and commit.
+**Phase 5 notes:** `scenes/battle-host.ts` builds the other side and calls `game/battle.ts`
+(`playBattle`: the battle view, the DOM battle UI, the turn loop, after-battle levels/moves/growing,
+nicknames; `playSparkRing`; `growAnimation`). Capture routes in `game/capture.ts`:
+`?scene=battle|befriend|evolution&seed=N` (`&mode=mood` for Mood Match), never saving; the hook's
+snapshot says `ready: true` when the moment is on screen. The hook also shows `spark` (the Spark
+Ring's spark angle and glow) and `battle` (turn, outcome) so tests can play them.
+Screenshots: `sh scripts/when-quiet.sh shots "<query>" out.png …` (one browser for several).
+
+**Next:** phase 6, the Trials in the game: `trial:<id>` doors (`TrialScene`), solved Trials let you
+walk straight through, the Keeper tops, the `dungeon` capture route, browser check.

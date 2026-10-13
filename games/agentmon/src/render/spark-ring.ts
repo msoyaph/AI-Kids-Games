@@ -7,6 +7,8 @@ import { Container, Graphics, Sprite, Text, type Texture } from 'pixi.js';
 import { sparkAngle, tapFill, type SparkSetup } from '../core/befriend';
 
 export interface SparkResult { fill: number; taps: (number | null)[] }
+/** Where the spark and the glow are right now (read-only, for the test hook). */
+export interface SparkInfo { index: number; angle: number; arcAt: number; arc: number }
 
 export class SparkRing {
   readonly root = new Container();
@@ -30,9 +32,11 @@ export class SparkRing {
   private layout(): void {
     const { cx, cy, r, scale, W, H } = this.size;
     this.dim.clear().rect(0, 0, W, H).fill({ color: 0x1f1a33, alpha: 0.55 });
-    this.friend.scale.set(-scale, scale);
+    // the friend stands just above the ring, small enough to stay on screen
+    const k = Math.max(2, Math.min(scale, Math.floor((cy - r * 1.12) / 30)));
+    this.friend.scale.set(-k, k);
     this.friend.x = cx;
-    this.friend.y = cy - r * 1.18;
+    this.friend.y = cy - r * 1.08;
     this.label.x = cx;
     this.label.y = cy + r * 1.3;
   }
@@ -45,7 +49,8 @@ export class SparkRing {
     const centre = this.setup.arcAt[index] ?? 0;
     const arc = (deg: number, color: number, alpha: number) => {
       const a0 = ((centre - deg / 2 - 90) * Math.PI) / 180, a1 = ((centre + deg / 2 - 90) * Math.PI) / 180;
-      g.arc(cx, cy, r, a0, a1).stroke({ color, alpha, width: w });
+      // start a fresh path at the arc's first end (otherwise a line joins it to the last shape)
+      g.moveTo(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r).arc(cx, cy, r, a0, a1).stroke({ color, alpha, width: w });
     };
     arc(this.setup.arc * 1.6, 0xffd84a, 0.35);
     arc(this.setup.arc, 0xff8fc0, 1);
@@ -82,7 +87,7 @@ export class SparkRing {
    * Play the three sparks. `tapped()` returns true once when the player taps / presses A.
    * Returns the heart fill and each tap's angle (null = no tap this spark).
    */
-  async play(tapped: () => boolean, instant = false): Promise<SparkResult> {
+  async play(tapped: () => boolean, instant = false, onFrame?: (info: SparkInfo | null) => void): Promise<SparkResult> {
     const taps: (number | null)[] = [];
     for (let i = 0; i < this.setup.sparks; i++) {
       this.drawRing(i);
@@ -97,12 +102,14 @@ export class SparkRing {
           const turns = secs * this.setup.speed;
           const angle = sparkAngle(this.setup, secs);
           this.drawSpark(angle);
+          onFrame?.({ index: i, angle, arcAt: this.setup.arcAt[i] ?? 0, arc: this.setup.arc });
           if (tapped()) { hit = angle; return resolve(); }
           if (turns >= 1.15) return resolve(); // one full lap (and a little) with no tap
           requestAnimationFrame(frame);
         };
         requestAnimationFrame(frame);
       });
+      onFrame?.(null);
       taps.push(hit);
       const f = hit === null ? 0 : tapFill(this.setup, i, hit);
       this.fillNow += f;

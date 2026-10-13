@@ -1,16 +1,19 @@
 /**
- * Starting spars and befriending from the overworld. (Phase 4: a simple stand-in that plays the
- * battle rules with the AI on both sides; phase 5 replaces it with the battle scene.)
+ * Starting spars and befriending from the overworld: builds the other side (a wild Agentmon, a
+ * trainer's team) and plays the battle scene. Also the first partner's Spark Ring scene.
  */
-import { afterBattle, type Outcome } from '../../core/battle/engine';
+import type { Outcome } from '../../core/battle/engine';
+import { sparkSetup } from '../../core/befriend';
 import { makeCreature } from '../../core/creature';
-import { Rng } from '../../core/rng';
+import { hash32, Rng } from '../../core/rng';
 import type { WildMon } from '../../core/world/world';
 import { DEX } from '../../data/index';
+import { MAPS } from '../../data/maps/index';
 import { SPECIES } from '../../data/species';
 import { TRAINER_BY_ID, trainerTeam } from '../../data/trainers';
 import { TUNING } from '../../tuning';
-import { runBattle } from '../../sim/battle-runner';
+import { BattleView } from '../../render/battle-view';
+import { playBattle, playSparkRing } from '../battle';
 import type { Game } from '../game';
 
 export type BattleRequest =
@@ -20,37 +23,53 @@ export type BattleRequest =
 export async function runBattleScene(game: Game, req: BattleRequest): Promise<Outcome> {
   const session = game.session!;
   const s = session.state;
-  const say = (t: string, who?: string) => game.dialogue.say(t, who);
   if (!session.awakeTeam().length) {
-    await say('Your friends are too sleepy to spar. Visit a Rest Stop first!');
+    await game.dialogue.say('Your friends are too sleepy to spar. Visit a Rest Stop first!');
     game.dialogue.close();
     return 'left';
   }
-  const rng = new Rng(s.rng ^ s.stats.battles * 977);
-  let foe;
+  const seed = hash32(s.rng, s.stats.battles, s.stats.steps);
+  const rng = new Rng(seed);
+  const bg = MAPS[s.map]?.battleBg ?? 'meadow';
   if (req.kind === 'trainer') {
     const t = TRAINER_BY_ID[req.trainer]!;
-    foe = trainerTeam(t, s.difficulty, s.starter, TUNING.difficulty[s.difficulty]).map(m => makeCreature(DEX, { species: m.species, level: m.level }, rng));
-  } else {
-    const species = req.wild?.species ?? req.species!;
-    foe = [makeCreature(DEX, { species, level: req.wild?.level ?? req.level ?? 5, shimmer: req.wild?.shimmer }, rng)];
-    await say(`A wild ${SPECIES[species]!.name} wants to play!`);
+    const foe = trainerTeam(t, s.difficulty, s.starter, TUNING.difficulty[s.difficulty]).map(m => makeCreature(DEX, { species: m.species, level: m.level }, rng));
+    const r = await playBattle(game, { kind: 'trainer', foe, trainer: { name: t.name, title: t.title, gentle: t.gentle }, bg: t.kind === 'keeper' ? 'trial' : bg, seed });
+    return r.outcome;
   }
-  s.stats.battles++;
-  const r = runBattle(DEX, { kind: req.kind, player: s.team, foe, difficulty: s.difficulty, playerAi: 'normal', foeAi: TUNING.difficulty[s.difficulty].ai, seed: rng.int(2 ** 31), sharedXp: game.settings.sharedXp });
-  afterBattle(DEX, r.battle);
-  if (r.outcome === 'won') { s.stats.wins++; s.coins += r.battle.coins; await say(`You won the spar! +${r.battle.coins} coins.`); }
-  else if (r.outcome === 'lost') await say('Your friends are tuckered out. Time for a nap!');
-  game.dialogue.close();
+  const species = req.wild?.species ?? req.species!;
+  const foe = [makeCreature(DEX, { species, level: req.wild?.level ?? req.level ?? 5, shimmer: req.wild?.shimmer }, rng)];
+  const r = await playBattle(game, { kind: 'wild', foe, mood: req.wild?.mood ?? 'calm', guardian: req.guardian, bg, seed });
   return r.outcome;
 }
 
+/** Your first partner: say hi, then the Spark Ring with a big, slow glow (retry until it works). */
 export async function runPartnerScene(game: Game, species: string): Promise<void> {
   const session = game.session!;
-  const c = makeCreature(DEX, { species, level: 5 }, new Rng(session.state.rng));
+  const c = makeCreature(DEX, { species, level: 5 }, new Rng(hash32(session.state.rng, 5)));
+  const view = new BattleView(game.app.sprites, 'meadow');
+  game.app.stage.addChild(view.root);
+  const host = game.app.host;
+  view.resize({ x: 0, y: 0, w: host.width, h: host.height });
+  view.setCreature(1, c, 'happy');
+  view.hide(0);
+  try {
+    await game.tutorial('befriend');
+    for (let tries = 0; ; tries++) {
+      const setup = sparkSetup(DEX, { foe: { ...c, energy: 1 }, mood: 'happy', difficulty: 'easy', seed: hash32(tries, 7) });
+      setup.arc = Math.max(setup.arc, 150);
+      setup.speed = Math.min(setup.speed, 0.38);
+      const fill = await playSparkRing(game, view.root, setup, c);
+      if (fill >= setup.need) break;
+      await game.dialogue.say(`${SPECIES[species]!.name} is still a little shy. Let's try again!`);
+      game.dialogue.close();
+    }
+  } finally {
+    view.destroy();
+  }
   session.befriend(c);
   session.state.starter = species;
   session.state.flags.add('got-partner');
-  await game.dialogue.say(`You and ${SPECIES[species]!.name} are friends now!`);
+  await game.dialogue.say(`You and ${SPECIES[species]!.name} are friends now! 💛`);
   game.dialogue.close();
 }

@@ -9,6 +9,7 @@ import { h, wait } from '../ui/dom';
 import { FocusManager } from '../ui/focus';
 import { TouchControls } from '../ui/touch';
 import { TUTORIALS } from '../data/tutorials';
+import type { SparkInfo } from '../render/spark-ring';
 import type { App } from './app';
 import type { Session } from './session';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
@@ -22,6 +23,8 @@ export class Game {
   session: Session | null = null;
   private toastEl: HTMLElement;
   private fadeEl: HTMLElement;
+  /** Moment-to-moment facts for the read-only test hook (the Spark Ring's spark, the battle). */
+  live: { spark: SparkInfo | null; battle: { turn: number; outcome: string | null } | null } = { spark: null, battle: null };
   /** Taps on the world (CSS px), consumed by the overworld. */
   onWorldTap: ((x: number, y: number) => void) | null = null;
 

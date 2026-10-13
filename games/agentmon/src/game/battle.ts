@@ -64,6 +64,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
   const b: Battle = startBattle(DEX, { kind: setup.kind, player: s.team, foe: setup.foe, difficulty, seed: setup.seed, sharedXp: settings.sharedXp, mood: setup.mood, guardian: setup.guardian, lead });
   const rng = new Rng(hash32(setup.seed, 99));
   s.stats.battles++;
+  game.live.battle = { turn: 0, outcome: null };
   for (const c of setup.foe) session.seen(c.species);
   const statusOf = (side: 0 | 1) => activeFighter(b, side).status?.id;
   const refresh = () => {
@@ -113,6 +114,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
       const foeAction = chooseAction(DEX, b, 1, foeAi, rng);
       const before: [Creature, Creature] = [active(b, 0), active(b, 1)];
       const events = resolveTurn(DEX, b, action, foeAction);
+      game.live.battle = { turn: b.turn, outcome: b.outcome ?? null };
       await playEvents(events, before);
     }
 
@@ -144,6 +146,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
     if (outcome !== 'lost') await afterLevels();
     return { outcome, befriended };
   } finally {
+    game.live.battle = null;
     alive = false;
     removeEventListener('resize', relayout);
     ui.destroy();
@@ -290,9 +293,10 @@ export async function playSparkRing(game: Game, parent: import('pixi.js').Contai
   const layer = { el: document.createElement('div') };
   game.focus.push(layer);
   try {
-    const result = await ring.play(tapped, game.settings.skipAnimations);
+    const result = await ring.play(tapped, game.settings.skipAnimations, info => { game.live.spark = info; });
     return result.fill;
   } finally {
+    game.live.spark = null;
     removeEventListener('pointerdown', on);
     removeEventListener('keydown', on);
     game.focus.pop(layer);

@@ -4,12 +4,14 @@
  *
  * Capture routes (?scene=…&seed=N) show a good-looking moment and never save anything:
  *   sheet (all 52 Agentmon; &shimmer=1, &pose=happy, &small=1)
- * More routes arrive with their scenes (battle, befriend, evolution, town, dungeon, guide).
+ *   battle (a super-strong bump), befriend (the Spark Ring; &mode=mood for Mood Match), evolution
+ * More routes arrive with their scenes (town, dungeon, guide).
  */
 import 'pixi.js/unsafe-eval'; // no eval(): the build's Content Security Policy forbids it
 import './style.css';
 import { GAME } from './config';
 import { App } from './game/app';
+import { CAPTURE_KINDS, CaptureScene, type CaptureKind } from './game/capture';
 import { SheetScene } from './game/scenes/sheet';
 import { startAdventure, TitleScene } from './game/scenes/title';
 import { Game } from './game/game';
@@ -22,6 +24,7 @@ const capture = sceneParam !== null;
 const lowQuality = params.has('low') || (globalThis as { E2E_LOW?: boolean }).E2E_LOW === true;
 
 let app: App | null = null;
+let game: Game | null = null;
 let bootError = '';
 
 // The read-only test hook: tests and the website's preview capture read the game through it.
@@ -37,6 +40,8 @@ Object.defineProperty(window, GAME.hook, {
       frames: app?.frames ?? 0,
       frameMs: app ? Math.round(app.frameMs * 10) / 10 : 0,
       capture,
+      spark: game?.live.spark ?? null,
+      battle: game?.live.battle ?? null,
       ...(app?.scene?.snapshot?.() ?? {}),
     }),
   }),
@@ -47,9 +52,10 @@ async function boot() {
   const ui = document.getElementById('ui')!;
   const host = await createRenderer(root, lowQuality);
   app = new App(host, ui, capture);
-  const game = new Game(app);
-  (window as unknown as { __agentmonGame?: Game }).__agentmonGame = undefined;
-  if (sceneParam === 'sheet') app.go(new SheetScene({ shimmer: params.get('shimmer') === '1', pose: (params.get('pose') as PoseName) ?? 'idle', small: params.get('small') === '1' }));
+  game = new Game(app);
+  const seed = Number(params.get('seed') ?? 7) >>> 0;
+  if (sceneParam && (CAPTURE_KINDS as readonly string[]).includes(sceneParam)) app.go(new CaptureScene(game, sceneParam as CaptureKind, seed, params.get('mode') ?? ''));
+  else if (sceneParam === 'sheet') app.go(new SheetScene({ shimmer: params.get('shimmer') === '1', pose: (params.get('pose') as PoseName) ?? 'idle', small: params.get('small') === '1' }));
   else if (params.has('quickstart')) {
     // Tests and quick tries: a new adventure in slot 3 with a default look, straight into Gran's house.
     startAdventure(game, 3, 0, { skin: 1, hair: 0, hairColor: 0, outfit: 0 }, (params.get('difficulty') as 'easy' | 'normal' | 'hard') ?? 'normal');
