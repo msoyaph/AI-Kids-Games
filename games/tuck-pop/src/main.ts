@@ -142,10 +142,10 @@ function onMove(m: Move) {
     scene.fx.kick(Math.min(1, 0.25 + m.points.lines * 0.12));
     scene.fx.flash(performance.now(), m.boardClear ? 0.5 : 0.25 + m.points.lines * 0.05);
     const size = Math.max(28, l.cell * (0.9 + Math.min(0.6, (m.points.streak - 1) * 0.1) + (m.points.lines - 1) * 0.08));
-    const word = `${m.points.word} +${m.points.total}`;
+    const word = `${m.points.word}\n+${m.points.total}`;
     const colors: Record<string, string> = { 'Nice!': '#ff8a3d', 'Super!': '#ff5c8a', 'Amazing!': '#8f6bff', 'Wow!': '#24b47e', 'Board clear!': '#ff4fa3' };
-    scene.fx.word(word, l.board.x + l.board.w / 2, l.board.y + l.board.h * 0.42, m.boardClear ? size * 1.15 : size, colors[m.points.word] ?? '#ff8a3d', 1, m.boardClear ? 1.5 : 1.1);
-    if (m.points.streak >= 2) scene.fx.word(`Streak ${multText(m.points.multHalves)}`, l.board.x + l.board.w / 2, l.board.y + l.board.h * 0.42 + size * 1.05, Math.max(22, size * 0.62), '#ffb52e', 1, 1.2);
+    scene.fx.word(word, l.board.x + l.board.w / 2, l.board.y + l.board.h * 0.4, m.boardClear ? size * 1.15 : size, colors[m.points.word] ?? '#ff8a3d', 1, m.boardClear ? 1.5 : 1.1, l.board.w * 0.96);
+    if (m.points.streak >= 2) scene.fx.word(`Streak ${multText(m.points.multHalves)}`, l.board.x + l.board.w / 2, l.board.y + l.board.h * 0.4 + size * 1.45, Math.max(22, size * 0.55), '#ffb52e', 1, 1.2, l.board.w * 0.9);
     say(`${m.points.word} ${m.points.lines} ${m.points.lines === 1 ? 'line' : 'lines'}, plus ${m.points.total} points.${m.points.streak >= 2 ? ` Streak ${m.points.streak}.` : ''}`);
   }
   if (m.boardClear) { sfx('boardClear'); scene.fx.confetti(l.w, l.cell, 70); scene.fx.rings(l.board.x + l.board.w / 2, l.board.y + l.board.h / 2, l.board.w); }
@@ -154,7 +154,7 @@ function onMove(m: Move) {
   const best = bestFor(game);
   if (!passedBest && best > 0 && game.score > best) {
     passedBest = true;
-    scene.fx.word('New best!', l.board.x + l.board.w / 2, l.board.y + l.board.h * 0.24, Math.max(26, l.cell * 0.8), '#ffb52e', 1, 1.4);
+    scene.fx.word('New best!', l.board.x + l.board.w / 2, l.board.y + l.board.h * 0.18, Math.max(26, l.cell * 0.8), '#ffb52e', 1, 1.4, l.board.w * 0.9);
     scene.fx.confetti(l.w, l.cell, 40); sfx('best'); say('You beat your best score!');
   }
   profile.stats.lines += m.points.lines; profile.stats.placed += m.piece.size; if (m.boardClear) profile.stats.clears++;

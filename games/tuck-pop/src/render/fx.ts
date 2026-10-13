@@ -71,10 +71,13 @@ export class Fx {
   }
 
   /** A word (and its points) that pops up, grows and floats away. `scale` grows with the streak. */
-  word(text: string, x: number, y: number, size: number, color: string, scale = 1, dur = 1.1) {
+  word(text: string, x: number, y: number, size: number, color: string, scale = 1, dur = 1.1, maxWidth = Infinity) {
     const w = this.words.find(v => v.t >= v.dur) ?? this.words[0]!;
-    w.sprite.texture = wordTexture(text, size, color);
-    w.sprite.visible = true; w.t = 0; w.dur = this.reduced ? dur * 0.8 : dur; w.x = x; w.y = y; w.scale = scale;
+    const tex = wordTexture(text, size, color);
+    w.sprite.texture = tex;
+    w.sprite.visible = true; w.t = 0; w.dur = this.reduced ? dur * 0.8 : dur; w.x = x; w.y = y;
+    // never wider than the space it pops up in (it grows to 1.15× at the top of its pop)
+    w.scale = Math.min(scale, maxWidth / (tex.width * 1.15));
   }
 
   /** A soft glow over the board, limited to 3 a second. */

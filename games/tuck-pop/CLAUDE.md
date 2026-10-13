@@ -126,7 +126,27 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
      on it, so `show()` blurs it.
    - **Shared Mac:** run browser tests through `sh scripts/when-idle.sh npx playwright test` (it
      waits while any other test or capture runs).
-4. Effects and sound.
+4. COMPLETE: effects and sound.
+   - **Audio** (`audio/`):
+     - `engine.ts`: one context; iOS unlock; hidden-tab suspend; sfx and music buses into
+       `masterChain` (glue compressor → limiter → tanh soft clip, from Vanex Defense).
+     - `voices.ts`: tone, bell, mallet, noise, kick, pad.
+     - `sound.ts`: pick, place, a clear chime whose pitch climbs with the streak and gains notes
+       with more lines, board clear, no, tap, helper, star, best/win, over.
+     - `music.ts`: per-theme recipes (BPM, key, lead, drums), a seeded melody, a four-chord
+       loop, and a look-ahead scheduler (25 ms tick, 0.15 s ahead). Relax plays a calm, drumless
+       version at 0.8× tempo.
+   - **Effects:**
+     - Two-line words ("Super!\n+60"), shrunk to fit the board, colored by word.
+     - Streak text under them; a mid-game "New best!" cheer with confetti.
+     - Board-clear rings (expanding, fading) and confetti.
+     - `render/flash.ts` FlashLimiter (unit-tested: ≤3 glows a second); the home screen's
+       drifting blocks.
+   - **Tried and dropped:** a "board-clear offer" in built trays. Casual boards rarely get near
+     empty, so it changed nothing (≈0.01 board clears per game).
+   - **Tooling:** `npm run shots` (scripts/shots.ts) takes review screenshots of capture-route
+     moments into `reports/shots/` (git-ignored). The browser pane pauses rAF while hidden, so use
+     this for timed moments.
 5. Relax, Daily and helpers.
 6. Adventure.
 7. Themes and accessibility.

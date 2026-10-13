@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "sim": "tsx scripts/simulate.ts"
+    "sim": "tsx scripts/simulate.ts",
+    "shots": "tsx scripts/shots.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.0",
