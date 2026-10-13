@@ -99,12 +99,13 @@ export class BattleView {
   }
 
   /**
-   * Where a friend's info card goes (device px; the card sits just above the point): over its head
-   * side by side; beside it when staggered (the other one's card to its left, yours to your right).
+   * Where a friend's info card goes (device px; the card sits just above the point): over its head;
+   * when staggered, yours goes beside your friend, to the right (over its head it would cover the
+   * other one, and beside the other one it would cover the face turned toward you).
    */
   headPoint(side: 0 | 1): { x: number; y: number } {
     const l = this.layout;
-    if (this.portrait) return side === 1 ? { x: l.x + l.w * 0.28, y: this.base[1].y - 6 * this.monScale } : { x: l.x + l.w * 0.72, y: this.base[0].y };
+    if (this.portrait && side === 0) return { x: l.x + l.w * 0.72, y: this.base[0].y };
     return { x: this.base[side].x, y: this.base[side].y - 30 * this.monScale };
   }
 

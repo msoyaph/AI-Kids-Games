@@ -135,6 +135,11 @@ the tablet test now accepts any card from the centred row.
 
 ## Agentmon, the eighth game (release 2.5.0, after the owner's approval)
 
+**1.1 (PR stacked on the 1.0 PR, not released):** game 1.1.0 with 77 Agentmon and pet care; the
+listing says 77 and adds a pet-care feature line; the previews are recaptured from the 1.1 build
+(the same capture routes, now with 1.1's art); STORAGE_AUDIT.md has the 1.1 sizes (no new keys).
+The cover, logo and OG image are unchanged.
+
 Listed from `games/agentmon/game.json`. Its genres are Adventure and RPG (RPG is new: its filter chip
 and /category route come from the games). Art lives in `public/media/agentmon/`: a cover (the Field
 Agent and the three partners above Saltwhistle at dusk, the Lighthouse Beacon lit), bob and twinkle

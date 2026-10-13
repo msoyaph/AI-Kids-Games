@@ -458,8 +458,8 @@ commit at the end of every phase, stop before production.
 | 5 Menus: Team, Bag, Field Guide; dialogue portraits | done: Field Guide (filters, badges, entry page), Team, friend page, Bag, portraits, title parade |
 | 6 Banyan Hollow, quests, Verdanyan | done: map, Rest Stop, three quests, Verdanyan, spawn variety |
 | 7 Pet care and accessories | done: care page, Bubble Catch, 12 earned accessories, hearts, Best buddy; no save migration needed |
-| 8 Saves and tests; visual review | |
-| 9 Release prep (1.1.0, site, PR; stop before production) | |
+| 8 Saves and tests; visual review | done: no migration needed (real 1.0 save test), slot 27.5 KB max, 236 unit + 24 sim tests, matrix 41/41, reports/visual-review-1.1.md |
+| 9 Release prep (1.1.0, site, PR; stop before production) | game 1.1.0 imported, listing (77, pet care), storage audit, previews recaptured; PR stacked on the 1.0 PR; stop before production |
 
 **1.1 decisions** (newest last):
 - 2026-10-13 Faces are drawn in design units (each face pixel is an s×s block), so a 64 px sprite gets
@@ -522,7 +522,8 @@ commit at the end of every phase, stop before production.
   whole-number scales. Turn feedback: the acting side's card lifts with a gold ring and a ▶.
 - 2026-10-13 Tall screens (a phone held upright) stage the spar staggered: the other Agentmon further
   back on the right, your friend nearer on the left, so each can be half the stage wide (192 px on a
-  390 px phone, up from 1.0's overlapping sprites); the cards sit beside their Agentmon.
+  390 px phone, up from 1.0's overlapping sprites). The other one's card sits above its head, in the
+  open sky; yours sits beside your friend.
 - 2026-10-13 Befriend games lose the grey dim: the Spark Ring has a light plum wash with a warm
   spotlight behind the ring; Mood Match sits low like the battle panel over a light wash, so the
   Agentmon whose mood you read stays in view.

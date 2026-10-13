@@ -3,9 +3,9 @@
   "slug": "agentmon",
   "title": "Agentmon",
   "tagline": "Befriend creatures and relight the six Beacons.",
-  "shortDescription": "Join the Field Agent Academy, make friends with 52 cute creatures and solve puzzle Trials to clear the static fog. A gentle pixel-art adventure where nobody gets hurt.",
-  "longDescription": "Agentmon is a creature-befriending pixel-art adventure for ages 7 to 12. New Field Agents explore the Sunreach region, from a sunny coast to a sky island, and make friends with 52 original Agentmon in a little timing game, never by catching them. Friends spar in calm turn-based battles where a tired creature simply takes a nap. Puzzle Trials with blocks, ice, mirrors and color gates lead to the six Beacons that push back a strange static fog. Read-aloud dialogue, hints, three difficulty levels and a Field Guide full of real nature facts make it easy to play and learn.",
-  "version": "1.0.0",
+  "shortDescription": "Join the Field Agent Academy, make friends with 77 cute creatures and solve puzzle Trials to clear the static fog. A gentle pixel-art adventure where nobody gets hurt.",
+  "longDescription": "Agentmon is a creature-befriending pixel-art adventure for ages 7 to 12. New Field Agents explore the Sunreach region, from a sunny coast to a sky island, and make friends with 77 original Agentmon in a little timing game, never by catching them. At the Agent Base you can pet your friends, play Bubble Catch and dress them in accessories you earn. Friends spar in calm turn-based battles where a tired creature simply takes a nap. Puzzle Trials with blocks, ice, mirrors and color gates lead to the six Beacons that push back a strange static fog. Read-aloud dialogue, hints, three difficulty levels and a Field Guide full of real nature facts make it easy to play and learn.",
+  "version": "1.1.0",
   "minAge": 7,
   "ageRange": "7–12",
   "genres": [
@@ -32,7 +32,8 @@
     "offline game"
   ],
   "features": [
-    "52 original creatures to befriend with a timing or mood game",
+    "77 original creatures to befriend with a timing or mood game",
+    "Pet care at the Agent Base: pet, play and dress up your friends",
     "Friendly turn-based sparring where nobody gets hurt",
     "Six puzzle Trials with blocks, ice, mirrors and color gates",
     "A Field Guide with a real nature fact for every creature",

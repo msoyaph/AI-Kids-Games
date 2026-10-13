@@ -494,8 +494,8 @@ export const generatedGames: Game[] = [
     "slug": "agentmon",
     "title": "Agentmon",
     "tagline": "Befriend creatures and relight the six Beacons.",
-    "description": "Join the Field Agent Academy, make friends with 52 cute creatures and solve puzzle Trials to clear the static fog. A gentle pixel-art adventure where nobody gets hurt.",
-    "version": "1.0.0",
+    "description": "Join the Field Agent Academy, make friends with 77 cute creatures and solve puzzle Trials to clear the static fog. A gentle pixel-art adventure where nobody gets hurt.",
+    "version": "1.1.0",
     "categories": [
       "Adventure",
       "RPG"

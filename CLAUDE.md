@@ -344,6 +344,13 @@ isn't in the hero). After the owner's approval, the release commit bumps the sit
 Sky and Light Crossing GPU suites); then AIKG_ALLOW_PRODUCTION=2.5.0 in Vercel Production, merge with
 a merge commit, the production smoke test and Lighthouse, and the record PR.
 
+**Agentmon 1.1** (owner brief and approved plan 2026-10-13; plan games/agentmon/docs/PLAN-1.1.md;
+branch `agentmon-1.1`, worktree ~/Documents/AI-Kids-Games-agentmon-1.1, PR stacked on the 1.0 PR):
+polish across the game, 25 new Agentmon (77 in all) and the post-game Banyan Hollow, and pet care
+at the Agent Base. Game 1.1.0, re-imported; no new storage keys and no save migration (1.0 saves
+load as they are, tested with a real 1.0 save). The PR keeps the site at its current version; the
+owner plays it first, and the release (on its own or together with 1.0) bumps the site then.
+
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
    `npm ci`, `npx playwright install chromium webkit`.

@@ -2,11 +2,11 @@
   "games": [
     {
       "slug": "agentmon",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "source": "games/agentmon/dist/index.html",
-      "bytes": 1007515,
-      "sha256": "6ef2525f67972898ebe7ab54538963f1e4bd1ffb0a461ebc150bea8907fcef23",
-      "inputsSha256": "fa59cbf57eb76e3b6b8468034159dad770b4cdc67baaf9925cbd725b06a5291e",
+      "bytes": 1156145,
+      "sha256": "c2c345963f81b15a91ad694ac7a23655889c19bad5b8a41568a48714d5143809",
+      "inputsSha256": "1199fb8f8f8f90913685e002e082737cb214d8132b0aa1569a23c32a5e00fa30",
       "importedAt": "2026-10-13"
     },
     {
