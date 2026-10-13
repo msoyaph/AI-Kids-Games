@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Star Sprint</title>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Star Sprint: the night sky where your comet catches stars"></canvas>
+    <div id="hud" hidden>
+      <span class="pill" aria-label="Stars caught">★ <b id="score">0</b></span>
+      <span class="pill" aria-label="Seconds left">⏱ <b id="time">60</b></span>
+      <button id="pause-button" class="round" aria-label="Pause">❚❚</button>
+    </div>
+    <section id="title" class="screen">
+      <h1>Star Sprint</h1>
+      <p>Race your little comet across the sky and catch the stars. Sleepy clouds make you drowsy, so glide around them!</p>
+      <button id="play" class="big">Play</button>
+      <p class="how">Glide up and down with W and S, the arrow keys or a gamepad stick, or hold your finger or the mouse above or below the comet.</p>
+      <p>Best: <b id="best">0</b></p>
+      <button id="sound" aria-pressed="true">Sound: on</button>
+      <p id="storage-note" class="note" hidden>This browser can't save progress, so your best score lasts until you close the game.</p>
+    </section>
+    <section id="paused" class="screen" hidden>
+      <h2>Paused</h2>
+      <button id="resume" class="big">Keep playing</button>
+    </section>
+    <section id="results" class="screen" hidden>
+      <h2>Time's up!</h2>
+      <p>You caught <b id="final">0</b> stars. Longest streak: <b id="streak">0</b>.</p>
+      <button id="again" class="big">Play again</button>
+    </section>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
