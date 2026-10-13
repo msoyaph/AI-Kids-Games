@@ -1,5 +1,5 @@
 /**
- * The game in progress (key `tuckpop.run`): the current Classic and Relax games, so a reload
+ * The game in progress (key `tuckpop.run`): the current Classic, Relax and Daily games, so a reload
  * resumes exactly where the player was, Undo included. Each run records the rules version; a run
  * made under different rules (or with a piece this version doesn't know) is dropped, while the
  * profile's best scores are kept.
@@ -12,7 +12,7 @@ export const RUN_VERSION = 1;
 /** Bump when a saved game from the old rules would play differently. */
 export const RULES_VERSION = 1;
 export const RUN_KEY = 'run';
-export type RunMode = Extract<Mode, 'classic' | 'relax'>;
+export type RunMode = Extract<Mode, 'classic' | 'relax' | 'daily'>;
 
 type SlotData = [string, number] | null;
 interface Core {
@@ -21,7 +21,7 @@ interface Core {
   score: number; streak: number; dry: number; moves: number; lines: number; placed: number;
   boardClears: number; bestStreak: number; collected: number; broken: number; freeShuffle: number;
 }
-export interface RunData extends Core { rules: number; mode: RunMode; difficulty: 'easy' | 'normal'; seed: number; shuffles: number; continues: number; freeUndo: number; undo: Core | null }
+export interface RunData extends Core { rules: number; mode: RunMode; difficulty: 'easy' | 'normal'; seed: number; shuffles: number; continues: number; freeUndo: number; movesLimit: number; weights: number[] | null; undo: Core | null }
 
 const slotOut = (s: Slot | null): SlotData => (s ? [s.piece.id, s.color] : null);
 const slotIn = (d: unknown): Slot | null => (Array.isArray(d) && typeof d[0] === 'string' && hasPiece(d[0]) && Number.isInteger(d[1]) && d[1] >= 1 && d[1] <= 6 ? { piece: piece(d[0]), color: d[1] } : null);
@@ -36,7 +36,7 @@ function core(g: Game | Snapshot): Core {
 }
 
 export function toRun(g: Game): RunData {
-  return { rules: RULES_VERSION, mode: g.mode as RunMode, difficulty: g.difficulty, seed: g.seed, shuffles: g.shuffles, continues: g.continues, freeUndo: g.freeUndo, ...core(g), undo: g.undo ? core(g.undo) : null };
+  return { rules: RULES_VERSION, mode: g.mode as RunMode, difficulty: g.difficulty, seed: g.seed, shuffles: g.shuffles, continues: g.continues, freeUndo: g.freeUndo, movesLimit: g.movesLimit, weights: g.weights ? [...g.weights] : null, ...core(g), undo: g.undo ? core(g.undo) : null };
 }
 
 const num = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
@@ -62,7 +62,7 @@ function coreIn(d: Record<string, unknown>): Snapshot | null {
 export function fromRun(raw: unknown): Game | null {
   if (!raw || typeof raw !== 'object') return null;
   const d = raw as Record<string, unknown>;
-  if (d.rules !== RULES_VERSION || (d.mode !== 'classic' && d.mode !== 'relax') || (d.difficulty !== 'easy' && d.difficulty !== 'normal') || !num(d.seed)) return null;
+  if (d.rules !== RULES_VERSION || (d.mode !== 'classic' && d.mode !== 'relax' && d.mode !== 'daily') || (d.difficulty !== 'easy' && d.difficulty !== 'normal') || !num(d.seed)) return null;
   const c = coreIn(d);
   if (!c || (!c.tray.some(Boolean) && !c.bonus)) return null;
   const g = newGame({ mode: d.mode, difficulty: d.difficulty, seed: d.seed as number });
@@ -70,11 +70,13 @@ export function fromRun(raw: unknown): Game | null {
   g.shuffles = num(d.shuffles) ? (d.shuffles as number) : 0;
   g.continues = num(d.continues) ? (d.continues as number) : 0;
   g.freeUndo = num(d.freeUndo) ? (d.freeUndo as number) : 0;
+  g.movesLimit = num(d.movesLimit) ? (d.movesLimit as number) : 0;
+  g.weights = Array.isArray(d.weights) && d.weights.length === 3 && d.weights.every(num) ? (d.weights as unknown as [number, number, number]) : null;
   g.undo = d.undo && typeof d.undo === 'object' ? coreIn(d.undo as Record<string, unknown>) : null;
   return g;
 }
 
-interface Stored { v: number; classic?: RunData; relax?: RunData }
+interface Stored { v: number; classic?: RunData; relax?: RunData; daily?: RunData }
 function stored(): Stored {
   try { const v = JSON.parse(read(RUN_KEY) ?? 'null'); return v && typeof v === 'object' && v.v === RUN_VERSION ? v : { v: RUN_VERSION }; } catch { return { v: RUN_VERSION }; }
 }
@@ -83,11 +85,11 @@ export function loadRun(mode: RunMode): Game | null { return fromRun(stored()[mo
 
 /** Saves the run (or forgets it when the game is over). */
 export function saveRun(g: Game): boolean {
-  if (g.mode !== 'classic' && g.mode !== 'relax') return true;
+  if (g.mode !== 'classic' && g.mode !== 'relax' && g.mode !== 'daily') return true;
   const s = stored();
   if (g.over) delete s[g.mode]; else s[g.mode] = toRun(g);
-  if (!s.classic && !s.relax) { remove(RUN_KEY); return true; }
+  if (!s.classic && !s.relax && !s.daily) { remove(RUN_KEY); return true; }
   return write(RUN_KEY, JSON.stringify(s));
 }
 
-export function dropRun(mode: RunMode) { const s = stored(); delete s[mode]; if (!s.classic && !s.relax) remove(RUN_KEY); else write(RUN_KEY, JSON.stringify(s)); }
+export function dropRun(mode: RunMode) { const s = stored(); delete s[mode]; if (!s.classic && !s.relax && !s.daily) remove(RUN_KEY); else write(RUN_KEY, JSON.stringify(s)); }

@@ -15,6 +15,7 @@ import { defaults, load as loadProfile, save as saveProfile, type Profile } from
 import { dropRun, loadRun, saveRun } from './save/run';
 import { persistent, writeFailed } from './save/storage';
 import { addSingle, canMove, newGame, rescues, shuffle, undo, type Difficulty, type Game, type Move } from './sim/game';
+import { DAILY_MOVES, dailyGame, dailySeed, dayNumber } from './sim/daily';
 import { multText } from './sim/scoring';
 import { TUNING } from './tuning';
 import { autoMove, captureScene, captureSpeed, sceneGame } from './capture';
@@ -90,6 +91,9 @@ let shownScore = 0;
 function updateHud(instant = false) {
   const best = bestFor(game);
   if (instant) shownScore = game.score;
+  $('#best-label').textContent = game.mode === 'daily' ? "Today's best" : 'Best';
+  $('#moves-left').hidden = !game.movesLimit;
+  if (game.movesLimit) $('#moves').textContent = String(Math.max(0, game.movesLimit - game.moves));
   $('#score').textContent = String(shownScore);
   $('#best').textContent = String(Math.max(best, game.score));
   const h = profile.helpers;
@@ -116,7 +120,12 @@ function describePiece(id: string, size: number) {
   const dir = /^i[2-5]h$/.test(id) || id === 'r23' ? ', lying down' : /^i[2-5]v$/.test(id) || id === 'r32' ? ', standing up' : '';
   return `${names[fam] ?? `${size} blocks`}${dir}`;
 }
-function bestFor(g: Game) { return g.mode === 'relax' ? profile.best.relax : g.difficulty === 'normal' ? profile.best.normal : profile.best.easy; }
+function bestFor(g: Game) {
+  if (g.mode === 'daily') return profile.daily.find(([d]) => dailySeed(d) === g.seed)?.[1] ?? 0;
+  return g.mode === 'relax' ? profile.best.relax : g.difficulty === 'normal' ? profile.best.normal : profile.best.easy;
+}
+/** Today as yyyymmdd, in the player's own time zone. */
+function today() { const d = new Date(); return dayNumber(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
 
 // ---- messages ----
 let toastTimer = 0;
@@ -164,22 +173,17 @@ function onMove(m: Move) {
   updateHud();
 }
 
-/** Classic and Relax earn a helper every 2,500 points (rotating Undo → Shuffle → Single). */
+/** Classic and Relax earn a helper every 2,500 points (whichever helper the player has fewest of). */
 function earnFromPoints(points: number) {
   if (game.mode !== 'classic' && game.mode !== 'relax') return;
   const h = profile.helpers, every = TUNING.helpers.classicPointsPerHelper;
   h.progress += points;
-  while (h.progress >= every) {
-    h.progress -= every;
-    const order = ['undo', 'shuffle', 'single'] as const;
-    const pick = order.find(k => h[k] === Math.min(h.undo, h.shuffle, h.single)) ?? 'undo';
-    if (h[pick] < TUNING.helpers.cap) { h[pick]++; toast(`You earned a helper: ${pick === 'single' ? 'Single block' : pick === 'undo' ? 'Undo' : 'Shuffle'}!`); sfx('helper'); }
-  }
+  while (h.progress >= every) { h.progress -= every; const text = earnHelper(); if (text) toast(text); }
 }
 
 function onEnded() {
   if (!game.over) return;
-  if (game.mode === 'classic' && game.end === 'stuck' && game.continues < TUNING.helpers.continues) {
+  if ((game.mode === 'classic' || game.mode === 'relax') && game.end === 'stuck' && game.continues < TUNING.helpers.continues) {
     const r = rescues(game), h = profile.helpers;
     const can = { undo: r.undo && h.undo > 0, shuffle: r.shuffle && h.shuffle > 0, single: r.single && h.single > 0 };
     if (can.undo || can.shuffle || can.single) {
@@ -193,20 +197,53 @@ function onEnded() {
 }
 
 function finishGame() {
-  const key = game.mode === 'relax' ? 'relax' : game.difficulty;
-  const prev = profile.best[key as keyof Profile['best']];
-  const isBest = game.score > prev && game.score > 0;
-  if (isBest) profile.best[key as keyof Profile['best']] = game.score;
+  let prev: number, isBest: boolean;
+  let earned = '';
+  if (game.mode === 'daily') {
+    const day = today(), entry = profile.daily.find(([d]) => dailySeed(d) === game.seed);
+    prev = entry?.[1] ?? 0;
+    isBest = game.score > prev;
+    const first = !entry;
+    if (entry) entry[1] = Math.max(entry[1], game.score); else profile.daily.push([dailySeed(day) === game.seed ? day : dayFromSeed(game.seed), game.score]);
+    profile.daily = profile.daily.slice(-30);
+    profile.stats.dailies++;
+    if (first) earned = earnHelper();
+  } else {
+    const key = game.mode === 'relax' ? 'relax' : game.difficulty;
+    prev = profile.best[key as keyof Profile['best']];
+    isBest = game.score > prev && game.score > 0;
+    if (isBest) profile.best[key as keyof Profile['best']] = game.score;
+  }
   profile.stats.games++;
-  persist(); if (!capture) dropRun(game.mode as 'classic' | 'relax');
-  $('#over-title').textContent = isBest ? 'A new best!' : game.score >= prev * 0.8 && prev > 0 ? 'So close to your best!' : 'Great game!';
+  persist(); if (!capture) dropRun(game.mode as 'classic' | 'relax' | 'daily');
+  const titles: Record<string, string> = { daily: 'Daily puzzle done!', relax: 'What a cozy game!', classic: 'Great game!' };
+  $('#over-title').textContent = isBest && game.mode !== 'daily' ? 'A new best!' : game.mode === 'classic' && game.score >= prev * 0.8 && prev > 0 ? 'So close to your best!' : titles[game.mode] ?? 'Great game!';
   $('#new-best').hidden = !isBest;
   $('#final').textContent = String(game.score);
+  $('#final-best-label').textContent = game.mode === 'daily' ? "Today's best" : 'Your best';
   $('#final-best').textContent = String(Math.max(prev, game.score));
-  $('#stat').textContent = statLine(game);
+  $('#stat').textContent = game.mode === 'daily' && game.end === 'moves' ? `You used all ${DAILY_MOVES} moves and cleared ${game.lines} ${game.lines === 1 ? 'line' : 'lines'}. A new puzzle comes tomorrow!` : statLine(game);
+  $('#earned').hidden = !earned; $('#earned').textContent = earned;
+  $('#again').textContent = game.mode === 'daily' ? 'Try today\'s puzzle again' : 'Play again';
   show('over');
   if (isBest) { sfx('best'); scene.fx.confetti(lay.w, lay.cell, 110); } else sfx('over');
-  say(`${$('#over-title').textContent} Score ${game.score}. ${statLine(game)}`);
+  say(`${$('#over-title').textContent} Score ${game.score}. ${$('#stat').textContent} ${earned}`);
+}
+
+/** The Daily seed's date, for a run finished after midnight (looked up in the last two days). */
+function dayFromSeed(seed: number) {
+  const d = new Date();
+  for (let i = 0; i < 3; i++) { const n = dayNumber(d.getFullYear(), d.getMonth() + 1, d.getDate()); if (dailySeed(n) === seed) return n; d.setDate(d.getDate() - 1); }
+  return today();
+}
+
+/** One helper, whichever the player has fewest of (up to the cap). Returns the message, or ''. */
+function earnHelper(): string {
+  const h = profile.helpers, order = ['undo', 'shuffle', 'single'] as const;
+  const pick = order.find(k => h[k] === Math.min(h.undo, h.shuffle, h.single)) ?? 'undo';
+  if (h[pick] >= TUNING.helpers.cap) return '';
+  h[pick]++; sfx('helper');
+  return `You earned a helper: ${pick === 'single' ? 'Single block' : pick === 'undo' ? 'Undo' : 'Shuffle'}!`;
 }
 
 function statLine(g: Game) {
@@ -251,6 +288,8 @@ function startGame(g: Game) {
   show('play');
   if (!capture) saveRun(g);
 }
+/** A fresh game of the same kind (the Daily replays today's puzzle). */
+function again(): Game { return game.mode === 'daily' ? dailyGame(today()) : newGame({ mode: game.mode, difficulty: game.difficulty, seed: freshSeed() }); }
 function newClassic(difficulty: Difficulty) { unlock(); startGame(newGame({ mode: 'classic', difficulty, seed: freshSeed() })); }
 function freshSeed() { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0]!; }
 
@@ -260,8 +299,13 @@ function refreshHome() {
   $('#classic').classList.toggle('primary', !run || run.moves === 0);
   if (run) $('#continue-info').textContent = `Classic ${run.difficulty === 'normal' ? 'Normal' : 'Easy'} · score ${run.score}`;
   const d = profile.settings.difficulty;
-  $('#classic-best').textContent = `Best ${d === 'normal' ? profile.best.normal : profile.best.easy} on ${d === 'normal' ? 'Normal' : 'Easy'}`;
+  const best = d === 'normal' ? profile.best.normal : profile.best.easy;
+  $('#classic-best').textContent = best ? `Best ${best} on ${d === 'normal' ? 'Normal' : 'Easy'}` : d === 'normal' ? 'Bigger pieces as you score' : 'Fill lines, pop blocks';
   document.querySelectorAll<HTMLButtonElement>('.segmented button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.difficulty === d)));
+  const relax = capture ? null : loadRun('relax');
+  $('#relax-info').textContent = relax && relax.moves > 0 ? `Pick up where you left off · score ${relax.score}` : profile.best.relax ? `Calm and cozy · best ${profile.best.relax}` : 'Calm and cozy, no rush';
+  const t = today(), done = profile.daily.find(([d]) => d === t);
+  $('#daily-info').textContent = done ? `Today's best ${done[1]} · play again any time` : 'A new puzzle every day';
   $('#storage-note').hidden = capture || persistent();
 }
 
@@ -352,17 +396,19 @@ function bindButtons() {
   const on = (id: string, fn: () => void) => $(id).addEventListener('click', () => { unlock(); sfx('tap'); fn(); });
   on('#classic', () => newClassic(profile.settings.difficulty));
   on('#continue', () => { const run = loadRun('classic'); if (run) { unlock(); startGame(run); } });
+  on('#relax', () => { const run = loadRun('relax'); startGame(run && run.moves > 0 ? run : newGame({ mode: 'relax', seed: freshSeed() })); });
+  on('#daily', () => { const run = loadRun('daily'); startGame(run && run.seed === dailySeed(today()) && run.moves > 0 ? run : dailyGame(today())); });
   document.querySelectorAll<HTMLButtonElement>('.segmented button').forEach(b => b.addEventListener('click', () => { profile.settings.difficulty = b.dataset.difficulty as Difficulty; persist(); refreshHome(); }));
   on('#pause-btn', pause);
   on('#resume', () => show('play'));
-  on('#restart', () => { dropRun(game.mode as 'classic' | 'relax'); startGame(newGame({ mode: game.mode, difficulty: game.difficulty, seed: freshSeed() })); });
+  on('#restart', () => { dropRun(game.mode as 'classic' | 'relax' | 'daily'); startGame(again()); });
   on('#quit', () => show('home'));
   on('#pause-settings', () => { settingsBack = 'pause'; show('settings'); });
   on('#settings-btn', () => { settingsBack = 'home'; show('settings'); });
   on('#settings-done', () => show(settingsBack));
   on('#help-btn', () => show('help'));
   on('#help-done', () => show('home'));
-  on('#again', () => startGame(newGame({ mode: game.mode, difficulty: game.difficulty, seed: freshSeed() })));
+  on('#again', () => startGame(again()));
   on('#over-home', () => show('home'));
   on('#offer-undo', () => useHelper('undo', true));
   on('#offer-shuffle', () => useHelper('shuffle', true));

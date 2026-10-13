@@ -114,3 +114,31 @@ test('runs inside a sandboxed iframe like on the website', async ({ page }) => {
   await expect.poll(() => page.frames()[1]!.evaluate(hook => (window as unknown as Record<string, { snapshot(): { moves: number } }>)[hook]!.snapshot().moves, GAME.hook)).toBe(1);
   expect(problems).toEqual([]);
 });
+
+test('Relax gives a free Undo; the Daily puzzle counts its 40 moves down and is the same after a reload', async ({ page }) => {
+  const problems = watch(page);
+  await page.goto('/');
+  await page.locator('#relax').click();
+  await expect.poll(async () => (await snapshot(page)).screen).toBe('play');
+  await expect(page.locator('#undo-count')).toHaveText('free');
+  await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
+  await expect.poll(async () => (await snapshot(page)).moves).toBe(1);
+  await page.locator('#undo').click();
+  await expect.poll(async () => (await snapshot(page)).moves).toBe(0);
+  await expect(page.locator('#undo-count')).toHaveText('2'); // the free one is used; the supply is untouched
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Home' }).click();
+  await page.locator('#daily').click();
+  await expect(page.locator('#moves-left')).toBeVisible();
+  await expect(page.locator('#moves')).toHaveText('40');
+  const first = (await snapshot(page)).board;
+  await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
+  await expect(page.locator('#moves')).toHaveText('39');
+  await page.reload();
+  await page.locator('#daily').click();
+  await expect(page.locator('#moves')).toHaveText('39');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'New game' }).click();
+  expect((await snapshot(page)).board).toEqual(first); // today's puzzle again, from the start
+  expect(problems).toEqual([]);
+});

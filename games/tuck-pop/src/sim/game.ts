@@ -68,8 +68,9 @@ export interface NewGame {
 const set = (i: number): [number, number] => (i < 32 ? [(1 << i) | 0, 0] : [0, (1 << (i - 32)) | 0]);
 const has = (lo: number, hi: number, i: number) => (i < 32 ? (lo >>> i) & 1 : (hi >>> (i - 32)) & 1) === 1;
 
+/** Classic Normal deals at random (with its promises); every other mode builds trays that fit. */
 export function dealKind(g: Pick<Game, 'mode' | 'difficulty'>): DealKind {
-  return (g.mode === 'classic' && g.difficulty === 'normal') || g.mode === 'daily' ? 'normal' : 'build';
+  return g.mode === 'classic' && g.difficulty === 'normal' ? 'normal' : 'build';
 }
 
 export function newGame(opts: NewGame): Game {

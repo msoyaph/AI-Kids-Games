@@ -144,11 +144,13 @@ export class Scene {
 
   private layoutDeco() {
     const l = this.layout, size = Math.max(36, Math.min(l.w, l.h) * 0.09);
+    const portrait = l.h >= l.w;
     this.decoBits.forEach((d, i) => {
-      // around the edges, away from the menu in the middle
-      const side = i % 4, f = ((i * 0.618) % 1);
-      d.x = side === 0 ? l.w * (0.06 + f * 0.18) : side === 1 ? l.w * (0.76 + f * 0.18) : l.w * (0.1 + f * 0.8);
-      d.y = side === 2 ? l.h * (0.04 + f * 0.1) : side === 3 ? l.h * (0.86 + f * 0.1) : l.h * (0.12 + f * 0.76);
+      // only in bands the menu never covers: top and bottom on a tall screen, the sides on a wide one
+      // seven per band, evenly spaced along it with a little jitter
+      const first = i % 2 === 0, k = Math.floor(i / 2), along = (k + 0.5) / 7 + (((i * 0.618) % 1) - 0.5) * 0.06, across = ((i * 0.382 + 0.17) % 1);
+      if (portrait) { d.x = l.w * (0.05 + along * 0.9); d.y = first ? l.h * (0.03 + across * 0.12) : l.h * (0.87 + across * 0.1); }
+      else { d.x = first ? l.w * (0.04 + across * 0.12) : l.w * (0.84 + across * 0.12); d.y = l.h * (0.05 + along * 0.9); }
       d.s.texture = this.atlas.block[1 + (i % 6)]!; d.s.scale.set((size / this.atlas.cell) * (0.7 + (i % 3) * 0.2)); d.s.alpha = 0.85; d.s.rotation = d.spin;
       d.s.position.set(d.x, d.y);
     });

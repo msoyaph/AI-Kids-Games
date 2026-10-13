@@ -46,9 +46,9 @@
               <button type="button" role="radio" data-difficulty="normal" aria-checked="false">Normal</button>
             </div>
           </div>
-          <button id="relax" class="mode" type="button" hidden><b>Relax</b><small>Calm and cozy, no rush</small></button>
+          <button id="relax" class="mode" type="button"><b>Relax</b><small id="relax-info">Calm and cozy, no rush</small></button>
           <button id="adventure" class="mode" type="button" hidden><b>Adventure</b><small id="adventure-info"></small></button>
-          <button id="daily" class="mode" type="button" hidden><b>Daily puzzle</b><small id="daily-info"></small></button>
+          <button id="daily" class="mode" type="button"><b>Daily puzzle</b><small id="daily-info"></small></button>
         </div>
         <div class="small-buttons">
           <button id="themes-btn" type="button" hidden>Themes</button>
@@ -86,7 +86,7 @@
           <h2 id="over-title">Great game!</h2>
           <p id="new-best" class="badge" hidden>New best!</p>
           <p class="final">Score <b id="final">0</b></p>
-          <p class="final-best">Your best: <b id="final-best">0</b></p>
+          <p class="final-best"><span id="final-best-label">Your best</span>: <b id="final-best">0</b></p>
           <p id="stat" class="stat"></p>
           <p id="earned" class="earned" hidden></p>
           <button id="again" class="big" type="button">Play again</button>

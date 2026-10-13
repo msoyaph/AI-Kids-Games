@@ -147,7 +147,20 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
    - **Tooling:** `npm run shots` (scripts/shots.ts) takes review screenshots of capture-route
      moments into `reports/shots/` (git-ignored). The browser pane pauses rAF while hidden, so use
      this for timed moments.
-5. Relax, Daily and helpers.
+5. COMPLETE: Relax, Daily and helpers.
+   - **Relax:** free Undo shown as "free", a free reshuffle (sim), calm music, slower effects, the
+     helper offer too, and "What a cozy game!". Its run resumes from the home button.
+   - **Daily:** `sim/daily.ts`. The seed is `hash32(0xDA11, yyyymmdd)` of the player's local date;
+     3–5 clumps with no full line; 40 moves; trays built to fit with weights [40, 45, 15].
+     - **Why built trays:** with Normal dealing only 66% of casual games finished.
+     - **Progress:** the profile keeps the best per day (30 days). The first finish of a day earns
+       a helper. A run resumes the same day.
+     - **No pressure:** "A new puzzle comes tomorrow!", no streaks.
+   - **Helpers:** `earnHelper()` gives whichever the player has fewest of, up to the cap of 5.
+     Earned from 2,500 Classic/Relax points and the first Daily of a day; Adventure adds stars and
+     worlds.
+   - **Runs:** `run.ts` also stores Daily runs (with move limit and weights).
+   - **Home:** the drifting blocks stay in bands clear of the menu.
 6. Adventure.
 7. Themes and accessibility.
 8. Hardening and the full browser suite.
