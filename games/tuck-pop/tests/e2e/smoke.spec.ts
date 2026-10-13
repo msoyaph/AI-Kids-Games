@@ -1,36 +1,47 @@
 import { expect, test, type Page } from '@playwright/test';
+import { GAME } from '../../src/config';
 
-const HOOK = '__tuckpop';
-const PREFIX = 'tuckpop.';
-type Snapshot = { screen: string; score: number; timeLeft: number; persistent: boolean; audio: string };
-const snapshot = (page: Page) => page.evaluate(hook => (window as unknown as Record<string, { snapshot(): Snapshot }>)[hook]!.snapshot(), HOOK);
+type Rect = { x: number; y: number; w: number; h: number };
+type Snapshot = {
+  screen: string; score: number; moves: number; over: boolean; board: number[]; tray: ({ id: string; color: number } | null)[];
+  play: { selected: number | null }; layout: { board: Rect; slots: Rect[]; cell: number }; persistent: boolean;
+};
+const snapshot = (page: Page) => page.evaluate(hook => (window as unknown as Record<string, { snapshot(): Snapshot }>)[hook]!.snapshot(), GAME.hook);
 
 /** Fails the test on console errors and on any request that leaves the game's own origin. */
 function watch(page: Page) {
   const problems: string[] = [];
   page.on('pageerror', error => problems.push(`page error: ${error.message}`));
   page.on('console', message => { if (message.type() === 'error') problems.push(`console error: ${message.text()}`); });
-  page.on('request', request => { const url = new URL(request.url()); if (!['127.0.0.1:4444', ''].includes(url.host) && url.protocol !== 'data:') problems.push(`request to ${request.url()}`); });
+  page.on('request', request => { const url = new URL(request.url()); if (!['127.0.0.1:4444', ''].includes(url.host) && !['data:', 'blob:'].includes(url.protocol)) problems.push(`request to ${request.url()}`); });
   return problems;
 }
 
-test('plays with keyboard or touch, pauses and resumes, with no errors and no network', async ({ page, isMobile }) => {
-  const problems = watch(page);
+async function startClassic(page: Page) {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Tuck Pop' })).toBeVisible();
-  await page.getByRole('button', { name: 'Play' }).click();
+  await page.locator('#classic').click();
   await expect.poll(async () => (await snapshot(page)).screen).toBe('play');
-  if (isMobile) {
-    // hold the pointer down and drag it around: the firefly flies toward it
-    await page.mouse.move(80, 120);
-    await page.mouse.down();
-    for (let i = 0; i < 20; i++) { await page.mouse.move(80 + i * 12, 120 + i * 20); await page.waitForTimeout(100); }
-    await page.mouse.up();
-  } else {
-    for (const key of ['KeyD', 'KeyS', 'KeyA', 'KeyW']) { await page.keyboard.down(key); await page.waitForTimeout(700); await page.keyboard.up(key); }
-  }
-  expect((await snapshot(page)).timeLeft).toBeLessThan(60);
-  // Escape pauses, the button resumes
+}
+
+/** Drags tray piece `slot` with the mouse so its center lands on the board's center. */
+async function dragToCenter(page: Page, slot: number) {
+  const s = await snapshot(page), r = s.layout.slots[slot]!, b = s.layout.board;
+  await page.mouse.move(r.x + r.w / 2, r.y + r.h / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i++) await page.mouse.move(r.x + r.w / 2 + ((b.x + b.w / 2 - r.x - r.w / 2) * i) / 8, r.y + r.h / 2 + ((b.y + b.h / 2 - r.y - r.h / 2) * i) / 8);
+  await page.mouse.up();
+}
+
+test('drag and drop with the mouse places a piece; Escape pauses; no errors, no network', async ({ page }) => {
+  const problems = watch(page);
+  await startClassic(page);
+  await dragToCenter(page, 0);
+  await expect.poll(async () => (await snapshot(page)).moves).toBe(1);
+  const s = await snapshot(page);
+  expect(s.score).toBeGreaterThan(0);
+  expect(s.tray[0]).toBeNull();
+  expect(s.board.filter(Boolean).length).toBeGreaterThan(0);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('heading', { name: 'Paused' })).toBeVisible();
   await page.getByRole('button', { name: 'Keep playing' }).click();
@@ -38,26 +49,53 @@ test('plays with keyboard or touch, pauses and resumes, with no errors and no ne
   expect(problems).toEqual([]);
 });
 
-test('a finished round saves the best score under the game prefix, and it survives a reload', async ({ page }) => {
+test('tap a piece, then tap the board', async ({ page }) => {
   const problems = watch(page);
-  await page.goto('/?seconds=4&seed=3');
-  await page.getByRole('button', { name: 'Play' }).click();
-  await page.keyboard.down('KeyD'); await page.waitForTimeout(1500); await page.keyboard.up('KeyD');
-  await expect(page.getByRole('heading', { name: "Time's up!" })).toBeVisible({ timeout: 10_000 });
-  const keys = await page.evaluate(() => Object.keys(localStorage));
-  expect(keys).toEqual([`${PREFIX}save`]);
-  const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), `${PREFIX}save`);
-  expect(saved).toMatchObject({ v: 2, plays: 1 });
-  await page.reload();
-  await expect(page.locator('#best')).toHaveText(String(saved.best));
+  await startClassic(page);
+  const s = await snapshot(page), r = s.layout.slots[1]!, b = s.layout.board;
+  await page.mouse.click(r.x + r.w / 2, r.y + r.h / 2);
+  await expect.poll(async () => (await snapshot(page)).play.selected).toBe(1);
+  await page.mouse.click(b.x + b.w / 2, b.y + b.h / 2);
+  await expect.poll(async () => (await snapshot(page)).moves).toBe(1);
+  expect((await snapshot(page)).tray[1]).toBeNull();
   expect(problems).toEqual([]);
 });
 
-test('the capture route shows a moment without touching saves', async ({ page }) => {
+test('keyboard only: pick with 1, place with Enter, move with the arrows', async ({ page }) => {
   const problems = watch(page);
-  await page.goto('/?scene=play&seed=7');
+  await startClassic(page);
+  await page.keyboard.press('Digit1');
+  await page.keyboard.press('Enter');
+  await expect.poll(async () => (await snapshot(page)).moves).toBe(1);
+  await page.keyboard.press('Digit2');
+  for (const key of ['ArrowUp', 'ArrowUp', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft']) await page.keyboard.press(key);
+  await page.keyboard.press('Enter');
+  await expect.poll(async () => (await snapshot(page)).moves).toBe(2);
+  expect(problems).toEqual([]);
+});
+
+test('a Classic game resumes exactly after a reload, and saves only under the game prefix', async ({ page }) => {
+  const problems = watch(page);
+  await startClassic(page);
+  await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
+  await expect.poll(async () => (await snapshot(page)).moves).toBe(1);
+  await page.keyboard.press('Digit2'); await page.keyboard.press('Enter');
+  await expect.poll(async () => (await snapshot(page)).moves).toBe(2);
+  const before = await snapshot(page);
+  const keys = await page.evaluate(() => Object.keys(localStorage).sort());
+  expect(keys).toEqual([`${GAME.storagePrefix}run`, `${GAME.storagePrefix}save`]);
+  await page.reload();
+  await page.getByRole('button', { name: /Continue/ }).click();
   await expect.poll(async () => (await snapshot(page)).screen).toBe('play');
-  await page.waitForTimeout(1500);
+  const after = await snapshot(page);
+  expect({ board: after.board, tray: after.tray, score: after.score, moves: after.moves }).toEqual({ board: before.board, tray: before.tray, score: before.score, moves: before.moves });
+  expect(problems).toEqual([]);
+});
+
+test('the capture route plays by itself without touching saves', async ({ page }) => {
+  const problems = watch(page);
+  await page.goto('/?scene=combo&seed=7&speed=3');
+  await expect.poll(async () => (await snapshot(page)).moves, { timeout: 15_000 }).toBeGreaterThan(2);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
   expect(problems).toEqual([]);
 });
@@ -69,7 +107,10 @@ test('runs inside a sandboxed iframe like on the website', async ({ page }) => {
   await page.goto('/host.html');
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('heading', { name: 'Tuck Pop' })).toBeVisible();
-  await frame.getByRole('button', { name: 'Play' }).click();
+  await frame.locator('#classic').click();
   await expect(frame.locator('#hud')).toBeVisible();
+  await frame.locator('body').press('Digit1');
+  await frame.locator('body').press('Enter');
+  await expect.poll(() => page.frames()[1]!.evaluate(hook => (window as unknown as Record<string, { snapshot(): { moves: number } }>)[hook]!.snapshot().moves, GAME.hook)).toBe(1);
   expect(problems).toEqual([]);
 });

@@ -108,7 +108,24 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
      board is nearly empty (phase 4).
    - **Tests:** `dealer.test.ts` (I1–I5 on 10k played boards plus 200 crowded ones, budget) and
      `balance.test.ts` (CI-sized, fixed seeds, about 6 s).
-3. Playable Classic.
+3. COMPLETE: playable Classic.
+   - **Rendering:** `render/scene.ts` (Pixi `WebGLRenderer` with `skipExtensionImports`, sprites
+     only, renders on change, context loss), `atlas.ts` + `paint.ts` (all art in Canvas 2D),
+     `layout.ts` (pure; portrait and landscape, safe areas, the panel frame, the streak band, per-piece
+     tray fit), `fx.ts` (pooled sparkles and confetti, FlashLimiter, words, shake), `tween.ts`,
+     `words.ts` (text textures).
+   - **Input:** `play.ts`: drag with a touch lift, forgiving snap, ghost and line hints, ease-back,
+     tap-to-place, keys, gamepad, and `glide()` for autoplay. `input/gamepad.ts`.
+   - **Saves:** `save/storage.ts` (starter's, plus remove and write-failed), `profile.ts` (v1 schema,
+     MIGRATIONS chain, sanitize, newer-version read-only, size guard), `run.ts` (Classic and Relax
+     runs with Undo, rules version).
+   - **App:** `main.ts`: screens, HUD placement, helpers, the game-over offer, settings, hook,
+     haptics. `capture.ts`: `?scene=play|combo|clear`, bot autoplay with real glides.
+   - **Build:** 463 KB.
+   - **Pitfall:** focus left on a button in a just-hidden screen turned the next Enter into a click
+     on it, so `show()` blurs it.
+   - **Shared Mac:** run browser tests through `sh scripts/when-idle.sh npx playwright test` (it
+     waits while any other test or capture runs).
 4. Effects and sound.
 5. Relax, Daily and helpers.
 6. Adventure.
