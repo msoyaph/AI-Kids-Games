@@ -114,6 +114,17 @@ Space Sky, Tuck Pop).
 then by column. Before this, two cards in the same row tied and the first in the page always won;
 the tablet test now accepts any card from the centred row.
 
+## Home opens on the featured games (owner, 2026-10-13; next release)
+
+- The home h1 ("Ai Kids Games: The games kids love. …") is screen-reader and search only (`sr-only`).
+- The "Watch the trailer" button and its dialog are gone. The trailer lives on About only.
+- The hero carousel opens on TheaBonk (`HERO_LEAD` in `src/pages/Home.tsx`). The other featured
+  games follow in catalog order.
+- **Fix:** the featured thumbnails made the hero wider than the phone (366 px), which pushed it past
+  the right gutter and turned a 375 px page sideways. Now the hero column is `minmax(0,1fr)`, and
+  on phones the thumbnails share the row at 48–56 px, wrapping only below about 330 px. The phone
+  test checks 320, 375 and 390 px.
+
 ## Next: Light Crossing v2.0 (owner request, on hold)
 
 Owner wants Light Crossing v2.0 imported and released. On 2026-10-11 its project was on
