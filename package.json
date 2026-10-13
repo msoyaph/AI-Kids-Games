@@ -7,7 +7,6 @@
   "workspaces": [
     "apps/*",
     "games/*",
-    "marketing/*",
     "templates/*"
   ],
   "engines": {
@@ -25,9 +24,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "manifests": "tsx scripts/manifests.ts",
     "audit-storage": "tsx scripts/audit-storage.ts",
-    "new-game": "tsx scripts/new-game.ts",
-    "reel": "npm run reel --workspace marketing/sizzle --",
-    "reel:capture": "npm run capture --workspace marketing/sizzle --"
+    "new-game": "tsx scripts/new-game.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

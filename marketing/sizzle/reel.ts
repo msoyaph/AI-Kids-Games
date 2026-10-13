@@ -1,5 +1,5 @@
 // npm run reel: music → media and compositions → HyperFrames renders and encodes → review →
-// publish the web trailer to the site. Capturing is separate (npm run reel:capture -- <slug>).
+// publish the web trailer to the site. Capturing is separate (npm run capture -- <slug> (in marketing/sizzle)).
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { sizzle } from './reel.config';

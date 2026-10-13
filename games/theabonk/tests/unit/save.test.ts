@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryStore, SafeLocalStore, type KeyValueStore } from '../../src/core/storage';
 import { applyRunResult, buy, checkAchievements, goldForRun, metaBonuses, nextCost, refundAll, type RunSummary } from '../../src/meta/progression';
-import { SAVE_KEY, SaveManager, defaultSave, sanitizeSave } from '../../src/meta/save';
+import { readFileSync } from 'node:fs';
+import { SAVE_BACKUP_KEY, SAVE_KEY, SAVE_VERSION, SaveManager, defaultSave, sanitizeSave } from '../../src/meta/save';
 
 function summary(p: Partial<RunSummary> = {}): RunSummary {
   return {
     characterId: 'thea',
+    mapId: 'meadow',
+    difficulty: 'normal',
+    tier: 0,
+    daily: null,
+    goldMult: 1,
+    slideDistance: 0,
+    banishes: 0,
+    killsByType: {},
+    acquired: { weapons: [], passives: [] },
     time: 300,
     won: false,
     level: 12,
@@ -80,7 +90,7 @@ describe('save / load', () => {
     expect(d.stats.totalKills).toBe(0);
     expect(d.stats.bestTime).toBe(640);
     expect(d.settings.masterVolume).toBe(1);
-    expect(d.settings.quality).toBe('high');
+    expect(d.settings.quality).toBe('auto');
     expect(d.settings.invertY).toBe(false);
   });
 
@@ -170,5 +180,132 @@ describe('run results and achievements', () => {
     expect(d.unlockedWeapons).toContain('frostFan');
     expect(checkAchievements(d, run)).toEqual([]);
     expect(d.stats.totalKills).toBe(0);
+  });
+});
+
+describe('save format upgrades', () => {
+  const v1Raw = readFileSync('tests/fixtures/save-v1.json', 'utf8');
+  const v1 = JSON.parse(v1Raw) as Record<string, unknown> & { stats: Record<string, unknown> };
+
+  it('migrates the real v1 save without losing anything', () => {
+    const d = sanitizeSave(v1);
+    expect(d.version).toBe(SAVE_VERSION);
+    expect(d.gold).toBe(v1.gold);
+    expect(d.shop).toEqual(v1.shop);
+    expect(d.unlockedCharacters.sort()).toEqual((v1.unlockedCharacters as string[]).sort());
+    expect(d.unlockedWeapons.sort()).toEqual((v1.unlockedWeapons as string[]).sort());
+    expect(d.achievements.sort()).toEqual((v1.achievements as string[]).sort());
+    for (const k of ['runsPlayed', 'wins', 'totalKills', 'bestTime', 'highestLevel', 'evolutions', 'shrinesBroken', 'totalGold']) {
+      expect(d.stats[k as keyof typeof d.stats]).toEqual(v1.stats[k]);
+    }
+    expect(d.stats.bestTimeByChar).toEqual(v1.stats.bestTimeByChar);
+    expect(d.stats.bossKills).toEqual(v1.stats.bossKills);
+    expect(d.settings).toMatchObject(v1.settings as object); // v1 settings kept; new sub-objects defaulted
+    expect(d.settings.controls.bindings.jump.keys).toEqual(['Space']);
+    expect(d.settings.access.reducedMotion).toBe('auto');
+    // v1 had a single map
+    expect(d.stats.bestTimeByMap).toEqual({ meadow: v1.stats.bestTime });
+    expect(d.unlockedMaps).toEqual(['meadow']); // no win yet
+    expect(d.lastMap).toBe('meadow');
+  });
+
+  it('a v1 save with a win unlocks Rimewood', () => {
+    const d = sanitizeSave({ ...v1, stats: { ...v1.stats, wins: 2 } });
+    expect(d.stats.winsByMap).toEqual({ meadow: 2 });
+    expect(d.unlockedMaps).toContain('rimewood');
+  });
+
+  it('backs up the old save once, just before the first write in the new format', () => {
+    const store = new MemoryStore();
+    store.set(SAVE_KEY, v1Raw);
+    const m = new SaveManager(store);
+    expect(store.get(SAVE_BACKUP_KEY)).toBeNull(); // loading alone writes nothing
+    m.data.gold += 5;
+    m.save();
+    expect(store.get(SAVE_BACKUP_KEY)).toBe(v1Raw);
+    expect(JSON.parse(store.get(SAVE_KEY)!).version).toBe(SAVE_VERSION);
+    // later saves (and later sessions) never overwrite the backup
+    m.data.gold += 5;
+    m.save();
+    new SaveManager(store).save();
+    expect(store.get(SAVE_BACKUP_KEY)).toBe(v1Raw);
+  });
+
+  it('current-format saves are not backed up', () => {
+    const store = new MemoryStore();
+    const m = new SaveManager(store);
+    m.save();
+    new SaveManager(store).save();
+    expect(store.get(SAVE_BACKUP_KEY)).toBeNull();
+  });
+
+  it('winning on Gloam Meadow unlocks Rimewood; Rimewood records stay separate', () => {
+    const d = defaultSave();
+    expect(d.unlockedMaps).toEqual(['meadow']);
+    const lost = applyRunResult(d, summary({ time: 500 }));
+    expect(lost.newMaps).toEqual([]);
+    const won = applyRunResult(d, summary({ time: 1200, won: true }));
+    expect(won.newMaps).toEqual(['rimewood']);
+    expect(d.unlockedMaps).toContain('rimewood');
+    applyRunResult(d, summary({ mapId: 'rimewood', time: 700 }));
+    expect(d.stats.bestTimeByMap).toEqual({ meadow: 1200, rimewood: 700 });
+    expect(d.stats.winsByMap).toEqual({ meadow: 1 });
+  });
+
+  it('drops a remembered map that is locked or unknown', () => {
+    expect(sanitizeSave({ ...v1, lastMap: 'rimewood' }).lastMap).toBe('meadow');
+    expect(sanitizeSave({ ...v1, lastMap: 'moon' }).lastMap).toBe('meadow');
+    expect(sanitizeSave({ ...v1, version: 2, unlockedMaps: ['meadow', 'rimewood', 'moon'], lastMap: 'rimewood' }).unlockedMaps).toEqual(['meadow', 'rimewood']);
+  });
+});
+
+describe('touch controls settings', () => {
+  it('old saves get the touch defaults; the v1 fixture keeps everything else', () => {
+    const v1 = JSON.parse(readFileSync('tests/fixtures/save-v1.json', 'utf8'));
+    const d = sanitizeSave(v1);
+    expect(d.settings.touch).toEqual(defaultSave().settings.touch);
+    expect(d.settings.touch.autoCamera).toBe(true);
+    expect(d.settings.touch.layout).toEqual({});
+  });
+
+  it('sanitizes garbage and clamps the layout', () => {
+    const d = sanitizeSave({
+      ...defaultSave(),
+      settings: {
+        ...defaultSave().settings,
+        touch: {
+          size: 'xl',
+          opacity: 0.05,
+          leftHanded: 'yes',
+          lookSensitivity: 99,
+          layout: {
+            jump: { ax: 1, ay: 1, dx: 0.3, dy: 0.2, s: 7 },
+            slide: { ax: 'left', ay: 0, dx: -4, dy: 'x', s: 0.1 },
+            confetti: { ax: 0, ay: 0, dx: 0, dy: 0, s: 1 },
+            pause: 'nope',
+          },
+        },
+      },
+    });
+    const t = d.settings.touch;
+    expect(t.size).toBe('m');
+    expect(t.opacity).toBe(0.4);
+    expect(t.leftHanded).toBe(false);
+    expect(t.lookSensitivity).toBe(3);
+    expect(t.layout.jump).toEqual({ ax: 1, ay: 1, dx: 0.3, dy: 0.2, s: 1.25 });
+    expect(t.layout.slide).toEqual({ ax: 0, ay: 0, dx: 0, dy: 0.2, s: 0.8 });
+    expect(Object.keys(t.layout).sort()).toEqual(['jump', 'slide']);
+  });
+
+  it('reset progress keeps the touch settings', () => {
+    const store = new MemoryStore();
+    const m = new SaveManager(store);
+    m.data.settings.touch.size = 'l';
+    m.data.settings.touch.layout = { jump: { ax: 1, ay: 1, dx: 0.2, dy: 0.2, s: 1 } };
+    m.data.gold = 500;
+    m.reset();
+    expect(m.data.gold).toBe(0);
+    expect(m.data.settings.touch.size).toBe('l');
+    expect(m.data.settings.touch.layout.jump).toBeTruthy();
   });
 });

@@ -11,9 +11,11 @@ const tmpC = new THREE.Color();
 class Shockwaves {
   readonly rings: THREE.InstancedMesh;
   readonly spheres: THREE.InstancedMesh;
+  /** Light pillars (level-up, evolution). */
+  readonly pillars: THREE.InstancedMesh;
   private cap = 96;
   private n = 0;
-  private data: Float32Array; // x y z radius life max kind(0 ring / 1 sphere)
+  private data: Float32Array; // x y z radius life max kind(0 ring / 1 sphere / 2 pillar)
   private col: Float32Array;
 
   constructor() {
@@ -25,11 +27,15 @@ class Shockwaves {
     const sg = new THREE.IcosahedronGeometry(1, 1);
     this.spheres = makeInstanced(sg, mat.clone(), this.cap, true);
     this.spheres.renderOrder = 2;
+    const pg = new THREE.CylinderGeometry(1, 0.55, 1, 20, 1, true);
+    pg.translate(0, 0.5, 0);
+    this.pillars = makeInstanced(pg, mat.clone(), 8, true);
+    this.pillars.renderOrder = 2;
     this.data = new Float32Array(this.cap * 7);
     this.col = new Float32Array(this.cap * 3);
   }
 
-  add(x: number, y: number, z: number, radius: number, color: number, life: number, sphere: boolean): void {
+  add(x: number, y: number, z: number, radius: number, color: number, life: number, sphere: boolean | 'pillar'): void {
     if (this.n >= this.cap) return;
     const o = this.n * 7;
     this.data[o] = x;
@@ -38,7 +44,7 @@ class Shockwaves {
     this.data[o + 3] = radius;
     this.data[o + 4] = life;
     this.data[o + 5] = life;
-    this.data[o + 6] = sphere ? 1 : 0;
+    this.data[o + 6] = sphere === 'pillar' ? 2 : sphere ? 1 : 0;
     tmpC.setHex(color);
     this.col[this.n * 3] = tmpC.r;
     this.col[this.n * 3 + 1] = tmpC.g;
@@ -69,14 +75,35 @@ class Shockwaves {
     const rc = this.rings.instanceColor!.array as Float32Array;
     const sa = this.spheres.instanceMatrix.array as Float32Array;
     const sc = this.spheres.instanceColor!.array as Float32Array;
+    const pa = this.pillars.instanceMatrix.array as Float32Array;
+    const pc = this.pillars.instanceColor!.array as Float32Array;
     let nr = 0;
     let ns = 0;
+    let np = 0;
     for (let k = 0; k < this.n; k++) {
       const o = k * 7;
       const f = 1 - this.data[o + 4] / this.data[o + 5]; // 0 → 1
       const ease = 1 - (1 - f) * (1 - f);
       const fade = 1 - f;
-      if (this.data[o + 6] === 0) {
+      if (this.data[o + 6] === 2) {
+        if (np >= 8) continue;
+        // a beam of light: shoots up fast, then thins and fades
+        const r = this.data[o + 3] * (1 - 0.6 * ease);
+        TRS[0] = this.data[o];
+        TRS[1] = this.data[o + 1];
+        TRS[2] = this.data[o + 2];
+        TRS[3] = f * 2;
+        TRS[4] = 0;
+        TRS[5] = r;
+        TRS[6] = 30 * Math.min(1, f * 5);
+        TRS[7] = r;
+        writeTRSFrom(pa, np * 16);
+        const ff = fade * 0.9;
+        pc[np * 3] = this.col[k * 3] * ff;
+        pc[np * 3 + 1] = this.col[k * 3 + 1] * ff;
+        pc[np * 3 + 2] = this.col[k * 3 + 2] * ff;
+        np++;
+      } else if (this.data[o + 6] === 0) {
         const r = this.data[o + 3] * (0.3 + 0.7 * ease);
         TRS[0] = this.data[o];
         TRS[1] = this.data[o + 1] + 0.15;
@@ -111,6 +138,7 @@ class Shockwaves {
     }
     commitInstances(this.rings, nr);
     commitInstances(this.spheres, ns);
+    commitInstances(this.pillars, np);
   }
 }
 
@@ -249,9 +277,23 @@ export class DamageNumbers {
     this.canvas.height = Math.round(h * this.dpr);
   }
 
-  /** kind: 0 damage, 1 heal, 2 player hurt */
+  /**
+   * kind: 0 damage, 1 heal, 2 player hurt. Rapid hits on the same spot merge into one number
+   * that grows (and pops) instead of stacking a pile of small ones.
+   */
   add(x: number, y: number, z: number, value: number, crit: boolean, kind = 0): void {
     if (!this.enabled && kind === 0) return;
+    const fresh = crit ? 0.9 : 0.65;
+    for (let k = 0; k < this.n; k++) {
+      const o = k * 7;
+      if (this.d[o + 6] !== kind || (this.d[o + 5] === 1) !== crit || this.d[o + 4] < fresh - 0.25) continue;
+      const dx = this.d[o] - x;
+      const dz = this.d[o + 2] - z;
+      if (dx * dx + dz * dz > 0.8 || Math.abs(this.d[o + 1] - y) > 1.2) continue;
+      this.d[o + 3] += value;
+      this.d[o + 4] = fresh;
+      return;
+    }
     let i: number;
     if (this.n < this.cap) i = this.n++;
     else {
@@ -302,15 +344,18 @@ export class DamageNumbers {
         const crit = this.d[o + 5] === 1;
         const kind = this.d[o + 6];
         const life = this.d[o + 4];
-        const pop = crit ? 1.45 + Math.max(0, life - 0.7) * 2 : 1;
-        const size = base * pop;
+        // bigger hits read bigger (log scale); crits pop in and wear a "!"
+        const value = this.d[o + 3];
+        const amount = kind === 0 ? 0.85 + Math.min(0.75, Math.log10(value + 1) * 0.32) : 1;
+        const pop = crit ? 1.35 + Math.max(0, life - 0.7) * 2.5 : 1 + Math.max(0, life - 0.55) * 1.5;
+        const size = base * pop * amount;
         ctx.globalAlpha = Math.min(1, life * 4);
         ctx.font = this.font(size);
-        const txt = kind === 1 ? `+${this.text(this.d[o + 3])}` : this.text(this.d[o + 3]);
+        const txt = kind === 1 ? `+${this.text(value)}` : crit ? `${this.text(value)}!` : this.text(value);
         ctx.lineWidth = Math.max(2, size * 0.18);
         ctx.strokeStyle = 'rgba(30, 20, 45, 0.9)';
         ctx.strokeText(txt, sx, sy);
-        ctx.fillStyle = kind === 1 ? '#7dff8a' : kind === 2 ? '#ff5a5f' : crit ? '#ffd34d' : '#ffffff';
+        ctx.fillStyle = kind === 1 ? '#7dff8a' : kind === 2 ? '#ff5a5f' : crit ? '#ffd34d' : value >= 100 ? '#ffe9c4' : '#ffffff';
         ctx.fillText(txt, sx, sy);
       }
       i++;
@@ -326,13 +371,15 @@ export class Fx {
   private bolts = new Lightning();
   readonly numbers: DamageNumbers;
   private enemyColors: number[] = ENEMIES.map((e) => e.color);
+  /** 0 pop, 1 shards, 2 puff, 3 splat (per enemy type). */
+  private deathFx = Uint8Array.from(ENEMIES.map((e) => ({ pop: 0, shards: 1, puff: 2, splat: 3 })[e.deathFx ?? 'pop']));
 
   constructor(
     private particles: Particles,
     overlay: HTMLCanvasElement,
     private rig: CameraRig,
   ) {
-    this.group.add(this.shock.rings, this.shock.spheres, this.bolts.lines, particles.mesh);
+    this.group.add(this.shock.rings, this.shock.spheres, this.shock.pillars, this.bolts.lines, particles.mesh, particles.sparkMesh, particles.puffMesh);
     this.numbers = new DamageNumbers(overlay);
   }
 
@@ -352,15 +399,42 @@ export class Fx {
       const c = ev.get(n, 2);
       const d = ev.get(n, 3);
       switch (t) {
-        case Ev.Damage:
-          this.numbers.add(a, b, c, d, ev.get(n, 4) === 1);
+        case Ev.Damage: {
+          const crit = ev.get(n, 4) === 1;
+          this.numbers.add(a, b, c, d, crit);
+          if (crit) p.sparks(a, b, c, 4, 0xffe28a, 9, 0.25);
           break;
+        }
         case Ev.EnemyDie: {
           const color = this.enemyColors[d] ?? 0xffffff;
           const scale = ev.get(n, 4);
           const big = ENEMIES[d]?.behavior === 'boss';
-          p.burst(a, b + 0.6 * scale, c, big ? 60 : 9 * scale, color, big ? 14 : 6 * scale, big ? 0.9 : 0.3 * scale, big ? 1.2 : 0.55);
-          p.burst(a, b + 0.6 * scale, c, big ? 20 : 3, 0xffffff, 4, 0.2, 0.35);
+          const y = b + 0.6 * scale;
+          if (big) {
+            p.burst(a, y, c, 60, color, 14, 0.9, 1.2);
+            p.sparks(a, y + 2, c, 40, 0xffffff, 18, 0.8);
+            p.puffs(a, b + 0.5, c, 14, 0xe8e0f0, 1.4, 1.2, 5);
+          } else {
+            switch (this.deathFx[d]) {
+              case 1: // shards: crystalline creatures shatter
+                p.sparks(a, y, c, 10 * scale, color, 9 * scale, 0.45);
+                p.sparks(a, y, c, 4, 0xffffff, 7, 0.3);
+                p.burst(a, y, c, 4 * scale, color, 4 * scale, 0.25 * scale, 0.5);
+                break;
+              case 2: // puff: a soft cloud
+                p.puffs(a, y, c, 3 * scale, color, 0.55 * scale, 0.5, 2);
+                p.puffs(a, y, c, 2, 0xf0eaf8, 0.4, 0.4, 2.5);
+                break;
+              case 3: // splat: goo flung low and wide
+                p.burst(a, b + 0.3, c, 10 * scale, color, 6 * scale, 0.3 * scale, 0.55, 0.35);
+                p.ring(a, b + 0.1, c, 8, color, 4 * scale, 0.22, 0.3);
+                break;
+              default: // pop
+                p.burst(a, y, c, 9 * scale, color, 6 * scale, 0.3 * scale, 0.55);
+                p.burst(a, y, c, 3, 0xffffff, 4, 0.2, 0.35);
+                if (Math.random() < 0.5) p.puffs(a, y, c, 1, 0xffffff, 0.35 * scale, 0.3, 1);
+            }
+          }
           if (ev.get(n, 5) === 1 || big) {
             this.shock.add(a, b, c, big ? 12 : 5, 0xffd34d, 0.6, false);
             this.rig.addTrauma(big ? 0.8 : 0.3);
@@ -371,7 +445,10 @@ export class Fx {
           const color = ev.i[n] || 0xff8a3d;
           this.shock.add(a, b, c, d * 1.1, color, 0.45, true);
           this.shock.add(a, b, c, d * 1.3, color, 0.4, false);
-          p.burst(a, b, c, 10 + d * 2, color, d * 2.5, 0.35, 0.5);
+          p.burst(a, b, c, 6 + d, color, d * 2.5, 0.35, 0.5);
+          p.sparks(a, b, c, 4 + d, color, d * 4, 0.35);
+          // hostile blasts leave a little smoke (the player's own bursts stay clean)
+          if (ev.get(n, 4) === 1) p.puffs(a, b - 0.2, c, 2 + Math.round(d * 0.5), 0x8a8090, Math.min(0.8, d * 0.2), 0.7, d * 0.8);
           const dist = Math.hypot(a - px, c - pz);
           if (dist < 20) this.rig.addTrauma(0.25 * (1 - dist / 20));
           break;
@@ -400,6 +477,7 @@ export class Fx {
           break;
         case Ev.Land:
           p.ring(a, b + 0.1, c, 10, 0xe8dcc0, Math.min(8, 2 + d * 0.4), 0.22, 0.35);
+          if (d > 9) p.puffs(a, b + 0.2, c, 3, 0xe8dcc0, 0.4, 0.45, 3);
           if (d > 14) this.rig.addTrauma(0.15);
           break;
         case Ev.Jump:
@@ -407,10 +485,19 @@ export class Fx {
           break;
         case Ev.Slide:
           p.burst(a, b + 0.2, c, 6, 0xd8c8a8, 3, 0.2, 0.4, 0.4);
+          p.puffs(a, b + 0.2, c, 2, 0xe8dcc0, 0.35, 0.4, 2);
           break;
         case Ev.LevelUp:
           this.shock.add(a, b, c, 6, 0x6dd6ff, 0.6, false);
+          this.shock.add(a, b, c, 1.6, 0x6dd6ff, 0.9, 'pillar');
           p.burst(a, b + 1, c, 30, 0x9ff3ff, 7, 0.25, 0.9, 1.5, 6);
+          p.sparks(a, b + 0.5, c, 16, 0xdff8ff, 10, 0.5, 1.6);
+          break;
+        case Ev.Evolve:
+          this.shock.add(px, py, pz, 2.4, 0xffd34d, 1.6, 'pillar');
+          this.shock.add(px, py, pz, 10, 0xffd34d, 0.9, false);
+          p.sparks(px, py + 1, pz, 40, 0xffe28a, 14, 0.9, 1.8);
+          p.burst(px, py + 1.5, pz, 30, 0xffd34d, 8, 0.3, 1.2, 1.5, 4);
           break;
         case Ev.Chest:
           this.shock.add(a, b, c, 5, 0xffd34d, 0.5, false);
@@ -423,7 +510,8 @@ export class Fx {
         case Ev.ShrineBreak:
           this.shock.add(a, b, c, 8, ev.i[n] || 0xffffff, 0.7, false);
           this.shock.add(a, b + 1.5, c, 3, ev.i[n] || 0xffffff, 0.5, true);
-          p.burst(a, b + 1.5, c, 40, ev.i[n] || 0xffffff, 9, 0.3, 1.0);
+          p.burst(a, b + 1.5, c, 30, ev.i[n] || 0xffffff, 9, 0.3, 1.0);
+          p.sparks(a, b + 1.5, c, 20, ev.i[n] || 0xffffff, 12, 0.6);
           this.rig.addTrauma(0.3);
           break;
         case Ev.Revive:

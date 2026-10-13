@@ -1,7 +1,7 @@
 {
   "name": "theabonk",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "TheaBonk \u2014 a 3D low-poly survivors-like roguelite. Bonk the Gloom, survive until dawn.",
   "type": "module",
   "scripts": {
@@ -13,7 +13,13 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "simulate": "tsx scripts/simulate.ts",
-    "bench": "tsx scripts/bench.ts"
+    "bench": "tsx scripts/bench.ts",
+    "check-size": "tsx scripts/check-size.ts",
+    "apply-tuning": "tsx scripts/apply-tuning.ts",
+    "analyze-playtests": "tsx scripts/analyze-playtests.ts",
+    "audio-report": "npm run build && tsx scripts/audio-report.ts",
+    "bench-browser": "npm run build && tsx scripts/bench-browser.ts",
+    "balance-sweep": "tsx scripts/balance-sweep.ts"
   },
   "dependencies": {
     "three": "^0.186.1"

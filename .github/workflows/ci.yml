@@ -65,8 +65,6 @@ jobs:
       - run: npm ci
       - name: Typecheck the repo tooling
         run: npm run typecheck
-      - name: Typecheck the sizzle reel tooling
-        run: npm run typecheck --workspace marketing/sizzle
       - name: No files over 10 MB, no local paths, no self-hosted runners
         run: npm run check:repo
       - name: Every game's committed build matches its source

@@ -12,12 +12,16 @@ in [STORYBOARD.md](STORYBOARD.md).
 ## Rebuild it
 
 ```bash
-npm run reel:capture -- calex-cart   # record one game's takes (repeat per game)
+npm ci                               # at the repo root (Playwright, ffmpeg-static, sharp, tsx)
+cd marketing/sizzle && npm ci        # the reel's own tools: GSAP and ffprobe
+npm run capture -- calex-cart        # record one game's takes (repeat per game)
 npm run reel                         # music, compositions, renders, encodes, review, publish
 ```
 
-Run both from the repo root. Never capture or render while tests are running: capture needs the
-whole GPU, and the capture script refuses to start if tests are running.
+HyperFrames 0.8.133 runs through `npx` (it is fetched once and cached). The reel is not a root
+workspace on purpose: a change to the root lockfile makes CI run every game's browser suite.
+Never capture or render while tests are running: capture needs the whole GPU, and both refuse to
+start while tests are running.
 
 Each step can also run on its own, from `marketing/sizzle`:
 

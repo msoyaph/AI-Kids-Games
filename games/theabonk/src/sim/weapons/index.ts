@@ -64,6 +64,7 @@ export function addWeapon(w: World, id: string): WeaponInstance | null {
   if (w.weapons.length >= WEAPON_SLOTS || hasWeapon(w, id)) return null;
   const wi = createWeaponInstance(w, id, w.weapons.length);
   w.weapons.push(wi);
+  w.stats.acquiredWeapons.add(id);
   return wi;
 }
 
@@ -80,6 +81,7 @@ export function evolveWeapon(w: World, wi: WeaponInstance, intoId: string): void
   clearOrbiters(w, wi.slot);
   wi.def = def;
   wi.index = WEAPON_INDEX[intoId];
+  w.stats.acquiredWeapons.add(intoId);
   wi.level = 1;
   wi.active = 0;
   wi.timer = 0.2;

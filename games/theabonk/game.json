@@ -4,8 +4,8 @@
   "title": "TheaBonk",
   "tagline": "Small hero. Mighty big bonks.",
   "shortDescription": "Help Thea push back the Gloom with her glowing Bonk Ring. Dodge waves of cartoon monsters, pick new powers as you level up and survive until dawn.",
-  "longDescription": "TheaBonk is a 3D action roguelite. Thea the Bonkwright and her friends hold a moonlit meadow against the Gloom from dusk until dawn. Weapons attack on their own, so your job is to move, jump and slide well enough to survive 20 minutes and three bosses. Level up to pick new weapons and items, evolve them into stronger forms, and spend gold between runs on permanent upgrades. It plays on computers with a keyboard and mouse or a gamepad.",
-  "version": "1.0.0",
+  "longDescription": "TheaBonk is a 3D action roguelite. Thea the Bonkwright and five friends hold a moonlit meadow and a snowy forest against the Gloom from dusk until dawn. Weapons attack on their own, so your job is to move, jump and slide well enough to survive 20 minutes and the bosses. Level up to pick new weapons and items, evolve them into stronger forms, and spend gold between runs on permanent upgrades. It plays on computers with a keyboard and mouse or a gamepad, and on phones and tablets with touch controls.",
+  "version": "2.0.0",
   "minAge": 8,
   "ageRange": "8+",
   "genres": [
@@ -31,33 +31,39 @@
     "offline game"
   ],
   "features": [
-    "Three heroes: Thea, plus Pip and Brindle to unlock, each with a starting weapon",
+    "Six heroes, each with their own starting weapon and a special power, from Thea's Landing Bonk to Brindle's Shell Guard",
+    "Two maps: Gloam Meadow and Rimewood, a snowy forest with slippery ice, falling icicles and wind",
     "Nine weapons with five levels each that evolve into stronger forms, plus 13 items",
-    "Bosses at 5, 10 and 15 minutes, and a win at dawn after 20",
-    "Shrines with six kinds of temporary blessing, and ramps for momentum jumps",
-    "A Workshop for permanent upgrades between runs, and achievements that unlock heroes and weapons"
+    "Bosses at 5, 10 and 15 minutes, a final boss on each map, and a win at dawn after 20",
+    "Relaxed, Normal and Hard difficulty, a daily run, and a collection of every monster you meet",
+    "Touch controls for phones and tablets, plus remappable keys and gamepad support",
+    "A Workshop for permanent upgrades between runs, and 26 achievements that unlock heroes and weapons"
   ],
-  "contentNotes": "Fantasy combat against cartoon monsters, fast movement and colorful effects. No realistic blood or gore. Action may feel intense. Unlocks and settings save in this browser. A keyboard and mouse or gamepad is required.",
+  "contentNotes": "Fantasy combat against cartoon monsters, fast movement and colorful effects. No realistic blood or gore. Action may feel intense. Unlocks and settings save in this browser.",
   "controls": {
     "types": [
       "Keyboard",
       "Mouse",
-      "Gamepad"
+      "Gamepad",
+      "Touch"
     ],
     "quickStart": [
-      "Move Thea with WASD, the arrow keys or a gamepad stick.",
+      "Move Thea with WASD, the arrow keys, a gamepad stick, or your left thumb on a phone or tablet.",
       "Her Bonk Ring bonks monsters all by itself. Stay on the move!",
-      "When you level up, pick a new power with 1–4."
+      "When you level up, pick a new power with 1–4, a click, or a tap."
     ],
     "howToPlay": [
       "Move with WASD or the arrow keys. Your Bonk Ring attacks automatically. Press Space to jump and Shift or C to slide.",
       "Drag the mouse or use Q/E to look. Choose pointer lock in Settings → Camera control, then click the game to lock the mouse. Escape or P pauses.",
       "Choose upgrades with 1–4, a click or the arrow keys and Enter.",
-      "With a gamepad, use the left stick to move and the right stick to look. A jumps, B or a trigger slides, and Start or Select pauses."
+      "With a gamepad, use the left stick to move and the right stick to look. A jumps, B or a trigger slides, and Start or Select pauses.",
+      "On phones and tablets, put your thumb down on the left to move, drag on the right to look, and tap JUMP and SLIDE. Tap a card to pick an upgrade. Settings → Touch controls changes their size, side and layout."
     ]
   },
   "devices": [
-    "Computer"
+    "Computer",
+    "Tablet",
+    "Phone"
   ],
   "orientation": "landscape",
   "requirements": [],
@@ -65,7 +71,10 @@
   "storage": {
     "prefix": "theabonk.",
     "keys": [
-      "theabonk.save"
+      "theabonk.save",
+      "theabonk.save.bak",
+      "theabonk.playtest",
+      "theabonk.tuning"
     ],
     "probe": "__theabonk_probe__"
   },

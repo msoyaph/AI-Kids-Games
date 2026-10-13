@@ -38,11 +38,11 @@
     },
     {
       "slug": "theabonk",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "source": "games/theabonk/dist/index.html",
-      "bytes": 772361,
-      "sha256": "8bd0050a31bc9c68c5dc6e764a57563dbfa2230668dd5fcf67da772a7ece7cbe",
-      "inputsSha256": "dbbe2bee3f2880629916d067181bb44cb84662579eb681ed87725fbab596b81b",
+      "bytes": 975472,
+      "sha256": "f1a627e9e3c10c9f3fcd8801a974fba068353b841250cd5443bfe2d37d2aa372",
+      "inputsSha256": "7310573d6319722bacc14c4c1ae23f676bec0f1f71ab89c7740c2a3a99bd1ed2",
       "importedAt": "2026-10-12"
     },
     {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DT, MOVE } from '../../src/config/balance';
+import { DT } from '../../src/config/balance';
+import { TUNING_DEFAULTS } from '../../src/config/tuning';
 import { updatePlayer, walkSpeed } from '../../src/sim/player';
 import { createWorld, emptyInput, type SimInput, type World } from '../../src/sim/world';
 
@@ -85,7 +86,7 @@ describe('player movement', () => {
     const w = flatWorld();
     w.player.vx = 100;
     run(w, { ...emptyInput(), moveX: 1 }, DT);
-    expect(speed(w)).toBeLessThanOrEqual(MOVE.maxSpeed + 1e-6);
+    expect(speed(w)).toBeLessThanOrEqual(TUNING_DEFAULTS.movement.maxSpeed + 1e-6);
   });
 
   it('a kicker ramp launches a fast player into the air', () => {

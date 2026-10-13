@@ -2,8 +2,11 @@
   "name": "Ai Kids Games",
   "short_name": "Ai Kids Games",
   "description": "Free, ad-free browser games for kids: kart racing, farming, tower defense, space adventures and more. No subscriptions, no sign-ups, no tracking.",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#F5F6F8",
   "theme_color": "#FFFFFF",
   "icons": [

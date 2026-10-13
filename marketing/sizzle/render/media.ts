@@ -16,7 +16,7 @@ export const HANDLE = 0.2;
 export interface Take { file: string; cut: number; duration: number; fps: number }
 export function take(shot: Shot): Take {
   const json = join(sizzle, 'captures', shot.slug, `${shot.take}.json`);
-  if (!existsSync(json)) throw new Error(`Missing take ${shot.slug}/${shot.take}: run npm run reel:capture -- ${shot.slug}`);
+  if (!existsSync(json)) throw new Error(`Missing take ${shot.slug}/${shot.take}: run npm run capture -- ${shot.slug} in marketing/sizzle`);
   return JSON.parse(readFileSync(json, 'utf8'));
 }
 

@@ -1,4 +1,5 @@
 import { SFX_NAMES } from '../config/sfx';
+import { LIMIT_CEILING_DB, mixGain } from './mix';
 import { Music } from './Music';
 
 type Wave = OscillatorType;
@@ -8,7 +9,11 @@ type Wave = OscillatorType;
  * The AudioContext is only created inside a user gesture (avoids autoplay warnings).
  */
 export class AudioEngine {
-  ctx: AudioContext | null = null;
+  ctx: BaseAudioContext | null = null;
+  /** Rendering offline (audio report): no autoplay state, no voice limits. */
+  offline = false;
+  /** Current sound's gain trim from the mix table (set by each named sound). */
+  private g = 1;
   private master: GainNode | null = null;
   private sfxBus: GainNode | null = null;
   private musicBus: GainNode | null = null;
@@ -21,7 +26,8 @@ export class AudioEngine {
   private lastGem = 0;
   private duck = 1;
 
-  constructor() {
+  constructor(listen = true) {
+    if (!listen) return;
     const unlock = (): void => this.unlock();
     window.addEventListener('pointerdown', unlock, { capture: true });
     window.addEventListener('keydown', unlock, { capture: true });
@@ -33,32 +39,59 @@ export class AudioEngine {
       if (!this.ctx) {
         const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
         if (!Ctor) return;
-        const ctx = new Ctor();
-        this.ctx = ctx;
-        const comp = ctx.createDynamicsCompressor();
-        comp.threshold.value = -14;
-        comp.knee.value = 12;
-        comp.ratio.value = 6;
-        comp.attack.value = 0.003;
-        comp.release.value = 0.2;
-        comp.connect(ctx.destination);
-        this.master = ctx.createGain();
-        this.master.connect(comp);
-        this.sfxBus = ctx.createGain();
-        this.sfxBus.connect(this.master);
-        this.musicBus = ctx.createGain();
-        this.musicBus.connect(this.master);
-        const len = ctx.sampleRate;
-        this.noise = ctx.createBuffer(1, len, ctx.sampleRate);
-        const data = this.noise.getChannelData(0);
-        for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-        this.music.attach(ctx, this.musicBus, this.noise);
-        this.applyVolumes();
+        this.build(new Ctor());
       }
-      if (this.ctx.state === 'suspended') void this.ctx.resume().catch(() => undefined);
+      const ctx = this.ctx as AudioContext | null;
+      if (ctx && ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
     } catch {
       this.ctx = null;
     }
+  }
+
+  /**
+   * Build the graph on a context (live, or offline for the audio report):
+   * sfx + music buses → master → glue compressor → limiter → soft clip at the ceiling.
+   */
+  build(ctx: BaseAudioContext, dest: AudioNode = ctx.destination): void {
+    this.ctx = ctx;
+    // glue: gentle compression of the whole mix
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -14;
+    comp.knee.value = 12;
+    comp.ratio.value = 6;
+    comp.attack.value = 0.003;
+    comp.release.value = 0.2;
+    // limiter: fast and hard just under the ceiling…
+    const lim = ctx.createDynamicsCompressor();
+    lim.threshold.value = LIMIT_CEILING_DB - 3;
+    lim.knee.value = 0;
+    lim.ratio.value = 20;
+    lim.attack.value = 0.001;
+    lim.release.value = 0.08;
+    // …and a soft clip that guarantees nothing ever passes the ceiling
+    const clip = ctx.createWaveShaper();
+    clip.curve = ceilingCurve(LIMIT_CEILING_DB);
+    clip.oversample = '2x';
+    comp.connect(lim);
+    lim.connect(clip);
+    clip.connect(dest);
+    this.master = ctx.createGain();
+    this.master.connect(comp);
+    this.sfxBus = ctx.createGain();
+    this.sfxBus.connect(this.master);
+    this.musicBus = ctx.createGain();
+    this.musicBus.connect(this.master);
+    const len = ctx.sampleRate;
+    this.noise = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = this.noise.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    this.music.attach(ctx, this.musicBus, this.noise);
+    this.applyVolumes();
+  }
+
+  /** The sfx bus (the audio report measures sounds here, before the master chain). */
+  get sfxOut(): AudioNode | null {
+    return this.sfxBus;
   }
 
   setVolumes(master: number, music: number, sfx: number): void {
@@ -83,12 +116,14 @@ export class AudioEngine {
   // ───────────────────────────── primitives ─────────────────────────────
 
   private canPlay(key: string, minGap: number): boolean {
-    if (!this.ctx || !this.sfxBus || this.ctx.state !== 'running') return false;
-    if (this.voices > 40) return false;
+    if (!this.ctx || !this.sfxBus || (!this.offline && this.ctx.state !== 'running')) return false;
+    if (this.voices > 40 && !this.offline) return false;
     const now = this.ctx.currentTime;
     const last = this.lastPlay.get(key) ?? -1;
     if (now - last < minGap) return false;
     this.lastPlay.set(key, now);
+    // every sound plays at its mix-table trim
+    this.g = mixGain(key);
     return true;
   }
 
@@ -113,7 +148,7 @@ export class AudioEngine {
     o.type = type;
     o.frequency.setValueAtTime(f0, t);
     if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
-    this.env(g, t, vol, attack, dur);
+    this.env(g, t, vol * this.g, attack, dur);
     o.connect(g);
     g.connect(dest ?? this.sfxBus!);
     o.start(t);
@@ -133,7 +168,7 @@ export class AudioEngine {
     bf.frequency.setValueAtTime(f0, t);
     bf.frequency.exponentialRampToValueAtTime(Math.max(30, f1), t + dur);
     const g = ctx.createGain();
-    this.env(g, t, vol, 0.004, dur);
+    this.env(g, t, vol * this.g, 0.004, dur);
     src.connect(bf);
     bf.connect(g);
     g.connect(this.sfxBus!);
@@ -211,11 +246,31 @@ export class AudioEngine {
       case 'spores':
         this.noiseHit(0.25, 0.2 * v, 'highpass', 1500, 4000);
         break;
+      case 'icicle':
+        // a high crack and a glassy tinkle
+        this.noiseHit(0.08, 0.3 * v, 'highpass', 5000, 3000);
+        this.tone('triangle', 2600 * r, 1900, 0.18, 0.1 * v, 0.01);
+        this.tone('sine', 3400 * r, 3100, 0.25, 0.06 * v, 0.04);
+        break;
+      case 'gust':
+        // a long rising-falling whoosh
+        this.noiseHit(1.6, 0.22 * v, 'bandpass', 300, 1400, 0, 0.8);
+        this.noiseHit(1.2, 0.12 * v, 'bandpass', 900, 2600, 0.3, 1.2);
+        break;
+      case 'shatter':
+        this.noiseHit(0.2, 0.3 * v, 'highpass', 3500, 6000);
+        this.tone('triangle', 1800 * r, 900, 0.15, 0.1 * v);
+        break;
+      case 'bonk':
+        // Thea's landing bonk: a woody thock with a little boom
+        this.tone('sine', 220 * r, 70, 0.18, 0.45 * v);
+        this.noiseHit(0.06, 0.25 * v, 'bandpass', 1400, 600, 0, 2);
+        break;
     }
   }
 
   hit(crit: boolean): void {
-    if (!this.canPlay('hit', 0.03)) return;
+    if (!this.canPlay(crit ? 'crit' : 'hit', 0.03)) return;
     this.noiseHit(0.035, crit ? 0.12 : 0.06, 'highpass', 3000, 2000);
     if (crit) this.tone('square', 1400, 900, 0.05, 0.04);
   }
@@ -223,6 +278,7 @@ export class AudioEngine {
   kill(boss = false): void {
     if (boss) {
       this.sfx(SFX_NAMES.indexOf('explode'), 1);
+      if (!this.canPlay('bossKill', 0.5)) return;
       this.arp([523, 659, 784, 1047, 1319], 0.09, 'triangle', 0.18, 0.3);
       return;
     }
@@ -237,8 +293,11 @@ export class AudioEngine {
     this.gemStreak = now - this.lastGem < 0.45 ? Math.min(24, this.gemStreak + 1) : 0;
     this.lastGem = now;
     if (!this.canPlay('gem', 0.03)) return;
-    const f = 880 * Math.pow(2, this.gemStreak / 12);
+    // a rising chime up a pentatonic scale while the pickups keep coming
+    const k = this.gemStreak;
+    const f = 880 * Math.pow(2, (PENTA[k % 5] + 12 * Math.floor(k / 5)) / 12);
     this.tone('sine', f, f, 0.08, 0.07);
+    this.tone('sine', f * 2, f * 2, 0.05, 0.02, 0.01);
   }
 
   coin(): void {
@@ -292,7 +351,7 @@ export class AudioEngine {
   }
 
   banner(boss: boolean): void {
-    if (!this.canPlay('banner', 0.5)) return;
+    if (!this.canPlay(boss ? 'bossBanner' : 'banner', 0.5)) return;
     if (boss) {
       this.tone('sawtooth', 110, 104, 1.4, 0.18, 0, 0.05);
       this.tone('sawtooth', 165, 156, 1.4, 0.12, 0, 0.05);
@@ -300,8 +359,57 @@ export class AudioEngine {
   }
 
   achievement(): void {
-    if (!this.canPlay('ach', 0.5)) return;
+    if (!this.canPlay('achievement', 0.5)) return;
     this.arp([659, 784, 988, 1319], 0.08, 'square', 0.06, 0.3);
+  }
+
+  /** Play any sound by its mix-table name (the audio report renders each one this way). */
+  play(name: string): void {
+    const id = (SFX_NAMES as readonly string[]).indexOf(name);
+    if (id >= 0) {
+      this.sfx(id, 1);
+      return;
+    }
+    switch (name) {
+      case 'hit':
+      case 'crit':
+        return this.hit(name === 'crit');
+      case 'kill':
+      case 'bossKill':
+        return this.kill(name === 'bossKill');
+      case 'gem':
+        return this.gem();
+      case 'coin':
+        return this.coin();
+      case 'levelUp':
+        return this.levelUp();
+      case 'hurt':
+        return this.hurt();
+      case 'heal':
+        return this.heal();
+      case 'jump':
+        return this.jump();
+      case 'land':
+        return this.land(14);
+      case 'slide':
+        return this.slide();
+      case 'chest':
+        return this.chest();
+      case 'evolve':
+        return this.evolve();
+      case 'banner':
+      case 'bossBanner':
+        return this.banner(name === 'bossBanner');
+      case 'achievement':
+        return this.achievement();
+      case 'heartbeat':
+        return this.heartbeat();
+      case 'stingerWin':
+      case 'stingerLose':
+        return this.stinger(name === 'stingerWin');
+      default:
+        if (name.startsWith('ui-')) this.ui(name.slice(3) as 'click' | 'buy' | 'error' | 'back' | 'open');
+    }
   }
 
   ui(kind: 'click' | 'buy' | 'error' | 'back' | 'open'): void {
@@ -333,8 +441,26 @@ export class AudioEngine {
   }
 
   stinger(win: boolean): void {
-    if (!this.ctx) return;
+    if (!this.canPlay(win ? 'stingerWin' : 'stingerLose', 1)) return;
     if (win) this.arp([523, 659, 784, 1047, 784, 1047, 1319], 0.13, 'triangle', 0.2, 0.5);
     else this.arp([392, 330, 262, 196], 0.18, 'triangle', 0.18, 0.5);
   }
+}
+
+/** Pentatonic steps (semitones) for the gem chimes. */
+const PENTA = [0, 2, 4, 7, 9];
+
+/** Soft clip: linear well below the ceiling, rounding off into it, never beyond it. */
+export function ceilingCurve(ceilingDb: number): Float32Array<ArrayBuffer> {
+  const n = 4096;
+  const out = new Float32Array(new ArrayBuffer(n * 4));
+  const c = Math.pow(10, ceilingDb / 20);
+  const knee = c * 0.8;
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    const a = Math.abs(x);
+    const y = a <= knee ? a : knee + (c - knee) * Math.tanh((a - knee) / (c - knee));
+    out[i] = Math.sign(x) * Math.min(c, y);
+  }
+  return out;
 }

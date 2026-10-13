@@ -151,7 +151,7 @@ export const generatedGames: Game[] = [
     "title": "TheaBonk",
     "tagline": "Small hero. Mighty big bonks.",
     "description": "Help Thea push back the Gloom with her glowing Bonk Ring. Dodge waves of cartoon monsters, pick new powers as you level up and survive until dawn.",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "categories": [
       "Action",
       "Adventure"
@@ -176,28 +176,32 @@ export const generatedGames: Game[] = [
     ],
     "ageGuidance": "Ages 8+",
     "minAge": 8,
-    "contentNotes": "Fantasy combat against cartoon monsters, fast movement and colorful effects. No realistic blood or gore. Action may feel intense. Unlocks and settings save in this browser. A keyboard and mouse or gamepad is required.",
+    "contentNotes": "Fantasy combat against cartoon monsters, fast movement and colorful effects. No realistic blood or gore. Action may feel intense. Unlocks and settings save in this browser.",
     "estimatedPlayTime": "10–20 minutes per run",
     "quickStart": [
-      "Move Thea with WASD, the arrow keys or a gamepad stick.",
+      "Move Thea with WASD, the arrow keys, a gamepad stick, or your left thumb on a phone or tablet.",
       "Her Bonk Ring bonks monsters all by itself. Stay on the move!",
-      "When you level up, pick a new power with 1–4."
+      "When you level up, pick a new power with 1–4, a click, or a tap."
     ],
     "controls": {
       "types": [
         "Keyboard",
         "Mouse",
-        "Gamepad"
+        "Gamepad",
+        "Touch"
       ],
       "howToPlay": [
         "Move with WASD or the arrow keys. Your Bonk Ring attacks automatically. Press Space to jump and Shift or C to slide.",
         "Drag the mouse or use Q/E to look. Choose pointer lock in Settings → Camera control, then click the game to lock the mouse. Escape or P pauses.",
         "Choose upgrades with 1–4, a click or the arrow keys and Enter.",
-        "With a gamepad, use the left stick to move and the right stick to look. A jumps, B or a trigger slides, and Start or Select pauses."
+        "With a gamepad, use the left stick to move and the right stick to look. A jumps, B or a trigger slides, and Start or Select pauses.",
+        "On phones and tablets, put your thumb down on the left to move, drag on the right to look, and tap JUMP and SLIDE. Tap a card to pick an upgrade. Settings → Touch controls changes their size, side and layout."
       ]
     },
     "supportedDevices": [
-      "Computer"
+      "Computer",
+      "Tablet",
+      "Phone"
     ],
     "orientation": "landscape",
     "requirements": [],

@@ -1,6 +1,6 @@
 // Record the reel's gameplay takes from the built games, with the site's capture tooling
 // (headed Chromium on the real GPU, 1920×1080 at 60 fps, the games' own sound tapped).
-// Usage: npm run reel:capture -- <slug> [--only=<take-id>]
+// Usage (in marketing/sizzle): npm run capture -- <slug> [--only=<take-id>]
 // Raw takes land in marketing/sizzle/captures/<slug>/ (git-ignored).
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -14,7 +14,7 @@ export const takeDir = (slug: string) => join(sizzle, 'captures', slug);
 const args = process.argv.slice(2);
 const slug = args.find(arg => !arg.startsWith('--'));
 const only = args.find(arg => arg.startsWith('--only='))?.split('=')[1];
-if (!slug || !existsSync(join(sizzle, 'capture/games', `${slug}.ts`))) throw new Error('Usage: npm run reel:capture -- <slug> [--only=<take-id>] (a route in marketing/sizzle/capture/games/)');
+if (!slug || !existsSync(join(sizzle, 'capture/games', `${slug}.ts`))) throw new Error('Usage (in marketing/sizzle): npm run capture -- <slug> [--only=<take-id>] (a route in marketing/sizzle/capture/games/)');
 if (!existsSync(join(site, 'public/games', slug, 'index.html'))) throw new Error(`apps/site/public/games/${slug}/index.html does not exist.`);
 
 // Never capture while browser or unit tests run: both need the whole GPU and CPU.

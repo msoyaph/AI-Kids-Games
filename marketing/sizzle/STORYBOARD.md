@@ -84,7 +84,7 @@ from `ffmpeg-static`). A `beats.json` lists every bar start; the review checks e
   reel takes per game and an audio tap; routes updated for the upgraded builds (Vanex 2.0, Space
   Sky 3D, Calex 0.2, Light Crossing 2.0) and a new one for Cliff Valley. Phone and tablet shots are
   recorded at true device sizes with real touches on the glass controls.
-  `npm run reel:capture -- <slug>` recaptures one game; nothing is captured while tests run.
+  `npm run capture -- <slug> (in marketing/sizzle)` recaptures one game; nothing is captured while tests run.
 - **Render:** `npm run reel` renders the master, the vertical cut, the cutdowns, the web encodes,
   the poster and the thumbnail, then runs the checks.
 - **Vertical:** each shot carries a focus point and, for wide scenes, a stacked layout (the shot on
