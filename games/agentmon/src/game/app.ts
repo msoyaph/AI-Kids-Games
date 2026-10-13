@@ -49,6 +49,17 @@ export class App {
     scene.resize?.(this);
   }
 
+  /**
+   * The frame-rate governor: if frames stay slower than ~22 fps for two seconds while drawing at
+   * more than 1×, drop to 1× (a sharper picture isn't worth a sluggish game on a slow device).
+   */
+  private slowFor = 0;
+  private govern(raw: number): void {
+    if (this.host.lowQuality || this.host.dpr <= 1) { this.slowFor = 0; return; }
+    this.slowFor = raw > 0.045 ? this.slowFor + raw : Math.max(0, this.slowFor - raw);
+    if (this.slowFor > 2) { this.slowFor = 0; this.host.setLowQuality(); }
+  }
+
   start(): void {
     if (this.running) return;
     this.running = true;
@@ -58,6 +69,7 @@ export class App {
       this.last = now;
       this.frameMs = this.frameMs * 0.95 + raw * 0.05;
       const dt = Math.min(0.1, raw / 1000) * this.timeScale;
+      this.govern(raw / 1000);
       this.scene?.update(dt, this);
       this.sprites.flush();
       this.host.app.render();

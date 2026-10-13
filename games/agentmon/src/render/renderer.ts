@@ -13,6 +13,10 @@ export interface RenderHost {
   /** Integer scale for 16-px tiles, from the screen's short side. */
   zoom: number;
   kind: 'webgl' | 'webgpu' | 'canvas';
+  /** Drawing at 1× (no extra device pixels): `?low`, a software renderer, or a slow device. */
+  lowQuality: boolean;
+  /** Switch to 1× drawing (the frame-rate governor calls this when frames stay slow). */
+  setLowQuality(): void;
   onResize: (() => void)[];
   onContextRestored: (() => void)[];
   resize(): void;
@@ -40,6 +44,16 @@ export async function createRenderer(parent: HTMLElement, lowQuality: boolean): 
   canvas.setAttribute('aria-hidden', 'true');
   parent.prepend(canvas);
   const name = app.renderer.name;
+  // A software renderer (no GPU, as on CI runners and some old computers) draws every pixel on the
+  // CPU: keep the canvas at 1× there.
+  let software = false;
+  try {
+    const gl = (app.renderer as unknown as { gl?: WebGLRenderingContext }).gl;
+    if (gl) {
+      const info = gl.getExtension('WEBGL_debug_renderer_info');
+      software = /swiftshader|llvmpipe|softpipe|software/i.test(String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)));
+    }
+  } catch { software = false; }
   const host: RenderHost = {
     app,
     width: 320,
@@ -47,12 +61,14 @@ export async function createRenderer(parent: HTMLElement, lowQuality: boolean): 
     dpr: 1,
     zoom: 3,
     kind: name === 'webgl' ? 'webgl' : name === 'webgpu' ? 'webgpu' : 'canvas',
+    lowQuality: lowQuality || software,
+    setLowQuality() { if (!host.lowQuality) { host.lowQuality = true; host.resize(); } },
     onResize: [],
     onContextRestored: [],
     resize() {
       const cssW = Math.max(1, parent.clientWidth || window.innerWidth);
       const cssH = Math.max(1, parent.clientHeight || window.innerHeight);
-      const dpr = Math.min(lowQuality ? 1 : 2, window.devicePixelRatio || 1);
+      const dpr = Math.min(host.lowQuality ? 1 : 2, window.devicePixelRatio || 1);
       const w = Math.floor(cssW * dpr), h = Math.floor(cssH * dpr);
       host.dpr = dpr;
       host.width = w;

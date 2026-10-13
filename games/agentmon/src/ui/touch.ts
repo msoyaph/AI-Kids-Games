@@ -24,7 +24,9 @@ export class TouchControls {
   private pointer: number | null = null;
   private start = { x: 0, y: 0, t: 0, moved: false };
   private visible = true;
-  private worldActive = true;
+  /** Off until a walking scene (the overworld or a Trial) turns the world controls on: the title,
+   *  new-game screens and capture scenes have their own buttons. */
+  private worldActive = false;
 
   constructor(private input: Input, private opts: TouchOptions) {
     this.knob = h('div.glass.gstick-knob', {}, h('div.gstick-shine'));

@@ -44,8 +44,6 @@ export async function advance(page: Page, seconds = 20) {
   throw new Error('dialogue did not end');
 }
 
-const DELTA: Record<string, [number, number]> = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowDown: [0, 1], ArrowUp: [0, -1] };
-
 /** Press A (Z) to talk, and wait until the conversation has started (the game reads keys on its next frame). */
 export async function talk(page: Page) {
   await page.keyboard.press('KeyZ');
@@ -65,17 +63,49 @@ export async function hold(page: Page, key: string, done: (s: Snap) => boolean, 
   await expect.poll(async () => { const s = await snap(page); return (!s.busy && !s.moving) || !!s.dialogue; }, { timeout: 5000, intervals: [50] }).toBe(true);
 }
 
-/** Walk exactly `steps` tiles (stopping early if a door, map edge or story moment takes over). */
-export async function walk(page: Page, key: string, steps: number) {
-  const before = await snap(page);
-  const [dx, dy] = DELTA[key]!;
-  const tx = before.x! + dx * steps, ty = before.y! + dy * steps;
-  await hold(page, key, s => (s.x === tx && s.y === ty) || s.map !== before.map || !!s.busy, 2000 + steps * 500);
+/**
+ * One step: hold the key until the step starts (the player's tile changes, or a door, map edge or
+ * story moment takes over), let go, and wait until the player stands still. Letting go during the
+ * step means a slow device (CI draws in software at ~15 fps) can never add a step. Returns false
+ * when something other than a plain step happened.
+ */
+/** Wait until nothing is happening: no step, fade or story moment under way (a dialogue counts as settled). */
+async function settled(page: Page) {
+  await expect.poll(async () => { const s = await snap(page); return (!s.busy && !s.moving) || !!s.dialogue; }, { timeout: 15_000, intervals: [30] }).toBe(true);
 }
 
-/** Keep walking until we arrive on another map. */
+async function oneStep(page: Page, key: string): Promise<boolean> {
+  await settled(page);
+  const b = await snap(page);
+  if (b.dialogue) return false;
+  await page.keyboard.down(key);
+  let moved = false;
+  try {
+    await expect.poll(async () => {
+      const s = await snap(page);
+      moved = s.x !== b.x || s.y !== b.y;
+      return moved || s.map !== b.map || !!s.busy || !!s.dialogue;
+    }, { timeout: 8000, intervals: [10] }).toBe(true);
+  } finally {
+    await page.keyboard.up(key);
+  }
+  await settled(page);
+  const a = await snap(page);
+  return moved && a.map === b.map && !a.dialogue;
+}
+
+/** Walk exactly `steps` tiles, one at a time (stopping early if a door, map edge or story moment takes over). */
+export async function walk(page: Page, key: string, steps: number) {
+  for (let i = 0; i < steps; i++) if (!(await oneStep(page, key))) return;
+}
+
+/** Keep walking, a step at a time, until we arrive on another map. */
 export async function leave(page: Page, key: string, map: string) {
-  await hold(page, key, s => s.map === map, 8000);
+  for (let i = 0; i < 40; i++) {
+    await oneStep(page, key);
+    if ((await snap(page)).map === map) return;
+  }
+  throw new Error(`did not reach ${map}`);
 }
 
 

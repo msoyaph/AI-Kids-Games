@@ -6,18 +6,27 @@ async function addPad(page: Page) {
   await page.addInitScript(() => {
     const button = () => ({ pressed: false, touched: false, value: 0 });
     const pad = { id: 'Test pad (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, button), vibrationActuator: null, hapticActuators: [] };
-    (window as unknown as { __pad: typeof pad }).__pad = pad;
-    Object.defineProperty(navigator, 'getGamepads', { value: () => [pad, null, null, null], configurable: true });
+    const w = window as unknown as { __pad: typeof pad; __padPolls: number };
+    w.__pad = pad;
+    w.__padPolls = 0;
+    // count the game's polls, so a press can be held until the game has really seen it
+    Object.defineProperty(navigator, 'getGamepads', { value: () => { w.__padPolls++; return [pad, null, null, null]; }, configurable: true });
   });
 }
 
-/** Press and let go of a button (0 A, 1 B, 9 Start, 12–15 d-pad up/down/left/right). */
+/**
+ * Press and let go of a button (0 A, 1 B, 9 Start, 12–15 d-pad up/down/left/right). The button is
+ * held until the game has polled the pad at least twice, and released for two more polls, so the
+ * press counts once however slow the frames are (CI draws in software at ~15 fps).
+ */
 async function press(page: Page, i: number) {
-  const set = (on: boolean) => page.evaluate(([b, v]) => { (window as unknown as { __pad: { buttons: unknown[] } }).__pad.buttons[b as number] = { pressed: v, touched: v, value: v ? 1 : 0 }; }, [i, on] as const);
-  await set(true);
-  await page.waitForTimeout(140);
-  await set(false);
-  await page.waitForTimeout(160);
+  const polls = () => page.evaluate(() => (window as unknown as { __padPolls: number }).__padPolls);
+  const set = (on: boolean) => page.evaluate(([b, v]) => { (window as unknown as { __pad: { buttons: unknown[] } }).__pad.buttons[b as number] = { pressed: v, touched: v, value: v ? 1 : 0 }; return (window as unknown as { __padPolls: number }).__padPolls; }, [i, on] as const);
+  const down = await set(true);
+  await expect.poll(polls, { timeout: 8000, intervals: [10] }).toBeGreaterThanOrEqual(down + 2);
+  const up = await set(false);
+  await expect.poll(polls, { timeout: 8000, intervals: [10] }).toBeGreaterThanOrEqual(up + 2);
+  await page.waitForTimeout(100);
 }
 
 const focused = (page: Page) => page.evaluate(() => (document.activeElement as HTMLElement | null)?.textContent?.trim() ?? '');

@@ -11,7 +11,9 @@ test('touch only: a new adventure, Chief Nell, a partner and the first spar', as
   test.setTimeout(240_000);
   const problems = watch(page);
   await page.goto('/?fasttext');
-  // the title, a slot, your Field Agent, a name, how tricky: all big buttons
+  // the title, a slot, your Field Agent, a name, how tricky: all big buttons (no stick or A/B here)
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.glass-ui')).toBeHidden();
   await page.getByRole('button', { name: 'Play' }).tap();
   await page.getByRole('button', { name: 'New adventure' }).first().tap();
   await page.getByRole('button', { name: 'Next', exact: true }).tap();
@@ -49,15 +51,15 @@ test('touch only: a new adventure, Chief Nell, a partner and the first spar', as
   expect(problems).toEqual([]);
 });
 
-/** One Trial step by touch: tap the tile next to you in that direction. */
+/** One Trial step by touch: wait until the last move has finished, then tap the tile next to you in that direction. */
 async function tapStep(page: Page, dir: number) {
+  await expect.poll(async () => { const n = await snap(page) as { moving?: boolean; busy?: boolean }; return !n.moving && !n.busy; }, { timeout: 8000, intervals: [30] }).toBe(true);
   const s = await snap(page);
   const [dx, dy] = [[0, 1], [-1, 0], [1, 0], [0, -1]][dir]!;
   const p = tileOnScreen(s, s.x! + dx, s.y! + dy);
   const before = s.moves ?? 0;
   await page.touchscreen.tap(p.x, p.y);
-  await expect.poll(async () => ((await snap(page)).moves ?? 0) > before, { timeout: 3000, intervals: [20] }).toBe(true);
-  await page.waitForTimeout(260);
+  await expect.poll(async () => ((await snap(page)).moves ?? 0) > before, { timeout: 8000, intervals: [20] }).toBe(true);
 }
 
 test('touch only: the first befriend, a Rest Stop nap, and a Trial room', async ({ page }, info) => {
