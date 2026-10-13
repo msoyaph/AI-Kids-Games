@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 import { boot,guard,instrument,launchGames,startGame,verifySaveReload } from './games';
 for (const game of launchGames) test(`${game.slug}: home → details → play, 20 seconds clean, durable save`,async ({ page },info) => {
   await instrument(page); const checks = guard(page);

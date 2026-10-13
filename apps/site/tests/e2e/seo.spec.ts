@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 import { games } from '../../src/data/games';
 import { faq } from '../../src/data/faq';
 import { guides } from '../../src/data/guides';

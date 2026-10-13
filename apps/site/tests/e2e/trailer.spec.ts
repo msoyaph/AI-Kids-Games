@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 import { guard } from './games';
 
 // The trailer is self-hosted and lives on About only: it loads only when someone presses play,

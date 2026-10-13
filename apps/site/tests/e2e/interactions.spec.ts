@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 import { boot,clearSpaceDialogue,guard,instrument,startGame } from './games';
 test('TheaBonk obtains pointer lock inside the actual play iframe',async ({ page },info) => {
   test.skip(info.project.name !== 'desktop','Pointer lock is for desktop mouse play.');

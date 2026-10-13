@@ -1,4 +1,4 @@
-import { devices,expect,test,type Page } from '@playwright/test';
+import { devices,expect,test,type Page } from './fixtures';
 import { guard as guardOrigin,instrument,pastTouchGate,startGame } from './games';
 const guard = (page: Page) => guardOrigin(page,new URL(test.info().project.use.baseURL!).origin);
 
