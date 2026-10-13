@@ -489,5 +489,74 @@ export const generatedGames: Game[] = [
     "featured": false,
     "accentColor": "#ffe0b8",
     "status": "Ready to play"
+  },
+  {
+    "slug": "agentmon",
+    "title": "Agentmon",
+    "tagline": "Befriend creatures and relight the six Beacons.",
+    "description": "Join the Field Agent Academy, make friends with 52 cute creatures and solve puzzle Trials to clear the static fog. A gentle pixel-art adventure where nobody gets hurt.",
+    "version": "1.0.0",
+    "categories": [
+      "Adventure",
+      "RPG"
+    ],
+    "tags": [
+      "Creatures",
+      "Pixel art",
+      "Puzzles",
+      "Exploring",
+      "Nature facts",
+      "Turn-based"
+    ],
+    "keywords": [
+      "creature collecting",
+      "turn-based rpg",
+      "pixel art",
+      "puzzle dungeons",
+      "kids rpg",
+      "befriend creatures",
+      "nature facts",
+      "browser game",
+      "offline game"
+    ],
+    "ageGuidance": "Ages 7–12",
+    "minAge": 7,
+    "contentNotes": "Gentle sparring only: tired creatures take a nap and are never hurt or lost. Losing sends you to a Rest Stop with nothing taken. No purchases, ads, chat or random reward packs. Some reading, with read-aloud. Saves stay in this browser.",
+    "estimatedPlayTime": "About 8 hours, plus post-game",
+    "quickStart": [
+      "Press Play, pick a slot and make your Field Agent.",
+      "Walk with the touch stick, the arrow keys or a gamepad, or tap where you want to go.",
+      "Press A to talk, spar and befriend; B goes back."
+    ],
+    "controls": {
+      "types": [
+        "Keyboard",
+        "Mouse",
+        "Gamepad",
+        "Touch"
+      ],
+      "howToPlay": [
+        "Walk with WASD or the arrow keys (hold X to hurry), a gamepad stick or d-pad, the touch stick, or tap or click a spot to walk there. Tap a person or a door to walk up to it.",
+        "A (Z, Space or Enter; gamepad A; the A button) talks, picks and confirms. B (X, Escape or Backspace; gamepad B; the B button) goes back.",
+        "Menu (M or Tab; gamepad Start; the Menu button) opens your team, bag, Field Guide, map, quests, the Agent Base and settings.",
+        "In a spar, pick a move (the star is a good pick), Rest to get energy back, or Befriend a tired wild Agentmon. In the Spark Ring, tap or press A when the spark is in the pink glow, or switch to Mood Match in Settings.",
+        "In Trials, walk into blocks to push them. Press R or open the Trial menu to reset a room."
+      ]
+    },
+    "supportedDevices": [
+      "Computer",
+      "Tablet",
+      "Phone"
+    ],
+    "orientation": "any",
+    "requirements": [],
+    "coverLayers": [
+      "twinkle",
+      "bob"
+    ],
+    "releaseDate": "2026-10-13",
+    "featured": false,
+    "accentColor": "#ffcf5c",
+    "status": "Ready to play"
   }
 ];

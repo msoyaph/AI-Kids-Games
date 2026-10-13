@@ -75,7 +75,8 @@ test('touch only: the first befriend, a Rest Stop nap, and a Trial room', async 
     const near = [...s.wild].sort((a, b) => Math.abs(a.x - s.x!) + Math.abs(a.y - s.y!) - (Math.abs(b.x - s.x!) + Math.abs(b.y - s.y!)));
     let p: { x: number; y: number } | undefined;
     for (const w of near) { const q = tileOnScreen(s, w.x, w.y); if (await reachesWorld(page, q)) { p = q; break; } }
-    if (!p) { await page.waitForTimeout(1000); continue; }
+    // none on screen (or all behind a button): walk toward the nearest one, as a kid would
+    if (!p) { if (near[0]) await tapWalk(page, near[0].x, near[0].y, { within: 3, befriend: true }); continue; }
     await page.touchscreen.tap(p.x, p.y);
     await expect.poll(async () => { const n = await snap(page); return !!n.battle || (!n.busy && !n.moving); }, { timeout: 20_000 }).toBe(true);
     if ((await snap(page)).battle) await touchAdvance(page, { befriend: true, seconds: 120 });

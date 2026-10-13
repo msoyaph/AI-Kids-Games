@@ -150,6 +150,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #4fa3ff; out
 /* ---- title, slots, new game ------------------------------------------------------------------- */
 /* the title block sits in the sky, above the parade of Agentmon walking on the grass (from 72% down) */
 .title-screen { gap: 18px; place-content: start center; padding-top: max(16px, 10vh); }
+.title-screen h1 .mon { color: #ff9ad0; }
 .title-screen h1 { font-size: calc(clamp(56px, 9vw, 92px) * var(--ui-scale)); -webkit-text-stroke: 3px var(--line); paint-order: stroke fill; text-shadow: 0 5px 0 var(--line), 0 0 22px rgba(255, 207, 92, 0.4); }
 .tagline { font-size: 1.05em; }
 button.big { min-height: 64px; padding: 0 44px; font-size: 1.3em; }

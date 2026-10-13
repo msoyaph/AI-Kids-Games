@@ -84,10 +84,12 @@ export class SparkRing {
   }
 
   /**
-   * Play the three sparks. `tapped()` returns true once when the player taps / presses A.
+   * Play the three sparks. `tapped()` returns true once when the player taps / presses A, or the
+   * tap's time (`performance.now()` clock): then the tap is judged where the spark was at that
+   * moment, not on the frame that notices it, so a slow device never turns a hit into a miss.
    * Returns the heart fill and each tap's angle (null = no tap this spark).
    */
-  async play(tapped: () => boolean, instant = false, onFrame?: (info: SparkInfo | null) => void, onSpark?: (fill: number) => void): Promise<SparkResult> {
+  async play(tapped: () => boolean | number, instant = false, onFrame?: (info: SparkInfo | null) => void, onSpark?: (fill: number) => void): Promise<SparkResult> {
     const taps: (number | null)[] = [];
     for (let i = 0; i < this.setup.sparks; i++) {
       this.drawRing(i);
@@ -103,7 +105,8 @@ export class SparkRing {
           const angle = sparkAngle(this.setup, secs);
           this.drawSpark(angle);
           onFrame?.({ index: i, angle, arcAt: this.setup.arcAt[i] ?? 0, arc: this.setup.arc });
-          if (tapped()) { hit = angle; return resolve(); }
+          const tap = tapped();
+          if (tap !== false) { hit = typeof tap === 'number' ? sparkAngle(this.setup, Math.max(0, Math.min(secs, (tap - t0) / 1000))) : angle; return resolve(); }
           if (turns >= 1.15) return resolve(); // one full lap (and a little) with no tap
           requestAnimationFrame(frame);
         };

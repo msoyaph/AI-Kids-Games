@@ -296,11 +296,17 @@ export async function playSparkRing(game: Game, parent: import('pixi.js').Contai
   const r = Math.min(host.width, host.height) * 0.26;
   const ring = new SparkRing(setupSpark, game.app.sprites.creature(foe.species, 32, 'happy', foe.shimmer), { cx: host.width / 2, cy: host.height * 0.52, r, scale: Math.max(2, Math.round(r / 22)), W: host.width, H: host.height });
   parent.addChild(ring.root);
-  let flag = false;
-  const on = (e: Event) => { if (e.type === 'keydown' && !['Space', 'Enter', 'KeyZ'].includes((e as KeyboardEvent).code)) return; flag = true; };
+  // a tap or key remembers when it happened, so the ring judges it at that moment (gamepad A is
+  // polled each frame, so it counts at the frame)
+  let flag: number | null = null;
+  const on = (e: Event) => {
+    if (e.type === 'keydown' && !['Space', 'Enter', 'KeyZ'].includes((e as KeyboardEvent).code)) return;
+    const now = performance.now();
+    flag = e.timeStamp > 0 && e.timeStamp <= now ? e.timeStamp : now;
+  };
   addEventListener('pointerdown', on);
   addEventListener('keydown', on);
-  const tapped = () => { const v = flag || game.input.consume('a'); flag = false; return v; };
+  const tapped = (): boolean | number => { const v = flag ?? game.input.consume('a'); flag = null; return v; };
   const layer = { el: document.createElement('div') };
   game.focus.push(layer);
   try {

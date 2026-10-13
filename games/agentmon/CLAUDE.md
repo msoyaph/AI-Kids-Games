@@ -208,6 +208,36 @@ Ports: dev 5246, preview 4246.
   their puzzle rooms; before, all twelve were the same wooden house room (phase 12 review).
 - 2026-10-13 Title screen: the title block sits in the sky above the parade (it covered the walking
   Agentmon), with a bigger outlined logo. The Mood Match capture says a line in the message bar.
+- 2026-10-13 Saves are sacred (found in the phase 13 storage audit): the `?quickstart` test shortcut
+  started a test adventure in slot 3 and saved it at once, so opening the game with that address
+  would have replaced a real adventure in slot 3. It now saves only when slot 3 is empty (tests run
+  in fresh browsers, so they still save); the save e2e checks that a saved slot 3 stays untouched.
+- 2026-10-13 Release versions: the game is 1.0.0; the site PR stays at 2.4.0 like Tuck Pop's did, and
+  the release commit after the owner's approval bumps it to 2.5.0. `npm test` runs the unit tests and
+  the sims (the playthrough bot takes about 5 s), so CI checks the bot without a change to ci.yml.
+- 2026-10-13 The title's "mon" is Spark Ring pink, matching the site logo.
+- 2026-10-13 Autosave when the page is hidden or closed (the plan promised it; phase 13 found it
+  missing): the overworld saves on `visibilitychange` to hidden and on `pagehide`, unless a story
+  moment or a step is under way (then the minute autosave's last save stands). A save e2e checks it.
+  The README is rewritten for the real game (it was still the starter's).
+- 2026-10-13 The flash test the plan promised was missing (found in phase 13): every repeating
+  brightness effect now takes its rate from `src/render/fx.ts` (quest pulse 0.64/s, shimmer twinkle
+  0.95/s, nap fade 0.32/s, growing glow 0.53/s), and `tests/unit/flash.test.ts` checks each is under
+  3 a second and that growing never swaps shapes more than 3 times in any second.
+- 2026-10-13 Spark Ring fairness on slow devices (phase 13; first suspected in touch e2e failures
+  that turned out to have another cause, see below, but right on its own): a tap was judged where
+  the spark was on the frame that noticed it, so a slow frame could turn a tap in the glow into a miss. Taps and keys now carry their own time (the event's timestamp) and are
+  judged where the spark was at that moment; gamepad A is polled each frame and counts at the frame.
+- 2026-10-13 Browser test fixes (phase 13): `tapWalk` plays a spar that starts on the way (a wild
+  Agentmon may wander into you; visible encounters work that way) instead of waiting 15 s for a
+  quiet scene, and can stop `within` a few tiles; the touch befriend walks toward the nearest wild
+  Agentmon when none can be tapped on screen (spawns are random per run). The quickstart check in the
+  save e2e compares which adventure slot 3 holds, not its bytes: leaving the page now autosaves the
+  real adventure first, which is right. Root cause of the Chromium-only touch failures: Chromium's
+  mobile emulation (like Android Chrome) snaps a tap near a button onto the button, and `tapWalk`
+  tapped a tile 4 px below the Menu button, which opened the menu. `reachesWorld` now keeps taps
+  32 px clear of the glass buttons. (Running `--repeat-each` in parallel also starved the software
+  renderer; stability runs use `--workers=1`.)
 - 2026-10-13 Browser test fix (phase 11): on a small phone the A and B buttons cover the bottom
   right corner, and the touch test tapped the nearest wild Agentmon even when it stood behind the A
   button, so every try pressed A instead (WebKit phone). Taps in tests now go only where a tap reaches

@@ -318,10 +318,24 @@ back.
 
 Brief: docs/prompts/agentmon.md. Plan, rules and status: games/agentmon/CLAUDE.md (approved plan in
 games/agentmon/docs/PLAN.md). Built in its own worktree (~/Documents/AI-Kids-Games-agentmon) from
-Tuck Pop's phase 0 commit 4e03eae, while the Tuck Pop session works in this checkout: never run
-heavy tests alongside it (games/agentmon/scripts/quiet-check.mjs). Repo side so far: the RPG genre
-(schema, manifest validator, site Category) and more monster-taming and RPG franchise names on
-the trademark blocklist. Stays "In development" until its last phase; stop before production.
+Tuck Pop's phase 0 commit 4e03eae, while the Tuck Pop session worked in this checkout: never run
+heavy tests alongside another session (games/agentmon/scripts/quiet-check.mjs).
+
+**Repo side:** the RPG genre (schema, manifest validator, site Category) and more monster-taming and
+RPG franchise names on the trademark blocklist. `main` (Tuck Pop, 2.4.0) was merged into `agentmon`
+in phase 13; the lockfile is main's plus Agentmon's workspace entries, and `games/blocks-wip` stays
+gone. No change to ci.yml: Agentmon gets the default checks and Chromium + WebKit, and its
+`npm test` includes the sims (the playthrough bot), so CI runs them.
+
+**Phases 0–12 complete; phase 13 (site and PR)** (see games/agentmon/CLAUDE.md): game 1.0.0, listed "Ready to play" (order
+8), imported, storage audited (apps/site/STORAGE_AUDIT.md), previews captured, cover, logo and OG
+image, site tests at 8 games.
+
+**Release plan (owner: "Don't merge and don't release to production; I'll play it first and then
+approve"):** the PR keeps the site at 2.4.0. After the owner's approval, the release commit bumps
+the site to 2.5.0, records the approval in DEPLOYMENT.json and runs `npm run release:local` (Space
+Sky and Light Crossing GPU suites); then AIKG_ALLOW_PRODUCTION=2.5.0 in Vercel Production, merge with
+a merge commit, the production smoke test and Lighthouse, and the record PR.
 
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),

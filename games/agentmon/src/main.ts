@@ -16,6 +16,7 @@ import { SheetScene } from './game/scenes/sheet';
 import { startAdventure, TitleScene } from './game/scenes/title';
 import { Game } from './game/game';
 import { applyTestSetup } from './game/devsetup';
+import { readKey } from './game/store';
 import { createRenderer } from './render/renderer';
 import type { PoseName } from './render/sprites';
 
@@ -60,7 +61,9 @@ async function boot() {
   else if (sceneParam === 'sheet') app.go(new SheetScene({ shimmer: params.get('shimmer') === '1', pose: (params.get('pose') as PoseName) ?? 'idle', small: params.get('small') === '1' }));
   else if (params.has('quickstart')) {
     // Tests and quick tries: a new adventure in slot 3 with a default look, straight into Gran's house.
-    startAdventure(game, 3, 0, { skin: 1, hair: 0, hairColor: 0, outfit: 0 }, (params.get('difficulty') as 'easy' | 'normal' | 'hard') ?? 'normal', false, st => applyTestSetup(st, params));
+    // It saves only into an empty slot 3, so a player's real adventure there is never overwritten.
+    const noSave = readKey('slot3') !== null;
+    startAdventure(game, 3, 0, { skin: 1, hair: 0, hairColor: 0, outfit: 0 }, (params.get('difficulty') as 'easy' | 'normal' | 'hard') ?? 'normal', noSave, st => applyTestSetup(st, params));
   } else app.go(new TitleScene(game));
   app.start();
 }

@@ -38,7 +38,7 @@ test('home filters: category and player age',async ({ page }) => {
   await expect(allGames(page).locator('.card-title')).toHaveText(['Calex Cart']);
   await allGames(page).getByRole('button',{ name: 'All',exact: true }).click();
   await allGames(page).getByLabel('Player age').selectOption('7');
-  await expect(allGames(page).locator('.card-title')).toHaveText(['Light Crossing','Space Sky','Tuck Pop']);
+  await expect(allGames(page).locator('.card-title')).toHaveText(['Light Crossing','Space Sky','Tuck Pop','Agentmon']);
 });
 test('theme, parental clearing, privacy and 404',async ({ page }) => {
   await page.goto('/'); await page.getByRole('button',{ name: 'Switch to dark mode' }).click(); await expect(page.locator('html')).toHaveAttribute('data-theme','dark');

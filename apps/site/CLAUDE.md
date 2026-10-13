@@ -114,6 +114,21 @@ Space Sky, Tuck Pop).
 then by column. Before this, two cards in the same row tied and the first in the page always won;
 the tablet test now accepts any card from the centred row.
 
+## Agentmon, the eighth game (release 2.5.0, after the owner's approval)
+
+Listed from `games/agentmon/game.json`. Its genres are Adventure and RPG (RPG is new: its filter chip
+and /category route come from the games). Art lives in `public/media/agentmon/`: a cover (the Field
+Agent and the three partners above Saltwhistle at dusk, the Lighthouse Beacon lit), bob and twinkle
+layers, a logo with "Agent" in gold and "mon" in Spark Ring pink (as on the game's title screen), and
+the OG image. `scripts/art/og.ts` re-encodes every game's OG image; only `og/agentmon.jpg` was kept
+(four others came out byte-different from the committed files, so they were restored untouched).
+Previews come from `scripts/capture/agentmon.ts`, which uses the game's own `?scene=` capture routes
+(`&play=1` plays the moment out). The battle, Spark Ring, Mood Match and Field Guide takes record the
+tab, because their cards, text and panels are DOM; the town and the Trial record the canvas, and the
+Trial take is cropped to the room. Loop 7.8 s.
+Tests now count 8 games (age 7: LC, Space Sky, Tuck Pop, Agentmon); the grid is checked at 8 (unit and
+browser); the launch tests start a new Agentmon adventure in slot 1 and continue it after a reload.
+
 ## Next: Light Crossing v2.0 (owner request, on hold)
 
 Owner wants Light Crossing v2.0 imported and released. On 2026-10-11 its project was on

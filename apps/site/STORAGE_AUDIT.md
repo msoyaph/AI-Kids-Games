@@ -1,6 +1,6 @@
-# Shared-origin storage audit (Tuck Pop added, 2026-10-13)
+# Shared-origin storage audit (Agentmon added, 2026-10-13)
 
-Result: **CLEAN.** All seven games and the website keep their data under their own keys. No build
+Result: **CLEAN.** All eight games and the website keep their data under their own keys. No build
 calls `localStorage.clear()`, uses sessionStorage, IndexedDB, cookies or Cache Storage, or reads,
 changes or deletes another owner's keys. Every build is the exact file recorded in
 `BUILD_IMPORTS.json` (`npm run check:builds`).
@@ -21,6 +21,7 @@ read by hand.
 | Calex Cart 0.2.0 | `calexcart.slot.1`–`slot.3`, `calexcart.settings`, `calexcart.lastSlot`, `calexcart.ghost.<slot>.<track>` | `calexcart.playtest` (playtest mode) | `calexcart.__probe` |
 | Cliff Valley 1.0.0 | `cliffvalley.slot.1`–`slot.3`, `cliffvalley.settings` | `cliffvalley.playtest` (`?playtest=1`) | `cliffvalley.__probe` |
 | Tuck Pop 1.0.0 | `tuckpop.save` (profile), `tuckpop.run` (the Classic, Relax and Daily games in progress) | none (its capture route never reads or writes storage) | `tuckpop.__probe` |
+| Agentmon 1.0.0 | `agentmon.slot1`–`slot3`, `agentmon.settings`, `agentmon.records` (the Challenge Tower's best floor), `agentmon.slot1.bak`–`slot3.bak` (written once when an older save is upgraded) | none (its capture routes never save; the `?quickstart` test shortcut saves only into an empty slot 3) | `agentmon.__probe` |
 
 The site never adds `?playtest=1` or similar to a game's address, so the special-mode keys only
 appear when someone opens a game file directly with that option.
@@ -60,8 +61,13 @@ game.
   and never enumerates or clears; a finished game removes only its own `tuckpop.run` entry (and the
   key itself once no game is in progress). Its unit tests check that other owners' keys are left
   untouched and that a full store keeps play going from memory.
+- **Agentmon:** `src/game/store.ts` prefixes every access with `agentmon.` (`PREFIX`) and never
+  enumerates or clears; deleting a slot removes only `agentmon.slotN` and its `.bak`. A save over the
+  300 KB slot limit or a full store keeps the previous save and tells the player; blocked storage
+  keeps play going from memory with a one-time note. Its unit tests check each of these and that only
+  `agentmon.` keys are touched; a browser test checks the keys after a save and reload.
 
-## Worst case for all seven games plus the site
+## Worst case for all eight games plus the site
 
 Sizes are in characters (localStorage counts string length; 1 KB = 1,024 characters). Browsers
 allow about 5 MB (5,242,880 characters) per origin.
@@ -76,11 +82,12 @@ allow about 5 MB (5,242,880 characters) per origin.
 | Calex Cart 0.2.0 | 1,106 KB | 1,000 KB | the game's own worst case, 1.08 MB: a ghost on all 20 tracks in all 3 slots, a full playtest log and settings |
 | Cliff Valley 1.0.0 | 1,051 KB | 100 KB | 300 KB budget per slot, playtest ≤ 150 KB; a year-one finale save measured 32 KB |
 | Tuck Pop 1.0.0 | 53 KB | 7 KB | the profile is refused over 50 KB (enforced) and a maximal one is under 4 KB (tested); the games in progress are at most about 0.8 KB each, three at once |
-| **Total** | **≈ 3.5 MB** | **≈ 1.2 MB** | |
+| Agentmon 1.0.0 | 112 KB | 40 KB | every collection in a slot is bounded (6 on the team, 240 in the Agent Base, the story's flags and quests), so a maximal slot is 18.3 KB (measured with the real codec), plus its one-time backup; a finished story is about 13 KB per slot; settings and records under 1 KB. Slots over 300 KB are refused (enforced), far above what play can reach |
+| **Total** | **≈ 3.7 MB** | **≈ 1.2 MB** | |
 
 Even with every key of every game at its cap (which no real player reaches: Light Crossing's and
 Cliff Valley's slot caps are about 10 times their largest real saves), the origin stays about
-1.5 MB under the 5 MB limit. Heavy normal play uses about a quarter of it, and most of that is
+1.3 MB under the 5 MB limit. Heavy normal play uses about a quarter of it, and most of that is
 Calex Cart's optional time-trial ghosts. If a browser ever runs out of room, every game keeps the
 previous save intact and tells the player (Calex Cart first frees its own playtest log).
 

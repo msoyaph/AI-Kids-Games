@@ -1,5 +1,6 @@
 /**
- * Shortcuts for tests and reviews, only with ?quickstart (a test adventure in slot 3):
+ * Shortcuts for tests and reviews, only with ?quickstart (a test adventure in slot 3, saved only
+ * when slot 3 is empty, so a real adventure is never overwritten):
  *   &at=map,x,y          start there instead of Gran's house (and skip the opening)
  *   &flags=a,b,c          story flags (e.g. got-partner,mission-1,beacon-lighthouse)
  *   &team=species:level,… friends on the team (first one leads)

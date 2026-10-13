@@ -11,6 +11,7 @@ import type { Creature, Element } from '../core/types';
 import { ELEMENT_INFO } from '../data/elements';
 import { SPECIES } from '../data/species';
 import type { Sprites } from './sprites';
+import { FX, wave } from './fx';
 
 export interface StageLayout { x: number; y: number; w: number; h: number }
 
@@ -239,7 +240,7 @@ export class BattleView {
         s.y = this.base[side].y - (Math.sin(this.time * 3 + side * 1.7) > 0.4 ? this.bgScale : 0);
       }
       const z = this.zzz[side];
-      if (z) z.alpha = 0.6 + Math.sin(this.time * 2) * 0.3;
+      if (z) z.alpha = 0.6 + wave(FX.napFadeHz, this.time) * 0.3;
     }
     for (const p of [...this.particles]) {
       p.life -= dt * this.speed;

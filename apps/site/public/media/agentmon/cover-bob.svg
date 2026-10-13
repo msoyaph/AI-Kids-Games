@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (bob): Spinnet, the maple-seed partner, hovering beside the Field Agent. -->
+  <g>
+    <path d="M928 640c40-70 110-104 176-96-22 18-40 44-50 70-34 4-80 14-126 26z" fill="#9fe0a8"/><path d="M928 640c40-70 110-104 176-96l-60 46c-40 14-76 30-116 50z" fill="#c4f0c8"/>
+    <path d="M940 634c46-38 96-62 150-78" fill="none" stroke="#6ab87a" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="930" cy="664" r="46" fill="#8a5a3a"/><path d="M884 664a46 46 0 0 1 46-46v92a46 46 0 0 1-46-46z" fill="#a06a44"/>
+    <circle cx="914" cy="660" r="7" fill="#2a1f3d"/><circle cx="946" cy="660" r="7" fill="#2a1f3d"/><circle cx="916" cy="657" r="2.5" fill="#fff"/><circle cx="948" cy="657" r="2.5" fill="#fff"/>
+    <ellipse cx="902" cy="676" rx="8" ry="5" fill="#ff9aa5" opacity=".6"/><ellipse cx="958" cy="676" rx="8" ry="5" fill="#ff9aa5" opacity=".6"/>
+    <path d="M922 680q8 7 16 0" fill="none" stroke="#2a1f3d" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+</svg>

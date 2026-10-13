@@ -4,6 +4,7 @@
  * sparkles. Skippable with a tap or A.
  */
 import { Container, Graphics, Sprite, type Texture } from 'pixi.js';
+import { FX, wave } from './fx';
 
 /** The swap rhythm: gaps between shape swaps, in ms. Never under 400 ms (at most 2.5 per second). */
 export const EVOLVE_SWAPS = [800, 700, 600, 520, 460, 420, 400, 400, 400];
@@ -24,7 +25,7 @@ export async function playEvolution(parent: Container, from: Texture, to: Textur
     const f = () => {
       if (skip()) return resolve(true);
       const k = (performance.now() - t0) / ms;
-      glow.clear().circle(size.W / 2, size.H / 2, size.scale * (18 + Math.sin(performance.now() / 300) * 2)).fill({ color: 0xfff3b0, alpha: 0.25 });
+      glow.clear().circle(size.W / 2, size.H / 2, size.scale * (18 + wave(FX.evolveGlowHz, performance.now() / 1000) * 2)).fill({ color: 0xfff3b0, alpha: 0.25 });
       if (k >= 1) return resolve(false);
       requestAnimationFrame(f);
     };

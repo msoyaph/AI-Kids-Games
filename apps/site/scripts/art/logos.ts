@@ -23,7 +23,9 @@ const styles: Record<string,LogoStyle> = {
   // In game: rounded letters, each one a different block color (Sunny theme), warm brown edge.
   'tuck-pop': { lines: [[...'Tuck Pop'].map((text,i) => ({ text,fill: ['#ff6f61','#ffb52e','#52c97a','#3fa7f5','#ffffff','#9b7cf6','#ff7fbf','#ff6f61'][i]! }))],outline: '#5a3220',outlineWidth: 14,shadow: '#3b2016',depth: 11,tilt: -3 },
   // In game: stacked capitals, each letter a different logo color.
-  'calex-cart': { lines: [[...'CALEX'].map((text,i) => ({ text,fill: ['#ffd23f','#4ce0d2','#ff6fae','#8cff6b'][i % 4] })),[...'CART'].map((text,i) => ({ text,fill: ['#ff6fae','#8cff6b','#ffd23f','#4ce0d2'][i % 4] }))],outline: '#2a2140',outlineWidth: 14,shadow: '#2a2140',depth: 15,tracking: 6,lineGap: -18 }
+  'calex-cart': { lines: [[...'CALEX'].map((text,i) => ({ text,fill: ['#ffd23f','#4ce0d2','#ff6fae','#8cff6b'][i % 4] })),[...'CART'].map((text,i) => ({ text,fill: ['#ff6fae','#8cff6b','#ffd23f','#4ce0d2'][i % 4] }))],outline: '#2a2140',outlineWidth: 14,shadow: '#2a2140',depth: 15,tracking: 6,lineGap: -18 },
+  // In game: big golden letters with a dark plum outline (the title screen), "mon" in Spark Ring pink.
+  agentmon: { lines: [[{ text: 'Agent',fill: ['#fff3b0','#ffcf5c'] },{ text: 'mon',fill: ['#ffd2ec','#ff7ac0'] }]],outline: '#2a1f3d',outlineWidth: 16,shadow: '#1b1530',depth: 12 },
 };
 
 const woff = readFileSync(createRequire(import.meta.url).resolve('@fontsource/nunito/files/nunito-latin-900-normal.woff'));
@@ -42,7 +44,7 @@ function layout(text: string,x: number,y: number) {
   });
   return { path,advance: cursor-x };
 }
-const titles: Record<string,string> = { theabonk: 'TheaBonk','light-crossing': 'Light Crossing','vanex-defense': 'Vanex Defense','space-sky': 'Space Sky','calex-cart': 'Calex Cart','cliff-valley': 'Cliff Valley','tuck-pop': 'Tuck Pop' };
+const titles: Record<string,string> = { agentmon: 'Agentmon',theabonk: 'TheaBonk','light-crossing': 'Light Crossing','vanex-defense': 'Vanex Defense','space-sky': 'Space Sky','calex-cart': 'Calex Cart','cliff-valley': 'Cliff Valley','tuck-pop': 'Tuck Pop' };
 
 function build(slug: string,style: LogoStyle) {
   const shapes: { d: string; fill: Segment['fill'] }[] = [];

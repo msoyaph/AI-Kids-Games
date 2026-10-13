@@ -28,6 +28,7 @@ import { TRIAL_BY_ID } from '../../data/trials';
 import { playTower } from '../tower';
 import { TrialScene } from './trial';
 import { QUEST_BY_ID } from '../../data/quests';
+import { FX, wave } from '../../render/fx';
 import { routeBetween } from '../links';
 
 const STEP = 0.2;
@@ -75,12 +76,23 @@ export class OverworldScene implements Scene, ScriptHost {
     this.game.touch.setWorldActive(true);
     this.root.addChild(this.darkness, this.arrow, this.cover);
     this.session.notify = message => this.game.toast(message, 5000);
+    addEventListener('visibilitychange', this.onHide);
+    addEventListener('pagehide', this.onHide);
   }
 
   exit(): void {
     this.game.onWorldTap = null;
     this.game.touch.setWorldActive(false);
+    removeEventListener('visibilitychange', this.onHide);
+    removeEventListener('pagehide', this.onHide);
   }
+
+  /** Save when the page is hidden or closed (a tab switch, the Home button), unless a story moment
+   *  or a step is under way: then the last autosave stands, as with the minute autosave. */
+  private onHide = (e: Event): void => {
+    if (e.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
+    if (!this.busy && !this.move) { this.sinceSave = 0; this.session.save(); }
+  };
 
   private build(): void {
     this.game.music.play(this.world.def.music);
@@ -241,7 +253,7 @@ export class OverworldScene implements Scene, ScriptHost {
     if (Math.hypot(tx - px, ty - py) < TILE * z * 1.2) return;
     const r = TILE * z * 1.6, s = TILE * z * 0.45;
     const cx = px + Math.cos(a) * r, cy = py + Math.sin(a) * r;
-    const pulse = this.game.settings.reducedMotion ? 1 : 0.65 + 0.35 * Math.sin(this.time * 4);
+    const pulse = this.game.settings.reducedMotion ? 1 : 0.65 + 0.35 * wave(FX.questPulseHz, this.time);
     const pt = (d: number, side: number) => [cx + Math.cos(a) * d - Math.sin(a) * side, cy + Math.sin(a) * d + Math.cos(a) * side];
     g.poly([...pt(s, 0), ...pt(-s * 0.7, s * 0.8), ...pt(-s * 0.3, 0), ...pt(-s * 0.7, -s * 0.8)]).fill({ color: 0xffd84a, alpha: pulse }).stroke({ color: 0x2a1f3d, width: Math.max(2, z) });
   }
@@ -435,7 +447,7 @@ export class OverworldScene implements Scene, ScriptHost {
       s.zIndex = ty + 1;
       // shimmer twinkle, grumpy fog tint
       s.tint = w.mood === 'grumpy' ? 0xd8d0f0 : 0xffffff;
-      s.alpha = w.shimmer && Math.sin(this.time * 6 + w.key) > 0.7 ? 0.8 : 1;
+      s.alpha = w.shimmer && wave(FX.shimmerTwinkleHz, this.time, w.key) > 0.7 ? 0.8 : 1;
     }
   }
 

@@ -52,7 +52,7 @@ export class TitleScene implements Scene {
 
   private showHome(): void {
     const el = h('div.screen.title-screen', {},
-      h('h1', {}, 'Agentmon'),
+      h('h1', {}, 'Agent', h('span.mon', {}, 'mon')),
       h('p.panel.tagline', {}, 'Befriend creatures and relight the six Beacons.'),
       h('button.primary.big', { type: 'button', 'data-autofocus': true, onclick: () => this.showSlots() }, 'Play'),
       persistent() ? null : h('p.panel.note', {}, "This browser can't save, so your adventure lasts until you close the game."));

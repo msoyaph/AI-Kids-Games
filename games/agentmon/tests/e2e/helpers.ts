@@ -89,12 +89,19 @@ export function tileOnScreen(s: Snap, x: number, y: number): { x: number; y: num
 
 /**
  * True when a tap at this point reaches the world: the canvas, or the stick's zone (a quick tap
- * there is passed on to the world). Not the A, B or Menu buttons, a dialogue or a menu.
+ * there is passed on to the world). Not the A, B or Menu buttons, a dialogue or a menu, and not
+ * right next to a button either: phones snap a tap near a button onto it (Chromium's touch
+ * adjustment does the same in the tests).
  */
 export async function reachesWorld(page: Page, p: { x: number; y: number }) {
   return page.evaluate(([x, y]) => {
     const el = document.elementFromPoint(x!, y!);
-    return el instanceof HTMLCanvasElement || !!el?.classList.contains('tzone');
+    if (!(el instanceof HTMLCanvasElement || el?.classList.contains('tzone'))) return false;
+    const pad = 32;
+    return [...document.querySelectorAll('.gbtn')].every(b => {
+      const r = b.getBoundingClientRect();
+      return r.width === 0 || x! < r.left - pad || x! > r.right + pad || y! < r.top - pad || y! > r.bottom + pad;
+    });
   }, [p.x, p.y]);
 }
 
@@ -109,21 +116,25 @@ function staticWalk(mapId: string) {
 
 /**
  * Tap-to-move to a tile (or a door, or an exit at the map's edge), in hops: tap the farthest tile
- * of the way that is on screen, wait for the walk, and tap again. Stops when the map changes.
+ * of the way that is on screen, wait for the walk, and tap again. Stops when the map changes, or
+ * `within` tiles of the target. A wild Agentmon may wander into you on the way: then the spar is
+ * played (and befriended with `befriend`), and the walk goes on.
  */
-export async function tapWalk(page: Page, tx: number, ty: number) {
+export async function tapWalk(page: Page, tx: number, ty: number, o: { within?: number; befriend?: boolean } = {}) {
   const start = await snap(page);
   const map = start.map!;
   const g = staticWalk(map);
   const vp = page.viewportSize()!;
+  const near = (n: Snap) => n.map !== map || Math.abs(n.x! - tx) + Math.abs(n.y! - ty) <= (o.within ?? 0);
   for (let hop = 0; hop < 25; hop++) {
-    // a story moment on the way (someone starts talking): tap through it, then keep walking;
-    // taps on the world are ignored while the scene is busy (a fade), so wait until it is free
+    // a story moment or a spar on the way: tap through it, then keep walking; taps on the world
+    // are ignored while the scene is busy (a fade), so wait until it is free
     const now = await snap(page);
-    if (now.map === map && (now.dialogue || (now.busy && !now.moving))) await touchAdvance(page);
-    await expect.poll(async () => { const n = await snap(page); return n.map !== map || (n.x === tx && n.y === ty) || (!n.busy && !n.moving && !n.dialogue); }, { timeout: 15_000, intervals: [100] }).toBe(true);
+    if (now.map === map && (now.dialogue || now.battle || (now.busy && !now.moving))) await touchAdvance(page, { befriend: o.befriend, seconds: 120 });
+    await expect.poll(async () => { const n = await snap(page); return near(n) || !!n.battle || !!n.dialogue || (!n.busy && !n.moving); }, { timeout: 15_000, intervals: [100] }).toBe(true);
     const s = await snap(page);
-    if (s.map !== map || (s.x === tx && s.y === ty)) return;
+    if (near(s)) return;
+    if (s.battle || s.dialogue || s.busy) continue;
     const inMap = tx >= 0 && ty >= 0 && tx < g.w && ty < g.h;
     const path = findPath(g.w, g.h, s.x!, s.y!, Math.max(0, Math.min(g.w - 1, tx)), Math.max(0, Math.min(g.h - 1, ty)), (x, y) => g.ok(x, y) || (x === tx && y === ty), 8000) ?? [[tx, ty] as [number, number]];
     let pick: [number, number] = inMap ? [tx, ty] : path[path.length - 1] ?? [tx, ty];
