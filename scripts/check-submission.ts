@@ -70,7 +70,7 @@ writeFileSync(join(s.checkDir,'report.md'),[
 const summary = `${ok ? 'PASS' : 'FAIL'}: ${checks.filter(check => check.status === 'pass').length} passed, ${failed.length} failed, ${warned.length} with notes, ${checks.filter(check => check.status === 'skip').length} skipped (report ${createHash('sha256').update(reportJson).digest('hex').slice(0,12)})`;
 if (json) console.log(reportJson); else {
   console.log(`\n${summary}`);
-  console.log(ok ? `Every check passed. Next: open a pull request that changes only community/${slug}/ (SUBMITTING.md).` : 'Fix the ✗ items above and run this again.');
+  console.log(untrusted ? (ok ? 'Every check passed.' : 'Some checks failed.') : ok ? `Every check passed. Next: open a pull request that changes only community/${slug}/ (SUBMITTING.md).` : 'Fix the ✗ items above and run this again.');
   console.log(`Report: community/${slug}/.check/report.md`);
 }
 process.exit(ok ? 0 : 1);

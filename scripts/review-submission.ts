@@ -109,6 +109,10 @@ const pkg = JSON.parse(readFileSync(join(dir,'package.json'),'utf8')) as { depen
 const mark = { pass: '✓',fail: '✗',warn: '!',skip: '–' } as const;
 const texts = [...new Map(report.texts.map(t => [t.text,t])).values()];
 const rel = (path: string) => relative(work,path);
+// Sentences and labels first; single-word strings in code (key names, ids, colors) go in a folded list.
+const looksLikeCode = (t: { text: string; file: string }) => !/\s/.test(t.text.trim()) && !/\.(html|json)$/.test(t.file);
+const readable = texts.filter(t => !looksLikeCode(t)), codeish = texts.filter(looksLikeCode);
+const line = (t: { text: string; file: string; line: number }) => `- \`${t.file}:${t.line}\` ${t.text.replace(/\s+/g,' ').slice(0,200)}`;
 
 const md = `# Review: ${m.title} (PR #${pr})
 
@@ -139,7 +143,15 @@ ${report.video ? `Recording: [${rel(report.video)}](${rel(report.video)})` : 'No
 
 ## Every piece of text in the game (${texts.length})
 
-${texts.map(t => `- \`${t.file}:${t.line}\` ${t.text.replace(/\s+/g,' ').slice(0,200)}`).join('\n')}
+Words and sentences players can see (${readable.length}):
+
+${readable.map(line).join('\n')}
+
+<details><summary>Short strings in the code (${codeish.length}): names, keys and values, worth a skim</summary>
+
+${codeish.map(line).join('\n')}
+
+</details>
 
 ## Risky code patterns
 

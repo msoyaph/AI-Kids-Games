@@ -85,7 +85,7 @@ export async function browserChecks(s: Submission,file: string,options: BrowserO
       await page.goto(hostUrl(scene)); const frame = await frameOf(page); await page.waitForTimeout(1500);
       const png = await shot(page);
       if (await blank(png)) contract.push({ message: `The capture scene ${scene} shows a blank screen.`,fix: 'Make each scene listed in game.json capture.scenes draw that screen (see the starter\'s src/main.ts).' });
-      record(`scene-${scene.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'')}`,png);
+      record(`scene-${scene.replace(/^\?scene=/,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'')}`,png);
       const log = await frame.evaluate(() => (window as unknown as { __aikgStorage: [string,string,string][] }).__aikgStorage.filter(entry => entry[0] === 'setItem' || entry[0] === 'removeItem' || entry[0] === 'clear')).catch(() => []);
       const writes = log.filter(([,, key]) => !key.endsWith('__probe'));
       if (writes.length) contract.push({ message: `The capture scene ${scene} changed saved data (${writes.map(entry => entry[2]).join(', ')}).`,fix: 'Capture scenes must never save: skip saving when the page has ?scene= (the starter shows how).' });
@@ -154,7 +154,7 @@ export async function browserChecks(s: Submission,file: string,options: BrowserO
     const declared = new Set([...(m.storage?.keys ?? []),m.storage?.probe ?? '']);
     for (const key of storageKeys) if (key.startsWith(prefix) && !declared.has(key)) storage.push({ message: `The game saved "${key}", which isn't listed in game.json storage.keys.`,fix: 'Add it to storage.keys so parents can see everything the game stores.',severity: 'warn' });
     if (await page.evaluate(() => document.fullscreenElement !== null).catch(() => false)) notes.smoke.push('the game went fullscreen');
-    if (options.record) { await page.close(); video = await page.video()?.path(); }
+    if (options.record) { await page.close(); const clip = page.video(); if (clip) { video = join(options.record,'recording.webm'); await clip.saveAs(video); await clip.delete(); } }
     await context.close();
 
     // Flash safety from the screencast.

@@ -7,7 +7,7 @@ export default function Community() {
   return <div className="container page">
     <div className="page-head"><h1 className="display">Community games</h1>
       <p className="muted">Games made by kids and families, often with an AI helper. Every one is checked by our automated tests and approved by a person before it appears here.</p></div>
-    {communityGames.length ? <GameGrid games={communityGames} label="Community games" />
+    {communityGames.length ? <section aria-labelledby="all-community"><h2 id="all-community" className="sr-only">All community games</h2><GameGrid games={communityGames} label="Community games" /></section>
       : <div className="empty"><h2 className="heading">No community games yet.</h2><p>Be the first: build a kid-safe game from our starter and send it in.</p><Link className="button primary" to="/list-your-game">How to submit a game</Link></div>}
     <section className="section prose" aria-labelledby="how-safe"><h2 id="how-safe" className="title">How community games stay safe</h2>
       <ul>
