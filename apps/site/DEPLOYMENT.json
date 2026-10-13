@@ -297,8 +297,8 @@
     }
   ],
   "localSuites": {
-    "release": "2.4.1",
-    "commit": "ca22ac6",
+    "release": "2.5.0",
+    "commit": "16e3637",
     "suites": [
       {
         "game": "space-sky",
@@ -309,7 +309,7 @@
         "failed": 0,
         "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-13T15:04:20.553Z"
+        "ranAt": "2026-10-13T19:32:12.574Z"
       },
       {
         "game": "light-crossing",
@@ -320,7 +320,7 @@
         "failed": 0,
         "flaky": 1,
         "skipped": 0,
-        "ranAt": "2026-10-13T15:50:47.265Z"
+        "ranAt": "2026-10-13T20:21:04.181Z"
       }
     ]
   }
