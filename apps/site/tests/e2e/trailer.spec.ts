@@ -19,6 +19,7 @@ test('About: the trailer plays from its poster, muted and captioned, with a text
   const loads: string[] = [];
   page.on('request',request => { if (request.url().includes('/trailer/')) loads.push(request.url()); });
   await page.goto('/about');
+  await expect(page.locator('html')).toHaveAttribute('data-app','ready');
   const poster = page.getByRole('button',{ name: /^Play the trailer \(\d+ seconds, sound off\)$/ });
   await expect(poster).toBeVisible();
   await page.getByText('What’s in the trailer').click();
@@ -42,6 +43,7 @@ test('a game page: its own trailer plays from the poster, muted and captioned',a
   const loads: string[] = [];
   page.on('request',request => { if (request.url().includes('/trailer/')) loads.push(request.url()); });
   await page.goto('/game/tuck-pop');
+  await expect(page.locator('html')).toHaveAttribute('data-app','ready');
   await page.getByRole('link',{ name: 'Watch the 15-second trailer' }).click();
   await expect(page).toHaveURL(/#trailer$/);
   const poster = page.getByRole('button',{ name: 'Play the Tuck Pop trailer (15 seconds, sound off)' });
