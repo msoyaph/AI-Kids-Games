@@ -2,7 +2,8 @@
 // build and the dev server). A submission can't bring its own: any vite.config in its folder is
 // rejected, and this config sets configFile: false. The build is one self-contained index.html,
 // as the starter's, with the no-network CSP, and imports may only reach the game's own folder or
-// an allow-listed package.
+// an allow-listed package. Builds log errors only: the checks report problems themselves, with
+// fixes.
 import { readFileSync } from 'node:fs';
 import { dirname,relative,resolve,sep } from 'node:path';
 import type { InlineConfig,Plugin } from 'vite';
@@ -40,7 +41,7 @@ const cspMeta: Plugin = { name: 'no-network-csp',apply: 'build',transformIndexHt
 
 export function communityViteConfig(dir: string,outDir: string,mode: 'build' | 'dev' = 'build'): InlineConfig {
   return {
-    configFile: false,envDir: false,root: dir,base: './',publicDir: false,logLevel: 'warn',clearScreen: false,mode: mode === 'dev' ? 'development' : 'production',
+    configFile: false,envDir: false,root: dir,base: './',publicDir: false,logLevel: mode === 'dev' ? 'warn' : 'error',clearScreen: false,mode: mode === 'dev' ? 'development' : 'production',
     plugins: [importGuard(dir),cspMeta,viteSingleFile({ removeViteModuleLoader: true })],
     build: { outDir,emptyOutDir: true,target: 'es2020',assetsInlineLimit: 100_000_000,cssCodeSplit: false,modulePreload: false,reportCompressedSize: false },
     server: { host: '127.0.0.1',strictPort: false,fs: { strict: true,allow: [dir,resolve(root,'node_modules')] } }
