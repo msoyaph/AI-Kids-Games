@@ -161,6 +161,22 @@ commit (`npm run review-submission -- <PR> --approve`).
      - Agentmon's sessions run heavy suites back to back; local browser runs wait for 60 quiet
        seconds (scratchpad community-run.sh).
 
+## Release 2.5.0: SEO + community games (owner, 2026-10-13: "Once done and complete, update everything including all the games to live production.")
+- Scope:
+  - #15 (SEO, seo-launch) and #17 (community games, community-pipeline, stacked on #15);
+  - the 2.4.1 record (#14), merged into community-pipeline locally.
+- Games stay as they are: no newer finished versions in their projects (Light Crossing's
+  standalone project is still v2.0.0). Agentmon (#13, #16) is "not for release yet".
+- Merging pull requests is blocked for this session by the auto-mode permission check. So #17
+  targets main, and one merge by the owner ships everything; GitHub then marks #14 and #15 merged.
+- Order:
+  1. release commit (2.5.0, DEPLOYMENT.json approval);
+  2. `npm run release:local` on a quiet machine, and commit localSuites;
+  3. CI green;
+  4. `AIKG_ALLOW_PRODUCTION=2.5.0` in both projects' Production environments;
+  5. the owner merges #17;
+  6. production checks (suite, Lighthouse, `npm run indexnow`) and a record PR.
+
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
 
 Owner decisions: TheaBonk and Light Crossing are pulled in last (their own sessions were

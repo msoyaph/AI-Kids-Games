@@ -24,3 +24,4 @@ marketing/sizzle/out/
 community/*/.check/
 .review/
 apps/site/src/data/community.generated.ts
+apps/site/tests/fixtures/community/*/.check/
