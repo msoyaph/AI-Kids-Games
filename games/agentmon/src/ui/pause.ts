@@ -21,6 +21,7 @@ import { applySettingsToDom } from '../game/settings';
 import { canvasUrl } from '../render/atlas';
 import { elementImg } from './battle-ui';
 import { h } from './dom';
+import { energyBar } from './parts';
 
 const TRAIT_TEXT: Record<string, string> = {
   cozy: 'Cozy: Rest gives back a little more energy.',
@@ -79,6 +80,7 @@ export function openPauseMenu(game: Game, start?: string): Promise<void> {
     const stack: Page[] = [];
     const show = (page: Page, push = true) => {
       if (push) stack.push(page);
+      if (stack.length > 1 || !push) game.sfx('page');
       panel.replaceChildren(...page());
       panel.scrollTop = 0;
       requestAnimationFrame(() => game.focus.focusFirst(panel));
@@ -89,6 +91,7 @@ export function openPauseMenu(game: Game, start?: string): Promise<void> {
       if (prev) show(prev, false); else close();
     };
     const close = () => { game.focus.pop(layer); el.remove(); resolve(); };
+    game.sfx('open');
     const layer = { el, back };
     const header = (title: string, extra?: HTMLElement) => h('div.page-head', {}, h('button.back', { type: 'button', onclick: back, 'aria-label': 'Back' }, '◀ Back'), h('h2', {}, title), extra ?? '');
     const btn = (label: string | Node, onclick: () => void, o: { cls?: string; disabled?: boolean; autofocus?: boolean; hint?: string } = {}) =>
@@ -114,16 +117,11 @@ export function openPauseMenu(game: Game, start?: string): Promise<void> {
     };
 
     // ---- team
-    const energyBar = (c: Creature) => {
-      const max = maxEnergy(DEX, c);
-      const pct = Math.round((c.energy / max) * 100);
-      return h('div.bar', { role: 'meter', 'aria-label': 'Energy', 'aria-valuemin': 0, 'aria-valuemax': max, 'aria-valuenow': c.energy }, h('div', { class: pct < 25 ? 'fill low' : pct < 50 ? 'fill mid' : 'fill', style: `width:${pct}%` }));
-    };
     const friendCard = (c: Creature, onclick: () => void, autofocus = false) => {
       const sp = SPECIES[c.species]!;
       return btn(h('span.friend', {}, creatureImg(c.species, { shimmer: c.shimmer, size: 48 }),
         h('span.fname', {}, elementImg(sp.element), h('b', {}, session.friendName(c)), h('span.lv', {}, ` Lv ${c.level}`)),
-        energyBar(c), h('small', {}, c.energy > 0 ? `Energy ${c.energy}/${maxEnergy(DEX, c)}` : 'Napping. A Rest Stop wakes it up.')), onclick, { cls: 'friend-btn', autofocus });
+        energyBar(c.energy, maxEnergy(DEX, c), { small: true }), c.energy > 0 ? null : h('small', {}, 'A Rest Stop wakes it up.')), onclick, { cls: 'friend-btn', autofocus });
     };
     const teamPage = (): (HTMLElement | string)[] => [
       header('Team', h('span.note', {}, `${s.team.length}/6`)),
@@ -153,7 +151,7 @@ export function openPauseMenu(game: Game, start?: string): Promise<void> {
           creatureImg(c.species, { shimmer: c.shimmer, size: 96 }),
           h('div', {},
             h('p', {}, elementImg(sp.element), h('b', {}, ` ${sp.name}`), ` · Lv ${c.level}${c.shimmer ? ' · ✨ shimmer' : ''}`),
-            energyBar(c),
+            energyBar(c.energy, maxEnergy(DEX, c)),
             h('p.note', {}, c.level < 50 ? `${next} experience to the next level.` : 'Top level!'),
             h('p.note', {}, TRAIT_TEXT[sp.trait] ?? ''),
             h('p.note', {}, `Personality: ${c.personality}. Favorite snack: ${ITEMS[sp.favoriteSnack]?.name}.`),

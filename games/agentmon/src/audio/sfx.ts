@@ -10,7 +10,8 @@ import { note, type AudioEngine } from './audio';
 export type Sfx =
   | 'click' | 'back' | 'step' | 'bump' | 'super' | 'weak' | 'rest' | 'item' | 'coin' | 'ability' | 'door'
   | 'spark-hit' | 'spark-near' | 'spark-miss' | 'heart' | 'friend' | 'level' | 'grow' | 'beacon' | 'solved'
-  | 'push' | 'shield' | 'boost' | 'status' | 'nap' | 'quest' | 'toast';
+  | 'push' | 'shield' | 'boost' | 'status' | 'nap' | 'quest' | 'toast'
+  | 'open' | 'confirm' | 'page' | 'error';
 
 export function playSfx(a: AudioEngine, id: Sfx | string): void {
   if (!a.ready) return;
@@ -19,6 +20,11 @@ export function playSfx(a: AudioEngine, id: Sfx | string): void {
   switch (id) {
     case 'click': tone(880, 0.05, 'triangle', 0.08); break;
     case 'back': tone(520, 0.06, 'triangle', 0.08, 0, 0.7); break;
+    // UI sounds (1.1): a menu opening, a gold "go" button, turning a page, and a gentle "not now"
+    case 'open': tone(note(72), 0.07, 'triangle', 0.07); tone(note(79), 0.1, 'triangle', 0.07, 0.05); break;
+    case 'confirm': tone(note(79), 0.06, 'triangle', 0.08); tone(note(86), 0.12, 'triangle', 0.08, 0.05); break;
+    case 'page': a.hiss({ dur: 0.07, vol: 0.035, freq: 2400, q: 1.2, at: t, sweep: 0.6 }); tone(note(76), 0.05, 'triangle', 0.05, 0.02); break;
+    case 'error': tone(note(62), 0.08, 'sine', 0.07); tone(note(59), 0.12, 'sine', 0.07, 0.09); break;
     case 'step': a.hiss({ dur: 0.04, vol: 0.03, freq: 900, q: 0.7, at: t }); break;
     case 'door': a.hiss({ dur: 0.18, vol: 0.06, freq: 600, q: 1, at: t, sweep: 0.5 }); tone(330, 0.1, 'triangle', 0.06, 0.05); break;
     case 'bump': tone(220, 0.12, 'square', 0.1, 0, 0.5); a.hiss({ dur: 0.08, vol: 0.06, freq: 1200, at: t }); break;

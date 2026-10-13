@@ -139,6 +139,19 @@ export class PixelCanvas {
     }
     return this;
   }
+  /** Grow the outermost ring by one pixel: each empty pixel touching the edge copies its neighbour (a 2 px outline at 64). */
+  thicken(): this {
+    const src = this.px.slice();
+    const w = this.w, h = this.h;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (src[y * w + x] !== T) continue;
+      for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]] as const) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && ny >= 0 && nx < w && ny < h && src[ny * w + nx] !== T) { this.px[y * w + x] = src[ny * w + nx]!; break; }
+      }
+    }
+    return this;
+  }
   /** Replace exact colour a with b. */
   swap(a: number, b: number): this {
     for (let i = 0; i < this.px.length; i++) if (this.px[i] === a) this.px[i] = b;

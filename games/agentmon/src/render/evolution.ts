@@ -9,13 +9,14 @@ import { FX, wave } from './fx';
 /** The swap rhythm: gaps between shape swaps, in ms. Never under 400 ms (at most 2.5 per second). */
 export const EVOLVE_SWAPS = [800, 700, 600, 520, 460, 420, 400, 400, 400];
 
+/** `size.scale` is screen pixels per design pixel (32-px space); 64 px textures (68 with their margin) show at half of it. */
 export async function playEvolution(parent: Container, from: Texture, to: Texture, size: { W: number; H: number; scale: number }, skip: () => boolean, fast: boolean): Promise<void> {
   const root = new Container();
   const bg = new Graphics().rect(0, 0, size.W, size.H).fill(0x2a2450);
   const glow = new Graphics();
   const sprite = new Sprite(from);
   sprite.anchor.set(0.5);
-  sprite.scale.set(size.scale);
+  sprite.scale.set(from.width > 40 ? size.scale / 2 : size.scale);
   sprite.x = size.W / 2;
   sprite.y = size.H / 2;
   root.addChild(bg, glow, sprite);
@@ -64,7 +65,7 @@ export function evolutionStill(parent: Container, to: Texture, size: { W: number
   const glow = new Graphics().circle(size.W / 2, size.H / 2, size.scale * 19).fill({ color: 0xfff3b0, alpha: 0.25 });
   const sprite = new Sprite(to);
   sprite.anchor.set(0.5);
-  sprite.scale.set(size.scale);
+  sprite.scale.set(to.width > 40 ? size.scale / 2 : size.scale);
   sprite.x = size.W / 2;
   sprite.y = size.H / 2;
   root.addChild(new Graphics().rect(0, 0, size.W, size.H).fill(0x2a2450), glow, sprite);

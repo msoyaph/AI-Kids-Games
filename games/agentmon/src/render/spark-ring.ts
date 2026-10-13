@@ -4,6 +4,7 @@
  * each hit fills part of the heart (a near miss fills half). The rules are in core/befriend.ts.
  */
 import { Container, Graphics, Sprite, Text, type Texture } from 'pixi.js';
+import { footAnchor } from '../art/painter';
 import { sparkAngle, tapFill, type SparkSetup } from '../core/befriend';
 
 export interface SparkResult { fill: number; taps: (number | null)[] }
@@ -20,8 +21,9 @@ export class SparkRing {
   private friend: Sprite;
   private fillNow = 0;
 
-  constructor(private setup: SparkSetup, friend: Texture, private size: { cx: number; cy: number; r: number; scale: number; W: number; H: number }) {
-    this.friend = new Sprite(friend);
+  /** `friend` draws the Agentmon at 32 or 64 px; the ring picks whichever stays crisp at its scale. */
+  constructor(private setup: SparkSetup, private friendArt: (size: 32 | 64) => Texture, private size: { cx: number; cy: number; r: number; scale: number; W: number; H: number }) {
+    this.friend = new Sprite(friendArt(32));
     this.friend.anchor.set(0.5, 1);
     this.label = new Text({ text: '', style: { fill: 0xffffff, fontSize: Math.round(size.r * 0.16), fontWeight: '900', stroke: { color: 0x2a1f3d, width: Math.max(3, size.r * 0.025) }, align: 'center' } });
     this.label.anchor.set(0.5);
@@ -34,7 +36,11 @@ export class SparkRing {
     this.dim.clear().rect(0, 0, W, H).fill({ color: 0x1f1a33, alpha: 0.55 });
     // the friend stands just above the ring, small enough to stay on screen
     const k = Math.max(2, Math.min(scale, Math.floor((cy - r * 1.12) / 30)));
-    this.friend.scale.set(-k, k);
+    // an even scale shows the 64 px art at half that (smoother bodies, the same pixel grid)
+    const big = k % 2 === 0;
+    this.friend.texture = this.friendArt(big ? 64 : 32);
+    this.friend.anchor.set(0.5, footAnchor(this.friend.texture.height));
+    this.friend.scale.set(big ? -k / 2 : -k, big ? k / 2 : k);
     this.friend.x = cx;
     this.friend.y = cy - r * 1.08;
     this.label.x = cx;

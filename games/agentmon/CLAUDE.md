@@ -305,6 +305,19 @@ Franchise creatures and characters are described here, not named (this is a publ
     yellow electric creature → each is now lemon-shaped with pointed ends and peel pores, with a copper
     strip and a zinc strip poked into its top (a real lemon battery) and a tiny zigzag spark between
     them; nothing on the cheeks but the blush every Agentmon has.
+- 1.1 new Agentmon (web checks 2026-10-13; 25 names final, 12 candidates dropped):
+  - Bombardier beetle line: the first draft was a teakettle beetle → a real bombardier beetle with
+    steam puffs (a famous teapot creature). Dropped names: Spoutlet, Kettlebug, Brewbastion (the
+    kettle idea), Sizzlet and Huffling (near a craft brand's trademark), Fumaroll and Fumarion (near an
+    online RPG's steam creature), Toastling (near a virtual-pet game's character).
+  - Lithops line: a desert-rose crystal read as a star with a face, then as a lion's mane → living
+    stones (lithops) with a flower on top. Dropped name: Pebbit (near two existing rock monsters).
+  - Springtail line: dropped Hopflake (a beer trademark) and Springlet (a toy line's characters).
+  - Elephantnose line: dropped Snoutlet (a published fan-made creature), Nozzlet (a toy robot),
+    Trunklet (a plush toy line's character), Murklet (a game's baby fish-folk) and Muddlet (a
+    children's magazine character).
+  - Pyrosome line: a green glowing tube read as a pickle (and a cartoon pickle character) → lilac
+    and blue colonies with a cyan glow.
 
 ## Progress
 | Phase | Status |
@@ -419,3 +432,66 @@ approval in DEPLOYMENT.json, `npm run release:local`, then the usual production 
 The owner has also asked for Agentmon 1.1 (design polish, 24 new Agentmon and a guardian, pet care at
 the Agent Base): it starts with a plan to show and wait on (screenshots and a top-10 polish list, a
 design direction with before/after mockups, the new creature sheet), on a new branch.
+
+## 1.1 (owner approved the plan 2026-10-13; branch `agentmon-1.1`, worktree ~/Documents/AI-Kids-Games-agentmon-1.1)
+
+Plan: docs/PLAN-1.1.md. Built on the 1.0 branch (`agentmon`, PR #13, not merged yet); merge `agentmon`
+into `agentmon-1.1` whenever 1.0 changes, and `main` once 1.0 lands. Same rules as 1.0: quiet checks
+before heavy runs, a disk check per phase, decisions and IP changes logged here, tests passing and a
+commit at the end of every phase, stop before production.
+
+| 1.1 phase | Status |
+|---|---|
+| 0 Plan drafts (25 recipes, scaled faces), merge 1.0 fixes | done |
+| 1 Foundations: components, font, tokens, UI sounds; painter (64 px, poses) | done: tokens, Nunito, buttons, panels, chips, energy bar, dialogue, toasts, battle cards, Trial bar, UI sounds; 64 px battle sprites with breathing, blinks, cheer, bump and nap. Each screen's redesign follows in phases 3–5 |
+| 2 New Agentmon: recipes, data, moves, facts, habitats; balance; IP log | done: 25 species (53–77), 11 moves, 25 facts, habitats, balance (elements 49.2–51.3%), IP log. Lookalike pass at 16/32/64 px in phase 8 |
+| 3 Battles: backgrounds, entrances, element effects, bars, turn feedback | |
+| 4 Overworld: decoration, ambient life, water and foliage, tint, transitions, interiors | |
+| 5 Menus: Team, Bag, Field Guide; dialogue portraits | |
+| 6 Banyan Hollow, quests, Verdanyan | |
+| 7 Pet care and accessories | |
+| 8 Saves and tests; visual review | |
+| 9 Release prep (1.1.0, site, PR; stop before production) | |
+
+**1.1 decisions** (newest last):
+- 2026-10-13 Faces are drawn in design units (each face pixel is an s×s block), so a 64 px sprite gets
+  a full face; 32 px and 16 px sprites stay byte-identical (checked against the 1.0 sheets).
+- 2026-10-13 Type: Nunito 700/800/900 (SIL OFL; licence in src/fonts/OFL.txt), Latin subset woff2,
+  inlined by the build as data URLs; the CSP gains `font-src data:` (still no network). +52 KB.
+- 2026-10-13 Components live at the top of style.css as tokens (`--ink`, `--paper*`, `--accent*`,
+  `--radius`, `--shadow`, the `--t-*` type scale, `--el-*` element colours) and a few classes (`.panel`
+  with `.tab`, `.card`, `.chip`, `.label`, `.ebar`, sticker buttons that sink when pressed).
+- 2026-10-13 UI sounds: 'open' (menu), 'confirm' (primary buttons), 'back', 'page' (menu pages),
+  'error' (a move that fails); the click router in game.ts picks them by button class.
+- 2026-10-13 Balance: the owner's brief asks for 48–52% per element (1.0's test allowed 42–58%), so the
+  test is tightened. Only the eight new families were tuned (`npx tsx scripts/tune-stats.ts 20 --new`:
+  family stat levels nudged toward 50% and toward their element's 50%, averaged over three seeds a
+  round), so 1.0 friends in saves keep their stats. Elements: 49.2–51.3% on the test seed, 48.7–51.5%
+  over four seeds; every species 30–70% within its stage, as before.
+- 2026-10-13 Test fix: the 3-vs-3 balance test expected exactly 16 third stages (1.0's family count);
+  it now counts them from the data (24). Same bounds, more creatures: not a weaker test.
+- 2026-10-13 64 px battle sprites match the 32 px look: the outline, shading rims, dots and lines are
+  one design pixel (2 canvas pixels). A 10 px margin (68→84 px texture) lets the 22 recipes that reach
+  up to 4 design pixels past the 32×32 space show whole with their outline; at 16 and 32 px that part
+  is clipped as in 1.0. A hash of all 1,040 1.0 sprites at 16 and 32 px is unchanged. Bottom-anchored
+  sprites use `footAnchor()`. tests/unit/art.test.ts checks every pose at every size and the margin.
+- 2026-10-13 Verdanyan's canopy now fits the design space (its 32 px sprite had a flat-cut top).
+- 2026-10-13 Battle sprites fit the stage at a whole-number scale: each is at most a third of the stage
+  wide and under half its height (1.0's two sprites overlapped on phones in portrait).
+- 2026-10-13 The Spark Ring uses the 64 px art at even scales (32 px at odd ones, so pixels stay
+  square); the growing animation's scale is now always even and uses 64 px.
+- 2026-10-13 Poses: breathing at rest (`MOTION.breatheHz` 0.45 Hz in fx.ts: movement, not brightness,
+  so it is kept apart from the flash list), blinks every 2.2–4.8 s (never in still captures, so
+  screenshots repeat), a happy hop on a win, a befriend and a level up, a squash on a bump, and a slump
+  with a small tilt for a nap. Reduced motion keeps the faces and drops the movement.
+- 2026-10-13 One energy bar component (`ui/parts.ts`) for battle cards and the Team page: the number
+  inside the bar, warm with a "Tired" flag at or under 40% (the befriend threshold, so kids learn the
+  cue), "Napping" at 0. The words carry the state, so it never relies on colour.
+- 2026-10-13 Test fix: the creature-sheet smoke test expected exactly 52 Agentmon and "52 Aurelune";
+  it now counts the species from the data and looks for the last one's label ("77 Verdanyan").
+- 2026-10-13 Test fix (a race in the helper, not the game): `oneStep` let go of the key only after a
+  round trip from the test, and with the full matrix running several browsers at once that round
+  trip sometimes outlasted a whole step, so the game took two (1 in 8 runs of the opening, under
+  load). The key is now let go from inside the page on the first frame the step shows (a `keyup` on
+  `window`, which the game listens to). 8 of 8 passed under the same load.
+

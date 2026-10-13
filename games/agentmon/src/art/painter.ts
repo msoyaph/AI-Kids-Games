@@ -22,37 +22,54 @@ export const TONGUE = 0xf0687e;
 
 type Pt = readonly [number, number];
 
+/**
+ * Margin around a sprite, in canvas pixels. Some recipes reach up to 4 design pixels past the
+ * 32×32 design space (a canopy, a tail); at 16 and 32 px that part is clipped, as in 1.0. A 64 px
+ * battle sprite gets 5 design pixels on every side, so it shows whole with its full outline.
+ */
+export const spritePad = (size: number) => (size >= 64 ? 10 : 0);
+/** Where the feet are, as a share of the texture's height (for bottom-anchored sprites). */
+export const footAnchor = (texHeight: number) => (texHeight > 64 ? (texHeight - spritePad(64)) / texHeight : 1);
+
 export class Painter {
   readonly pc: PixelCanvas;
   /** Scale from the 32×32 design space. */
   readonly s: number;
+  /** The margin (canvas pixels) on every side. */
+  readonly pad: number;
   /** Pixels belonging to the face (never shaded or recoloured). */
   private face = new Set<number>();
   constructor(size: 32 | 16 | 48 | 64) {
-    this.pc = new PixelCanvas(size, size);
+    this.pad = spritePad(size);
+    this.pc = new PixelCanvas(size + 2 * this.pad, size + 2 * this.pad);
     this.s = size / 32;
   }
   get small() { return this.s < 1; }
+  /** A length from design units to canvas pixels. */
   private sx(v: number) { return v * this.s; }
+  /** A position from design units to canvas pixels (inside the margin). */
+  private px(v: number) { return v * this.s + this.pad; }
 
   ellipse(cx: number, cy: number, rx: number, ry: number, c: number): this {
-    this.pc.ellipse(this.sx(cx), this.sx(cy), Math.max(0.6, this.sx(rx)), Math.max(0.6, this.sx(ry)), c);
+    this.pc.ellipse(this.px(cx), this.px(cy), Math.max(0.6, this.sx(rx)), Math.max(0.6, this.sx(ry)), c);
     return this;
   }
   circle(cx: number, cy: number, r: number, c: number): this {
     return this.ellipse(cx, cy, r, r, c);
   }
   poly(pts: readonly Pt[], c: number): this {
-    this.pc.poly(pts.map(([x, y]) => [this.sx(x), this.sx(y)] as const), c);
+    this.pc.poly(pts.map(([x, y]) => [this.px(x), this.px(y)] as const), c);
     return this;
   }
   rect(x: number, y: number, w: number, h: number, c: number): this {
-    const X = Math.floor(this.sx(x)), Y = Math.floor(this.sx(y));
+    const X = Math.floor(this.px(x)), Y = Math.floor(this.px(y));
     this.pc.rect(X, Y, Math.max(1, Math.round(this.sx(w))), Math.max(1, Math.round(this.sx(h))), c);
     return this;
   }
+  /** A line one design pixel wide (a 2×2 brush at 64). */
   line(x0: number, y0: number, x1: number, y1: number, c: number): this {
-    this.pc.line(this.sx(x0), this.sx(y0), this.sx(x1), this.sx(y1), c);
+    const k = Math.max(1, Math.round(this.s));
+    for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) this.pc.line(this.px(x0) + i, this.px(y0) + j, this.px(x1) + i, this.px(y1) + j, c);
     return this;
   }
   /** A thick line (a limb, a stem, a tail) drawn as overlapping dots. */
@@ -64,18 +81,20 @@ export class Painter {
     }
     return this;
   }
+  /** One design pixel: a canvas pixel at 16 and 32, a 2×2 block at 64. */
   dot(x: number, y: number, c: number): this {
-    this.pc.set(Math.floor(this.sx(x)), Math.floor(this.sx(y)), c);
+    const k = Math.max(1, Math.round(this.s)), X = Math.floor(this.px(x)), Y = Math.floor(this.px(y));
+    for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) this.pc.set(X + i, Y + j, c);
     return this;
   }
   /** Paint over already-filled pixels only (patterns, bellies). */
   paintEllipse(cx: number, cy: number, rx: number, ry: number, c: number): this {
-    const tmp = new PixelCanvas(this.pc.w, this.pc.h).ellipse(this.sx(cx), this.sx(cy), Math.max(0.6, this.sx(rx)), Math.max(0.6, this.sx(ry)), c);
+    const tmp = new PixelCanvas(this.pc.w, this.pc.h).ellipse(this.px(cx), this.px(cy), Math.max(0.6, this.sx(rx)), Math.max(0.6, this.sx(ry)), c);
     for (let i = 0; i < tmp.px.length; i++) if (tmp.px[i] !== T && this.pc.px[i] !== T) this.pc.px[i] = c;
     return this;
   }
   paintPoly(pts: readonly Pt[], c: number): this {
-    const tmp = new PixelCanvas(this.pc.w, this.pc.h).poly(pts.map(([x, y]) => [this.sx(x), this.sx(y)] as const), c);
+    const tmp = new PixelCanvas(this.pc.w, this.pc.h).poly(pts.map(([x, y]) => [this.px(x), this.px(y)] as const), c);
     for (let i = 0; i < tmp.px.length; i++) if (tmp.px[i] !== T && this.pc.px[i] !== T) this.pc.px[i] = c;
     return this;
   }
@@ -88,15 +107,19 @@ export class Painter {
     const { w, h, px } = this.pc;
     const src = px.slice();
     const at = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? T : src[y * w + x]!);
+    // rims are one design pixel wide at every size (2 canvas pixels at 64), so 32 and 64 match
+    const k = Math.max(1, Math.round(this.s));
+    const air = (x: number, y: number, dx: number, dy: number, from: number, to: number) => {
+      for (let j = from; j <= to; j++) if (at(x + dx * j, y + dy * j) === T) return true;
+      return false;
+    };
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const c = src[y * w + x]!;
       if (c === T) continue;
-      const up = at(x, y - 1), left = at(x - 1, y), down = at(x, y + 1), right = at(x + 1, y);
-      const down2 = at(x, y + 2);
-      if (down === T || right === T) px[y * w + x] = darken(c, 0.22 * strength);
-      else if (!this.small && down2 === T) px[y * w + x] = darken(c, 0.1 * strength);
-      else if (up === T || left === T) px[y * w + x] = lighten(c, 0.38 * strength);
-      else if (up !== c && up !== T && at(x, y - 1) !== T && !this.small) px[y * w + x] = lighten(c, 0.12 * strength);
+      if (air(x, y, 0, 1, 1, k) || air(x, y, 1, 0, 1, k)) px[y * w + x] = darken(c, 0.22 * strength);
+      else if (!this.small && air(x, y, 0, 1, k + 1, 2 * k)) px[y * w + x] = darken(c, 0.1 * strength);
+      else if (air(x, y, 0, -1, 1, k) || air(x, y, -1, 0, 1, k)) px[y * w + x] = lighten(c, 0.38 * strength);
+      else if (!this.small && [...Array(k)].some((_, j) => { const u = at(x, y - 1 - j); return u !== c && u !== T; })) px[y * w + x] = lighten(c, 0.12 * strength);
     }
     return this;
   }
@@ -111,8 +134,8 @@ export class Painter {
 
   /** One face pixel at design (x, y): a single pixel at 32, a 2×2 block at 64 (faces scale with the body). */
   private faceSet(x: number, y: number, c: number) {
-    if (this.s <= 1) return this.faceRaw(this.sx(x), this.sx(y), c);
-    const k = Math.round(this.s), X = Math.floor(x) * k, Y = Math.floor(y) * k;
+    if (this.s <= 1) return this.faceRaw(this.px(x), this.px(y), c);
+    const k = Math.round(this.s), X = Math.floor(x) * k + this.pad, Y = Math.floor(y) * k + this.pad;
     for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) this.faceRaw(X + i, Y + j, c);
   }
 
@@ -122,7 +145,7 @@ export class Painter {
    */
   eye(x: number, y: number, size: number, eyes: Eyes, iris = INK, flip = false): this {
     if (this.small) {
-      const X = this.sx(x), Y = this.sx(y);
+      const X = this.px(x), Y = this.px(y);
       const w = size >= 4 ? 2 : 1;
       if (eyes === 'open') { for (let i = 0; i < w; i++) { this.faceRaw(X + i, Y, iris); this.faceRaw(X + i, Y + 1, iris); } }
       else this.faceRaw(X, Y + 1, INK);
@@ -168,7 +191,7 @@ export class Painter {
 
   mouth(x: number, y: number, pose: Pose, wide = 2): this {
     const kind = pose.mouth ?? 'smile';
-    if (this.small) { if (kind !== 'flat') this.faceRaw(this.sx(x), this.sx(y), INK); return this; }
+    if (this.small) { if (kind !== 'flat') this.faceRaw(this.px(x), this.px(y), INK); return this; }
     const X = x, Y = y;
     if (kind === 'smile') {
       this.faceSet(X - 1, Y - 1, INK);
@@ -202,9 +225,10 @@ export class Painter {
     return this;
   }
 
-  /** Finish: a soft coloured outline (darker shade of whatever it touches). */
+  /** Finish: a soft coloured outline (darker shade of whatever it touches), one design pixel wide. */
   finish(): PixelCanvas {
     this.pc.outline(INK, true);
+    for (let i = 1; i < Math.round(this.s); i++) this.pc.thicken();
     return this.pc;
   }
 

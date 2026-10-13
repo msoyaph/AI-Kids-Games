@@ -38,8 +38,12 @@ export class Game {
     this.settings = loadSettings();
     applySettingsToDom(this.settings);
     this.audio.setVolumes(this.settings.volume);
-    // a soft click for every button press in the menus
-    app.ui.addEventListener('click', e => { if ((e.target as HTMLElement).closest('button')) this.sfx('click'); });
+    // a soft sound for every button press in the menus: gold "go" buttons confirm, Back goes back
+    app.ui.addEventListener('click', e => {
+      const b = (e.target as HTMLElement).closest('button');
+      if (!b) return;
+      this.sfx(b.classList.contains('primary') ? 'confirm' : b.classList.contains('back') ? 'back' : 'click');
+    });
     this.focus = new FocusManager(this.input);
     this.dialogue = new Dialogue(this.input, this.focus, {
       readAloud: () => this.settings.readAloud,

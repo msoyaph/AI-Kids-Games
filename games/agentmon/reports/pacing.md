@@ -19,31 +19,31 @@ This is a model of a typical unhurried kid, not a measurement; real play varies 
 
 | Difficulty | Seed | Result | Bot clock | Model total | Steps | Wild / trainer spars | Lost | Friends | Rests | Rooms | Final team |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| easy | 1 | credits | 3.09 h | 7.42 h | 4782 | 59 / 16 | 2 | 9 | 28 | 36 | druzarch 44, fluffkorn 42, canopant 42, grandatee 42, maplegale 42, starwisp 43 |
-| easy | 2 | credits | 2.94 h | 7.22 h | 3661 | 62 / 16 | 2 | 8 | 24 | 36 | voltabill 44, canopant 42, galehum 42, hardigrade 42, fluffkorn 42, druzarch 42 |
-| easy | 3 | credits | 2.81 h | 7.33 h | 4543 | 49 / 15 | 1 | 8 | 22 | 36 | maplegale 41, canopant 40, fluffkorn 40, grandatee 40, citrivolt 40, starwisp 42 |
-| normal | 1 | credits | 3.22 h | 7.47 h | 4323 | 63 / 17 | 4 | 9 | 27 | 36 | druzarch 45, fluffkorn 44, canopant 44, grandatee 44, maplegale 44, voltabill 44 |
-| normal | 2 | credits | 3.09 h | 7.41 h | 5350 | 60 / 16 | 2 | 9 | 29 | 36 | voltabill 44, canopant 43, galehum 43, hardigrade 43, fluffkorn 43, druzarch 43 |
-| normal | 3 | credits | 3.09 h | 7.39 h | 3659 | 61 / 17 | 6 | 9 | 26 | 36 | maplegale 45, canopant 44, fluffkorn 44, grandatee 43, starwisp 45, citrivolt 44 |
-| hard | 1 | credits | 3.57 h | 7.96 h | 6959 | 58 / 22 | 11 | 9 | 32 | 36 | druzarch 48, fluffkorn 47, canopant 47, galehum 47, hardigrade 47, grandatee 46 |
-| hard | 2 | credits | 3.28 h | 7.75 h | 4976 | 57 / 20 | 9 | 7 | 30 | 36 | voltabill 48, canopant 48, galehum 48, hardigrade 48, fluffkorn 48, starwisp 49 |
-| hard | 3 | credits | 3.19 h | 7.58 h | 3815 | 57 / 18 | 6 | 8 | 31 | 36 | maplegale 47, canopant 46, fluffkorn 46, grandatee 46, bouldwom 47, starwisp 47 |
+| easy | 1 | credits | 3.13 h | 7.45 h | 5090 | 56 / 17 | 3 | 11 | 28 | 36 | druzarch 43, fluffkorn 42, canopant 41, hardigrade 41, galehum 41, pyrolanterne 41 |
+| easy | 2 | credits | 2.95 h | 7.20 h | 4849 | 63 / 15 | 2 | 9 | 25 | 36 | voltabill 43, canopant 42, galehum 42, hardigrade 42, grandatee 42, fluffkorn 42 |
+| easy | 3 | credits | 2.99 h | 7.27 h | 4809 | 61 / 15 | 2 | 9 | 25 | 36 | maplegale 44, canopant 43, fluffkorn 43, grandatee 43, pyrolanterne 43, citrivolt 43 |
+| normal | 1 | credits | 3.26 h | 7.53 h | 3916 | 58 / 19 | 6 | 10 | 28 | 36 | druzarch 45, fluffkorn 44, canopant 44, hardigrade 43, galehum 43, pyrolanterne 44 |
+| normal | 2 | credits | 3.13 h | 7.40 h | 5115 | 61 / 17 | 3 | 10 | 28 | 36 | voltabill 45, canopant 44, galehum 44, hardigrade 44, grandatee 44, fluffkorn 44 |
+| normal | 3 | credits | 3.08 h | 7.52 h | 6369 | 52 / 17 | 3 | 10 | 25 | 36 | maplegale 45, canopant 44, fluffkorn 44, grandatee 43, pyrolanterne 44, bouldwom 44 |
+| hard | 1 | credits | 3.54 h | 8.04 h | 5950 | 54 / 23 | 14 | 9 | 27 | 36 | druzarch 48, fluffkorn 48, canopant 47, galehum 47, hardigrade 47, grandatee 47 |
+| hard | 2 | credits | 3.51 h | 7.97 h | 7121 | 51 / 26 | 13 | 10 | 28 | 36 | voltabill 48, canopant 47, galehum 47, hardigrade 46, grandatee 47, bouldwom 47 |
+| hard | 3 | credits | 3.54 h | 7.91 h | 5431 | 59 / 24 | 12 | 9 | 31 | 36 | maplegale 50, canopant 48, fluffkorn 49, grandatee 48, pyrolanterne 49, bouldwom 48 |
 
 ## Normal, seed 1: where the time goes
 
 | Part | Time |
 |---|---|
-| walking | 28 min |
-| more wild spars (to the chapters' usual number) | 28 min |
-| more friends (Field Guide collecting) | 40 min |
+| walking | 26 min |
+| more wild spars (to the chapters' usual number) | 33 min |
+| more friends (Field Guide collecting) | 38 min |
 | reading | 26 min |
-| spars | 74 min |
-| befriending | 3 min |
+| spars | 77 min |
+| befriending | 4 min |
 | puzzles | 69 min |
-| menus and story moments | 34 min |
+| menus and story moments | 35 min |
 | chatting with townspeople | 13 min |
 | side quests | 132 min |
-| **Total** | **7.47 h** |
+| **Total** | **7.53 h** |
 
 (79 townspeople; 22 side quests.)
 
@@ -55,15 +55,15 @@ This is a model of a typical unhurried kid, not a measurement; real play varies 
 | 1 | 3 |
 | 2 | 4 |
 | 3 | 2 |
-| 4 | 20 |
+| 4 | 19 |
 | 5 | 4 |
-| 6 | 29 |
-| 7 | 6 |
-| 8 | 9 |
-| 9 | 17 |
-| 10 | 6 |
-| 11 | 30 |
-| 12 | 11 |
-| 13 | 17 |
-| 14 | 9 |
-| 15 | 24 |
+| 6 | 36 |
+| 7 | 5 |
+| 8 | 10 |
+| 9 | 15 |
+| 10 | 5 |
+| 11 | 26 |
+| 12 | 10 |
+| 13 | 18 |
+| 14 | 10 |
+| 15 | 27 |

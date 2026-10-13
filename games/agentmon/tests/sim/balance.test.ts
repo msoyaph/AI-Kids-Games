@@ -20,10 +20,10 @@ describe('balance simulation', () => {
     expect(report.avgTurns).toBeLessThan(12);
   });
 
-  it('no element dominates (every element wins 42–58% of its 1-vs-1 spars)', () => {
+  it('no element dominates (every element wins 48–52% of its 1-vs-1 spars; 1.1 tightened this from 42–58%)', () => {
     for (const [element, r] of Object.entries(elementRates(report))) {
-      expect(r, element).toBeGreaterThan(0.42);
-      expect(r, element).toBeLessThan(0.58);
+      expect(r, element).toBeGreaterThanOrEqual(0.48);
+      expect(r, element).toBeLessThanOrEqual(0.52);
     }
   });
 
@@ -36,7 +36,8 @@ describe('balance simulation', () => {
 
   it('in 3-vs-3 team spars, every third stage pulls its weight (35–65%)', () => {
     const rates = teamRates(report);
-    expect(Object.keys(rates)).toHaveLength(16);
+    // one third stage per family (16 in 1.0, 24 in 1.1), counted from the data
+    expect(Object.keys(rates)).toHaveLength(Object.values(DEX.species).filter(s => !s.guardian && s.stage === 3).length);
     for (const [id, r] of Object.entries(rates)) {
       expect(r, id).toBeGreaterThan(0.35);
       expect(r, id).toBeLessThan(0.65);

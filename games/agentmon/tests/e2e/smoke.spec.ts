@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { watch } from './helpers';
+import { SPECIES } from '../../src/data/species';
 
 const HOOK = '__agentmon';
 type Snapshot = { scene: string; renderer: string; frames: number; creatures?: number };
@@ -14,11 +15,15 @@ test('the title screen starts with no errors and no network', async ({ page }) =
   expect(problems).toEqual([]);
 });
 
-test('the creature sheet shows all 52 Agentmon without touching saves', async ({ page }) => {
+// every Agentmon in the data (52 in 1.0, 77 in 1.1); the last one's label proves the sheet got to the end
+const ALL = Object.values(SPECIES).sort((a, b) => a.num - b.num);
+const LAST = ALL[ALL.length - 1]!;
+
+test('the creature sheet shows every Agentmon without touching saves', async ({ page }) => {
   const problems = watch(page);
   await page.goto('/?scene=sheet');
-  await expect.poll(async () => (await snapshot(page)).creatures, { timeout: 20_000 }).toBe(52);
-  await expect(page.getByText('52 Aurelune')).toBeAttached();
+  await expect.poll(async () => (await snapshot(page)).creatures, { timeout: 20_000 }).toBe(ALL.length);
+  await expect(page.getByText(`${LAST.num} ${LAST.name}`)).toBeAttached();
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('agentmon.')))).toEqual([]);
   expect(problems).toEqual([]);

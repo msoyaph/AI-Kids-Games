@@ -18,5 +18,11 @@ export const FX = {
   evolveGlowHz: 0.53,
 };
 
+/** Gentle repeating movement (not brightness), kept slow so the stage stays calm. Off with reduced motion. */
+export const MOTION = {
+  /** An Agentmon's breathing at rest (battle). */
+  breatheHz: 0.45,
+};
+
 /** A smooth wave from -1 to 1 at `hz` cycles a second, at time `t` in seconds. */
 export const wave = (hz: number, t: number, phase = 0) => Math.sin(2 * Math.PI * hz * t + phase);

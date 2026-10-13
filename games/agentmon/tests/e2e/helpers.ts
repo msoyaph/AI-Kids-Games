@@ -66,8 +66,11 @@ export async function hold(page: Page, key: string, done: (s: Snap) => boolean, 
 /**
  * One step: hold the key until the step starts (the player's tile changes, or a door, map edge or
  * story moment takes over), let go, and wait until the player stands still. Letting go during the
- * step means a slow device (CI draws in software at ~15 fps) can never add a step. Returns false
- * when something other than a plain step happened.
+ * step means a slow device (CI draws in software at ~15 fps) can never add a step. The key is let go
+ * from inside the page on the first frame the step shows: watching from the test instead takes a
+ * round trip per look, and on a busy machine (the full matrix runs several browsers at once) that
+ * round trip can outlast a whole step, so the game saw the key still held and took a second one.
+ * Returns false when something other than a plain step happened.
  */
 /** Wait until nothing is happening: no step, fade or story moment under way (a dialogue counts as settled). */
 async function settled(page: Page) {
@@ -81,11 +84,22 @@ async function oneStep(page: Page, key: string): Promise<boolean> {
   await page.keyboard.down(key);
   let moved = false;
   try {
-    await expect.poll(async () => {
-      const s = await snap(page);
-      moved = s.x !== b.x || s.y !== b.y;
-      return moved || s.map !== b.map || !!s.busy || !!s.dialogue;
-    }, { timeout: 8000, intervals: [10] }).toBe(true);
+    const started = await page.evaluate(({ code, b }) => new Promise<{ moved: boolean } | null>(resolve => {
+      const hook = (window as unknown as { __agentmon: { snapshot(): { x?: number; y?: number; map?: string; busy?: boolean; dialogue?: unknown } } }).__agentmon;
+      const t0 = performance.now();
+      const look = () => {
+        const s = hook.snapshot();
+        const stepped = s.x !== b.x || s.y !== b.y;
+        if (stepped || s.map !== b.map || !!s.busy || !!s.dialogue) {
+          dispatchEvent(new KeyboardEvent('keyup', { code, key: code }));
+          resolve({ moved: stepped });
+        } else if (performance.now() - t0 > 8000) resolve(null);
+        else requestAnimationFrame(look);
+      };
+      look();
+    }), { code: key, b: { x: b.x, y: b.y, map: b.map } });
+    expect(started, `a ${key} step should start within 8 s`).not.toBeNull();
+    moved = started!.moved;
   } finally {
     await page.keyboard.up(key);
   }

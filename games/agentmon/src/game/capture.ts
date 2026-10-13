@@ -74,6 +74,7 @@ export class CaptureScene implements Scene {
   private stage(bg: MapDef['battleBg'], ui: BattleUI): BattleView {
     const view = new BattleView(this.game.app.sprites, bg);
     this.view = view;
+    view.blinks = this.playing;
     this.root.addChild(view.root);
     view.resize(ui.stageRect());
     return view;
@@ -197,7 +198,7 @@ export class CaptureScene implements Scene {
     const setup = sparkSetup(DEX, { foe, mood: 'happy', snack: SPECIES[foe.species]!.favoriteSnack as never, difficulty: 'normal', seed: this.seed });
     const host = this.game.app.host;
     const r = Math.min(host.width, host.height) * 0.26;
-    const ring = new SparkRing(setup, this.game.app.sprites.creature(foe.species, 32, 'happy', foe.shimmer), { cx: host.width / 2, cy: host.height * 0.52, r, scale: Math.max(2, Math.round(r / 22)), W: host.width, H: host.height });
+    const ring = new SparkRing(setup, sz => this.game.app.sprites.creature(foe.species, sz, 'happy', foe.shimmer), { cx: host.width / 2, cy: host.height * 0.52, r, scale: Math.max(2, Math.round(r / 22)), W: host.width, H: host.height });
     this.root.addChild(ring.root);
     if (!this.playing) {
       ring.still(1, (setup.arcAt[1] ?? 0) - setup.arc * 0.15, 1, `Spark 2 of ${setup.sparks}`);
@@ -207,7 +208,7 @@ export class CaptureScene implements Scene {
     // the ring plays for real: the spark sweeps round and a tap lands in the glow
     ring.destroy();
     for (let round = 0; round < 3; round++) {
-      const live = new SparkRing({ ...setup, arcAt: setup.arcAt.map(a => (a + round * 70) % 360) }, this.game.app.sprites.creature(foe.species, 32, 'happy', foe.shimmer), { cx: host.width / 2, cy: host.height * 0.52, r, scale: Math.max(2, Math.round(r / 22)), W: host.width, H: host.height });
+      const live = new SparkRing({ ...setup, arcAt: setup.arcAt.map(a => (a + round * 70) % 360) }, sz => this.game.app.sprites.creature(foe.species, sz, 'happy', foe.shimmer), { cx: host.width / 2, cy: host.height * 0.52, r, scale: Math.max(2, Math.round(r / 22)), W: host.width, H: host.height });
       this.root.addChild(live.root);
       let spark: { angle: number; arcAt: number; arc: number } | null = null;
       this.ready = true;
@@ -221,13 +222,13 @@ export class CaptureScene implements Scene {
     const session = this.session([['zipbill', 32]]);
     const c = session.state.team[0]!;
     const host = this.game.app.host;
-    const scale = Math.max(3, Math.round(Math.min(host.width, host.height) / 90));
+    const scale = 2 * Math.max(2, Math.round(Math.min(host.width, host.height) / 180)); // even, as in battle.ts
     if (this.playing) {
       void this.game.dialogue.say(`${session.friendName(c)} is growing!`);
       this.ready = true;
-      await playEvolution(this.root, this.game.app.sprites.creature('zipbill', 32, 'idle', c.shimmer), this.game.app.sprites.creature('voltabill', 32, 'happy', c.shimmer), { W: host.width, H: host.height, scale }, () => false, false);
+      await playEvolution(this.root, this.game.app.sprites.creature('zipbill', 64, 'idle', c.shimmer), this.game.app.sprites.creature('voltabill', 64, 'happy', c.shimmer), { W: host.width, H: host.height, scale }, () => false, false);
     }
-    evolutionStill(this.root, this.game.app.sprites.creature('voltabill', 32, 'happy', c.shimmer), { W: host.width, H: host.height, scale });
+    evolutionStill(this.root, this.game.app.sprites.creature('voltabill', 64, 'happy', c.shimmer), { W: host.width, H: host.height, scale });
     void this.game.dialogue.say(`${session.friendName(c)} grew into ${SPECIES.voltabill!.name}!`);
     await wait(1500);
   }

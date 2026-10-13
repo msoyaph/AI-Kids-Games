@@ -49,6 +49,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
   const mapMusic = game.music.playing;
   game.music.play(setup.music ?? (setup.guardian ? 'guardian' : setup.kind === 'wild' ? 'battle-wild' : 'battle-trainer'));
   view.speed = settings.skipAnimations ? 4 : settings.battleSpeed;
+  view.calm = settings.reducedMotion;
   const foeName = (c: Creature) => (setup.kind === 'wild' ? `the wild ${SPECIES[c.species]!.name}` : `${setup.trainer?.name}'s ${SPECIES[c.species]!.name}`);
   const ui = new BattleUI(game, DEX, { friend: c => session.friendName(c), foe: c => SPECIES[c.species]!.name });
   app.stage.addChild(view.root);
@@ -131,7 +132,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
       s.stats.wins++;
       s.coins += b.coins;
       if (b.coins) game.sfx('coin');
-      await ui.say(setup.kind === 'wild' ? 'Great spar! The wild one waves and runs back to play.' : `You won the spar! ${setup.trainer!.name} gives you ${b.coins} coins.`, 1500);
+      await Promise.all([view.cheer(0, active(b, 0)), ui.say(setup.kind === 'wild' ? 'Great spar! The wild one waves and runs back to play.' : `You won the spar! ${setup.trainer!.name} gives you ${b.coins} coins.`, 1500)]);
     } else if (outcome === 'lost') {
       await ui.say('Your friends are all tuckered out. Time for a nap!', 1500);
     } else if (outcome === 'wandered') {
@@ -210,6 +211,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
         case 'wake': await ui.say(`${cap(name(e.side))} woke up!`, 600); refresh(); break;
         case 'toasty': refresh(); await ui.say(`${cap(name(e.side))} feels toasty and a bit tired.`, 650); break;
         case 'fail':
+          game.sfx('error');
           await ui.say(e.reason === 'status-proof' ? 'It just shrugs it off!' : e.reason === 'status-held' ? 'It already has a status.' : e.reason === 'too-tired' ? 'Too tired for that move!' : 'Nothing happened.', 600);
           break;
         case 'tuckered': {
@@ -229,11 +231,11 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
         case 'level': {
           game.sfx('level');
           const c = b.sides[0].team[e.index]!;
-          await ui.say(`${session.friendName(c)} grew to level ${e.report.to}!`, 800);
+          await Promise.all([c === active(b, 0) ? view.cheer(0, c, 1) : Promise.resolve(), ui.say(`${session.friendName(c)} grew to level ${e.report.to}!`, 800)]);
           break;
         }
         case 'befriend':
-          if (e.success) { game.sfx('friend'); game.cry(active(b, 1).species); await view.glow(1, 0xff8fc0); await ui.say(`${SPECIES[active(b, 1).species]!.name} wants to be your friend! 💛`, 1500); }
+          if (e.success) { game.sfx('friend'); game.cry(active(b, 1).species); await Promise.all([view.glow(1, 0xff8fc0), view.cheer(1, active(b, 1))]); await ui.say(`${SPECIES[active(b, 1).species]!.name} wants to be your friend! 💛`, 1500); }
           else await ui.say(`${SPECIES[active(b, 1).species]!.name} isn't sure yet. ${e.interest > 0 ? 'Maybe try again!' : ''}`, 1100);
           break;
         case 'coins': break;
@@ -294,7 +296,7 @@ async function befriendGame(game: Game, ui: BattleUI, view: BattleView, b: Battl
 export async function playSparkRing(game: Game, parent: import('pixi.js').Container, setupSpark: ReturnType<typeof sparkSetup>, foe: Creature): Promise<number> {
   const host = game.app.host;
   const r = Math.min(host.width, host.height) * 0.26;
-  const ring = new SparkRing(setupSpark, game.app.sprites.creature(foe.species, 32, 'happy', foe.shimmer), { cx: host.width / 2, cy: host.height * 0.52, r, scale: Math.max(2, Math.round(r / 22)), W: host.width, H: host.height });
+  const ring = new SparkRing(setupSpark, sz => game.app.sprites.creature(foe.species, sz, 'happy', foe.shimmer), { cx: host.width / 2, cy: host.height * 0.52, r, scale: Math.max(2, Math.round(r / 22)), W: host.width, H: host.height });
   parent.addChild(ring.root);
   // a tap or key remembers when it happened, so the ring judges it at that moment (gamepad A is
   // polled each frame, so it counts at the frame)
@@ -324,12 +326,12 @@ export async function playSparkRing(game: Game, parent: import('pixi.js').Contai
 export async function growAnimation(game: Game, c: Creature, to: string): Promise<void> {
   const host = game.app.host;
   game.sfx('grow');
-  const scale = Math.max(3, Math.round(Math.min(host.width, host.height) / 90));
+  const scale = 2 * Math.max(2, Math.round(Math.min(host.width, host.height) / 180)); // even: 64 px art at half
   let skip = false;
   const onTap = () => { skip = true; };
   addEventListener('pointerdown', onTap);
   try {
-    await playEvolution(game.app.stage, game.app.sprites.creature(c.species, 32, 'idle', c.shimmer), game.app.sprites.creature(to, 32, 'happy', c.shimmer), { W: host.width, H: host.height, scale }, () => skip || game.input.consume('a'), game.settings.reducedMotion || game.settings.skipAnimations);
+    await playEvolution(game.app.stage, game.app.sprites.creature(c.species, 64, 'idle', c.shimmer), game.app.sprites.creature(to, 64, 'happy', c.shimmer), { W: host.width, H: host.height, scale }, () => skip || game.input.consume('a'), game.settings.reducedMotion || game.settings.skipAnimations);
   } finally {
     removeEventListener('pointerdown', onTap);
   }

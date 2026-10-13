@@ -1,5 +1,6 @@
 /**
- * All 52 Agentmon: 16 families of three growth stages, plus 4 guardians.
+ * All 77 Agentmon: 24 families of three growth stages, plus 5 guardians (1.0 had 16 families and
+ * 4 guardians, numbers 1–52; 1.1 added 8 families, 53–76, and Verdanyan, 77).
  *
  * Each family is one entry: its element, real-world inspiration (its facts are in facts.ts),
  * trait, favorite snack, stage-3 base stats and growth levels. Stage 1 and 2 stats are the same
@@ -190,6 +191,79 @@ const FAMILIES: FamilyDef[] = [
       { num: 48, id: 'thermabara', name: 'Thermabara', blurb: 'A tiny hot spring bubbles on its back. Little friends ride along.' },
     ],
   },
+  // ---- 1.1 ---------------------------------------------------------------------------------
+  {
+    family: 'bombardier', element: 'flare', inspiration: 'bombardier beetles', trait: 'brave', snack: 'sun-pepper', friendliness: 1.0,
+    stats: [94, 122, 91, 102], grow: [17, 33], extra: [['pep-talk', 7], ['skipping-stone', 11], ['steam-spray', 26]],
+    stages: [
+      { num: 53, id: 'puffbit', name: 'Puffbit', blurb: 'A little beetle that puffs a warm "pff!" from its tail when it is surprised.' },
+      { num: 54, id: 'puffbeetle', name: 'Puffbeetle', blurb: 'Its orange-spotted wing cases keep warm all day. It puffs steam to say hello.' },
+      { num: 55, id: 'geyserguard', name: 'Geyserguard', blurb: 'It stands guard over warm springs and puffs big clouds of steam when friends need cover.' },
+    ],
+  },
+  {
+    family: 'mangrove', element: 'tide', inspiration: 'mangroves', trait: 'cozy', snack: 'sea-crisp', friendliness: 1.1,
+    stats: [116, 94, 110, 73], grow: [17, 33], extra: [['cozy-curl', 7], ['seed-flick', 11], ['seed-drop', 26]],
+    stages: [
+      { num: 56, id: 'stiltsprout', name: 'Stiltsprout', blurb: 'A seed that sprouted before it fell. It wades in the shallows on three little roots.' },
+      { num: 57, id: 'wadewood', name: 'Wadewood', blurb: 'Fish and crabs hide between its stilt roots when the tide comes in.' },
+      { num: 58, id: 'mangromere', name: 'Mangromere', blurb: 'A whole little island of roots. Seeds drop from its branches and float off to grow.' },
+    ],
+  },
+  {
+    family: 'stick-insect', element: 'leaf', inspiration: 'stick and leaf insects', trait: 'calm', snack: 'berry-bun', friendliness: 1.0,
+    stats: [91, 112, 85, 143], grow: [16, 32], extra: [['hop-in', 7], ['breeze-tap', 11], ['twig-mimic', 24]],
+    stages: [
+      { num: 59, id: 'sprigling', name: 'Sprigling', blurb: 'It looks just like a twig. If you look closely, the twig is smiling.' },
+      { num: 60, id: 'twigstride', name: 'Twigstride', blurb: 'It sways in the breeze on long, thin legs so nobody can tell it from a branch.' },
+      { num: 61, id: 'leafwarden', name: 'Leafwarden', blurb: 'Its body is shaped like a leaf, veins and all. It watches over the treetops.' },
+    ],
+  },
+  {
+    family: 'lithops', element: 'stone', inspiration: 'lithops (living stones)', trait: 'thrifty', snack: 'moon-melon', friendliness: 1.1,
+    stats: [102, 90, 124, 75], grow: [18, 34], extra: [['cozy-curl', 7], ['sprout-up', 11], ['pebble-hide', 22]],
+    stages: [
+      { num: 62, id: 'lithlet', name: 'Lithlet', blurb: 'It sits so still in the sand that everyone thinks it is a pebble.' },
+      { num: 63, id: 'lithopsy', name: 'Lithopsy', blurb: 'The little windows on top of its head let sunlight in. A bud is peeking out.' },
+      { num: 64, id: 'stonebloom', name: 'Stonebloom', blurb: 'A pebble-plant in full bloom. Its flower opens in the afternoon sun.' },
+    ],
+  },
+  {
+    family: 'flying-fish', element: 'gust', inspiration: 'flying fish', trait: 'waterproof', snack: 'sea-crisp', friendliness: 1.1,
+    stats: [91, 113, 85, 135], grow: [16, 32], extra: [['hop-in', 7], ['puddle-pat', 11], ['glide-skim', 24]],
+    stages: [
+      { num: 65, id: 'glidelet', name: 'Glidelet', blurb: 'It hops out of the waves and glides a little way on wide fins. Wheee!' },
+      { num: 66, id: 'skimfin', name: 'Skimfin', blurb: 'It skims over the sea faster than a boat, leaving a trail of sparkly spray.' },
+      { num: 67, id: 'galefin', name: 'Galefin', blurb: 'With four wing-fins it can glide for ages, riding the wind above the waves.' },
+    ],
+  },
+  {
+    family: 'springtail', element: 'frost', inspiration: 'springtails (snow fleas)', trait: 'cheerful', snack: 'frost-mint', friendliness: 1.2,
+    stats: [97, 107, 91, 125], grow: [16, 32], extra: [['hop-in', 7], ['happy-dance', 13], ['spring-hop', 20]],
+    stages: [
+      { num: 68, id: 'snowskip', name: 'Snowskip', blurb: 'A tiny hopper with a spring under its tail. Boing! It lands in the leaves.' },
+      { num: 69, id: 'springfrost', name: 'Springfrost', blurb: 'Its fluffy frost coat keeps it cozy while it hops around on fresh snow.' },
+      { num: 70, id: 'bounceberg', name: 'Bounceberg', blurb: 'Little icebergs ride on its back. It bounces so high it can see over hills.' },
+    ],
+  },
+  {
+    family: 'elephantnose', element: 'volt', inspiration: 'elephantnose fish', trait: 'calm', snack: 'spark-fizz', friendliness: 1.0,
+    stats: [99, 110, 95, 103], grow: [17, 33], extra: [['peekaboo', 7], ['drizzle-drop', 11], ['field-pulse', 24]],
+    stages: [
+      { num: 71, id: 'chinspark', name: 'Chinspark', blurb: 'Its long, bendy chin tingles when snacks are nearby, even in muddy water.' },
+      { num: 72, id: 'zapsnoot', name: 'Zapsnoot', blurb: 'It hums a tiny electric hum to feel its way along the riverbed.' },
+      { num: 73, id: 'voltrunk', name: 'Voltrunk', blurb: 'The tip of its trunk glows. It finds lost things in the darkest rivers.' },
+    ],
+  },
+  {
+    family: 'pyrosome', element: 'glow', inspiration: 'pyrosomes', trait: 'cozy', snack: 'moon-melon', friendliness: 1.1,
+    stats: [112, 100, 108, 90], grow: [18, 34], extra: [['happy-dance', 7], ['drip-tap', 11], ['glow-chain', 24]],
+    stages: [
+      { num: 74, id: 'glimmerpod', name: 'Glimmerpod', blurb: 'A soft, bumpy tube that floats in the sea. It glows when you say hello.' },
+      { num: 75, id: 'lumitube', name: 'Lumitube', blurb: 'Thousands of tiny glowing friends live together in its tube.' },
+      { num: 76, id: 'pyrolanterne', name: 'Pyrolanterne', blurb: 'A great glowing colony. Sailors once followed its blue light home.' },
+    ],
+  },
 ];
 
 interface GuardianDef {
@@ -217,6 +291,11 @@ const GUARDIANS: GuardianDef[] = [
     num: 52, id: 'aurelune', name: 'Aurelune', element: 'glow', inspiration: 'auroras', snack: 'moon-melon',
     stats: [120, 120, 105, 105], signature: 'ribbon-sky', extra: [['flutter-flick', 1], ['kite-spin', 30]],
     blurb: 'A great sky kite of soft light that trails ribbons of aurora. It watches over all of Sunreach.',
+  },
+  {
+    num: 77, id: 'verdanyan', name: 'Verdanyan', element: 'leaf', inspiration: 'banyan trees', snack: 'berry-bun',
+    stats: [135, 115, 125, 75], signature: 'root-curtain', extra: [['shine-bop', 1], ['ripple-roll', 30]],
+    blurb: 'One tree that is a whole grove. Its roots drop like curtains and grow into new trunks.',
   },
 ];
 

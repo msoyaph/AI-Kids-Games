@@ -15,19 +15,24 @@ import { effectiveness } from '../../src/core/elements';
 const words = (s: string) => s.trim().split(/\s+/).length;
 
 describe('the roster', () => {
-  it('has 52 Agentmon: 16 families of three stages, plus 4 guardians, numbered 1–52', () => {
-    expect(SPECIES_LIST).toHaveLength(52);
-    expect(SPECIES_LIST.map(s => s.num)).toEqual(Array.from({ length: 52 }, (_, i) => i + 1));
+  it('has 77 Agentmon: 24 families of three stages, plus 5 guardians, numbered 1–77', () => {
+    expect(SPECIES_LIST).toHaveLength(77);
+    expect(SPECIES_LIST.map(s => s.num)).toEqual(Array.from({ length: 77 }, (_, i) => i + 1));
     const families = new Map<string, number>();
     for (const s of SPECIES_LIST.filter(s => !s.guardian)) families.set(s.family, (families.get(s.family) ?? 0) + 1);
-    expect(families.size).toBe(16);
+    expect(families.size).toBe(24);
     expect([...families.values()].every(n => n === 3)).toBe(true);
-    expect(SPECIES_LIST.filter(s => s.guardian)).toHaveLength(4);
-    expect(new Set(SPECIES_LIST.map(s => s.name)).size).toBe(52);
+    expect(SPECIES_LIST.filter(s => s.guardian)).toHaveLength(5);
+    expect(new Set(SPECIES_LIST.map(s => s.name)).size).toBe(77);
   });
 
-  it('gives every element exactly two families', () => {
-    for (const e of ELEMENTS) expect(new Set(SPECIES_LIST.filter(s => s.element === e && !s.guardian).map(s => s.family)).size, e).toBe(2);
+  it('keeps every 1.0 Agentmon at its number (numbers are save ids)', () => {
+    const v1 = 'spinnet twirlwing maplegale druzling druzette druzarch buzzbill zipbill voltabill kernip poplet fluffkorn snipsy leafhauler canopant hummet whirrbird galehum burrowby burrowbat bouldwom lullakin lullatee grandatee dewpud mossbub hardigrade fiddlit frondle fernadore gleamgrub silklight starwisp glintle prismble fluorelle zestle zestwick citrivolt hailbit hailroll hailcastle scarfcub scarfpaw scarfspire bathlet steambly thermabara archwyn tidecrest frostmantle aurelune'.split(' ');
+    expect(SPECIES_LIST.slice(0, 52).map(s => s.id)).toEqual(v1);
+  });
+
+  it('gives every element exactly three families', () => {
+    for (const e of ELEMENTS) expect(new Set(SPECIES_LIST.filter(s => s.element === e && !s.guardian).map(s => s.family)).size, e).toBe(3);
   });
 
   it('grows stage by stage at rising levels, into the same family and element', () => {
@@ -107,7 +112,7 @@ describe('moves', () => {
 
 describe('facts (the reviewable real-world file)', () => {
   it('has exactly one fact for every Agentmon, each with where to check it', () => {
-    expect(FACTS).toHaveLength(52);
+    expect(FACTS).toHaveLength(77);
     for (const s of SPECIES_LIST) {
       const f = FACT_BY_ID[s.fact];
       expect(f, s.id).toBeDefined();

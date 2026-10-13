@@ -2,6 +2,8 @@
  * The battle stage: a backdrop, your friend on the left facing right, the other Agentmon on the
  * right, and playful animations (hops, bouncy bumps with stars, sparkles, a shield bubble, a nap
  * with little z's). Nothing scary, no impact gore. Nothing flashes more than 3 times a second.
+ * Battle sprites are 64 px (faces and outline drawn in 32-px design units) shown at a whole-number
+ * scale; at rest they breathe and blink, and they cheer, squash on a bump and slump for a nap.
  * Also draws the Spark Ring befriending game and the growing (evolution) animation.
  */
 import { Container, Graphics, Sprite, Text, type Texture } from 'pixi.js';
@@ -11,7 +13,8 @@ import type { Creature, Element } from '../core/types';
 import { ELEMENT_INFO } from '../data/elements';
 import { SPECIES } from '../data/species';
 import type { Sprites } from './sprites';
-import { FX, wave } from './fx';
+import { FX, MOTION, wave } from './fx';
+import { footAnchor } from '../art/painter';
 
 export interface StageLayout { x: number; y: number; w: number; h: number }
 
@@ -29,8 +32,16 @@ export class BattleView {
   private base: [{ x: number; y: number }, { x: number; y: number }] = [{ x: 0, y: 0 }, { x: 0, y: 0 }];
   private time = 0;
   bgScale = 4;
+  /** Device pixels per design pixel (the 32-px design space); the 64 px textures show at monScale / 2. */
   monScale = 6;
   speed = 1;
+  /** Reduced motion: no breathing or hops (blinks and pose faces stay). */
+  calm = false;
+  /** Random blinks (off for still captures, so screenshots repeat exactly). */
+  blinks = true;
+  private mons: [Creature | null, Creature | null] = [null, null];
+  private faces: ['idle' | 'blink' | 'happy' | 'hit' | 'nap', 'idle' | 'blink' | 'happy' | 'hit' | 'nap'] = ['idle', 'idle'];
+  private nextBlink = [1.4, 2.3];
   layout: StageLayout = { x: 0, y: 0, w: 1, h: 1 };
   private idle = [true, true];
   private napping = [false, false];
@@ -49,7 +60,10 @@ export class BattleView {
   resize(l: StageLayout): void {
     this.layout = l;
     this.bgScale = Math.max(1, Math.ceil(Math.max(l.w / BG_W, l.h / BG_H)));
-    this.monScale = Math.max(2, Math.round(this.bgScale * 1.5));
+    // 64 px textures at a whole-number scale stay crisp. Each friend fits a third of the stage's
+    // width and under half its height, so the two never overlap on a phone (1.0's did).
+    const fit = Math.floor(Math.min(l.w * 0.34, l.h * 0.45) / 64);
+    this.monScale = 2 * Math.max(1, Math.min(Math.round(this.bgScale * 0.85), fit));
     this.bg.scale.set(this.bgScale);
     this.bg.x = l.x + Math.round((l.w - BG_W * this.bgScale) / 2);
     this.bg.y = l.y + Math.round((l.h - BG_H * this.bgScale) / 2);
@@ -58,7 +72,7 @@ export class BattleView {
     this.base = [{ x: l.x + l.w / 2 - spread, y: groundY }, { x: l.x + l.w / 2 + spread, y: groundY }];
     for (const side of [0, 1] as const) {
       const s = this.sprites[side];
-      s.scale.set(this.monScale * (side === 0 ? -1 : 1), this.monScale);
+      this.rest(side);
       s.x = this.base[side].x;
       s.y = this.base[side].y;
     }
@@ -70,15 +84,48 @@ export class BattleView {
   }
 
   setCreature(side: 0 | 1, c: Creature, pose: 'idle' | 'happy' | 'hit' | 'nap' = 'idle'): void {
-    this.sprites[side].texture = this.art.creature(c.species, 32, pose, c.shimmer);
-    this.sprites[side].visible = true;
-    this.sprites[side].alpha = 1;
+    this.mons[side] = c;
+    this.pose(side, c, pose);
+    const s = this.sprites[side];
+    s.visible = true;
+    s.alpha = 1;
+    s.rotation = 0;
+    this.rest(side);
     this.napping[side] = pose === 'nap';
     if (!this.napping[side] && this.zzz[side]) { this.zzz[side]!.destroy(); this.zzz[side] = null; }
   }
 
   pose(side: 0 | 1, c: Creature, pose: 'idle' | 'blink' | 'happy' | 'hit' | 'nap'): void {
-    this.sprites[side].texture = this.art.creature(c.species, 32, pose, c.shimmer);
+    this.faces[side] = pose;
+    const s = this.sprites[side];
+    s.texture = this.art.creature(c.species, 64, pose, c.shimmer);
+    s.anchor.set(0.5, footAnchor(s.texture.height));
+  }
+
+  /** The sprite's resting scale (64 px textures, facing the other side). */
+  private rest(side: 0 | 1, sx = 1, sy = 1): void {
+    const m = this.monScale / 2;
+    this.sprites[side].scale.set(m * sx * (side === 0 ? -1 : 1), m * sy);
+  }
+
+  /** A happy hop or two with a big smile (a friend joins, a level up, a won spar). */
+  async cheer(side: 0 | 1, c: Creature, hops = 2): Promise<void> {
+    if (this.napping[side] || !this.sprites[side].visible) return;
+    this.idle[side] = false;
+    const s = this.sprites[side], by = this.base[side].y;
+    this.pose(side, c, 'happy');
+    if (this.calm) await this.wait(500);
+    else {
+      await this.tween(380 * hops, t => {
+        const k = Math.abs(Math.sin(t * Math.PI * hops));
+        s.y = by - k * 8 * this.bgScale;
+        this.rest(side, 1 - k * 0.06, 1 + k * 0.08);
+      });
+    }
+    s.y = by;
+    this.rest(side);
+    this.pose(side, c, 'idle');
+    this.idle[side] = true;
   }
 
   hide(side: 0 | 1): void { this.sprites[side].visible = false; }
@@ -140,10 +187,10 @@ export class BattleView {
     this.burst(x, y - 16 * this.monScale, matchup === 'strong' ? 14 : matchup === 'weak' ? 4 : 8, color, matchup === 'strong' ? 1.4 : 1);
     await this.tween(360, t => {
       const k = Math.sin(t * Math.PI);
-      s.scale.set(sign * this.monScale * (1 + k * 0.12), this.monScale * (1 - k * 0.12));
-      s.x = this.base[side].x + Math.sin(t * Math.PI * 3) * (1 - t) * 3 * this.bgScale;
+      this.rest(side, 1 + k * 0.12, 1 - k * 0.12);
+      if (!this.calm) s.x = this.base[side].x + Math.sin(t * Math.PI * 3) * (1 - t) * 3 * this.bgScale * -sign;
     });
-    s.scale.set(sign * this.monScale, this.monScale);
+    this.rest(side);
     s.x = this.base[side].x;
     this.pose(side, c, 'idle');
     this.idle[side] = true;
@@ -182,8 +229,15 @@ export class BattleView {
   async nap(side: 0 | 1, c: Creature): Promise<void> {
     this.setCreature(side, c, 'nap');
     const s = this.sprites[side];
-    const by = this.base[side].y;
-    await this.tween(500, t => { s.y = by + Math.sin(t * Math.PI) * 2 * this.bgScale; s.alpha = 1 - t * 0.25; });
+    const by = this.base[side].y, tilt = side === 0 ? -0.1 : 0.1;
+    // a slump: it settles lower and softer, tips a little to one side and dims a touch
+    await this.tween(500, t => {
+      const k = ease(t);
+      s.y = by + Math.sin(t * Math.PI) * 2 * this.bgScale;
+      this.rest(side, 1 + k * 0.05, 1 - k * 0.1);
+      s.rotation = this.calm ? 0 : tilt * k;
+      s.alpha = 1 - t * 0.25;
+    });
     const z = new Text({ text: 'z z z', style: { fill: 0xffffff, fontSize: 9 * this.bgScale, fontWeight: '900', stroke: { color: 0x2a1f3d, width: 2 * this.bgScale } } });
     z.anchor.set(0.5);
     z.x = s.x + 10 * this.monScale;
@@ -235,9 +289,16 @@ export class BattleView {
   update(dt: number): void {
     this.time += dt;
     for (const side of [0, 1] as const) {
-      const s = this.sprites[side];
+      const s = this.sprites[side], c = this.mons[side];
       if (this.idle[side] && s.visible && !this.napping[side]) {
-        s.y = this.base[side].y - (Math.sin(this.time * 3 + side * 1.7) > 0.4 ? this.bgScale : 0);
+        // breathing: a slow, gentle stretch from the feet (no brightness change)
+        const b = this.calm ? 0 : wave(MOTION.breatheHz, this.time, side * 1.7);
+        this.rest(side, 1 - b * 0.012, 1 + b * 0.025);
+        s.y = this.base[side].y;
+        // blinking now and then, never in step with the other side
+        if (this.blinks) this.nextBlink[side]! -= dt;
+        if (c && this.faces[side] === 'idle' && this.nextBlink[side]! <= 0) { this.pose(side, c, 'blink'); this.nextBlink[side] = 0.13; }
+        else if (c && this.faces[side] === 'blink' && this.nextBlink[side]! <= 0) { this.pose(side, c, 'idle'); this.nextBlink[side] = 2.2 + Math.random() * 2.6; }
       }
       const z = this.zzz[side];
       if (z) z.alpha = 0.6 + wave(FX.napFadeHz, this.time) * 0.3;

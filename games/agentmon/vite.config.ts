@@ -4,7 +4,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 
 // The built game may not load or send anything: no network at all. (Added to the build only,
 // because the dev server needs to load modules and its live-reload connection.)
-const csp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+const csp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
 const noNetwork: Plugin = {
   name: 'no-network-csp',
   apply: 'build',

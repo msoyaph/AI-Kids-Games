@@ -98,11 +98,53 @@ export const FACTS: Fact[] = [
   { id: 'steambly', topic: 'Capybaras', text: 'Capybaras love water. They can stay underwater for up to about five minutes.', check: 'Zoo fact pages (e.g. Alexandria Zoo); San Diego Zoo Wildlife Alliance', note: 'Popular sources give "up to about five minutes".' },
   { id: 'thermabara', topic: 'Capybaras', text: "A capybara's eyes, ears and nose sit high on its head. It can see and breathe while almost all of it is underwater.", check: 'San Diego Zoo Wildlife Alliance; Smithsonian National Zoo' },
 
+  // ---- 1.1 (checked 2026-10-13) --------------------------------------------------------------
+  // Bombardier beetles (Puffbit line)
+  { id: 'puffbit', topic: 'Bombardier beetles', text: 'When a bombardier beetle is scared, it mixes two chemicals inside its body and sprays out a hot, steamy puff.', check: 'Britannica (bombardier beetle); Eisner and Aneshansley, PNAS 1999' },
+  { id: 'puffbeetle', topic: 'Bombardier beetles', text: "A bombardier beetle's spray is about as hot as boiling water, and the beetle can aim it.", check: 'Britannica (bombardier beetle); Eisner and Aneshansley, PNAS 1999' },
+  { id: 'geyserguard', topic: 'Bombardier beetles', text: 'Its spray comes out in very fast pulses, hundreds of them every second.', check: 'Dean et al., Science 1990 (a biological pulse jet); Arndt et al., Science 2015' },
+
+  // Mangroves (Stiltsprout line)
+  { id: 'stiltsprout', topic: 'Mangroves', text: 'Many mangrove seeds start to sprout while they are still on the tree.', check: 'NOAA National Ocean Service; Smithsonian Ocean (mangroves)' },
+  { id: 'wadewood', topic: 'Mangroves', text: 'Mangrove roots give young fish, crabs and shrimp a safe place to hide and grow.', check: 'NOAA Fisheries; Smithsonian Ocean (mangroves)' },
+  { id: 'mangromere', topic: 'Mangroves', text: 'Mangroves can live in salty water. Some get rid of extra salt through their leaves.', check: 'Smithsonian Ocean (mangroves); NOAA National Ocean Service' },
+
+  // Stick and leaf insects (Sprigling line)
+  { id: 'sprigling', topic: 'Stick insects', text: 'Stick insects look so much like twigs that hungry birds often miss them.', check: 'Natural History Museum, London (stick insects); Smithsonian (phasmids)' },
+  { id: 'twigstride', topic: 'Stick insects', text: 'Some stick insects sway back and forth, like a twig moving in the breeze.', check: 'Natural History Museum, London; Bian et al., Biology Letters 2016 (swaying)' },
+  { id: 'leafwarden', topic: 'Leaf insects', text: 'Leaf insects have flat green bodies with lines that look like the veins of a leaf.', check: 'Natural History Museum, London (leaf insects); Smithsonian (phasmids)' },
+
+  // Lithops (Lithlet line)
+  { id: 'lithlet', topic: 'Lithops', text: 'Lithops are plants that look like pebbles, so hungry animals walk right past them.', check: 'Royal Botanic Gardens, Kew; Missouri Botanical Garden (Lithops)' },
+  { id: 'lithopsy', topic: 'Lithops', text: 'Most of a lithops stays under the ground. Clear windows on top let sunlight in.', check: 'Royal Botanic Gardens, Kew; Missouri Botanical Garden (Lithops)' },
+  { id: 'stonebloom', topic: 'Lithops', text: 'A lithops grows a flower from the gap between its two leaves, usually in autumn.', check: 'Missouri Botanical Garden (Lithops); Royal Botanic Gardens, Kew' },
+
+  // Flying fish (Glidelet line)
+  { id: 'glidelet', topic: 'Flying fish', text: 'Flying fish do not flap. They glide on big, stiff fins, like wings.', check: 'NOAA Fisheries; Smithsonian Ocean (flying fish)' },
+  { id: 'skimfin', topic: 'Flying fish', text: 'A flying fish can glide a long way. Some glides are longer than two football fields.', check: 'National Geographic (flying fish); Smithsonian Ocean', note: 'Glides of up to about 200 m are reported; a football field is about 100 m.' },
+  { id: 'galefin', topic: 'Flying fish', text: 'Flying fish leap out of the water to get away from bigger fish.', check: 'NOAA Fisheries; National Geographic (flying fish)' },
+
+  // Springtails (Snowskip line)
+  { id: 'snowskip', topic: 'Springtails', text: 'Springtails jump with a forked spring that folds under their body.', check: 'Natural History Museum, London (springtails); Penn State Extension' },
+  { id: 'springfrost', topic: 'Springtails', text: 'Some springtails are called snow fleas. They hop around on snow on mild winter days.', check: 'Penn State Extension (snow fleas); US Forest Service' },
+  { id: 'bounceberg', topic: 'Springtails', text: 'Springtails are tiny, but they can jump many times their own length.', check: 'Natural History Museum, London (springtails); Smithsonian' },
+
+  // Elephantnose fish (Chinspark line)
+  { id: 'chinspark', topic: 'Elephantnose fish', text: "The elephantnose fish's long trunk is really part of its chin.", check: 'Shedd Aquarium (elephantnose fish); von der Emde, Journal of Experimental Biology' },
+  { id: 'zapsnoot', topic: 'Elephantnose fish', text: 'Elephantnose fish make a weak electric field and feel things around them with it.', check: 'Shedd Aquarium; von der Emde, Journal of Experimental Biology' },
+  { id: 'voltrunk', topic: 'Elephantnose fish', text: 'They live in dark, muddy rivers in Africa, where their electric sense works better than eyes.', check: 'Shedd Aquarium; New England Aquarium (elephantnose fish)' },
+
+  // Pyrosomes (Glimmerpod line)
+  { id: 'glimmerpod', topic: 'Pyrosomes', text: 'A pyrosome looks like one creature, but it is made of thousands of tiny animals living together.', check: 'NOAA Ocean Exploration; Monterey Bay Aquarium Research Institute (pyrosomes)' },
+  { id: 'lumitube', topic: 'Pyrosomes', text: 'Pyrosomes glow blue-green when they are touched.', check: 'NOAA Ocean Exploration; Monterey Bay Aquarium Research Institute' },
+  { id: 'pyrolanterne', topic: 'Pyrosomes', text: 'A pyrosome is open at one end. It moves by pumping water out through its tube.', check: 'Monterey Bay Aquarium Research Institute; NOAA Ocean Exploration' },
+
   // Guardians
   { id: 'archwyn', topic: 'Natural arches', text: 'Natural rock arches form very slowly, as water, ice and wind wear away softer rock.', check: 'US National Park Service (Arches National Park)' },
   { id: 'tidecrest', topic: 'Tides', text: "Ocean tides happen mostly because the Moon's gravity pulls on Earth's water.", check: 'NOAA National Ocean Service; NASA' },
   { id: 'frostmantle', topic: 'Snowshoe hares', text: 'Snowshoe hares turn white in winter and brown in summer, so they blend in all year.', check: 'US Fish and Wildlife Service; National Wildlife Federation' },
   { id: 'aurelune', topic: 'Auroras', text: 'Auroras glow when tiny bits from the Sun crash into the air high above Earth, near the North and South Poles.', check: 'NASA; NOAA Space Weather Prediction Center' },
+  { id: 'verdanyan', topic: 'Banyan trees', text: 'A banyan tree drops roots from its branches. They grow down into the ground and become new trunks.', check: 'Britannica (banyan); Royal Botanic Gardens, Kew' },
 ];
 
 export const FACT_BY_ID: Record<string, Fact> = Object.fromEntries(FACTS.map(f => [f.id, f]));

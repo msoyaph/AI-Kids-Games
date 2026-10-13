@@ -44,7 +44,7 @@ export const PERSONALITIES: readonly PersonalityId[] = ['cheerful', 'brave', 'ca
 export type SnackId = 'berry-bun' | 'crunch-seed' | 'honey-drop' | 'sea-crisp' | 'sun-pepper' | 'frost-mint' | 'spark-fizz' | 'moon-melon';
 
 export interface Species {
-  /** Stable number in the Field Guide (1–52) and in saves. Never renumber. */
+  /** Stable number in the Field Guide (1–77) and in saves. Never renumber. */
   num: number;
   id: string;
   name: string;

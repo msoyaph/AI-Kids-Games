@@ -1,7 +1,7 @@
 /**
- * Agentmon 1.1 drafts: 8 new families of three and one new guardian, in the same recipe style as
- * creatures.ts (32×32 design space, ground at y≈30, facing left). Drafts for the plan review; the
- * names and designs are checked before they join the roster.
+ * The 1.1 Agentmon (numbers 53–77): 8 families of three and the guardian Verdanyan, in the same
+ * recipe style as creatures.ts (32×32 design space, ground at y≈30, facing left). Names were
+ * web-checked and the designs reviewed for lookalikes (games/agentmon/CLAUDE.md, IP log).
  */
 import { darken, lighten } from './pixelcanvas';
 import type { Painter, Pose } from './painter';
@@ -381,12 +381,13 @@ const verdanyan: Recipe = (p, pose) => {
   for (const [x, y1] of [[7, 21], [12, 18], [21, 19], [26, 22]] as const) p.stroke([[x, 12], [x, y1]], 0.35, AERIAL);
   p.ellipse(16, 22, 8.5, 9, BANYAN);
   p.ellipse(10, 30, 3.5, 1.5, BANYAN_D).ellipse(22, 30, 3.5, 1.5, BANYAN_D);
-  for (const [x, y, r] of [[3, 9, 4.5], [9, 5, 6], [16, 3, 7], [23, 5, 6], [29, 9, 4.5], [16, 10, 6]] as const) p.circle(x, y, r, CANOPY);
-  for (const [x, y] of [[7, 3], [16, 0.5], [25, 3], [12, 8], [21, 8]] as const) p.paintEllipse(x, y, 2.2, 1.1, CANOPY_L);
+  // the canopy fits the 32×32 design space, so even the small sprites show its round top
+  for (const [x, y, r] of [[4.2, 12, 4], [9, 8.5, 5.5], [16, 7, 6.5], [23, 8.5, 5.5], [27.8, 12, 4], [16, 12, 5]] as const) p.circle(x, y, r, CANOPY);
+  for (const [x, y] of [[7, 6.5], [16, 3], [25, 6.5], [12, 11], [21, 11]] as const) p.paintEllipse(x, y, 2.2, 1.1, CANOPY_L);
   p.paintEllipse(16, 26, 5, 3, lighten(BANYAN, 0.15));
   p.shade();
   // little glowing seeds in the canopy, like lanterns
-  for (const [x, y] of [[5, 11], [27, 11], [12, 12], [20, 12]] as const) p.dot(x, y, LANTERNY);
+  for (const [x, y] of [[5, 13], [27, 13], [11, 9], [21, 9]] as const) p.dot(x, y, LANTERNY);
   p.eyes(11, 19, 8, 3, pose).mouth(15, 24, pose).blush(10, 23).blush(21, 23);
 };
 

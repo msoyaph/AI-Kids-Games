@@ -17,6 +17,7 @@ import { elementIcon, itemIcon, statusIcon } from '../art/icons';
 import { canvasUrl } from '../render/atlas';
 import type { Game } from '../game/game';
 import { h } from './dom';
+import { energyBar } from './parts';
 import { speak } from './speech';
 
 export type Choice =
@@ -89,12 +90,10 @@ export class BattleUI {
     card.hidden = false;
     const sp = SPECIES[c.species]!;
     const max = maxEnergy(this.dex, c);
-    const pct = Math.max(0, Math.min(100, (c.energy / max) * 100));
     card.replaceChildren(
       h('div.bname', {}, elementImg(sp.element), h('b', {}, name ?? (side === 0 ? this.names.friend(c) : this.names.foe(c))), h('span.lv', {}, `Lv ${c.level}`), c.shimmer ? h('span.shimmer', { title: 'A rare shimmer!' }, '✨') : null),
-      h('div.bar', { role: 'meter', 'aria-label': 'Energy', 'aria-valuemin': 0, 'aria-valuemax': max, 'aria-valuenow': c.energy },
-        h('div.fill', { style: `width:${pct}%`, class: pct < 25 ? 'fill low' : pct < 50 ? 'fill mid' : 'fill' })),
-      h('div.bsub', {}, h('span', {}, `Energy ${c.energy}/${max}`), status ? h('span.status', { title: STATUS_TEXT[status] }, statusImg(status), status[0]!.toUpperCase() + status.slice(1)) : null),
+      energyBar(c.energy, max),
+      ...(status ? [h('div.bsub', {}, h('span.chip.soft.status', { title: STATUS_TEXT[status] }, statusImg(status), status[0]!.toUpperCase() + status.slice(1)))] : []),
     );
   }
 

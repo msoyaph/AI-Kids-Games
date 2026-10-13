@@ -142,6 +142,19 @@ const LIST: M[] = [
   { n: 92, id: 'snowshoe-dash', name: 'Snowshoe Dash', element: 'frost', power: 110, cost: 0.2, effects: [up('speed')], desc: 'Dashes across the snow and gets faster.' },
   { n: 93, id: 'canyon-echo', name: 'Canyon Echo', element: 'stone', power: 110, cost: 0.2, effects: [up('guard')], desc: 'A rumble that echoes through the canyon, and stands firmer.' },
   { n: 94, id: 'moon-tide', name: 'Moon Tide', element: 'tide', power: 110, cost: 0.2, effects: [restore(0.1)], desc: 'Calls a tide by moonlight, and gets back a little energy.' },
+
+  // ---- 1.1: family moves for the new Agentmon, two shared plain moves, and Verdanyan's -----------
+  { n: 95, id: 'steam-spray', name: 'Steam Spray', element: 'flare', power: 70, cost: 0.11, effects: [st('toasty', 0.35)], desc: 'Puffs warm steam from its tail. May make the other one Toasty.' },
+  { n: 96, id: 'seed-drop', name: 'Seed Drop', element: 'tide', power: 60, cost: 0.08, effects: [restore(0.08)], desc: 'Drops a floating seed with a splash, and soaks up a little energy.' },
+  { n: 97, id: 'twig-mimic', name: 'Twig Mimic', element: 'leaf', power: 0, cost: 0.05, effects: [up('guard', 2)], desc: 'Holds as still as a twig. Much sturdier.' },
+  { n: 98, id: 'pebble-hide', name: 'Pebble Hide', element: 'stone', power: 0, cost: 0.04, effects: [restore(0.12), up('guard')], desc: 'Pretends to be a pebble and rests. Gets back a little energy and stands firmer.' },
+  { n: 99, id: 'glide-skim', name: 'Glide Skim', element: 'gust', power: 55, cost: 0.06, priority: 1, desc: 'Glides in low over the water, going first.' },
+  { n: 100, id: 'spring-hop', name: 'Spring Hop', element: 'frost', power: 45, cost: 0.05, priority: 1, effects: [up('speed')], desc: 'Springs in with its tail, going first, and gets faster.' },
+  { n: 101, id: 'field-pulse', name: 'Field Pulse', element: 'volt', power: 55, cost: 0.07, effects: [down('speed')], desc: 'A tingly little pulse. The other one gets slower.' },
+  { n: 102, id: 'glow-chain', name: 'Glow Chain', element: 'glow', power: 0, cost: 0.07, effects: [st('sleepy', 0.5), restore(0.1)], desc: 'A chain of soft blue lights. May make the other one Sleepy, and glows back a little energy.' },
+  { n: 103, id: 'root-curtain', name: 'Root Curtain', element: 'leaf', power: 110, cost: 0.2, effects: [up('guard'), cleanse], desc: 'Drops a curtain of roots to shelter in. Shakes off a status and stands firmer.' },
+  { n: 104, id: 'happy-dance', name: 'Happy Dance', element: 'plain', power: 0, cost: 0.06, effects: [up('speed'), up('guard')], desc: 'A happy little dance. Faster and sturdier.' },
+  { n: 105, id: 'peekaboo', name: 'Peekaboo', element: 'plain', power: 25, cost: 0.03, priority: 1, effects: [down('power')], desc: 'Pops out first with a peekaboo. The other one giggles and bumps softer.' },
 ];
 
 export const MOVES: Record<string, Move> = Object.fromEntries(LIST.map(m => [m.id, { ...m, kind: kindOf(m) }]));

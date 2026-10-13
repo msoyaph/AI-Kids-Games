@@ -1,10 +1,11 @@
 /**
- * All 52 Agentmon as drawing recipes (32×32 design space, ground at y≈30, facing left; the battle
+ * The first 52 Agentmon as drawing recipes (the 1.1 ones are in creatures-more.ts) (32×32 design space, ground at y≈30, facing left; the battle
  * scene mirrors the player's side). Each recipe draws the body, calls p.shade(), then the face in
  * the given pose. Designs are original and reviewed for lookalikes (games/agentmon/CLAUDE.md, IP log).
  */
 import { darken, hueShift, lighten, mix, type PixelCanvas } from './pixelcanvas';
 import { Painter, POSES, WHITE, type Pose } from './painter';
+import { NEW_RECIPES } from './creatures-more';
 
 type Recipe = (p: Painter, pose: Pose) => void;
 
@@ -818,6 +819,7 @@ export const RECIPES: Record<string, Recipe> = {
   fiddlit, frondle, fernadore, gleamgrub, silklight, starwisp, glintle, prismble, fluorelle,
   zestle, zestwick, citrivolt, hailbit, hailroll, hailcastle, scarfcub, scarfpaw, scarfspire,
   bathlet, steambly, thermabara, archwyn, tidecrest, frostmantle, aurelune,
+  ...NEW_RECIPES,
 };
 
 /** Shimmer variants: a rotated hue on the body (never the face), the same for every pose. */

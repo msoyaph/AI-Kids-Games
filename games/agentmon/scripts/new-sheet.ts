@@ -2,7 +2,7 @@
  * Review sheet of the Agentmon 1.1 drafts (node only):
  *   npx tsx scripts/new-sheet.ts [out.png] [--poses] [--shimmer]
  */
-import { NEW_RECIPES } from '../src/art/creatures-new';
+import { NEW_RECIPES } from '../src/art/creatures-more';
 import { Painter, POSES, WHITE } from '../src/art/painter';
 import { hueShift, PixelCanvas } from '../src/art/pixelcanvas';
 import { drawNumber, writePng } from './png';
