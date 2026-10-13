@@ -2,7 +2,7 @@
   "$schema": "../../docs/community-game.schema.json",
   "slug": "star-sprint",
   "title": "Star Sprint",
-  "tagline": "Race a little comet across the night sky and catch the stars.",
+  "tagline": "Race a little comet across the sky and catch the stars.",
   "shortDescription": "Glide your comet up and down to catch the stars flying toward you, and steer around the sleepy clouds that make it drowsy.",
   "longDescription": "Star Sprint is a one-minute sky race. Your little comet zooms along on its own; you glide it up and down to catch the stars coming your way. Catch several in a row for a streak. Sleepy clouds never take points away: bumping one just makes the comet yawn and glide slowly for a moment. The sky speeds up as the minute goes on, and your best score is saved on this device.",
   "version": "0.1.0",
