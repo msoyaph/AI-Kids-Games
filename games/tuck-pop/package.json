@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "sim": "tsx scripts/simulate.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.0",

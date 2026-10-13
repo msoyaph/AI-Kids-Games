@@ -89,7 +89,25 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
    Plus `core/rng.ts` (from Cliff Valley), `core/bits.ts` and `tuning.ts`. Tests: rules, game,
    purity (no DOM, clock or Math.random in sim/core). The starter's Star Catch files (`sim.ts`,
    `render.ts`, `main.ts` …) remain until phase 3 replaces them.
-2. Fair dealer and bots.
+2. COMPLETE: fair dealer tuned with bots (`src/sim/bot.ts`, `npm run sim` → `reports/sim.md`).
+   - **Casual bot:** a young player. It looks at the held pieces (sometimes one), never plans the
+     order, uses a softmax over lines, snugness and holes, and makes 8% careless moves.
+   - **Strong bot:** plans the whole tray with a beam of 8.
+   - **Dealer changes found by simulation:**
+     - Normal prefers random draws that can be fully placed, even on crowded boards (otherwise the
+       draw where most pieces fit). Open boards still get the I3 guarantee.
+     - A gradual warm-up: below 2,000 points a Normal tray is built to fit with chance 1 − s/2000.
+       A hard switch made a cliff at 1,000.
+     - Past 10,000 points the open threshold rises one cell per 500 points, and one fewer draw is
+       tried per 1,000 points, so strong games end.
+   - **Results** (20k casual, 400 strong):
+     - Casual: Normal averages 4.4 min (p50 3.8), Easy 6.4, Relax 12.0.
+     - Strong, Normal: median 42 min, score 15k (17× casual), never capped.
+     - Strong, Easy: endless by design (built trays): it hits the 4,000-move cap.
+   - **Board clears are rare** for casual play (≈0.01 per game); consider a kinder tray when the
+     board is nearly empty (phase 4).
+   - **Tests:** `dealer.test.ts` (I1–I5 on 10k played boards plus 200 crowded ones, budget) and
+     `balance.test.ts` (CI-sized, fixed seeds, about 6 s).
 3. Playable Classic.
 4. Effects and sound.
 5. Relax, Daily and helpers.

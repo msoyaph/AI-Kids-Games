@@ -4,7 +4,9 @@
  *   through a tray, never on a deal.
  * - I2, built trays (Easy, Relax, Adventure, Shuffle): all three pieces can be placed, in some order.
  * - I3, Normal: while the board is open (a free 3×3 and enough empty cells), all three can be
- *   placed. Bad luck alone never ends a game; a crowded board can. The "open" threshold rises
+ *   placed. Past a high score the "open" threshold rises and fewer random draws are tried, so
+ *   even perfect play ends. During a warm-up (the first 2,000 points) trays are also often built to fit, less
+ *   often as the score grows, so a first game eases in without a sudden step. Bad luck alone never ends a game; a crowded board can. The "open" threshold rises
  *   with the score, so even perfect play ends.
  * - I4: a deal depends only on (board, score, seed, tray number, salt), with its own random
  *   stream, so resuming, undoing or replaying never changes it.
@@ -35,6 +37,8 @@ export function normalWeights(score: number): Weights {
   return [0, 1, 2].map(i => D.normalStart[i]! + (D.normalEnd[i]! - D.normalStart[i]!) * t) as unknown as Weights;
 }
 export const openThreshold = (score: number) => D.openBase + Math.round(D.openPressure * pressure(score)) + Math.max(0, Math.floor((score - D.tightenFrom) / D.tightenEvery));
+/** Random draws a Normal deal may try before settling: fewer as the score climbs past the tightening point. */
+export const drawsAt = (score: number) => Math.max(1, D.draws - Math.max(0, Math.floor((score - D.tightenFrom) / D.drawEvery)));
 /** Open: a free 3×3 and at least `openThreshold` empty cells. */
 export const isOpen = (lo: number, hi: number, score: number) => emptyCells(lo, hi) >= openThreshold(score) && fitsAnywhere(lo, hi, O3);
 
@@ -107,16 +111,24 @@ export function deal(req: DealRequest): Dealt {
   const stats = req.stats;
   if (stats) stats.deals++;
   let pieces: Piece[] | null = null;
-  if (req.kind === 'normal' && n === 3) {
+  // Warm-up: early Normal trays are often built to fit, less often as the score nears `warmup`.
+  const warm = req.score < D.warmup && rng.chance(1 - req.score / D.warmup);
+  if (req.kind === 'normal' && n === 3 && !warm) {
+    // Random draws, preferring one that can be fully placed. If none can: on an open board,
+    // build one that can (the promise); on a crowded board, take the draw where most pieces fit.
     const open = isOpen(req.lo, req.hi, req.score);
     const spent = { ops: 0 };
-    for (let d = 0; d < D.draws && !pieces && spent.ops < D.dealBudget; d++) {
+    let fallback: Piece[] | null = null, fallbackFits = 0;
+    const draws = drawsAt(req.score);
+    for (let d = 0; d < draws && !pieces && spent.ops < D.dealBudget; d++) {
       const tray = drawTray(rng, req.score);
       if (stats) stats.draws++;
-      if (!tray.some(p => fitsAnywhere(req.lo, req.hi, p))) continue;
-      if (open && !placeable(req.lo, req.hi, tray, Math.min(D.checkBudget, D.dealBudget - spent.ops), spent)) continue;
-      pieces = tray;
+      const fits = tray.filter(p => fitsAnywhere(req.lo, req.hi, p)).length;
+      if (!fits) continue;
+      if (placeable(req.lo, req.hi, tray, Math.min(D.checkBudget, D.dealBudget - spent.ops), spent)) pieces = tray;
+      else if (fits > fallbackFits) { fallback = tray; fallbackFits = fits; }
     }
+    if (!pieces && !open && fallback) pieces = fallback;
     if (stats) stats.ops += spent.ops;
   }
   if (!pieces) {

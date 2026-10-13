@@ -12,22 +12,25 @@ export const TUNING = {
   },
   dealer: {
     /** Tier weights (small, medium, big). */
-    easy: [42, 46, 12] as const,
-    normalStart: [38, 44, 18] as const,
-    normalEnd: [18, 44, 38] as const,
+    easy: [50, 42, 8] as const,
+    normalStart: [50, 40, 10] as const,
+    normalEnd: [20, 44, 36] as const,
     /** Pressure P = clamp((score − from) / span, 0, 1). */
     pressureFrom: 1000,
     pressureSpan: 9000,
     /** Chance of a "hard set" (at least two big pieces) is hardSet·P. */
     hardSet: 0.35,
+    /** Warm-up: at score s below this, a Normal tray is built to fit (with Normal's piece mix) with chance 1 − s/warmup. */
+    warmup: 2000,
     /** While the board is open (a free 3×3 and this many empty cells), Normal trays are fully placeable. */
-    openBase: 22,
-    openPressure: 10,
+    openBase: 16,
+    openPressure: 14,
     /** Above this score the open threshold rises one cell per `tightenEvery` points, so even perfect play ends. */
-    tightenFrom: 25000,
-    tightenEvery: 1000,
-    /** Random draws on Normal before building a placeable tray instead. */
-    draws: 6,
+    tightenFrom: 10000,
+    tightenEvery: 500,
+    /** Random draws on Normal before building a placeable tray instead (one fewer every `drawEvery` points past `tightenFrom`). */
+    draws: 8,
+    drawEvery: 1000,
     /** When building a tray, how often a piece goes where it clears the most lines. */
     kindPlacement: 0.6,
     /** Fit tests per solvability check and per deal: a fixed operation budget, not time, so every device deals the same. */
