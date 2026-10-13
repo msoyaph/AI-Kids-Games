@@ -114,7 +114,7 @@ Space Sky, Tuck Pop).
 then by column. Before this, two cards in the same row tied and the first in the page always won;
 the tablet test now accepts any card from the centred row.
 
-## Home opens on the featured games (owner, 2026-10-13; next release)
+## Home opens on the featured games (owner, 2026-10-13; release 2.4.1, live 2026-10-13)
 
 - The home h1 ("Ai Kids Games: The games kids love. …") is screen-reader and search only (`sr-only`).
 - The "Watch the trailer" button and its dialog are gone. The trailer lives on About only.

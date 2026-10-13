@@ -319,6 +319,30 @@ accessibility, hardening); see games/tuck-pop/CLAUDE.md for details and numbers.
 `games/blocks-wip`. Whichever lands second reconciles the lockfile and must not bring that folder
 back.
 
+## Release 2.4.1: Home opens on the featured games (owner, 2026-10-13)
+- **Scope:** PR #12; details in apps/site/CLAUDE.md.
+  - The home heading is for screen readers only.
+  - The trailer is on About only.
+  - The carousel opens on TheaBonk.
+  - "Add to Home" sits beside Play on phones and tablets.
+  - The hero now fits small phones.
+  - All seven games stay at their 2.4.0 versions.
+- **Order:** the owner approved ("Yes, I approve release 2.4.1."), then:
+  1. #11 (the 2.4.0 record) merged;
+  2. main merged into the branch;
+  3. bump and approval (ca22ac6);
+  4. `release:local` once Agentmon's browser tests had finished and the machine was quiet for a
+     minute: Space Sky 42/0; Light Crossing 190/0 with 1 flaky (the phone-portrait Chapter 1
+     touch playthrough, which passed on retry; 46 min);
+  5. AIKG_ALLOW_PRODUCTION=2.4.1;
+  6. merge.
+- **2.4.1 LIVE 2026-10-13** (merge commit 5fd33b2; dpl_DP3HnJf9wiCSLb7XH978j3DeNVh7):
+  - **Guard:** "approved by the owner on 2026-10-13; GPU browser suites passed on ca22ac6".
+  - **Production suite:** 148 passed, 0 failed (77 device and engine skips), including the
+    320/375/390 px hero test and Add to Home.
+  - **Lighthouse mobile:** home 99/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
+    Tuck Pop details and play 99/100/100/100.
+
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
    `npm ci`, `npx playwright install chromium webkit`.
