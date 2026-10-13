@@ -12,6 +12,7 @@ borrow its structure for your own game.
 | Space Sky | Space exploration and learning | 6–10 | [space-sky.md](space-sky.md) |
 | Calex Cart | 3D kart racing | 10–14 | [calex-cart.md](calex-cart.md) |
 | Cliff Valley | Pixel-art farming life-sim | 8–14 | [cliff-valley.md](cliff-valley.md) |
+| Agentmon | Creature-befriending pixel RPG | 7–12 | [agentmon.md](agentmon.md) |
 
 ## What they have in common
 

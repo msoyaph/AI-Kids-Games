@@ -1,0 +1,49 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "agentmon",
+  "title": "Agentmon",
+  "tagline": "Befriend creatures and relight the six Beacons.",
+  "shortDescription": "Join the Field Agent Academy, make friends with 52 cute creatures and solve puzzle Trials to clear the static fog. A gentle pixel-art adventure where nobody gets hurt.",
+  "longDescription": "Agentmon is a creature-befriending pixel-art adventure for ages 7 to 12. New Field Agents explore the Sunreach region, from a sunny coast to a sky island, and make friends with 52 original Agentmon in a little timing game, never by catching them. Friends spar in calm turn-based battles where a tired creature simply takes a nap. Puzzle Trials with blocks, ice, mirrors and color gates lead to the six Beacons that push back a strange static fog. Read-aloud dialogue, hints, three difficulty levels and a Field Guide full of real nature facts make it easy to play and learn.",
+  "version": "0.1.0",
+  "minAge": 7,
+  "ageRange": "7–12",
+  "genres": ["Adventure", "RPG"],
+  "tags": ["Creatures", "Pixel art", "Puzzles", "Exploring", "Nature facts", "Turn-based"],
+  "keywords": ["creature collecting", "turn-based rpg", "pixel art", "puzzle dungeons", "kids rpg", "befriend creatures", "nature facts", "browser game", "offline game"],
+  "features": [
+    "52 original creatures to befriend with a timing or mood game",
+    "Friendly turn-based sparring where nobody gets hurt",
+    "Six puzzle Trials with blocks, ice, mirrors and color gates",
+    "A Field Guide with a real nature fact for every creature",
+    "Read-aloud dialogue, hints and three difficulty levels",
+    "Three save slots that stay in this browser"
+  ],
+  "contentNotes": "Gentle sparring only: tired creatures take a nap and are never hurt or lost. Losing sends you to a Rest Stop with nothing taken. No purchases, ads, chat or random reward packs. Some reading, with read-aloud. Saves stay in this browser.",
+  "controls": {
+    "types": ["Keyboard", "Mouse", "Gamepad", "Touch"],
+    "quickStart": [
+      "Press New Game and pick your look and name.",
+      "Walk with the stick, the arrow keys or by tapping where you want to go.",
+      "Press A to talk, battle and befriend; B goes back."
+    ],
+    "howToPlay": [
+      "Walk with WASD or the arrow keys, a gamepad stick or d-pad, the touch stick, or tap or click a spot to walk there.",
+      "A (Z, Space or Enter; gamepad A) talks, picks and confirms. B (X, Escape or Backspace; gamepad B) goes back.",
+      "Menu (M or Tab; gamepad Start; the Menu button) opens your team, bag, Field Guide, map, quests and settings."
+    ]
+  },
+  "devices": ["Computer", "Tablet", "Phone"],
+  "orientation": "any",
+  "requirements": [],
+  "playTime": "About 8 hours, plus post-game",
+  "storage": {
+    "prefix": "agentmon.",
+    "keys": ["agentmon.slot<slot>", "agentmon.slot<slot>.bak", "agentmon.settings", "agentmon.records"],
+    "probe": "agentmon.__probe"
+  },
+  "capture": { "route": "?scene=battle&seed=7", "script": "apps/site/scripts/capture/agentmon.ts" },
+  "license": "MIT",
+  "source": "games/agentmon",
+  "site": { "featured": false, "releaseDate": "2026-10-13", "accentColor": "#ffcf5c", "coverLayers": [], "status": "In development" }
+}

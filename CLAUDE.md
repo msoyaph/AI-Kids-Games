@@ -279,6 +279,15 @@ runners, then empty `LOCAL_SUITES`.
 **Release plan:** in phase 9 the PR keeps the site at 2.3.0. The release commit (phase 10, after
 approval) bumps to 2.4.0, records the approval and runs `npm run release:local`.
 
+## Eighth game: Agentmon (owner brief 2026-10-13; slug `agentmon`, branch `agentmon`)
+
+Brief: docs/prompts/agentmon.md. Plan, rules and status: games/agentmon/CLAUDE.md (approved plan in
+games/agentmon/docs/PLAN.md). Built in its own worktree (~/Documents/AI-Kids-Games-agentmon) from
+Tuck Pop's phase 0 commit 4e03eae, while the Tuck Pop session works in this checkout: never run
+heavy tests alongside it (games/agentmon/scripts/quiet-check.mjs). Repo side so far: the RPG genre
+(schema, manifest validator, site Category) and more monster-taming and RPG franchise names on
+the trademark blocklist. Stays "In development" until its last phase; stop before production.
+
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
    `npm ci`, `npx playwright install chromium webkit`.
