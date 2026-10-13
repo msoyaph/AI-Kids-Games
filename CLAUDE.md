@@ -89,7 +89,21 @@ commit (`npm run review-submission -- <PR> --approve`).
      - It adds the cover, OG image and shots to `apps/site/public/media/community/<slug>/`.
      - It prints the owner's commit and the `vercel domains add` command.
    - `--decline "<reason>"` writes a ready-made comment.
-5. Separate hosting.
+5. COMPLETE: separate hosting, `apps/play` (Vercel project `ai-kids-games-play`,
+   prj_3oFUXIsCuLppTrGA107v6b9scCa1, created 2026-10-13).
+   - Project settings: Root Directory apps/play, linked to msoyaph/AI-Kids-Games, Standard
+     protection, fork protection on, SITE_ORIGIN for production. It has no `AIKG_ALLOW_PRODUCTION`
+     yet: set it with the site's at the release that ships it.
+   - The build (Build Output API): `scripts/build.ts` builds the served games with the kit.
+     - Production runs the site's release guard first.
+     - Production routes are per host (`aikg-<slug>.vercel.app` → that game only, everything else
+       404s); previews are path-based. Rules are in `scripts/routes.ts`.
+     - Strict headers: connect-src 'none', and frame-ancestors is the site only (previews:
+       *.vercel.app and local).
+   - Only valid manifests are served (`validCommunityManifests`), and production serves only
+     approved, listed games whose `sourceSha256` still matches (`servedCommunity`).
+   - Until the branch merges, the play project's deployments of branches without apps/play fail
+     (no root directory); this is expected.
 6. The website.
 7. Docs.
 8. The end-to-end proof.

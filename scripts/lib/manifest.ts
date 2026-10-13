@@ -175,6 +175,15 @@ export function readCommunityManifest(slug: string): CommunityManifest {
   return JSON.parse(readFileSync(file,'utf8')) as CommunityManifest;
 }
 export const readCommunityManifests = () => communitySlugs().map(readCommunityManifest);
+/** The community manifests a build may use: an invalid one is never served, whatever its listing. */
+export function validCommunityManifests() {
+  const valid: CommunityManifest[] = [], invalid: { slug: string; why: string }[] = [];
+  for (const folder of communitySlugs()) {
+    const manifest = readCommunityManifest(folder), problems = validateCommunityManifest(manifest,folder,takenBy(folder));
+    if (problems.length) invalid.push({ slug: folder,why: `its game.json has problems: ${problems.join(' ')}` }); else valid.push(manifest);
+  }
+  return { valid,invalid };
+}
 /** Slugs and storage prefixes a community game must not reuse: every first-party game's and every other community game's. */
 export function takenBy(slug: string) {
   const first = readManifests(), community = readCommunityManifests().filter(m => m.slug !== slug);

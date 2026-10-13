@@ -1,0 +1,12 @@
+{
+  "name": "@ai-kids-games/play",
+  "private": true,
+  "version": "1.0.0",
+  "description": "The play origin: builds community games from source and serves each from its own address (Vercel project ai-kids-games-play).",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "serve": "tsx scripts/serve.ts"
+  }
+}

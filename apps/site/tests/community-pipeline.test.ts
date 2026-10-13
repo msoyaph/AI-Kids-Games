@@ -1,4 +1,9 @@
+import { mkdirSync,mkdtempSync,writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe,expect,it } from 'vitest';
+import { playRoutes,PLAY_HOST } from '../../play/scripts/routes';
+import { servedCommunity,sourceSha256 } from '../../../scripts/lib/community';
 import type { CommunityManifest } from '../../../scripts/lib/manifest';
 import { checkContent } from '../../../scripts/submission/content';
 import { checkDependencies,checkFiles } from '../../../scripts/submission/files';
@@ -10,6 +15,47 @@ const manifest = (slug: string,extra: Partial<CommunityManifest> = {}) => ({ slu
 const submission = (files: Record<string,string>,m: Partial<CommunityManifest> = {}): Submission => ({
   slug: 'test-game',dir: '/tmp/test-game',checkDir: '/tmp/test-game/.check',manifest: manifest('test-game',m),
   files: Object.entries(files).map(([path,text]): SourceFile => ({ path,bytes: Buffer.byteLength(text),text }))
+});
+
+describe('the play origin',() => {
+  const headers = (routes: ReturnType<typeof playRoutes>) => (routes.routes[0] as { headers: Record<string,string> }).headers;
+  it('serves each approved game only on its own host in production, and 404s everything else',() => {
+    const config = playRoutes({ slugs: ['star-sprint'],production: true,siteOrigins: ['https://ai-kids-games-fawn.vercel.app'] });
+    expect(config.routes).toContainEqual({ src: '^/.*$',has: [{ type: 'host',value: PLAY_HOST('star-sprint') }],dest: '/star-sprint/index.html' });
+    expect(config.routes.at(-1)).toEqual({ src: '^/.*$',dest: '/404.html',status: 404 });
+    expect(JSON.stringify(config)).not.toContain('"handle":"filesystem"');
+    expect(PLAY_HOST('star-sprint')).toBe('aikg-star-sprint.vercel.app');
+  });
+  it('sends the strict policy: no connections, nothing from outside, framed only by the website',() => {
+    const csp = headers(playRoutes({ slugs: [],production: true,siteOrigins: ['https://ai-kids-games-fawn.vercel.app'] }))['Content-Security-Policy']!;
+    for (const rule of ["default-src 'none'","connect-src 'none'","frame-src 'none'","form-action 'none'",'frame-ancestors https://ai-kids-games-fawn.vercel.app']) expect(csp).toContain(rule);
+    expect(csp).not.toMatch(/unsafe-eval|https?:\/\/(?!ai-kids-games-fawn)/);
+  });
+  it('previews serve games by path behind Vercel sign-in',() => expect(playRoutes({ slugs: ['a'],production: false,siteOrigins: ['https://*.vercel.app'] }).routes).toContainEqual({ handle: 'filesystem' }));
+});
+
+describe('which community games a build serves',() => {
+  const dir = mkdtempSync(join(tmpdir(),'aikg-community-'));
+  const make = (slug: string,content: string) => { mkdirSync(join(dir,slug,'src'),{ recursive: true }); writeFileSync(join(dir,slug,'src/main.ts'),content); writeFileSync(join(dir,slug,'game.json'),JSON.stringify({ slug,listing: 'submitted',submitted: { date: '2026-10-13',sourceCommit: 'pending' } })); return sourceSha256(join(dir,slug)); };
+  const approved = make('approved-game','draw();'), changed = make('changed-game','draw();');
+  writeFileSync(join(dir,'changed-game/src/main.ts'),'draw(); fetch("/x");');
+  make('new-game','draw();'); make('gone-game','draw();');
+  const approval = (sourceSha: string) => ({ by: '@owner',date: '2026-10-13',commit: 'a'.repeat(40),sourceSha256: sourceSha,reportSha256: 'b'.repeat(64) });
+  const manifests = [manifest('approved-game',{ listing: 'listed',approval: approval(approved) }),manifest('changed-game',{ listing: 'listed',approval: approval(changed) }),manifest('new-game'),manifest('gone-game',{ listing: 'unlisted' })];
+  it('production: only approved games whose source is unchanged since the approval',() => {
+    const { served,skipped } = servedCommunity(manifests,'production',slug => join(dir,slug));
+    expect(served.map(entry => entry.manifest.slug)).toEqual(['approved-game']);
+    expect(skipped.find(entry => entry.slug === 'changed-game')?.why).toMatch(/changed after the approval/);
+  });
+  it('previews: everything but unlisted games, unreviewed ones marked as previews',() => {
+    const { served } = servedCommunity(manifests,'preview',slug => join(dir,slug));
+    expect(served.map(entry => [entry.manifest.slug,entry.preview])).toEqual([['approved-game',false],['changed-game',true],['new-game',true]]);
+  });
+  it('the fingerprint ignores the approval fields, so approving doesn\'t change it',() => {
+    const before = sourceSha256(join(dir,'new-game'));
+    writeFileSync(join(dir,'new-game/game.json'),JSON.stringify({ slug: 'new-game',listing: 'listed',approval: approval(before),submitted: { date: '2026-10-13',sourceCommit: 'c'.repeat(40) } }));
+    expect(sourceSha256(join(dir,'new-game'))).toBe(before);
+  });
 });
 
 describe('check-submission finds problems, with a fix for each',() => {
