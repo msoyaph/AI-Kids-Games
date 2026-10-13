@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gainXp, grow, growthTarget, learnMove, levelForXp, makeCreature, maxEnergy, movesAtLevel, statsFor, xpForLevel } from '../../src/core/creature';
+import { canSwap, gainXp, grow, growthTarget, learnMove, levelForXp, makeCreature, maxEnergy, movesAtLevel, statsFor, xpForLevel } from '../../src/core/creature';
 import { Rng } from '../../src/core/rng';
 import { TUNING } from '../../src/tuning';
 import { dex, species } from './fixtures';
@@ -43,11 +43,13 @@ describe('making creatures', () => {
     expect(a).toEqual(b);
     expect(a.energy).toBe(maxEnergy(dex, a));
     expect(a.moves).toEqual(['bump', 'flare-hit', 'pump', 'toast']);
+    expect(makeCreature(dex, { species: 'fx-flare', level: 40 }, new Rng(5)).moves).toContain('bump');
     expect(a.xp).toBe(xpForLevel(10));
   });
 
-  it('knows at most the last four moves it would have learned', () => {
-    expect(movesAtLevel(species['fx-flare']!, 30)).toEqual(['pump', 'toast', 'shield', 'big-flare']);
+  it('knows the last four moves it would have learned, always keeping a free one', () => {
+    // fx-flare learns bump (free), flare-hit, pump, toast, shield, big-flare: the free bump stays.
+    expect(movesAtLevel(dex, species['fx-flare']!, 30)).toEqual(['bump', 'toast', 'shield', 'big-flare']);
   });
 });
 
@@ -69,8 +71,14 @@ describe('experience and growing', () => {
     const r = gainXp(dex, c, xpForLevel(16) - c.xp);
     expect(r.newMoves).toEqual(['big-flare']);
     expect(c.moves).not.toContain('big-flare');
-    learnMove(c, 'big-flare', 0);
-    expect(c.moves[0]).toBe('big-flare');
+    // The free bump can't be swapped away; another slot can.
+    expect(c.moves).toContain('bump');
+    const free = c.moves.indexOf('bump');
+    expect(canSwap(dex, c, 'big-flare', free)).toBe(false);
+    expect(learnMove(dex, c, 'big-flare', free)).toBe(false);
+    const other = free === 0 ? 1 : 0;
+    expect(learnMove(dex, c, 'big-flare', other)).toBe(true);
+    expect(c.moves[other]).toBe('big-flare');
   });
 
   it('can grow at the growth level, keeps its friend details, and can wait a level', () => {

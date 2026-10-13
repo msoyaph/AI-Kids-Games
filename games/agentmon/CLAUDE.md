@@ -91,17 +91,47 @@ Ports: dev 5246, preview 4246.
 - 2026-10-13 Saves: JSON with 23-character packed creatures; flags/quests by name (robust to content
   changes). Our own per-slot budget 64 KB (brief: 300 KB); stored bytes counted as UTF-16 (2/char).
   slotN.bak is written only when an older save is migrated. A newer-version save is never overwritten.
+- 2026-10-13 Pace: damage divisor 22 → about 4 turns per 1-vs-1 spar (2–4 bumps to tucker out);
+  bump spread 0.85–1.15 (makes outcomes less knife-edge, so balance is robust).
+- 2026-10-13 Wild and Keeper Agentmon use `bestMoveset` (a free move, best own-element bump, best
+  other-element bump, one helper); the same pick is the suggested swap when a friend learns a move.
+  Every Agentmon always keeps a free move (`movesAtLevel`, `canSwap`).
+- 2026-10-13 Family stat levels tuned with `npx tsx scripts/tune-stats.ts` (nudges each family toward
+  50%): elements 49–52%, species 35–65% in 1-vs-1. Totals now range ~370–444; guardians 450.
+- 2026-10-13 Difficulty level shifts ease in over chapters 0–5 (`difficultyShift`); Hard's extra
+  Keeper teammate starts at chapter 4. Story bosses (`boss: true`) always have a Rest Stop just before.
+- 2026-10-13 Starters Spinnet/Druzling/Buzzbill; Juno picks a partner never strong against yours.
+- 2026-10-13 Field Guide facts live in `src/data/facts.ts` with a "check" source per fact; facts
+  verified by web search where unsure (popcorn 6,700 years, capybara ~5 min, manatee ~20 min, lemons).
 
 ## IP log (names or designs changed after a check)
-_(none yet)_
+Franchise creatures and characters are described here, not named (this is a public repo).
+- Manatee stage 1 "Seabun" → **Lullakin**: an upcoming indie creature-collecting game is called Seabun.
+- Snow leopard line "Flurrcub/Flurrtail/Flurrdane" → **Scarfcub/Scarfpaw/Scarfspire**: "Flurr" is an
+  ice character in a toy line.
+- Glowworm stage 1 "Twinklet" → **Gleamgrub** (contains an adult slang word); the draft "Glimlet"
+  was dropped before checking (too close to an existing crystal creature's name).
+- Glowworm stage 3 was planned as a cave chandelier → **Starwisp**, a starry glowworm (a famous
+  monster line is a candle → lantern → chandelier).
+- Frost guardian was planned as a shaggy musk ox with fur over its eyes → **Frostmantle**, a giant
+  snowshoe hare (an existing shaggy ice pig/mammoth line looks like that).
+- Glow guardian was planned as a paper lantern → **Aurelune**, an aurora sky kite (an existing
+  lantern creature).
+- Moves: "Silly Face" → **Goofy Grin** (echoed a well-known move), "Twinkle Tap" → **Glint Tap**
+  (echoed a special move's name). Avoided outright: every move name that matches a known move list.
+- Names list: dropped nicknames that are franchise characters (professors, protagonists, leaders,
+  team names), a toy-line and a TV dog's names, a store brand and two slangy words; player names
+  "Iris", "Rosa", "Milo" → Isla, Rosie, Mika. Trainers "Ash" → Rio, "Reggie" → Rudy; the Showcase
+  Club curator "Opaline" → **Velour**.
+- Web checks (2026-10-13) found no existing creature or product for the remaining 52 names.
 
 ## Progress
 | Phase | Status |
 |---|---|
 | 0 Scaffold, budget, RPG genre, CLAUDE.md | done |
 | 1 Core rules (battle, energy, status, xp, AI, befriend, save codec) | done (72 unit tests) |
-| 2 Content data + balance sim + level curve | next |
-| 3 Art foundation (renderer, atlas, 52 creature recipes, tiles, characters, sheet) | |
+| 2 Content data + balance sim + level curve | done |
+| 3 Art foundation (renderer, atlas, 52 creature recipes, tiles, characters, sheet) | next |
 | 4 Overworld (maps, movement, NPCs, dialogue + read-aloud, encounters, inputs, Rest Stops, shops) | |
 | 5 Battle + befriend scenes, evolution | |
 | 6 Puzzles + 6 Trials + solver tests + field abilities | |
@@ -118,8 +148,15 @@ _(none yet)_
 `src/game/store.ts`, numbers in `src/tuning.ts`. Unit tests use a made-up fixture dex
 (`tests/unit/fixtures.ts`), independent of the real content.
 
-**Next:** phase 2: real content in `src/data/` (species.ts with all 52, moves.ts ≈90, items.ts,
-names.ts, facts.ts, trainers), web name checks (log in the IP log), then `tests/sim/balance.test.ts`
-(AI-vs-AI) and the level-curve check. The starter's Star Catch files (`src/sim.ts`, `render.ts`,
-`main.ts`, `storage.ts`, `audio.ts`, `input.ts`, and their tests) are still in place and get replaced
-in phases 3–4.
+**Phase 2 notes:** content in `src/data/` (species.ts, moves.ts, items.ts, names.ts, facts.ts,
+areas.ts, trainers.ts, chapters.ts, index.ts → `DEX`, `CODEC`). Simulations in `src/sim/`
+(battle-runner, balance, progression); tests in `tests/sim/` write `reports/balance.md` and
+`reports/level-curve.md`. Helpers: `npx tsx scripts/tune-stats.ts`, `npx tsx scripts/level-curve.ts`.
+Test fix: the balance test's "moves in use" floor was set to 30 (not 40): the 1-vs-1 sim only sees
+the moves known at its three fixed levels, so ~37 attack moves show up there by design.
+
+**Next:** phase 3, the art foundation: Pixi renderer + PixelCanvas/Atlas (copied from Cliff Valley),
+palette, creature shape recipes for all 52 (32×32 battle, 16×16 overworld/icons), tiles, characters,
+the `?scene=sheet` capture route, and a first visual/IP review. The starter's Star Catch files
+(`src/sim.ts`, `render.ts`, `main.ts`, `storage.ts`, `audio.ts`, `input.ts` + their tests) are still
+in place until phase 4 replaces main.

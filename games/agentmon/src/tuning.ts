@@ -26,11 +26,11 @@ export const TUNING = {
 
   damage: {
     /** Divisor in the bump formula: lower = harder hits. */
-    divisor: 42,
+    divisor: 22,
     flat: 2,
     /** Seeded spread so bumps aren't all identical. */
-    spreadMin: 0.9,
-    spreadMax: 1.1,
+    spreadMin: 0.85,
+    spreadMax: 1.15,
     /** Boost stages −2…+2 → multiplier. */
     boost: { [-2]: 0.6, [-1]: 0.8, 0: 1, 1: 1.25, 2: 1.5 } as Record<number, number>,
     /** Every bump drains at least this much (so tiny Agentmon still make progress). */

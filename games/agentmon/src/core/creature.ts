@@ -52,10 +52,42 @@ export function levelForXp(xp: number): number {
   return level;
 }
 
-/** The moves a species knows at a level: the last four it would have learned. */
-export function movesAtLevel(species: Species, level: number): string[] {
-  const learned = species.learnset.filter(([at]) => at <= level).map(([, id]) => id);
-  return [...new Set(learned)].slice(-4);
+export const isFree = (dex: Dex, move: string) => (dex.moves[move]?.cost ?? 1) <= 0;
+
+/**
+ * The moves a species knows at a level: the last four it would have learned, always keeping one
+ * free move (every Agentmon can always do something, however tired).
+ */
+export function movesAtLevel(dex: Dex, species: Species, level: number): string[] {
+  const learned = [...new Set(species.learnset.filter(([at]) => at <= level).map(([, id]) => id))];
+  const four = learned.slice(-4);
+  if (!four.some(m => isFree(dex, m))) {
+    const free = [...learned].reverse().find(m => isFree(dex, m));
+    if (free) four[0] = free;
+  }
+  return four;
+}
+
+/**
+ * A sensible set of four for wild and Keeper Agentmon (and the suggested swap in the game's
+ * "learn a new move" screen): a free move, the strongest move of its own element, the best move
+ * of another element, and one helper (status, boost, shield or comfort) or another bump.
+ */
+export function bestMoveset(dex: Dex, species: Species, level: number): string[] {
+  const known = [...new Set(species.learnset.filter(([at]) => at <= level).map(([, id]) => id))].map(id => dex.moves[id]!).filter(Boolean);
+  const pick: string[] = [];
+  const take = (m: { id: string } | undefined) => { if (m && !pick.includes(m.id) && pick.length < 4) pick.push(m.id); };
+  const attackScore = (m: (typeof known)[number]) => m.power * (m.element === species.element ? 1.2 : 1) * (1 - m.cost * 1.5) + (m.priority ? 5 : 0);
+  const attacks = known.filter(m => m.power > 0 && m.cost > 0).sort((a, b) => attackScore(b) - attackScore(a));
+  const free = known.filter(m => m.power > 0 && m.cost <= 0).sort((a, b) => attackScore(b) - attackScore(a));
+  take(free[0]);
+  take(attacks.find(m => m.element === species.element));
+  take(attacks.find(m => m.element !== species.element));
+  const helpers = known.filter(m => m.power === 0).sort((a, b) => b.cost - a.cost || b.n - a.n);
+  take(helpers.find(m => m.effects?.some(e => e.type === 'status' || e.type === 'boost')) ?? helpers[0]);
+  for (const m of attacks) take(m);
+  for (const m of known) take(m);
+  return pick;
 }
 
 export interface NewCreature {
@@ -79,7 +111,7 @@ export function makeCreature(dex: Dex, opts: NewCreature, rng: Rng): Creature {
     level,
     xp: xpForLevel(level),
     energy: 0,
-    moves: movesAtLevel(species, level),
+    moves: bestMoveset(dex, species, level),
     personality,
     shimmer: opts.shimmer ?? false,
     friendship: 0,
@@ -149,10 +181,18 @@ export function grow(dex: Dex, c: Creature): string[] {
   return learned;
 }
 
-/** Replace move `slot` with `move` (the player picked which to swap). */
-export function learnMove(c: Creature, move: string, slot: number): void {
-  if (c.moves.includes(move)) return;
-  if (slot >= 0 && slot < 4) c.moves[slot] = move;
+/** Can `slot` be swapped for `move`? Never swap away the last free move. */
+export function canSwap(dex: Dex, c: Creature, move: string, slot: number): boolean {
+  if (c.moves.includes(move) || slot < 0 || slot >= 4) return false;
+  const after = c.moves.map((m, i) => (i === slot ? move : m));
+  return after.some(m => isFree(dex, m));
+}
+
+/** Replace move `slot` with `move` (the player picked which to swap). Returns false if not allowed. */
+export function learnMove(dex: Dex, c: Creature, move: string, slot: number): boolean {
+  if (!canSwap(dex, c, move, slot)) return false;
+  c.moves[slot] = move;
+  return true;
 }
 
 export const heal = (dex: Dex, c: Creature) => { c.energy = maxEnergy(dex, c); };

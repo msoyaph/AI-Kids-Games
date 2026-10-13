@@ -37,11 +37,13 @@ describe('bump math', () => {
     expect(flareVsGust / plainVsGust).toBeCloseTo(TUNING.elements.sameElement, 1);
   });
 
-  it('a neutral same-element bump at equal levels drains roughly a fifth to a third of energy', () => {
+  it('a neutral same-element bump at equal levels drains about a third to a half of energy (2–4 bumps to tucker out)', () => {
     const b = battle([mk('fx-flare', 25)], [mk('fx-gust', 25)]);
     const share = bumpAmount(dex, b, 0, dex.moves['flare-hit']!) / maxEnergy(dex, active(b, 1));
-    expect(share).toBeGreaterThan(0.15);
-    expect(share).toBeLessThan(0.4);
+    expect(share).toBeGreaterThan(0.25);
+    expect(share).toBeLessThan(0.55);
+    // The free bump does much less, so a tired wild one can be worn down gently for befriending.
+    expect(bumpAmount(dex, b, 0, dex.moves['bump']!) / maxEnergy(dex, active(b, 1))).toBeLessThan(0.3);
   });
 
   it('power boosts raise bumps and guard drops raise them too; shields halve them', () => {
