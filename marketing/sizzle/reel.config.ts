@@ -232,19 +232,19 @@ export const TRAILERS: Record<Slug, { shots: [Shot, Shot, Shot, Shot, Shot, Shot
       shot('cliff-valley', 'mine', { from: 0.2 }),
       shot('cliff-valley', 'tablet', { from: 0.4 }),
       shot('cliff-valley', 'festival', { from: 2.3 }),
-      shot('cliff-valley', 'mine', { from: 1.3 })
+      shot('cliff-valley', 'mine', { from: 1.2 })
     ]
   },
   'tuck-pop': {
     line: '60 levels and daily puzzles.',
-    describe: 'Bright blocks drop into place, two lines pop with sparkles, the whole board clears with confetti, and an Adventure level and a space theme follow.',
+    describe: 'Bright blocks drop into place and lines pop with sparkles, the whole board clears with confetti, a Classic game fills up, the Space theme, the Adventure map and an Adventure level with gems.',
     shots: [
       shot('tuck-pop', 'combo', { from: 0, zoom: 1.3, focus: [0.5, 0.5] }),
       shot('tuck-pop', 'board-clear', { from: 0, zoom: 1.3, focus: [0.5, 0.5] }),
-      shot('tuck-pop', 'adventure', { from: 0, zoom: 1.3, focus: [0.5, 0.5] }),
+      shot('tuck-pop', 'play', { from: 1.8, zoom: 1.3, focus: [0.5, 0.5] }),
       shot('tuck-pop', 'themes', { from: 0, zoom: 1.3, focus: [0.5, 0.5] }),
-      shot('tuck-pop', 'combo', { from: 1.9, zoom: 1.3, focus: [0.5, 0.5] }),
-      shot('tuck-pop', 'adventure', { from: 1.9, zoom: 1.3, focus: [0.5, 0.5] })
+      shot('tuck-pop', 'map', { from: 0.5, zoom: 1.6, focus: [0.5, 0.5] }),
+      shot('tuck-pop', 'adventure', { from: 0, zoom: 1.3, focus: [0.5, 0.5] })
     ]
   }
 };

@@ -1,1 +1,163 @@
-{}
+{
+  "calex-cart": {
+    "seconds": 15,
+    "published": "2026-10-13",
+    "poster": "/trailer/calex-cart/poster.jpg",
+    "posterWebp": "/trailer/calex-cart/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/calex-cart/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/calex-cart/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/calex-cart/trailer.en.vtt",
+    "description": [
+      "Calex Cart gameplay: A kart drifts through a snowy village at night, then boosts through neon and snowy tracks.",
+      "The Calex Cart logo and its pitch: “Drift, boost and chase the finish.” Ages 10–14.",
+      "On screen: “Snow, neon and canyon tracks.”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
+  },
+  "theabonk": {
+    "seconds": 15,
+    "published": "2026-10-13",
+    "poster": "/trailer/theabonk/poster.jpg",
+    "posterWebp": "/trailer/theabonk/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/theabonk/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/theabonk/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/theabonk/trailer.en.vtt",
+    "description": [
+      "TheaBonk gameplay: Thea swings her glowing Bonk Ring through a crowd of cartoon monsters and sends out a ring wave, then levels up and meets Grumblecap, the giant mushroom boss.",
+      "The TheaBonk logo and its pitch: “Small hero. Mighty big bonks.” Ages 8+.",
+      "On screen: “Level up. Beat the boss!”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
+  },
+  "vanex-defense": {
+    "seconds": 15,
+    "published": "2026-10-13",
+    "poster": "/trailer/vanex-defense/poster.jpg",
+    "posterWebp": "/trailer/vanex-defense/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/vanex-defense/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/vanex-defense/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/vanex-defense/trailer.en.vtt",
+    "description": [
+      "Vanex Defense gameplay: Towers zap enemies winding through a snowy maze and along a sky road, then a giant boss arrives.",
+      "The Vanex Defense logo and its pitch: “Build the maze. Hold the line.” Ages 10–14.",
+      "On screen: “Towers, upgrades and giant bosses.”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
+  },
+  "space-sky": {
+    "seconds": 15,
+    "published": "2026-10-13",
+    "poster": "/trailer/space-sky/poster.jpg",
+    "posterWebp": "/trailer/space-sky/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/space-sky/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/space-sky/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/space-sky/trailer.en.vtt",
+    "description": [
+      "Space Sky gameplay: A rocket flies past a ringed planet, lands on the Moon's glowing pad and explores icy Europa.",
+      "The Space Sky logo and its pitch: “Your rocket. A universe of wonder.” Ages 6–10.",
+      "On screen: “Visit the Moon and Europa.”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
+  },
+  "light-crossing": {
+    "seconds": 15,
+    "published": "2026-10-13",
+    "poster": "/trailer/light-crossing/poster.jpg",
+    "posterWebp": "/trailer/light-crossing/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/light-crossing/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/light-crossing/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/light-crossing/trailer.en.vtt",
+    "description": [
+      "Light Crossing gameplay: Skating through lantern rings on a frozen pond, the island in autumn, a cozy decorated home and a festival.",
+      "The Light Crossing logo and its pitch: “Make a little island shine.” Ages 6+.",
+      "On screen: “Skate, decorate and make friends.”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
+  },
+  "cliff-valley": {
+    "seconds": 15,
+    "published": "2026-10-13",
+    "poster": "/trailer/cliff-valley/poster.jpg",
+    "posterWebp": "/trailer/cliff-valley/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/cliff-valley/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/cliff-valley/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/cliff-valley/trailer.en.vtt",
+    "description": [
+      "Cliff Valley gameplay: Picking ripe crops on the farm, the snowy town square on Starlight Night and the crystal mine.",
+      "The Cliff Valley logo and its pitch: “Grow a farm, make friends, fix the valley.” Ages 8–14.",
+      "On screen: “Crops, festivals and crystal mines.”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
+  },
+  "tuck-pop": {
+    "seconds": 15,
+    "published": "2026-10-13",
+    "poster": "/trailer/tuck-pop/poster.jpg",
+    "posterWebp": "/trailer/tuck-pop/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/tuck-pop/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/tuck-pop/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/tuck-pop/trailer.en.vtt",
+    "description": [
+      "Tuck Pop gameplay: Bright blocks drop into place and lines pop with sparkles, the whole board clears with confetti, a Classic game fills up, the Space theme, the Adventure map and an Adventure level with gems.",
+      "The Tuck Pop logo and its pitch: “Fit the blocks, fill a line, watch it pop.” Ages 6+.",
+      "On screen: “60 levels and daily puzzles.”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
+  }
+}
