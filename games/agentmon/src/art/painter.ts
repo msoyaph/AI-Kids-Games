@@ -101,11 +101,19 @@ export class Painter {
     return this;
   }
 
-  private faceSet(x: number, y: number, c: number) {
+  /** One face pixel at canvas pixel (x, y). */
+  private faceRaw(x: number, y: number, c: number) {
     const X = Math.floor(x), Y = Math.floor(y);
     if (X < 0 || Y < 0 || X >= this.pc.w || Y >= this.pc.h) return;
     this.pc.set(X, Y, c);
     this.face.add(Y * this.pc.w + X);
+  }
+
+  /** One face pixel at design (x, y): a single pixel at 32, a 2×2 block at 64 (faces scale with the body). */
+  private faceSet(x: number, y: number, c: number) {
+    if (this.s <= 1) return this.faceRaw(this.sx(x), this.sx(y), c);
+    const k = Math.round(this.s), X = Math.floor(x) * k, Y = Math.floor(y) * k;
+    for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) this.faceRaw(X + i, Y + j, c);
   }
 
   /**
@@ -113,13 +121,14 @@ export class Painter {
    * eye becomes a 1×2 (or 2×2) dot so the face still reads.
    */
   eye(x: number, y: number, size: number, eyes: Eyes, iris = INK, flip = false): this {
-    const X = this.sx(x), Y = this.sx(y);
     if (this.small) {
+      const X = this.sx(x), Y = this.sx(y);
       const w = size >= 4 ? 2 : 1;
-      if (eyes === 'open') { for (let i = 0; i < w; i++) { this.faceSet(X + i, Y, iris); this.faceSet(X + i, Y + 1, iris); } }
-      else this.faceSet(X, Y + 1, INK);
+      if (eyes === 'open') { for (let i = 0; i < w; i++) { this.faceRaw(X + i, Y, iris); this.faceRaw(X + i, Y + 1, iris); } }
+      else this.faceRaw(X, Y + 1, INK);
       return this;
     }
+    const X = x, Y = y;
     const w = size, h = size + 1;
     if (eyes === 'open') {
       for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
@@ -158,9 +167,9 @@ export class Painter {
   }
 
   mouth(x: number, y: number, pose: Pose, wide = 2): this {
-    const X = this.sx(x), Y = this.sx(y);
     const kind = pose.mouth ?? 'smile';
-    if (this.small) { if (kind !== 'flat') this.faceSet(X, Y, INK); return this; }
+    if (this.small) { if (kind !== 'flat') this.faceRaw(this.sx(x), this.sx(y), INK); return this; }
+    const X = x, Y = y;
     if (kind === 'smile') {
       this.faceSet(X - 1, Y - 1, INK);
       for (let i = 0; i < wide; i++) this.faceSet(X + i, Y, INK);
@@ -181,7 +190,7 @@ export class Painter {
 
   blush(x: number, y: number, w = 2): this {
     if (this.small) return this;
-    const X = this.sx(x), Y = this.sx(y);
+    const X = x, Y = y;
     for (let i = 0; i < w; i++) this.faceSet(X + i, Y, BLUSH);
     return this;
   }
@@ -189,7 +198,7 @@ export class Painter {
   /** Small sparkle highlights (shine on crystals, water drops). */
   shine(x: number, y: number): this {
     if (this.small) return this;
-    this.faceSet(this.sx(x), this.sx(y), WHITE);
+    this.faceSet(x, y, WHITE);
     return this;
   }
 
