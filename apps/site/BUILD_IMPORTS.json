@@ -4,9 +4,9 @@
       "slug": "agentmon",
       "version": "1.0.0",
       "source": "games/agentmon/dist/index.html",
-      "bytes": 1007515,
-      "sha256": "6ef2525f67972898ebe7ab54538963f1e4bd1ffb0a461ebc150bea8907fcef23",
-      "inputsSha256": "fa59cbf57eb76e3b6b8468034159dad770b4cdc67baaf9925cbd725b06a5291e",
+      "bytes": 1007800,
+      "sha256": "618922972bec7889cc846a75cd46461f209d3371c3f52499014911b6dc072b8c",
+      "inputsSha256": "aa94d5c8d4a2f5b20fbbec78a10e8f18301176d6f3d4e8797c99ab4cc4b30d6c",
       "importedAt": "2026-10-13"
     },
     {
