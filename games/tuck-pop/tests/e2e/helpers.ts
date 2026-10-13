@@ -63,19 +63,27 @@ export async function touchDrag(page: Page, from: { x: number; y: number }, to: 
   await fire('pointerup', to.x, to.y);
 }
 
-/** A pretend gamepad (standard mapping). `press(name)` holds a button for a few frames. */
+/**
+ * A pretend gamepad (standard mapping). `press(name)` holds a button until the game has polled it
+ * (it reads the pad once per frame), then releases it until the game has seen that too, so presses
+ * register at any frame rate (software WebGL on CI is slow).
+ */
 export async function fakeGamepad(page: Page) {
   await page.addInitScript(() => {
-    const pad = { buttons: new Array(17).fill(0) as number[], axes: [0, 0, 0, 0] };
+    const pad = { buttons: new Array(17).fill(0) as number[], axes: [0, 0, 0, 0], polls: 0 };
     (window as unknown as { __pad: typeof pad }).__pad = pad;
-    navigator.getGamepads = () => [{ id: 'Test pad', index: 0, connected: true, mapping: 'standard', timestamp: performance.now(), axes: pad.axes, buttons: pad.buttons.map(v => ({ pressed: v > 0.5, value: v, touched: v > 0 })), hapticActuator: null, vibrationActuator: null } as unknown as Gamepad];
+    navigator.getGamepads = () => { pad.polls++; return [{ id: 'Test pad', index: 0, connected: true, mapping: 'standard', timestamp: performance.now(), axes: pad.axes, buttons: pad.buttons.map(v => ({ pressed: v > 0.5, value: v, touched: v > 0 })), hapticActuator: null, vibrationActuator: null } as unknown as Gamepad]; };
   });
   const index: Record<string, number> = { a: 0, b: 1, x: 2, y: 3, lb: 4, rb: 5, back: 8, start: 9, up: 12, down: 13, left: 14, right: 15 };
+  type Pad = { __pad: { buttons: number[]; polls: number } };
+  const polls = () => page.evaluate(() => (window as unknown as Pad).__pad.polls);
+  // the game reads the pad (twice) every frame; wait for a full frame after the change
+  const seen = async (from: number) => { await expect.poll(polls, { timeout: 30_000 }).toBeGreaterThanOrEqual(from + 3); };
+  // change a button and read the poll count in one step, so no frame slips in between
+  const set = (i: number, v: number) => page.evaluate(([i, v]) => { const pad = (window as unknown as Pad).__pad; pad.buttons[i!] = v!; return pad.polls; }, [i, v]);
   return async (name: keyof typeof index) => {
-    await page.evaluate(i => { (window as unknown as { __pad: { buttons: number[] } }).__pad.buttons[i] = 1; }, index[name]!);
-    await page.waitForTimeout(90);
-    await page.evaluate(i => { (window as unknown as { __pad: { buttons: number[] } }).__pad.buttons[i] = 0; }, index[name]!);
-    await page.waitForTimeout(90);
+    await seen(await set(index[name]!, 1));
+    await seen(await set(index[name]!, 0));
   };
 }
 

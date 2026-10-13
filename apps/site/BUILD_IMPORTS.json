@@ -49,9 +49,9 @@
       "slug": "tuck-pop",
       "version": "1.0.0",
       "source": "games/tuck-pop/dist/index.html",
-      "bytes": 520236,
-      "sha256": "7a0e45826b9de50edb6bd638073684eded5627ad6a6062d708d27b0218c7a838",
-      "inputsSha256": "ac1fd43af9170034eeee86facbfe84565fe98523dd3f3ad5eb6f22af1a81063e",
+      "bytes": 520648,
+      "sha256": "1a2385338ee790308b16705a6c9a9eb752244dcfac6303395c85286bc27187e0",
+      "inputsSha256": "6b7e71acdfebd60c017b7c9181372da06180956609b4545d138045c172ac1546",
       "importedAt": "2026-10-13"
     },
     {

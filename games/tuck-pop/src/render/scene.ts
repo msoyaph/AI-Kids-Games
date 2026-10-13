@@ -78,12 +78,20 @@ export class Scene {
   lost = false;
   /** Frames actually drawn (the test hook reports it). */
   frames = 0;
+  /** True on a software WebGL renderer, or after the frame-rate governor found the device slow. */
+  software = false;
   private bgTex: Texture | null = null; private panelTex: Texture | null = null; private glowTex: Texture | null = null;
 
   async init(canvasEl: HTMLCanvasElement, layout: Layout, view: View, dpr: number) {
     this.renderer = new WebGLRenderer();
     await this.renderer.init({ canvas: canvasEl, width: layout.w, height: layout.h, resolution: dpr, autoDensity: true, antialias: false, background: view.theme.bg[0], skipExtensionImports: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
     this.dpr = dpr; this.layout = layout; this.view = view;
+    // A software renderer (no GPU) draws every pixel on the CPU: keep the canvas at 1× there.
+    try {
+      const gl = (this.renderer as unknown as { gl: WebGLRenderingContext }).gl;
+      const info = gl.getExtension('WEBGL_debug_renderer_info');
+      this.software = /swiftshader|llvmpipe|software|softpipe/i.test(String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)));
+    } catch { this.software = false; }
     canvasEl.addEventListener('webglcontextlost', e => { e.preventDefault(); this.lost = true; });
     canvasEl.addEventListener('webglcontextrestored', () => { this.lost = false; this.rebuild(); });
     this.stage.addChild(this.bg, this.deco, this.world);

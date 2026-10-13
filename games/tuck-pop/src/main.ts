@@ -60,7 +60,8 @@ function insets(): Insets {
   probe.remove();
   return v;
 }
-const dpr = () => Math.min(2, window.devicePixelRatio || 1);
+/** Canvas resolution: the screen's, up to 2×; 1× on software rendering or a slow device. */
+const dpr = () => (scene.software ? 1 : Math.min(2, window.devicePixelRatio || 1));
 const LEVELS = levelData.levels as Level[];
 /** The Adventure level being played (or previewed), else null. */
 let level: Level | null = null;
@@ -646,8 +647,19 @@ function menuPad(buttons: PadButton[]) {
 // ---- loop ----
 const pad: PadButton[] = [];
 let last = performance.now();
+// The frame-rate governor: if animating frames average slower than ~22 fps for 2 seconds at a
+// higher resolution, drop to 1× (sharper isn't worth a sluggish game on a slow device).
+let slowFor = 0;
+function govern(raw: number, animating: boolean) {
+  if (scene.software || !animating || dpr() <= 1) { slowFor = 0; return; }
+  slowFor = raw > 0.045 ? slowFor + raw : Math.max(0, slowFor - raw);
+  if (slowFor > 2) { scene.software = true; slowFor = 0; resize(); }
+}
+
 function frame(now: number) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const raw = (now - last) / 1000; last = now;
+  // up to 0.1 s per frame, so effects and the capture autoplay keep real time on slow devices
+  const dt = Math.min(0.1, raw);
   const presses = pollPad(dt, pad);
   if (presses.length) {
     unlock();
@@ -663,6 +675,7 @@ function frame(now: number) {
   if (shownScore !== game.score) { shownScore += Math.max(1, Math.ceil((game.score - shownScore) * Math.min(1, dt * 12))); if (shownScore > game.score) shownScore = game.score; $('#score').textContent = String(shownScore); }
   // Normally only changes are drawn; the capture route draws every frame so recordings flow.
   scene.frame(dt, animating || capture);
+  govern(raw, animating || capture || tweensRunning() > 0);
   requestAnimationFrame(frame);
 }
 
