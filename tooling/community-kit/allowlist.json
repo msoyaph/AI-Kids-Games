@@ -1,0 +1,8 @@
+{
+  "$comment": "The only packages a community game may list in its package.json dependencies, at exactly these versions. Everything else is written in the game's own source. To propose a package, open a Discussion; the owner decides.",
+  "packages": {
+    "three": "0.186.1",
+    "@types/three": "0.186.0",
+    "pixi.js": "8.22.0"
+  }
+}

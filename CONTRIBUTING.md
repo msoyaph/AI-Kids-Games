@@ -1,4 +1,4 @@
-# Contributing to Ai Kids Games
+# Contributing to AI Kids Games
 
 Thank you for helping make games kids love, without the stuff parents don't. Bug reports, game
 ideas, fixes, new games and better docs are all welcome.
@@ -16,8 +16,9 @@ ideas, fixes, new games and better docs are all welcome.
 - **Fix something:** pick an issue, comment that you're on it, and open a pull request.
 - **Build a game:** start from `templates/game-starter` (`npm run new-game -- <slug>`) and read
   [docs/CREATE-A-GAME.md](docs/CREATE-A-GAME.md).
-- **List your game on aikids.games:** coming soon. Open a *Game listing request* issue to get in
-  line.
+- **Submit your game to AI Kids Games:** build it in `community/<slug>/` from the starter, check it
+  with `npm run check-submission -- <slug>` and open a pull request. [SUBMITTING.md](SUBMITTING.md)
+  is the full guide.
 
 ## Kid-safety checklist (every pull request)
 
@@ -43,7 +44,7 @@ Every game and every change to the site must keep all of these true:
 
 ## How the repo works
 
-- `apps/site/` is the aikids.games website (Vite, React, TypeScript).
+- `apps/site/` is the AI Kids Games website (Vite, React, TypeScript).
 - `games/<slug>/` is each game's full project. Its `game.json` is the single source of truth for
   its listing; run `npm run manifests` after changing it.
 - The site ships each game as one committed file, `apps/site/public/games/<slug>/index.html`.
@@ -64,6 +65,11 @@ npm test && npm run check                     # site unit tests, repo and build 
 - Keep each pull request focused on one change, and describe what you changed and how you tested it.
 - Fill in the checklist in the pull request template.
 - Pull requests from forks need a maintainer's approval before CI and preview deployments run.
+- **Sign off every commit** (`git commit -s`). The `Signed-off-by:` line certifies the
+  [Developer Certificate of Origin](https://developercertificate.org): that you wrote the change
+  or otherwise have the right to submit it under this project's license. CI checks it on community
+  game pull requests.
+- A community game pull request may change only its own `community/<slug>/` folder.
 - By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE)
   and that you follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 

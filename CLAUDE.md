@@ -30,6 +30,153 @@ Commands (root): `npm run dev | build | test | test:e2e` (site), `npm run import
 - Before every commit, check `git log` for commits this session did not make; if any appear,
   stop and tell the owner. Don't rewrite history.
 
+## Community games (owner brief 2026-10-13; branch `community-pipeline`, stacked on `seo-launch`)
+
+Anyone may fork the repo, build a kid-safe game in `community/<slug>/` (source only) and submit it in
+a pull request. Everything up to the owner's final approval is automated. **Nothing from a community
+submission goes live without that approval**, recorded in the game's manifest by the owner's own
+commit (`npm run review-submission -- <PR> --approve`).
+
+**Rules:**
+- **Hosting:** community games are never imported into `apps/site/public/games/`. They are built from
+  source and served from their own origin by the `ai-kids-games-play` Vercel project (`apps/play`):
+  `aikg-<slug>.vercel.app` per game in production, which is its own site because `vercel.app` is on
+  the Public Suffix List.
+- **Not workspaces:** community games are not npm workspaces and never get `npm install`. Their only
+  packages come from `tooling/community-kit` (allowlist, exact versions).
+- **Scope:** a community pull request may change only its own `community/<slug>/`. Every commit
+  needs a DCO sign-off; CI enforces both.
+- **CI:** fork pull requests run only under `pull_request` with read-only permissions and no secrets.
+  Slugs are validated before they reach a shell, and passed through `env:`.
+
+**Plan:** ~/.claude/plans/purring-swinging-church.md (owner-approved). Steps, each one commit:
+1. COMPLETE: submission format.
+   - `docs/community-game.schema.json`.
+   - `validateCommunityManifest`, with the listing rules shared with first-party games in
+     `scripts/lib/manifest.ts`.
+   - `npm run new-community-game` (source only, plus AGENTS.md and CLAUDE.md for assistants).
+   - The game-submission PR template, with the DCO.
+2. COMPLETE: `npm run check-submission -- <slug>`.
+   - scripts/check-submission.ts plus scripts/submission/: files, manifest and placeholders,
+     dependencies, a TypeScript-AST source scan, content, type-check, unit tests, the shared Vite
+     build, and browser checks.
+   - The browser checks cover the contract, 20 s of play in the site's sandbox on a second origin,
+     storage, the flash audit and accessibility.
+   - Every problem gets a fix, and reports go to `community/<slug>/.check/`.
+   - `tooling/community-kit` pins the packages (dev dependencies, so the lockfile only gains the
+     kit and obscenity).
+   - `--untrusted` skips the submission's own unit tests. The review kit uses it: they run only in
+     CI and on the creator's machine.
+3. COMPLETE: CI for fork pull requests. ci.yml gains two jobs, under "CI passed":
+   - "Community scope": `.github/scripts/community-scope.mjs` (one community/<slug>/ only) and
+     `dco.mjs` (a sign-off matching each commit's author);
+   - "Submission <slug>": check-submission.
+
+   Also: slugs are validated in what-changed and community-scope and passed via env (the game job
+   too); CODEOWNERS. Unchanged and verified: GitHub requires approval for all external
+   contributors' workflows, and Vercel gitForkProtection is true.
+4. COMPLETE (exercised end to end in step 8): `npm run review-submission -- <PR>`.
+   - It refuses a PR whose files fail the scope check (via gh).
+   - It fetches the head into a git worktree at `.review/pr-<n>/tree`, then runs this checkout's
+     trusted check-submission on it (`AIKG_COMMUNITY_ROOT`, `--untrusted --record`).
+   - It writes `.review/pr-<n>/REVIEW.md`: the manifest, the results, every piece of text, risky
+     code with file:line, files and sizes, screenshots, the recording, and an approve/decline
+     checklist.
+   - `--approve` runs on a clean main after the PR is merged as "submitted". It needs a passing
+     review whose source fingerprint matches (`sourceSha256` in scripts/lib/community.ts: every
+     file, with game.json minus approval, listing and sourceCommit).
+     - It writes the approval and `listing: "listed"`.
+     - It adds the cover, OG image and shots to `apps/site/public/media/community/<slug>/`.
+     - It prints the owner's commit and the `vercel domains add` command.
+   - `--decline "<reason>"` writes a ready-made comment.
+5. COMPLETE: separate hosting, `apps/play` (Vercel project `ai-kids-games-play`,
+   prj_3oFUXIsCuLppTrGA107v6b9scCa1, created 2026-10-13).
+   - Project settings: Root Directory apps/play, linked to msoyaph/AI-Kids-Games, Standard
+     protection, fork protection on, SITE_ORIGIN for production. It has no `AIKG_ALLOW_PRODUCTION`
+     yet: set it with the site's at the release that ships it.
+   - The build (Build Output API): `scripts/build.ts` builds the served games with the kit.
+     - Production runs the site's release guard first.
+     - Production routes are per host (`aikg-<slug>.vercel.app` → that game only, everything else
+       404s); previews are path-based. Rules are in `scripts/routes.ts`.
+     - Strict headers: connect-src 'none', and frame-ancestors is the site only (previews:
+       *.vercel.app and local).
+   - Only valid manifests are served (`validCommunityManifests`), and production serves only
+     approved, listed games whose `sourceSha256` still matches (`servedCommunity`).
+   - Until the branch merges, the play project's deployments of branches without apps/play fail
+     (no root directory); this is expected.
+6. COMPLETE (pending the site suites): the website.
+   - `scripts/generate-community.ts` writes `src/data/community.generated.ts` (git-ignored) before
+     every build, dev server and vitest run. Its CSP `frame-src` lists exactly those games' play
+     origins.
+   - Pages and parts:
+     - the Community shelf on Home (only when there are games), with Preview/Community pills and
+       "Made by @handle";
+     - the /community page (routes, meta, schema, sitemap, llms);
+     - the details-page credit, preview note, safety wording and Report link (prefilled issue
+       form, ExitGuard);
+     - Play iframes the play origin (no same-origin streaming), with the sandbox unchanged;
+     - favorites and recently played accept community slugs;
+     - "Submit a game" (ListYourGame) is the guide;
+     - footer links;
+     - copy in Parents, FAQ (a new community question) and Privacy.
+   - Tests:
+     - fixture games in `apps/site/tests/fixtures/community` (test-garden submitted, test-gone
+       unlisted), used when `AIKG_COMMUNITY_ROOT` points there: CI's site job, and local runs that
+       set it;
+     - Playwright then also builds and serves the play origin on 127.0.0.1:4320;
+     - `tests/e2e/community.spec.ts`; `guard(page, origin, allow)` allows exactly the play origin.
+7. COMPLETE: docs.
+   - SUBMITTING.md (with a section for AI assistants) and MODERATION.md.
+   - Updated: README (Submit a game, repo structure), CONTRIBUTING (DCO, community path), AGENTS,
+     SECURITY, CREATE-A-GAME §6, ADDING_A_GAME, STORAGE_AUDIT.
+   - Issue templates: the listing form became a contact link; the bug report adds Tuck Pop.
+   - The root llms.txt (npm run manifests) lists approved community games.
+   - The community-scope check also enforces that only the owner's pull request (a branch of this
+     repo, author_association OWNER) may change approval, listing or sourceCommit, or add the
+     game's art. Without that, a merged submission could list itself.
+   - Left as is: the trailer video still says "List your game: coming soon" (a rendered asset).
+8. COMPLETE: the end-to-end proof. The summary is on #17 (pipeline PR, community-pipeline →
+   seo-launch).
+   - The simulated contributor works from a scratch clone with its own git identity (no fork of
+     the owner's own repo is possible).
+   - #18 Star Sprint by @starsprint-maker (stays unapproved and open; never merge):
+     - 14/14 checks in CI;
+     - served on the play preview, and shown on the site preview's shelf;
+     - played framed in a browser: the parent page and fetch were blocked;
+     - review kit: REVIEW.md, screens and a recording.
+   - #19 Block Builder (closed, branch deleted): CI named every planted problem.
+     - The self-approval is caught only for non-owners: PRs from the owner's account are `OWNER`.
+       The local check and the unit tests cover it.
+   - The approval was simulated offline (stand-in remote plus a gh shim). --approve then produced
+     production site and play builds serving the game; one later edit dropped it.
+   - Lighthouse (fixture build): home 93/100/100/100; community 99/100 after the heading fix;
+     submit 99/100/100/100; community details 98/100/100/100; community play 99/100/100/100.
+   - The protection-bypass secrets `vercel curl` created on both projects were revoked.
+   - Pitfalls:
+     - Vercel installs only a project's own workspace dependencies: apps/play lists its build
+       packages, and the site's tsc must not reach the checker's modules.
+     - vercel.json rejects `$comment`.
+     - `vercel curl` bypasses protection only for the project the folder is linked to: use
+       scratchpad `vlink` (site) and `vlink-play` (play).
+     - Agentmon's sessions run heavy suites back to back; local browser runs wait for 60 quiet
+       seconds (scratchpad community-run.sh).
+
+## Release 2.5.0: SEO + community games (owner, 2026-10-13: "Once done and complete, update everything including all the games to live production.")
+- Scope:
+  - #15 (SEO, seo-launch) and #17 (community games, community-pipeline, stacked on #15);
+  - the 2.4.1 record (#14), merged into community-pipeline locally.
+- Games stay as they are: no newer finished versions in their projects (Light Crossing's
+  standalone project is still v2.0.0). Agentmon (#13, #16) is "not for release yet".
+- Merging pull requests is blocked for this session by the auto-mode permission check. So #17
+  targets main, and one merge by the owner ships everything; GitHub then marks #14 and #15 merged.
+- Order:
+  1. release commit (2.5.0, DEPLOYMENT.json approval);
+  2. `npm run release:local` on a quiet machine, and commit localSuites;
+  3. CI green;
+  4. `AIKG_ALLOW_PRODUCTION=2.5.0` in both projects' Production environments;
+  5. the owner merges #17;
+  6. production checks (suite, Lighthouse, `npm run indexnow`) and a record PR.
+
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
 
 Owner decisions: TheaBonk and Light Crossing are pulled in last (their own sessions were
@@ -318,6 +465,30 @@ accessibility, hardening); see games/tuck-pop/CLAUDE.md for details and numbers.
 **Merge order with the Agentmon branch:** that branch was cut from 4e03eae and still has
 `games/blocks-wip`. Whichever lands second reconciles the lockfile and must not bring that folder
 back.
+
+## Release 2.4.1: Home opens on the featured games (owner, 2026-10-13)
+- **Scope:** PR #12; details in apps/site/CLAUDE.md.
+  - The home heading is for screen readers only.
+  - The trailer is on About only.
+  - The carousel opens on TheaBonk.
+  - "Add to Home" sits beside Play on phones and tablets.
+  - The hero now fits small phones.
+  - All seven games stay at their 2.4.0 versions.
+- **Order:** the owner approved ("Yes, I approve release 2.4.1."), then:
+  1. #11 (the 2.4.0 record) merged;
+  2. main merged into the branch;
+  3. bump and approval (ca22ac6);
+  4. `release:local` once Agentmon's browser tests had finished and the machine was quiet for a
+     minute: Space Sky 42/0; Light Crossing 190/0 with 1 flaky (the phone-portrait Chapter 1
+     touch playthrough, which passed on retry; 46 min);
+  5. AIKG_ALLOW_PRODUCTION=2.4.1;
+  6. merge.
+- **2.4.1 LIVE 2026-10-13** (merge commit 5fd33b2; dpl_DP3HnJf9wiCSLb7XH978j3DeNVh7):
+  - **Guard:** "approved by the owner on 2026-10-13; GPU browser suites passed on ca22ac6".
+  - **Production suite:** 148 passed, 0 failed (77 device and engine skips), including the
+    320/375/390 px hero test and Add to Home.
+  - **Lighthouse mobile:** home 99/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
+    Tuck Pop details and play 99/100/100/100.
 
 ## Eighth game: Agentmon (owner brief 2026-10-13; slug `agentmon`, branch `agentmon`)
 

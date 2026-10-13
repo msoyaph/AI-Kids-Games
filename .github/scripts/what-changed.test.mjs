@@ -52,3 +52,9 @@ test('entries of a game folder that no longer exists count as shared: every game
   const after = lock({ 'node_modules/pixi.js': { version: '8.22.0' } });
   assert.deepEqual(lockfileGames(lock(base),after,['calex-cart','game-starter']),'all');
 });
+
+test('community games and the community kit run no game suites',() => {
+  assert.deepEqual(pick({ event: 'pull_request',changed: ['community/star-sprint/game.json','community/star-sprint/src/main.ts','tooling/community-kit/allowlist.json'],games }).games,[]);
+  const kit = (version) => ({ ...base,'node_modules/@ai-kids-games/community-kit': { resolved: 'tooling/community-kit',link: true },'tooling/community-kit': { name: '@ai-kids-games/community-kit',version } });
+  assert.deepEqual(lockfileGames(lock(kit('1.0.0')),lock(kit('1.0.1')),games),[]);
+});

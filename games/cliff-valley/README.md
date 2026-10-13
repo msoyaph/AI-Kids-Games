@@ -1,6 +1,6 @@
 # Cliff Valley 🌱
 
-A cozy 2D pixel-art farming life-sim for **ages 8–14**, made for **Ai Kids Games**.
+A cozy 2D pixel-art farming life-sim for **ages 8–14**, made for **AI Kids Games**.
 
 Great-Aunt Rosemary left you her old farm in Cliff Valley — but a big storm knocked the valley
 about. Grow crops, raise animals, explore a 40-floor mine, fish, cook, craft and make friends
@@ -105,7 +105,7 @@ anywhere.
 URL options: `?bench=1` (benchmark), `?playtest=1` (local playtest stats), `?lowq=1` (low
 quality), `?seed=N`, `?scene=<name>&zoom=-2&hud=0` (preview scenes, never saved).
 
-## Ai Kids Games integration
+## AI Kids Games integration
 
 1. `npm run build`
 2. Copy `dist/index.html` to `public/games/cliff-valley/index.html` in the site.
@@ -244,7 +244,7 @@ nicknames that stay on the device).
 
 ## Continuous integration
 
-Cliff Valley lives in the Ai Kids Games monorepo. Its checks run in the root workflow
+Cliff Valley lives in the AI Kids Games monorepo. Its checks run in the root workflow
 (`.github/workflows/ci.yml`, job **Cliff Valley**) on GitHub's standard runners for every pull
 request and every push to `main` that touches `games/cliff-valley/` or shared files: typecheck,
 unit tests, bot playthrough + pacing, the single-file build, and Playwright on desktop/tablet/phone

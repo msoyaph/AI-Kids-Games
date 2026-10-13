@@ -6,8 +6,14 @@ interface Captured { loopSeconds: number; mp4Bytes: number; webmBytes: number; s
 const captured = manifest as Record<string,Captured>;
 
 /** Every asset for a game lives in public/media/<slug>/ (see ADDING_A_GAME.md). */
-export function mediaFor(game: Pick<Game,'slug' | 'coverLayers'>) {
+export function mediaFor(game: Pick<Game,'slug' | 'coverLayers'> & { community?: Game['community'] }) {
   const base = `/media/${game.slug}`;
+  // Community games: a cover and screenshots made from the owner's review (or a placeholder before
+  // approval), no idle layers, no gameplay loop and no logo (the title is text).
+  if (game.community) {
+    const c = game.community, one = (src: string) => ({ avif: src,webp: src,jpg: src });
+    return { cover: c.cover,layers: [] as { motion: string; src: string }[],logo: '',og: c.og,preview: undefined,shots: c.shots.map((src,index) => ({ alt: `Screenshot ${index+1}`,full: one(src),thumb: one(src) })),temporary: false };
+  }
   const entry = captured[game.slug];
   const image = (name: string) => ({ avif: `${base}/${name}.avif`,webp: `${base}/${name}.webp`,jpg: `${base}/${name}.jpg` });
   // TEMPORARY ART (see src/data/temporary-art.ts): the game's own screenshots stand in for a

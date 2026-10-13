@@ -33,5 +33,10 @@ export default defineConfig({
         : devices['iPhone 13']),
       browserName: 'webkit' as const,launchOptions: {},baseURL: remote || 'http://127.0.0.1:4191' } }))
   ],
-  webServer: remote ? undefined : [4190,4191].map(port => ({ command: `npx tsx scripts/serve-dist.ts ${port}`,url: `http://127.0.0.1:${port}`,reuseExistingServer: true,timeout: 90000 }))
+  // With AIKG_COMMUNITY_ROOT (CI and local test builds use tests/fixtures/community), community games
+  // play from a second local origin, as they do from apps/play's separate addresses when hosted.
+  webServer: remote ? undefined : [
+    ...[4190,4191].map(port => ({ command: `npx tsx scripts/serve-dist.ts ${port}`,url: `http://127.0.0.1:${port}`,reuseExistingServer: true,timeout: 90000 })),
+    ...(process.env.AIKG_COMMUNITY_ROOT ? [{ command: 'npx tsx ../play/scripts/build.ts && npx tsx ../play/scripts/serve.ts 4320',url: 'http://127.0.0.1:4320',reuseExistingServer: true,timeout: 120000 }] : [])
+  ]
 });

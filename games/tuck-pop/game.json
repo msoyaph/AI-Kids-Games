@@ -71,6 +71,13 @@
     ],
     "probe": "tuckpop.__probe"
   },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
   "capture": {
     "route": "?scene=combo&seed=7",
     "script": "apps/site/scripts/capture/tuck-pop.ts"

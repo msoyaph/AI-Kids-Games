@@ -81,6 +81,13 @@
     ],
     "probe": "__spacesky_probe__"
   },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
   "capture": {
     "route": "?debug",
     "script": "apps/site/scripts/capture/space-sky.ts"

@@ -1,9 +1,13 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { communityOrigins } from './scripts/generate-community';
 
 // Same-origin only. connect-src 'self' lets the play page stream its own game file for a real
-// progress bar (owner-approved); nothing may load from or connect to another origin.
-const csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'";
+// progress bar (owner-approved); nothing may load from or connect to another origin. The one
+// exception is framing community games from their own play-origin addresses (apps/play), so they
+// can't reach the website or each other.
+const frames = ["'self'",...communityOrigins()].join(' ');
+const csp = `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'self'; frame-src ${frames}; object-src 'none'; base-uri 'self'; form-action 'none'`;
 
 const sitePolicy: Plugin = {
   name: 'site-policy-and-font-preload',

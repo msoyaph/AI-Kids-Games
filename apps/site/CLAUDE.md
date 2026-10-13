@@ -114,7 +114,7 @@ Space Sky, Tuck Pop).
 then by column. Before this, two cards in the same row tied and the first in the page always won;
 the tablet test now accepts any card from the centred row.
 
-## Home opens on the featured games (owner, 2026-10-13; next release)
+## Home opens on the featured games (owner, 2026-10-13; release 2.4.1, live 2026-10-13)
 
 - The home h1 ("Ai Kids Games: The games kids love. …") is screen-reader and search only (`sr-only`).
 - The "Watch the trailer" button and its dialog are gone. The trailer lives on About only.
@@ -132,6 +132,67 @@ the tablet test now accepts any card from the centred row.
   the right gutter and turned a 375 px page sideways. Now the hero column is `minmax(0,1fr)`, and
   on phones the thumbnails share the row at 48–56 px, wrapping only below about 330 px. The phone
   test checks 320, 375 and 390 px.
+
+## SEO and AI search (owner brief 2026-10-13; next release 2.5.0, needs the owner's approval)
+
+The audit is in docs/seo/AUDIT.md, and the owner's manual steps are in docs/seo/LAUNCH-CHECKLIST.md.
+
+**Owner decisions:**
+- **Brand:** "AI Kids Games", matching the owner's new logo (docs/brand). It applies to the site,
+  manifests, llms.txt, README and public docs. Exceptions:
+  - game sources and game package.json files are build inputs, so Cliff Valley and Space Sky still
+    say "Ai Kids Games" in-game until their next release;
+  - CLAUDE.md logs, docs/prompts and marketing/ are historical;
+  - the trailer still shows the old logo and an aikids.games end card.
+- **Organization data:** sameAs lists GitHub, YouTube and Facebook. The owner's LinkedIn goes on
+  `founder` (a person's profile doesn't identify an organization).
+- **Domain:** aikids.games is unregistered, so nothing links to it. The live address is
+  `PUBLIC_ORIGIN` in src/data/site.ts plus `SITE_ORIGIN` in Vercel Production; switch both when
+  the domain is connected.
+
+**How it works:**
+- **Real HTML:**
+  - `generate-route-shells.ts` renders every route with `src/entry-server.tsx` (the same
+    `src/routes.tsx` and components as the app) into its static HTML.
+  - `main.tsx` loads the current page's chunk before the first render, so `createRoot` swaps the
+    prebuilt HTML for identical markup, with no loading screen and no layout shift
+    (tests/e2e/seo.spec.ts).
+  - **Pitfall:** never touch `window`, `document`, `matchMedia` or storage while rendering; guard
+    `useState` initializers with `typeof`.
+- **Real 404s:** the catch-all rewrite is gone from vercel.json, and `serve-dist.ts` does the same.
+  - **Pitfall:** a new route must be added to `sitePaths()` or `unlistedPaths()` in src/seo/meta.ts,
+    or it 404s on reload.
+- **One source for page metadata:** `pageMeta(path)` in src/seo/meta.ts gives the title,
+  description (50–160 characters, tested) and share image to both the build and `usePageMeta()`
+  (called in Layout and Play).
+- **Structured data:** src/seo/schema.ts, typed with schema-dts 2.0.0 (pinned). It covers:
+  - Organization and WebSite;
+  - ItemList, CollectionPage and BreadcrumbList;
+  - VideoGame, FAQPage, Article, and a VideoObject for the trailer.
+
+  tests/seo.test.ts checks the properties Google requires and that every file exists.
+- **Content:**
+  - src/data/faq.ts: its device and age answers come from the manifests.
+  - src/data/guides.ts holds the metadata; src/data/guide-bodies.ts holds the words. They are
+    separate so the main bundle doesn't carry the guides.
+  - lib/rich-text.ts: plain data with `[links](/path)` and `**bold**`. It renders the pages and
+    feeds the JSON-LD and llms-full.txt.
+- **Safety and privacy on each game page,** from the manifest:
+  - ages and contentNotes;
+  - the new `safety` block (ads, purchases, chat, accounts and network, all required false;
+    validated in scripts/lib/manifest.ts and docs/game.schema.json);
+  - storage keys.
+- **llms.txt and llms-full.txt:** generated per deployment from src/seo/llms.ts. The repo's
+  llms.txt uses `PUBLIC_ORIGIN`; public/llms.txt is gone.
+- **IndexNow:** key file `public/<INDEXNOW_KEY>.txt`. The release step after the production checks
+  is `npm run indexnow --workspace apps/site`, which submits only pages whose words changed (tracked
+  in indexnow-state.json; commit it with the record).
+- **Art:** `scripts/art/icons.ts` builds the favicons, app icons, header mark and README wordmarks
+  from docs/brand/*-source.webp. `scripts/art/og.ts` uses each game's real cover, including
+  temporary art. Run icons.ts before og.ts.
+- **Pitfall:** check the exit code of `npm run build`. Its `tsc` covers tests/, so a type error
+  in a test stops the build, and a hidden failure leaves a stale dist/ that the e2e tests then pass
+  against.
 
 ## Agentmon, the eighth game (release 2.5.0, after the owner's approval)
 

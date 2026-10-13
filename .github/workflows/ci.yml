@@ -1,4 +1,4 @@
-# Ai Kids Games CI. GitHub's standard Ubuntu runners only: self-hosted runners must never be used
+# AI Kids Games CI. GitHub's standard Ubuntu runners only: self-hosted runners must never be used
 # with this public repository (scripts/check-repo.ts fails the build if one ever appears).
 #
 # The repo checks and the website always run. Each game (and the starter template) runs its own
@@ -6,6 +6,11 @@
 # (.github/scripts/what-changed.mjs), in the game's low-quality test mode on software WebGL.
 # Space Sky's and Light Crossing's browser suites need a real GPU, so they run on the release
 # machine instead (npm run release:local), and the production guard requires that recorded run.
+# Community games (community/<slug>/, SUBMITTING.md): a pull request that touches community/ may
+# change only that one game's folder, every commit must be signed off (DCO), and
+# npm run check-submission must pass. Fork code runs here only under pull_request, with the
+# read-only token below and no secrets; never pull_request_target. Slugs are validated before
+# they reach a job, and reach shells only through env.
 # "CI passed" is the one required check.
 name: CI
 
@@ -82,6 +87,9 @@ jobs:
     timeout-minutes: 60
     env:
       CI: 'true'
+      # Two fixture community games (one submitted, one unlisted), so the Community shelf and the
+      # separate play origin are tested; the live site's builds read community/ instead.
+      AIKG_COMMUNITY_ROOT: apps/site/tests/fixtures/community
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -133,8 +141,10 @@ jobs:
       - run: npm ci
       - name: Checks
         working-directory: ${{ matrix.game == 'game-starter' && 'templates/game-starter' || format('games/{0}', matrix.game) }}
+        env:
+          GAME: ${{ matrix.game }}
         run: |
-          case "${{ matrix.game }}" in
+          case "$GAME" in
             theabonk)       npm run typecheck && npm test && npm run build ;;
             light-crossing) npm run typecheck && npm run build && npm run size && npm test && npm run pacing -- --check ;;
             vanex-defense)  npm run typecheck && npm test && npm run build ;;
@@ -146,16 +156,20 @@ jobs:
       - name: Install browsers
         if: matrix.game != 'space-sky' && matrix.game != 'light-crossing'
         working-directory: ${{ matrix.game == 'game-starter' && 'templates/game-starter' || format('games/{0}', matrix.game) }}
+        env:
+          GAME: ${{ matrix.game }}
         run: |
-          case "${{ matrix.game }}" in
+          case "$GAME" in
             theabonk|vanex-defense|cliff-valley|game-starter) npx playwright install --with-deps chromium ;;
             *) npx playwright install --with-deps chromium webkit ;; # calex-cart, and new games test Safari's engine too
           esac
       - name: Browser tests (low quality, software WebGL)
         if: matrix.game != 'space-sky' && matrix.game != 'light-crossing'
         working-directory: ${{ matrix.game == 'game-starter' && 'templates/game-starter' || format('games/{0}', matrix.game) }}
+        env:
+          GAME: ${{ matrix.game }}
         run: |
-          case "${{ matrix.game }}" in
+          case "$GAME" in
             vanex-defense)  npm run check:dist && npx playwright test ;;
             cliff-valley)   npm run test:e2e ;;
             *)              npx playwright test ;;
@@ -173,9 +187,75 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+  community:
+    name: Community scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      slugs: ${{ steps.scope.outputs.slugs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: scope
+        name: Which community games this pull request changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.sha }}
+          # The owner's approval pull requests: a branch of this repository, opened by its owner.
+          OWNER: ${{ github.event.pull_request.author_association == 'OWNER' && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: node .github/scripts/community-scope.mjs >> "$GITHUB_OUTPUT"
+      - name: A community pull request changes only its own folder
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.sha }}
+          OWNER: ${{ github.event.pull_request.author_association == 'OWNER' && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: node .github/scripts/community-scope.mjs --strict > /dev/null
+      - name: Every commit is signed off (DCO)
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && steps.scope.outputs.slugs != '[]' }}
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node .github/scripts/dco.mjs
+
+  submission:
+    name: Submission ${{ matrix.slug }}
+    needs: community
+    # Runs even when the scope check fails, so a creator sees every problem with their game at once.
+    if: ${{ !cancelled() && needs.community.outputs.slugs != '' && needs.community.outputs.slugs != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        slug: ${{ fromJSON(needs.community.outputs.slugs) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: npm run check-submission
+        env:
+          SLUG: ${{ matrix.slug }}
+        run: npm run check-submission -- "$SLUG"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: submission-${{ matrix.slug }}
+          path: community/*/.check/report.*
+          retention-days: 14
+          if-no-files-found: ignore
+
   passed:
     name: CI passed
-    needs: [changes, checks, site, game]
+    needs: [changes, checks, site, game, community, submission]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

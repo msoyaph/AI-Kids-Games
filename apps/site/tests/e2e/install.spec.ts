@@ -15,7 +15,7 @@ test('Add to Home shows the Safari steps on an iPhone or iPad',async ({ page },i
   const play = await page.locator('.hero-actions .button.play').boundingBox(), add = await button.boundingBox();
   expect(Math.abs(play!.y - add!.y),'beside Play').toBeLessThan(2);
   await button.click();
-  const dialog = page.getByRole('dialog',{ name: 'Add Ai Kids Games to your Home Screen' });
+  const dialog = page.getByRole('dialog',{ name: 'Add AI Kids Games to your Home Screen' });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('Add to Home Screen');
   await expect(dialog).toContainText('saves from Safari don’t carry over');

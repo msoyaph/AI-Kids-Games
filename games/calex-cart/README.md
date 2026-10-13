@@ -183,7 +183,7 @@ Developer tools (dev server only, stripped from production builds):
 
 ## Continuous integration (GitHub Actions)
 
-Calex Cart lives in the Ai Kids Games monorepo. Its checks run in the root workflow
+Calex Cart lives in the AI Kids Games monorepo. Its checks run in the root workflow
 (`.github/workflows/ci.yml`, job **Calex Cart**) on GitHub's standard Ubuntu runners for every pull request and
 every push to `main` that touches `games/calex-cart/` or shared files: typecheck, single-file build with the 2 MB
 size check, unit and simulation tests, the track validator, and the Chromium + WebKit browser tests in the game's
@@ -233,7 +233,7 @@ Paints are two colours. Decals use one of the procedural patterns in `src/render
 
 ---
 
-## Putting it on Ai Kids Games
+## Putting it on AI Kids Games
 
 1. `npm run build`. Output: one file, `dist/index.html`, **about 1.25 MB** (the build fails at 2 MB).
 2. Copy `dist/index.html` to `public/games/calex-cart/index.html`. Copy `site/banner.svg` and

@@ -1,0 +1,41 @@
+name: Report a problem with a community game
+description: Something in a community game isn't kid-safe, isn't working, or isn't original. The owner reviews every report.
+title: "Problem with "
+labels: ["community-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for telling us. GitHub accounts are for people 13 and older; kids, ask a grown-up to help.
+        **Please don't include personal information** (names, schools, photos, contact details) in this report.
+        For anything urgent or private, use "Report a security or privacy problem" instead.
+  - type: input
+    id: game
+    attributes:
+      label: Which game? (its address name, for example star-sprint)
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of problem?
+      options:
+        - Something isn't right for kids (words, pictures, scary or upsetting content)
+        - It asks for personal information or tries to reach people outside the game
+        - It copies another company's game, characters, art or music
+        - It flashes too much or made someone feel unwell
+        - It doesn't work (crash, can't start, can't finish)
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Where in the game, and what you saw. Screenshots help (without personal information).
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser (optional)

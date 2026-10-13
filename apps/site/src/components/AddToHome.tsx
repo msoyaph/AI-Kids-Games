@@ -20,15 +20,15 @@ export default function AddToHome() {
     {createPortal(<dialog ref={dialog} className="install-dialog" aria-labelledby="install-title" onClose={() => setSteps(null)} onClick={event => { if (event.target === dialog.current) dialog.current?.close(); }}>
       {steps && <>
         <Icon name="add" size={30} />
-        <h2 id="install-title">Add Ai Kids Games to your Home Screen</h2>
+        <h2 id="install-title">Add AI Kids Games to your Home Screen</h2>
         {steps === 'apple' ? <ol>
           <li>In Safari, tap <strong>Share</strong> <Icon name="share" size={18} /> (on newer iPhones it’s in the <strong>•••</strong> menu).</li>
           <li>Choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>
-          <li>Open <strong>Ai Kids Games</strong> from your Home Screen.</li>
+          <li>Open <strong>AI Kids Games</strong> from your Home Screen.</li>
         </ol> : <ol>
           <li>Open your browser’s menu (<strong>⋮</strong> or <strong>•••</strong>).</li>
           <li>Choose <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
-          <li>Open <strong>Ai Kids Games</strong> from your Home Screen.</li>
+          <li>Open <strong>AI Kids Games</strong> from your Home Screen.</li>
         </ol>}
         {steps === 'apple' && <p>Games on the Home Screen keep their own progress: saves from Safari don’t carry over there, and saves made there stay there.</p>}
         <button type="button" className="button primary" autoFocus onClick={() => dialog.current?.close()}>Got it</button>

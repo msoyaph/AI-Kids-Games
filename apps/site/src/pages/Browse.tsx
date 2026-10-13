@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { categories } from '../data/games';
-import { usePageMeta } from '../lib/meta';
 import { Icon } from '../components/Icon';
 import GameGrid from '../components/GameGrid';
 import { AgeSelect, CategoryChips, useCatalogFilters } from '../components/Filters';
@@ -11,7 +10,6 @@ export default function Browse() {
   const fixed = name ? categories.find(category => category.toLowerCase() === name.toLowerCase()) ?? '?' : undefined;
   const { category,playerAge,query,results,set,reset,sort } = useCatalogFilters(fixed === '?' ? undefined : fixed);
   const input = useRef<HTMLInputElement>(null);
-  usePageMeta(fixed && fixed !== '?' ? `${fixed} games` : 'Find a game','Search the games by name, category or what you love to play, and filter by age.');
   useEffect(() => { if (new URLSearchParams(location.search).has('focus')) input.current?.focus(); },[]);
   const shown = sort === 'new' ? [...results].sort((a,b) => b.releaseDate.localeCompare(a.releaseDate)) : results;
   if (fixed === '?') return <div className="container page"><div className="empty"><h1 className="title">That category wandered off.</h1><Link className="button primary" to="/games">See all games</Link></div></div>;

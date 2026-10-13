@@ -1,0 +1,11 @@
+# The owner reviews every change. Community games (community/<slug>/) are reviewed with
+# npm run review-submission -- <PR> (MODERATION.md); nothing outside a contributor's own folder may
+# change in a community pull request (CI enforces it).
+*                                 @msoyaph
+/.github/                         @msoyaph
+/scripts/                         @msoyaph
+/tooling/                         @msoyaph
+/apps/                            @msoyaph
+/apps/site/DEPLOYMENT.json        @msoyaph
+/apps/site/scripts/check-deployment.ts @msoyaph
+/community/                       @msoyaph

@@ -25,8 +25,9 @@ export default function GameCard({ game,eager = false,span }: { game: Game; eage
       <div className="card-media">
         <Preview game={game} still="cover" active={active} eager={eager} />
         <span className="card-badge">{game.ageGuidance}</span>
+        {game.community && <span className="card-community">{game.community.preview ? 'Preview' : 'Community'}</span>}
       </div>
-      <div className="card-text"><h3 className="card-title">{game.title}</h3><p className="card-meta">{game.status === 'Coming soon' ? 'Coming soon' : game.categories[0]}{computerOnly(game) && <span className="card-device"><Icon name="computer" size={16} />Computer game</span>}</p></div>
+      <div className="card-text"><h3 className="card-title">{game.title}</h3>{game.community && <p className="card-credit">Made by {game.community.handle}</p>}<p className="card-meta">{game.status === 'Coming soon' ? 'Coming soon' : game.categories[0]}{computerOnly(game) && <span className="card-device"><Icon name="computer" size={16} />Computer game</span>}</p></div>
     </Link>
     <FavoriteButton game={game} />
   </article>;

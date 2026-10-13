@@ -13,13 +13,15 @@ body:
     attributes:
       label: Where did it happen?
       options:
-        - The website (aikids.games)
+        - The website
         - TheaBonk
         - Light Crossing
         - Vanex Defense
         - Space Sky
         - Calex Cart
         - Cliff Valley
+        - Tuck Pop
+        - A community game
         - Somewhere else in this repo
     validations:
       required: true

@@ -82,6 +82,13 @@
     ],
     "probe": "calexcart.__probe"
   },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
   "capture": {
     "route": "",
     "script": "apps/site/scripts/capture/calex-cart.ts"

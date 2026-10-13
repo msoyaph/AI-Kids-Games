@@ -41,6 +41,13 @@
     "Three save slots that stay in this browser"
   ],
   "contentNotes": "Gentle sparring only: tired creatures take a nap and are never hurt or lost. Losing sends you to a Rest Stop with nothing taken. No purchases, ads, chat or random reward packs. Some reading, with read-aloud. Saves stay in this browser.",
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
   "controls": {
     "types": [
       "Keyboard",

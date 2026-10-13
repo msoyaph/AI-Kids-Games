@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/msoyaph/AI-Kids-Games/main/docs/community-game.schema.json",
+  "title": "AI Kids Games community game manifest (community/<slug>/game.json)",
+  "description": "A community game's listing, creator and review state. Checked by `npm run check-submission -- <slug>` and in CI; the shared fields mean the same as in game.schema.json. See SUBMITTING.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "slug",
+    "title",
+    "tagline",
+    "shortDescription",
+    "longDescription",
+    "version",
+    "minAge",
+    "ageRange",
+    "genres",
+    "tags",
+    "keywords",
+    "features",
+    "contentNotes",
+    "controls",
+    "devices",
+    "orientation",
+    "playTime",
+    "storage",
+    "safety",
+    "hook",
+    "capture",
+    "creator",
+    "license",
+    "originality",
+    "submitted",
+    "listing"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "description": "Folder name under community/ and the URL slug on the AI Kids Games website. Must not be used by any other game."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "tagline": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60,
+      "description": "One short line, shown in the hero and on cards."
+    },
+    "shortDescription": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 260,
+      "description": "Two short sentences for the details page, search results and structured data."
+    },
+    "longDescription": {
+      "type": "string",
+      "minLength": 40,
+      "description": "A paragraph for the README and llms.txt."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "The released version; the monorepo tag is <slug>-v<version>."
+    },
+    "minAge": {
+      "type": "integer",
+      "minimum": 3,
+      "maximum": 17
+    },
+    "ageRange": {
+      "type": "string",
+      "pattern": "^\\d+(\\+|–\\d+)$",
+      "description": "Shown as \"Ages <ageRange>\": either \"8+\" or \"10–14\" (en dash)."
+    },
+    "genres": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "Action",
+          "Adventure",
+          "Casual",
+          "Cozy",
+          "Farming",
+          "Learning",
+          "Puzzle",
+          "Racing",
+          "Strategy"
+        ]
+      }
+    },
+    "tags": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 24
+      },
+      "description": "Short words players can search for on the site."
+    },
+    "keywords": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9 +&'-]*$"
+      },
+      "description": "Genre, feature and audience words for search engines. Never another company's game title or trademark."
+    },
+    "features": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "minLength": 6
+      }
+    },
+    "contentNotes": {
+      "type": "string",
+      "minLength": 20,
+      "description": "What parents should know: conflict, scariness, reading, saves."
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "types",
+        "quickStart",
+        "howToPlay"
+      ],
+      "properties": {
+        "types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "Keyboard",
+              "Mouse",
+              "Gamepad",
+              "Touch"
+            ]
+          }
+        },
+        "quickStart": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "string",
+            "minLength": 6
+          }
+        },
+        "howToPlay": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 6
+          }
+        }
+      }
+    },
+    "devices": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "Computer",
+          "Tablet",
+          "Phone"
+        ]
+      }
+    },
+    "orientation": {
+      "enum": [
+        "any",
+        "landscape",
+        "portrait"
+      ],
+      "description": "How phones and tablets must be held. The game shows its own prompt; the site never adds one."
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Browser features the game needs, e.g. \"WebGL 2\"."
+    },
+    "playTime": {
+      "type": "string",
+      "minLength": 3
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prefix",
+        "keys"
+      ],
+      "properties": {
+        "prefix": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Every localStorage key the game writes starts with this (see apps/site/STORAGE_AUDIT.md)."
+        },
+        "keys": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "description": "Every persistent key; <slot> or <track> marks a placeholder."
+        },
+        "probe": {
+          "type": "string",
+          "description": "The short-lived availability-check key, written and removed at once."
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ads",
+        "purchases",
+        "chat",
+        "accounts",
+        "network"
+      ],
+      "description": "What the game never does. Every listed game must have all five false; the website shows them in each game's \"Safety and privacy\" section.",
+      "properties": {
+        "ads": {
+          "const": false,
+          "description": "No advertising of any kind, including rewarded ads."
+        },
+        "purchases": {
+          "const": false,
+          "description": "No purchases, currencies bought with money, or paid unlocks."
+        },
+        "chat": {
+          "const": false,
+          "description": "No chat, messages, uploads or contact with other players."
+        },
+        "accounts": {
+          "const": false,
+          "description": "No accounts, sign-ups, names or emails."
+        },
+        "network": {
+          "const": false,
+          "description": "Makes no network requests: nothing is sent anywhere, and it keeps running offline once loaded."
+        }
+      }
+    },
+    "hook": {
+      "type": "string",
+      "pattern": "^__[a-z][a-z0-9]*$",
+      "description": "The read-only test hook on window, e.g. \"__starsprint\" (your slug without hyphens)."
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenes"
+      ],
+      "properties": {
+        "scenes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "pattern": "^\\?scene=[a-z0-9-]+(&[a-z0-9-]+=[a-z0-9-]+)*$"
+          },
+          "description": "Capture routes that show each screen without saving, e.g. \"?scene=title\". The checks and the review screenshot them."
+        }
+      }
+    },
+    "creator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "handle"
+      ],
+      "properties": {
+        "handle": {
+          "type": "string",
+          "pattern": "^@[a-z0-9_-]{2,32}$",
+          "description": "A nickname such as \"@star-maker\". Never a real name."
+        }
+      }
+    },
+    "license": {
+      "const": "MIT",
+      "description": "Community games are open source under the MIT license."
+    },
+    "originality": {
+      "type": "string",
+      "minLength": 40,
+      "maxLength": 600,
+      "description": "In your own words: this is your original work (alone or with an AI assistant), with no other companies' names, characters, art or music."
+    },
+    "submitted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "date",
+        "sourceCommit"
+      ],
+      "properties": {
+        "date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "sourceCommit": {
+          "type": "string",
+          "pattern": "^(pending|[0-9a-f]{40})$",
+          "description": "\"pending\" when you submit; the owner's review tool fills in the reviewed commit."
+        }
+      }
+    },
+    "listing": {
+      "enum": [
+        "submitted",
+        "listed",
+        "unlisted"
+      ],
+      "description": "\"submitted\" while in review (never on the site). Only the owner's review tool sets \"listed\"; \"unlisted\" takes a game off the site without deleting it."
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "by",
+        "date",
+        "commit",
+        "sourceSha256",
+        "reportSha256"
+      ],
+      "description": "Written only by the owner's review tool (npm run review-submission -- <PR> --approve).",
+      "properties": {
+        "by": {
+          "type": "string",
+          "pattern": "^@[a-z0-9_-]{2,32}$"
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "sourceSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "reportSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "accentColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "description": "Optional card color."
+    }
+  }
+}

@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "If you use or build on Ai Kids Games, please cite it as below."
-title: "Ai Kids Games"
+message: "If you use or build on AI Kids Games, please cite it as below."
+title: "AI Kids Games"
 type: software
 abstract: >-
   Free, open-source browser games for kids: kart racing, farming, tower defense, space
@@ -8,9 +8,9 @@ abstract: >-
   single HTML file, and the repo includes a starter template for building your own kid-safe game.
 authors:
   - name: "Cliff Sumalpong"
-  - name: "Ai Kids Games contributors"
+  - name: "AI Kids Games contributors"
 repository-code: "https://github.com/msoyaph/AI-Kids-Games"
-url: "https://aikids.games"
+url: "https://ai-kids-games-fawn.vercel.app"
 license: MIT
 version: "2.1.0"
 date-released: "2026-10-11"
