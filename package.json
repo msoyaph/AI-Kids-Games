@@ -7,7 +7,8 @@
   "workspaces": [
     "apps/*",
     "games/*",
-    "templates/*"
+    "templates/*",
+    "tooling/*"
   ],
   "engines": {
     "node": ">=22"

@@ -56,7 +56,17 @@ commit (`npm run review-submission -- <PR> --approve`).
      `scripts/lib/manifest.ts`.
    - `npm run new-community-game` (source only, plus AGENTS.md and CLAUDE.md for assistants).
    - The game-submission PR template, with the DCO.
-2. `npm run check-submission -- <slug>`.
+2. COMPLETE: `npm run check-submission -- <slug>`.
+   - scripts/check-submission.ts plus scripts/submission/: files, manifest and placeholders,
+     dependencies, a TypeScript-AST source scan, content, type-check, unit tests, the shared Vite
+     build, and browser checks.
+   - The browser checks cover the contract, 20 s of play in the site's sandbox on a second origin,
+     storage, the flash audit and accessibility.
+   - Every problem gets a fix, and reports go to `community/<slug>/.check/`.
+   - `tooling/community-kit` pins the packages (dev dependencies, so the lockfile only gains the
+     kit and obscenity).
+   - `--untrusted` skips the submission's own unit tests. The review kit uses it: they run only in
+     CI and on the creator's machine.
 3. CI for fork pull requests.
 4. The review kit.
 5. Separate hosting.

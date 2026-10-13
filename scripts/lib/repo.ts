@@ -12,7 +12,8 @@ export const gameDir = (slug: string) => resolve(root,'games',slug);
 export const SLUG = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
 /** Community games (community/<slug>/): source only, built and checked by tooling/community-kit, hosted on their own origin. */
-export const communityRoot = resolve(root,'community');
+/** AIKG_COMMUNITY_ROOT points the checks at another checkout's community/ folder: the owner's review kit checks a pull request from its own worktree with these trusted tools. */
+export const communityRoot = process.env.AIKG_COMMUNITY_ROOT ? resolve(process.env.AIKG_COMMUNITY_ROOT) : resolve(root,'community');
 export const communityDir = (slug: string) => resolve(communityRoot,slug);
 /** Every folder under community/ that has a game.json manifest, sorted. */
 export function communitySlugs() {
