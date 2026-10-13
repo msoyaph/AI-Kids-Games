@@ -64,26 +64,32 @@ export async function touchDrag(page: Page, from: { x: number; y: number }, to: 
 }
 
 /**
- * A pretend gamepad (standard mapping). `press(name)` holds a button until the game has polled it
- * (it reads the pad once per frame), then releases it until the game has seen that too, so presses
- * register at any frame rate (software WebGL on CI is slow).
+ * A pretend gamepad (standard mapping). `press(name)` taps a button for exactly one frame of the
+ * game's own polling, then waits until the game has polled again. A tap that lasted for test
+ * round-trips would be held for many frames when frames are slow (software WebGL on CI runs at
+ * about 5 fps), and the d-pad's auto-repeat would then move twice.
  */
 export async function fakeGamepad(page: Page) {
   await page.addInitScript(() => {
-    const pad = { buttons: new Array(17).fill(0) as number[], axes: [0, 0, 0, 0], polls: 0 };
+    // taps[i]: how many more getGamepads() calls see button i pressed
+    const pad = { taps: new Array(17).fill(0) as number[], axes: [0, 0, 0, 0], polls: 0 };
     (window as unknown as { __pad: typeof pad }).__pad = pad;
-    navigator.getGamepads = () => { pad.polls++; return [{ id: 'Test pad', index: 0, connected: true, mapping: 'standard', timestamp: performance.now(), axes: pad.axes, buttons: pad.buttons.map(v => ({ pressed: v > 0.5, value: v, touched: v > 0 })), hapticActuator: null, vibrationActuator: null } as unknown as Gamepad]; };
+    navigator.getGamepads = () => {
+      pad.polls++;
+      const buttons = pad.taps.map(n => ({ pressed: n > 0, value: n > 0 ? 1 : 0, touched: n > 0 }));
+      pad.taps = pad.taps.map(n => Math.max(0, n - 1));
+      return [{ id: 'Test pad', index: 0, connected: true, mapping: 'standard', timestamp: performance.now(), axes: pad.axes, buttons, hapticActuator: null, vibrationActuator: null } as unknown as Gamepad];
+    };
   });
   const index: Record<string, number> = { a: 0, b: 1, x: 2, y: 3, lb: 4, rb: 5, back: 8, start: 9, up: 12, down: 13, left: 14, right: 15 };
-  type Pad = { __pad: { buttons: number[]; polls: number } };
+  type Pad = { __pad: { taps: number[]; polls: number } };
   const polls = () => page.evaluate(() => (window as unknown as Pad).__pad.polls);
-  // the game reads the pad (twice) every frame; wait for a full frame after the change
-  const seen = async (from: number) => { await expect.poll(polls, { timeout: 30_000 }).toBeGreaterThanOrEqual(from + 3); };
-  // change a button and read the poll count in one step, so no frame slips in between
-  const set = (i: number, v: number) => page.evaluate(([i, v]) => { const pad = (window as unknown as Pad).__pad; pad.buttons[i!] = v!; return pad.polls; }, [i, v]);
   return async (name: keyof typeof index) => {
-    await seen(await set(index[name]!, 1));
-    await seen(await set(index[name]!, 0));
+    // The game calls getGamepads() twice per frame (a support check, then the read), so 2 calls is
+    // one frame. Start the tap and read the poll count in one step, between two frames.
+    const from = await page.evaluate(i => { const pad = (window as unknown as Pad).__pad; pad.taps[i] = 2; return pad.polls; }, index[name]!);
+    // the tap's frame, then one released frame
+    await expect.poll(polls, { timeout: 30_000 }).toBeGreaterThanOrEqual(from + 4);
   };
 }
 
