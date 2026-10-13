@@ -79,6 +79,13 @@
     ],
     "probe": "__vanex_probe__"
   },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
   "capture": {
     "route": "?map=w1m1&diff=easy",
     "script": "apps/site/scripts/capture/vanex-defense.ts"

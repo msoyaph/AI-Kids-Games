@@ -13,7 +13,7 @@ body:
     attributes:
       label: Where did it happen?
       options:
-        - The website (aikids.games)
+        - The website
         - TheaBonk
         - Light Crossing
         - Vanex Defense

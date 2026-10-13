@@ -1,11 +1,11 @@
-# AGENTS.md: working in the Ai Kids Games repo
+# AGENTS.md: working in the AI Kids Games repo
 
 Instructions for AI coding assistants (and humans) working here. Claude Code also reads
 `CLAUDE.md`, which holds the project's running notes; this file is the stable guide.
 
 ## What this repo is
 
-- `apps/site/`: the aikids.games website (Vite, React, React Router, strict TypeScript). Static
+- `apps/site/`: the AI Kids Games website (Vite, React, React Router, strict TypeScript). Static
   pages per route, a strict Content Security Policy, no data collection. It ships each game as
   one committed file, `apps/site/public/games/<slug>/index.html`, played in a sandboxed iframe.
 - `games/<slug>/`: each game's complete project with its own tests and docs. `game.json` is the

@@ -2,18 +2,18 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { games } from '../data/games';
 import { usePreferences } from '../lib/preferences';
-import { usePageMeta } from '../lib/meta';
 import { Icon } from '../components/Icon';
 import { mediaFor } from '../lib/media';
+import { faq } from '../data/faq';
+import { Blocks } from '../lib/rich';
 
 export default function Parents() {
-  usePageMeta('For parents','No ads, no tracking, no accounts. Game progress stays on your device. Age guidance for every game.');
   const { clearHistory } = usePreferences(); const [cleared,setCleared] = useState(false);
   return <div className="container page">
     <div className="page-head"><h1 className="display">For parents</h1><p className="muted">The games kids love. None of the stuff parents don’t.</p></div>
     <ul className="promises">
       <li><Icon name="check" /><div><strong>No ads or tracking</strong><p className="muted">No advertising, analytics, tracking pixels or outside scripts. Everything loads from this site.</p></div></li>
-      <li><Icon name="check" /><div><strong>No accounts or chat</strong><p className="muted">No sign-ups, messages, uploads or other players. Kids pick a game and play.</p></div></li>
+      <li><Icon name="check" /><div><strong>No accounts or chat</strong><p className="muted">No sign-ups, messages, uploads or online players. Kids pick a game and play.</p></div></li>
       <li><Icon name="check" /><div><strong>Progress stays on this device</strong><p className="muted">Game saves, favorites and recently played live in this browser. We never receive them. Read the <Link to="/privacy">privacy page</Link>.</p></div></li>
     </ul>
     <section className="section" aria-labelledby="the-games"><h2 id="the-games" className="title" style={{ marginBottom: 16 }}>The games</h2>
@@ -23,7 +23,11 @@ export default function Parents() {
     <section className="section prose" aria-labelledby="tips"><h2 id="tips" className="title">Tips for grown-ups</h2>
       <p>Ages are our suggestion, not an official rating. Try a game together and decide what feels right. Take breaks, and help younger players with the controls.</p>
       <p>Saves are kept in this browser only, so clearing browser data removes them. Each game has its own save controls. Links to other websites ask a grown-up first.</p>
-      <p>The 3D games need a modern browser with WebGL (Space Sky needs WebGL 2). TheaBonk needs a keyboard and mouse or a gamepad; every other game also plays by touch on phones and tablets.</p>
+      {/* Devices and requirements, generated from the game manifests (the same answer as the FAQ). */}
+      <Blocks blocks={faq(games).find(item => item.id === 'devices')!.answer} />
+    </section>
+    <section className="section prose" aria-labelledby="questions"><h2 id="questions" className="title">Questions?</h2>
+      <p>The <Link to="/faq">parent FAQ</Link> answers the common ones: what’s free, what data is collected, ages, devices and offline play. Our <Link to="/guides">guides for parents</Link> cover choosing ad-free games, what makes a game kid-safe, and building a first game with your kid.</p>
     </section>
     <section className="section prose" aria-labelledby="makers"><h2 id="makers" className="title">Made in the open</h2>
       <p>Every game here is open source, so you can read exactly what it does. Families and young makers can build their own kid-safe games from the same starter, and listing games made by others is coming soon: see <Link to="/list-your-game">List your game</Link>.</p>

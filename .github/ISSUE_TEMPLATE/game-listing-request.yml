@@ -1,12 +1,12 @@
 name: Game listing request
-description: Register interest in listing your kid-safe game on aikids.games (coming soon).
+description: Register interest in listing your kid-safe game on AI Kids Games (coming soon).
 title: "[Listing] "
 labels: [listing-request]
 body:
   - type: markdown
     attributes:
       value: |
-        **Listing games on aikids.games is coming soon.** This form lets you get in line; we'll reply here when listings open.
+        **Listing games on AI Kids Games is coming soon.** This form lets you get in line; we'll reply here when listings open.
         The website never collects any data, which is why requests live here on GitHub.
         Please don't include personal information about yourself or any child. Link to your game's public source code instead.
   - type: input

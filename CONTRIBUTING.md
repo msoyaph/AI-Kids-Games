@@ -1,4 +1,4 @@
-# Contributing to Ai Kids Games
+# Contributing to AI Kids Games
 
 Thank you for helping make games kids love, without the stuff parents don't. Bug reports, game
 ideas, fixes, new games and better docs are all welcome.
@@ -16,7 +16,7 @@ ideas, fixes, new games and better docs are all welcome.
 - **Fix something:** pick an issue, comment that you're on it, and open a pull request.
 - **Build a game:** start from `templates/game-starter` (`npm run new-game -- <slug>`) and read
   [docs/CREATE-A-GAME.md](docs/CREATE-A-GAME.md).
-- **List your game on aikids.games:** coming soon. Open a *Game listing request* issue to get in
+- **List your game on AI Kids Games:** coming soon. Open a *Game listing request* issue to get in
   line.
 
 ## Kid-safety checklist (every pull request)
@@ -43,7 +43,7 @@ Every game and every change to the site must keep all of these true:
 
 ## How the repo works
 
-- `apps/site/` is the aikids.games website (Vite, React, TypeScript).
+- `apps/site/` is the AI Kids Games website (Vite, React, TypeScript).
 - `games/<slug>/` is each game's full project. Its `game.json` is the single source of truth for
   its listing; run `npm run manifests` after changing it.
 - The site ships each game as one committed file, `apps/site/public/games/<slug>/index.html`.

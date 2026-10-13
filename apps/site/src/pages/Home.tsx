@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { categories, games } from '../data/games';
 import { usePreferences } from '../lib/preferences';
-import { usePageMeta } from '../lib/meta';
 import { mediaFor } from '../lib/media';
+import { BRAND,TAGLINE } from '../data/site';
 import Hero from '../components/Hero';
 import GameGrid from '../components/GameGrid';
 import GameCard from '../components/GameCard';
@@ -14,7 +14,6 @@ export const CATEGORY_ROWS_FROM = 12;
 export const HERO_LEAD = 'theabonk';
 
 export default function Home() {
-  usePageMeta("The games kids love. None of the stuff parents don’t.",'Free, ad-free browser games for kids: kart racing, farming, tower defense, space adventures and more. No subscriptions, no sign-ups, no tracking.');
   const { recent } = usePreferences();
   const { category,playerAge,results,set,reset } = useCatalogFilters();
   const featured = games.filter(game => game.featured).sort((a,b) => Number(b.slug === HERO_LEAD)-Number(a.slug === HERO_LEAD));
@@ -22,7 +21,7 @@ export default function Home() {
   return <div className="container home">
     <header className="home-intro">
       {/* The heading is for screen readers and search only; the page opens on the featured games. */}
-      <h1 className="sr-only">Ai Kids Games: The games kids love. None of the stuff parents don’t.</h1>
+      <h1 className="sr-only">{BRAND}: {TAGLINE}</h1>
       <p>No ads. No subscriptions. No sign-ups. No tracking. Just play, or build your own.</p>
     </header>
     <Hero games={featured.length ? featured : games} />

@@ -1,4 +1,4 @@
-// "Add to Home" (Home's hero) puts Ai Kids Games on a phone or tablet's Home Screen. Chromium
+// "Add to Home" (Home's hero) puts AI Kids Games on a phone or tablet's Home Screen. Chromium
 // browsers (Chrome, Edge, Samsung Internet) hand over their own install prompt with
 // beforeinstallprompt, which can fire before Home has loaded, so main.tsx imports this module at
 // startup to keep it. Safari and the others have no prompt: the button shows the steps in the

@@ -113,7 +113,7 @@ npm run e2e
 `?stress=300[&map=w6m3]` (stress test with an FPS meter — works in the production build too),
 `?quality=low|medium|high|auto`, `?playtest=1|0`. Dev server only: `?editor=1`, `?gallery=1`.
 
-## Putting it on Ai Kids Games
+## Putting it on AI Kids Games
 
 1. `npm run build`
 2. Copy `dist/index.html` → `public/games/vanex-defense/index.html`
@@ -260,7 +260,7 @@ Test performance**.
 
 ## Continuous integration
 
-The Ai Kids Games monorepo's root workflow checks every pull request and push on Ubuntu (typecheck, unit tests +
+The AI Kids Games monorepo's root workflow checks every pull request and push on Ubuntu (typecheck, unit tests +
 balance sims, build, dist checks, all Playwright tests). The real-GPU benchmark runs by hand on your own computer.
 Details: [docs/CI.md](docs/CI.md).
 

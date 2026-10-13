@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { findGame, games, type Control, type Device } from '../data/games';
-import { usePageMeta } from '../lib/meta';
+import { findGame, games, type Control, type Device, type Game } from '../data/games';
 import { mediaFor } from '../lib/media';
 import { FavoriteButton } from '../components/GameCard';
 import GameGrid from '../components/GameGrid';
@@ -13,11 +12,12 @@ import { computerOnly } from '../lib/devices';
 
 const deviceIcon: Record<Device,IconName> = { Computer: 'computer',Tablet: 'tablet',Phone: 'phone' };
 const controlIcon: Record<Control,IconName> = { Keyboard: 'keyboard',Mouse: 'mouse',Gamepad: 'gamepad',Touch: 'touch' };
+/** From the game's manifest (game.json `safety`): what it never does. */
+const SAFETY: [keyof Game['safety'],string][] = [['ads','No ads'],['purchases','No purchases'],['chat','No chat or messages'],['accounts','No accounts or sign-ups'],['network','Nothing sent anywhere']];
 const list = (items: string[]) => items.length < 2 ? items.join('') : `${items.slice(0,-1).join(', ')} and ${items.at(-1)}`;
 
 export default function Details() {
   const { slug } = useParams(); const game = findGame(slug);
-  usePageMeta(game ? `${game.title}: a free ${game.categories[0]!.toLowerCase()} game for kids` : 'Game not found',game ? `${game.description} ${game.ageGuidance}. Free, no ads or sign-ups.` : 'This game could not be found.',game ? mediaFor(game).og : undefined);
   const [shot,setShot] = useState<number | null>(null);
   if (!game) return <NotFound />;
   const media = mediaFor(game);
@@ -49,7 +49,15 @@ export default function Details() {
         <ol className="steps" style={{ marginTop: 20 }}>{game.quickStart.map(step => <li key={step}>{step}</li>)}</ol>
         <details className="all-controls"><summary><Icon name="chevron" size={18} />All controls</summary><ul>{game.controls.howToPlay.map(step => <li key={step}>{step}</li>)}</ul></details>
       </section>
-      <section className="grownups" aria-labelledby="grownups"><h2 id="grownups" className="title">For grown-ups</h2><p style={{ marginTop: 16 }}>{game.contentNotes}</p><p className="links"><Link className="text-link" to="/parents">For parents</Link><Link className="text-link" to="/privacy">Privacy</Link></p></section>
+      <section className="grownups safety" aria-labelledby="safety"><h2 id="safety" className="title">Safety and privacy</h2>
+        <dl className="safety-facts">
+          <div><dt>Ages</dt><dd>{game.ageGuidance}: our suggestion, not an official rating.</dd></div>
+          <div><dt>What to expect</dt><dd>{game.contentNotes}</dd></div>
+          <div><dt>Never in this game</dt><dd><ul className="safety-checks">{SAFETY.filter(([flag]) => game.safety[flag] === false).map(([flag,label]) => <li key={flag}><Icon name="check" size={18} />{label}</li>)}</ul></dd></div>
+          <div><dt>Saved on this device</dt><dd>Progress saves in this browser only, never sent to us, under {game.storage.keys.length === 1 ? 'one storage key' : `${game.storage.keys.length} storage keys`} starting with <code>{game.storage.prefix}</code>. To erase it, clear this site’s data in your browser settings.</dd></div>
+        </dl>
+        <p className="links"><Link className="text-link" to="/faq">Parent FAQ</Link><Link className="text-link" to="/parents">For parents</Link><Link className="text-link" to="/privacy">Privacy</Link></p>
+      </section>
     </div>
     <section className="section" aria-labelledby="more-games"><div className="section-head"><h2 id="more-games" className="title">More games</h2></div><GameGrid games={games.filter(item => item.slug !== game.slug)} /></section>
   </div>;

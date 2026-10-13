@@ -1,6 +1,6 @@
 # Security policy
 
-Ai Kids Games is played by children, so we treat safety and privacy problems as urgent.
+AI Kids Games is played by children, so we treat safety and privacy problems as urgent.
 
 ## Reporting a problem
 
@@ -41,4 +41,4 @@ pipeline.
 
 ## Supported versions
 
-Only the current release on https://aikids.games and the `main` branch are supported.
+Only the current release on the website (https://ai-kids-games-fawn.vercel.app) and the `main` branch are supported.

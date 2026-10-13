@@ -34,6 +34,11 @@ export interface Game {
   featured: boolean;
   accentColor: string;
   status: 'Ready to play' | 'Coming soon';
+  /** Where the game saves in this browser (localStorage keys; <slot> marks a placeholder). */
+  storage: { prefix: string; keys: string[] };
+  /** What the game never does, from its manifest: all false for every listed game. */
+  safety: { ads: false; purchases: false; chat: false; accounts: false; network: false };
+  license: string;
 }
 /**
  * The catalog comes from each game's manifest, games/<slug>/game.json. Edit those, then run

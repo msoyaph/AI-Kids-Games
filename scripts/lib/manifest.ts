@@ -15,6 +15,8 @@ export type Status = typeof STATUSES[number];
 export type ControlType = typeof CONTROLS[number];
 export type Device = typeof DEVICES[number];
 export type Motion = typeof MOTIONS[number];
+export const SAFETY = ['ads','purchases','chat','accounts','network'] as const;
+export type Safety = Record<typeof SAFETY[number],false>;
 
 export interface Manifest {
   $schema?: string;
@@ -23,6 +25,8 @@ export interface Manifest {
   controls: { types: ControlType[]; quickStart: string[]; howToPlay: string[] };
   devices: Device[]; orientation: 'any' | 'landscape' | 'portrait'; requirements?: string[]; playTime: string;
   storage: { prefix: string; keys: string[]; probe?: string };
+  /** What the game never does; all five must be false (the contract in docs/CREATE-A-GAME.md). */
+  safety: Safety;
   capture: { route: string; script: string };
   license: string; source: string;
   site: { featured: boolean; releaseDate: string; accentColor: string; coverLayers: Motion[]; status: Status; order?: number };
@@ -66,6 +70,8 @@ export function validateManifest(m: Manifest,folder = m.slug): string[] {
   if (!m.storage || typeof m.storage.prefix !== 'string' || m.storage.prefix.length < 3) at('storage.prefix is missing.');
   else for (const key of m.storage.keys ?? []) if (!key.startsWith(m.storage.prefix)) at(`storage key "${key}" does not start with the prefix "${m.storage.prefix}".`);
   if (!m.storage?.keys?.length) at('storage.keys must list every persistent key.');
+  for (const flag of SAFETY) if (m.safety?.[flag] !== false) at(`safety.${flag} must be false: listed games never have ${flag === 'network' ? 'network requests' : flag}.`);
+  if (m.safety && Object.keys(m.safety).some(flag => !(SAFETY as readonly string[]).includes(flag))) at(`safety may only list ${SAFETY.join(', ')}.`);
   if (typeof m.capture?.route !== 'string' || !m.capture?.script?.startsWith('apps/site/scripts/capture/')) at('capture needs a route and a script under apps/site/scripts/capture/.');
   text(m.license,'license'); if (m.source !== `games/${folder}`) at(`source must be games/${folder}.`);
   const site = m.site;
@@ -76,7 +82,7 @@ export function validateManifest(m: Manifest,folder = m.slug): string[] {
   if (!STATUSES.includes(site?.status)) at(`site.status must be one of ${STATUSES.map(status => `"${status}"`).join(', ')}.`);
   if (site?.order !== undefined && (!Number.isInteger(site.order) || site.order < 1)) at('site.order must be a whole number from 1.');
   // Never another company's game title or trademark, anywhere in the listing.
-  const words = JSON.stringify({ ...m,$schema: undefined,capture: undefined,storage: undefined,source: undefined }).toLowerCase();
+  const words = JSON.stringify({ ...m,$schema: undefined,capture: undefined,storage: undefined,safety: undefined,source: undefined }).toLowerCase();
   for (const mark of TRADEMARKS) if (new RegExp(`(^|[^a-z])${mark.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^a-z]|$)`).test(words)) at(`uses "${mark}", another company's title or trademark. Describe the game by its genre and features instead.`);
   return errors;
 }

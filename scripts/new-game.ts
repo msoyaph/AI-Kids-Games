@@ -28,7 +28,7 @@ cpSync(template,dest,{ recursive: true,filter: source => !/(^|\/)(node_modules|d
 const edit = (file: string,change: (text: string) => string) => { const path = resolve(dest,file); writeFileSync(path,change(readFileSync(path,'utf8'))); };
 const swap = (text: string) => text.replaceAll('Star Catch',title).replaceAll('gamestarter.',prefix).replaceAll('__gamestarter',hook).replaceAll('game-starter',slug).replaceAll('4199',String(preview)).replaceAll('5199',String(dev));
 for (const file of ['src/config.ts','index.html','tests/e2e/smoke.spec.ts','playwright.config.ts','vite.config.ts','README.md','CLAUDE.md']) edit(file,swap);
-edit('package.json',text => { const pkg = JSON.parse(text); pkg.name = slug; pkg.version = '0.1.0'; pkg.description = `${title}, a game for Ai Kids Games.`; return `${JSON.stringify(pkg,null,2)}\n`; });
+edit('package.json',text => { const pkg = JSON.parse(text); pkg.name = slug; pkg.version = '0.1.0'; pkg.description = `${title}, a game for AI Kids Games.`; return `${JSON.stringify(pkg,null,2)}\n`; });
 edit('game.json',text => {
   const m = JSON.parse(swap(text));
   m.version = '0.1.0';

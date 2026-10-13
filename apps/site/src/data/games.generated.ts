@@ -72,7 +72,25 @@ export const generatedGames: Game[] = [
     "releaseDate": "2026-10-11",
     "featured": true,
     "accentColor": "#d8ecc4",
-    "status": "Ready to play"
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "cliffvalley.",
+      "keys": [
+        "cliffvalley.slot.1",
+        "cliffvalley.slot.2",
+        "cliffvalley.slot.3",
+        "cliffvalley.settings",
+        "cliffvalley.playtest"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
   },
   {
     "slug": "light-crossing",
@@ -144,7 +162,27 @@ export const generatedGames: Game[] = [
     "releaseDate": "2026-10-11",
     "featured": true,
     "accentColor": "#c7f1dd",
-    "status": "Ready to play"
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "lightcrossing.",
+      "keys": [
+        "lightcrossing.slot0",
+        "lightcrossing.slot1",
+        "lightcrossing.slot2",
+        "lightcrossing.settings",
+        "lightcrossing.playtest.slot0",
+        "lightcrossing.playtest.slot1",
+        "lightcrossing.playtest.slot2"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
   },
   {
     "slug": "theabonk",
@@ -212,7 +250,24 @@ export const generatedGames: Game[] = [
     "releaseDate": "2026-10-11",
     "featured": true,
     "accentColor": "#e1dafa",
-    "status": "Ready to play"
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "theabonk.",
+      "keys": [
+        "theabonk.save",
+        "theabonk.save.bak",
+        "theabonk.playtest",
+        "theabonk.tuning"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
   },
   {
     "slug": "vanex-defense",
@@ -282,7 +337,23 @@ export const generatedGames: Game[] = [
     "releaseDate": "2026-10-11",
     "featured": true,
     "accentColor": "#dbe7c8",
-    "status": "Ready to play"
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "vanex-defense-",
+      "keys": [
+        "vanex-defense-save",
+        "vanex-defense-save-backup",
+        "vanex-defense-playtest"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
   },
   {
     "slug": "space-sky",
@@ -354,7 +425,24 @@ export const generatedGames: Game[] = [
     "releaseDate": "2026-10-11",
     "featured": true,
     "accentColor": "#d9d4f6",
-    "status": "Ready to play"
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "spacesky.",
+      "keys": [
+        "spacesky.slot.0",
+        "spacesky.slot.1",
+        "spacesky.slot.2",
+        "spacesky.settings"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
   },
   {
     "slug": "calex-cart",
@@ -424,7 +512,27 @@ export const generatedGames: Game[] = [
     "releaseDate": "2026-10-11",
     "featured": true,
     "accentColor": "#f7e3ac",
-    "status": "Ready to play"
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "calexcart.",
+      "keys": [
+        "calexcart.slot.1",
+        "calexcart.slot.2",
+        "calexcart.slot.3",
+        "calexcart.settings",
+        "calexcart.lastSlot",
+        "calexcart.ghost.<slot>.<track>",
+        "calexcart.playtest"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
   },
   {
     "slug": "tuck-pop",
@@ -488,6 +596,21 @@ export const generatedGames: Game[] = [
     "releaseDate": "2026-10-13",
     "featured": false,
     "accentColor": "#ffe0b8",
-    "status": "Ready to play"
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "tuckpop.",
+      "keys": [
+        "tuckpop.save",
+        "tuckpop.run"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
   }
 ];

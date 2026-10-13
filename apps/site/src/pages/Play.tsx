@@ -3,9 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { findGame } from '../data/games';
 import sizes from '../data/build-sizes.json';
 import { usePreferences } from '../lib/preferences';
-import { usePageMeta } from '../lib/meta';
 import { mediaFor } from '../lib/media';
 import { Icon } from '../components/Icon';
+import { usePageMeta } from '../lib/meta';
 import Cover from '../components/Cover';
 import { computerOnly, touchOnlyDevice } from '../lib/devices';
 import { enterFullscreen, exitFullscreen, fullscreenElement, fullscreenSupported, iPhoneSafari, lockOrientation, onFullscreenChange, standaloneDisplay, touchFirst, unlockOrientation } from '../lib/fullscreen';
@@ -53,15 +53,15 @@ function useGameDownload(slug: string,attempt: number,enabled: boolean) {
 
 export default function Play() {
   const { slug = '' } = useParams(); const game = findGame(slug);
-  usePageMeta(game ? `Play ${game.title}` : 'Game not found',game?.tagline || 'Choose another game.',game ? mediaFor(game).og : undefined);
   const { rememberGame } = usePreferences();
+  usePageMeta();
   const [loaded,setLoaded] = useState(false); const [slow,setSlow] = useState(false); const [attempt,setAttempt] = useState(0);
   const navigate = useNavigate();
   const [canFullscreen] = useState(fullscreenSupported);
   const [full,setFull] = useState(false); const [menu,setMenu] = useState(false); const [fullscreenError,setFullscreenError] = useState('');
   const [tip,setTip] = useState(firstTip);
   const locked = useRef(false);
-  const [notice,setNotice] = useState(() => window.innerWidth <= 768 || matchMedia('(pointer: coarse)').matches);
+  const [notice,setNotice] = useState(() => typeof window !== 'undefined' && (window.innerWidth <= 768 || matchMedia('(pointer: coarse)').matches));
   const stage = useRef<HTMLDivElement>(null); const frame = useRef<HTMLIFrameElement>(null);
   // A computer-only game on a touch-only device: explain instead of loading it (driven by the manifest).
   const [confirmed,setConfirmed] = useState(keyboardConfirmed);
@@ -140,11 +140,11 @@ export default function Play() {
       </div>}
       {tip === 'home-screen' && <div className="play-tip" role="dialog" aria-labelledby="tip-title">
         <Icon name="share" size={30} />
-        <h2 id="tip-title">Add Ai Kids Games to your Home Screen to play full screen</h2>
+        <h2 id="tip-title">Add AI Kids Games to your Home Screen to play full screen</h2>
         <ol>
           <li>In Safari, tap <strong>Share</strong> (on newer iPhones it’s in the <strong>•••</strong> menu).</li>
           <li>Choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>
-          <li>Open <strong>Ai Kids Games</strong> from your Home Screen.</li>
+          <li>Open <strong>AI Kids Games</strong> from your Home Screen.</li>
         </ol>
         <p>Games on the Home Screen keep their own progress: saves from Safari don’t carry over there, and saves made there stay there.</p>
         <div className="play-tip-actions"><button className="button primary" autoFocus onClick={() => { answerTip('home-screen'); focusGame(); }}>Got it</button></div>

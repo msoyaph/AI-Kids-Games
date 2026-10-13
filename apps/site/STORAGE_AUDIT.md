@@ -13,7 +13,7 @@ read by hand.
 
 | Owner | Persistent keys | Only in special modes | Availability probe (written and removed at once) |
 |---|---|---|---|
-| Ai Kids Games (site) | `aikg:favorites`, `aikg:recent`, `aikg:tips` (one-time play-page tips answered, ≤ 40 bytes) | none | none |
+| AI Kids Games (site) | `aikg:favorites`, `aikg:recent`, `aikg:tips` (one-time play-page tips answered, ≤ 40 bytes) | none | none |
 | TheaBonk 2.0.0 | `theabonk.save`, `theabonk.save.bak` (written once when a 1.0 save is upgraded) | `theabonk.playtest` (`?playtest=1`), `theabonk.tuning` (`?tune=1`) | `__theabonk_probe__` |
 | Light Crossing 2.0.0 | `lightcrossing.slot0`–`slot2`, `lightcrossing.settings` | `lightcrossing.playtest.slot0`–`slot2` (`?playtest=1`) | `lightcrossing.__probe` |
 | Vanex Defense 2.0.0 | `vanex-defense-save`, `vanex-defense-save-backup` (written once when an older save is upgraded) | `vanex-defense-playtest` (`?playtest=1`) | `__vanex_probe__` |

@@ -1,7 +1,7 @@
 {
   "name": "ai-kids-games",
   "private": true,
-  "description": "Free, open-source browser games for kids, and the aikids.games website that hosts them.",
+  "description": "Free, open-source browser games for kids, and the AI Kids Games website that hosts them.",
   "license": "MIT",
   "type": "module",
   "workspaces": [

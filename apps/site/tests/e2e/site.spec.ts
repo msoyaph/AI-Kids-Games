@@ -4,7 +4,7 @@ const allGames = (page: import('@playwright/test').Page) => page.getByRole('regi
 test('home, details, favorites and reload',async ({ page }) => {
   const errors: string[] = []; page.on('pageerror',error => errors.push(error.message));
   page.on('console',message => { if (message.type() === 'error') errors.push(message.text()); });
-  await page.goto('/'); await expect(page.getByRole('heading',{ level: 1 })).toHaveText('Ai Kids Games: The games kids love. None of the stuff parents don’t.');
+  await page.goto('/'); await expect(page.getByRole('heading',{ level: 1 })).toHaveText('AI Kids Games: The games kids love. None of the stuff parents don’t.');
   await expect(page.getByRole('region',{ name: 'Featured games' }).getByRole('link',{ name: 'Play',exact: true })).toBeVisible();
   await expect(allGames(page).getByRole('heading',{ name: 'TheaBonk' })).toBeVisible();
   await allGames(page).getByRole('button',{ name: 'Add TheaBonk to favorites' }).click();

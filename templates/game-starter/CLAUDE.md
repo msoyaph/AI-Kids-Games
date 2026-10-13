@@ -1,6 +1,6 @@
-# Star Catch (Ai Kids Games starter)
+# Star Catch (AI Kids Games starter)
 
-A minimal canvas game that follows the Ai Kids Games game contract. When you turn it into a new
+A minimal canvas game that follows the AI Kids Games game contract. When you turn it into a new
 game, keep these working and update this file with your own notes, commands and status.
 
 ## Rules that never change

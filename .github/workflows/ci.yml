@@ -1,4 +1,4 @@
-# Ai Kids Games CI. GitHub's standard Ubuntu runners only: self-hosted runners must never be used
+# AI Kids Games CI. GitHub's standard Ubuntu runners only: self-hosted runners must never be used
 # with this public repository (scripts/check-repo.ts fails the build if one ever appears).
 #
 # The repo checks and the website always run. Each game (and the starter template) runs its own

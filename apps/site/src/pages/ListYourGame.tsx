@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { usePageMeta } from '../lib/meta';
 import { Icon } from '../components/Icon';
 import { REPO } from '../lib/links';
 
@@ -13,9 +12,8 @@ const needs = [
 ] as const;
 
 export default function ListYourGame() {
-  usePageMeta('List your game','Listing kid-safe games made by others on Ai Kids Games is coming soon. See what a game needs, and get in line on GitHub.');
   return <div className="container page">
-    <div className="page-head"><p className="soon-badge">Coming soon</p><h1 className="display">List your game on aikids.games</h1><p className="muted">We’re getting ready to list kid-safe games made by others, right next to our own.</p></div>
+    <div className="page-head"><p className="soon-badge">Coming soon</p><h1 className="display">List your game on AI Kids Games</h1><p className="muted">We’re getting ready to list kid-safe games made by others, right next to our own.</p></div>
     <section className="section" aria-labelledby="needs"><h2 id="needs" className="title" style={{ marginBottom: 16 }}>What a listed game needs</h2>
       <ul className="promises">{needs.map(([title,text]) => <li key={title}><Icon name="check" /><div><strong>{title}</strong><p className="muted">{text}</p></div></li>)}</ul>
     </section>
@@ -23,8 +21,8 @@ export default function ListYourGame() {
       <h2 className="heading">How to get in line</h2>
       <p>This website never collects any information, so there’s no form here. Listing requests happen on GitHub, where every game is built in the open: open a <a href={`${REPO}/issues/new?template=game-listing-request.yml`}>Game listing request</a>. GitHub is for people 13 and older, so kids, ask a grown-up to do it with you, and never share personal information.</p>
       <h2 className="heading">Build your own</h2>
-      <p>Every game on Ai Kids Games is open source, and the repository has a starter game and a step-by-step guide, including how to build a game with an AI coding assistant: <a href={REPO}>Ai Kids Games on GitHub</a>.</p>
-      <p>Links to GitHub leave Ai Kids Games, so they ask a grown-up first. Questions for parents are answered on the <Link to="/parents">For parents</Link> page.</p>
+      <p>Every game on AI Kids Games is open source, and the repository has a starter game and a step-by-step guide, including how to build a game with an AI coding assistant: <a href={REPO}>AI Kids Games on GitHub</a>.</p>
+      <p>Links to GitHub leave AI Kids Games, so they ask a grown-up first. Questions for parents are answered on the <Link to="/parents">For parents</Link> page.</p>
     </div>
   </div>;
 }

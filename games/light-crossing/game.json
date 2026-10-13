@@ -85,6 +85,13 @@
     ],
     "probe": "lightcrossing.__probe"
   },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
   "capture": {
     "route": "?preview=cover",
     "script": "apps/site/scripts/capture/light-crossing.ts"

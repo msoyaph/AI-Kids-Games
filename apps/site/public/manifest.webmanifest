@@ -1,7 +1,7 @@
 {
-  "name": "Ai Kids Games",
-  "short_name": "Ai Kids Games",
-  "description": "Free, ad-free browser games for kids: kart racing, farming, tower defense, space adventures and more. No subscriptions, no sign-ups, no tracking.",
+  "name": "AI Kids Games",
+  "short_name": "AI Kids Games",
+  "description": "Free browser games for kids: kart racing, farming, tower defense, space adventures, puzzles and more. No ads, purchases, sign-ups or tracking.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
@@ -10,9 +10,28 @@
   "background_color": "#F5F6F8",
   "theme_color": "#FFFFFF",
   "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": [
+    "games",
+    "kids",
+    "entertainment"
   ]
 }

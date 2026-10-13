@@ -71,14 +71,14 @@ test('List your game: coming soon, nothing collected, GitHub behind the grown-up
   const { errors,external } = guard(page);
   await page.goto('/');
   await page.getByRole('contentinfo').getByRole('link',{ name: 'List your game' }).click();
-  await expect(page.getByRole('heading',{ level: 1,name: 'List your game on aikids.games' })).toBeVisible();
+  await expect(page.getByRole('heading',{ level: 1,name: 'List your game on AI Kids Games' })).toBeVisible();
   await expect(page.getByText('Coming soon',{ exact: true })).toBeVisible();
   await expect(page.locator('form, input, textarea')).toHaveCount(0);
   await page.getByRole('link',{ name: 'Game listing request' }).click();
   await expect(page.getByRole('dialog')).toContainText('Ask a grown-up first!');
   await page.getByRole('button',{ name: 'Stay here' }).click();
   await page.getByRole('contentinfo').getByRole('link',{ name: 'Build your own' }).click();
-  await expect(page.getByRole('dialog')).toContainText('You’re leaving Ai Kids Games');
+  await expect(page.getByRole('dialog')).toContainText('You’re leaving AI Kids Games');
   await page.getByRole('button',{ name: 'Stay here' }).click();
   await page.goto('/parents'); await expect(page.locator('main').getByRole('link',{ name: 'List your game' })).toHaveAttribute('href','/list-your-game');
   expect(errors).toEqual([]); expect(external).toEqual([]);

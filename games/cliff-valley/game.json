@@ -83,6 +83,13 @@
     ],
     "probe": "cliffvalley.__probe"
   },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
   "capture": {
     "route": "?scene=farmHarvest&hud=0",
     "script": "apps/site/scripts/capture/cliff-valley.ts"

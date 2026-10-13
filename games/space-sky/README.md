@@ -71,7 +71,7 @@ npm run build
 
 URL flags: `?fps` shows FPS, graphics level, draw calls and triangles; `?q=low|medium|high` forces a graphics level; `?stress` keeps it fixed (for measuring); `?debug` exposes `window.__spacesky` for testing. Review pages: `?gallery` (planets), `?rockets`, `?chars`, `?props`, `?academy`.
 
-## Putting it on Ai Kids Games
+## Putting it on AI Kids Games
 
 1. Run `npm run build`.
 2. Copy `dist/index.html` to `public/games/space-sky/index.html` on the site (same slug, `space-sky`, and the same save keys, so players keep their progress).

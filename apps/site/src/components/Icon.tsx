@@ -34,7 +34,3 @@ const paths: Record<IconName,string> = {
 export function Icon({ name, size = 22, filled = false, style }: { name: IconName; size?: number; filled?: boolean; style?: CSSProperties }) {
   return <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}><path d={paths[name]} /></svg>;
 }
-/** The site mark: a friendly gamepad. Uses the text color, so it follows light and dark mode. */
-export function Mark() {
-  return <svg aria-hidden="true" focusable="false" viewBox="0 0 40 40"><rect width="40" height="40" rx="12" fill="currentColor"/><path d="M13.5 14h13a6 6 0 0 1 5.9 7.1l-.8 4.1a2.8 2.8 0 0 1-4.7 1.4L24 24h-8l-2.9 2.6a2.8 2.8 0 0 1-4.7-1.4l-.8-4.1A6 6 0 0 1 13.5 14Z" fill="var(--paper)"/><path d="M13 17.5v4.5M10.8 19.8h4.4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/><circle cx="25" cy="18.6" r="1.6" fill="currentColor"/><circle cx="28.2" cy="21.6" r="1.6" fill="currentColor"/></svg>;
-}

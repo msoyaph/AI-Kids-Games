@@ -1,12 +1,12 @@
-# Create a game for Ai Kids Games
+# Create a game for AI Kids Games
 
-This guide walks you through making a browser game that follows the Ai Kids Games **game
+This guide walks you through making a browser game that follows the AI Kids Games **game
 contract**, from an empty folder to a game that runs on the website on your own computer. You can
 write it yourself, or build it with an AI coding assistant the way every game here was made.
 
 ## 1. The game contract
 
-Every game in this repo, and every game listed on aikids.games, must:
+Every game in this repo, and every game listed on the AI Kids Games website, must:
 
 1. **Be one file.** `npm run build` produces a single self-contained `dist/index.html` with all
    code, styles, art and sound inlined. It works offline, opened from `file://`, and inside a
@@ -90,5 +90,5 @@ Draw a cover and logo in `apps/site/public/media/my-game/` and record previews w
   the maintainers review in full, because games share the website's origin.
 - **On your own site:** fork the repo and give your site and games their own name and look (see
   [BRAND.md](../BRAND.md)).
-- **On aikids.games:** listing outside games is coming soon. Open a *Game listing request* issue
+- **On the AI Kids Games website:** listing outside games is coming soon. Open a *Game listing request* issue
   to register interest.
