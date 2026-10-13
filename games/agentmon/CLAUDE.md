@@ -228,6 +228,19 @@ Ports: dev 5246, preview 4246.
   that turned out to have another cause, see below, but right on its own): a tap was judged where
   the spark was on the frame that noticed it, so a slow frame could turn a tap in the glow into a miss. Taps and keys now carry their own time (the event's timestamp) and are
   judged where the spark was at that moment; gamepad A is polled each frame and counts at the frame.
+- 2026-10-13 Touch controls only show while walking (found by phone screenshots for the 1.1 plan):
+  the glass stick, A, B and Menu floated over the title, the new-game screens and capture scenes on
+  touch devices. They now start off and the overworld and Trials turn them on; the touch e2e checks
+  the title has none.
+- 2026-10-13 CI (GitHub's runners draw WebGL in software): the first PR run failed 8 browser tests.
+  The game's own frame times in the traces were 50–75 ms on the desktop profiles and 100–550 ms on
+  the phone and tablet ones (2–10 fps), so held keys overshot a tile, gamepad presses were missed and
+  timed steps ran out. Game: a software renderer (SwiftShader, llvmpipe) draws at 1×, and a
+  frame-rate governor drops any device to 1× after two seconds under ~22 fps (as Tuck Pop does).
+  Tests: keyboard walking and Trial steps go one tile at a time (hold until the step starts, let
+  go, wait until still), the pretend gamepad holds a button until the game has polled it, and touch
+  Trial steps wait for the last move to finish. The Trial snapshot now says `moving`.
+  `E2E_SOFTWARE=1` rehearses CI's software rendering on a Mac (Chromium projects).
 - 2026-10-13 Browser test fixes (phase 13): `tapWalk` plays a spar that starts on the way (a wild
   Agentmon may wander into you; visible encounters work that way) instead of waiting 15 s for a
   quiet scene, and can stop `within` a few tiles; the touch befriend walks toward the nearest wild

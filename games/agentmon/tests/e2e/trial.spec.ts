@@ -6,16 +6,20 @@ import { advance, snap, talk, walk, watch } from './helpers';
 
 const KEY = ['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'];
 
-/** One step in a Trial room: hold the arrow until the move counts, then let go. */
+/**
+ * One step in a Trial room: hold the arrow until the move counts, let go, and wait for the move to
+ * finish. Exactly one move: letting go as soon as it counts means a slow device can't add a second.
+ */
 async function step(page: Page, dir: number) {
   const before = (await snap(page)).moves ?? 0;
   await page.keyboard.down(KEY[dir]!);
   try {
-    await expect.poll(async () => ((await snap(page)).moves ?? 0) > before, { timeout: 3000, intervals: [10] }).toBe(true);
+    await expect.poll(async () => ((await snap(page)).moves ?? 0) > before, { timeout: 8000, intervals: [10] }).toBe(true);
   } finally {
     await page.keyboard.up(KEY[dir]!);
   }
-  await page.waitForTimeout(220);
+  await expect.poll(async () => !(await snap(page)).moving, { timeout: 8000, intervals: [30] }).toBe(true);
+  expect((await snap(page)).moves).toBe(before + 1);
 }
 
 test('keyboard: the Lighthouse Trial, room by room, then the Keeper and the Beacon', async ({ page }, info) => {
