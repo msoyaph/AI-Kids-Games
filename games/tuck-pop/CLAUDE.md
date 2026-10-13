@@ -78,7 +78,17 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
    - Space Sky's and Light Crossing's browser suites moved to `npm run release:local`, enforced by
      the production guard.
 
-1. Core rules — next.
+1. COMPLETE: core rules in `src/sim/`:
+   - `pieces.ts`: 37 shapes, 13 families, 3 tiers, precomputed masks.
+   - `board.ts`: branch-free full row/column finder.
+   - `scoring.ts`, `solver.ts` (budgeted "can all be placed").
+   - `dealer.ts`: the fair dealer, written in full and tuned in phase 2.
+   - `game.ts`: moves, clears including stones and gems, streak, deals, game over, Undo, Shuffle,
+     Single, Relax's free reshuffle, move limits and goals.
+
+   Plus `core/rng.ts` (from Cliff Valley), `core/bits.ts` and `tuning.ts`. Tests: rules, game,
+   purity (no DOM, clock or Math.random in sim/core). The starter's Star Catch files (`sim.ts`,
+   `render.ts`, `main.ts` …) remain until phase 3 replaces them.
 2. Fair dealer and bots.
 3. Playable Classic.
 4. Effects and sound.
