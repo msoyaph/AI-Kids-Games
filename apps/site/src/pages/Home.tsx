@@ -4,6 +4,7 @@ import { usePreferences } from '../lib/preferences';
 import { usePageMeta } from '../lib/meta';
 import { mediaFor } from '../lib/media';
 import Hero from '../components/Hero';
+import { TrailerButton } from '../components/Trailer';
 import GameGrid from '../components/GameGrid';
 import GameCard from '../components/GameCard';
 import { AgeSelect, CategoryChips, useCatalogFilters } from '../components/Filters';
@@ -21,6 +22,7 @@ export default function Home() {
     <header className="home-intro">
       <h1><span className="sr-only">Ai Kids Games: </span>The games kids love. None of the stuff parents don’t.</h1>
       <p>No ads. No subscriptions. No sign-ups. No tracking. Just play, or build your own.</p>
+      <TrailerButton />
     </header>
     <Hero games={featured.length ? featured : games} />
     <section className="section" aria-labelledby="all-games">

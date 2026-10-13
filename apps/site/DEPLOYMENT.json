@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.2.0",
+  "release": "2.3.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.2.0",
+    "release": "2.3.0",
     "date": "2026-10-12",
     "approvedBy": "Owner",
-    "scope": "TheaBonk 2.0.0 (touch controls on phones and tablets, Rimewood, six heroes, difficulty, accessibility, gamepads; imported byte-identical to its verified build, manifest Computer/Tablet/Phone + Touch, storage audit, new previews) and fullscreen play on the site (top-bar button, corner menu rail, one-time \"Play fullscreen?\" and iPhone Home Screen card in aikg:tips, Android orientation lock, web-app manifest and Apple tags, safe areas).",
-    "note": "Owner wrote: \"If 2.1.0 is live … ship Steps 2–3 as the next release once preview checks pass. I approve both. Record the approvals so the production guard allows them.\" Guard: scripts/check-deployment.ts needs this record for 2.2.0, AIKG_ALLOW_PRODUCTION=2.2.0 in Vercel's Production environment only (set just before the merge), and a build from main."
+    "scope": "The 60-second trailer on the site (Home \"Watch the trailer\" dialog and the About page: self-hosted AV1/H.264 files under 8 MB that load only on play, muted start, captions, text description), the sizzle-reel tooling in marketing/sizzle, and the README video. All six games stay at the versions live in 2.2.0, which are their latest releases.",
+    "note": "Owner wrote: \"update everything including all the games to live production\". Guard: scripts/check-deployment.ts needs this record for 2.3.0, AIKG_ALLOW_PRODUCTION=2.3.0 in Vercel's Production environment only (set just before the merge), and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",

@@ -1,0 +1,22 @@
+{
+  "name": "@ai-kids-games/sizzle",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Ai Kids Games sizzle reel: real gameplay, an original soundtrack and HyperFrames compositions, all built as code. Install with `npm ci` here after `npm ci` at the repo root (Playwright, ffmpeg-static, sharp, tsx and TypeScript come from the root).",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "capture": "tsx capture/run.ts",
+    "music": "tsx music/render.ts",
+    "compose": "tsx compose/build.ts",
+    "render": "tsx render/run.ts",
+    "review": "tsx review/run.ts",
+    "reel": "tsx reel.ts",
+    "publish": "tsx render/publish.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@ffprobe-installer/ffprobe": "2.1.2",
+    "gsap": "3.13.0"
+  }
+}

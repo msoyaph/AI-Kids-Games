@@ -187,3 +187,67 @@ session's uncommitted sizzle-reel work — never touch that checkout's files.
   home 98/100/100/100, details 99/100/100/100, play 92/100/100/100. Monorepo tag theabonk-v2.0.0.
   CI: TheaBonk's Chromium suite (incl. the 5-minute touch playthrough) passes on GitHub's runners;
   its desktop 150% scaling check flaked once (passed on retry).
+
+
+## Sizzle reel v1 (branch sizzle-reel; owner approved the storyboard, end card says aikids.games)
+
+Built as code in `marketing/sizzle/` (workspace @ai-kids-games/sizzle; see its README). HyperFrames
+0.8.133 via npx (telemetry off), GSAP 3.13.0 from npm, ffmpeg-static (Homebrew ffmpeg is broken on
+this Mac: missing libx265) and @ffprobe-installer/ffprobe for HyperFrames' ffprobe.
+1. COMPLETE: storyboard (STORYBOARD.md, storyboard/*.jpg).
+2. Capture (`cd marketing/sizzle && npm ci && npm run capture -- <slug>`; not a root workspace, so the root lockfile and CI stay untouched; routes in capture/games/): Calex, TheaBonk (live v1,
+   the site's route with sound on), Vanex, Space Sky, Light Crossing done except the tablet take;
+   Cliff Valley next. Shared capture lib (apps/site/scripts/capture/lib.ts) gained device sizes,
+   an audio tap (AudioNode.connect → MediaStreamDestination, mixed in a recorder AudioContext whose
+   resume() must not be awaited without a timeout before a user gesture) and an output dir.
+   Pitfalls found:
+   - This Mac's screen is 120 Hz: `canvas.captureStream(60)` samples a 120 fps game unevenly
+     (8/17/25 ms). Record with `captureStream(120)` and resample to 60 in the trim (even).
+     `captureStream()` with no rate gave Light Crossing no frames at all.
+   - A covered or touched capture window stalls frames; run.ts rejects takes with stalls.
+   - Vanex at quality "high" drops to ~46 fps with a full maze; use "medium". Its speed button
+     text is CSS-uppercased ("3X"). Escape with no dialog open pauses the game.
+   - Space Sky: wait ~1.5 s on the title before clicking Play (the intro swallows clicks).
+   - Light Crossing camera.zoom scales the distance (0.7 = closest). Never return dev.start()'s
+     Game object through page.evaluate (serializing it can hang).
+   - Never pgrep/pkill with a pattern that matches the waiting shell's own command line.
+   - Another session works in the worktree ~/Documents/AI-Kids-Games-ship (branch
+     theabonk-touch-gate) and runs browser tests there; the capture waits for them.
+3–5. COMPLETE: music (1,025 notes, renders in ~2 s), 4 HyperFrames renders (60 s 16:9 and 9:16,
+   15 s cutdowns; ~5 min each 60 s on this Mac), review: every cut on the beat, at most 2 flashes
+   per second, −14.0 LUFS / −4.3 dBTP, text on screen long enough to read. Pitfalls: SVT-AV1 in
+   ffmpeg-static 6.0 is v1.4 and slow: one pass at a target bitrate, preset 10. HyperFrames falls
+   back to screenshot capture when CSS blur is used (fine, ~5 min per minute of 1080p60).
+6. Site: Trailer.tsx (Home "Watch the trailer" dialog: muted, captions on, Escape closes, focus
+   returns, nothing loads before play; About: poster you press, text description), files in
+   apps/site/public/trailer/ (AV1 WebM first, H.264 fallback, 720/1080 by screen), trailer.json
+   written by `npm run publish` in marketing/sizzle. Home Lighthouse 97/100/100/100, 0 trailer
+   requests before play; 109 site e2e passed. README thumbnail links to the release.
+
+## Release 2.3.0: the trailer (owner, 2026-10-12: "update everything including all the games to live production")
+- Scope: PR #5 (sizzle-reel) merged with main's 2.2.0. The six games stay at their 2.2.0
+  versions, which are their latest releases (checked against each game's own project: Calex Cart
+  0.2.0, Cliff Valley 1.0.0, Light Crossing 2.0.0 in ~/Light Crossing, Space Sky 2.0.0,
+  TheaBonk 2.0.0, Vanex Defense 2.0.0; no newer commits). DEPLOYMENT.json records the approval;
+  AIKG_ALLOW_PRODUCTION=2.3.0 is set in Vercel's Production environment just before the merge.
+- marketing/sizzle is deliberately not a root workspace: root package.json, package-lock.json and
+  ci.yml stay as on main, so CI runs only the website job (any change there runs every game's
+  browser suite, and Space Sky's and Light Crossing's never pass on GitHub's GPU-less runners).
+  The reel installs separately: `cd marketing/sizzle && npm ci` after the root `npm ci`.
+- README: the trailer plays inline (GitHub user-attachments video, PR #6), links to the release
+  and to YouTube (https://www.youtube.com/watch?v=C47DcpiEVo8). The reel shows TheaBonk v1
+  footage; recapture it with `npm run capture -- theabonk` in marketing/sizzle if wanted.
+
+## Setting up on another computer
+1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
+   `npm ci`, `npx playwright install chromium webkit`.
+2. Site: `npm run dev` / `npm test` / `npm run build`, browser tests with
+   `npm run test:e2e --workspace apps/site`.
+3. Deploys: `gh auth login` (account msoyaph), and `npx vercel link` to real-tours/ai-kids-games
+   (Root Directory apps/site). Production needs a new version, its DEPLOYMENT.json approval and
+   AIKG_ALLOW_PRODUCTION in Vercel's Production environment (see scripts/check-deployment.ts).
+4. Reel: `cd marketing/sizzle && npm ci`; HyperFrames runs via npx. Raw takes
+   (marketing/sizzle/captures/) and renders (out/) are git-ignored: copy them over to re-render
+   without recapturing; the masters are also on the Sizzle reel v1 release.
+5. The game folders in the monorepo (games/<slug>) carry each game's full history; the old
+   standalone project folders are no longer needed.
