@@ -177,14 +177,14 @@ export const TRAILERS: Record<Slug, { shots: [Shot, Shot, Shot, Shot, Shot, Shot
   },
   theabonk: {
     line: 'Level up. Beat the boss!',
-    describe: 'Thea swings her glowing Bonk Ring through a crowd of cartoon monsters, levels up, explores Rimewood and meets Grumblecap.',
+    describe: 'Thea swings her glowing Bonk Ring through a crowd of cartoon monsters and sends out a ring wave, then levels up and meets Grumblecap, the giant mushroom boss.',
     shots: [
       shot('theabonk', 'horde', { from: 0.2, sfx: 0.55, sound: 'bonk, bonk, bonk' }),
       shot('theabonk', 'ring-wave', { from: 0.2 }),
+      shot('theabonk', 'horde', { from: 1 }),
+      shot('theabonk', 'ring-wave', { from: 2 }),
       shot('theabonk', 'level-up', { from: 0.6, sfx: 0.5, sound: 'a level-up chime' }),
-      shot('theabonk', 'rimewood', { from: 0.3 }),
-      shot('theabonk', 'boss', { from: 1.25 }),
-      shot('theabonk', 'horde', { from: 2.3 })
+      shot('theabonk', 'boss', { from: 1.25 })
     ]
   },
   'vanex-defense': {

@@ -9,5 +9,5 @@ const storage = { 'theabonk.save': JSON.stringify({ version: 1, settings }) };
 
 export const scenario: Scenario = {
   ...site,
-  takes: ['horde', 'ring-wave', 'level-up', 'rimewood', 'boss'].map(id => ({ ...site.takes.find(take => take.id === id)!, storage, audio: true }))
+  takes: ['horde', 'ring-wave', 'level-up', 'boss'].map(id => ({ ...site.takes.find(take => take.id === id)!, storage, audio: true }))
 };
