@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.4.0",
+  "release": "2.4.1",
   "productionApproval": {
     "approved": true,
-    "release": "2.4.0",
+    "release": "2.4.1",
     "date": "2026-10-13",
     "approvedBy": "Owner",
-    "scope": "Tuck Pop 1.0.0, the seventh game (a kid-friendly block puzzle: Classic, Relax, 60 Adventure levels, a Daily puzzle, earned helpers and themes; imported byte-identical to its verified build, storage audit clean, cover, logo, OG image and previews), the Puzzle and Casual categories, the README game table generated from the manifests, the touch preview tie-break, CI's precise game picker, and Space Sky's and Light Crossing's GPU browser suites moved to the required local release run (npm run release:local, recorded below). The other six games stay at their 2.3.0 versions.",
-    "note": "Owner wrote: \"complete all the phases end to end\", replying to the phase list that ends \"10. Release, after your approval\" (earlier: \"Stop only before the production release\"). Guard: scripts/check-deployment.ts needs this record for 2.4.0, a passing localSuites record for 2.4.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.4.0 in Vercel's Production environment only (set just before the merge), and a build from main."
+    "scope": "Home opens on the featured games: the home heading is for screen readers and search only, the \"Watch the trailer\" button and dialog are removed from Home (the trailer stays on About), the featured carousel opens on TheaBonk, an \"Add to Home\" button beside Play on phones and tablets (the browser's own install prompt in Chrome, Edge and Samsung Internet; the Safari steps on iPhone and iPad, with the Home Screen saves note; nothing stored or sent), and a fix for the hero overflowing small phones (the thumbnails set its width; a 375 px page scrolled sideways). All seven games stay at their 2.4.0 versions.",
+    "note": "Owner wrote: \"Yes, I approve release 2.4.1.\" (confirming the release plan: merge the 2.4.0 record first, bring PR #12 up to date, bump to 2.4.1, record the approval, run release:local when the machine is quiet, then set AIKG_ALLOW_PRODUCTION=2.4.1, merge and run the production checks). Guard: scripts/check-deployment.ts needs this record for 2.4.1, a passing localSuites record for 2.4.1 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.4.1 in Vercel's Production environment only (set just before the merge), and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
