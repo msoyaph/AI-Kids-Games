@@ -177,6 +177,19 @@ commit (`npm run review-submission -- <PR> --approve`).
   5. the owner merges #17;
   6. production checks (suite, Lighthouse, `npm run indexnow`) and a record PR.
 
+**2.5.0 LIVE 2026-10-13** (PR #17, merge commit a58d7d1; site dpl_GeCxoce5C1JVVX571ERV7zM3vt8y,
+play origin dpl_31jaPSNuiWrsuDNF3RBExENwYevF). Both guards logged the owner's approval.
+- Lighthouse mobile (production): 100/100/100/100 on home, details, community, submit, FAQ,
+  guides and Tuck Pop; play 81 (exempt)/100/100/100. IndexNow: 202.
+- Live suite: 130 passed / 25 failed, all from tests acting before the app took over the
+  prerendered page (110–220 ms on the live site). tests/e2e/fixtures.ts (2.6.0) waits for
+  `<html data-app="ready">`. Every e2e spec imports `test` from `./fixtures`, never from
+  @playwright/test.
+- The merge needed the owner's go-ahead ("merge it yourself once CI passes"). TheaBonk's
+  display-scaling checks flaked on GitHub's runners twice and passed on the third run of that job.
+- Pitfall: run the production suite from main's tests (a worktree), not from a feature branch with
+  new specs.
+
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
 
 Owner decisions: TheaBonk and Light Crossing are pulled in last (their own sessions were
