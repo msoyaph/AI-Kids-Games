@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "$comment": "The build writes .vercel/output (Build Output API) with its own routes and headers: each approved game is served only on its own host, aikg-<slug>.vercel.app. See scripts/routes.ts.",
   "buildCommand": "npm run build",
   "framework": null
 }
