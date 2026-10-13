@@ -9,6 +9,7 @@ import GameGrid from '../components/GameGrid';
 import Lightbox from '../components/Lightbox';
 import Preview, { Still } from '../components/Preview';
 import { TrailerInline } from '../components/Trailer';
+import { GameRepoBox } from '../components/GitHub';
 import { gameTrailer } from '../data/trailers';
 import { Icon, type IconName } from '../components/Icon';
 import NotFound from './NotFound';
@@ -38,7 +39,7 @@ export default function Details() {
         {game.community ? <h1 className="display community-title">{game.title}</h1> : <h1><img src={media.logo} alt={game.title} width={440} height={140} /></h1>}
         {game.community && <p className="credit"><span className="card-community">{game.community.preview ? 'Preview' : 'Community'}</span> Made by {game.community.handle}</p>}
         <p>{game.community?.longDescription ?? game.description}</p>
-        <div className="details-actions"><Link to={`/play/${game.slug}`} className="button primary play"><Icon name="play" filled size={20} />Play</Link><FavoriteButton game={game} large /></div>
+        <div className="details-actions"><Link to={`/play/${game.slug}`} className="button primary play"><Icon name="play" filled size={20} />Play</Link><FavoriteButton game={game} large /><GameRepoBox game={game} /></div>
         {trailer && <a className="text-link watch-trailer" href="#trailer">Watch the {Math.round(trailer.seconds)}-second trailer</a>}
       </div>
     </div>

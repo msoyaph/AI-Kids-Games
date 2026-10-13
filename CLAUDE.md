@@ -204,6 +204,11 @@ play origin dpl_31jaPSNuiWrsuDNF3RBExENwYevF). Both guards logged the owner's ap
   - The main reel would now render TheaBonk v2 footage; retune its offsets before re-rendering it.
 - Capturing: a 3D take fails at under 30 fps when the Mac is loaded (another project's `node --test`
   suites are invisible to the guard). Wait for `sysctl vm.loadavg` < 6 as well.
+- GitHub boxes (owner request): src/components/GitHub.tsx.
+  - RepoBox in the header is hidden under 375 px, where the brand and three buttons don't fit.
+  - GameRepoBox (Code → games/<slug> or community/<slug>, Fork → /fork) sits beside the hero's
+    age badge and in Details' actions.
+  - Marks are inline Octicons, and all links go through ExitGuard.
 - Site: Details shows a Trailer section (src/components/Trailer.tsx TrailerInline, data in
   src/data/game-trailers.json via src/data/trailers.ts) and VideoGame.trailer in schema.ts.
 
