@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.3.0",
+  "release": "2.4.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.3.0",
-    "date": "2026-10-12",
+    "release": "2.4.0",
+    "date": "2026-10-13",
     "approvedBy": "Owner",
-    "scope": "The 60-second trailer on the site (Home \"Watch the trailer\" dialog and the About page: self-hosted AV1/H.264 files under 8 MB that load only on play, muted start, captions, text description), the sizzle-reel tooling in marketing/sizzle, and the README video. All six games stay at the versions live in 2.2.0, which are their latest releases.",
-    "note": "Owner wrote: \"update everything including all the games to live production\". Guard: scripts/check-deployment.ts needs this record for 2.3.0, AIKG_ALLOW_PRODUCTION=2.3.0 in Vercel's Production environment only (set just before the merge), and a build from main."
+    "scope": "Tuck Pop 1.0.0, the seventh game (a kid-friendly block puzzle: Classic, Relax, 60 Adventure levels, a Daily puzzle, earned helpers and themes; imported byte-identical to its verified build, storage audit clean, cover, logo, OG image and previews), the Puzzle and Casual categories, the README game table generated from the manifests, the touch preview tie-break, CI's precise game picker, and Space Sky's and Light Crossing's GPU browser suites moved to the required local release run (npm run release:local, recorded below). The other six games stay at their 2.3.0 versions.",
+    "note": "Owner wrote: \"complete all the phases end to end\", replying to the phase list that ends \"10. Release, after your approval\" (earlier: \"Stop only before the production release\"). Guard: scripts/check-deployment.ts needs this record for 2.4.0, a passing localSuites record for 2.4.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.4.0 in Vercel's Production environment only (set just before the merge), and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
@@ -190,5 +190,33 @@
         "note": "Owner wrote: \"I approve a production deployment for this release.\" Guard: scripts/check-deployment.ts allows production builds only for this version."
       }
     }
-  ]
+  ],
+  "localSuites": {
+    "release": "2.4.0",
+    "commit": "966d126",
+    "suites": [
+      {
+        "game": "space-sky",
+        "version": "2.0.0",
+        "inputsSha256": "4c88d5b9a8d151995703473d1b09dde44abbc352d4254bf6f004251abee42e4d",
+        "command": "npx playwright test --reporter=list,json",
+        "passed": 42,
+        "failed": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "ranAt": "2026-10-13T09:09:02.521Z"
+      },
+      {
+        "game": "light-crossing",
+        "version": "2.0.0",
+        "inputsSha256": "0d32ecc81e1e11c1d80b41619c3eef1516fac32b7b7d42f09a283f0197922232",
+        "command": "npx playwright test --reporter=list,json --workers=2 --retries=1",
+        "passed": 190,
+        "failed": 0,
+        "flaky": 1,
+        "skipped": 0,
+        "ranAt": "2026-10-13T11:16:37.434Z"
+      }
+    ]
+  }
 }

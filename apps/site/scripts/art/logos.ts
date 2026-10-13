@@ -20,6 +20,8 @@ const styles: Record<string,LogoStyle> = {
   'space-sky': { lines: [[{ text: 'Space Sky',fill: ['#fff07a','#ffc23d'] }]],outline: '#3a1f6e',outlineWidth: 17,shadow: '#20124d',depth: 13 },
   // In game: warm cream-to-gold pixel-farm lettering with a dark brown edge.
   'cliff-valley': { lines: [[{ text: 'Cliff Valley',fill: ['#fff6d6','#f3c650'] }]],outline: '#5a3a1c',outlineWidth: 14,shadow: '#2e4a22',depth: 10 },
+  // In game: rounded letters, each one a different block color (Sunny theme), warm brown edge.
+  'tuck-pop': { lines: [[...'Tuck Pop'].map((text,i) => ({ text,fill: ['#ff6f61','#ffb52e','#52c97a','#3fa7f5','#ffffff','#9b7cf6','#ff7fbf','#ff6f61'][i]! }))],outline: '#5a3220',outlineWidth: 14,shadow: '#3b2016',depth: 11,tilt: -3 },
   // In game: stacked capitals, each letter a different logo color.
   'calex-cart': { lines: [[...'CALEX'].map((text,i) => ({ text,fill: ['#ffd23f','#4ce0d2','#ff6fae','#8cff6b'][i % 4] })),[...'CART'].map((text,i) => ({ text,fill: ['#ff6fae','#8cff6b','#ffd23f','#4ce0d2'][i % 4] }))],outline: '#2a2140',outlineWidth: 14,shadow: '#2a2140',depth: 15,tracking: 6,lineGap: -18 }
 };
@@ -40,7 +42,7 @@ function layout(text: string,x: number,y: number) {
   });
   return { path,advance: cursor-x };
 }
-const titles: Record<string,string> = { theabonk: 'TheaBonk','light-crossing': 'Light Crossing','vanex-defense': 'Vanex Defense','space-sky': 'Space Sky','calex-cart': 'Calex Cart','cliff-valley': 'Cliff Valley' };
+const titles: Record<string,string> = { theabonk: 'TheaBonk','light-crossing': 'Light Crossing','vanex-defense': 'Vanex Defense','space-sky': 'Space Sky','calex-cart': 'Calex Cart','cliff-valley': 'Cliff Valley','tuck-pop': 'Tuck Pop' };
 
 function build(slug: string,style: LogoStyle) {
   const shapes: { d: string; fill: Segment['fill'] }[] = [];

@@ -55,12 +55,21 @@ test('only one preview plays at a time on touch devices',async ({ page },info) =
     await page.evaluate(top => scrollTo(0,top),y); await page.waitForTimeout(300);
     expect((await playing(page)).length,`at scroll ${y}`).toBeLessThanOrEqual(1);
   }
-  // Each card with a captured loop plays when it is the one in the middle of the screen.
+  // Scroll each card with a captured loop to the middle: exactly one preview plays, from that card's
+  // row (cards side by side on a tablet tie on height; the one nearest the centre plays).
   const videos = page.locator('.card video[data-game]');
   const slugs = await videos.evaluateAll(list => list.map(video => (video as HTMLVideoElement).dataset.game!));
   expect(slugs.length).toBeGreaterThan(1);
+  const rowOf = (slug: string) => page.locator(`.card video[data-game="${slug}"]`).evaluate(video => Math.round(video.closest('.preview')!.getBoundingClientRect().top));
+  const played = new Set<string>();
   for (const slug of slugs) {
     await page.locator(`.card video[data-game="${slug}"]`).evaluate(video => video.closest('.preview')!.scrollIntoView({ block: 'center' }));
-    await expect.poll(() => playing(page),{ timeout: 15000 }).toEqual([slug]);
+    await expect.poll(async () => {
+      const now = await playing(page);
+      if (now.length !== 1) return `${now.length} playing`;
+      return Math.abs(await rowOf(now[0]!)-await rowOf(slug)) <= 2 ? 'its row' : `${now[0]} (another row)`;
+    },{ timeout: 15000,message: `${slug} centred` }).toBe('its row');
+    played.add((await playing(page))[0]!);
   }
+  expect(played.size).toBeGreaterThan(1);
 });

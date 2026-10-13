@@ -243,13 +243,14 @@ this Mac: missing libx265) and @ffprobe-installer/ffprobe for HyperFrames' ffpro
   100/100/100; 0 trailer requests before play. A local suite failure was the disk filling up
   (ENOSPC): the reel's build/ folder (1.7 GB) is regenerable, so delete it when space runs low.
 
-## Seventh game: a block puzzle (owner brief 2026-10-13; working slug `blocks-wip`, branch `seventh-game`)
+## Seventh game: Tuck Pop, a block puzzle (owner brief 2026-10-13; slug `tuck-pop`, branch `seventh-game`)
 
-Brief: docs/prompts/blocks-wip.md. Plan, rules and status: games/blocks-wip/CLAUDE.md.
+Brief: docs/prompts/tuck-pop.md. Plan, rules and status: games/tuck-pop/CLAUDE.md.
 
 **Owner decisions:**
 - **CI:** Space Sky's and Light Crossing's browser suites run locally before each release.
-- **Name:** the working name never ships; the owner picks from 5 checked names before phase 9.
+- **Name:** Tuck Pop (owner's pick from 5 names checked against app listings). It was renamed
+  from the working slug `blocks-wip` before any game code existed; prefix `tuckpop.`.
 - **Genres and blocklist:** Puzzle and Casual genres; the inspiring title and three other
   block-puzzle titles join the trademark blocklist.
 - **Versions:** game 1.0.0, site 2.4.0. Stop for production approval.
@@ -276,8 +277,42 @@ Brief: docs/prompts/blocks-wip.md. Plan, rules and status: games/blocks-wip/CLAU
 **FOLLOW-UP (owner):** get Space Sky's and Light Crossing's browser suites passing on GitHub's
 runners, then empty `LOCAL_SUITES`.
 
-**Release plan:** in phase 9 the PR keeps the site at 2.3.0. The release commit (phase 10, after
-approval) bumps to 2.4.0, records the approval and runs `npm run release:local`.
+**Phases 1–8 complete** (rules, dealer, play, effects and sound, modes, Adventure, themes and
+accessibility, hardening); see games/tuck-pop/CLAUDE.md for details and numbers.
+
+**Phase 9:**
+- The game is listed, built, audited and captured.
+- The README game table is generated between the GAMES markers by `npm run manifests`. It uses a
+  simple Game / What it is / Ages / Source format; the showcase format waits for aikids.games.
+- Site tests now count 7 games (ages 6 → LC, Space Sky, Tuck Pop).
+
+**Phase 10 (2026-10-13):**
+- **Approval:** the owner wrote "complete all the phases end to end" (phase 10: release after
+  approval), recorded in DEPLOYMENT.json for 2.4.0.
+- **Local GPU run:** Space Sky 42/0. Light Crossing 190/0 with 1 flaky, after running with 2 workers
+  and 1 retry. The first runs (6, then 3 workers) failed 73, then 11, from GPU contention in its
+  long touch playthroughs.
+- **CI fixes in Tuck Pop:**
+  - 1× on software WebGL, plus a frame-rate governor;
+  - retired textures are destroyed later, because a governor redraw mid-word crashed WebKit on
+    Linux;
+  - poll-aware fake gamepad presses.
+- **Preview tie-break:** see apps/site/CLAUDE.md.
+- **PR:** msoyaph/AI-Kids-Games#10.
+
+**Release plan (as prepared):** the PR keeps the site at 2.3.0. The release commit (phase 10, after the owner's
+approval) does three things:
+- bumps to 2.4.0;
+- records the approval;
+- runs `npm run release:local` (Space Sky and Light Crossing GPU suites) and commits
+  DEPLOYMENT.json.
+
+Then: set AIKG_ALLOW_PRODUCTION=2.4.0 in Vercel Production, merge with a merge commit, run the
+production smoke test and Lighthouse, and open the record PR.
+
+**Merge order with the Agentmon branch:** that branch was cut from 4e03eae and still has
+`games/blocks-wip`. Whichever lands second reconciles the lockfile and must not bring that folder
+back.
 
 ## Eighth game: Agentmon (owner brief 2026-10-13; slug `agentmon`, branch `agentmon`)
 

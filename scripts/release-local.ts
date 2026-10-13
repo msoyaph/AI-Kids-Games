@@ -12,6 +12,9 @@ import { LOCAL_SUITES,type LocalSuites } from '../apps/site/scripts/local-suites
 import { readManifest } from './lib/manifest';
 import { buildInputsHash,gameDir,readJson,root,site,writeJson } from './lib/repo';
 
+/** Extra Playwright options per suite. Light Crossing's long touch playthroughs time out when more than two share one GPU; one retry, as on CI (a test that passes on retry is recorded as flaky). */
+const OPTIONS: Record<string,string[]> = { 'space-sky': [],'light-crossing': ['--workers=2','--retries=1'] };
+
 const asked = process.argv.slice(2);
 const unknown = asked.filter(slug => !(LOCAL_SUITES as readonly string[]).includes(slug));
 if (unknown.length) throw new Error(`Not a local GPU suite: ${unknown.join(', ')}. The suites are ${LOCAL_SUITES.join(', ')}.`);
@@ -31,9 +34,10 @@ const commit = execFileSync('git',['rev-parse','--short','HEAD'],{ cwd: root,enc
 let failed = 0;
 for (const game of games) {
   const out = mkdtempSync(join(tmpdir(),`aikg-${game}-`)), report = join(out,'report.json');
-  const command = 'npx playwright test --reporter=list,json';
+  const args = ['playwright','test','--reporter=list,json',...(OPTIONS[game] ?? [])];
+  const command = `npx ${args.join(' ')}`;
   console.log(`\n${game}: ${command} (games/${game})`);
-  const run = spawnSync('npx',['playwright','test','--reporter=list,json'],{ cwd: gameDir(game),stdio: 'inherit',env: { ...process.env,PLAYWRIGHT_JSON_OUTPUT_FILE: report } });
+  const run = spawnSync('npx',args,{ cwd: gameDir(game),stdio: 'inherit',env: { ...process.env,PLAYWRIGHT_JSON_OUTPUT_FILE: report } });
   let stats: { expected: number; unexpected: number; flaky: number; skipped: number };
   try { stats = (JSON.parse(readFileSync(report,'utf8')) as { stats: typeof stats }).stats; } catch { throw new Error(`${game}: Playwright wrote no report (exit ${run.status}).`); } finally { rmSync(out,{ recursive: true,force: true }); }
   const result = { game,version: readManifest(game).version,inputsSha256: buildInputsHash(game).sha256,command,passed: stats.expected,failed: stats.unexpected,flaky: stats.flaky,skipped: stats.skipped,ranAt: new Date().toISOString() };

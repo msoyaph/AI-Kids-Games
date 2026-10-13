@@ -1,6 +1,6 @@
-# Shared-origin storage audit (release 2.2.0, 2026-10-12)
+# Shared-origin storage audit (Tuck Pop added, 2026-10-13)
 
-Result: **CLEAN.** All six games and the website keep their data under their own keys. No build
+Result: **CLEAN.** All seven games and the website keep their data under their own keys. No build
 calls `localStorage.clear()`, uses sessionStorage, IndexedDB, cookies or Cache Storage, or reads,
 changes or deletes another owner's keys. Every build is the exact file recorded in
 `BUILD_IMPORTS.json` (`npm run check:builds`).
@@ -20,6 +20,7 @@ read by hand.
 | Space Sky 2.0.0 | `spacesky.slot.0`–`slot.2`, `spacesky.settings` | none | `__spacesky_probe__` |
 | Calex Cart 0.2.0 | `calexcart.slot.1`–`slot.3`, `calexcart.settings`, `calexcart.lastSlot`, `calexcart.ghost.<slot>.<track>` | `calexcart.playtest` (playtest mode) | `calexcart.__probe` |
 | Cliff Valley 1.0.0 | `cliffvalley.slot.1`–`slot.3`, `cliffvalley.settings` | `cliffvalley.playtest` (`?playtest=1`) | `cliffvalley.__probe` |
+| Tuck Pop 1.0.0 | `tuckpop.save` (profile), `tuckpop.run` (the Classic, Relax and Daily games in progress) | none (its capture route never reads or writes storage) | `tuckpop.__probe` |
 
 The site never adds `?playtest=1` or similar to a game's address, so the special-mode keys only
 appear when someone opens a game file directly with that option.
@@ -55,8 +56,12 @@ game.
   prefix; deleting a slot removes its slot key and only that slot's ghost keys.
 - **Cliff Valley:** `src/core/storage.ts` prefixes every access with `cliffvalley.`; its usage
   meter enumerates storage but skips every key without the prefix.
+- **Tuck Pop:** `src/save/storage.ts` prefixes every access with `tuckpop.` (from `src/config.ts`)
+  and never enumerates or clears; a finished game removes only its own `tuckpop.run` entry (and the
+  key itself once no game is in progress). Its unit tests check that other owners' keys are left
+  untouched and that a full store keeps play going from memory.
 
-## Worst case for all six games plus the site
+## Worst case for all seven games plus the site
 
 Sizes are in characters (localStorage counts string length; 1 KB = 1,024 characters). Browsers
 allow about 5 MB (5,242,880 characters) per origin.
@@ -70,6 +75,7 @@ allow about 5 MB (5,242,880 characters) per origin.
 | Space Sky 2.0.0 | 92 KB | 30 KB | real chapter-3 save 2.6 KB; ≤ 30 KB per slot for a finished game |
 | Calex Cart 0.2.0 | 1,106 KB | 1,000 KB | the game's own worst case, 1.08 MB: a ghost on all 20 tracks in all 3 slots, a full playtest log and settings |
 | Cliff Valley 1.0.0 | 1,051 KB | 100 KB | 300 KB budget per slot, playtest ≤ 150 KB; a year-one finale save measured 32 KB |
+| Tuck Pop 1.0.0 | 53 KB | 7 KB | the profile is refused over 50 KB (enforced) and a maximal one is under 4 KB (tested); the games in progress are at most about 0.8 KB each, three at once |
 | **Total** | **≈ 3.5 MB** | **≈ 1.2 MB** | |
 
 Even with every key of every game at its cap (which no real player reaches: Light Crossing's and

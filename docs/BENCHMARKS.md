@@ -15,7 +15,9 @@ suites on the release machine (with nothing else testing at the same time):
 npm run release:local                      # both suites; or: npm run release:local -- space-sky
 ```
 
-It records each result, the game's version and a hash of the sources it tested in
+Light Crossing's suite runs with two workers and one retry (its long touch playthroughs time out
+when more share one GPU; a test that passes on its retry is recorded as flaky). It records each
+result, the game's version and a hash of the sources it tested in
 `apps/site/DEPLOYMENT.json` (`localSuites`) for the site's current version. Commit that file with
 the release. The production guard (`apps/site/scripts/check-deployment.ts`) refuses a release
 unless both suites passed for that version and for exactly the game sources it ships. The list
