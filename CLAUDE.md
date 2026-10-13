@@ -296,19 +296,24 @@ accessibility, hardening); see games/tuck-pop/CLAUDE.md for details and numbers.
   - 1× on software WebGL, plus a frame-rate governor;
   - retired textures are destroyed later, because a governor redraw mid-word crashed WebKit on
     Linux;
-  - poll-aware fake gamepad presses.
+  - fake gamepad presses last exactly one frame. Held across slow test round-trips, the d-pad's
+    auto-repeat moved focus twice.
 - **Preview tie-break:** see apps/site/CLAUDE.md.
 - **PR:** msoyaph/AI-Kids-Games#10.
 
-**Release plan (as prepared):** the PR keeps the site at 2.3.0. The release commit (phase 10, after the owner's
-approval) does three things:
-- bumps to 2.4.0;
-- records the approval;
-- runs `npm run release:local` (Space Sky and Light Crossing GPU suites) and commits
-  DEPLOYMENT.json.
-
-Then: set AIKG_ALLOW_PRODUCTION=2.4.0 in Vercel Production, merge with a merge commit, run the
-production smoke test and Lighthouse, and open the record PR.
+**2.4.0 LIVE 2026-10-13** (PR #10, merge commit 22fb160; dpl_FtgxLuCNMft5d72MSYiHWmhwvR17):
+- **Guard:** "approved by the owner on 2026-10-13; GPU browser suites passed on 966d126".
+  AIKG_ALLOW_PRODUCTION=2.4.0, set with `vercel env update … production` from a scratch link dir.
+- **Tests and builds:**
+  - CI was green on af74bcc, all seven game jobs included;
+  - the production suite passed 141/0 (72 device and engine skips);
+  - production's Tuck Pop file is byte-identical to the verified build.
+- **Lighthouse mobile (production):**
+  - home 99/100/100/100; details 99/100/100/100;
+  - play 89 (exempt)/100/100/100;
+  - Tuck Pop details 99/100/100/100; Tuck Pop play 99/100/100/100.
+- **Pitfall:** fetch before cutting a branch from `origin/main` after a merge. A stale ref
+  checks out the old tree, which removed games/tuck-pop from the working copy mid-test.
 
 **Merge order with the Agentmon branch:** that branch was cut from 4e03eae and still has
 `games/blocks-wip`. Whichever lands second reconciles the lockfile and must not bring that folder
