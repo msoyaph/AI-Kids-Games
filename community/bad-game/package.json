@@ -1,0 +1,8 @@
+{
+  "name": "community-bad-game",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Block Builder, a community game for AI Kids Games by @bad-maker.",
+  "license": "MIT",
+  "dependencies": {}
+}
