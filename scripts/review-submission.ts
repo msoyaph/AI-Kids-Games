@@ -62,8 +62,10 @@ if (approve) {
   const scenes = state.screens.filter(path => /scene-/.test(path)), others = state.screens.filter(path => !/scene-/.test(path));
   const pictures = [...scenes,...others].slice(0,5);
   if (!pictures.length) { console.error('The review has no screenshots to use as art.'); process.exit(1); }
-  await sharp(pictures[0]).resize(1600,900,{ fit: 'cover' }).webp({ quality: 82 }).toFile(join(media,'cover.webp'));
-  await sharp(pictures[0]).resize(1200,630,{ fit: 'cover' }).jpeg({ quality: 82,mozjpeg: true }).toFile(join(media,'og.jpg'));
+  // The cover is a moment of play (the "play" capture scene) rather than the title screen, whose words would repeat the card's.
+  const cover = scenes.find(path => /scene-play/.test(path)) ?? pictures[0]!;
+  await sharp(cover).resize(1600,900,{ fit: 'cover' }).webp({ quality: 82 }).toFile(join(media,'cover.webp'));
+  await sharp(cover).resize(1200,630,{ fit: 'cover' }).jpeg({ quality: 82,mozjpeg: true }).toFile(join(media,'og.jpg'));
   for (const [index,picture] of pictures.entries()) await sharp(picture).resize(1280,720,{ fit: 'cover' }).webp({ quality: 80 }).toFile(join(media,`shot-${index+1}.webp`));
   spawnSync('npm',['run','-s','manifests'],{ cwd: root,stdio: 'inherit' });
   console.log(`
