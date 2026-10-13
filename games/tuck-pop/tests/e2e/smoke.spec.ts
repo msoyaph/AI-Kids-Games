@@ -1,28 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { GAME } from '../../src/config';
-
-type Rect = { x: number; y: number; w: number; h: number };
-type Snapshot = {
-  screen: string; score: number; moves: number; over: boolean; board: number[]; tray: ({ id: string; color: number } | null)[];
-  play: { selected: number | null }; layout: { board: Rect; slots: Rect[]; cell: number }; persistent: boolean;
-};
-const snapshot = (page: Page) => page.evaluate(hook => (window as unknown as Record<string, { snapshot(): Snapshot }>)[hook]!.snapshot(), GAME.hook);
-
-/** Fails the test on console errors and on any request that leaves the game's own origin. */
-function watch(page: Page) {
-  const problems: string[] = [];
-  page.on('pageerror', error => problems.push(`page error: ${error.message}`));
-  page.on('console', message => { if (message.type() === 'error') problems.push(`console error: ${message.text()}`); });
-  page.on('request', request => { const url = new URL(request.url()); if (!['127.0.0.1:4444', ''].includes(url.host) && !['data:', 'blob:'].includes(url.protocol)) problems.push(`request to ${request.url()}`); });
-  return problems;
-}
-
-async function startClassic(page: Page) {
-  await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Tuck Pop' })).toBeVisible();
-  await page.locator('#classic').click();
-  await expect.poll(async () => (await snapshot(page)).screen).toBe('play');
-}
+import { snapshot, startClassic, watch } from './helpers';
 
 /** Drags tray piece `slot` with the mouse so its center lands on the board's center. */
 async function dragToCenter(page: Page, slot: number) {
@@ -69,7 +47,11 @@ test('keyboard only: pick with 1, place with Enter, move with the arrows', async
   await expect.poll(async () => (await snapshot(page)).moves).toBe(1);
   await page.keyboard.press('Digit2');
   for (const key of ['ArrowUp', 'ArrowUp', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft']) await page.keyboard.press(key);
-  await page.keyboard.press('Enter');
+  // like a player: if it doesn't fit there (the first piece is in the way), move it and try again
+  for (let tries = 0; tries < 10 && (await snapshot(page)).moves < 2; tries++) {
+    await page.keyboard.press('Enter');
+    if ((await snapshot(page)).moves < 2) await page.keyboard.press(tries < 5 ? 'ArrowDown' : 'ArrowRight');
+  }
   await expect.poll(async () => (await snapshot(page)).moves).toBe(2);
   expect(problems).toEqual([]);
 });

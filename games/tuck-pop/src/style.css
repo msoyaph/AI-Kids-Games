@@ -42,8 +42,13 @@ button.icon svg { width: 26px; height: 26px; fill: currentColor; }
 .slot-btn:focus-visible { outline-offset: -4px; }
 
 /* screens and cards */
-.screen { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 16px; overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain;
+/* Screens center their content between two spacers: when it's taller than the screen (a phone on
+   its side) it scrolls from the top instead of spilling out of reach above it. */
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; gap: 16px; overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain;
   padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); text-align: center; }
+/* growing spacers above and below (never below zero, so tall content scrolls from the top) */
+.screen::before, .screen::after { content: ''; flex: 1 0 0; }
+.screen > * { flex: none; }
 .screen.dim { background: rgba(40, 24, 12, 0.35); }
 .card { background: var(--panel); border-radius: 28px; padding: 24px; width: min(420px, 100%); display: grid; gap: 12px; justify-items: stretch; box-shadow: 0 8px 0 var(--soft), 0 18px 40px rgba(0, 0, 0, 0.18); }
 .card.wide { width: min(520px, 100%); }
@@ -67,7 +72,9 @@ button.big { min-height: 60px; font-size: calc(22px * var(--t)); background: var
 .segmented { display: grid; grid-template-columns: 1fr 1fr; background: var(--soft); border-radius: 18px; padding: 4px; gap: 4px; }
 .segmented button { box-shadow: none; background: transparent; min-height: 48px; }
 .segmented button[aria-checked="true"] { background: var(--panel); box-shadow: 0 2px 0 var(--soft); }
-.small-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.small-buttons { display: grid; grid-template-columns: repeat(3, auto); gap: 8px; justify-content: center; }
+.small-buttons button { padding: 0 14px; }
+@media (max-width: 380px) { .small-buttons button { padding: 0 10px; font-size: calc(15px * var(--t)); } }
 .note { font-size: calc(14px * var(--t)); opacity: 0.8; max-width: 30em; }
 
 .badge { justify-self: center; background: var(--accent); color: #fff; border-radius: 999px; padding: 4px 16px; }

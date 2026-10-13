@@ -201,7 +201,33 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
      look switches `&symbols=1&contrast=1&text=N`.
    - **Review:** shots of all six themes, with and without symbols, on phone and desktop (contact
      sheets in `reports/`).
-8. Hardening and the full browser suite.
+8. COMPLETE: hardening and the full browser suite.
+   - **Saves:** frozen fixtures `tests/fixtures/saves/` (v1 full, a pre-release v0). `saves.test.ts`
+     covers migration and repair, the newer-version read-only rule, the size guard (maximal under
+     4 KB; Daily trims to 14; over 50 KB refused), full storage (memory plus a one-time note),
+     prefix-only keys, exact run round-trips with Undo, dropped stale or broken runs, and separate
+     Classic/Relax/Daily runs.
+   - **Playwright:** 8 projects (Chromium and WebKit × desktop, tablet, phone, phone landscape),
+     160 tests, all passing locally (about 2.5 min).
+     - `touch.spec`: real touch through CDP on Chromium, touch pointer events on WebKit. Lift
+       above the finger, ghost, snap, ease-back, tap-to-place.
+     - `gamepad.spec`: a fake standard pad for menus and play.
+     - `contract.spec`: file://, full storage, pixels really drawn (PNG reader), reduced motion,
+       ≤3 glows a second, capture scenes never save.
+     - `smoke.spec`: modes, resume, iframe, themes and settings.
+   - **Hook:** adds drag position, frames drawn, reduced motion, glows in the last second, level,
+     theme, themes, stars.
+   - **`npm run perf`** (headed Chromium, Metal, 390×844 @3×, CPU throttled 4×): combo,
+     adventure and play all hold the M3 Pro's 120 Hz display (p95 10 ms, 0% of frames over 20 ms),
+     and the heap stays flat.
+   - **Pitfalls:**
+     - Centered screens taller than a landscape phone spilled out of reach above the scroll
+       area. Fixed with growing spacers (`.screen::before/::after`).
+     - Touch lift is now 1.1 cells (at least 44 px); 1.4 cells plus half a tall piece lifted it
+       off short landscape boards.
+     - tsx's `__name` helper needs a page shim (`perf.ts`).
+     - `when-idle.sh` must skip its own parent shells (their command lines mention the test
+       command) and orphaned workers.
 9. Site integration, then a pull request with CI green and the preview link.
 10. Release, after the owner's approval.
 

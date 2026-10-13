@@ -76,6 +76,8 @@ export class Scene {
   dpr = 1;
   dirty = true;
   lost = false;
+  /** Frames actually drawn (the test hook reports it). */
+  frames = 0;
   private bgTex: Texture | null = null; private panelTex: Texture | null = null; private glowTex: Texture | null = null;
 
   async init(canvasEl: HTMLCanvasElement, layout: Layout, view: View, dpr: number) {
@@ -142,6 +144,10 @@ export class Scene {
   /** Hides the board and tray (the home screen shows the background and a few drifting blocks). */
   showWorld(on: boolean) { if (this.world.visible !== on) { this.world.visible = on; this.deco.visible = !on; this.dirty = true; } }
 
+  /** The menu's box on the home screen: drifting blocks never sit behind it. */
+  private decoAvoid: { x: number; y: number; w: number; h: number } | null = null;
+  avoidDeco(r: { x: number; y: number; w: number; h: number } | null) { this.decoAvoid = r; this.layoutDeco(); this.dirty = true; }
+
   private layoutDeco() {
     const l = this.layout, size = Math.max(36, Math.min(l.w, l.h) * 0.09);
     const portrait = l.h >= l.w;
@@ -152,6 +158,8 @@ export class Scene {
       if (portrait) { d.x = l.w * (0.05 + along * 0.9); d.y = first ? l.h * (0.03 + across * 0.12) : l.h * (0.87 + across * 0.1); }
       else { d.x = first ? l.w * (0.04 + across * 0.12) : l.w * (0.84 + across * 0.12); d.y = l.h * (0.05 + along * 0.9); }
       d.s.texture = this.atlas.block[1 + (i % 6)]!; d.s.scale.set((size / this.atlas.cell) * (0.7 + (i % 3) * 0.2)); d.s.alpha = 0.85; d.s.rotation = d.spin;
+      const a = this.decoAvoid, m = size;
+      d.s.visible = !a || !(d.x > a.x - m && d.x < a.x + a.w + m && d.y > a.y - m && d.y < a.y + a.h + m);
       d.s.position.set(d.x, d.y);
     });
   }
@@ -264,8 +272,11 @@ export class Scene {
     }
     this.glow.alpha = this.fx.glow;
     this.world.position.set(this.fx.shakeX, this.fx.shakeY);
-    if (!this.lost && (this.dirty || busy || animating)) { this.renderer.render(this.stage); this.dirty = false; }
+    if (!this.lost && (this.dirty || busy || animating)) { this.renderer.render(this.stage); this.dirty = false; this.frames++; }
   }
+
+  /** Where the dragged piece is (CSS px), for the test hook. */
+  dragState() { const r = this.drag.root; return { visible: r.visible, x: r.position.x, y: r.position.y, scale: r.scale.x }; }
 
   /** Board-cell center in CSS px. */
   cellCenter(i: number) { const l = this.layout; return { x: l.board.x + (i % 8 + 0.5) * l.cell, y: l.board.y + (Math.floor(i / 8) + 0.5) * l.cell }; }

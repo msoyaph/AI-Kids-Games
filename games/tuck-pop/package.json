@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "sim": "tsx scripts/simulate.ts",
     "shots": "tsx scripts/shots.ts",
-    "levels": "tsx scripts/levels.ts"
+    "levels": "tsx scripts/levels.ts",
+    "perf": "tsx scripts/perf.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.0",

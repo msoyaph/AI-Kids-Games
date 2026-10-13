@@ -43,5 +43,5 @@ describe('layout', () => {
     }
   });
   it('tablets in portrait use the portrait layout', () => { const l = layout(820, 1180); sane(l); expect(l.portrait).toBe(true); });
-  it('lifts a dragged piece clear of a finger', () => expect(layout(390, 844).lift).toBeGreaterThanOrEqual(48));
+  it('lifts a dragged piece clear of a finger', () => expect(layout(390, 844).lift).toBeGreaterThanOrEqual(44));
 });

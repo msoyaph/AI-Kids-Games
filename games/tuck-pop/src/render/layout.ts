@@ -65,7 +65,7 @@ function finish(w: number, h: number, portrait: boolean, board: Rect, tray: Rect
   // Tray pieces share one cell size (sizes stay comparable); a 3×3 fits any slot with a margin,
   // and the rare piece that would still be too wide (a 5-long line) shrinks a little (trayFit).
   const trayCell = Math.min(cell * 0.6, slots[0].w / 3.6, slots[0].h / 3.6);
-  return { w, h, portrait, board, cell, tray, slots, trayCell, hud, helpers, pause, streak, lift: Math.max(48, cell * 1.4) };
+  return { w, h, portrait, board, cell, tray, slots, trayCell, hud, helpers, pause, streak, lift: Math.max(44, cell * 1.1) };
 }
 
 /** The cell size for one piece in a tray slot: the shared size, unless the piece is too wide or tall for the slot. */

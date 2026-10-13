@@ -90,6 +90,7 @@ function show(next: ScreenId) {
   const focus: Partial<Record<ScreenId, string>> = { home: '#classic', pause: '#resume', over: '#again', offer: '#offer-no', settings: '#settings-done', help: '#help-done', themes: '#theme-grid [aria-checked="true"]', map: '#level-grid .next, #level-grid button:not([disabled])', intro: '#intro-start', done: '#done-next:not([hidden]), #done-map' };
   if (focus[next] && !capture) requestAnimationFrame(() => $(focus[next]!).focus({ preventScroll: true }));
   if (next === 'home') { refreshHome(); syncMusic(); }
+  requestAnimationFrame(avoidMenu);
   scene.dirty = true;
 }
 
@@ -664,11 +665,21 @@ function frame(now: number) {
   requestAnimationFrame(frame);
 }
 
+/** Tells the canvas where the open menu is, so the drifting blocks stay out from behind it. */
+function avoidMenu() {
+  const host = overlays.map(id => $(`#${id}`)).find(el => !el.hidden && el.classList.contains('screen') && !el.classList.contains('dim'));
+  if (!host) { scene.avoidDeco(null); return; }
+  const kids = [...host.children].filter((el): el is HTMLElement => el instanceof HTMLElement && !el.hidden);
+  if (!kids.length) { scene.avoidDeco(null); return; }
+  const boxes = kids.map(el => el.getBoundingClientRect()), x = Math.min(...boxes.map(b => b.left)), y = Math.min(...boxes.map(b => b.top));
+  scene.avoidDeco({ x, y, w: Math.max(...boxes.map(b => b.right)) - x, h: Math.max(...boxes.map(b => b.bottom)) - y });
+}
+
 function resize() {
   lay = computeLayout(innerWidth, innerHeight, insets());
   scene.resize(lay, dpr());
   scene.syncBoard(game); scene.syncTray(game); scene.streak(game.streak, game.dry); scene.selectSlot(playCtl.selected);
-  positionHud();
+  positionHud(); avoidMenu();
 }
 
 // ---- capture mode: the game plays itself ----
@@ -695,6 +706,8 @@ function hook() {
         helpers: { ...profile.helpers }, settings: { ...profile.settings }, play: playCtl.describe(),
         layout: { board: lay.board, slots: lay.slots, cell: lay.cell, portrait: lay.portrait, lift: lay.lift, bonus: scene.bonusRect() },
         canMove: canMove(game), particles: scene.fx.alive(), tweens: tweensRunning(), audio: audioState(), persistent: persistent(), readOnly,
+        drag: scene.dragState(), frames: scene.frames, reduced: reduced(), glowsLastSecond: scene.fx.flashes.count(performance.now()),
+        level: level?.id ?? null, theme: viewTheme(), themes: [...profile.themes], stars: profile.adv,
       }),
     }),
   });
