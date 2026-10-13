@@ -44,10 +44,11 @@ test.describe('with community games',() => {
     // First-party lists stay first-party: the catalog and its count are unchanged.
     await page.goto('/games'); await expect(page.locator('main')).not.toContainText('Test Garden');
     for (const path of ['/','/community','/games']) { await page.goto(path); await expect(page.locator('main')).not.toContainText('Test Gone'); }
+    expect(errors).toEqual([]); expect(external).toEqual([]);
+    // (The browser logs each 404 below as a failed resource, so they come after the error check.)
     expect((await page.goto('/game/test-gone'))?.status()).toBe(404);
     expect((await page.goto('/play/test-gone'))?.status()).toBe(404);
     await expect(page.getByRole('heading',{ level: 1 })).toBeVisible();
-    expect(errors).toEqual([]); expect(external).toEqual([]);
   });
 
   test('details: credit, preview note, safety, favorites and the report link behind the grown-up check',async ({ page }) => {
