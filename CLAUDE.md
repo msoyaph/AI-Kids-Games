@@ -135,7 +135,22 @@ commit (`npm run review-submission -- <PR> --approve`).
      repo, author_association OWNER) may change approval, listing or sourceCommit, or add the
      game's art. Without that, a merged submission could list itself.
    - Left as is: the trailer video still says "List your game: coming soon" (a rendered asset).
-8. The end-to-end proof.
+8. IN PROGRESS: the end-to-end proof.
+   - Pipeline PR #17 (community-pipeline → seo-launch, draft).
+   - The simulated contributor works from a scratch clone with its own git identity (no fork of
+     the owner's own repo is possible).
+     - #18 `community/star-sprint`: Star Sprint, a real small game by @starsprint-maker. Stays
+       unapproved; never merge.
+     - #19 `community/bad-game`: deliberately bad (network, eval, clear(), 2.2 MB, "Minecraft",
+       self-approval, a file outside its folder, an unsigned commit). Close it after CI reports.
+   - Pitfalls:
+     - Vercel installs only a project's own workspace dependencies: apps/play lists its build
+       packages, and the site's tsc must not reach the checker's modules.
+     - vercel.json rejects `$comment`.
+     - `vercel curl` bypasses protection only for the project the folder is linked to: use
+       scratchpad `vlink` (site) and `vlink-play` (play).
+     - Agentmon's sessions run heavy suites back to back; local browser runs wait for 60 quiet
+       seconds (scratchpad community-run.sh).
 
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
 
