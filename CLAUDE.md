@@ -135,14 +135,23 @@ commit (`npm run review-submission -- <PR> --approve`).
      repo, author_association OWNER) may change approval, listing or sourceCommit, or add the
      game's art. Without that, a merged submission could list itself.
    - Left as is: the trailer video still says "List your game: coming soon" (a rendered asset).
-8. IN PROGRESS: the end-to-end proof.
-   - Pipeline PR #17 (community-pipeline → seo-launch, draft).
+8. COMPLETE: the end-to-end proof. The summary is on #17 (pipeline PR, community-pipeline →
+   seo-launch).
    - The simulated contributor works from a scratch clone with its own git identity (no fork of
      the owner's own repo is possible).
-     - #18 `community/star-sprint`: Star Sprint, a real small game by @starsprint-maker. Stays
-       unapproved; never merge.
-     - #19 `community/bad-game`: deliberately bad (network, eval, clear(), 2.2 MB, "Minecraft",
-       self-approval, a file outside its folder, an unsigned commit). Close it after CI reports.
+   - #18 Star Sprint by @starsprint-maker (stays unapproved and open; never merge):
+     - 14/14 checks in CI;
+     - served on the play preview, and shown on the site preview's shelf;
+     - played framed in a browser: the parent page and fetch were blocked;
+     - review kit: REVIEW.md, screens and a recording.
+   - #19 Block Builder (closed, branch deleted): CI named every planted problem.
+     - The self-approval is caught only for non-owners: PRs from the owner's account are `OWNER`.
+       The local check and the unit tests cover it.
+   - The approval was simulated offline (stand-in remote plus a gh shim). --approve then produced
+     production site and play builds serving the game; one later edit dropped it.
+   - Lighthouse (fixture build): home 93/100/100/100; community 99/100 after the heading fix;
+     submit 99/100/100/100; community details 98/100/100/100; community play 99/100/100/100.
+   - The protection-bypass secrets `vercel curl` created on both projects were revoked.
    - Pitfalls:
      - Vercel installs only a project's own workspace dependencies: apps/play lists its build
        packages, and the site's tsc must not reach the checker's modules.
