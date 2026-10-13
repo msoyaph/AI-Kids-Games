@@ -14,7 +14,10 @@ function busy() {
   const rows = out.split('\n').map(line => line.trim().match(/^(\d+)\s+(\d+)\s+(.*)$/)).filter(Boolean).map(m => ({ pid: +m[1], ppid: +m[2], cmd: m[3] }));
   const mine = new Set([process.pid]);
   for (let p = process.ppid, guard = 0; p > 1 && guard < 50; guard++) { mine.add(p); p = rows.find(r => r.pid === p)?.ppid ?? 0; }
-  return rows.filter(r => !mine.has(r.pid) && HEAVY.some(re => re.test(r.cmd)) && !/quiet-check/.test(r.cmd));
+  // Only real runners and browsers count: not waiting wrappers (shells, another session's
+  // when-idle.sh, our own when-quiet.sh) and not orphaned leftovers (owned by launchd, ppid 1).
+  const wrapper = (cmd) => /^(\/bin\/)?(zsh|bash|sh)\b/.test(cmd) || /when-idle|when-quiet|quiet-check/.test(cmd);
+  return rows.filter(r => !mine.has(r.pid) && r.ppid !== 1 && HEAVY.some(re => re.test(r.cmd)) && !wrapper(r.cmd));
 }
 
 function freeGB() {

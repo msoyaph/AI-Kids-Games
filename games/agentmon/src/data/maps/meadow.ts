@@ -1,0 +1,55 @@
+/** The Meadow Path (route 1): from Brightmoor north towards the coast and Saltwhistle. */
+import { townsLook } from '../cast';
+import type { MapDef } from '../../core/world/map';
+
+export const meadowPath: MapDef = {
+  id: 'meadow-path', name: 'Meadow Path', music: 'route-meadow', outdoor: true, battleBg: 'meadow',
+  rows: [
+    'TTTTTTTTTT::TTTTTTTTTTTT',
+    'T.........::...........T',
+    'T..,,,,...::....,,,,,..T',
+    'T..,,,,,..::...,,,,,,..T',
+    'T...,,,...::....,,,,...T',
+    'T.........::...........T',
+    'TTT.......:::::::......T',
+    'T.....E.........::..B..T',
+    'T..B............::.....T',
+    'T.....,,,,,,....::.....T',
+    'T....,,,,,,,,...::.....T',
+    'T....,,,,,,,,...::.....T',
+    'T.....,,,,,,....::...""T',
+    'T...............::...""T',
+    'T..::::::::::::::......T',
+    'T..::..................T',
+    'T..::...~~~~~..........T',
+    'T..::..~~~~~~~..,,,,...T',
+    'T..::...~~~~~..,,,,,,..T',
+    'T..::...........,,,,...T',
+    'T..::.....B.....,,.....T',
+    'T..::::::::::..........T',
+    'T..........::..........T',
+    'TT..,,,,...::...,,,,..TT',
+    'T...,,,,,..::..,,,,,...T',
+    'T....,,,...::...,,,....T',
+    'T..........::..........T',
+    'TTTTTTTTTT::TTTTTTTTTTTT',
+  ],
+  objects: [
+    { kind: 'sign', x: 12, y: 26, text: 'Meadow Path. North: Saltwhistle, by the sea.' },
+    { kind: 'sign', x: 9, y: 1, text: 'Saltwhistle is just ahead. Listen for the sea!' },
+    { kind: 'gift', x: 21, y: 13, id: 'meadow-snack', item: 'honey-drop' },
+    { kind: 'gift', x: 1, y: 19, id: 'meadow-berry', item: 'pep-berry' },
+  ],
+  warps: [],
+  edges: [
+    { side: 's', to: 'brightmoor', offset: 4 },
+    { side: 'n', to: 'saltwhistle', offset: 0 },
+  ],
+  npcs: [
+    { id: 'agent-pia', name: 'Pia', x: 12, y: 22, dir: 1, look: townsLook('pia', { agent: true }), talk: 'trainer-agent-pia', trainer: 'agent-pia' },
+    { id: 'agent-tomo', name: 'Tomo', x: 18, y: 7, dir: 0, look: townsLook('tomo', { agent: true, hat: 'cap', hatColor: 0x4fa66a }), talk: 'trainer-agent-tomo', trainer: 'agent-tomo' },
+    { id: 'hiker-june', name: 'Ms. June', x: 6, y: 14, dir: 0, look: townsLook('june', { hat: 'sunhat', hatColor: 0xffd84a }), talk: 'meadow-june' },
+  ],
+  triggers: [{ x: 10, y: 0, w: 2, h: 1, script: 'meadow-north' }],
+  wild: ['meadow-path'],
+};

@@ -11,7 +11,8 @@ import './style.css';
 import { GAME } from './config';
 import { App } from './game/app';
 import { SheetScene } from './game/scenes/sheet';
-import { TitleScene } from './game/scenes/title';
+import { startAdventure, TitleScene } from './game/scenes/title';
+import { Game } from './game/game';
 import { createRenderer } from './render/renderer';
 import type { PoseName } from './render/sprites';
 
@@ -46,8 +47,13 @@ async function boot() {
   const ui = document.getElementById('ui')!;
   const host = await createRenderer(root, lowQuality);
   app = new App(host, ui, capture);
+  const game = new Game(app);
+  (window as unknown as { __agentmonGame?: Game }).__agentmonGame = undefined;
   if (sceneParam === 'sheet') app.go(new SheetScene({ shimmer: params.get('shimmer') === '1', pose: (params.get('pose') as PoseName) ?? 'idle', small: params.get('small') === '1' }));
-  else app.go(new TitleScene());
+  else if (params.has('quickstart')) {
+    // Tests and quick tries: a new adventure in slot 3 with a default look, straight into Gran's house.
+    startAdventure(game, 3, 0, { skin: 1, hair: 0, hairColor: 0, outfit: 0 }, (params.get('difficulty') as 'easy' | 'normal' | 'hard') ?? 'normal');
+  } else app.go(new TitleScene(game));
   app.start();
 }
 

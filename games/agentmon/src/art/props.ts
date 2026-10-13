@@ -219,3 +219,48 @@ export function crate(): PixelCanvas {
   c.rect(1, 3, 14, 12, P.wood3).rect(1, 3, 14, 2, P.wood4).line(2, 5, 13, 14, P.wood1).line(13, 5, 2, 14, P.wood1);
   return c.outline(P.ink, true);
 }
+
+// ---- indoors ---------------------------------------------------------------------------------
+
+export function bed(): PixelCanvas {
+  const c = new PixelCanvas(16, 32);
+  c.rect(1, 2, 14, 28, P.wood2).rect(2, 3, 12, 6, P.white).rect(2, 10, 12, 18, 0x6f9fe0).rect(2, 10, 12, 2, 0x9fc0f0);
+  return c.outline(P.ink, true);
+}
+
+export function table(): PixelCanvas {
+  const c = new PixelCanvas(32, 16);
+  c.rect(1, 2, 30, 8, P.wood3).rect(1, 2, 30, 2, P.wood4).rect(3, 10, 3, 5, P.wood1).rect(26, 10, 3, 5, P.wood1);
+  c.circle(10, 4, 2, P.white).circle(20, 4, 2, P.flowerPink);
+  return c.outline(P.ink, true);
+}
+
+export function shelf(): PixelCanvas {
+  const c = new PixelCanvas(16, 32);
+  c.rect(1, 2, 14, 28, P.wood1).rect(2, 3, 12, 26, P.wood2);
+  for (const y of [9, 17, 25]) c.rect(2, y, 12, 2, P.wood0);
+  const cols = [0xd9604f, 0x4f7fd9, 0x4fa66a, 0xe8a23a, 0x9a5fb8];
+  for (const y of [4, 12, 20]) for (let x = 3; x < 13; x += 2) c.rect(x, y, 2, 5, cols[(x + y) % 5]!);
+  return c.outline(P.ink, true);
+}
+
+export function counter(w = 3): PixelCanvas {
+  const c = new PixelCanvas(16 * w, 24);
+  c.rect(0, 6, 16 * w, 16, P.wood2).rect(0, 4, 16 * w, 4, P.wood4).rect(0, 20, 16 * w, 2, P.wood0);
+  return c.outline(P.ink, true);
+}
+
+/** The Rest Stop's cozy nest: Agentmon nap here and wake up full of energy. */
+export function restNest(): PixelCanvas {
+  const c = new PixelCanvas(32, 24);
+  c.ellipse(16, 15, 15, 8, 0xc99a62).ellipse(16, 13, 12, 6, 0xffe6c8).ellipse(16, 13, 9, 4, 0xfff4e4);
+  c.circle(16, 6, 3, 0xff6b8a).circle(12, 6, 3, 0xff6b8a).poly([[9, 7], [19, 7], [14, 12]], 0xff6b8a);
+  return c.outline(P.ink, true);
+}
+
+export function rugPlant(): PixelCanvas {
+  const c = new PixelCanvas(16, 24);
+  c.rect(4, 16, 8, 7, 0xc0704a).rect(3, 15, 10, 2, 0xd8885a);
+  c.ellipse(8, 9, 6, 7, P.leaf).ellipse(5, 7, 3, 4, P.leafLight).ellipse(11, 6, 3, 4, P.leafDark);
+  return c.outline(P.ink, true);
+}

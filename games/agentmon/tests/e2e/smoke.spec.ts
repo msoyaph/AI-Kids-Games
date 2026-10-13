@@ -1,20 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
+import { watch } from './helpers';
 
 const HOOK = '__agentmon';
 type Snapshot = { scene: string; renderer: string; frames: number; creatures?: number };
 const snapshot = (page: Page) => page.evaluate(hook => (window as unknown as Record<string, { snapshot(): Snapshot }>)[hook]!.snapshot(), HOOK);
-
-/** Fails the test on console errors and on any request that leaves the game's own origin. */
-export function watch(page: Page) {
-  const problems: string[] = [];
-  page.on('pageerror', error => problems.push(`page error: ${error.message}`));
-  page.on('console', message => { if (message.type() === 'error') problems.push(`console error: ${message.text()}`); });
-  page.on('request', request => {
-    const url = new URL(request.url());
-    if (!['127.0.0.1:4246', ''].includes(url.host) && url.protocol !== 'data:' && url.protocol !== 'blob:') problems.push(`request to ${request.url()}`);
-  });
-  return problems;
-}
 
 test('the title screen starts with no errors and no network', async ({ page }) => {
   const problems = watch(page);

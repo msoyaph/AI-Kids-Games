@@ -110,14 +110,18 @@ export function terrainPixel(t: Ter, x: number, y: number, theme = 0): number {
       const plank = y % 6 === 0 || (x + Math.floor(y / 6) * 5) % 16 === 0;
       return plank ? P.wood1 : hash32(Math.floor((x + Math.floor(y / 6) * 5) / 16), Math.floor(y / 6), 2) % 3 === 0 ? P.wood2 : P.wood3;
     }
-    case 'rug': {
-      const edge = x % 16 < 1 || y % 16 < 1;
-      return edge ? 0xb84a5a : (x + y) % 6 < 3 ? 0xd9604f : 0xe8806a;
-    }
+    case 'rug': return (x + y) % 8 < 4 ? 0xd9604f : (x - y + 64) % 8 < 1 ? 0xffd8a8 : 0xe8806a;
     case 'stairs': return y % 4 < 1 ? P.r1 : y % 4 < 2 ? P.r3 : P.r2;
     // cliff tops are raised grass (the rock face is drawn on their lower edge)
     case 'cliff': return terrainPixel('grass', x, y, 1);
-    case 'wall': return (y % 8 === 0 || (x + ((y >> 3) % 2) * 8) % 16 === 0) ? P.r1 : P.r2;
+    case 'wall': {
+      if (theme === 3) {
+        // indoor wallpaper with a wood skirting board on the lowest row of the wall
+        if (y % 16 >= 12) return y % 16 === 12 ? P.wood4 : P.wood2;
+        return (x % 8 === 0) ? 0xf0d8b4 : (x + y) % 16 === 4 ? 0xffd8c8 : 0xfbe8c8;
+      }
+      return (y % 8 === 0 || (x + ((y >> 3) % 2) * 8) % 16 === 0) ? P.r1 : P.r2;
+    }
   }
 }
 

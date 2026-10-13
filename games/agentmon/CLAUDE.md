@@ -18,7 +18,12 @@ carry on from "Next".
   leave it alone.
 - **Heavy runs:** before any browser test, capture or long simulation run
   `node games/agentmon/scripts/quiet-check.mjs` (or `--wait`). Never run heavy work alongside
-  another session's tests.
+  another session's tests. Easiest: `sh scripts/when-quiet.sh e2e|sim|shot …` (from
+  games/agentmon) waits until quiet, then runs Playwright / the sims / a screenshot. It takes task
+  names so its own command line never contains "playwright test": Tuck Pop's `when-idle.sh` and
+  our `quiet-check.mjs` both look for that text, and two waiting scripts that match each other wait
+  forever (that happened once). `quiet-check.mjs` ignores shells, waiting wrappers and orphans
+  (ppid 1).
 - **Disk:** check free space at the start of every phase (`df -h ~`). Under 2 GB: clean only our
   own regenerable files (games/agentmon/test-results, dist, reports/tmp); still under → stop and ask.
 - Before every commit: `git log` for commits this session didn't make (the other session commits
@@ -109,6 +114,18 @@ Ports: dev 5246, preview 4246.
   (speckle noise looked busy). Corner rounding was tried and dropped (it made notch artifacts).
 - 2026-10-13 The build keeps the starter's strict CSP (no eval): `import 'pixi.js/unsafe-eval'`
   (Pixi's no-eval polyfills) must stay first in `src/main.ts`, or WebGL setup fails.
+- 2026-10-13 Overworld: trainers on routes are opt-in (talk to them to spar); only Keepers, rivals
+  and story bosses are part of the story. Wild Agentmon wander only on their habitat terrain, never
+  step onto or next to the player, and come back 25–45 s after leaving. Walking 0.2 s/tile, hold B
+  to hurry (0.13 s), ice slides. Tap-to-move: tap a tile to walk there, tap a person/creature/thing
+  to walk next to it and interact. A quick tap in the touch-stick zone also walks there.
+- 2026-10-13 Field abilities work from anyone you've befriended (team or Agent Base), so no friend
+  is ever "needed on the team". Snipped vines / melted ice / powered machines stay that way (flags).
+- 2026-10-13 Read-aloud: auto-read is off by default (the 🔊 button on every line works anyway);
+  only local voices. Text speed normal (50 chars/s); any press shows the whole line.
+- 2026-10-13 Autosave: every map change, every spar, every Rest Stop nap, and every minute.
+  `?quickstart` starts a test adventure in slot 3 (Easy/Normal/Hard via `&difficulty=`);
+  `&fasttext` shows lines instantly (tests).
 - 2026-10-13 Field Guide facts live in `src/data/facts.ts` with a "check" source per fact; facts
   verified by web search where unsure (popcorn 6,700 years, capybara ~5 min, manatee ~20 min, lemons).
 
@@ -155,8 +172,8 @@ Franchise creatures and characters are described here, not named (this is a publ
 | 1 Core rules (battle, energy, status, xp, AI, befriend, save codec) | done (72 unit tests) |
 | 2 Content data + balance sim + level curve | done |
 | 3 Art foundation (renderer, atlas, 52 creature recipes, tiles, characters, sheet) | done |
-| 4 Overworld (maps, movement, NPCs, dialogue + read-aloud, encounters, inputs, Rest Stops, shops) | next |
-| 5 Battle + befriend scenes, evolution | |
+| 4 Overworld (maps, movement, NPCs, dialogue + read-aloud, encounters, inputs, Rest Stops, shops) | done (153 unit tests; keyboard opening + smoke e2e on desktop Chromium) |
+| 5 Battle + befriend scenes, evolution | next |
 | 6 Puzzles + 6 Trials + solver tests + field abilities | |
 | 7 World + story content, post-game | |
 | 8 Menus, Agent Base, save slots, tutorials, stuck helper, reading level | |
@@ -186,10 +203,32 @@ scripts/creature-sheet.ts [out.png] [--poses] [--small] [--shimmer] [--only=a,b]
 scripts/art-sheet.ts chars|icons|scene`; in-browser: `node scripts/shot.mjs "scene=sheet" out.png`
 (after a build; quiet-check first). PNGs go to `reports/tmp/` (git-ignored). Build ≈ 615 KB.
 
-**Next:** phase 4, the overworld. Already written (uncommitted until phase 4 lands): map format
-`src/core/world/map.ts`, world rules `src/core/world/world.ts`, scripts `src/core/script.ts`, the
-copied TheaBonk stick `src/input/stick.ts` and `src/ui/glass.css`. Still to do: input (keyboard,
-gamepad, touch glass controls, tap-to-move), the overworld scene (baked ground, y-sorted sprites,
-camera, smooth steps, wild creatures, NPCs), dialogue box + read-aloud, script runner, session
-(new game / save / load / autosave), Brightmoor + Academy + Meadow Path + a house/Rest Stop/shop
-interior, and tests.
+**Phase 3 commit note:** its message says "108 unit tests"; the real count at that commit was 90.
+
+**Phase 4 notes:** world rules `src/core/world/` (map.ts parse/footprint, world.ts movement,
+abilities, wild spawns, path.ts BFS), scripts `src/core/script.ts` (the `Cmd` union) run by
+`src/game/runner.ts` against a `ScriptHost` (the overworld scene). `src/game/game.ts` owns input,
+focus, dialogue, touch controls, toast, fade, tutorials; `session.ts` owns the game state, saving
+and befriending; `scenes/overworld.ts` is the walking scene and `ScriptHost`. Maps: `src/data/maps/`
+(Brightmoor, Gran's house, neighbour, Academy, Academy Garden, Rest Stop, shop, Meadow Path);
+dialogue `src/data/dialogue/` (chapter 0); cast, shops, tutorials, quests in `src/data/`.
+UI in `src/ui/` (dialogue + read-aloud, focus, menus, shop, new game, touch glass controls).
+Inputs: `src/input/input.ts` (keyboard, gamepad, touch stick), tap-to-move in the scene.
+`scenes/battle-host.ts` is a phase 4 stand-in (spars resolve with the AI-vs-AI runner). E2E: the
+keyboard opening (wake up → Nell → garden → partner → spar with Juno) in `tests/e2e/opening.spec.ts`.
+Test fix: its walk helper used to hold a key for a poll interval (100–350 ms) and count steps;
+a held key keeps walking (also right after a door, as intended), so it took an extra step after
+Gran's door and walked into the sign. It now holds the key until the exact target tile (the tile
+changes at the start of a step, so letting go then never overshoots) or until a named map loads.
+Also committed with phase 4 but **not wired in yet** (written ahead, unit-tested where pure):
+phase 5 `src/game/battle.ts`, `render/battle-view.ts`, `render/spark-ring.ts`, `render/evolution.ts`,
+`ui/battle-ui.ts`, `ui/mood-match.ts`, `art/backdrops.ts`; phase 6 `src/core/puzzle/` (engine +
+BFS solver), `data/trials.ts` (36 rooms, all solved by `tests/unit/trials.test.ts`),
+`art/trial-art.ts`, `game/scenes/trial.ts`. Review helpers: `scripts/backdrop-sheet.ts`,
+`scripts/room-sheet.ts`, `scripts/rooms.ts` (solve/print rooms).
+
+**Next:** phase 5, battles and befriending on screen. The real battle host is drafted in
+`reports/tmp/battle-host.phase5.ts` (git-ignored; if it is gone, rebuild it from `game/battle.ts`:
+`playBattle` + `playSparkRing`/`playMoodMatch` + `BattleView` + `BattleUI`). Swap it in as
+`src/game/scenes/battle-host.ts`, add capture routes `?scene=battle|befriend|evolution&seed=`
+(never save), lose → Rest Stop, evolution after battles, then browser-check and commit.
