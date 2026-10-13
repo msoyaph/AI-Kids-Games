@@ -34,6 +34,12 @@ for (const size of ['phone', 'desktop'] as const) {
     { name: `${size}-adventure`, url: '/?scene=adventure&hud=1', size, at: async p => { await until(p, s => s.moves >= 4); await p.waitForTimeout(400); } },
   );
 }
+for (const t of ['classic', 'wood', 'candy', 'ocean', 'space', 'night']) for (const size of ['phone', 'desktop'] as const) {
+  SHOTS.push({ name: `${size}-theme-${t}`, url: `/?scene=themes&theme=${t}&hud=1`, size, at: async p => { await until(p, s => s.moves >= 3); await p.waitForTimeout(450); } });
+  SHOTS.push({ name: `${size}-theme-${t}-symbols`, url: `/?scene=themes&theme=${t}&hud=1&symbols=1`, size, at: async p => { await until(p, s => s.moves >= 3); await p.waitForTimeout(450); } });
+}
+SHOTS.push({ name: 'phone-contrast', url: '/?scene=themes&theme=classic&hud=1&contrast=1&symbols=1', size: 'phone', at: async p => { await until(p, s => s.moves >= 3); await p.waitForTimeout(450); } });
+SHOTS.push({ name: 'phone-themes-screen', url: '/?scene=themes-screen', size: 'phone', at: async p => { await p.waitForTimeout(400); } });
 SHOTS.push({ name: 'landscape-play', url: '/?scene=play&hud=1&speed=2', size: 'landscape', at: async p => { await until(p, s => s.moves >= 6); await p.waitForTimeout(500); } });
 
 async function server() {

@@ -4,7 +4,8 @@
  */
 import './style.css';
 import { GAME } from './config';
-import { theme as themeById } from './data/themes';
+import { THEMES, theme as themeById, type ThemeId } from './data/themes';
+import { earned as themeEarned, progressText, unlockThemes } from './data/unlocks';
 import { pollPad, type PadButton } from './input/gamepad';
 import { Play } from './play';
 import { layout as computeLayout, type Insets, type Layout, type Rect } from './render/layout';
@@ -28,8 +29,15 @@ const params = new URLSearchParams(location.search);
 const capture = params.has('scene');
 
 // ---- profile and settings ----
-// The capture route never reads or writes saves: it plays with fresh defaults.
+// The capture route never reads or writes saves: it plays with fresh defaults (and can show the
+// accessibility looks: &symbols=1, &contrast=1, &text=1|2).
 const loaded = capture ? { profile: defaults(), readOnly: true } : loadProfile();
+if (capture) {
+  const q = new URLSearchParams(location.search);
+  loaded.profile.settings.symbols = q.has('symbols'); loaded.profile.settings.contrast = q.has('contrast');
+  loaded.profile.settings.text = (Number(q.get('text')) || 0) as 0 | 1 | 2;
+  loaded.profile.settings.sound = loaded.profile.settings.music = false;
+}
 let profile: Profile = loaded.profile;
 const readOnly = loaded.readOnly;
 const persist = () => { if (capture) return; if (!saveProfile(profile, readOnly) && !readOnly) storageTrouble(); };
@@ -64,8 +72,8 @@ let shownTheme = '';
 function syncView() { const key = `${viewTheme()}|${level?.world ?? ''}`; if (key !== shownTheme) { shownTheme = key; scene.setView(view()); applySettings(); } }
 
 // ---- screens ----
-type ScreenId = 'home' | 'play' | 'pause' | 'over' | 'offer' | 'settings' | 'help' | 'map' | 'intro' | 'done';
-const overlays: ScreenId[] = ['home', 'pause', 'over', 'offer', 'settings', 'help', 'map', 'intro', 'done'];
+type ScreenId = 'home' | 'play' | 'pause' | 'over' | 'offer' | 'settings' | 'help' | 'map' | 'intro' | 'done' | 'themes';
+const overlays: ScreenId[] = ['home', 'pause', 'over', 'offer', 'settings', 'help', 'map', 'intro', 'done', 'themes'];
 let screen: ScreenId = 'home';
 let settingsBack: ScreenId = 'home';
 function show(next: ScreenId) {
@@ -75,11 +83,11 @@ function show(next: ScreenId) {
   const active = document.activeElement;
   if (active instanceof HTMLElement && active.closest('.screen[hidden]')) active.blur();
   // the game stays visible under pause, offer, over and settings-from-pause
-  const overGame = !(next === 'home' || next === 'help' || next === 'map' || (next === 'settings' && settingsBack === 'home'));
+  const overGame = !(next === 'home' || next === 'help' || next === 'map' || next === 'themes' || (next === 'settings' && settingsBack === 'home'));
   $('#hud').hidden = !overGame || next === 'intro';
   scene.showWorld(overGame);
   if (next === 'home' || next === 'map') { if (next === 'home') level = null; syncView(); }
-  const focus: Partial<Record<ScreenId, string>> = { home: '#classic', pause: '#resume', over: '#again', offer: '#offer-no', settings: '#settings-done', help: '#help-done', map: '#level-grid .next, #level-grid button:not([disabled])', intro: '#intro-start', done: '#done-next:not([hidden]), #done-map' };
+  const focus: Partial<Record<ScreenId, string>> = { home: '#classic', pause: '#resume', over: '#again', offer: '#offer-no', settings: '#settings-done', help: '#help-done', themes: '#theme-grid [aria-checked="true"]', map: '#level-grid .next, #level-grid button:not([disabled])', intro: '#intro-start', done: '#done-next:not([hidden]), #done-map' };
   if (focus[next] && !capture) requestAnimationFrame(() => $(focus[next]!).focus({ preventScroll: true }));
   if (next === 'home') { refreshHome(); syncMusic(); }
   scene.dirty = true;
@@ -213,6 +221,14 @@ function onEnded() {
   finishGame();
 }
 
+/** New themes earned since the last check: saved, and cheered once. */
+function checkThemes(): string {
+  const fresh = unlockThemes(profile);
+  if (!fresh.length) return '';
+  persist();
+  return fresh.map(id => `New theme: ${themeById(id).name}!`).join(' ');
+}
+
 function finishGame() {
   if (game.mode === 'adventure') { levelLost(); return; }
   let prev: number, isBest: boolean;
@@ -241,6 +257,8 @@ function finishGame() {
   $('#final-best-label').textContent = game.mode === 'daily' ? "Today's best" : 'Your best';
   $('#final-best').textContent = String(Math.max(prev, game.score));
   $('#stat').textContent = game.mode === 'daily' && game.end === 'moves' ? `You used all ${DAILY_MOVES} moves and cleared ${game.lines} ${game.lines === 1 ? 'line' : 'lines'}. A new puzzle comes tomorrow!` : statLine(game);
+  const themes = checkThemes();
+  earned = [earned, themes].filter(Boolean).join(' ');
   $('#earned').hidden = !earned; $('#earned').textContent = earned;
   $('#again').textContent = game.mode === 'daily' ? 'Try today\'s puzzle again' : 'Play again';
   $('#over-home').textContent = 'Home'; $('#final-label').textContent = 'Score';
@@ -421,6 +439,7 @@ function levelWon() {
   if (opened) earned.push(`${opened.name} is open!`);
   profile.stats.games++;
   persist();
+  const themes = checkThemes(); if (themes) earned.push(themes);
   clock.on = false; $('#clock').hidden = true;
   $('#done-title').textContent = stars === 3 ? 'Perfect!' : stars === 2 ? 'Great job!' : 'You did it!';
   $('#done-stars').textContent = '';
@@ -454,6 +473,32 @@ function levelLost() {
   say(`${$('#over-title').textContent} ${$('#stat').textContent}`);
 }
 
+// ---- themes ----
+function openThemes() { renderThemes(); show('themes'); }
+function renderThemes() {
+  $('#theme-grid').replaceChildren(...THEMES.map(t => {
+    const owned = profile.themes.includes(t.id), on = profile.settings.theme === t.id;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'theme-card'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(on)); b.disabled = !owned;
+    const swatch = document.createElement('span'); swatch.className = 'swatch';
+    swatch.style.background = `linear-gradient(${t.bg[0]}, ${t.bg[1]})`; swatch.style.border = `3px solid ${t.board}`;
+    for (const c of t.blocks) { const i = document.createElement('i'); i.style.background = c; swatch.append(i); }
+    const name = document.createElement('b'); name.textContent = t.name;
+    const note = document.createElement('small');
+    note.textContent = on ? 'Playing now' : owned ? 'Tap to use' : `🔒 ${t.unlock}`;
+    b.append(swatch, name, note);
+    const progress = owned ? '' : progressText(t.id, profile);
+    if (progress) { const p = document.createElement('small'); p.textContent = progress; b.append(p); }
+    b.setAttribute('aria-label', `${t.name}: ${note.textContent.replace('🔒 ', 'locked. ')}${progress ? `. ${progress}` : ''}`);
+    b.addEventListener('click', () => { if (!owned) return; sfx('tap'); setTheme(t.id); renderThemes(); });
+    return b;
+  }));
+}
+function setTheme(id: ThemeId) {
+  if (!themeEarned(id, profile) && !profile.themes.includes(id)) return;
+  profile.settings.theme = id; persist(); syncView(); syncMusic();
+}
+
 // ---- read-aloud ----
 const speechOk = () => typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined';
 function speak(text: string) {
@@ -481,6 +526,7 @@ function bindSettings() {
     const el = $<HTMLInputElement>(id); el.checked = s[key];
     el.onchange = () => { s[key] = el.checked; afterSetting(key === 'symbols' || key === 'contrast'); };
   };
+  $('#read-aloud-row').hidden = !speechOk();
   box('#set-sound', 'sound'); box('#set-music', 'music'); box('#set-haptics', 'haptics'); box('#set-shake', 'shake'); box('#set-symbols', 'symbols'); box('#set-contrast', 'contrast'); box('#set-read', 'readAloud');
   const vol = $<HTMLInputElement>('#set-volume'); vol.value = String(Math.round(s.volume * 100)); vol.oninput = () => { s.volume = Number(vol.value) / 100; afterSetting(false); };
   const motion = $<HTMLSelectElement>('#set-motion'); motion.value = s.motion; motion.onchange = () => { s.motion = motion.value as typeof s.motion; afterSetting(false); };
@@ -557,6 +603,8 @@ function bindButtons() {
   on('#restart', () => { dropRun(game.mode as 'classic' | 'relax' | 'daily'); startGame(again()); });
   on('#quit', () => (game.mode === 'adventure' ? openMap() : show('home')));
   on('#adventure', () => openMap());
+  on('#themes-btn', () => openThemes());
+  on('#themes-back', () => show('home'));
   on('#map-back', () => show('home'));
   on('#intro-start', () => startLevel());
   on('#intro-back', () => openMap());
@@ -668,6 +716,18 @@ async function boot() {
     level = LEVELS[Math.min(60, Math.max(1, Number(new URLSearchParams(location.search).get('level')) || 32)) - 1]!;
     syncView(); startGame(levelGame(level));
     $('#hud').hidden = !new URLSearchParams(location.search).has('hud');
+  } else if (captureScene === 'themes') {
+    // ?scene=themes: the themes in turn while the game plays itself (&theme=<id> holds one)
+    const only = new URLSearchParams(location.search).get('theme');
+    profile.themes = THEMES.map(t => t.id);
+    profile.settings.theme = (THEMES.find(t => t.id === only)?.id ?? 'classic');
+    syncView();
+    startGame(sceneGame('combo'));
+    if (!only) { let k = 0; setInterval(() => { k = (k + 1) % THEMES.length; profile.settings.theme = THEMES[k]!.id; syncView(); syncMusic(); }, 3000); }
+    $('#hud').hidden = !new URLSearchParams(location.search).has('hud');
+  } else if (captureScene === 'themes-screen') {
+    profile.themes = ['classic', 'wood', 'candy']; profile.best.normal = 1240; profile.stats.lines = 62;
+    openThemes();
   } else if (captureScene === 'map') {
     profile.adv = '3'.repeat(16) + '2' + '1' + '0'.repeat(42);
     openMap(1);

@@ -185,7 +185,22 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
      shows the world's theme and music.
    - **Pitfall:** adding moves didn't help casual play, because casual losses are being stuck
      mid-tray, not running out of moves. The free reshuffle and spare stones fixed it.
-7. Themes and accessibility.
+7. COMPLETE: themes and accessibility.
+   - **Themes:** a screen of six cards (`#themes`) with swatches, "Playing now / Tap to use /
+     locked + progress". Unlock rules in `data/unlocks.ts` (pure, tested): Treehouse 1,000 in one
+     Classic game, Candy 10★, Lagoon 100 lines, Star Trip all Ocean levels, Moonlight 3 Dailies.
+     Checked after every game and level, and cheered on the result card. The theme changes board,
+     blocks, background and music (`syncView`).
+   - **Accessibility:**
+     - Colorblind symbols (every block, tray and drag); high contrast (atlas outlines and white
+       board, CSS borders); text 100/120/140%; reduced motion.
+     - Read-aloud: `say()` speaks when it's on and `speechSynthesis` exists (the toggle is
+       hidden otherwise).
+     - Keyboard and gamepad for menus and play.
+   - **Capture:** `?scene=themes` (all six, 3 s each, or `&theme=`), `?scene=themes-screen`, and
+     look switches `&symbols=1&contrast=1&text=N`.
+   - **Review:** shots of all six themes, with and without symbols, on phone and desktop (contact
+     sheets in `reports/`).
 8. Hardening and the full browser suite.
 9. Site integration, then a pull request with CI green and the preview link.
 10. Release, after the owner's approval.

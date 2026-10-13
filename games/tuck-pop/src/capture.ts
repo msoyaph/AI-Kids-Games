@@ -6,6 +6,7 @@
  *   ?scene=clear     a board one move from a full board clear
  *   ?scene=adventure a Candy level with gems and stones (&level=N for level N, 1–60)
  *   ?scene=map       the Adventure map with some stars (shown, never saved)
+ *   ?scene=themes    the six themes in turn, 3 s each (&theme=<id> holds one)
  *   &seed=N          the game's seed (default 7);  &speed=K  moves faster (K > 1) or slower;  &hud=1 shows the HUD
  */
 import { strongChoice } from './sim/bot';

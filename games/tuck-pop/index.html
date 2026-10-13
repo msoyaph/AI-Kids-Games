@@ -54,7 +54,7 @@
           <button id="daily" class="mode" type="button"><b>Daily puzzle</b><small id="daily-info"></small></button>
         </div>
         <div class="small-buttons">
-          <button id="themes-btn" type="button" hidden>Themes</button>
+          <button id="themes-btn" type="button">Themes</button>
           <button id="settings-btn" type="button">Settings</button>
           <button id="help-btn" type="button">How to play</button>
         </div>
@@ -95,6 +95,15 @@
           <button id="done-next" class="big" type="button">Next level</button>
           <button id="done-retry" type="button">Play again</button>
           <button id="done-map" type="button">Map</button>
+        </div>
+      </section>
+
+      <section id="themes" class="screen" hidden aria-labelledby="themes-title">
+        <div class="card wide">
+          <div class="map-head"><button id="themes-back" class="icon" type="button" aria-label="Back to the start"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <h2 id="themes-title">Themes</h2><span></span></div>
+          <p class="note">Each theme changes the board, the blocks, the background and the music. Earn new ones by playing.</p>
+          <div id="theme-grid" class="theme-grid" role="radiogroup" aria-label="Theme"></div>
         </div>
       </section>
 

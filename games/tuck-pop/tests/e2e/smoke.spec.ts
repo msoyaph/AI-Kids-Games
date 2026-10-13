@@ -161,3 +161,26 @@ test('Adventure: the map opens level 1, the card shows the goal, and play shows 
   expect(await page.evaluate(() => Object.keys(localStorage).every(k => k.startsWith('tuckpop.')))).toBe(true);
   expect(problems).toEqual([]);
 });
+
+test('themes: only Sunny is open at first; settings turn on symbols and high contrast', async ({ page }) => {
+  const problems = watch(page);
+  await page.goto('/');
+  await page.locator('#themes-btn').click();
+  const cards = page.locator('.theme-card');
+  await expect(cards).toHaveCount(6);
+  await expect(cards.nth(0)).toBeEnabled();
+  for (let i = 1; i < 6; i++) await expect(cards.nth(i)).toBeDisabled();
+  await expect(cards.nth(0)).toHaveAttribute('aria-checked', 'true');
+  await page.locator('#themes-back').click();
+  await page.locator('#settings-btn').click();
+  await page.locator('#set-symbols').check();
+  await page.locator('#set-contrast').check();
+  await page.locator('#set-text').selectOption('2');
+  await page.locator('#settings-done').click();
+  const s = await page.evaluate(() => (window as unknown as { __tuckpop: { snapshot(): { settings: { symbols: boolean; contrast: boolean; text: number } } } }).__tuckpop.snapshot().settings);
+  expect(s).toMatchObject({ symbols: true, contrast: true, text: 2 });
+  await expect(page.locator('body')).toHaveClass(/hc/);
+  await page.reload();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('tuckpop.save')!).settings)).toMatchObject({ symbols: true, contrast: true, text: 2 });
+  expect(problems).toEqual([]);
+});
