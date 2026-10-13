@@ -101,6 +101,14 @@ Ports: dev 5246, preview 4246.
 - 2026-10-13 Difficulty level shifts ease in over chapters 0–5 (`difficultyShift`); Hard's extra
   Keeper teammate starts at chapter 4. Story bosses (`boss: true`) always have a Rest Stop just before.
 - 2026-10-13 Starters Spinnet/Druzling/Buzzbill; Juno picks a partner never strong against yours.
+- 2026-10-13 Art: creatures are shape recipes (`src/art/creatures.ts`, painter in `painter.ts`) drawn at
+  32×32 (battle) and 16×16 (overworld/icons) in 5 poses (idle, blink, happy, hit = dizzy swirls,
+  nap); shimmer variants rotate the body hue 150° (never the face). Characters 16×24.
+  Maps bake their whole ground into one PixelCanvas (`src/art/ground.ts`) with soft edges between
+  terrains; trees/houses/props are depth-sorted sprites. Flat colours with sparse details
+  (speckle noise looked busy). Corner rounding was tried and dropped (it made notch artifacts).
+- 2026-10-13 The build keeps the starter's strict CSP (no eval): `import 'pixi.js/unsafe-eval'`
+  (Pixi's no-eval polyfills) must stay first in `src/main.ts`, or WebGL setup fails.
 - 2026-10-13 Field Guide facts live in `src/data/facts.ts` with a "check" source per fact; facts
   verified by web search where unsure (popcorn 6,700 years, capybara ~5 min, manatee ~20 min, lemons).
 
@@ -124,6 +132,21 @@ Franchise creatures and characters are described here, not named (this is a publ
   "Iris", "Rosa", "Milo" → Isla, Rosie, Mika. Trainers "Ash" → Rio, "Reggie" → Rudy; the Showcase
   Club curator "Opaline" → **Velour**.
 - Web checks (2026-10-13) found no existing creature or product for the remaining 52 names.
+- Phase 3 art review (lookalike pass on the first drawings):
+  - Twirlwing: leaves sprouting from the top of a round body echoed a famous bulb creature → its
+    seed wings now spread to the sides, angled down.
+  - Maplegale: four spread wings read as a butterfly → a two-blade "helicopter" rotor on its head
+    and a maple-leaf collar.
+  - Geode line: grey rocks with crystal crowns were too close to an existing crystal-crowned rock
+    creature → sandy rocks whose crystals show in a geode window on the tummy (and, for Druzarch,
+    a cut-open geode shell behind it).
+  - Fluffkorn: a round white puff looked like an existing woolly sheep creature (and a fried egg) →
+    a golden kernel-shell cup overflowing with buttery popcorn.
+  - Mossbub/Hardigrade: a smooth moss dome read as a turtle shell → fuzzy moss tufts.
+  - Frondle: raised green arms read as a cactus → drooping fronds.
+  - Hailcastle: the cloud hat looked like a mushroom cap → a separate cloud floating above it.
+- Icons: the Stone icon is a mountain peak (a hexagon looked round at 12 px); Chilly is an ice cube
+  (it looked like the Frost icon); Toasty is wavy heat lines.
 
 ## Progress
 | Phase | Status |
@@ -131,8 +154,8 @@ Franchise creatures and characters are described here, not named (this is a publ
 | 0 Scaffold, budget, RPG genre, CLAUDE.md | done |
 | 1 Core rules (battle, energy, status, xp, AI, befriend, save codec) | done (72 unit tests) |
 | 2 Content data + balance sim + level curve | done |
-| 3 Art foundation (renderer, atlas, 52 creature recipes, tiles, characters, sheet) | next |
-| 4 Overworld (maps, movement, NPCs, dialogue + read-aloud, encounters, inputs, Rest Stops, shops) | |
+| 3 Art foundation (renderer, atlas, 52 creature recipes, tiles, characters, sheet) | done |
+| 4 Overworld (maps, movement, NPCs, dialogue + read-aloud, encounters, inputs, Rest Stops, shops) | next |
 | 5 Battle + befriend scenes, evolution | |
 | 6 Puzzles + 6 Trials + solver tests + field abilities | |
 | 7 World + story content, post-game | |
@@ -155,8 +178,18 @@ areas.ts, trainers.ts, chapters.ts, index.ts → `DEX`, `CODEC`). Simulations in
 Test fix: the balance test's "moves in use" floor was set to 30 (not 40): the 1-vs-1 sim only sees
 the moves known at its three fixed levels, so ~37 attack moves show up there by design.
 
-**Next:** phase 3, the art foundation: Pixi renderer + PixelCanvas/Atlas (copied from Cliff Valley),
-palette, creature shape recipes for all 52 (32×32 battle, 16×16 overworld/icons), tiles, characters,
-the `?scene=sheet` capture route, and a first visual/IP review. The starter's Star Catch files
-(`src/sim.ts`, `render.ts`, `main.ts`, `storage.ts`, `audio.ts`, `input.ts` + their tests) are still
-in place until phase 4 replaces main.
+**Phase 3 notes:** art in `src/art/` (pixelcanvas, painter, creatures, characters, icons, palette,
+ground, props); Pixi in `src/render/` (renderer, atlas with lazy sprites, sprites registry); app shell
+`src/game/app.ts` (scene manager + loop), scenes `title` (placeholder) and `sheet` (`?scene=sheet`,
+`&shimmer=1`, `&pose=happy`, `&small=1`). Review helpers (node, no browser): `npx tsx
+scripts/creature-sheet.ts [out.png] [--poses] [--small] [--shimmer] [--only=a,b]` and `npx tsx
+scripts/art-sheet.ts chars|icons|scene`; in-browser: `node scripts/shot.mjs "scene=sheet" out.png`
+(after a build; quiet-check first). PNGs go to `reports/tmp/` (git-ignored). Build ≈ 615 KB.
+
+**Next:** phase 4, the overworld. Already written (uncommitted until phase 4 lands): map format
+`src/core/world/map.ts`, world rules `src/core/world/world.ts`, scripts `src/core/script.ts`, the
+copied TheaBonk stick `src/input/stick.ts` and `src/ui/glass.css`. Still to do: input (keyboard,
+gamepad, touch glass controls, tap-to-move), the overworld scene (baked ground, y-sorted sprites,
+camera, smooth steps, wild creatures, NPCs), dialogue box + read-aloud, script runner, session
+(new game / save / load / autosave), Brightmoor + Academy + Meadow Path + a house/Rest Stop/shop
+interior, and tests.

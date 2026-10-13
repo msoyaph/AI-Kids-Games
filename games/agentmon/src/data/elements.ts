@@ -14,7 +14,7 @@ export interface ElementInfo {
   color: number;
   dark: number;
   /** Icon shape drawn in art/icons.ts; also the one-letter badge for colorblind mode. */
-  icon: 'flame' | 'drop' | 'leaf' | 'hexagon' | 'swirl' | 'snowflake' | 'bolt' | 'star';
+  icon: 'flame' | 'drop' | 'leaf' | 'mountain' | 'swirl' | 'snowflake' | 'bolt' | 'star';
   letter: string;
   strong: [Element, Element];
   /** Why, in kid words, for the chart screen: one reason per strong matchup. */
@@ -40,7 +40,7 @@ export const ELEMENT_INFO: Record<Element, ElementInfo> = {
     ability: { id: 'snip', name: 'Snip', desc: 'Trims thick vines.' },
   },
   stone: {
-    id: 'stone', name: 'Stone', color: 0xb08050, dark: 0x6b4526, icon: 'hexagon', letter: 'S',
+    id: 'stone', name: 'Stone', color: 0xb08050, dark: 0x6b4526, icon: 'mountain', letter: 'S',
     strong: ['flare', 'volt'], why: ['Rock smothers flames.', 'Rock grounds sparks.'],
     ability: { id: 'shove', name: 'Shove', desc: 'Pushes big boulders.' },
   },
