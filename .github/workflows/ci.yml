@@ -196,13 +196,21 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - id: scope
-        name: A community pull request changes only its own folder
+        name: Which community games this pull request changes
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.sha }}
+          # The owner's approval pull requests: a branch of this repository, opened by its owner.
+          OWNER: ${{ github.event.pull_request.author_association == 'OWNER' && github.event.pull_request.head.repo.full_name == github.repository }}
         run: node .github/scripts/community-scope.mjs >> "$GITHUB_OUTPUT"
+      - name: A community pull request changes only its own folder
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.sha }}
+          OWNER: ${{ github.event.pull_request.author_association == 'OWNER' && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: node .github/scripts/community-scope.mjs --strict > /dev/null
       - name: Every commit is signed off (DCO)
-        if: github.event_name == 'pull_request' && steps.scope.outputs.slugs != '[]'
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && steps.scope.outputs.slugs != '[]' }}
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
@@ -211,7 +219,8 @@ jobs:
   submission:
     name: Submission ${{ matrix.slug }}
     needs: community
-    if: needs.community.outputs.slugs != '[]'
+    # Runs even when the scope check fails, so a creator sees every problem with their game at once.
+    if: ${{ !cancelled() && needs.community.outputs.slugs != '' && needs.community.outputs.slugs != '[]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
