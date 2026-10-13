@@ -13,7 +13,9 @@ async function appReady(page: Page) {
 }
 
 export const test = base.extend({
-  page: async ({ page },use) => {
+  page: async ({ page,javaScriptEnabled },use) => {
+    // Without JavaScript (the prebuilt pages' own test) the app never runs: nothing to wait for.
+    if (javaScriptEnabled === false) { await use(page); return; }
     const goto = page.goto.bind(page),reload = page.reload.bind(page);
     page.goto = async (url,options) => { const response = await goto(url,options); if (options?.waitUntil !== 'commit') await appReady(page); return response; };
     page.reload = async options => { const response = await reload(options); await appReady(page); return response; };
