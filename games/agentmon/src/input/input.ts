@@ -33,6 +33,13 @@ export class Input {
   private padPrev: boolean[] = [];
   /** The d-pad/stick direction last frame, for menu navigation (one move per press). */
   private navPrev: Dir | null = null;
+  /**
+   * A quick tap of an arrow key, kept until a scene takes it: on a slow device a key can go down and
+   * up between two frames, and the tap should still take its one step.
+   */
+  private tapDir: Dir | null = null;
+  /** How many arrow taps scenes have taken (reported by the test hook). */
+  tapsTaken = 0;
   onDevice: ((d: Device) => void)[] = [];
 
   constructor() {
@@ -44,6 +51,7 @@ export class Input {
       if (d !== undefined) {
         this.held = this.held.filter(h => h !== d);
         this.held.push(d);
+        if (!e.repeat) this.tapDir = d;
         e.preventDefault();
       }
       const b = KEY_BTN[e.code];
@@ -75,6 +83,7 @@ export class Input {
     this.down.clear();
     this.stick = { x: 0, y: 0 };
     this.tap = null;
+    this.tapDir = null;
   }
 
   /** Simulated presses from on-screen buttons. */
@@ -90,7 +99,15 @@ export class Input {
 
   isDown(b: Button): boolean { return this.down.has(b); }
 
-  clearPresses(): void { this.pressed.clear(); this.tap = null; }
+  clearPresses(): void { this.pressed.clear(); this.tap = null; this.tapDir = null; }
+
+  /** The arrow tap waiting to be taken, if any (takes it). Movement uses `dir() ?? takeTap()`. */
+  takeTap(): Dir | null {
+    const d = this.tapDir;
+    this.tapDir = null;
+    if (d !== null) this.tapsTaken++;
+    return d;
+  }
 
   /** The direction being held right now: keyboard, gamepad, or the touch stick. */
   dir(): Dir | null {

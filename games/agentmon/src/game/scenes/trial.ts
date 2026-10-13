@@ -336,7 +336,9 @@ export class TrialScene implements Scene {
     if (input.consume('menu')) { void this.trialMenu(); return; }
     if (input.consume('a')) { this.pressA(); return; }
     if (input.consume('b')) return;
-    const d = input.dir();
+    // an arrow tap that went down and up between frames still takes its step
+    const tapped = input.takeTap();
+    const d = input.dir() ?? tapped;
     if (d !== null) this.step(d);
   }
 
@@ -371,7 +373,7 @@ export class TrialScene implements Scene {
   }
 
   snapshot() {
-    return { trial: this.trial.id, room: this.room.def.id, roomIndex: this.roomIndex, x: this.state.x, y: this.state.y, moves: this.moves, solved: this.state.solved, busy: this.busy, moving: !!this.anim,
+    return { trial: this.trial.id, room: this.room.def.id, roomIndex: this.roomIndex, x: this.state.x, y: this.state.y, moves: this.moves, taps: this.game.input.tapsTaken, solved: this.state.solved, busy: this.busy, moving: !!this.anim,
       view: { x: this.world.x, y: this.world.y, zoom: this.world.scale.x, dpr: this.app.host.dpr } };
   }
 }

@@ -10,7 +10,9 @@ export default defineConfig({
   testDir: 'tests/e2e',
   timeout: CI ? 240_000 : 120_000,
   retries: CI ? 1 : 0,
-  workers: CI ? 2 : 3,
+  // one at a time on CI: each browser draws WebGL in software there, and two at once starved each
+  // other on a 4-core runner (a frame every few seconds)
+  workers: CI ? 1 : 3,
   reporter: CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: { baseURL: `http://127.0.0.1:${PORT}`, trace: 'retain-on-failure', video: 'off', screenshot: 'only-on-failure' },
   webServer: {

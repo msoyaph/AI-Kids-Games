@@ -268,6 +268,20 @@ Ports: dev 5246, preview 4246.
   game listens to) on the very frame the step starts; `oneStep` and the Trial's `step` use it. The
   full matrix passed 41/41, and a CI rehearsal (`E2E_SOFTWARE=1 CI=1`) of both tests 6/6.
 
+- 2026-10-13 CI, second look (the 8ba668f run failed again, with more tests): CI ran two browsers at
+  once on a 4-core runner, each drawing WebGL in software, and they starved each other (one WebKit
+  page drew one frame in 8 s). Every failure was a test action timed across a test-to-page round
+  trip. Fixes:
+  - **Game:** a quick arrow tap is kept until a scene takes it (`Input.takeTap`; movement uses
+    `dir() ?? takeTap()`), so a tap shorter than a frame still takes exactly one step. Real players on
+    slow devices lost such taps before. The hook reports `taps` (taps taken).
+  - **Tests:** steps press the key (no holding) and wait for `taps` to go up (`oneStep`, the Trial's
+    `step`, and `walkUntil` instead of holding ↑ into the Trial, which could carry an extra step into
+    the first room). The Spark Ring tap is made inside the page on the frame the spark is in the
+    glow (`sparkTap`: a `pointerdown` from a finger, or Space), and judged at that moment as for
+    players. `hold` and `holdUntil` are gone.
+  - **CI:** one worker (`workers: CI ? 1 : 3`).
+
 ## IP log (names or designs changed after a check)
 Franchise creatures and characters are described here, not named (this is a public repo).
 - Manatee stage 1 "Seabun" → **Lullakin**: an upcoming indie creature-collecting game is called Seabun.

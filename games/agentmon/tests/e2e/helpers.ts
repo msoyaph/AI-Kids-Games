@@ -17,11 +17,35 @@ export function watch(page: Page) {
 }
 
 export type Spark = { index: number; angle: number; arcAt: number; arc: number };
-export type Snap = { scene: string; frameMs?: number; coins?: number; wild?: { species: string; x: number; y: number }[]; view?: { x: number; y: number; zoom: number; dpr: number }; audio?: { on: boolean; song: string } | null; trial?: string; room?: string; roomIndex?: number; moves?: number; solved?: boolean; ready?: boolean; spark?: Spark | null; battle?: { turn: number; outcome: string | null } | null; map?: string; x?: number; y?: number; busy?: boolean; moving?: boolean; dialogue?: boolean; flags?: string[]; team?: { species: string }[] };
+export type Snap = { scene: string; frameMs?: number; coins?: number; wild?: { species: string; x: number; y: number }[]; view?: { x: number; y: number; zoom: number; dpr: number }; audio?: { on: boolean; song: string } | null; trial?: string; room?: string; roomIndex?: number; moves?: number; taps?: number; solved?: boolean; ready?: boolean; spark?: Spark | null; battle?: { turn: number; outcome: string | null } | null; map?: string; x?: number; y?: number; busy?: boolean; moving?: boolean; dialogue?: boolean; flags?: string[]; team?: { species: string }[] };
 export const snap = (page: Page) => page.evaluate(() => (window as unknown as { __agentmon: { snapshot(): Snap } }).__agentmon.snapshot());
 
-/** How far the spark is from the middle of the glow, in degrees. */
-const offGlow = (sp: Spark) => Math.abs((((sp.angle - sp.arcAt) % 360) + 540) % 360 - 180);
+/**
+ * Tap the Spark Ring when the spark is in the middle of the glow. The watching and the tap both
+ * happen inside the page, on the frame the spark gets there: deciding from the test takes a round
+ * trip per look, and on CI's software rendering one round trip can be longer than the spark's trip
+ * across the glow. The tap is the event a player's tap or key makes (a `pointerdown` from a finger,
+ * or Space), and the ring judges it at the moment it happened, as it does for players.
+ */
+async function sparkTap(page: Page, via: 'key' | 'touch') {
+  await page.evaluate(via => new Promise<void>(resolve => {
+    const hook = (window as unknown as { __agentmon: { snapshot(): { spark?: { angle: number; arcAt: number; arc: number } | null } } }).__agentmon;
+    const t0 = performance.now();
+    const look = () => {
+      const sp = hook.snapshot().spark;
+      if (!sp || performance.now() - t0 > 20_000) return resolve();
+      const off = Math.abs((((sp.angle - sp.arcAt) % 360) + 540) % 360 - 180);
+      if (off < sp.arc * 0.2) {
+        if (via === 'key') dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ' }));
+        else dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', isPrimary: true }));
+        return resolve();
+      }
+      requestAnimationFrame(look);
+    };
+    look();
+  }), via);
+  await page.waitForTimeout(300);
+}
 
 /** Press A (Z) until no dialogue or card is open and the world is free. In battles, A picks the
  *  hinted move (it has the focus). In the Spark Ring, wait until the spark is in the glow, then tap. */
@@ -29,11 +53,7 @@ export async function advance(page: Page, seconds = 20) {
   const until = Date.now() + seconds * 1000;
   while (Date.now() < until) {
     const s = await snap(page);
-    if (s.spark) {
-      if (offGlow(s.spark) < s.spark.arc * 0.25) { await page.keyboard.press('Space'); await page.waitForTimeout(300); }
-      else await page.waitForTimeout(8);
-      continue;
-    }
+    if (s.spark) { await sparkTap(page, 'key'); continue; }
     // tutorial cards and Yes/No choices: the first button has the keyboard focus, Enter presses it
     const card = page.locator('.tutorial button, .dlg-choices button').first();
     if (await card.isVisible().catch(() => false)) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); continue; }
@@ -50,69 +70,52 @@ export async function talk(page: Page) {
   await expect.poll(async () => { const s = await snap(page); return !!s.dialogue || !!s.busy; }, { timeout: 3000, intervals: [20] }).toBe(true);
 }
 
-/** Hold a direction key until `done`, then let go and wait until the player stands still. The game
- *  moves the player's tile at the start of each step, so letting go as soon as the target tile is
- *  reached never adds an extra step (a held key keeps walking, also through doors, as in the game). */
-export async function hold(page: Page, key: string, done: (s: Snap) => boolean, timeout: number) {
-  await page.keyboard.down(key);
-  try {
-    await expect.poll(async () => done(await snap(page)), { timeout, intervals: [15] }).toBe(true);
-  } finally {
-    await page.keyboard.up(key);
-  }
-  await expect.poll(async () => { const s = await snap(page); return (!s.busy && !s.moving) || !!s.dialogue; }, { timeout: 5000, intervals: [50] }).toBe(true);
+/**
+ * Wait until nothing is happening: no step, fade or story moment under way (a dialogue counts as
+ * settled). With `scene`, arriving in another scene counts too (a Trial opens with its own card).
+ */
+async function settled(page: Page, scene?: string) {
+  await expect.poll(async () => {
+    const s = await snap(page);
+    return (!s.busy && !s.moving) || !!s.dialogue || (scene !== undefined && s.scene !== scene);
+  }, { timeout: 15_000, intervals: [30] }).toBe(true);
 }
 
 /**
- * Hold a key until the game's snapshot shows a change from `before` (or, with `orBusy`, a fade or a
- * story moment), and let go on that very frame. Both the watching and the letting go happen inside
- * the page: watching from the test takes a round trip per look, and on a slow or busy machine (CI's
- * software rendering, or several browsers at once) one round trip can outlast a whole step, so the
- * game saw the key still held and took a second step. Returns the snapshot at the moment of change.
+ * One step: press the arrow (down and up, like a quick tap), wait until the game has taken the tap
+ * (its `taps` count goes up; a door, map edge or story moment may take over instead), then wait until
+ * the player stands still. The game takes a tap even when the key went down and up between two
+ * frames, and a tap is always exactly one step, so this needs no timing and holds on any machine
+ * (CI draws in software at a few frames a second). Returns false when something other than a plain
+ * step happened.
  */
-export async function holdUntil(page: Page, code: string, before: Record<string, unknown>, opts: { orBusy?: boolean; timeout?: number } = {}): Promise<Snap> {
-  await page.keyboard.down(code);
-  try {
-    const seen = await page.evaluate(({ code, before, orBusy, timeout }) => new Promise<Record<string, unknown> | null>(resolve => {
-      const hook = (window as unknown as { __agentmon: { snapshot(): Record<string, unknown> } }).__agentmon;
-      const t0 = performance.now();
-      const look = () => {
-        const s = hook.snapshot();
-        if (Object.entries(before).some(([k, v]) => s[k] !== v) || (orBusy && (!!s.busy || !!s.dialogue))) {
-          dispatchEvent(new KeyboardEvent('keyup', { code, key: code }));
-          resolve(s);
-        } else if (performance.now() - t0 > timeout) resolve(null);
-        else requestAnimationFrame(look);
-      };
-      look();
-    }), { code, before, orBusy: !!opts.orBusy, timeout: opts.timeout ?? 8000 });
-    expect(seen, `holding ${code} should change ${Object.keys(before).join(', ')}`).not.toBeNull();
-    return seen as Snap;
-  } finally {
-    await page.keyboard.up(code);
-  }
-}
-
-/**
- * One step: hold the key until the step starts (the player's tile changes, or a door, map edge or
- * story moment takes over), let go on that frame (holdUntil), and wait until the player stands
- * still. Letting go during the step means a slow device can never add a step. Returns false when
- * something other than a plain step happened.
- */
-/** Wait until nothing is happening: no step, fade or story moment under way (a dialogue counts as settled). */
-async function settled(page: Page) {
-  await expect.poll(async () => { const s = await snap(page); return (!s.busy && !s.moving) || !!s.dialogue; }, { timeout: 15_000, intervals: [30] }).toBe(true);
-}
-
 async function oneStep(page: Page, key: string): Promise<boolean> {
   await settled(page);
   const b = await snap(page);
   if (b.dialogue) return false;
-  const s = await holdUntil(page, key, { x: b.x, y: b.y, map: b.map }, { orBusy: true });
-  const moved = s.x !== b.x || s.y !== b.y;
-  await settled(page);
+  const taps = b.taps ?? 0;
+  await page.keyboard.press(key);
+  await expect.poll(async () => {
+    const s = await snap(page);
+    return (s.taps ?? 0) > taps || s.map !== b.map || s.scene !== b.scene || !!s.busy || !!s.dialogue;
+  }, { timeout: 15_000, intervals: [30] }).toBe(true);
+  // into another scene (a Trial's stairs): that scene's own opening (a tutorial card) takes over
+  await settled(page, b.scene);
+  if ((await snap(page)).scene !== b.scene) return false;
   const a = await snap(page);
-  return moved && a.map === b.map && !a.dialogue;
+  return (a.x !== b.x || a.y !== b.y) && a.map === b.map && !a.dialogue;
+}
+
+/** Step (one tap at a time) until `done` is true, e.g. until a door has taken you into a Trial. */
+export async function walkUntil(page: Page, key: string, done: (s: Snap) => boolean, max = 40) {
+  for (let i = 0; i < max; i++) {
+    const s = await snap(page);
+    if (done(s)) return;
+    await settled(page, s.scene);
+    if (done(await snap(page))) return;
+    await oneStep(page, key);
+  }
+  await expect.poll(async () => done(await snap(page)), { timeout: 15_000 }).toBe(true);
 }
 
 /** Walk exactly `steps` tiles, one at a time (stopping early if a door, map edge or story moment takes over). */
@@ -212,11 +215,7 @@ export async function touchAdvance(page: Page, o: { seconds?: number; befriend?:
   const visible = async (sel: string) => { const l = page.locator(sel).first(); return (await l.isVisible().catch(() => false)) ? l : null; };
   while (Date.now() < until) {
     const s = await snap(page);
-    if (s.spark) {
-      if (offGlow(s.spark) < s.spark.arc * 0.25) { const vp = page.viewportSize()!; await page.touchscreen.tap(vp.width / 2, vp.height / 2); await page.waitForTimeout(300); }
-      else await page.waitForTimeout(8);
-      continue;
-    }
+    if (s.spark) { await sparkTap(page, 'touch'); continue; }
     const card = await visible('.tutorial button, .dlg-choices button, .credits-skip');
     if (card) { await card.tap(); await page.waitForTimeout(150); continue; }
     if (o.befriend) {
