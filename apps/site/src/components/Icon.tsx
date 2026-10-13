@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-export type IconName = 'search' | 'heart' | 'play' | 'pause' | 'back' | 'next' | 'sun' | 'moon' | 'shield' | 'grid' | 'home' | 'close' | 'expand' | 'shrink' | 'computer' | 'tablet' | 'phone' | 'gamepad' | 'keyboard' | 'mouse' | 'touch' | 'clock' | 'check' | 'chevron' | 'age' | 'lock' | 'more' | 'share';
+export type IconName = 'search' | 'heart' | 'play' | 'pause' | 'back' | 'next' | 'sun' | 'moon' | 'shield' | 'grid' | 'home' | 'close' | 'expand' | 'shrink' | 'computer' | 'tablet' | 'phone' | 'gamepad' | 'keyboard' | 'mouse' | 'touch' | 'clock' | 'check' | 'chevron' | 'age' | 'lock' | 'more' | 'share' | 'add';
 const paths: Record<IconName,string> = {
   search: 'M21 21l-5-5M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z',
   heart: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z',
@@ -28,7 +28,8 @@ const paths: Record<IconName,string> = {
   age: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18ZM8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01',
   lock: 'M6 11h12v10H6Zm3 0V7a3 3 0 0 1 6 0v4',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
-  share: 'M12 3v12m-4-8 4-4 4 4M7 11H5v10h14V11h-2'
+  share: 'M12 3v12m-4-8 4-4 4 4M7 11H5v10h14V11h-2',
+  add: 'M6 3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm6 5v8m-4-4h8'
 };
 export function Icon({ name, size = 22, filled = false, style }: { name: IconName; size?: number; filled?: boolean; style?: CSSProperties }) {
   return <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}><path d={paths[name]} /></svg>;

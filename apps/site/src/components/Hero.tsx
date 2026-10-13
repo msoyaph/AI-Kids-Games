@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Game } from '../data/games';
 import { mediaFor } from '../lib/media';
+import AddToHome from './AddToHome';
 import { Icon } from './Icon';
 import Preview from './Preview';
 
@@ -12,7 +13,7 @@ function useReducedMotion() {
   return reduced;
 }
 
-/** Featured games: gameplay loop beside (or above) logo, one line, age and Play. Rotates after each loop. */
+/** Featured games: gameplay loop beside (or above) logo, one line, age, Play and Add to Home. Rotates after each loop. */
 export default function Hero({ games }: { games: Game[] }) {
   const [index,setIndex] = useState(0); const [paused,setPaused] = useState(false); const [holding,setHolding] = useState(false);
   const reduced = useReducedMotion();
@@ -28,7 +29,7 @@ export default function Hero({ games }: { games: Game[] }) {
       <h2 className="hero-logo"><img src={media.logo} alt={game.title} width={440} height={130} /></h2>
       <p className="hero-line">{game.tagline}</p>
       <span className="badge">{game.ageGuidance}</span>
-      <Link to={`/play/${game.slug}`} className="button primary play"><Icon name="play" filled size={20} />Play</Link>
+      <div className="hero-actions"><Link to={`/play/${game.slug}`} className="button primary play"><Icon name="play" filled size={20} />Play</Link><AddToHome /></div>
       <div className="hero-controls">
         <div className="slide-picks" role="group" aria-label="Choose a featured game">{games.map((item,i) => <button key={item.slug} className="slide-pick" aria-label={`Show ${item.title}`} aria-current={i === index} onClick={() => setIndex(i)}><img src={mediaFor(item).cover} alt="" width={64} height={36} loading="lazy" /></button>)}</div>
         {!reduced && games.length > 1 && <button className="icon-button" onClick={() => setPaused(!paused)} aria-label={paused ? 'Play featured games' : 'Pause featured games'}><Icon name={paused ? 'play' : 'pause'} filled={paused} /></button>}

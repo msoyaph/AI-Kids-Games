@@ -32,26 +32,6 @@ function Description({ id }: { id: string }) {
   return <details className="trailer-description"><summary>What’s in the trailer</summary><div id={id}>{trailer.description.map(line => <p key={line}>{line}</p>)}</div></details>;
 }
 
-/** "Watch the trailer": opens the player in a dialog (Escape or Close shuts it, focus goes back). */
-export function TrailerButton({ className = 'button secondary' }: { className?: string }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const [open,setOpen] = useState(false);
-  useEffect(() => { if (open && dialog.current && !dialog.current.open) dialog.current.showModal(); },[open]);
-  return <>
-    <button type="button" className={className} onClick={() => setOpen(true)}><Icon name="play" filled size={18} />Watch the trailer</button>
-    <dialog ref={dialog} className="trailer-dialog" aria-label="Ai Kids Games trailer" onClose={() => setOpen(false)} onClick={event => { if (event.target === dialog.current) dialog.current?.close(); }}>
-      {open && <>
-        <TrailerVideo id="trailer-dialog-description" />
-        <div className="trailer-bar">
-          <p>Sound is off. Turn it on in the player.</p>
-          <button type="button" className="icon-button" onClick={() => dialog.current?.close()} aria-label="Close the trailer" autoFocus><Icon name="close" /></button>
-        </div>
-        <Description id="trailer-dialog-description" />
-      </>}
-    </dialog>
-  </>;
-}
-
 /** The trailer in a page (About): a poster you press to play. */
 export function TrailerInline() {
   const [playing,setPlaying] = useState(false);

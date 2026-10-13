@@ -4,25 +4,26 @@ import { usePreferences } from '../lib/preferences';
 import { usePageMeta } from '../lib/meta';
 import { mediaFor } from '../lib/media';
 import Hero from '../components/Hero';
-import { TrailerButton } from '../components/Trailer';
 import GameGrid from '../components/GameGrid';
 import GameCard from '../components/GameCard';
 import { AgeSelect, CategoryChips, useCatalogFilters } from '../components/Filters';
 
 /** Category rows return automatically once the catalog is big enough to need them. */
 export const CATEGORY_ROWS_FROM = 12;
+/** The featured carousel opens on this game (owner's pick); the others follow in catalog order. */
+export const HERO_LEAD = 'theabonk';
 
 export default function Home() {
   usePageMeta("The games kids love. None of the stuff parents don’t.",'Free, ad-free browser games for kids: kart racing, farming, tower defense, space adventures and more. No subscriptions, no sign-ups, no tracking.');
   const { recent } = usePreferences();
   const { category,playerAge,results,set,reset } = useCatalogFilters();
-  const featured = games.filter(game => game.featured);
+  const featured = games.filter(game => game.featured).sort((a,b) => Number(b.slug === HERO_LEAD)-Number(a.slug === HERO_LEAD));
   const played = recent.map(slug => games.find(game => game.slug === slug)).filter(game => !!game).slice(0,6);
   return <div className="container home">
     <header className="home-intro">
-      <h1><span className="sr-only">Ai Kids Games: </span>The games kids love. None of the stuff parents don’t.</h1>
+      {/* The heading is for screen readers and search only; the page opens on the featured games. */}
+      <h1 className="sr-only">Ai Kids Games: The games kids love. None of the stuff parents don’t.</h1>
       <p>No ads. No subscriptions. No sign-ups. No tracking. Just play, or build your own.</p>
-      <TrailerButton />
     </header>
     <Hero games={featured.length ? featured : games} />
     <section className="section" aria-labelledby="all-games">
