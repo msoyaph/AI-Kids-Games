@@ -44,3 +44,17 @@ Audited https://ai-kids-games-fawn.vercel.app (the live site) before any fixes.
 4. One brand spelling: **AI Kids Games**, matching the new logo. The new logo, favicons, OG
    images and metadata come from the owner's artwork.
 5. Nothing links to `aikids.games` until it is live. IndexNow gets a key file and a release ping.
+
+## After: this branch (local Vercel-like build, before release)
+
+| Area | Result |
+|---|---|
+| Content without JavaScript | Every page has its real words, headings and links: home 193 words, game pages 360–432 with 12 headings, FAQ 1,035, guides 612–698. |
+| Unknown URLs | 404 with a "not found" page and `noindex`. |
+| Structured data | Organization, WebSite, ItemList, CollectionPage, BreadcrumbList, VideoGame, FAQPage, Article and VideoObject, typed with schema-dts and tested. |
+| Sitemap | 27 URLs: the FAQ, the guides index and 3 guides are new. |
+| Descriptions | 50–160 characters on every page (tested). |
+| Domain | Nothing links to `aikids.games`. The live address is one constant plus `SITE_ORIGIN`. |
+| Brand | "AI Kids Games" across the site, manifests, llms.txt, README and docs. Exceptions: two game builds (until their next release) and historical logs. |
+| IndexNow | Key file served; `npm run indexnow` sends only changed pages after each release. |
+| Lighthouse mobile (local) | All 90+ in every category. Home 93/100/100/100; details 96/100/100/100; play 94/100/100/100; Tuck Pop details 96, Tuck Pop play 99, FAQ 99, guide 99, About 96 (all 100/100/100 in the other categories). |
