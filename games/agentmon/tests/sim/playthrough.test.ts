@@ -4,6 +4,7 @@ import type { Difficulty } from '../../src/core/types';
 import { MAPS } from '../../src/data/maps/index';
 import { QUESTS } from '../../src/data/quests';
 import { CHAPTERS } from '../../src/data/chapters';
+import { AREA_BY_ID } from '../../src/data/areas';
 import { playthrough, type BotResult } from '../../src/sim/bot';
 
 /**
@@ -34,8 +35,12 @@ export const PACING = {
 
 export function pacing(r: BotResult) {
   const c = r.clock;
-  const people = Object.values(MAPS).reduce((n, m) => n + m.npcs.filter(p => !p.trainer && !p.creature).length, 0);
-  const sideQuests = QUESTS.filter(q => q.side && !q.id.startsWith('guardian')).length;
+  // the story's hours: people and side quests you meet before the credits (1.1 moved the model off
+  // post-game places and quests, which Banyan Hollow added; 1.0 counted the meadow's three people)
+  const post = new Set(Object.values(MAPS).filter(m => (m.wild ?? []).some(a => (AREA_BY_ID[a]?.chapter ?? 0) >= 14)).map(m => m.id));
+  for (const m of Object.values(MAPS)) if (!m.outdoor && m.warps.length && m.warps.every(w => post.has(w.to))) post.add(m.id);
+  const people = Object.values(MAPS).filter(m => !post.has(m.id)).reduce((n, m) => n + m.npcs.filter(p => !p.trainer && !p.creature).length, 0);
+  const sideQuests = QUESTS.filter(q => q.side && !q.id.startsWith('guardian') && !q.postgame).length;
   const plannedSpars = CHAPTERS.reduce((n, ch) => n + ch.pathSpars, 0);
   const parts = {
     walking: c.walk * PACING.exploreWalk,

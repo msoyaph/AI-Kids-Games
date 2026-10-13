@@ -2,10 +2,10 @@
  * Capture routes (?scene=battle|befriend|evolution&seed=N): one good-looking moment each, for the
  * website's previews and the visual review. They use a made-up adventure that never saves.
  * The snapshot says `ready: true` once the moment is on screen.
- *   battle     a Volt friend's super-strong bump on a Tide Agentmon
+ *   battle     a Volt friend's super-strong bump on a Tide Agentmon (&bg=kind&tod=time of day)
  *   befriend   the Spark Ring mid-play (&mode=mood shows Mood Match instead)
  *   evolution  a friend that has just grown
- *   town       Saltwhistle by the sea, with the team out walking   (&map=id,x,y for another place)
+ *   town       Saltwhistle by the sea, with the team out walking   (&map=id,x,y for another place, &tod=)
  *   dungeon    a Redrock Trial room with light beams, half solved   (&trial=id&room=N&steps=N)
  *   guide      the Field Guide with lots of friends made
  * For the website's preview loops, `&play=1` keeps the moment moving (a few turns of the spar, the
@@ -35,6 +35,7 @@ import { Session } from './session';
 import { OverworldScene } from './scenes/overworld';
 import { TrialScene } from './scenes/trial';
 import { openPauseMenu } from '../ui/pause';
+import { DAY_TIMES, playMsFor, type DayTime } from '../core/world/daytime';
 
 export type CaptureKind = 'battle' | 'befriend' | 'evolution' | 'town' | 'dungeon' | 'guide';
 export const CAPTURE_KINDS: readonly CaptureKind[] = ['battle', 'befriend', 'evolution', 'town', 'dungeon', 'guide'];
@@ -66,13 +67,15 @@ export class CaptureScene implements Scene {
       addFriend(state, c);
       state.guide.seen.add(SPECIES[species]!.num);
     }
+    // full daylight unless the route asks for another time of day (&tod=)
+    state.playMs = playMsFor(this.tod);
     const session = new Session(state, this.game.settings, true);
     this.game.session = session;
     return session;
   }
 
   private stage(bg: MapDef['battleBg'], ui: BattleUI): BattleView {
-    const view = new BattleView(this.game.app.sprites, bg);
+    const view = new BattleView(this.game.app.sprites, this.params().get('bg') as MapDef['battleBg'] | null ?? bg, this.tod);
     this.view = view;
     view.blinks = this.playing;
     this.root.addChild(view.root);
@@ -81,6 +84,8 @@ export class CaptureScene implements Scene {
   }
 
   private get playing() { return this.params().get('play') === '1'; }
+  /** `&tod=morning|day|evening|night` picks the battle backdrop's time of day (default day). */
+  private get tod(): DayTime { const t = this.params().get('tod'); return (DAY_TIMES as readonly string[]).includes(t ?? '') ? (t as DayTime) : 'day'; }
 
   private async run(app: App): Promise<void> {
     void app;
@@ -146,7 +151,7 @@ export class CaptureScene implements Scene {
     ui.placeCards([view.headPoint(0), view.headPoint(1)]);
     resolveTurn(DEX, b, { type: 'move', move: volt }, { type: 'move', move: foeMove });
     await ui.say(`${session.friendName(me)} used ${DEX.moves[volt]!.name}!`, 500);
-    await view.lunge(0);
+    await view.attack(0, 'volt');
     await view.bump(1, 'strong', 'volt', foe);
     void view.float(1, 'Super strong!', 0xffd84a);
     ui.updateCard(0, me);
@@ -160,13 +165,13 @@ export class CaptureScene implements Scene {
     for (let turn = 0; turn < 3 && foe.energy > 0; turn++) {
       this.ready = true;
       await ui.say(`${SPECIES[foe.species]!.name} used ${DEX.moves[foeMove]!.name}!`, 500);
-      await view.lunge(1);
+      await view.attack(1, DEX.moves[foeMove]!.element);
       await view.bump(0, 'neutral', DEX.moves[foeMove]!.element, me);
       me.energy = Math.max(1, me.energy - 9);
       ui.updateCard(0, me);
       await wait(400);
       await ui.say(`${session.friendName(me)} used ${DEX.moves[volt]!.name}!`, 500);
-      await view.lunge(0);
+      await view.attack(0, 'volt');
       await view.bump(1, 'strong', 'volt', foe);
       void view.float(1, 'Super strong!', 0xffd84a);
       foe.energy = Math.max(0, foe.energy - 22);

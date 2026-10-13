@@ -1,4 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { earnedAccessories, guideBadges, heartsOf } from '../../src/core/care';
+import { SPECIES, SPECIES_LIST } from '../../src/data/species';
+import { CODEC } from '../../src/data/index';
 import { makeCreature } from '../../src/core/creature';
 import { Rng } from '../../src/core/rng';
 import { codecTables, packBits, packCreature, unpackBits, unpackCreature } from '../../src/core/save/codec';
@@ -30,7 +34,9 @@ function fullState(): GameState {
   // Generous stand-ins until phase 7 swaps in the real flag and quest lists (all of them set).
   for (let i = 0; i < 400; i++) s.flags.add(`story-flag-name-${i}`);
   for (let i = 0; i < 150; i++) s.vars[`quest-counter-${i}`] = 12345;
-  for (let i = 1; i <= 52; i++) { s.guide.seen.add(i); s.guide.friends.add(i); s.guide.stars[i] = 3; s.guide.shimmer.add(i); }
+  for (let i = 1; i <= 77; i++) { s.guide.seen.add(i); s.guide.friends.add(i); s.guide.stars[i] = 3; s.guide.shimmer.add(i); }
+  // 1.1: every friend wearing something (what a friend wears is saved in vars)
+  for (const c of [...s.team, ...s.base]) s.vars[`wear:${c.uid}`] = 12;
   for (let i = 0; i < 60; i++) s.quests[`side-quest-${i}`] = -1;
   for (let i = 0; i < 40; i++) s.tutorials.add(`tutorial-${i}`);
   s.playMs = 123_456_789;
@@ -195,5 +201,35 @@ describe('storage', () => {
     expect(fake.data.get('agentmon.slot1')).toBe(JSON.stringify({ v: 99 }));
     fake.data.set('agentmon.slot1', 'garbage');
     expect(loadSlot(t, 1).kind).toBe('unreadable');
+  });
+});
+
+describe('1.0 saves in 1.1', () => {
+  // read with the real game's tables (the rest of this file uses the small made-up dex)
+  // tests/unit/data/save-1.0.json was written by the 1.0 game's own code (a finished adventure:
+  // all 52 friends, all six Beacons, a Juno rematch won, six team friends with different friendship)
+  const text = readFileSync(new URL('./data/save-1.0.json', import.meta.url), 'utf8');
+
+  it('loads exactly, with nothing lost and no migration needed', () => {
+    const r = deserialize(CODEC, text, 1);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.lost).toBe(0);
+    expect(r.state.team.map(c => c.species)).toEqual(['spinnet', 'lullatee', 'druzarch', 'fluffkorn', 'starwisp', 'aurelune']);
+    expect(r.state.team.map(c => c.friendship)).toEqual([0, 49, 50, 120, 249, 255]);
+    expect(r.state.base).toHaveLength(30);
+    expect(r.state.guide.friends.size).toBe(52);
+    // and it saves again as a 1.1 save that reads back the same
+    const again = deserialize(CODEC, serialize(CODEC, r.state), 1);
+    expect(again.ok && again.state).toEqual(r.state);
+  });
+
+  it('gets 1.1 things it has already earned: hearts, the Silver Guide and its accessories', () => {
+    const r = deserialize(CODEC, text, 1);
+    if (!r.ok) throw new Error('unreadable');
+    expect(r.state.team.map(c => heartsOf(c.friendship))).toEqual([0, 0, 1, 2, 4, 5]);
+    expect(guideBadges(r.state.guide.friends, SPECIES_LIST.length)).toMatchObject({ first: true, all: false });
+    const got = earnedAccessories(r.state, SPECIES, SPECIES_LIST.length).map(a => a.id);
+    expect(got).toEqual(['sailor-hat', 'flower-crown', 'miner-lamp', 'sun-hat', 'snow-earmuffs', 'star-cape', 'agent-goggles', 'silver-star']);
   });
 });

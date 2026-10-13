@@ -287,3 +287,46 @@ export function updraft(): PixelCanvas {
   }
   return c.outline(0x5a7ab0, true);
 }
+
+// ---- 1.1: Banyan Hollow -----------------------------------------------------------------------
+
+const BARK = 0x8a6a4a, BARK_D = 0x6a4e36, BARK_L = 0xa8875e;
+
+/** The great banyan (6 tiles wide): a wide canopy on many trunks, with roots hanging down like ropes. */
+export function banyan(): PixelCanvas {
+  const c = new PixelCanvas(96, 104);
+  // prop roots: extra trunks that grew down from the branches
+  for (const [x, top] of [[8, 40], [18, 34], [30, 42], [64, 42], [77, 34], [87, 40]] as const) {
+    c.rect(x, top, 3, 104 - top - 2, BARK_D).rect(x, top, 1, 104 - top - 2, BARK);
+    c.rect(x - 1, 100, 5, 3, BARK_D);
+  }
+  // the main trunk, braided from many strands
+  c.ellipse(48, 98, 20, 5, BARK_D).rect(32, 44, 32, 56, BARK);
+  for (let x = 34; x < 62; x += 5) c.rect(x, 46, 2, 54, x % 10 === 4 ? BARK_D : BARK_L);
+  c.ellipse(48, 82, 6, 8, 0x3a2a24).ellipse(48, 79, 4, 4, 0x2a1f24);
+  // canopy
+  for (const [x, y, r] of [[14, 30, 14], [30, 20, 18], [48, 16, 20], [66, 20, 18], [82, 30, 14], [24, 38, 12], [48, 36, 16], [72, 38, 12]] as const) c.circle(x, y, r, P.leaf);
+  for (const [x, y, r] of [[26, 14, 9], [46, 8, 10], [64, 12, 9], [12, 24, 7], [84, 24, 7]] as const) c.circle(x, y, r, P.leafLight);
+  for (const [x, y] of [[18, 44], [40, 48], [58, 48], [78, 44], [30, 30], [66, 30]] as const) c.circle(x, y, 4, P.leafDark);
+  // a few thin aerial roots hanging from the canopy
+  for (const x of [22, 40, 56, 72]) c.rect(x, 44, 1, 14 + (x % 3) * 4, BARK_L);
+  return c.outline(P.ink, true);
+}
+
+/** The root tunnel between the Starlit Meadow and Banyan Hollow: an arch of roots with a dark way through. */
+export function rootTunnel(): PixelCanvas {
+  const c = new PixelCanvas(32, 32);
+  c.ellipse(16, 22, 15, 15, BARK).ellipse(16, 24, 9, 11, 0x2a1f24).rect(7, 24, 18, 8, 0x2a1f24);
+  for (const [x0, y0, x1, y1] of [[2, 30, 10, 8], [30, 30, 22, 8], [6, 14, 26, 12], [4, 22, 12, 6]] as const) c.line(x0, y0, x1, y1, BARK_D);
+  c.circle(6, 9, 3, P.leaf).circle(26, 8, 3, P.leafLight).circle(16, 6, 3, P.leaf);
+  return c.outline(P.ink, true);
+}
+
+/** A lantern post with a seed lantern: a closed green bud until the seeds are planted, then a warm light. */
+export function lanternPost(lit: boolean): PixelCanvas {
+  const c = new PixelCanvas(16, 32);
+  c.rect(7, 10, 2, 21, BARK_D).rect(5, 29, 6, 2, BARK_D).rect(7, 8, 6, 2, BARK_D).rect(11, 9, 1, 3, BARK_L);
+  if (lit) c.ellipse(11.5, 15, 3.5, 4, 0xffd86b).ellipse(11.5, 15, 2, 2.5, 0xfff6d0).set(11, 11, P.leaf).set(12, 11, P.leaf);
+  else c.ellipse(11.5, 15, 3, 3.5, 0x9ed97a).set(11, 14, P.leafDark).set(12, 16, P.leafDark);
+  return c.outline(P.ink, true);
+}

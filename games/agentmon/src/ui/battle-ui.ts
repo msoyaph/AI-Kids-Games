@@ -75,6 +75,11 @@ export class BattleUI {
     return { x: 0, y: 0, w: innerWidth * dpr, h: Math.max(120, bottom.top * dpr) };
   }
 
+  /** Turn feedback: the card of the side that is acting (or choosing) lifts and glows. */
+  turn(side: 0 | 1 | null): void {
+    this.cards.forEach((c, i) => c.classList.toggle('acting', i === side));
+  }
+
   placeCards(points: [{ x: number; y: number }, { x: number; y: number }]): void {
     const dpr = this.game.app.host.dpr;
     points.forEach((p, i) => {

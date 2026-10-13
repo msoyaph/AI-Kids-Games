@@ -5,7 +5,7 @@
  * and updrafts (game/links.ts).
  */
 export interface QuestGoal { map: string; x: number; y: number }
-export interface QuestDef { id: string; title: string; side: boolean; stages: string[]; goals?: (QuestGoal | null)[] }
+export interface QuestDef { id: string; title: string; side: boolean; stages: string[]; goals?: (QuestGoal | null)[]; /** Only after the credits (1.1). */ postgame?: boolean }
 
 export const MAIN_STAGES: [string, QuestGoal | null][] = [
   ['Go to the Field Agent Academy, the big blue building in town.', { map: 'academy', x: 5, y: 6 }],
@@ -57,6 +57,11 @@ export const QUESTS: QuestDef[] = [
   side('guardian-tidecrest', 'The humming pearl', 'Paddle east past the Lighthouse to Deep Blue Cove.'),
   side('guardian-archwyn', 'The canyon bell', 'Ring the Canyon Bell by the great arch on the Dune Flats.'),
   side('guardian-frostmantle', 'The frost feather', 'Take the Frost Feather to the top of the Frostfall Slopes.'),
+  // 1.1: Banyan Hollow
+  { ...side('sq-lantern', 'Lantern seeds', 'Find three Lantern Seeds in Banyan Hollow for Fen.'), postgame: true },
+  { ...side('sq-relay', 'The Root Relay', 'Visit Sprigling, Twigstride and Leafwarden in order, then Pip. No rush!'), postgame: true },
+  { ...side('sq-tea', 'Tea in the grove', 'Bring Grandma Mo a Honey Drop and a Moon Melon.'), postgame: true },
+  side('guardian-verdanyan', 'The sleeping banyan', 'Help Fen, Pip and Grandma Mo in Banyan Hollow.'),
 ];
 
 export const QUEST_BY_ID: Record<string, QuestDef> = Object.fromEntries(QUESTS.map(q => [q.id, q]));

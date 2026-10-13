@@ -12,7 +12,7 @@ const ROOM = ['WWWWWWWWW', 'WWWWWWWWW', 'fffffffff', 'fffffffff', 'ffffrffff', '
 /** A Rest Stop: the helper behind the counter, the cozy nest, and the door at the bottom. */
 export function restStopMap(id: string, name: string, exit: Exit): MapDef {
   return {
-    id, name, music: 'rest', outdoor: false, battleBg: 'indoor', theme: 3, rows: ROOM,
+    id, name, music: 'rest', outdoor: false, battleBg: 'indoor', theme: 14, rows: ROOM,
     objects: [{ kind: 'nest', x: 1, y: 3, w: 2 }, { kind: 'counter', x: 3, y: 3, w: 3 }, { kind: 'plant', x: 8, y: 2 }, { kind: 'plant', x: 0, y: 6 }],
     warps: [{ x: 4, y: 7, to: exit.map, tx: exit.x, ty: exit.y, dir: 0 }],
     npcs: [{ id: 'helper', name: CAST.helper!.name, x: 4, y: 2, dir: 0, look: CAST.helper!.look, talk: 'rest-stop' }],
@@ -24,7 +24,7 @@ export function restStopMap(id: string, name: string, exit: Exit): MapDef {
 /** A shop: the shopkeeper behind the counter and shelves of snacks. */
 export function shopMap(id: string, name: string, talk: string, exit: Exit): MapDef {
   return {
-    id, name, music: 'shop', outdoor: false, battleBg: 'indoor', theme: 3, rows: ROOM,
+    id, name, music: 'shop', outdoor: false, battleBg: 'indoor', theme: 15, rows: ROOM,
     objects: [{ kind: 'counter', x: 3, y: 3, w: 3 }, { kind: 'shelf', x: 0, y: 2 }, { kind: 'shelf', x: 1, y: 2 }, { kind: 'shelf', x: 7, y: 2 }, { kind: 'shelf', x: 8, y: 2 }, { kind: 'plant', x: 8, y: 6 }],
     warps: [{ x: 4, y: 7, to: exit.map, tx: exit.x, ty: exit.y, dir: 0 }],
     npcs: [{ id: 'clerk', name: CAST.clerk!.name, x: 4, y: 2, dir: 0, look: CAST.clerk!.look, talk }],

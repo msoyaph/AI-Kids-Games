@@ -4,6 +4,8 @@ import { drawCreature, RECIPES } from '../../src/art/creatures';
 import { Painter, POSES, spritePad } from '../../src/art/painter';
 import { PixelCanvas, T } from '../../src/art/pixelcanvas';
 import { SPECIES } from '../../src/data/species';
+import { drawPortrait, expressionFor, PORTRAIT_EXPRS } from '../../src/art/portraits';
+import { CAST, townsLook } from '../../src/data/cast';
 
 const ids = Object.keys(SPECIES);
 
@@ -42,5 +44,24 @@ describe('creature art', () => {
     expect(pc.px.filter(c => c !== T).length).toBe(52);
     expect(pc.px[4 * 12 + 2]).not.toBe(T);
     expect(pc.px[4 * 12 + 1]).toBe(T);
+  });
+});
+
+describe('dialogue portraits', () => {
+  it('every named character and a crowd of townsfolk draw in every expression', () => {
+    const looks = [...Object.values(CAST).map(c => c.look), ...Array.from({ length: 40 }, (_, i) => townsLook(`t${i}`))];
+    for (const look of looks) for (const e of PORTRAIT_EXPRS) {
+      const pc = drawPortrait(look, e);
+      expect(pc.w).toBe(32);
+      expect(pc.px.filter(c => c !== T).length).toBeGreaterThan(400);
+    }
+  });
+
+  it('picks a face that fits the line', () => {
+    expect(expressionFor('Hi! Are you new too?')).toBe('curious');
+    expect(expressionFor('Wow, you are good!')).toBe('surprised');
+    expect(expressionFor('Oh no, the Beacon went out.')).toBe('worried');
+    expect(expressionFor('My turn! I pick this one!')).toBe('happy');
+    expect(expressionFor('The Rest Stop is just over there.')).toBe('smile');
   });
 });

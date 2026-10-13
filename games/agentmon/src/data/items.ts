@@ -46,6 +46,8 @@ const LIST: Item[] = [
   { n: 75, id: 'tide-pearl', name: 'Tide Pearl', kind: 'key', price: 0, desc: 'A moon-white pearl that hums near the sea.' },
   { n: 76, id: 'canyon-bell', name: 'Canyon Bell', kind: 'key', price: 0, desc: 'Its ring echoes for a long time in the canyon.' },
   { n: 77, id: 'frost-feather', name: 'Frost Feather', kind: 'key', price: 0, desc: 'A feather of frost that never melts.' },
+  // 1.1
+  { n: 78, id: 'lantern-seed', name: 'Lantern Seed', kind: 'key', price: 0, desc: 'A seed that glows softly. Fen in Banyan Hollow is looking for these.' },
 ];
 
 export const ITEMS: Record<string, Item> = Object.fromEntries(LIST.map(i => [i.id, i]));

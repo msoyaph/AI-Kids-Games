@@ -3,7 +3,7 @@
  * and installs the read-only test hook.
  *
  * Capture routes (?scene=…&seed=N) show a good-looking moment and never save anything:
- *   sheet (all 52 Agentmon; &shimmer=1, &pose=happy, &small=1)
+ *   sheet (every Agentmon; &shimmer=1, &pose=happy, &small=1)
  *   battle (a super-strong bump), befriend (the Spark Ring; &mode=mood for Mood Match), evolution
  * More routes arrive with their scenes (town, dungeon, guide).
  */

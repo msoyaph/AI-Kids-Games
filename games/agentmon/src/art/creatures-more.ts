@@ -361,11 +361,11 @@ const lumitube: Recipe = (p, pose) => {
 };
 
 const pyrolanterne: Recipe = (p, pose) => {
-  for (const [x, y, r] of [[30, 4, 1.3], [28, 1, 0.9], [32, 8, 0.8]] as const) p.circle(x, y, r, BUBBLE);
-  // the main tube, with two young tubes budding off it
-  tube(p, 17, 31, 9, 4);
-  tube(p, 18, 31, 28, 3.5);
-  tube(p, 1, 31, 18, 9.5);
+  for (const [x, y, r] of [[28, 4, 1.3], [26, 1.5, 0.9], [30, 7.5, 0.8]] as const) p.circle(x, y, r, BUBBLE);
+  // the main tube, with two young tubes budding off it (all inside the 32×32 space, open ends too)
+  tube(p, 16, 29, 9, 4);
+  tube(p, 17, 29, 28, 3.5);
+  tube(p, 1, 28, 18, 9.5);
   p.shade();
   glowBumps(p, [[14, 11], [18, 10], [22, 11], [26, 13], [14, 26], [18, 27], [22, 26], [26, 23], [20, 17], [24, 18], [28, 18], [22, 7], [26, 8], [23, 28]]);
   p.eyes(5, 16, 7, 3, pose).mouth(8, 22, pose).blush(4, 21).blush(14, 21);

@@ -46,6 +46,28 @@ export function terrainPixel(t: Ter, x: number, y: number, theme = 0): number {
         }
       }
       if (t === 'tall') c = mix(c, P.tall1, 0.6);
+      if (t === 'grass') {
+        // 1.1: now and then a little cluster of flowers, and in the woods a mushroom
+        const fl = cellFeature(x, y, 26, 23, 0.16);
+        if (fl) {
+          const { dx, dy } = fl, col = [P.flowerPink, P.flowerYellow, P.flowerWhite, P.flowerBlue][hash32(x >> 5, y >> 5, 5) % 4]!;
+          for (const [fx, fy] of [[0, 0], [3, 1], [1, 3]] as const) {
+            if (dx === fx && dy === fy) return P.flowerYellow;
+            if (Math.abs(dx - fx) + Math.abs(dy - fy) === 1) return col;
+            if (dx === fx && dy === fy + 2) return dark;
+          }
+        }
+        if (theme === 1) {
+          const m = cellFeature(x, y, 30, 27, 0.12);
+          if (m) {
+            const { dx, dy } = m;
+            if (dy === 0 && dx >= -1 && dx <= 1) return dx === 0 ? P.white : P.flowerRed;
+            if (dy === -1 && dx === 0) return P.flowerRed;
+            if (dy === 1 && dx === 0) return 0xf4e4c8;
+            if (dy === 2 && dx === 0) return dark;
+          }
+        }
+      }
       return c;
     }
     case 'path': {
@@ -61,11 +83,26 @@ export function terrainPixel(t: Ter, x: number, y: number, theme = 0): number {
       return hash32(x >> 3, y >> 3, 9) % 5 === 0 ? P.cob1 : P.cob2;
     }
     case 'sand': {
+      // 1.1: a few shells (pink, with a pale ridge) and tiny starfish
+      const sh = cellFeature(x, y, 22, 53, 0.14);
+      if (sh) {
+        const { dx, dy } = sh, star = (hash32(x / 22 | 0, y / 22 | 0, 54) & 1) === 1;
+        if (star && ((dy === 0 && Math.abs(dx) <= 2) || (dx === 0 && dy >= -2 && dy <= 1) || (Math.abs(dx) === 1 && dy === 1))) return 0xf49a5a;
+        if (!star && dy >= 0 && dy <= 1 && dx >= 0 && dx <= 2) return dy === 0 && dx === 1 ? 0xffe4dc : 0xffb0a8;
+        if (!star && dy === 2 && dx >= 0 && dx <= 2) return P.sand1;
+      }
       const s = cellFeature(x, y, 7, 51, 0.45);
       if (s && s.dy === 0 && s.dx >= 0 && s.dx <= 2) return P.sand1;
       return n > 0.98 ? P.sand3 : n < 0.02 ? P.sand1 : P.sand2;
     }
     case 'snow': {
+      // 1.1: soft snow lumps with a blue shadow
+      const lump = cellFeature(x, y, 20, 63, 0.2);
+      if (lump) {
+        const { dx, dy } = lump;
+        if (dy === 0 && dx >= -1 && dx <= 2) return 0xffffff;
+        if (dy === 1 && dx >= -1 && dx <= 2) return P.ice2;
+      }
       const s = cellFeature(x, y, 8, 61, 0.5);
       if (s && s.dy === 0 && s.dx >= -1 && s.dx <= 1) return P.snow1;
       return n < 0.015 ? P.snow1 : P.snow2;
@@ -86,6 +123,9 @@ export function terrainPixel(t: Ter, x: number, y: number, theme = 0): number {
       return mix(P.w3, P.sand2, 0.3);
     }
     case 'cave': {
+      // 1.1: a few tiny crystals catching the light
+      const cr = cellFeature(x, y, 24, 83, 0.14);
+      if (cr && ((cr.dx === 0 && cr.dy >= -2 && cr.dy <= 0) || (cr.dy === 0 && Math.abs(cr.dx) === 1))) return cr.dy === -2 ? 0xe0fff8 : 0x9ff7e8;
       const r = cellFeature(x, y, 7, 81, 0.5);
       if (r && r.dy === 0 && (r.dx === 0 || r.dx === 1)) return P.cave1;
       if (r && r.dy === -1 && r.dx === 0) return P.cave3;
@@ -107,6 +147,7 @@ export function terrainPixel(t: Ter, x: number, y: number, theme = 0): number {
       return hash32(x >> 4, Math.floor(y / 5), 4) % 3 === 0 ? P.wood2 : P.wood3;
     }
     case 'floor': {
+      if (theme >= 14) return roomFloor(theme, x, y);
       if (theme >= 8) return trialFloor(theme, x, y, n);
       const plank = y % 6 === 0 || (x + Math.floor(y / 6) * 5) % 16 === 0;
       return plank ? P.wood1 : hash32(Math.floor((x + Math.floor(y / 6) * 5) / 16), Math.floor(y / 6), 2) % 3 === 0 ? P.wood2 : P.wood3;
@@ -124,6 +165,7 @@ export function terrainPixel(t: Ter, x: number, y: number, theme = 0): number {
       return terrainPixel('grass', x, y, 1);
     }
     case 'wall': {
+      if (theme >= 14) return roomWall(theme, x, y);
       if (theme >= 8) return trialWall(theme, x, y, n);
       if (theme === 3) {
         // indoor wallpaper with a wood skirting board on the lowest row of the wall
@@ -293,3 +335,31 @@ export function waterSparkle(frame: number): PixelCanvas {
 }
 
 export { T, darken };
+
+/**
+ * 1.1: each kind of building has its own room (homes keep theme 3's wallpaper and planks).
+ * 14 Rest Stop: mint wallpaper with little pink hearts, soft peach tiles.
+ * 15 shop: cream wallpaper with green stripes, green and cream checks.
+ * 16 Academy: sky-blue wallpaper above a wood rail, blue-grey tiles with a star in some.
+ */
+function roomWall(theme: number, x: number, y: number): number {
+  const r = y % 16;
+  if (r >= 12) return r === 12 ? P.wood4 : P.wood2; // skirting board
+  if (theme === 14) {
+    const hx = x % 12, hy = r % 12;
+    const heart = (hy === 4 && (hx === 4 || hx === 6)) || (hy === 5 && hx >= 4 && hx <= 6) || (hy === 6 && hx === 5);
+    return heart ? 0xff9bb0 : (x + r) % 24 === 0 ? 0xc8ecdc : 0xd8f4e8;
+  }
+  if (theme === 15) return x % 12 < 3 ? 0xa8d8a0 : x % 12 === 3 ? 0x8cc884 : 0xfff0d0;
+  // Academy: a rail two thirds of the way down
+  if (r === 8) return P.wood3;
+  return x % 16 === 0 ? 0xa8d0f0 : 0xc4e2fb;
+}
+
+function roomFloor(theme: number, x: number, y: number): number {
+  const tx = Math.floor(x / 8), ty = Math.floor(y / 8), edge = x % 8 === 0 || y % 8 === 0;
+  if (theme === 14) return edge ? 0xf0c8b0 : (tx + ty) % 2 ? 0xffe4d2 : 0xffd8c4;
+  if (theme === 15) return edge ? 0x7fb87a : (tx + ty) % 2 ? 0x9fd494 : 0xfff4dc;
+  const star = (hash32(tx, ty, 16) & 7) === 0 && x % 8 === 4 && y % 8 >= 3 && y % 8 <= 5;
+  return edge ? 0x8a9cc0 : star ? 0xffe08a : (tx + ty) % 2 ? 0xb4c4e4 : 0xa8b8dc;
+}

@@ -6,7 +6,7 @@ import { newGameState, type GameState } from '../../src/core/state';
 import { footprint, parseMap } from '../../src/core/world/map';
 import { findPath } from '../../src/core/world/path';
 import { hasAbility, World } from '../../src/core/world/world';
-import { AREA_BY_ID } from '../../src/data/areas';
+import { AREA_BY_ID, AREAS } from '../../src/data/areas';
 import { SCRIPTS } from '../../src/data/dialogue/index';
 import { DEX } from '../../src/data/index';
 import { MAPS, START } from '../../src/data/maps/index';
@@ -179,6 +179,46 @@ describe('wild Agentmon', () => {
         expect(w.ter(m.x, m.y)).toBe('tall');
         if (m.hopped) expect(Math.abs(m.x - s.x) + Math.abs(m.y - s.y)).toBeGreaterThan(1);
       }
+    }
+  });
+
+  it('every kind in an area shows up without waiting on luck (1.1: kinds not out yet come first)', () => {
+    for (const area of AREAS) {
+      const map = Object.values(MAPS).find(m => m.wild?.includes(area.id));
+      if (!map) continue;
+      const kinds = new Set(area.wild.map(e => e.species));
+      const s = fresh();
+      s.map = map.id;
+      // a friend of every element, so every field ability works (water spawns need a paddler)
+      const rng = new Rng(3);
+      for (const el of ['flare', 'tide', 'leaf', 'stone', 'gust', 'frost', 'volt', 'glow']) {
+        const sp = Object.values(DEX.species).find(x => x.element === el && x.stage === 1)!;
+        s.base.push(makeCreature(DEX, { species: sp.id, level: 30 }, rng));
+      }
+      // stand on this map's wild ground where the most of it can be reached, like arriving at its
+      // entrance (the gate-helper rule looks at what you can reach)
+      const probe = new World(map, s, DEX, 5);
+      let best = -1;
+      for (let y = 0; y < probe.h; y++) for (let x = 0; x < probe.w; x++) {
+        if (TER[probe.ter(x, y)].wild !== area.terrain) continue;
+        const at = { x: s.x, y: s.y };
+        s.x = x; s.y = y;
+        const n = probe.reachable().size;
+        if (n > best) best = n; else { s.x = at.x; s.y = at.y; }
+      }
+      const w = new World(map, s, DEX, 5);
+      w.populate();
+      const seen = new Set(w.wild.filter(m => m.area === area.id).map(m => m.species));
+      // the first spawns are all different kinds; walking off with one at a time brings in the rest
+      expect(seen.size, area.id).toBe(Math.min(kinds.size, w.wild.filter(m => m.area === area.id).length));
+      for (let round = 0; round < kinds.size && seen.size < kinds.size; round++) {
+        const first = w.wild.find(m => m.area === area.id);
+        if (!first) break;
+        w.remove(first.key);
+        for (let i = 0; i < 400 && w.wild.filter(m => m.area === area.id).length < area.spawns; i++) w.update(0.25);
+        for (const m of w.wild) if (m.area === area.id) seen.add(m.species);
+      }
+      expect(seen.size, `${area.id}: ${[...kinds].filter(k => !seen.has(k)).join(', ')}`).toBe(kinds.size);
     }
   });
 

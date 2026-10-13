@@ -1,6 +1,7 @@
 /**
- * Title: a sky with Agentmon strolling by, the logo, and Play → three save slots (continue, start
- * a new adventure, or clear a slot after a confirm). Saving problems are explained kindly.
+ * Title: a morning meadow with a parade of Agentmon walking a path (1.1), the logo, and Play →
+ * three save slots (continue, start a new adventure, or clear a slot after a confirm). Saving
+ * problems are explained kindly.
  */
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { newGameState, type GameState } from '../../core/state';
@@ -17,12 +18,18 @@ import type { Game } from '../game';
 import { Session } from '../session';
 import { deleteSlot, loadSlot, persistent, SLOTS } from '../store';
 import { OverworldScene } from './overworld';
+import { BG_H, BG_W, drawBackdrop, GROUND_Y } from '../../art/backdrops';
+import { footAnchor } from '../../art/painter';
+import { P } from '../../art/palette';
 
 export class TitleScene implements Scene {
   readonly name = 'title';
   readonly root = new Container();
   private sky = new Graphics();
-  private friends: { s: Sprite; vx: number; phase: number }[] = [];
+  private bg: Sprite | null = null;
+  private path = new Graphics();
+  private friends: { s: Sprite; shadow: Graphics; phase: number }[] = [];
+  private walk = { y: 0, gap: 0, speed: 0, m: 1 };
   private el: HTMLElement | null = null;
   private t = 0;
 
@@ -30,13 +37,17 @@ export class TitleScene implements Scene {
 
   enter(app: App): void {
     this.game.music.play('title');
-    this.root.addChild(this.sky);
-    const picks = ['spinnet', 'druzling', 'buzzbill', 'kernip', 'hummet', 'lullakin', 'gleamgrub', 'zestle', 'hailbit', 'bathlet'];
+    this.bg = new Sprite(app.sprites.get('bg:meadow:morning', () => drawBackdrop('meadow', 'morning')));
+    this.root.addChild(this.sky, this.bg, this.path);
+    // the parade: the three partners in front, then old friends and new ones
+    const picks = ['spinnet', 'druzling', 'buzzbill', 'puffbit', 'lullakin', 'sprigling', 'glidelet', 'kernip', 'chinspark', 'glimmerpod', 'hummet', 'snowskip', 'stiltsprout', 'lithlet', 'gleamgrub', 'zestle'];
     picks.forEach((id, i) => {
-      const s = new Sprite(app.sprites.creature(id));
-      s.anchor.set(0.5, 1);
-      this.root.addChild(s);
-      this.friends.push({ s, vx: (i % 2 ? 1 : -1) * (12 + (i * 7) % 15), phase: i * 1.3 });
+      const s = new Sprite(app.sprites.creature(id, 64, 'happy'));
+      s.anchor.set(0.5, footAnchor(s.texture.height));
+      s.scale.x = -1;
+      const shadow = new Graphics();
+      this.root.addChild(shadow, s);
+      this.friends.push({ s, shadow, phase: i * 1.3 });
     });
     this.showHome();
   }
@@ -106,9 +117,22 @@ export class TitleScene implements Scene {
 
   resize(app: App): void {
     const { width: W, height: H } = app.host;
-    this.sky.clear().rect(0, 0, W, H).fill(0x8fc8ff).rect(0, H * 0.72, W, H * 0.28).fill(0x74c464).rect(0, H * 0.72, W, 6).fill(0x9ed97a);
-    const scale = Math.max(2, Math.round(app.host.zoom * 1.2));
-    this.friends.forEach((f, i) => { f.s.scale.set(scale); f.s.x = ((i + 0.5) / this.friends.length) * W; f.s.y = H * 0.72 + 8 + (i % 3) * 18; });
+    // the morning meadow backdrop covers the screen, its ground along the bottom quarter
+    const k = Math.max(1, Math.ceil(Math.max(W / BG_W, H / BG_H)));
+    this.sky.clear().rect(0, 0, W, H).fill(0xffd8c6);
+    if (this.bg) { this.bg.scale.set(k); this.bg.x = Math.round((W - BG_W * k) / 2); this.bg.y = Math.round(H - BG_H * k); }
+    const ground = H - (BG_H - GROUND_Y) * k;
+    // a dirt path across the grass for the parade
+    const py = ground + 10 * k, ph = Math.max(8 * k, 18);
+    this.path.clear().rect(0, py, W, ph).fill(P.dirt2).rect(0, py, W, Math.max(2, k)).fill(P.dirt3).rect(0, py + ph - Math.max(2, k), W, Math.max(2, k)).fill(P.dirt1);
+    const m = Math.max(1, Math.min(4, Math.round(Math.min(W / 640, H / 360) * 1.5)));
+    this.walk = { y: py + ph * 0.7, gap: 70 * m, speed: 18 * m, m };
+    this.friends.forEach((f, i) => {
+      f.s.scale.set(-m, m);
+      f.s.x = W - i * this.walk.gap;
+      f.s.y = this.walk.y;
+      f.shadow.clear().ellipse(0, 0, 11 * m, 2.4 * m).fill({ color: 0x2a1f3d, alpha: 0.18 });
+    });
   }
 
   update(dt: number, app: App): void {
@@ -123,13 +147,19 @@ export class TitleScene implements Scene {
         else if (pad.a) (document.activeElement as HTMLElement).click();
       }
     }
-    const W = app.host.width;
+    // the parade walks to the right along the path, each with a little hop, and loops round
+    const W = app.host.width, calm = this.game.settings.reducedMotion;
+    const loop = this.friends.length * this.walk.gap;
     for (const f of this.friends) {
-      f.s.x += f.vx * dt * Math.abs(f.s.scale.x) * 0.5;
-      f.s.scale.x = Math.abs(f.s.scale.x) * (f.vx > 0 ? -1 : 1);
-      if (f.s.x < -40) f.s.x = W + 40;
-      if (f.s.x > W + 40) f.s.x = -40;
-      f.s.pivot.y = Math.round(Math.max(0, Math.sin(this.t * 6 + f.phase)) * 2);
+      if (!calm) {
+        f.s.x += this.walk.speed * dt;
+        if (f.s.x > W + this.walk.gap * 0.6) f.s.x -= loop;
+      }
+      const hop = calm ? 0 : Math.max(0, Math.sin(this.t * 7 + f.phase)) * 3 * this.walk.m;
+      f.s.y = this.walk.y - Math.round(hop);
+      f.shadow.x = f.s.x;
+      f.shadow.y = this.walk.y - this.walk.m;
+      f.shadow.scale.set(1 - hop / (40 * this.walk.m));
     }
   }
 }

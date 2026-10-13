@@ -7,7 +7,8 @@
  * Also draws the Spark Ring befriending game and the growing (evolution) animation.
  */
 import { Container, Graphics, Sprite, Text, type Texture } from 'pixi.js';
-import { BG_H, BG_W, drawBackdrop, GROUND_Y } from '../art/backdrops';
+import { BG_H, BG_W, drawBackdrop, GROUND_Y, INDOOR_BG } from '../art/backdrops';
+import type { DayTime } from '../core/world/daytime';
 import type { MapDef } from '../core/world/map';
 import type { Creature, Element } from '../core/types';
 import { ELEMENT_INFO } from '../data/elements';
@@ -18,15 +19,19 @@ import { footAnchor } from '../art/painter';
 
 export interface StageLayout { x: number; y: number; w: number; h: number }
 
-interface Particle { g: Graphics; vx: number; vy: number; life: number; max: number; spin: number }
+interface Particle { g: Container; vx: number; vy: number; life: number; max: number; spin: number; fall?: number }
 
 const ease = (t: number) => 1 - (1 - t) * (1 - t);
+/** A springy 0 → 1 that overshoots a little and settles (a pop). */
+const spring = (t: number) => (t >= 1 ? 1 : 1 - Math.exp(-6 * t) * Math.cos(t * 9));
 
 export class BattleView {
   readonly root = new Container();
   private bg: Sprite;
   readonly sprites: [Sprite, Sprite];
   private shields: [Graphics, Graphics] = [new Graphics(), new Graphics()];
+  /** Soft shadows on the ground under each friend (they shrink when it hops). */
+  private shadows: [Graphics, Graphics] = [new Graphics(), new Graphics()];
   private fx = new Container();
   private particles: Particle[] = [];
   private base: [{ x: number; y: number }, { x: number; y: number }] = [{ x: 0, y: 0 }, { x: 0, y: 0 }];
@@ -39,47 +44,67 @@ export class BattleView {
   calm = false;
   /** Random blinks (off for still captures, so screenshots repeat exactly). */
   blinks = true;
+  /** 1.1: what your friends wear (an accessory number); only your side is dressed. */
+  wearingOf: (c: Creature) => number = () => 0;
   private mons: [Creature | null, Creature | null] = [null, null];
   private faces: ['idle' | 'blink' | 'happy' | 'hit' | 'nap', 'idle' | 'blink' | 'happy' | 'hit' | 'nap'] = ['idle', 'idle'];
   private nextBlink = [1.4, 2.3];
   layout: StageLayout = { x: 0, y: 0, w: 1, h: 1 };
+  /** Staggered stage for tall screens (see resize). */
+  private portrait = false;
   private idle = [true, true];
   private napping = [false, false];
   private zzz: [Text | null, Text | null] = [null, null];
 
-  constructor(private art: Sprites, kind: MapDef['battleBg']) {
-    this.bg = new Sprite(art.get(`bg:${kind}`, () => drawBackdrop(kind)));
+  constructor(private art: Sprites, kind: MapDef['battleBg'], time: DayTime = 'day') {
+    const t = INDOOR_BG.includes(kind) ? 'day' : time;
+    this.bg = new Sprite(art.get(`bg:${kind}:${t}`, () => drawBackdrop(kind, t)));
     this.sprites = [new Sprite(), new Sprite()];
     for (const s of this.sprites) s.anchor.set(0.5, 1);
     // no mask: the backdrop simply runs on under the see-through bottom panel (a stencil mask cost a
     // few ms a frame on slow tablets)
-    this.root.addChild(this.bg, this.shields[0], this.shields[1], this.sprites[0], this.sprites[1], this.fx);
+    for (const g of this.shadows) g.visible = false;
+    this.root.addChild(this.bg, this.shadows[0], this.shadows[1], this.shields[0], this.shields[1], this.sprites[0], this.sprites[1], this.fx);
   }
 
   /** Fit the stage into a rectangle (device pixels). */
   resize(l: StageLayout): void {
     this.layout = l;
     this.bgScale = Math.max(1, Math.ceil(Math.max(l.w / BG_W, l.h / BG_H)));
-    // 64 px textures at a whole-number scale stay crisp. Each friend fits a third of the stage's
-    // width and under half its height, so the two never overlap on a phone (1.0's did).
-    const fit = Math.floor(Math.min(l.w * 0.34, l.h * 0.45) / 64);
+    // 64 px textures at a whole-number scale stay crisp. Side by side, each friend fits a third of
+    // the stage's width and under half its height, so the two never overlap (1.0's did on phones).
+    // On a tall stage (a phone held upright) they stand staggered instead: the other one further
+    // back on the right, your friend nearer on the left, so each can be half the width.
+    this.portrait = l.h > l.w * 1.15;
+    const fit = Math.floor((this.portrait ? Math.min(l.w * 0.5, l.h * 0.3) : Math.min(l.w * 0.34, l.h * 0.45)) / 64);
     this.monScale = 2 * Math.max(1, Math.min(Math.round(this.bgScale * 0.85), fit));
     this.bg.scale.set(this.bgScale);
     this.bg.x = l.x + Math.round((l.w - BG_W * this.bgScale) / 2);
     this.bg.y = l.y + Math.round((l.h - BG_H * this.bgScale) / 2);
     const groundY = this.bg.y + GROUND_Y * this.bgScale + this.bgScale * 4;
-    const spread = Math.min(l.w * 0.3, 32 * this.monScale * 1.4);
-    this.base = [{ x: l.x + l.w / 2 - spread, y: groundY }, { x: l.x + l.w / 2 + spread, y: groundY }];
+    if (this.portrait) {
+      const near = Math.min(groundY + 16 * this.bgScale, l.y + l.h - 3 * this.bgScale);
+      this.base = [{ x: l.x + l.w * 0.3, y: near }, { x: l.x + l.w * 0.7, y: groundY }];
+    } else {
+      const spread = Math.min(l.w * 0.3, 32 * this.monScale * 1.4);
+      this.base = [{ x: l.x + l.w / 2 - spread, y: groundY }, { x: l.x + l.w / 2 + spread, y: groundY }];
+    }
     for (const side of [0, 1] as const) {
       const s = this.sprites[side];
+      this.shadows[side].clear().ellipse(0, 0, 12 * this.monScale, 2.4 * this.monScale).fill({ color: 0x2a1f3d, alpha: 0.2 });
       this.rest(side);
       s.x = this.base[side].x;
       s.y = this.base[side].y;
     }
   }
 
-  /** Top of a friend's head (device px), for the info cards. */
+  /**
+   * Where a friend's info card goes (device px; the card sits just above the point): over its head
+   * side by side; beside it when staggered (the other one's card to its left, yours to your right).
+   */
   headPoint(side: 0 | 1): { x: number; y: number } {
+    const l = this.layout;
+    if (this.portrait) return side === 1 ? { x: l.x + l.w * 0.28, y: this.base[1].y - 6 * this.monScale } : { x: l.x + l.w * 0.72, y: this.base[0].y };
     return { x: this.base[side].x, y: this.base[side].y - 30 * this.monScale };
   }
 
@@ -98,7 +123,7 @@ export class BattleView {
   pose(side: 0 | 1, c: Creature, pose: 'idle' | 'blink' | 'happy' | 'hit' | 'nap'): void {
     this.faces[side] = pose;
     const s = this.sprites[side];
-    s.texture = this.art.creature(c.species, 64, pose, c.shimmer);
+    s.texture = this.art.creature(c.species, 64, pose, c.shimmer, side === 0 ? this.wearingOf(c) : 0);
     s.anchor.set(0.5, footAnchor(s.texture.height));
   }
 
@@ -148,13 +173,96 @@ export class BattleView {
     });
   }
 
-  /** Slide a friend in from its side. */
-  async enter(side: 0 | 1, c: Creature): Promise<void> {
+  /**
+   * A friend arrives: `run` hops in from its side and lands in a little dust puff (your friends, and
+   * a trainer's); `pop` jumps out of the grass with a springy pop and a "!" (a wild one).
+   * With reduced motion it simply fades in where it stands.
+   */
+  async enter(side: 0 | 1, c: Creature, how: 'run' | 'pop' = 'run'): Promise<void> {
     this.setCreature(side, c);
+    const s = this.sprites[side], bx = this.base[side].x, by = this.base[side].y;
+    this.idle[side] = false;
+    if (this.calm) {
+      s.x = bx; s.y = by; s.alpha = 0;
+      await this.tween(280, t => { s.alpha = t; });
+      s.alpha = 1;
+    } else if (how === 'pop') {
+      s.x = bx; s.y = by;
+      this.puff(bx, by, 10, 0x8fd88a);
+      await this.tween(520, t => {
+        const k = Math.max(0.01, spring(t));
+        this.rest(side, k, k * (1 + Math.sin(t * Math.PI) * 0.12));
+        s.y = by - Math.sin(Math.min(1, t * 1.4) * Math.PI) * 12 * this.bgScale;
+      });
+      void this.exclaim(side);
+    } else {
+      const from = side === 0 ? this.layout.x - 40 * this.monScale : this.layout.x + this.layout.w + 40 * this.monScale;
+      await this.tween(520, t => { s.x = from + (bx - from) * ease(t); s.y = by - Math.abs(Math.sin(t * Math.PI * 3)) * 6 * this.bgScale * (1 - t * 0.5); });
+      this.puff(bx, by, 7, 0xfff3e0);
+    }
+    s.x = bx; s.y = by;
+    this.rest(side);
+    this.idle[side] = true;
+  }
+
+  /** A little puff at the feet (dust, or leaves when something jumps out of the grass). */
+  private puff(x: number, y: number, n: number, color: number): void {
+    for (let i = 0; i < n; i++) {
+      const g = new Graphics().circle(0, 0, 1.6 + (i % 3) * 0.6).fill({ color, alpha: 0.9 });
+      g.scale.set(this.bgScale);
+      g.x = x + (i - n / 2) * 2 * this.bgScale;
+      g.y = y - this.bgScale;
+      this.fx.addChild(g);
+      const dir = i < n / 2 ? -1 : 1;
+      this.particles.push({ g, vx: dir * (18 + (i % 4) * 9) * this.bgScale, vy: -(14 + (i % 3) * 8) * this.bgScale, life: 0.5, max: 0.5, spin: 0, fall: 40 });
+    }
+  }
+
+  /** A "!" over its head (a wild one notices you). */
+  private async exclaim(side: 0 | 1): Promise<void> {
     const s = this.sprites[side];
-    const from = side === 0 ? this.layout.x - 40 * this.monScale : this.layout.x + this.layout.w + 40 * this.monScale;
-    await this.tween(420, t => { s.x = from + (this.base[side].x - from) * ease(t); s.y = this.base[side].y - Math.abs(Math.sin(t * Math.PI * 2)) * 6 * this.bgScale; });
-    s.y = this.base[side].y;
+    const t = new Text({ text: '!', style: { fill: 0xffcf5c, fontSize: 18 * this.bgScale, fontWeight: '900', stroke: { color: 0x2a1f3d, width: 4 * this.bgScale } } });
+    t.anchor.set(0.5, 1);
+    t.x = s.x + (side === 0 ? -1 : 1) * 10 * this.monScale;
+    t.y = s.y - 28 * this.monScale;
+    this.fx.addChild(t);
+    await this.tween(240, k => t.scale.set(spring(k)));
+    await this.wait(520);
+    await this.tween(200, k => { t.alpha = 1 - k; });
+    t.destroy();
+  }
+
+  /**
+   * An attack: the hop toward the other side, and a volley of the move's element shape (flames,
+   * drops, leaves, pebbles, swirls, snowflakes, zigzags or stars) arcing over to it. The shapes are
+   * the element icons, so the effect reads without colour.
+   */
+  async attack(side: 0 | 1, element: Element | 'plain'): Promise<void> {
+    if (element !== 'plain' && !this.calm) void this.volley(side, element);
+    await this.lunge(side);
+  }
+
+  private async volley(side: 0 | 1, element: Element): Promise<void> {
+    const from = this.sprites[side], to = this.sprites[side === 0 ? 1 : 0];
+    const x0 = from.x, y0 = from.y - 16 * this.monScale, x1 = to.x, y1 = to.y - 14 * this.monScale;
+    const tex = this.art.element(element);
+    const shots = Array.from({ length: 5 }, async (_, i) => {
+      await this.wait(i * 70);
+      const p = new Sprite(tex);
+      p.anchor.set(0.5);
+      // whole-number scales keep the icon's pixels square (12 px icons: about a quarter of a friend's height)
+      p.scale.set(Math.max(1, Math.round(this.monScale * (0.6 + (i % 2) * 0.2))));
+      this.fx.addChild(p);
+      const lift = (10 + (i % 3) * 7) * this.monScale, wob = (i - 2) * 3 * this.monScale;
+      await this.tween(360, t => {
+        p.x = x0 + (x1 - x0) * t;
+        p.y = y0 + (y1 - y0) * t - Math.sin(t * Math.PI) * lift + Math.sin(t * Math.PI) * wob * 0.3;
+        p.rotation = element === 'gust' ? t * 6 : 0;
+        p.alpha = t < 0.85 ? 1 : (1 - t) / 0.15;
+      });
+      p.destroy();
+    });
+    await Promise.all(shots);
   }
 
   async leave(side: 0 | 1): Promise<void> {
@@ -184,7 +292,7 @@ export class BattleView {
     this.pose(side, c, 'hit');
     const color = element === 'plain' ? 0xfff3b0 : ELEMENT_INFO[element].color;
     const { x, y } = s;
-    this.burst(x, y - 16 * this.monScale, matchup === 'strong' ? 14 : matchup === 'weak' ? 4 : 8, color, matchup === 'strong' ? 1.4 : 1);
+    this.burst(x, y - 16 * this.monScale, matchup === 'strong' ? 14 : matchup === 'weak' ? 4 : 8, color, matchup === 'strong' ? 1.4 : 1, false, element === 'plain' ? undefined : element);
     await this.tween(360, t => {
       const k = Math.sin(t * Math.PI);
       this.rest(side, 1 + k * 0.12, 1 - k * 0.12);
@@ -270,14 +378,23 @@ export class BattleView {
     t.destroy();
   }
 
-  private burst(x: number, y: number, n: number, color: number, power = 1, gentle = false): void {
+  private burst(x: number, y: number, n: number, color: number, power = 1, gentle = false, element?: Element): void {
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + Math.random() * 0.4;
       const star = i % 2 === 0 && !gentle;
-      const g = new Graphics();
-      if (star) g.poly([0, -3, 1, -1, 3, 0, 1, 1, 0, 3, -1, 1, -3, 0, -1, -1]).fill(i % 4 === 0 ? 0xffffff : color);
-      else g.circle(0, 0, 1.4).fill(color);
-      g.scale.set(this.bgScale * (0.8 + power * 0.4));
+      let g: Container;
+      if (element && i % 2 === 1) {
+        // the element's own shape, so a bump says which element it was without colour
+        const icon = new Sprite(this.art.element(element));
+        icon.anchor.set(0.5);
+        g = icon;
+      } else {
+        const d = new Graphics();
+        if (star) d.poly([0, -3, 1, -1, 3, 0, 1, 1, 0, 3, -1, 1, -3, 0, -1, -1]).fill(i % 4 === 0 ? 0xffffff : color);
+        else d.circle(0, 0, 1.4).fill(color);
+        g = d;
+      }
+      g.scale.set(element && i % 2 === 1 ? Math.max(1, Math.round(this.monScale * (0.45 + power * 0.15))) : this.bgScale * (0.8 + power * 0.4));
       g.x = x;
       g.y = y;
       this.fx.addChild(g);
@@ -289,7 +406,15 @@ export class BattleView {
   update(dt: number): void {
     this.time += dt;
     for (const side of [0, 1] as const) {
-      const s = this.sprites[side], c = this.mons[side];
+      const s = this.sprites[side], c = this.mons[side], sh = this.shadows[side];
+      sh.visible = s.visible && s.alpha > 0.05;
+      if (sh.visible) {
+        const lift = Math.max(0, this.base[side].y - s.y);
+        sh.x = s.x;
+        sh.y = this.base[side].y - this.monScale * 0.6;
+        sh.scale.set(Math.max(0.5, 1 - lift / (36 * this.monScale)) * Math.min(1, Math.abs(s.scale.x) / (this.monScale / 2)));
+        sh.alpha = s.alpha;
+      }
       if (this.idle[side] && s.visible && !this.napping[side]) {
         // breathing: a slow, gentle stretch from the feet (no brightness change)
         const b = this.calm ? 0 : wave(MOTION.breatheHz, this.time, side * 1.7);
@@ -307,7 +432,7 @@ export class BattleView {
       p.life -= dt * this.speed;
       p.g.x += p.vx * dt * this.speed;
       p.g.y += p.vy * dt * this.speed;
-      p.vy += 60 * this.bgScale * dt * this.speed;
+      p.vy += (p.fall ?? 60) * this.bgScale * dt * this.speed;
       p.g.rotation += p.spin * dt;
       p.g.alpha = Math.max(0, p.life / p.max);
       if (p.life <= 0) { p.g.destroy(); this.particles = this.particles.filter(x => x !== p); }

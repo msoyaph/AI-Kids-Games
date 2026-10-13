@@ -101,6 +101,9 @@ export class Input {
     return Math.abs(x) > Math.abs(y) ? (x > 0 ? 2 : 1) : y > 0 ? 0 : 3;
   }
 
+  /** The stick or D-pad direction held at the last poll, even while a menu has focus (1.1: Bubble Catch). */
+  get padHeld(): Dir | null { return this.navPrev; }
+
   /** Poll gamepads once per frame. Returns menu-navigation presses for DOM menus. */
   pollGamepad(): { nav: Dir | null; a: boolean; b: boolean; menu: boolean } {
     const none = { nav: null, a: false, b: false, menu: false };

@@ -20,6 +20,8 @@ export interface Settings {
   befriendMode: 'spark' | 'mood';
   sharedXp: boolean;
   touchSize: 's' | 'm' | 'l';
+  /** 1.1: morning, day, evening and night come and go with play time (off: always day). */
+  dayCycle: boolean;
 }
 
 export function defaultSettings(): Settings {
@@ -28,7 +30,7 @@ export function defaultSettings(): Settings {
   return {
     v: 1, textSize: 0, readAloud: false, textSpeed: 'normal', battleSpeed: 1, skipAnimations: false, hints: true,
     reducedMotion: reduced, colorblind: false, volume: { master: 0.8, music: 0.7, sfx: 0.8, voice: 0.8 },
-    befriendMode: 'spark', sharedXp: true, touchSize: 'm',
+    befriendMode: 'spark', sharedXp: true, touchSize: 'm', dayCycle: true,
   };
 }
 
@@ -53,6 +55,7 @@ export function loadSettings(): Settings {
     befriendMode: raw.befriendMode === 'mood' ? 'mood' : 'spark',
     sharedXp: raw.sharedXp !== false,
     touchSize: raw.touchSize === 's' || raw.touchSize === 'l' ? raw.touchSize : 'm',
+    dayCycle: raw.dayCycle !== false,
   };
 }
 

@@ -33,7 +33,10 @@ export class SparkRing {
 
   private layout(): void {
     const { cx, cy, r, scale, W, H } = this.size;
-    this.dim.clear().rect(0, 0, W, H).fill({ color: 0x1f1a33, alpha: 0.55 });
+    // a light plum wash (1.0 greyed the scene out) and a warm spotlight behind the ring
+    this.dim.clear().rect(0, 0, W, H).fill({ color: 0x2a1f3d, alpha: 0.28 })
+      .circle(cx, cy - r * 0.2, r * 1.65).fill({ color: 0xfff1d8, alpha: 0.14 })
+      .circle(cx, cy - r * 0.2, r * 1.3).fill({ color: 0xfff1d8, alpha: 0.12 });
     // the friend stands just above the ring, small enough to stay on screen
     const k = Math.max(2, Math.min(scale, Math.floor((cy - r * 1.12) / 30)));
     // an even scale shows the 64 px art at half that (smoother bodies, the same pixel grid)

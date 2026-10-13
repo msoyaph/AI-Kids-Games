@@ -62,6 +62,8 @@ export const AREAS: AreaDef[] = [
   { id: 'beacon-spire', name: 'Beacon Spire', chapter: 12, terrain: 'none', spawns: 0, wild: [] },
   // Post-game wilds: the third stages, so collectors can also meet them in the wild.
   { id: 'starlit-meadow', name: 'Starlit Meadow', chapter: 14, terrain: 'grass', spawns: 8, wild: [w('fluffkorn', 42, 46), w('canopant', 42, 46), w('bouldwom', 42, 46), w('fernadore', 42, 46), w('voltabill', 42, 46), w('druzarch', 42, 46), w('stonebloom', 42, 46)] },
+  // 1.1: Banyan Hollow (through the root tunnel from the Starlit Meadow)
+  { id: 'banyan-hollow', name: 'Banyan Hollow', chapter: 14, terrain: 'grass', spawns: 7, wild: [w('geyserguard', 42, 46), w('leafwarden', 42, 46), w('bounceberg', 42, 46), w('wadewood', 42, 46), w('lumitube', 42, 46), w('skimfin', 42, 46), w('lithopsy', 42, 46)] },
   { id: 'deep-blue-cove', name: 'Deep Blue Cove', chapter: 14, terrain: 'water', spawns: 8, wild: [w('grandatee', 42, 46), w('hardigrade', 42, 46), w('thermabara', 42, 46), w('hailcastle', 42, 46), w('scarfspire', 42, 46), w('mangromere', 42, 46), w('galefin', 42, 46), w('pyrolanterne', 42, 46), w('voltrunk', 42, 46)] },
 ];
 

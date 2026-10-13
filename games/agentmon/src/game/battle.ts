@@ -17,12 +17,14 @@ import { SPECIES } from '../data/species';
 import type { MapDef } from '../core/world/map';
 import { BattleView } from '../render/battle-view';
 import { playEvolution } from '../render/evolution';
+import { dayTime, type DayTime } from '../core/world/daytime';
 import { SparkRing } from '../render/spark-ring';
 import { BattleUI } from '../ui/battle-ui';
 import { wait } from '../ui/dom';
 import { playMoodMatch } from '../ui/mood-match';
 import { TUNING } from '../tuning';
 import type { Game } from './game';
+import { wearing } from '../core/care';
 
 export interface BattleSetup {
   kind: 'wild' | 'trainer';
@@ -32,6 +34,8 @@ export interface BattleSetup {
   mood?: Mood;
   guardian?: boolean;
   bg: MapDef['battleBg'];
+  /** Time of day for the backdrop (from play time when not given). */
+  time?: DayTime;
   seed: number;
   /** Battle music (battle-wild, battle-trainer, battle-keeper, battle-rival, guardian). */
   music?: string;
@@ -44,12 +48,13 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
   const s = session.state;
   const settings = game.settings;
   const app = game.app;
-  const view = new BattleView(app.sprites, setup.bg);
-  const enter = async (side: 0 | 1, c: Creature) => { game.cry(c.species); await view.enter(side, c); };
+  const view = new BattleView(app.sprites, setup.bg, setup.time ?? (settings.dayCycle ? dayTime(s.playMs) : 'day'));
+  const enter = async (side: 0 | 1, c: Creature) => { game.cry(c.species); await view.enter(side, c, side === 1 && setup.kind === 'wild' ? 'pop' : 'run'); };
   const mapMusic = game.music.playing;
   game.music.play(setup.music ?? (setup.guardian ? 'guardian' : setup.kind === 'wild' ? 'battle-wild' : 'battle-trainer'));
   view.speed = settings.skipAnimations ? 4 : settings.battleSpeed;
   view.calm = settings.reducedMotion;
+  view.wearingOf = c => wearing(s, c);
   const foeName = (c: Creature) => (setup.kind === 'wild' ? `the wild ${SPECIES[c.species]!.name}` : `${setup.trainer?.name}'s ${SPECIES[c.species]!.name}`);
   const ui = new BattleUI(game, DEX, { friend: c => session.friendName(c), foe: c => SPECIES[c.species]!.name });
   app.stage.addChild(view.root);
@@ -107,6 +112,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
         continue;
       }
       refresh();
+      ui.turn(0);
       const choice = await ui.chooseAction(b);
       let action: Action;
       if (choice.type === 'befriend') {
@@ -168,12 +174,13 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
     for (const e of events) {
       switch (e.t) {
         case 'act':
+          ui.turn(e.side);
           if (e.kind === 'move' && e.move) {
             lastMove = { side: e.side, move: e.move };
             const m = DEX.moves[e.move]!;
             const mover = e.side === 0 ? session.friendName(before[0]) : foeName(before[1]);
             await ui.say(`${cap(mover)} used ${m.name}!`, 650);
-            if (m.power > 0) await view.lunge(e.side);
+            if (m.power > 0) await view.attack(e.side, m.element);
           } else if (e.kind === 'rest') {
             await ui.say(`${cap(name(e.side))} takes a rest.`, 600);
           } else if (e.kind === 'item' && e.item) {
@@ -243,6 +250,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
       }
     }
     for (const side of [0, 1] as const) void view.shield(side, false);
+    ui.turn(null);
     refresh();
   }
 

@@ -30,6 +30,9 @@ import { TrialScene } from './trial';
 import { QUEST_BY_ID } from '../../data/quests';
 import { FX, wave } from '../../render/fx';
 import { routeBetween } from '../links';
+import { Ambient } from '../../render/ambient';
+import { duskAmount, nightAmount } from '../../core/world/daytime';
+import { mix } from '../../art/pixelcanvas';
 
 const STEP = 0.2;
 const RUN_STEP = 0.13;
@@ -41,6 +44,7 @@ export class OverworldScene implements Scene, ScriptHost {
   readonly name = 'overworld';
   readonly root = new Container();
   private view!: WorldView;
+  private ambient!: Ambient;
   private move: Move | null = null;
   private path: [number, number][] = [];
   private pathGoal: { x: number; y: number } | null = null;
@@ -99,6 +103,10 @@ export class OverworldScene implements Scene, ScriptHost {
     if (this.view) { this.root.removeChild(this.view.root); this.view.destroy(); }
     this.view = new WorldView(this.app.sprites, this.world, this.state);
     this.root.addChildAt(this.view.root, 0);
+    this.ambient = new Ambient(this.app.sprites, this.world.def);
+    // who can talk here, for the dialogue portraits
+    this.game.speakers = new Map(this.world.npcs.map(n => [n.def.name, { look: n.def.look, creature: n.def.creature }]));
+    this.view.root.addChild(this.ambient.root);
     this.npcMoves.clear();
     this.wildMoves.clear();
     this.placeActors();
@@ -226,6 +234,7 @@ export class OverworldScene implements Scene, ScriptHost {
     else if (this.move) this.advanceMove(dt);
     this.animatePlayer(dt);
     this.followCamera(dt);
+    this.liven(dt);
     this.drawDarkness();
     this.stuckHelper(dt);
   }
@@ -451,6 +460,22 @@ export class OverworldScene implements Scene, ScriptHost {
     }
   }
 
+  /**
+   * 1.1: the map's gentle life and light. Outdoors (and with "Time of day" on) the whole map takes a
+   * warm evening tint and then a soft night blue, as a multiply on the world (no extra drawing pass).
+   */
+  private liven(dt: number): void {
+    const settings = this.game.settings;
+    const sky = this.world.def.outdoor && settings.dayCycle;
+    const dusk = sky ? duskAmount(this.state.playMs) : 0, night = sky ? nightAmount(this.state.playMs) : 0;
+    const calm = settings.reducedMotion;
+    this.view.animate(this.time, dusk, calm);
+    const z = this.zoom(), { width: W, height: H } = this.app.host;
+    this.ambient.update(dt, { x: this.camX / z, y: this.camY / z, w: W / z, h: H / z }, dusk, calm);
+    const warm = mix(0xffffff, 0xffd6b0, dusk * (1 - night));
+    this.view.root.tint = mix(warm, 0xaab6f0, night);
+  }
+
   private followCamera(dt: number): void {
     const z = this.zoom();
     const { width: W, height: H } = this.app.host;
@@ -572,11 +597,17 @@ export class OverworldScene implements Scene, ScriptHost {
   }
 
   private async changeMap(id: string, x: number, y: number, dir: Dir): Promise<void> {
-    await this.game.fade('out');
+    await this.game.fade('out', 260, this.playerOnScreen());
     this.session.enterMap(id, x, y, dir);
     this.build();
     this.session.save();
-    await this.game.fade('in');
+    await this.game.fade('in', 260, this.playerOnScreen());
+  }
+
+  /** The player's middle on screen, in CSS px (where the iris between maps closes and opens). */
+  private playerOnScreen(): { x: number; y: number } {
+    const z = this.zoom(), dpr = this.app.host.dpr, p = this.view.player;
+    return { x: (p.x * z + this.view.root.x) / dpr, y: ((p.y - 10) * z + this.view.root.y) / dpr };
   }
 
   private async openMenu(): Promise<void> {

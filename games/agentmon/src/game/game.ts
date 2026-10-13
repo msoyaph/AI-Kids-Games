@@ -17,6 +17,12 @@ import { SPECIES } from '../data/species';
 import type { App } from './app';
 import type { Session } from './session';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
+import type { CharLook } from '../art/characters';
+import { drawCreature } from '../art/creatures';
+import { POSES } from '../art/painter';
+import { drawPortrait, expressionFor } from '../art/portraits';
+import { CAST } from '../data/cast';
+import { canvasUrl } from '../render/atlas';
 
 export class Game {
   readonly input = new Input();
@@ -49,6 +55,7 @@ export class Game {
       readAloud: () => this.settings.readAloud,
       textSpeed: () => this.settings.textSpeed,
       instant: () => this.settings.skipAnimations || new URLSearchParams(location.search).has('fasttext'),
+      portrait: (who, line) => this.portraitFor(who, line),
     }, app.ui);
     this.touch = new TouchControls(this.input, { onTap: (x, y) => this.onWorldTap?.(x, y) });
     app.ui.appendChild(this.touch.el);
@@ -91,11 +98,61 @@ export class Game {
     setTimeout(() => el.remove(), ms + 400);
   }
 
-  async fade(dir: 'out' | 'in', ms = 260): Promise<void> {
+  /** People (and story Agentmon) on the current map, by the name they talk with (the overworld fills it). */
+  speakers = new Map<string, { look?: CharLook; creature?: string }>();
+  private portraitUrls = new Map<string, string>();
+
+  /** The speaker's portrait for a line (named cast first, then whoever is on this map), with a fitting face. */
+  portraitFor(who: string, line: string): string | null {
+    const cast = Object.values(CAST).find(c => c.name === who);
+    const one = cast ? { look: cast.look } : this.speakers.get(who);
+    if (!one) return null;
+    const expr = expressionFor(line);
+    const key = `${who}:${one.creature ?? ''}:${expr}`;
+    let url = this.portraitUrls.get(key);
+    if (!url) {
+      url = one.creature ? canvasUrl(drawCreature(one.creature, 32, expr === 'happy' ? POSES.happy : expr === 'surprised' ? POSES.hit : POSES.idle), 3)
+        : one.look ? canvasUrl(drawPortrait(one.look, expr), 3) : '';
+      this.portraitUrls.set(key, url);
+    }
+    return url || null;
+  }
+
+  /**
+   * Fade the screen out or in. With `at` (a point on screen, in CSS px) it is an iris instead: a
+   * circle closes on that point, and opens from it again on the new map. Reduced motion (or
+   * skipping animations) keeps the plain, instant fade. Timed with timers, so a hidden tab can't
+   * leave it half done.
+   */
+  async fade(dir: 'out' | 'in', ms = 260, at?: { x: number; y: number }): Promise<void> {
     const fast = this.settings.reducedMotion || this.settings.skipAnimations;
-    this.fadeEl.style.transitionDuration = `${fast ? 0 : ms}ms`;
-    this.fadeEl.classList.toggle('on', dir === 'out');
-    await wait(fast ? 0 : ms);
+    const el = this.fadeEl;
+    if (!at || fast) {
+      el.classList.remove('iris');
+      el.style.transitionDuration = `${fast ? 0 : ms}ms`;
+      el.classList.toggle('on', dir === 'out');
+      await wait(fast ? 0 : ms);
+      return;
+    }
+    const R = Math.hypot(Math.max(at.x, innerWidth - at.x), Math.max(at.y, innerHeight - at.y)) + 4;
+    const dur = ms * 1.6;
+    el.style.transitionDuration = '0ms';
+    el.style.setProperty('--ix', `${Math.round(at.x)}px`);
+    el.style.setProperty('--iy', `${Math.round(at.y)}px`);
+    el.style.setProperty('--ir', `${dir === 'out' ? R : 0}px`);
+    el.classList.add('iris', 'on');
+    const t0 = performance.now();
+    await new Promise<void>(resolve => {
+      const step = () => {
+        const k = Math.min(1, (performance.now() - t0) / dur);
+        const e = k * k * (3 - 2 * k);
+        el.style.setProperty('--ir', `${Math.round(dir === 'out' ? R * (1 - e) : R * e)}px`);
+        if (k < 1) setTimeout(step, 16);
+        else resolve();
+      };
+      step();
+    });
+    if (dir === 'in') el.classList.remove('iris', 'on');
   }
 
   /** A one-time tutorial card (once per adventure), with the controls for the current device. */

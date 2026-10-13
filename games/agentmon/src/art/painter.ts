@@ -232,6 +232,17 @@ export class Painter {
     return this.pc;
   }
 
+  /** Where the face was drawn (canvas pixels), or null: accessories use it to find the head. */
+  faceBounds(): { x0: number; y0: number; x1: number; y1: number } | null {
+    if (!this.face.size) return null;
+    let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
+    for (const i of this.face) {
+      const x = i % this.pc.w, y = Math.floor(i / this.pc.w);
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+    return { x0, y0, x1, y1 };
+  }
+
   /** For shimmer variants: recolour the body but never the face. */
   recolor(f: (c: number) => number): this {
     for (let i = 0; i < this.pc.px.length; i++) if (this.pc.px[i] !== T && !this.face.has(i)) this.pc.px[i] = f(this.pc.px[i]!);

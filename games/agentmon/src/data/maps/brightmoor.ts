@@ -98,7 +98,7 @@ export const neighbor: MapDef = {
 };
 
 export const academy: MapDef = {
-  id: 'academy', name: 'Field Agent Academy', music: 'academy', outdoor: false, battleBg: 'indoor', theme: 3,
+  id: 'academy', name: 'Field Agent Academy', music: 'academy', outdoor: false, battleBg: 'indoor', theme: 16,
   rows: [
     'WWWWWWWWWWWW',
     'WWWWWWWWWWWW',
@@ -156,7 +156,7 @@ export const academyGarden: MapDef = {
 };
 
 export const restBrightmoor: MapDef = {
-  id: 'rest-brightmoor', name: 'Brightmoor Rest Stop', music: 'rest', outdoor: false, battleBg: 'indoor', theme: 3,
+  id: 'rest-brightmoor', name: 'Brightmoor Rest Stop', music: 'rest', outdoor: false, battleBg: 'indoor', theme: 14,
   rows: ['WWWWWWWWW', 'WWWWWWWWW', 'fffffffff', 'fffffffff', 'ffffrffff', 'fffffffff', 'fffffffff', 'ffffrffff'],
   objects: [{ kind: 'nest', x: 1, y: 3, w: 2 }, { kind: 'counter', x: 3, y: 3, w: 3 }, { kind: 'plant', x: 8, y: 2 }, { kind: 'plant', x: 0, y: 6 }],
   warps: [{ x: 4, y: 7, to: 'brightmoor', tx: 6, ty: 17, dir: 0 }],
@@ -166,7 +166,7 @@ export const restBrightmoor: MapDef = {
 };
 
 export const shopBrightmoor: MapDef = {
-  id: 'shop-brightmoor', name: 'Brightmoor Shop', music: 'shop', outdoor: false, battleBg: 'indoor', theme: 3,
+  id: 'shop-brightmoor', name: 'Brightmoor Shop', music: 'shop', outdoor: false, battleBg: 'indoor', theme: 15,
   rows: ['WWWWWWWWW', 'WWWWWWWWW', 'fffffffff', 'fffffffff', 'fffffffff', 'fffffffff', 'fffffffff', 'ffffrffff'],
   objects: [{ kind: 'counter', x: 3, y: 3, w: 3 }, { kind: 'shelf', x: 0, y: 2 }, { kind: 'shelf', x: 8, y: 2 }, { kind: 'crate', x: 8, y: 6 }],
   warps: [{ x: 4, y: 7, to: 'brightmoor', tx: 21, ty: 17, dir: 0 }],

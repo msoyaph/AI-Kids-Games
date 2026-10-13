@@ -13,11 +13,14 @@ export interface DialogueOptions {
   textSpeed: () => 'slow' | 'normal' | 'fast';
   /** Instant text (reduced motion or tests). */
   instant: () => boolean;
+  /** 1.1: a picture of the speaker for this line (an image URL), or null for none. */
+  portrait?: (who: string, line: string) => string | null;
 }
 
 export class Dialogue {
   readonly el: HTMLElement;
   private who: HTMLElement;
+  private face: HTMLImageElement;
   private text: HTMLElement;
   private more: HTMLElement;
   private choices: HTMLElement;
@@ -27,20 +30,25 @@ export class Dialogue {
 
   constructor(private input: Input, private focus: FocusManager, private opts: DialogueOptions, parent: HTMLElement) {
     this.who = h('div.dlg-who');
+    this.face = h('img.px.dlg-face', { alt: '', width: 96, height: 96 });
     this.text = h('p.dlg-text', { 'aria-live': 'polite' });
     this.more = h('div.dlg-more', { 'aria-hidden': 'true' }, '▼');
     this.choices = h('div.dlg-choices');
     this.voice = h('button.dlg-voice', { type: 'button', 'aria-label': 'Read this aloud', title: 'Read aloud' }, '🔊');
     this.voice.addEventListener('click', e => { e.stopPropagation(); speak(this.current); });
-    this.el = h('div.dlg', { role: 'dialog', 'aria-label': 'Conversation', hidden: true }, this.who, this.text, this.more, this.voice, this.choices);
+    this.el = h('div.dlg', { role: 'dialog', 'aria-label': 'Conversation', hidden: true }, this.face, this.who, this.text, this.more, this.voice, this.choices);
     parent.appendChild(this.el);
   }
 
-  private show(who?: string): void {
+  private show(who?: string, line = ''): void {
     this.open = true;
     this.el.hidden = false;
     this.who.textContent = who ?? '';
     this.who.hidden = !who;
+    const pic = who && this.opts.portrait ? this.opts.portrait(who, line) : null;
+    if (pic) this.face.src = pic;
+    this.face.hidden = !pic;
+    this.el.classList.toggle('has-face', !!pic);
     this.voice.hidden = !speechAvailable();
     this.choices.replaceChildren();
   }
@@ -98,7 +106,7 @@ export class Dialogue {
   }
 
   async say(line: string, who?: string): Promise<void> {
-    this.show(who);
+    this.show(who, line);
     await this.type(line);
     this.more.hidden = false;
     await this.nextPress();
@@ -106,7 +114,7 @@ export class Dialogue {
 
   /** A question with choices (returns the index picked; B picks the last option). */
   async ask(line: string, options: string[], who?: string): Promise<number> {
-    this.show(who);
+    this.show(who, line);
     await this.type(line);
     return new Promise(resolve => {
       const layer = {

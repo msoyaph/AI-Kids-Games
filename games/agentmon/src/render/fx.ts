@@ -16,6 +16,12 @@ export const FX = {
   napFadeHz: 0.32,
   /** The soft glow behind a growing Agentmon (evolution). */
   evolveGlowHz: 0.53,
+  /** 1.1: a firefly's slow glow at dusk (overworld). */
+  fireflyGlowHz: 0.45,
+  /** 1.1: a glint on the water coming and going (each glint; overworld). */
+  waterGlintHz: 0.6,
+  /** 1.1: a lamp's warm glow breathing in the evening (overworld). */
+  lampGlowHz: 0.25,
 };
 
 /** Gentle repeating movement (not brightness), kept slow so the stage stays calm. Off with reduced motion. */

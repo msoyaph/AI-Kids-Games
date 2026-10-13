@@ -445,11 +445,11 @@ commit at the end of every phase, stop before production.
 | 0 Plan drafts (25 recipes, scaled faces), merge 1.0 fixes | done |
 | 1 Foundations: components, font, tokens, UI sounds; painter (64 px, poses) | done: tokens, Nunito, buttons, panels, chips, energy bar, dialogue, toasts, battle cards, Trial bar, UI sounds; 64 px battle sprites with breathing, blinks, cheer, bump and nap. Each screen's redesign follows in phases 3–5 |
 | 2 New Agentmon: recipes, data, moves, facts, habitats; balance; IP log | done: 25 species (53–77), 11 moves, 25 facts, habitats, balance (elements 49.2–51.3%), IP log. Lookalike pass at 16/32/64 px in phase 8 |
-| 3 Battles: backgrounds, entrances, element effects, bars, turn feedback | |
-| 4 Overworld: decoration, ambient life, water and foliage, tint, transitions, interiors | |
-| 5 Menus: Team, Bag, Field Guide; dialogue portraits | |
-| 6 Banyan Hollow, quests, Verdanyan | |
-| 7 Pet care and accessories | |
+| 3 Battles: backgrounds, entrances, element effects, bars, turn feedback | done: 11 places × 4 times of day, shadows, pop and hop entrances, element-icon volleys and bursts, acting card, staggered phone stage, lighter befriend games |
+| 4 Overworld: decoration, ambient life, water and foliage, tint, transitions, interiors | done: baked decoration, butterflies, leaves, fireflies, snow, swaying grass, water glints, lamp glow, evening and night tint, iris, rooms by kind |
+| 5 Menus: Team, Bag, Field Guide; dialogue portraits | done: Field Guide (filters, badges, entry page), Team, friend page, Bag, portraits, title parade |
+| 6 Banyan Hollow, quests, Verdanyan | done: map, Rest Stop, three quests, Verdanyan, spawn variety |
+| 7 Pet care and accessories | done: care page, Bubble Catch, 12 earned accessories, hearts, Best buddy; no save migration needed |
 | 8 Saves and tests; visual review | |
 | 9 Release prep (1.1.0, site, PR; stop before production) | |
 
@@ -494,4 +494,97 @@ commit at the end of every phase, stop before production.
   trip sometimes outlasted a whole step, so the game took two (1 in 8 runs of the opening, under
   load). The key is now let go from inside the page on the first frame the step shows (a `keyup` on
   `window`, which the game listens to). 8 of 8 passed under the same load.
+- 2026-10-13 Time of day comes from play time (`core/world/daytime.ts`): a 20-minute day (morning
+  15%, day 50%, evening 17%, night 18%), starting mid-morning; no clock and no new save data. The
+  evening tint for the overworld eases in and out (`duskAmount`, tested for no jumps). A Settings row
+  "Time of day: Changes / Always day" (on by default; older settings load as on).
+- 2026-10-13 Battle backdrops in four times of day: each sky has its own gradient (sun low in the
+  morning and evening, a crescent moon and stars at night), and everything under the sky takes that
+  time's light (a warm wash in the morning and evening, a friendly blue at night, never dark). Every
+  outdoor place gained layers that fade into the air (hills, houses with bunting, a lighthouse
+  island, pines, mesas, a floating island) and small things on the ground near the edges, where no
+  one stands. Caves, Trials and rooms look the same all day. Review sheet: `scripts/backdrop-sheet.ts`.
+  Capture routes take `&bg=` and `&tod=`.
+- 2026-10-13 Battle stage motion: soft shadows (they shrink when a friend hops); wild ones pop out of
+  the grass with a leaf puff and a "!", friends and trainers' ones hop in and land in a dust puff
+  (reduced motion: a fade); an attack sends a volley of five element icons arcing across, and the
+  bump bursts into the same shapes, so you can tell the element without colour. Icons show at
+  whole-number scales. Turn feedback: the acting side's card lifts with a gold ring and a ▶.
+- 2026-10-13 Tall screens (a phone held upright) stage the spar staggered: the other Agentmon further
+  back on the right, your friend nearer on the left, so each can be half the stage wide (192 px on a
+  390 px phone, up from 1.0's overlapping sprites); the cards sit beside their Agentmon.
+- 2026-10-13 Befriend games lose the grey dim: the Spark Ring has a light plum wash with a warm
+  spotlight behind the ring; Mood Match sits low like the battle panel over a light wash, so the
+  Agentmon whose mood you read stays in view.
+- 2026-10-13 Overworld light: outdoors (and with "Time of day" on) the whole map takes a warm evening
+  tint, then a soft night blue (`nightAmount`, continuous like `duskAmount`), as a tint on the world
+  container: a multiply with no extra drawing pass, so no cost on slow phones. Lamps glow additively
+  from dusk. Capture routes take `&tod=` (default full day, so website previews stay bright).
+- 2026-10-13 Overworld life: tall grass sways as a breeze rolls across (1.0's unused second tuft frame),
+  glints come and go on open water (1.0's unused sparkle frames, one water tile in seven), and
+  `render/ambient.ts` adds a few butterflies by day, leaves drifting down in the woods, fireflies at
+  dusk and snow on the peaks, matched to the place's backdrop kind. Off with reduced motion. New
+  rates in fx.ts: fireflies 0.45 Hz, water glints 0.6 Hz, lamp glow 0.25 Hz (flash test covers them).
+- 2026-10-13 Decoration is baked into the ground (no runtime cost): little flower clusters in grass,
+  mushrooms in the woods, shells and starfish on sand, snow lumps, tiny crystals in caves.
+- 2026-10-13 Rooms by kind: Rest Stops (theme 14: mint wallpaper with hearts, peach tiles), shops (15:
+  green stripes, green and cream checks), the Academy (16: sky blue above a wood rail, blue-grey
+  tiles with stars); homes keep 1.0's wallpaper and planks.
+- 2026-10-13 Map changes close an iris on the player and open it on the new map (`game.fade` with a
+  point; a radial gradient on the fade layer, timed with timers so a hidden tab can't stall it).
+  Reduced motion and "skip animations" keep the plain fade.
+- 2026-10-13 Field Guide: element-framed cards with element filter chips, a progress chip, and a big
+  entry page (the 64 px art at 2×, element and stage chips, research stars, a fact card, habitat
+  chips, the growth chain as pictures, ◀ ▶ to browse what you know in the current filter).
+- 2026-10-13 "Players who completed 52 keep their reward": 1.0 gave no item for a full guide, so the
+  reward is the completion itself. A Silver Guide badge (and the Silver Star accessory) is earned by
+  befriending all of the first 52 Agentmon, so a 1.0 save that finished its guide has it at once,
+  and its completion is never taken away by the 25 new pages. Befriending all 77 earns the Golden
+  Guide badge and the Rainbow Scarf.
+- 2026-10-13 Team, friend page and Bag: friend cards with an element edge, a level chip, hearts, a
+  "★ Leads" badge and the small energy bar; the friend page reuses the big entry panel (energy and
+  experience bars, hearts), with trait and personality cards and move cards; the Bag has a tab per
+  kind and item cards with counts.
+- 2026-10-13 Dialogue portraits: `art/portraits.ts` draws a 32 px head-and-shoulders bust from the
+  speaker's look (the same skin, hair, outfit, hats, glasses, aprons, scarves and vest as their
+  walking sprite) in one of five faces (smile, happy, surprised, curious, worried), picked from the
+  line's words and punctuation. Named cast are found by name; everyone else from the people on the
+  current map (`game.speakers`, filled by the overworld); story Agentmon show their own picture.
+- 2026-10-13 Title: the morning meadow backdrop covers the screen, with a dirt path where a parade of
+  16 Agentmon (the partners first, then old friends and new ones) walks by in 64 px, hopping, with
+  shadows. Reduced motion: they stand still.
+- 2026-10-13 Wild spawns: a kind that isn't out yet is picked first, so every kind in an area shows up
+  within its first spawns (some areas now have more kinds than spawn spots). Tested over every area.
+- 2026-10-13 Banyan Hollow (post-game): through a root tunnel at the north end of the Starlit
+  Meadow's path (locked until the credits). A 6-tile banyan in a ring path, three lantern posts, a
+  pond with a rope bridge to a flower island, a Rest Stop in a hollow trunk (theme 14), seven wild
+  third stages (Lv 42–46). Quests: Lantern Seeds (find three glowing seeds; planting them lights the
+  lanterns), The Root Relay (Sprigling, then Twigstride, then Leafwarden, then Pip; no timer), Tea in
+  the Grove (a Honey Drop and a Moon Melon for Grandma Mo). Old Rowan tells the guardian's story and
+  starts its quest; when all three are done, Verdanyan waits in front of the tree (guardian spar).
+- 2026-10-13 Pet care needs no new save data: hearts (0–5) are friendship ÷ 50, and friendship only
+  ever goes up (1.0 already saved it, +2 a spar); accessories are earned by milestones the save keeps
+  (six Beacons, three Banyan Hollow quests, a Juno rematch win, the Silver and Golden Guides), so a
+  1.0 adventure gets what it has earned at once; what a friend wears is `vars['wear:<uid>']`. So
+  there is no save migration: SAVE_VERSION stays 1 and 1.0 saves load as they are.
+- 2026-10-13 Care page (from any friend's page, team or Base): Pet (a happy face, a floating heart,
+  its cry and a reaction made of its personality and element), Snack (favorites count double), Play
+  (Bubble Catch: twelve bubbles drift down; steer with arrows, the stick, a drag or a tap; tapping a
+  bubble pops it; it can't be lost), Dress up (12 accessories; locked ones say how to earn them).
+  Friendship from care: pet 3, snack 8, favorite 16, play 10. No bonus in spars: it is just for fun.
+- 2026-10-13 Accessories sit where each Agentmon's head and neck really are: the painter reports
+  where it drew the face, a hat goes on the body straight above the face (so wings, antennae and
+  floating clouds stay free), a bow just under the mouth, a cape behind and wider than the body.
+  Your friends wear them in spars too (only your side: a wild one's uid could match a friend's).
+- 2026-10-13 Pacing model fix (the model, not the game): it counted every townsperson and side quest
+  as part of the story's hours, so Banyan Hollow's post-game people and quests pushed Normal from
+  7.4–7.5 h to 7.7–7.9 h. It now counts only what comes before the credits (maps whose wild area is
+  post-game, rooms that open only onto them, and quests marked `postgame`); this also drops 1.0's
+  three Starlit Meadow people. Normal: 7.33–7.57 h (target 8 h ±10%); 76 people, 22 side quests.
+- 2026-10-13 Saves: a real 1.0 save (tests/unit/data/save-1.0.json, written by the 1.0 code) loads in
+  1.1 with nothing lost, saves again identically, and arrives with its hearts, the Silver Guide and
+  the 8 accessories it earned. The worst-case slot test now fills all 77 guide pages and dresses all
+  246 friends; a realistic maximal 1.1 slot is 41 KB (budget 64 KB, limit 300 KB).
+- 2026-10-13 Art: Pyrolanterne's tubes now end inside the 32×32 space (its open end was cut flat at
+  32 px). The lookalike pass over the 77 sheet found nothing new to change.
 

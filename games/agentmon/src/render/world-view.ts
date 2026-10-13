@@ -1,10 +1,15 @@
 /**
  * Draws one map: the baked ground, depth-sorted props, people, wild Agentmon and tall-grass tufts.
  * The overworld scene moves the camera and animates; this owns the Pixi objects.
+ * 1.1: tall grass sways as a breeze passes, glints come and go on the water, and lamps glow in the
+ * evening (`animate`).
  */
 import { Container, Sprite, type Texture } from 'pixi.js';
 import { playerLook, type CharLook } from '../art/characters';
-import { bakeGround, tallGrassTuft } from '../art/ground';
+import { bakeGround, tallGrassTuft, waterSparkle } from '../art/ground';
+import { PixelCanvas as Canvas } from '../art/pixelcanvas';
+import { hash32 } from '../core/rng';
+import { FX, wave } from './fx';
 import * as props from '../art/props';
 import type { PixelCanvas } from '../art/pixelcanvas';
 import { P } from '../art/palette';
@@ -26,6 +31,9 @@ export class WorldView {
   npcSprites = new Map<string, Sprite>();
   wildSprites = new Map<number, Sprite>();
   private groundTextures: Texture[] = [];
+  private tufts: { s: Sprite; x: number; y: number; frame: number }[] = [];
+  private glints: { s: Sprite; phase: number; frame: number }[] = [];
+  private lampGlows: Sprite[] = [];
 
   constructor(private sprites: Sprites, private world: World, private state: GameState) {
     this.actors.sortableChildren = true;
@@ -52,6 +60,18 @@ export class WorldView {
       s.y = y * TILE;
       s.zIndex = (y + 1) * TILE + 0.5;
       this.actors.addChild(s);
+      this.tufts.push({ s, x, y, frame: 0 });
+    }
+    // glints on open water: a few per screen, each coming and going in its own time
+    for (let y = 0; y < w.h; y++) for (let x = 0; x < w.w; x++) {
+      const t = w.ter(x, y);
+      if ((t !== 'water' && t !== 'shallow') || hash32(x, y, 404) % 7 !== 0) continue;
+      const s = new Sprite(this.sprites.get('glint:0', () => waterSparkle(0)));
+      s.x = x * TILE + (hash32(x, y, 405) % 8);
+      s.y = y * TILE + (hash32(x, y, 406) % 8);
+      s.visible = false;
+      this.ground.addChild(s);
+      this.glints.push({ s, phase: (hash32(x, y, 407) % 628) / 100, frame: -1 });
     }
     for (const o of w.map.objects) this.addObject(o);
     this.syncObjects();
@@ -62,6 +82,30 @@ export class WorldView {
     this.actors.addChild(this.player);
     for (const n of w.npcs) this.addNpc(n);
     this.syncNpcs();
+  }
+
+  /**
+   * Gentle life on the map, every frame: `dusk` 0–1 is the evening light (lamps glow with it).
+   * Reduced motion keeps the grass still and the water calm.
+   */
+  animate(t: number, dusk: number, calm: boolean): void {
+    for (const tf of this.tufts) {
+      // a breeze rolling across the grass from the left
+      const f = calm ? 0 : wave(0.35, t, -tf.x * 0.45 - tf.y * 0.2) > 0.55 ? 1 : 0;
+      if (f !== tf.frame) { tf.frame = f; tf.s.texture = this.sprites.get(`tuft:${f}`, () => tallGrassTuft(f)); }
+    }
+    for (const g of this.glints) {
+      const v = calm ? -1 : wave(FX.waterGlintHz, t, g.phase);
+      const f = v > 0.75 ? 1 : v > 0.3 ? 0 : -1;
+      if (f === g.frame) continue;
+      g.frame = f;
+      g.s.visible = f >= 0;
+      if (f >= 0) g.s.texture = this.sprites.get(`glint:${f}`, () => waterSparkle(f));
+    }
+    for (const g of this.lampGlows) {
+      g.visible = dusk > 0.05;
+      g.alpha = Math.min(1, dusk * 1.4) * (calm ? 0.85 : 0.75 + 0.15 * wave(FX.lampGlowHz, t));
+    }
   }
 
   destroy(): void {
@@ -111,6 +155,9 @@ export class WorldView {
       case 'gift': return { key: 'gift', make: () => giftCanvas() };
       case 'water-gap': return { key: `rapids:${seed % 3}`, make: () => props.rapids(seed % 3) };
       case 'updraft': return { key: 'updraft', make: () => props.updraft() };
+      case 'banyan': return { key: 'banyan', make: () => props.banyan() };
+      case 'roots': return { key: 'roots', make: () => props.rootTunnel() };
+      case 'lantern': { const lit = !!o.litBy && this.state.flags.has(o.litBy); return { key: `lantern:${lit ? 1 : 0}`, make: () => props.lanternPost(lit) }; }
       default: return null;
     }
   }
@@ -129,6 +176,17 @@ export class WorldView {
     s.zIndex = (o.y + 1) * TILE - (o.kind === 'gift' ? 0.2 : 0.1);
     this.actors.addChild(s);
     this.objSprites.set(o.id!, s);
+    if (o.kind === 'lamp') {
+      const g = new Sprite(this.sprites.get('lampglow', lampGlow));
+      g.anchor.set(0.5);
+      g.x = s.x;
+      g.y = s.y - 26;
+      g.zIndex = s.zIndex + 0.05;
+      g.blendMode = 'add';
+      g.visible = false;
+      this.actors.addChild(g);
+      this.lampGlows.push(g);
+    }
   }
 
   /** Show or hide objects whose flags changed (snipped vines, gifts taken, lit Beacons). */
@@ -138,7 +196,7 @@ export class WorldView {
       if (!s) continue;
       s.visible = this.world.present(o);
       if (o.kind === 'boulder') { s.x = o.x * TILE + TILE / 2; s.y = (o.y + 1) * TILE; s.zIndex = s.y - 0.1; }
-      if (o.kind === 'beacon' || o.kind === 'lighthouse' || o.kind === 'machine') {
+      if (o.kind === 'beacon' || o.kind === 'lighthouse' || o.kind === 'machine' || o.kind === 'lantern') {
         const spec = this.objectCanvas(o);
         if (spec) s.texture = this.sprites.get(spec.key, spec.make);
       }
@@ -181,6 +239,13 @@ export class WorldView {
     const s = this.wildSprites.get(key);
     if (s) { s.destroy(); this.wildSprites.delete(key); }
   }
+}
+
+/** A lamp's soft light: rings of warm yellow, brightest in the middle (shown additively). */
+function lampGlow(): PixelCanvas {
+  const c = new Canvas(28, 28);
+  c.circle(14, 14, 13, 0x2a2410).circle(14, 14, 10, 0x4a3e18).circle(14, 14, 7, 0x6a5820).circle(14, 14, 4, 0x8a7430);
+  return c;
 }
 
 function giftCanvas(): PixelCanvas {

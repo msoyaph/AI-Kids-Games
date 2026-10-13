@@ -257,7 +257,12 @@ export class World {
     });
     const mine = needed ? tiles.filter(([tx, ty]) => near!.has(ty * this.w + tx)) : [];
     const [x, y] = this.rng.pick(mine.length ? mine : tiles);
-    const e = (needed && area.wild.find(w => w.species === needed)) || this.rng.weighted(area.wild, area.wild.map(w => w.weight));
+    // 1.1: a kind that isn't out yet comes first, so every kind in an area shows up within its first
+    // spawns (no waiting on luck, even where an area has more kinds than spawn spots)
+    const out = new Set(this.wild.filter(w => w.area === area.id).map(w => w.species));
+    const absent = area.wild.filter(w => !out.has(w.species));
+    const pool = absent.length ? absent : area.wild;
+    const e = (needed && area.wild.find(w => w.species === needed)) || this.rng.weighted(pool, pool.map(w => w.weight));
     const species = this.dex.species[e.species]!;
     const shift = difficultyShift(TUNING.difficulty[this.s.difficulty].wildLevel, area.chapter);
     const level = Math.max(2, Math.min(50, this.rng.range(e.min, e.max) + shift));

@@ -1,7 +1,7 @@
 /**
  * Review sheet of every Agentmon (node only):
  *   npx tsx scripts/creature-sheet.ts [out.png] [--poses] [--small] [--shimmer]
- * Default: all 52 at 32×32 in Field Guide order, numbered, 4× scale.
+ * Default: every Agentmon at 32×32 in Field Guide order, numbered, 4× scale.
  */
 import { drawCreature } from '../src/art/creatures';
 import { POSES } from '../src/art/painter';

@@ -15,7 +15,9 @@ export type ObjKind =
   | 'tree' | 'pine' | 'snowpine' | 'palm' | 'blossom' | 'autumn' | 'crystal' | 'bush' | 'berrybush' | 'rock' | 'boulder'
   | 'vines' | 'icewall' | 'machine' | 'fence-h' | 'fence-v' | 'lamp' | 'bench' | 'pot' | 'crate' | 'sign' | 'house'
   | 'beacon' | 'lighthouse' | 'lure' | 'cave' | 'stairs' | 'water-gap' | 'updraft' | 'gift'
-  | 'bed' | 'table' | 'shelf' | 'counter' | 'nest' | 'plant';
+  | 'bed' | 'table' | 'shelf' | 'counter' | 'nest' | 'plant'
+  // 1.1: Banyan Hollow
+  | 'banyan' | 'roots' | 'lantern';
 
 export interface HouseStyleDef { roof: number; wall: number; door?: number }
 
@@ -155,7 +157,7 @@ export function parseMap(def: MapDef): ParsedMap {
 
 /** Tiles an object blocks (its footprint), or none. */
 export function footprint(o: MapObject): { x: number; y: number }[] {
-  const solid: ObjKind[] = ['tree', 'pine', 'snowpine', 'palm', 'blossom', 'autumn', 'crystal', 'bush', 'berrybush', 'rock', 'boulder', 'vines', 'icewall', 'machine', 'fence-h', 'fence-v', 'lamp', 'bench', 'pot', 'crate', 'sign', 'house', 'beacon', 'lighthouse', 'lure', 'gift', 'bed', 'table', 'shelf', 'counter', 'nest', 'plant', 'water-gap', 'updraft'];
+  const solid: ObjKind[] = ['tree', 'pine', 'snowpine', 'palm', 'blossom', 'autumn', 'crystal', 'bush', 'berrybush', 'rock', 'boulder', 'vines', 'icewall', 'machine', 'fence-h', 'fence-v', 'lamp', 'bench', 'pot', 'crate', 'sign', 'house', 'beacon', 'lighthouse', 'lure', 'gift', 'bed', 'table', 'shelf', 'counter', 'nest', 'plant', 'water-gap', 'updraft', 'banyan', 'lantern'];
   if (!solid.includes(o.kind)) return [];
   const w = o.w ?? 1, h = o.h ?? 1;
   const out: { x: number; y: number }[] = [];

@@ -834,4 +834,13 @@ export function drawCreature(id: string, size: 32 | 16 | 64 = 32, pose: Pose = P
   return p.finish();
 }
 
+/** Where a creature's face is (canvas pixels at `size`), for placing accessories. */
+export function creatureFace(id: string, size: 32 | 16 | 64 = 32): { x0: number; y0: number; x1: number; y1: number } | null {
+  const recipe = RECIPES[id];
+  if (!recipe) return null;
+  const p = new Painter(size);
+  recipe(p, POSES.idle!);
+  return p.faceBounds();
+}
+
 export { C as CREATURE_COLORS, mix };
