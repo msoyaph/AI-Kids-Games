@@ -28,8 +28,8 @@
     "release:local": "tsx scripts/release-local.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.6.5",
     "tsx": "^4.20.6",
-    "typescript": "~5.9.3"
+    "typescript": "~7.0.2"
   }
 }
