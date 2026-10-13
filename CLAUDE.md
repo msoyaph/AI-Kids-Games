@@ -75,7 +75,20 @@ commit (`npm run review-submission -- <PR> --approve`).
    Also: slugs are validated in what-changed and community-scope and passed via env (the game job
    too); CODEOWNERS. Unchanged and verified: GitHub requires approval for all external
    contributors' workflows, and Vercel gitForkProtection is true.
-4. The review kit.
+4. COMPLETE (exercised end to end in step 8): `npm run review-submission -- <PR>`.
+   - It refuses a PR whose files fail the scope check (via gh).
+   - It fetches the head into a git worktree at `.review/pr-<n>/tree`, then runs this checkout's
+     trusted check-submission on it (`AIKG_COMMUNITY_ROOT`, `--untrusted --record`).
+   - It writes `.review/pr-<n>/REVIEW.md`: the manifest, the results, every piece of text, risky
+     code with file:line, files and sizes, screenshots, the recording, and an approve/decline
+     checklist.
+   - `--approve` runs on a clean main after the PR is merged as "submitted". It needs a passing
+     review whose source fingerprint matches (`sourceSha256` in scripts/lib/community.ts: every
+     file, with game.json minus approval, listing and sourceCommit).
+     - It writes the approval and `listing: "listed"`.
+     - It adds the cover, OG image and shots to `apps/site/public/media/community/<slug>/`.
+     - It prints the owner's commit and the `vercel domains add` command.
+   - `--decline "<reason>"` writes a ready-made comment.
 5. Separate hosting.
 6. The website.
 7. Docs.
