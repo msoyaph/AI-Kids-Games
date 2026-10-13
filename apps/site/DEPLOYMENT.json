@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.5.0",
+  "release": "2.6.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.5.0",
+    "release": "2.6.0",
     "date": "2026-10-13",
     "approvedBy": "Owner",
-    "scope": "SEO and AI search (PR #15): every page prerendered with its real words, structured data (typed JSON-LD, FAQPage, VideoObject, Organization sameAs), the Parent FAQ, three guides, a Safety and privacy section on every game page, llms.txt, IndexNow, consistent \"AI Kids Games\" branding, and the new logo, favicons and share images. Community games (PR #17): anyone can submit a kid-safe game in community/<slug>/ (source only); npm run check-submission; fork-safe CI (scope, DCO, owner-only approval fields); the owner's review kit; a separate play origin per game (Vercel project ai-kids-games-play, aikg-<slug>.vercel.app); the Community page and shelf (hidden until the owner approves a game), the submission guide, SUBMITTING.md and MODERATION.md. Also the 2.4.1 production record (PR #14). All seven games stay at their current versions: their projects have no newer finished versions (Agentmon is not for release).",
-    "note": "Owner wrote, with the community games brief (after the SEO brief): \"Once done and complete, update everything including all the games to live production.\" Guard: scripts/check-deployment.ts needs this record for 2.5.0, a passing localSuites record for 2.5.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.5.0 in the Production environment of both Vercel projects (ai-kids-games and ai-kids-games-play, whose production build runs the same guard), and a build from main."
+    "scope": "Game trailers: a 15-second trailer for each of the seven games, made from real gameplay with marketing/sizzle (npm run trailers: an original soundtrack per cut, HyperFrames renders, the flash, readability, loudness and beat-grid review). On each game page: a Trailer section that loads only its poster until someone presses play (muted, captioned, with a text description), a \"Watch the 15-second trailer\" link, and the trailer in the VideoGame structured data. The compositions use the new AI Kids Games wordmark. Also: the site marks <html data-app=\"ready\"> once the app has taken over the prebuilt page, and the browser tests wait for it; the 2.5.0 production record. All seven games stay at their current versions.",
+    "note": "Owner wrote: \"Add each game a quick trailer\" and then \"keep going and release the trailers when green\". Guard: scripts/check-deployment.ts needs this record for 2.6.0, a passing localSuites record for 2.6.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.6.0 in the Production environment of both Vercel projects, and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",

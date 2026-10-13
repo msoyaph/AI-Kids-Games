@@ -190,6 +190,23 @@ play origin dpl_31jaPSNuiWrsuDNF3RBExENwYevF). Both guards logged the owner's ap
 - Pitfall: run the production suite from main's tests (a worktree), not from a feature branch with
   new specs.
 
+## Release 2.6.0: game trailers (owner, 2026-10-13: "Add each game a quick trailer"; "keep going and release the trailers when green")
+- marketing/sizzle: TRAILERS in reel.config.ts (six shots and one short line per game) and
+  `npm run trailers` (music → compose game- → render game- → review game- → publish:trailers).
+  - The 60-second reel and the cutdown are untouched.
+  - Compositions use the new wordmark (docs/brand).
+  - review/render/compose take cut prefixes (`game-`).
+- Takes:
+  - TheaBonk v2 recaptured (the v1 takes are in captures/theabonk-v1). Rimewood's setup hangs, so
+    it's left out.
+  - Tuck Pop has its own route, with play and map takes (the map is recorded from the tab).
+  - Space Sky's moon-landing.mp4 was missing and is recaptured.
+  - The main reel would now render TheaBonk v2 footage; retune its offsets before re-rendering it.
+- Capturing: a 3D take fails at under 30 fps when the Mac is loaded (another project's `node --test`
+  suites are invisible to the guard). Wait for `sysctl vm.loadavg` < 6 as well.
+- Site: Details shows a Trailer section (src/components/Trailer.tsx TrailerInline, data in
+  src/data/game-trailers.json via src/data/trailers.ts) and VideoGame.trailer in schema.ts.
+
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
 
 Owner decisions: TheaBonk and Light Crossing are pulled in last (their own sessions were
