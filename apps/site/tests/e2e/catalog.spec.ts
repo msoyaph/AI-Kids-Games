@@ -8,7 +8,13 @@ test('home shows every game; each details and play page opens',async ({ page }) 
   test.setTimeout(240_000);
   const { errors,external } = guard(page);
   await page.goto('/');
+  // The heading is for screen readers and search only; the page opens on the featured games, TheaBonk first.
   await expect(page.getByRole('heading',{ level: 1 })).toContainText('The games kids love. None of the stuff parents don’t.');
+  await expect(page.getByRole('heading',{ level: 1 })).toHaveClass('sr-only');
+  const picks = page.getByRole('group',{ name: 'Choose a featured game' }).getByRole('button');
+  await expect(picks.first()).toHaveAccessibleName('Show TheaBonk');
+  await expect(picks.first()).toHaveAttribute('aria-current','true');
+  await expect(page.locator('.hero-logo img')).toHaveAttribute('alt','TheaBonk');
   await expect(page.locator('.home-intro p')).toHaveText('No ads. No subscriptions. No sign-ups. No tracking. Just play, or build your own.');
   const grid = page.getByRole('region',{ name: 'All games',exact: true });
   await expect(grid.locator('.card')).toHaveCount(games.length);

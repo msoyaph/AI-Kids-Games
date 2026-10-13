@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import ExitGuard from './components/ExitGuard';
 import { PreferencesProvider } from './lib/preferences';
+import './lib/install';
 import './styles.css';
 const Home = lazy(() => import('./pages/Home'));
 const Browse = lazy(() => import('./pages/Browse'));
