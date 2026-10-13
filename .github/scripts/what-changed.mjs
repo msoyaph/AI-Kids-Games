@@ -7,17 +7,20 @@
 // - package-lock.json: only the workspaces whose own entries changed (adding a game adds just its
 //   workspace entries). Any other entry is a shared dependency, so every game runs.
 // Root scripts/ and docs/ are repo tooling: the repo checks cover them, and no game uses them.
+// community/<slug>/ and tooling/community-kit run no game suites: the community jobs check those.
 import { execFileSync } from 'node:child_process';
 import { existsSync,readdirSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 export const STARTER = 'game-starter';
+/** The slug pattern (scripts/lib/repo.ts): nothing else ever reaches a job name or a shell. */
+export const SLUG = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const EVERYTHING = [/^package\.json$/,/^\.nvmrc$/,/^\.github\/workflows\/ci\.yml$/,/^\.github\/scripts\//];
 
 /** Every game folder with a package.json, plus the starter template. */
 export function allGames(root = '.') {
   const dir = `${root}/games`;
-  const games = existsSync(dir) ? readdirSync(dir).filter(name => existsSync(`${dir}/${name}/package.json`)).sort() : [];
+  const games = existsSync(dir) ? readdirSync(dir).filter(name => SLUG.test(name) && existsSync(`${dir}/${name}/package.json`)).sort() : [];
   return [...games,STARTER];
 }
 
@@ -27,6 +30,7 @@ function owner(path,games) {
   if (game && games.includes(game)) return game;
   if (/^templates\/game-starter(?:\/|$)/.test(path)) return STARTER;
   if (/^apps\/site(?:\/|$)/.test(path)) return 'site';
+  if (/^tooling\/community-kit(?:\/|$)/.test(path)) return 'community';
   return null;
 }
 
@@ -44,7 +48,7 @@ export function lockfileGames(before,after,games) {
     // A workspace's own entry, its nested node_modules, or the node_modules link npm makes to it.
     const workspace = owner(path,games) ?? (entry?.link ? owner(entry.resolved ?? '',games) : null);
     if (!workspace) return 'all';
-    if (workspace !== 'site') picked.add(workspace);
+    if (workspace !== 'site' && workspace !== 'community') picked.add(workspace);
   }
   return [...picked];
 }

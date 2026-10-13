@@ -67,7 +67,14 @@ commit (`npm run review-submission -- <PR> --approve`).
      kit and obscenity).
    - `--untrusted` skips the submission's own unit tests. The review kit uses it: they run only in
      CI and on the creator's machine.
-3. CI for fork pull requests.
+3. COMPLETE: CI for fork pull requests. ci.yml gains two jobs, under "CI passed":
+   - "Community scope": `.github/scripts/community-scope.mjs` (one community/<slug>/ only) and
+     `dco.mjs` (a sign-off matching each commit's author);
+   - "Submission <slug>": check-submission.
+
+   Also: slugs are validated in what-changed and community-scope and passed via env (the game job
+   too); CODEOWNERS. Unchanged and verified: GitHub requires approval for all external
+   contributors' workflows, and Vercel gitForkProtection is true.
 4. The review kit.
 5. Separate hosting.
 6. The website.
