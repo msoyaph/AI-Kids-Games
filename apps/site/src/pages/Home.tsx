@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { categories, games } from '../data/games';
+import { allGames, communityGames } from '../data/community';
 import { usePreferences } from '../lib/preferences';
 import { mediaFor } from '../lib/media';
 import { BRAND,TAGLINE } from '../data/site';
@@ -17,7 +18,7 @@ export default function Home() {
   const { recent } = usePreferences();
   const { category,playerAge,results,set,reset } = useCatalogFilters();
   const featured = games.filter(game => game.featured).sort((a,b) => Number(b.slug === HERO_LEAD)-Number(a.slug === HERO_LEAD));
-  const played = recent.map(slug => games.find(game => game.slug === slug)).filter(game => !!game).slice(0,6);
+  const played = recent.map(slug => allGames().find(game => game.slug === slug)).filter(game => !!game).slice(0,6);
   return <div className="container home">
     <header className="home-intro">
       {/* The heading is for screen readers and search only; the page opens on the featured games. */}
@@ -30,6 +31,10 @@ export default function Home() {
       <div className="filters"><CategoryChips selected={category} onSelect={value => set('category',value.toLowerCase())} /><AgeSelect value={playerAge} onChange={value => set('age',value)} /></div>
       {results.length ? <GameGrid games={results} label="All games" /> : <div className="empty"><h3 className="heading">No games match yet.</h3><p>Try another category or age.</p><button className="button secondary" onClick={reset}>Show all games</button></div>}
     </section>
+    {communityGames.length > 0 && <section className="section" aria-labelledby="community">
+      <div className="section-head"><h2 id="community" className="title">Community games</h2><Link className="text-link" to="/community">See all community games</Link></div>
+      <p className="section-note">Made by kids and families, checked and approved by AI Kids Games.</p>
+      <GameGrid games={communityGames} label="Community games" /></section>}
     {played.length > 0 && <section className="section" aria-labelledby="play-again"><div className="section-head"><h2 id="play-again" className="title">Play again</h2></div>
       <ul className="play-again">{played.map(game => <li key={game.slug}><Link className="tile" to={`/play/${game.slug}`}><img src={mediaFor(game).cover} alt="" width={85} height={48} loading="lazy" />{game.title}</Link></li>)}</ul></section>}
     {games.length >= CATEGORY_ROWS_FROM && categories.map(name => <section key={name} className="section" aria-labelledby={`row-${name}`}>

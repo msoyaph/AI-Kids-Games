@@ -67,19 +67,20 @@ test('Cliff Valley starts a new farm in the site and its save survives a reload'
   expect(errors).toEqual([]); expect(external).toEqual([]);
 });
 
-test('List your game: coming soon, nothing collected, GitHub behind the grown-up check',async ({ page }) => {
+test('Submit a game: the guide, nothing collected, GitHub behind the grown-up check',async ({ page }) => {
   const { errors,external } = guard(page);
   await page.goto('/');
-  await page.getByRole('contentinfo').getByRole('link',{ name: 'List your game' }).click();
-  await expect(page.getByRole('heading',{ level: 1,name: 'List your game on AI Kids Games' })).toBeVisible();
-  await expect(page.getByText('Coming soon',{ exact: true })).toBeVisible();
+  await page.getByRole('contentinfo').getByRole('link',{ name: 'Submit a game' }).click();
+  await expect(page.getByRole('heading',{ level: 1,name: 'Submit a game to AI Kids Games' })).toBeVisible();
+  for (const step of ['1. Get a grown-up and a computer','4. Check it','6. What happens next']) await expect(page.getByRole('heading',{ level: 2,name: step })).toBeVisible();
+  await expect(page.getByText('npm run check-submission -- my-game').first()).toBeVisible();
   await expect(page.locator('form, input, textarea')).toHaveCount(0);
-  await page.getByRole('link',{ name: 'Game listing request' }).click();
+  await page.getByRole('link',{ name: 'SUBMITTING.md' }).click();
   await expect(page.getByRole('dialog')).toContainText('Ask a grown-up first!');
   await page.getByRole('button',{ name: 'Stay here' }).click();
   await page.getByRole('contentinfo').getByRole('link',{ name: 'Build your own' }).click();
   await expect(page.getByRole('dialog')).toContainText('You’re leaving AI Kids Games');
   await page.getByRole('button',{ name: 'Stay here' }).click();
-  await page.goto('/parents'); await expect(page.locator('main').getByRole('link',{ name: 'List your game' })).toHaveAttribute('href','/list-your-game');
+  await page.goto('/parents'); await expect(page.locator('main').getByRole('link',{ name: 'submit them' })).toHaveAttribute('href','/list-your-game');
   expect(errors).toEqual([]); expect(external).toEqual([]);
 });

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { findGame } from '../data/games';
+import { findAnyGame } from '../data/community';
 import sizes from '../data/build-sizes.json';
 import { usePreferences } from '../lib/preferences';
 import { mediaFor } from '../lib/media';
@@ -31,11 +31,13 @@ let keyboardConfirmed = false;
  * recorded size; the stream may be compressed in transit), then let the iframe load it from
  * the browser cache. Falls back to an indeterminate bar if streaming is unavailable.
  */
-function useGameDownload(slug: string,attempt: number,enabled: boolean) {
+function useGameDownload(slug: string,attempt: number,enabled: boolean,remote?: string) {
   const [progress,setProgress] = useState<number | null>(0); const [src,setSrc] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false; setProgress(0); setSrc(null);
     if (!enabled) return;
+    // A community game loads from its own play-origin address: no same-origin stream, so the bar is indeterminate.
+    if (remote) { setProgress(null); setSrc(remote); return; }
     const url = `/games/${slug}/index.html`, total = (sizes as Record<string,number>)[slug];
     (async () => {
       try {
@@ -47,12 +49,12 @@ function useGameDownload(slug: string,attempt: number,enabled: boolean) {
       if (!cancelled) setSrc(url);
     })();
     return () => { cancelled = true; };
-  },[slug,attempt,enabled]);
+  },[slug,attempt,enabled,remote]);
   return { progress,src };
 }
 
 export default function Play() {
-  const { slug = '' } = useParams(); const game = findGame(slug);
+  const { slug = '' } = useParams(); const game = findAnyGame(slug);
   const { rememberGame } = usePreferences();
   usePageMeta();
   const [loaded,setLoaded] = useState(false); const [slow,setSlow] = useState(false); const [attempt,setAttempt] = useState(0);
@@ -66,7 +68,7 @@ export default function Play() {
   // A computer-only game on a touch-only device: explain instead of loading it (driven by the manifest).
   const [confirmed,setConfirmed] = useState(keyboardConfirmed);
   const gate = !!game && computerOnly(game) && !confirmed && touchOnlyDevice();
-  const { progress,src } = useGameDownload(slug,attempt,!gate);
+  const { progress,src } = useGameDownload(slug,attempt,!gate,game?.community?.playUrl);
   useEffect(() => { setLoaded(false); setSlow(false); if (gate) return; const timer = setTimeout(() => setSlow(true),12000); return () => clearTimeout(timer); },[slug,attempt,gate]);
   useEffect(() => {
     document.body.classList.add('is-playing');

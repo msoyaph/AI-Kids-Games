@@ -30,7 +30,7 @@ export default function Parents() {
       <p>The <Link to="/faq">parent FAQ</Link> answers the common ones: what’s free, what data is collected, ages, devices and offline play. Our <Link to="/guides">guides for parents</Link> cover choosing ad-free games, what makes a game kid-safe, and building a first game with your kid.</p>
     </section>
     <section className="section prose" aria-labelledby="makers"><h2 id="makers" className="title">Made in the open</h2>
-      <p>Every game here is open source, so you can read exactly what it does. Families and young makers can build their own kid-safe games from the same starter, and listing games made by others is coming soon: see <Link to="/list-your-game">List your game</Link>.</p>
+      <p>Every game here is open source, so you can read exactly what it does. Families and young makers can build their own kid-safe games from the same starter and <Link to="/list-your-game">submit them</Link>. Every <Link to="/community">community game</Link> passes the same checks, is approved by a person, and runs from its own separate address.</p>
     </section>
     <section className="section panel" aria-labelledby="fresh-start"><div><h2 id="fresh-start" className="heading">Clear saved lists</h2><p>Removes favorites and recently played on this device. Game saves stay.</p></div>
       <button className="button secondary" onClick={() => { clearHistory(); setCleared(true); }}>Clear saved lists</button>

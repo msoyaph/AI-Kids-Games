@@ -16,13 +16,15 @@ const intro = (origin: string) => `# ${BRAND}
 
 ${BRAND} (${origin}) is a website of original games made for kids, plus the open-source monorepo they are built in (${REPO}). The site and the games collect no data: there are no accounts, ads, purchases, analytics, chat or requests to other websites, and game progress stays in the player's browser. Each game is a single self-contained HTML file.`;
 
-export function llmsText(origin: string,games: Game[]) {
+const communitySection = (origin: string,community: Game[]) => community.length ? `\n## Community games\n\nMade by kids and families from the starter, checked by the same tests and approved by a person. Each runs from its own separate address.\n\n${community.map(game => `- [${game.title}](${origin}/game/${game.slug}): ${game.description} ${game.ageGuidance}. Made by ${game.community!.handle}. [Source](${REPO}/tree/main/community/${game.slug})`).join('\n')}\n` : '';
+
+export function llmsText(origin: string,games: Game[],community: Game[] = []) {
   return `${intro(origin)}
 
 ## Games
 
 ${games.map(game => `- [${game.title}](${origin}/game/${game.slug}): ${game.description} ${game.ageGuidance}. ${game.categories.join(', ')}. Plays on ${game.supportedDevices.join(', ').toLowerCase()} with ${game.controls.types.join(', ').toLowerCase()}. Play time: ${game.estimatedPlayTime}. [Play](${origin}/play/${game.slug}) · [Source](${REPO}/tree/main/games/${game.slug})`).join('\n')}
-
+${communitySection(origin,community)}
 ## For parents
 
 - [Parent FAQ](${origin}/faq): free, no ads or purchases, what data is collected (none), ages, devices and offline play.
@@ -37,7 +39,7 @@ ${guides.map(guide => `- [${guide.title}](${origin}/guides/${guide.slug}): ${gui
 
 - [Create a game](${REPO}/blob/main/docs/CREATE-A-GAME.md): the game contract and the starter template.
 - [Example briefs](${REPO}/tree/main/docs/prompts): the prompts the games were built from with Claude Code.
-- [List your game](${origin}/list-your-game): listing games made by others is coming soon; requests go through GitHub.
+- [Submit a game](${origin}/list-your-game): build a kid-safe game from the starter, check it with npm run check-submission and submit it in a pull request ([SUBMITTING.md](${REPO}/blob/main/SUBMITTING.md)).
 
 ## Optional
 
@@ -45,7 +47,7 @@ ${guides.map(guide => `- [${guide.title}](${origin}/guides/${guide.slug}): ${gui
 `;
 }
 
-export function llmsFullText(origin: string,games: Game[]) {
+export function llmsFullText(origin: string,games: Game[],community: Game[] = []) {
   const line = (text: string) => markdown(text,origin);
   const game = (g: Game) => `### ${g.title}
 
@@ -67,7 +69,7 @@ ${g.controls.howToPlay.map(step => `- ${step}`).join('\n')}`;
 ## Games
 
 ${games.map(game).join('\n\n')}
-
+${communitySection(origin,community)}
 ## Parent FAQ
 
 ${faq(games).map(item => `### ${item.question}\n\n${blocksToText(item.answer,line)}`).join('\n\n')}

@@ -10,7 +10,7 @@ import './styles.css';
 const loaders: Record<PageName,() => Promise<{ default: ComponentType }>> = {
   Home: () => import('./pages/Home'),Browse: () => import('./pages/Browse'),Details: () => import('./pages/Details'),Play: () => import('./pages/Play'),
   Favorites: () => import('./pages/Favorites'),Parents: () => import('./pages/Parents'),Faq: () => import('./pages/Faq'),Guides: () => import('./pages/Guides'),
-  Guide: () => import('./pages/Guide'),About: () => import('./pages/About'),Privacy: () => import('./pages/Privacy'),ListYourGame: () => import('./pages/ListYourGame'),
+  Guide: () => import('./pages/Guide'),Community: () => import('./pages/Community'),About: () => import('./pages/About'),Privacy: () => import('./pages/Privacy'),ListYourGame: () => import('./pages/ListYourGame'),
   NotFound: () => import('./pages/NotFound')
 };
 /** Pages load on demand, except one whose code is already here (the first page), which renders at once. */

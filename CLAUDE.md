@@ -104,7 +104,27 @@ commit (`npm run review-submission -- <PR> --approve`).
      approved, listed games whose `sourceSha256` still matches (`servedCommunity`).
    - Until the branch merges, the play project's deployments of branches without apps/play fail
      (no root directory); this is expected.
-6. The website.
+6. COMPLETE (pending the site suites): the website.
+   - `scripts/generate-community.ts` writes `src/data/community.generated.ts` (git-ignored) before
+     every build, dev server and vitest run. Its CSP `frame-src` lists exactly those games' play
+     origins.
+   - Pages and parts:
+     - the Community shelf on Home (only when there are games), with Preview/Community pills and
+       "Made by @handle";
+     - the /community page (routes, meta, schema, sitemap, llms);
+     - the details-page credit, preview note, safety wording and Report link (prefilled issue
+       form, ExitGuard);
+     - Play iframes the play origin (no same-origin streaming), with the sandbox unchanged;
+     - favorites and recently played accept community slugs;
+     - "Submit a game" (ListYourGame) is the guide;
+     - footer links;
+     - copy in Parents, FAQ (a new community question) and Privacy.
+   - Tests:
+     - fixture games in `apps/site/tests/fixtures/community` (test-garden submitted, test-gone
+       unlisted), used when `AIKG_COMMUNITY_ROOT` points there: CI's site job, and local runs that
+       set it;
+     - Playwright then also builds and serves the play origin on 127.0.0.1:4320;
+     - `tests/e2e/community.spec.ts`; `guard(page, origin, allow)` allows exactly the play origin.
 7. Docs.
 8. The end-to-end proof.
 

@@ -1,0 +1,88 @@
+{
+  "$schema": "../../../../../../docs/community-game.schema.json",
+  "slug": "test-garden",
+  "title": "Test Garden",
+  "tagline": "Catch falling stars in a calm little garden.",
+  "shortDescription": "Fly a small bee around a garden and catch the stars before the timer runs out.",
+  "longDescription": "Test Garden is the fixture the AI Kids Games website tests use for its Community games shelf. You fly a small bee around a garden and catch as many stars as you can in one minute. Nothing is lost if you miss; the round simply ends and shows your score.",
+  "version": "0.1.0",
+  "minAge": 5,
+  "ageRange": "5+",
+  "genres": [
+    "Action"
+  ],
+  "tags": [
+    "Arcade",
+    "Original"
+  ],
+  "keywords": [
+    "test fixture",
+    "arcade",
+    "kids game",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "Plays with keyboard, mouse, touch or gamepad",
+    "Remembers your best score on this device",
+    "One self-contained HTML file that works offline"
+  ],
+  "contentNotes": "Gentle arcade play with no fighting or scary content. The best score saves in this browser.",
+  "controls": {
+    "types": [
+      "Keyboard",
+      "Mouse",
+      "Gamepad",
+      "Touch"
+    ],
+    "quickStart": [
+      "Press Play.",
+      "Fly with the arrow keys, a gamepad stick, or hold your finger where you want to go.",
+      "Catch as many stars as you can before the time runs out."
+    ],
+    "howToPlay": [
+      "Fly with WASD or the arrow keys, a gamepad's left stick or d-pad, or hold the mouse or a finger where you want to go.",
+      "Escape or P pauses; gamepad A or Start presses the buttons in menus."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "any",
+  "requirements": [],
+  "playTime": "1 minute per round",
+  "storage": {
+    "prefix": "testgarden.",
+    "keys": [
+      "testgarden.save"
+    ],
+    "probe": "testgarden.__probe"
+  },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
+  "hook": "__testgarden",
+  "capture": {
+    "scenes": [
+      "?scene=title",
+      "?scene=play&seed=7",
+      "?scene=results"
+    ]
+  },
+  "creator": {
+    "handle": "@aikg-tests"
+  },
+  "license": "MIT",
+  "originality": "This fixture is the AI Kids Games starter game, renamed for the website tests. It uses no other companies’ names, characters, art or music.",
+  "submitted": {
+    "date": "2026-10-13",
+    "sourceCommit": "pending"
+  },
+  "listing": "submitted"
+}

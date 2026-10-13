@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { games } from '../data/games';
+import { allGames } from '../data/community';
 import { addRecent, deviceStorage, FAVORITES_KEY, LEGACY_FAVORITES_KEY, LEGACY_RECENT_KEY, readList, RECENT_KEY, writeList } from './storage';
-const valid = games.map(game => game.slug);
+const valid = allGames().map(game => game.slug);
 interface Preferences { favorites: string[]; recent: string[]; toggleFavorite: (slug: string) => void; rememberGame: (slug: string) => void; clearHistory: () => void; }
 const Context = createContext<Preferences | null>(null);
 export function PreferencesProvider({ children }: { children: ReactNode }) {

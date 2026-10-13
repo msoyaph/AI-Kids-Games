@@ -2,7 +2,8 @@
 // type or property schema.org doesn't define. tests/structured-data.test.ts also checks the
 // properties search engines require. The build writes it into each page's static HTML.
 import type { Article,BreadcrumbList,CollectionPage,FAQPage,Graph,ItemList,Organization,Thing,VideoGame,VideoObject,WebSite } from 'schema-dts';
-import { categories,findGame,games,type Game } from '../data/games';
+import { categories,games,type Game } from '../data/games';
+import { communityGames,findAnyGame } from '../data/community';
 import { faq } from '../data/faq';
 import { findGuide,guides } from '../data/guides';
 import { guideBodies } from '../data/guide-bodies';
@@ -43,7 +44,7 @@ export function structuredData(pathname: string,origin: string): Graph {
       isFamilyFriendly: true,isAccessibleForFree: true,
       ...(LICENSES[game.license] ? { license: LICENSES[game.license] } : {}),
       offers: { '@type': 'Offer',price: '0',priceCurrency: 'USD',availability: 'https://schema.org/InStock',url: url(`/play/${game.slug}`) },
-      author: publisher,publisher
+      author: game.community ? { '@type': 'Person',name: game.community.handle } : publisher,publisher
     };
   }
 
@@ -58,8 +59,11 @@ export function structuredData(pathname: string,origin: string): Graph {
       graph.push(page,crumbs([['Home','/'],['Games','/games'],[`${category} games`,path]]));
     }
   } else if (section === 'game') {
-    const game = findGame(slug);
-    if (game) graph.push(videoGame(game),crumbs([['Home','/'],['Games','/games'],[game.title,path]]));
+    const game = findAnyGame(slug);
+    if (game) graph.push(videoGame(game),crumbs(game.community ? [['Home','/'],['Community','/community'],[game.title,path]] : [['Home','/'],['Games','/games'],[game.title,path]]));
+  } else if (path === '/community') {
+    const page: CollectionPage = { '@type': 'CollectionPage',name: 'Community games',url: url(path),isPartOf: { '@id': url('/#website') },mainEntity: gameList(communityGames,'Community games') };
+    graph.push(page);
   } else if (path === '/faq') {
     const page: FAQPage = { '@type': 'FAQPage',url: url(path),name: 'Parent FAQ',mainEntity: faq(games).map(item => ({ '@type': 'Question',name: item.question,acceptedAnswer: { '@type': 'Answer',text: blocksToText(item.answer) } })) };
     graph.push(page);

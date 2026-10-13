@@ -4,13 +4,13 @@ import type { ComponentType } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 
-export type PageName = 'Home' | 'Browse' | 'Details' | 'Play' | 'Favorites' | 'Parents' | 'Faq' | 'Guides' | 'Guide' | 'About' | 'Privacy' | 'ListYourGame' | 'NotFound';
+export type PageName = 'Home' | 'Browse' | 'Details' | 'Play' | 'Favorites' | 'Parents' | 'Faq' | 'Guides' | 'Guide' | 'Community' | 'About' | 'Privacy' | 'ListYourGame' | 'NotFound';
 export type Pages = Record<PageName,ComponentType>;
 
 /** Inside the site layout, in matching order; Play has the whole screen. */
 export const ROUTES: { path?: string; index?: true; page: PageName }[] = [
   { index: true,page: 'Home' },{ path: 'games',page: 'Browse' },{ path: 'category/:name',page: 'Browse' },{ path: 'game/:slug',page: 'Details' },
-  { path: 'favorites',page: 'Favorites' },{ path: 'parents',page: 'Parents' },{ path: 'faq',page: 'Faq' },{ path: 'guides',page: 'Guides' },{ path: 'guides/:slug',page: 'Guide' },
+  { path: 'favorites',page: 'Favorites' },{ path: 'parents',page: 'Parents' },{ path: 'faq',page: 'Faq' },{ path: 'guides',page: 'Guides' },{ path: 'guides/:slug',page: 'Guide' },{ path: 'community',page: 'Community' },
   { path: 'about',page: 'About' },{ path: 'privacy',page: 'Privacy' },{ path: 'list-your-game',page: 'ListYourGame' },{ path: '*',page: 'NotFound' }
 ];
 

@@ -23,3 +23,4 @@ marketing/sizzle/out/
 # community games: check reports and builds, and the owner's review worktrees
 community/*/.check/
 .review/
+apps/site/src/data/community.generated.ts

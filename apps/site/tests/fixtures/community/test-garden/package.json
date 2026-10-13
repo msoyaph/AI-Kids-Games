@@ -1,0 +1,8 @@
+{
+  "name": "community-test-garden",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Test Garden, a community game for AI Kids Games by @aikg-tests.",
+  "license": "MIT",
+  "dependencies": {}
+}

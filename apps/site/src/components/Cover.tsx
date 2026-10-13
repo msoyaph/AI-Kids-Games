@@ -11,7 +11,7 @@ function watch(element: Element,callback: (visible: boolean) => void) {
 }
 
 /** The game's cover art with its slow idle layers, animated only while on screen (CSS stops it under reduced motion). */
-export default function Cover({ game,eager = false,animate = true,className = '' }: { game: Pick<Game,'slug' | 'coverLayers'>; eager?: boolean; animate?: boolean; className?: string }) {
+export default function Cover({ game,eager = false,animate = true,className = '' }: { game: Pick<Game,'slug' | 'coverLayers' | 'community'>; eager?: boolean; animate?: boolean; className?: string }) {
   const media = mediaFor(game); const root = useRef<HTMLDivElement>(null); const [visible,setVisible] = useState(false);
   useEffect(() => animate && root.current ? watch(root.current,setVisible) : undefined,[animate]);
   const loading = eager ? 'eager' : 'lazy';

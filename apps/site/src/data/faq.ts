@@ -49,15 +49,21 @@ export function faq(games: Game[]): Question[] {
     { id: 'saves',question: 'Where is progress saved, and how do I clear it?',answer: [
       { p: 'Progress is saved in this browser on this device. It doesn’t move between devices or browsers.' },
       { p: 'On iPhone and iPad, a game opened from the Home Screen keeps its own saves, separate from Safari’s.' },
-      { p: 'To remove favorites and recently played, use **Clear saved lists** on [For parents](/parents). To remove game progress, clear this site’s data in your browser’s settings. Each game’s page lists exactly what it stores.' }
+      { p: 'To remove favorites and recently played, use **Clear saved lists** on [For parents](/parents). To remove game progress, clear this site’s data in your browser’s settings. Each game’s page lists exactly what it stores.' },
+      { p: 'Community games save under their own separate address, which their game page names; clearing all site data in your browser’s settings removes those saves too.' }
     ] },
     { id: 'makers',question: 'Who makes the games? Are they made with AI?',answer: [
       { p: 'AI Kids Games is a small independent project. Each game starts from a written brief and is built with AI coding tools.' },
       { p: 'Before every release, automated tests check that it works on computers, tablets and phones, that saves survive a reload, and that it makes no network requests.' },
       { p: `The full source of every game, and the briefs they were built from, are public on [GitHub](${REPO}).` }
     ] },
+    { id: 'community',question: 'What are community games, and are they safe?',answer: [
+      { p: 'Community games are made by kids and families from our starter game, often with an AI helper, and sent in on GitHub. They follow the same rules as our own games: no ads, purchases, chat, accounts, tracking or network requests, honest ages and no fast flashing.' },
+      { p: 'Each one passes the same automated checks, and a person plays it and reads every word in it before it’s approved. Until then, it doesn’t appear on the site.' },
+      { p: 'Community games run from their own separate web address, so they can’t reach this site, your favorites or other games’ saves. If you spot a problem, each community game’s page has a **Report a problem** link, and we can take a game down at any time.' }
+    ] },
     { id: 'make-your-own',question: 'Can my child make their own game?',answer: [
-      { p: 'Yes, with a grown-up. Our guide [Build a simple game with your kid using AI](/guides/build-a-game-with-your-kid-using-ai) walks through a first game in an afternoon, with an example to copy.' }
+      { p: 'Yes, with a grown-up. Our guide [Build a simple game with your kid using AI](/guides/build-a-game-with-your-kid-using-ai) walks through a first game in an afternoon, with an example to copy. When it’s ready, you can [submit it](/list-your-game) for Community games.' }
     ] }
   ];
 }

@@ -7,6 +7,7 @@ import { mkdirSync,readFileSync,writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { renderPage } from '../src/entry-server';
 import { games } from '../src/data/games';
+import { communityGames } from '../src/data/community';
 import { BRAND,PUBLIC_ORIGIN } from '../src/data/site';
 import { llmsFullText,llmsText } from '../src/seo/llms';
 import { pageMeta,sitePaths,unlistedPaths } from '../src/seo/meta';
@@ -51,6 +52,6 @@ writeFileSync('dist/sitemap.xml',`<?xml version="1.0" encoding="UTF-8"?>\n<urlse
 // Search engines and AI assistants' crawlers are welcome on the public site; previews stay private.
 const crawlers = ['Googlebot','Bingbot','Applebot','DuckDuckBot','GPTBot','OAI-SearchBot','ChatGPT-User','ClaudeBot','Claude-SearchBot','Claude-User','PerplexityBot','Perplexity-User','Google-Extended','Applebot-Extended','CCBot'];
 writeFileSync('dist/robots.txt',preview ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nAllow: /\n\n${crawlers.map(bot => `User-agent: ${bot}\nAllow: /\n`).join('\n')}\nSitemap: ${origin}/sitemap.xml\n`);
-writeFileSync('dist/llms.txt',llmsText(origin,games));
-writeFileSync('dist/llms-full.txt',llmsFullText(origin,games));
+writeFileSync('dist/llms.txt',llmsText(origin,games,communityGames));
+writeFileSync('dist/llms-full.txt',llmsFullText(origin,games,communityGames));
 console.log(`${BRAND}: static HTML for ${listed.length+unlisted.length} pages and 404.html, sitemap (${listed.length} URLs), robots.txt, llms.txt and llms-full.txt for ${origin}${preview ? ' (preview: noindex)' : ''}.`);
