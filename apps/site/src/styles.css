@@ -333,6 +333,12 @@ main { min-height: 70vh; }
 .device-notice .button { background: #F1F3F6; color: #16191F; }
 .play-message { padding: 10px 20px; background: #181B21; color: #A2A9B6; }
 .play-bar-spacer { width: 96px; }
+/* From the Home Screen (src/lib/fullscreen.ts standaloneDisplay): no bar, the game fills the
+   screen, and a frosted-glass circle takes you back, clear of the notch and rounded corners. */
+.app-back { position: fixed; z-index: 20; top: max(10px,env(safe-area-inset-top)); left: max(10px,env(safe-area-inset-left)); display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; color: #fff; background: rgb(22 25 31 / .32); -webkit-backdrop-filter: blur(14px) saturate(1.5); backdrop-filter: blur(14px) saturate(1.5); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .38), 0 6px 18px rgb(0 0 0 / .28); transition: background-color .15s, transform .15s; }
+.app-back:hover { background: rgb(22 25 31 / .5); }
+.app-back:active { transform: scale(.94); }
+.app-back:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 /* Opened from the Home Screen (black-translucent status bar): keep clear of the notch and the bar. */
 .play-bar { padding-top: max(4px,env(safe-area-inset-top)); padding-left: max(8px,env(safe-area-inset-left)); padding-right: max(8px,env(safe-area-inset-right)); }
 

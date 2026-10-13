@@ -204,6 +204,11 @@ play origin dpl_31jaPSNuiWrsuDNF3RBExENwYevF). Both guards logged the owner's ap
   - The main reel would now render TheaBonk v2 footage; retune its offsets before re-rendering it.
 - Capturing: a 3D take fails at under 30 fps when the Mac is loaded (another project's `node --test`
   suites are invisible to the guard). Wait for `sysctl vm.loadavg` < 6 as well.
+- Home Screen play (owner request): Play.tsx `is-app` (standaloneDisplay).
+  - There's no play bar, and the stage fills 100dvh.
+  - `.app-back` is a 48 px frosted-glass circle, top-left inside the safe area.
+  - The page title stays as an sr-only h1.
+  - The status bar stays (`default`): games can't see the notch from inside their iframe.
 - GitHub boxes (owner request): src/components/GitHub.tsx.
   - RepoBox in the header is hidden under 375 px, where the brand and three buttons don't fit.
   - GameRepoBox (Code → games/<slug> or community/<slug>, Fork → /fork) sits beside the hero's

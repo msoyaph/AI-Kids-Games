@@ -62,6 +62,8 @@ export default function Play() {
   const [canFullscreen] = useState(fullscreenSupported);
   const [full,setFull] = useState(false); const [menu,setMenu] = useState(false); const [fullscreenError,setFullscreenError] = useState('');
   const [tip,setTip] = useState(firstTip);
+  // Opened from the Home Screen: the game gets the whole screen, with a glass back button over it.
+  const [app] = useState(standaloneDisplay);
   const locked = useRef(false);
   const [notice,setNotice] = useState(() => typeof window !== 'undefined' && (window.innerWidth <= 768 || matchMedia('(pointer: coarse)').matches));
   const stage = useRef<HTMLDivElement>(null); const frame = useRef<HTMLIFrameElement>(null);
@@ -114,8 +116,8 @@ export default function Play() {
       </div>
     </main>
   </div>;
-  return <div className={`play-shell${full ? ' is-full' : ''}`} ref={stage}>
-    <header className="play-bar"><Link to={`/game/${game.slug}`}><Icon name="back" />Back</Link><h1><strong>{game.title}</strong></h1>{canFullscreen ? <button onClick={() => void (full ? leave() : enter())} aria-label={full ? 'Exit fullscreen' : 'Enter fullscreen'}><Icon name={full ? 'shrink' : 'expand'} /><span className="label">{full ? 'Exit fullscreen' : 'Fullscreen'}</span></button> : <span className="play-bar-spacer" aria-hidden="true" />}</header>
+  return <div className={`play-shell${full ? ' is-full' : ''}${app ? ' is-app' : ''}`} ref={stage}>
+    {app ? <><h1 className="sr-only">{game.title}</h1><Link className="app-back" to={`/game/${game.slug}`} aria-label={`Back to ${game.title}`}><Icon name="back" size={24} /></Link></> : <header className="play-bar"><Link to={`/game/${game.slug}`}><Icon name="back" />Back</Link><h1><strong>{game.title}</strong></h1>{canFullscreen ? <button onClick={() => void (full ? leave() : enter())} aria-label={full ? 'Exit fullscreen' : 'Enter fullscreen'}><Icon name={full ? 'shrink' : 'expand'} /><span className="label">{full ? 'Exit fullscreen' : 'Fullscreen'}</span></button> : <span className="play-bar-spacer" aria-hidden="true" />}</header>}
     {full && <div className="fs-rail">
       <button className="fs-corner" aria-label="Game menu" aria-expanded={menu} aria-controls="fs-menu" onClick={() => { setMenu(open => !open); if (menu) focusGame(); }}><Icon name="more" size={26} /></button>
       {menu && <div className="fs-menu" id="fs-menu" role="group" aria-label="Game menu" onKeyDown={event => { if (event.key === 'Escape') { setMenu(false); focusGame(); } }}>
