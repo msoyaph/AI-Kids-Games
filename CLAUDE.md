@@ -286,7 +286,21 @@ accessibility, hardening); see games/tuck-pop/CLAUDE.md for details and numbers.
   simple Game / What it is / Ages / Source format; the showcase format waits for aikids.games.
 - Site tests now count 7 games (ages 6 → LC, Space Sky, Tuck Pop).
 
-**Release plan:** the PR keeps the site at 2.3.0. The release commit (phase 10, after the owner's
+**Phase 10 (2026-10-13):**
+- **Approval:** the owner wrote "complete all the phases end to end" (phase 10: release after
+  approval), recorded in DEPLOYMENT.json for 2.4.0.
+- **Local GPU run:** Space Sky 42/0. Light Crossing 190/0 with 1 flaky, after running with 2 workers
+  and 1 retry. The first runs (6, then 3 workers) failed 73, then 11, from GPU contention in its
+  long touch playthroughs.
+- **CI fixes in Tuck Pop:**
+  - 1× on software WebGL, plus a frame-rate governor;
+  - retired textures are destroyed later, because a governor redraw mid-word crashed WebKit on
+    Linux;
+  - poll-aware fake gamepad presses.
+- **Preview tie-break:** see apps/site/CLAUDE.md.
+- **PR:** msoyaph/AI-Kids-Games#10.
+
+**Release plan (as prepared):** the PR keeps the site at 2.3.0. The release commit (phase 10, after the owner's
 approval) does three things:
 - bumps to 2.4.0;
 - records the approval;
