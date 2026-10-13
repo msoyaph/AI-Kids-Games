@@ -112,8 +112,16 @@ export function terrainPixel(t: Ter, x: number, y: number, theme = 0): number {
     }
     case 'rug': return (x + y) % 8 < 4 ? 0xd9604f : (x - y + 64) % 8 < 1 ? 0xffd8a8 : 0xe8806a;
     case 'stairs': return y % 4 < 1 ? P.r1 : y % 4 < 2 ? P.r3 : P.r2;
-    // cliff tops are raised grass (the rock face is drawn on their lower edge)
-    case 'cliff': return terrainPixel('grass', x, y, 1);
+    // cliff tops are raised ground (the rock face is drawn on their lower edge): grass, or the
+    // region's own rock (4 cave, 5 desert sandstone, 6 snow, 7 mountain)
+    case 'cliff': {
+      const n = hash32(x >> 2, y >> 2, 31) & 7;
+      if (theme === 4) return n === 0 ? 0x3a3246 : n < 3 ? 0x2c2638 : 0x332c40;
+      if (theme === 5) return n === 0 ? 0xc86a40 : n < 3 ? 0xe08a5a : 0xd9774b;
+      if (theme === 6) return n === 0 ? P.snow1 : P.snow2;
+      if (theme === 7) return n === 0 ? P.r1 : n < 3 ? P.r3 : P.r2;
+      return terrainPixel('grass', x, y, 1);
+    }
     case 'wall': {
       if (theme === 3) {
         // indoor wallpaper with a wood skirting board on the lowest row of the wall
@@ -181,16 +189,18 @@ export function bakeGround(src: GroundSource): PixelCanvas {
     // cliffs: a raised grassy top with a rock face where the cliff ends below, and dark rims on the sides
     if (t === 'cliff') {
       const below = nb[2]!, left = nb[3]!, right = nb[1]!;
+      const rim = theme === 4 ? 0x1c1830 : theme === 5 ? 0x8a3f20 : theme === 6 ? 0x8fa8d0 : theme === 7 ? P.r0 : P.g0;
+      const face: [number, number, number, number] = theme === 4 ? [0x1c1830, 0x2c2638, 0x3a3246, 0x4a4256] : theme === 5 ? [0x8a3f20, 0xa84f30, 0xc06040, 0xd9774b] : [P.r0, P.r1, P.r2, P.r3];
       const isCliff = (n: Ter) => n === 'cliff' || n === 'wall';
       for (let py = 0; py < TILE; py++) for (let px = 0; px < TILE; px++) {
         const x = tx * TILE + px, y = ty * TILE + py;
         let c = pc.px[y * pc.w + x]!;
-        if (!isCliff(left) && px === 0) c = P.g0;
-        if (!isCliff(right) && px === TILE - 1) c = P.g0;
+        if (!isCliff(left) && px === 0) c = rim;
+        if (!isCliff(right) && px === TILE - 1) c = rim;
         if (!isCliff(below) && py >= 6) {
           const fy = py - 6;
           const crack = (px + (fy >> 2) * 5) % 7 === 0 && fy % 4 !== 0;
-          c = fy === 0 ? P.g0 : fy === 1 ? P.r3 : fy >= 8 ? P.r0 : crack ? P.r0 : fy < 4 ? P.r2 : P.r1;
+          c = fy === 0 ? rim : fy === 1 ? face[3] : fy >= 8 ? face[0] : crack ? face[0] : fy < 4 ? face[2] : face[1];
         }
         pc.px[y * pc.w + x] = c;
       }

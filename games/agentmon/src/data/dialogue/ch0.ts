@@ -17,7 +17,7 @@ const partner = (id: string, name: string, line: string): Script => [
 export const CH0: Record<string, Script> = {
   intro: [
     say('Good morning, {player}! Today is your very first day at the Field Agent Academy.', GRAN),
-    say('Field Agents make friends with Agentmon and help them. Just like your mom and dad did.', GRAN),
+    say('Field Agents make friends with Agentmon and help them. Your mom and dad are Field Agents too, exploring far away!', GRAN),
     say('Chief Nell is waiting for you. The Academy is the big blue building in town.', GRAN),
     { set: 'woke-up' },
     { tutorial: 'move' },
@@ -26,8 +26,6 @@ export const CH0: Record<string, Script> = {
     { if: 'mission-1', then: [say('Off to the sea, are you? Be kind, and come home safe.', GRAN), { heal: true }, say('There. A good snack for your friends!', GRAN)],
       else: [say('The Academy is the big blue building. You can do it!', GRAN)] },
   ],
-  'bm-bo': [say('Did you know? Wild Agentmon play in tall grass. You can walk around them if you want.', 'Bo')],
-  'bm-dale': [say('The Beacons have looked dim lately. I hope the new Field Agents can help.', 'Mr. Dale')],
   'bm-tess': [say('Rest Stops have a heart on the roof. They are free, and the nests are so cozy!', 'Tess')],
   'bm-hollis': [say('Our pond is full of shiny pebbles. Look closely around it!', 'Mrs. Hollis')],
   'juno-town': [say('I am going to fill my Field Guide first! Race you, {player}!', JUNO)],

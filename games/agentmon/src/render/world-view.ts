@@ -109,6 +109,8 @@ export class WorldView {
       case 'nest': return { key: 'nest', make: () => props.restNest() };
       case 'plant': return { key: 'plant', make: () => props.rugPlant() };
       case 'gift': return { key: 'gift', make: () => giftCanvas() };
+      case 'water-gap': return { key: `rapids:${seed % 3}`, make: () => props.rapids(seed % 3) };
+      case 'updraft': return { key: 'updraft', make: () => props.updraft() };
       default: return null;
     }
   }

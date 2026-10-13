@@ -5,6 +5,9 @@
  *   battle     a Volt friend's super-strong bump on a Tide Agentmon
  *   befriend   the Spark Ring mid-play (&mode=mood shows Mood Match instead)
  *   evolution  a friend that has just grown
+ *   town       Saltwhistle by the sea, with the team out walking   (&map=id,x,y for another place)
+ *   dungeon    a Redrock Trial room with light beams, half solved   (&trial=id&room=N&steps=N)
+ *   guide      the Field Guide with lots of friends made
  */
 import { Container } from 'pixi.js';
 import { sparkSetup, moodRounds } from '../core/befriend';
@@ -15,7 +18,7 @@ import { addFriend, newGameState } from '../core/state';
 import type { Creature } from '../core/types';
 import type { MapDef } from '../core/world/map';
 import { DEX } from '../data/index';
-import { SPECIES } from '../data/species';
+import { SPECIES, SPECIES_LIST } from '../data/species';
 import { TUNING } from '../tuning';
 import { BattleView } from '../render/battle-view';
 import { evolutionStill } from '../render/evolution';
@@ -26,9 +29,12 @@ import { playMoodMatch } from '../ui/mood-match';
 import type { App, Scene } from './app';
 import type { Game } from './game';
 import { Session } from './session';
+import { OverworldScene } from './scenes/overworld';
+import { TrialScene } from './scenes/trial';
+import { openPauseMenu } from '../ui/pause';
 
-export type CaptureKind = 'battle' | 'befriend' | 'evolution';
-export const CAPTURE_KINDS: readonly CaptureKind[] = ['battle', 'befriend', 'evolution'];
+export type CaptureKind = 'battle' | 'befriend' | 'evolution' | 'town' | 'dungeon' | 'guide';
+export const CAPTURE_KINDS: readonly CaptureKind[] = ['battle', 'befriend', 'evolution', 'town', 'dungeon', 'guide'];
 
 export class CaptureScene implements Scene {
   readonly name = 'capture';
@@ -74,7 +80,45 @@ export class CaptureScene implements Scene {
     void app;
     if (this.kind === 'battle') return this.battle();
     if (this.kind === 'befriend') return this.befriend();
+    if (this.kind === 'town') return this.town();
+    if (this.kind === 'dungeon') return this.dungeon();
+    if (this.kind === 'guide') return this.guide();
     return this.evolution();
+  }
+
+  private params() { return new URLSearchParams(location.search); }
+
+  private async town(): Promise<void> {
+    const session = this.session([['spinnet', 14], ['lullakin', 12], ['snipsy', 11]]);
+    for (const f of ['woke-up', 'got-partner', 'mission-1', 'salt-arrive', 'met-finch']) session.state.flags.add(f);
+    const [map = 'saltwhistle', x = '17', y = '13'] = (this.params().get('map') ?? '').split(',').filter(Boolean);
+    session.enterMap(map, Number(x), Number(y), 0);
+    await wait(0);
+    this.game.app.go(new OverworldScene(this.game));
+  }
+
+  private async dungeon(): Promise<void> {
+    const p = this.params();
+    const session = this.session([['zestle', 26], ['poplet', 26]]);
+    const trial = p.get('trial') ?? 'canyon';
+    session.state.vars[`trial-room:${trial}`] = Number(p.get('room') ?? 1);
+    for (const t of ['puzzle', 'move', 'talk']) session.state.tutorials.add(t);
+    await wait(0);
+    const scene = new TrialScene(this.game, trial);
+    this.game.app.go(scene);
+    scene.demo(Number(p.get('steps') ?? 6));
+  }
+
+  private async guide(): Promise<void> {
+    const friends: [string, number][] = SPECIES_LIST.filter((sp, i) => !sp.guardian && i % 5 !== 3).slice(0, 34).map(sp => [sp.id, 20]);
+    const session = this.session(friends.slice(0, 6));
+    for (const [id] of friends) { const sp = SPECIES[id]!; session.state.guide.friends.add(sp.num); session.state.guide.seen.add(sp.num); session.state.guide.stars[sp.num] = 1 + (sp.num % 3); }
+    for (const sp of SPECIES_LIST.slice(0, 48)) session.state.guide.seen.add(sp.num);
+    session.enterMap('brightmoor', 16, 12, 0);
+    await wait(0);
+    this.game.app.go(new OverworldScene(this.game));
+    await wait(100);
+    void openPauseMenu(this.game, this.params().get('page') ?? 'guide');
   }
 
   private async battle(): Promise<void> {

@@ -63,7 +63,7 @@ export const TRIALS: TrialDef[] = [
     ],
   },
   {
-    id: 'canopy', name: 'Canopy Trial', from: 'canopy-gate', to: { map: 'canopy-top', x: 6, y: 7 }, theme: 'canopy', music: 'trial-2',
+    id: 'canopy', name: 'Canopy Trial', from: 'canopy-gate', to: { map: 'canopy-top', x: 5, y: 7 }, theme: 'canopy', music: 'trial-2',
     rooms: [
       { id: 'cn-1', name: 'Pink path', hint: 'Step on the pink switch to open the pink gate.', rows: [
         '#########',
@@ -116,7 +116,7 @@ export const TRIALS: TrialDef[] = [
     ],
   },
   {
-    id: 'mine', name: 'Old Mine Trial', from: 'old-mine', to: { map: 'mine-top', x: 6, y: 7 }, theme: 'mine', music: 'trial-3',
+    id: 'mine', name: 'Old Mine Trial', from: 'old-mine', to: { map: 'mine-top', x: 5, y: 7 }, theme: 'mine', music: 'trial-3',
     rooms: [
       { id: 'mn-1', name: 'All aboard', hint: 'Wait for the cart, then step on. It carries you across!', platforms: [{ path: [[3, 2], [4, 2], [5, 2], [6, 2]], start: 0 }], rows: [
         '##########',
@@ -164,7 +164,7 @@ export const TRIALS: TrialDef[] = [
     ],
   },
   {
-    id: 'canyon', name: 'Sunstone Trial', from: 'sunstone-gate', to: { map: 'sunstone-top', x: 6, y: 7 }, theme: 'canyon', music: 'trial-4',
+    id: 'canyon', name: 'Redrock Trial', from: 'sunstone-gate', to: { map: 'sunstone-top', x: 5, y: 7 }, theme: 'canyon', music: 'trial-4',
     rooms: [
       { id: 'cy-1', name: 'First light', hint: 'The block is in the light\'s way. Push it aside so the light reaches the crystal.', emitters: [{ x: 1, y: 2, dir: 2 }], rows: [
         '#########',
@@ -211,7 +211,7 @@ export const TRIALS: TrialDef[] = [
         '#####D#####',
         '#####E#####',
       ] },
-      { id: 'cy-6', name: 'Sunstone heart', hint: 'Push the block onto the plate, but keep it out of the light\'s path.', emitters: [{ x: 1, y: 1, dir: 0 }], rows: [
+      { id: 'cy-6', name: 'Redrock heart', hint: 'Push the block onto the plate, but keep it out of the light\'s path.', emitters: [{ x: 1, y: 1, dir: 0 }], rows: [
         '##########',
         '#L.......#',
         '#........#',
@@ -225,7 +225,7 @@ export const TRIALS: TrialDef[] = [
     ],
   },
   {
-    id: 'summit', name: 'Summit Trial', from: 'summit-gate', to: { map: 'summit-top', x: 6, y: 7 }, theme: 'summit', music: 'trial-5',
+    id: 'summit', name: 'Summit Trial', from: 'summit-gate', to: { map: 'summit-top', x: 5, y: 7 }, theme: 'summit', music: 'trial-5',
     rooms: [
       { id: 'sm-1', name: 'Slippery start', tutorial: 'ice', hint: 'On ice you slide until something stops you. Look for the rocks!', rows: [
         '#########',
@@ -289,7 +289,7 @@ export const TRIALS: TrialDef[] = [
     ],
   },
   {
-    id: 'spire', name: 'Beacon Spire Trial', from: 'spire-gate', to: { map: 'spire-top', x: 6, y: 7 }, theme: 'spire', music: 'trial-6',
+    id: 'spire', name: 'Beacon Spire Trial', from: 'spire-gate', to: { map: 'spire-top', x: 5, y: 7 }, theme: 'spire', music: 'trial-6',
     rooms: [
       { id: 'sp-1', name: 'Icy plates', hint: 'Slide the block on the ice so it stops on the plate.', rows: [
         '#########',

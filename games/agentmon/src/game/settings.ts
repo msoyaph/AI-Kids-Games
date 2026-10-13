@@ -64,4 +64,5 @@ export function applySettingsToDom(s: Settings): void {
   root.style.setProperty('--ui-scale', String([1, 1.18, 1.36][s.textSize]));
   root.classList.toggle('reduced-motion', s.reducedMotion);
   root.classList.toggle('colorblind', s.colorblind);
+  root.dataset.touchSize = s.touchSize;
 }

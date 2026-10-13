@@ -4,7 +4,7 @@
  * scene animates what this decides, and the playthrough bot drives it headlessly.
  */
 import { Rng } from '../rng';
-import type { Dir, GameState } from '../state';
+import { storyFlags, type Dir, type GameState } from '../state';
 import type { BattleDex, Element } from '../types';
 import type { Mood } from '../battle/engine';
 import { TER, type Ter } from '../../data/terrain';
@@ -82,9 +82,12 @@ export class World {
   private respawn: { area: string; at: number }[] = [];
   private clock = 0;
   readonly rng: Rng;
+  /** Story flags plus live facts (items carried, friends made), for map conditions. */
+  readonly flags: { has(flag: string): boolean };
 
   constructor(def: MapDef, readonly s: GameState, readonly dex: BattleDex, seed: number) {
     this.def = def;
+    this.flags = storyFlags(s, dex.species);
     this.map = parseMap(def);
     this.rng = new Rng(seed);
     this.npcs = def.npcs.map(n => ({ def: n, x: n.x, y: n.y, dir: n.dir, timer: 1 + this.rng.next() * 3, visible: true }));
@@ -98,7 +101,7 @@ export class World {
   /** Is an object present right now (flags can remove or reveal it)? */
   present(o: MapObject): boolean {
     if (o.goneIf && this.s.flags.has(o.goneIf)) return false;
-    if (o.showIf && !evalFlags(o.showIf, this.s.flags)) return false;
+    if (o.showIf && !evalFlags(o.showIf, this.flags)) return false;
     if (o.kind === 'gift' && o.id && this.s.flags.has(`got:${this.def.id}:${o.id}`)) return false;
     if (o.id && this.s.flags.has(`gone:${this.def.id}:${o.id}`)) return false;
     return true;
@@ -111,7 +114,7 @@ export class World {
   }
 
   refreshNpcs(): void {
-    for (const n of this.npcs) n.visible = (!n.def.showIf || evalFlags(n.def.showIf, this.s.flags)) && (!n.def.hideIf || !evalFlags(n.def.hideIf, this.s.flags));
+    for (const n of this.npcs) n.visible = (!n.def.showIf || evalFlags(n.def.showIf, this.flags)) && (!n.def.hideIf || !evalFlags(n.def.hideIf, this.flags));
   }
 
   npcAt(x: number, y: number): NpcState | undefined {
@@ -177,7 +180,7 @@ export class World {
     if (wild) return { kind: 'wild', wild };
     const warp = this.warpAt(nx, ny);
     if (warp) {
-      if (warp.needs && !evalFlags(warp.needs, this.s.flags)) return { kind: 'locked', warp };
+      if (warp.needs && !evalFlags(warp.needs, this.flags)) return { kind: 'locked', warp };
       return { kind: 'warp', warp };
     }
     const obj = this.objectAt(nx, ny);
@@ -233,7 +236,13 @@ export class World {
     const tiles = this.areaTiles(area).filter(([x, y]) => Math.abs(x - this.s.x) + Math.abs(y - this.s.y) >= avoid && !this.wildAt(x, y));
     if (!tiles.length || !area.wild.length) return null;
     const [x, y] = this.rng.pick(tiles);
-    const e = this.rng.weighted(area.wild, area.wild.map(w => w.weight));
+    // A gate's helper is always out here while you have no friend of its element yet.
+    const needed = (area.ensure ?? []).find(id => {
+      const el = this.dex.species[id]?.element;
+      const friend = [...this.s.team, ...this.s.base].some(c => this.dex.species[c.species]?.element === el);
+      return !friend && !this.wild.some(w => w.area === area.id && this.dex.species[w.species]?.element === el);
+    });
+    const e = (needed && area.wild.find(w => w.species === needed)) || this.rng.weighted(area.wild, area.wild.map(w => w.weight));
     const species = this.dex.species[e.species]!;
     const shift = difficultyShift(TUNING.difficulty[this.s.difficulty].wildLevel, area.chapter);
     const level = Math.max(2, Math.min(50, this.rng.range(e.min, e.max) + shift));

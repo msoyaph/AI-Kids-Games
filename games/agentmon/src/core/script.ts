@@ -14,6 +14,8 @@ export type Cmd =
   | { clear: string }
   | { if: string; then: Cmd[]; else?: Cmd[] }
   | { give: string; n?: number }
+  /** Hand over items (side quests). */
+  | { take: string; n?: number }
   | { coins: number }
   | { heal: true }
   | { rest: true }
@@ -42,8 +44,8 @@ export type Cmd =
 
 export type Script = Cmd[];
 
-/** Evaluate a flag expression against the set flags. */
-export function evalFlags(expr: string, flags: ReadonlySet<string>): boolean {
+/** Evaluate a flag expression against the set flags (or a live view of them, see `storyFlags`). */
+export function evalFlags(expr: string, flags: { has(flag: string): boolean }): boolean {
   return expr.split('|').some(any => any.split('&').every(term => {
     const t = term.trim();
     if (!t) return true;

@@ -46,6 +46,7 @@ export class Session {
     const def = MAPS[id];
     if (!def) throw new Error(`no map ${id}`);
     this.state.map = id;
+    if (def.outdoor) this.state.flags.add(`been:${id}`);
     this.state.x = x;
     this.state.y = y;
     this.state.dir = dir;
@@ -111,9 +112,19 @@ export class Session {
 
   awakeTeam(): Creature[] { return this.state.team.filter(c => c.energy > 0); }
 
+  /** Shows a short note to the player (set by the scene): used when a save can't be written. */
+  notify: ((message: string) => void) | null = null;
+  private warned = new Set<WriteResult>();
+
   save(): WriteResult | null {
     if (this.noSave) return null;
     this.lastSave = saveSlot(CODEC, this.state).result;
+    if (this.lastSave !== 'ok' && !this.warned.has(this.lastSave)) {
+      this.warned.add(this.lastSave);
+      this.notify?.(this.lastSave === 'blocked'
+        ? 'This browser can\'t keep saves, so your adventure lasts until you close the game.'
+        : 'Storage is full, so the game couldn\'t save just now. Your last save is still safe.');
+    }
     return this.lastSave;
   }
 }

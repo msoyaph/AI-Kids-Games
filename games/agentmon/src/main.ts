@@ -15,6 +15,7 @@ import { CAPTURE_KINDS, CaptureScene, type CaptureKind } from './game/capture';
 import { SheetScene } from './game/scenes/sheet';
 import { startAdventure, TitleScene } from './game/scenes/title';
 import { Game } from './game/game';
+import { applyTestSetup } from './game/devsetup';
 import { createRenderer } from './render/renderer';
 import type { PoseName } from './render/sprites';
 
@@ -58,7 +59,7 @@ async function boot() {
   else if (sceneParam === 'sheet') app.go(new SheetScene({ shimmer: params.get('shimmer') === '1', pose: (params.get('pose') as PoseName) ?? 'idle', small: params.get('small') === '1' }));
   else if (params.has('quickstart')) {
     // Tests and quick tries: a new adventure in slot 3 with a default look, straight into Gran's house.
-    startAdventure(game, 3, 0, { skin: 1, hair: 0, hairColor: 0, outfit: 0 }, (params.get('difficulty') as 'easy' | 'normal' | 'hard') ?? 'normal');
+    startAdventure(game, 3, 0, { skin: 1, hair: 0, hairColor: 0, outfit: 0 }, (params.get('difficulty') as 'easy' | 'normal' | 'hard') ?? 'normal', false, st => applyTestSetup(st, params));
   } else app.go(new TitleScene(game));
   app.start();
 }

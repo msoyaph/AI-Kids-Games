@@ -1,6 +1,6 @@
 /**
  * The people of Sunreach: how the named characters look, and a seeded look maker for townsfolk.
- * Everyone is friendly; the Showcase Club are misguided collectors, not villains.
+ * Everyone is friendly; the Spotlight Club are misguided collectors, not villains.
  */
 import type { CharLook } from '../art/characters';
 import { hash32, Rng } from '../core/rng';
@@ -18,7 +18,7 @@ export const CAST: Record<string, { name: string; look: CharLook }> = {
   yuki: { name: 'Yuki', look: { skin: 0, hair: 2, hairColor: 5, outfit: 5, hat: 'beanie', hatColor: 0x8fb8ff, scarf: 0xffffff } },
   celeste: { name: 'Celeste', look: { skin: 2, hair: 6, hairColor: 6, outfit: 4, hat: 'crown' } },
   velour: { name: 'Velour', look: { skin: 1, hair: 7, hairColor: 6, outfit: 4, coat: 0x9a5fb8, scarf: 0xffd2f0 } },
-  club: { name: 'Showcase Club', look: { skin: 3, hair: 0, hairColor: 1, outfit: 4, coat: 0xffd2f0, hat: 'cap', hatColor: 0x9a5fb8 } },
+  club: { name: 'Spotlight Club', look: { skin: 3, hair: 0, hairColor: 1, outfit: 4, coat: 0xffd2f0, hat: 'cap', hatColor: 0x9a5fb8 } },
   agent: { name: 'Field Agent', look: { skin: 2, hair: 1, hairColor: 2, outfit: 5, agent: true } },
 };
 

@@ -13,6 +13,10 @@ import { MAPS, START } from '../../src/data/maps/index';
 import { TER } from '../../src/data/terrain';
 import { TRAINER_BY_ID } from '../../src/data/trainers';
 import type { Cmd, Script } from '../../src/core/script';
+import { TRIAL_BY_ID, TRIALS } from '../../src/data/trials';
+import { QUEST_BY_ID, QUESTS } from '../../src/data/quests';
+import { ITEMS } from '../../src/data/items';
+import { checkMaps, checkReach } from '../../scripts/check-maps';
 
 const fresh = (): GameState => newGameState({ slot: 1, name: 0, look: { skin: 0, hair: 0, hairColor: 0, outfit: 0 }, difficulty: 'normal', seed: 5, start: { map: START.map, x: START.x, y: START.y } });
 
@@ -24,6 +28,7 @@ describe('maps', () => {
       const m = parseMap(def);
       const w = new World(def, fresh(), DEX, 1);
       for (const warp of def.warps) {
+        if (warp.to.startsWith('trial:')) { expect(TRIAL_BY_ID[warp.to.slice(6)], warp.to).toBeDefined(); continue; }
         expect(MAPS[warp.to], `warp to ${warp.to}`).toBeDefined();
         const dest = parseMap(MAPS[warp.to]!);
         const t = dest.ter[warp.ty * dest.w + warp.tx]!;
@@ -33,7 +38,7 @@ describe('maps', () => {
         // a map you can walk off has a matching edge back
         const back = MAPS[e.to]!.edges?.find(b => b.to === def.id);
         expect(back, `${e.to} leads back to ${def.id}`).toBeDefined();
-        expect(back!.offset).toBe(-e.offset);
+        expect(back!.offset + e.offset, "offsets mirror").toBe(0);
       }
       for (const n of def.npcs) {
         expect(TER[m.ter[n.y * m.w + n.x]!].walk, `${n.id} stands on walkable ground`).toBe(true);
@@ -46,8 +51,50 @@ describe('maps', () => {
         expect(f.x >= 0 && f.y >= 0 && f.x < m.w && f.y < m.h, `${o.id} inside the map`).toBe(true);
       }
       if (def.rest) expect(w.passable(def.rest.x, def.rest.y), 'rest spot is walkable').toBe(true);
+      for (const o of m.objects) if (o.script) expect(SCRIPTS[o.script], `${o.id} runs ${o.script}`).toBeDefined();
     });
   }
+
+  it('connects every map: edges mirror, border tiles land on walkable ground, warps land on free tiles', () => {
+    expect(checkMaps(MAPS)).toEqual([]);
+  });
+
+  it('every door, person and gift can be reached from the ways into its map', () => {
+    expect(checkReach(MAPS)).toEqual([]);
+  });
+
+  it('every Trial has a door on its map and leads somewhere you can stand', () => {
+    for (const t of TRIALS) {
+      expect(MAPS[t.from]?.warps.some(w => w.to === `trial:${t.id}`), `${t.id} has a door on ${t.from}`).toBe(true);
+      const to = new World(MAPS[t.to.map]!, fresh(), DEX, 1);
+      expect(to.passable(t.to.x, t.to.y), `${t.id} ends on a free tile`).toBe(true);
+    }
+  });
+
+  it('the friend each gate needs lives just before it', () => {
+    for (const a of Object.values(AREA_BY_ID)) for (const id of a.ensure ?? []) {
+      expect(a.wild.some(w => w.species === id), `${a.id} has ${id}`).toBe(true);
+    }
+  });
+
+  it('quests and their stages exist wherever scripts mention them', () => {
+    const check = (list: Script) => {
+      for (const c of list as Cmd[]) {
+        if ('quest' in c) {
+          const q = QUEST_BY_ID[c.quest];
+          expect(q, c.quest).toBeDefined();
+          expect(c.stage < q!.stages.length, `${c.quest} stage ${c.stage}`).toBe(true);
+        }
+        if ('give' in c || 'take' in c) expect(ITEMS[('give' in c ? c.give : (c as { take: string }).take)], JSON.stringify(c)).toBeDefined();
+        for (const k of ['then', 'else', 'yes', 'no', 'win', 'lose', 'friend'] as const) {
+          const sub = (c as Record<string, unknown>)[k];
+          if (Array.isArray(sub)) check(sub as Script);
+        }
+      }
+    };
+    for (const sc of Object.values(SCRIPTS)) check(sc);
+    expect(QUESTS.filter(q => q.side && !q.id.startsWith('guardian')).length).toBeGreaterThanOrEqual(20);
+  });
 
   it('starts the adventure on a free tile in Gran\'s house', () => {
     const w = new World(MAPS[START.map]!, fresh(), DEX, 1);

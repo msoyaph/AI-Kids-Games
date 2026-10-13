@@ -129,6 +129,30 @@ Ports: dev 5246, preview 4246.
 - 2026-10-13 Field Guide facts live in `src/data/facts.ts` with a "check" source per fact; facts
   verified by web search where unsure (popcorn 6,700 years, capybara ~5 min, manatee ~20 min, lemons).
 
+- 2026-10-13 A gate's helper is guaranteed: areas list `ensure` species; while you have no friend
+  of that element, one of them is out first (Sandy Shore → Tide, Cliff Road → Leaf, Mossgrove Woods
+  and Glimmer Cave → Glow, Cragtop Slopes → Stone and Volt, Frost Pass → Flare, Frostfall Slopes →
+  Frost, Updraft Ridge → Gust). Snipsy was added to the Cliff Road for this.
+- 2026-10-13 The rushing stream on the Frostfall Slopes is a row of rapids (water-gap objects on ice),
+  so a Tide friend can't paddle past the Frost gate; freezing any rapid makes an ice step.
+- 2026-10-13 Trials: a solved Trial's door takes you straight to where it leads (the Keeper's top, or
+  the far side for the three small puzzles). R or the Trial menu (Start / M) resets a room. Keepers
+  stand straight in front of where you arrive. Losing to a Keeper: rest by the Beacon and try again.
+- 2026-10-13 Story spars (Juno, the Spotlight Club) happen once; win or lose the story goes on, and
+  after a loss your friends share berries (full rest). Keepers offer rematches after the credits.
+- 2026-10-13 Side quests use live flags (`item:id:n`, `family:species`, `friend:species`, `guide:n`,
+  `beacons:n`, in `core/state.ts` `storyFlags`) and a `take` command. 22 side quests + 3 guardian
+  quests (`data/dialogue/sq.ts`, `data/quests.ts`). Guardians appear only after the credits, each
+  through a key item someone gives you (Tide Pearl, Canyon Bell, Frost Feather).
+- 2026-10-13 The parents are Field Agents "exploring far away" (no sad backstory).
+- 2026-10-13 Main quest stages carry a `goal` tile; the stuck helper (40 s idle, or 5 min on one map
+  without progress; Hints setting) shows the stage as a hint and a pulsing ★ arrow toward the goal or
+  the door/edge on the way (`core/world/route.ts` `mapRoute`).
+- 2026-10-13 Dark caves draw a circle of light around you (wider with a Glow friend).
+- 2026-10-13 Map themes: 0 grass, 1 forest, 2 sky, 3 indoor, 4 cave, 5 desert, 6 snow, 7 mountain
+  (cliff tops and faces follow the region).
+- 2026-10-13 Test shortcuts with `?quickstart`: `&at=map,x,y&flags=…&team=species:level,…&items=…&quest=N`
+  (`game/devsetup.ts`), so browser tests start where they need to.
 - 2026-10-13 Battle menus put the keyboard/gamepad focus on the ★ suggested move when hints are on
   (else the first usable button), so pressing A picks a sensible move.
 - 2026-10-13 Spark Ring arcs start a new path for each arc (Pixi joins consecutive arcs with a
@@ -167,6 +191,10 @@ Franchise creatures and characters are described here, not named (this is a publ
   - Mossbub/Hardigrade: a smooth moss dome read as a turtle shell → fuzzy moss tufts.
   - Frondle: raised green arms read as a cactus → drooping fronds.
   - Hailcastle: the cloud hat looked like a mushroom cap → a separate cloud floating above it.
+- The misguided collectors "Showcase Club" → **Spotlight Club**: a famous creature series' anime has
+  "Showcases", contests where creatures perform; a club running a creature show echoed it too closely.
+- The desert Trial "Sunstone" (Trial, Mesa, Beacon, Keeper) → **Redrock**: a famous creature series
+  has a "Sun Stone" evolution item. (Internal ids such as `sunstone-gate` stay; players never see them.)
 - Icons: the Stone icon is a mountain peak (a hexagon looked round at 12 px); Chilly is an ice cube
   (it looked like the Frost icon); Toasty is wavy heat lines.
 
@@ -179,10 +207,10 @@ Franchise creatures and characters are described here, not named (this is a publ
 | 3 Art foundation (renderer, atlas, 52 creature recipes, tiles, characters, sheet) | done |
 | 4 Overworld (maps, movement, NPCs, dialogue + read-aloud, encounters, inputs, Rest Stops, shops) | done (153 unit tests; keyboard opening + smoke e2e on desktop Chromium) |
 | 5 Battle + befriend scenes, evolution | done (capture routes battle/befriend/evolution; opening e2e plays the real Spark Ring and spar) |
-| 6 Puzzles + 6 Trials + solver tests + field abilities | next |
-| 7 World + story content, post-game | |
-| 8 Menus, Agent Base, save slots, tutorials, stuck helper, reading level | |
-| 9 Audio | |
+| 6 Puzzles + 6 Trials + solver tests + field abilities | done (Lighthouse Trial e2e: 4 rooms by keyboard, Marisol, Beacon) |
+| 7 World + story content, post-game | done (57 maps, 140+ scripts, 22 side quests, 3 guardian quests; map checks in unit tests) |
+| 8 Menus, Agent Base, save slots, tutorials, stuck helper, reading level | done (phases 6–8 committed together: they share the overworld wiring) |
+| 9 Audio | next (engine, 21 tracks, effects and cries written; wiring in progress) |
 | 10 Headless bot × 3 difficulties, pacing, retune | |
 | 11 Browser tests | |
 | 12 Visual + IP review | |
@@ -240,5 +268,21 @@ snapshot says `ready: true` when the moment is on screen. The hook also shows `s
 Ring's spark angle and glow) and `battle` (turn, outcome) so tests can play them.
 Screenshots: `sh scripts/when-quiet.sh shots "<query>" out.png …` (one browser for several).
 
-**Next:** phase 6, the Trials in the game: `trial:<id>` doors (`TrialScene`), solved Trials let you
-walk straight through, the Keeper tops, the `dungeon` capture route, browser check.
+**Phases 6–8 notes:** maps in `src/data/maps/` by region (brightmoor, meadow, coast, forest,
+mountain, desert, frost, sky, postgame; `interiors.ts` builds Rest Stops, shops, homes, Trial halls
+and tops); dialogue in `src/data/dialogue/` by chapter (ch0, ch2, ch3, ch5, ch7, ch9, ch11), `post.ts`
+(after the story) and `sq.ts` (side quests); builders `keeperScript`, `storySpar`, `sideQuest` in
+`common.ts`. Trials: `trial:<id>` doors open `scenes/trial.ts`; capture routes `town` (`&map=id,x,y`),
+`dungeon` (`&trial=&room=&steps=`), `guide` (`&page=guide|guide:<species>|map|team|…`). Menu:
+`ui/pause.ts` (Team, Bag, Field Guide, Map, Quests, Agent Base, Settings, Save). Credits `ui/credits.ts`,
+Challenge Tower `game/tower.ts` (best floor in `agentmon.records`). Checks: `npx tsx scripts/check-maps.ts`
+(rows, warps, edges, reachability; also in `tests/unit/world.test.ts`), `tests/unit/reading.test.ts`.
+Runs that would otherwise wait for the other session: `sh scripts/snap-run.sh e2e|unit|sim …` copies the
+game to `reports/tmp/snap` and runs there, so editing can go on.
+Test fix: the map test compared edge offsets with `toBe(-offset)`, which fails for 0 (`-0` is not `0`
+to `Object.is`); it now checks that the two offsets add up to 0.
+
+**Next:** phase 9, audio: wire `src/audio/` (engine with limiter, `music.ts` 21 tracks, `sfx.ts`
+effects and cries) into the game (map music, battle music by opponent, cries, effects, volumes),
+browser check, commit. Then phase 10: the playthrough bot `src/sim/bot.ts` (`npx tsx scripts/bot-run.ts
+seed difficulty fuzz`), the pacing model and `tests/sim/playthrough.test.ts`.

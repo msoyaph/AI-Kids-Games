@@ -93,7 +93,7 @@ export interface MapDef {
   id: string;
   name: string;
   music: string;
-  /** Ground look: 0 normal, 1 forest, 2 sky (void shows sky). */
+  /** Ground look: 0 normal, 1 forest, 2 sky (void shows sky), 3 indoor, 4 cave, 5 desert, 6 snow, 7 mountain. */
   theme?: number;
   outdoor: boolean;
   rows: string[];
@@ -152,7 +152,7 @@ export function parseMap(def: MapDef): ParsedMap {
 
 /** Tiles an object blocks (its footprint), or none. */
 export function footprint(o: MapObject): { x: number; y: number }[] {
-  const solid: ObjKind[] = ['tree', 'pine', 'snowpine', 'palm', 'blossom', 'autumn', 'crystal', 'bush', 'berrybush', 'rock', 'boulder', 'vines', 'icewall', 'machine', 'fence-h', 'fence-v', 'lamp', 'bench', 'pot', 'crate', 'sign', 'house', 'beacon', 'lighthouse', 'lure', 'gift', 'bed', 'table', 'shelf', 'counter', 'nest', 'plant', 'water-gap'];
+  const solid: ObjKind[] = ['tree', 'pine', 'snowpine', 'palm', 'blossom', 'autumn', 'crystal', 'bush', 'berrybush', 'rock', 'boulder', 'vines', 'icewall', 'machine', 'fence-h', 'fence-v', 'lamp', 'bench', 'pot', 'crate', 'sign', 'house', 'beacon', 'lighthouse', 'lure', 'gift', 'bed', 'table', 'shelf', 'counter', 'nest', 'plant', 'water-gap', 'updraft'];
   if (!solid.includes(o.kind)) return [];
   const w = o.w ?? 1, h = o.h ?? 1;
   const out: { x: number; y: number }[] = [];

@@ -23,6 +23,12 @@ import { runScript, type ScriptHost } from '../runner';
 import { runBattleScene, runPartnerScene } from './battle-host';
 import { openPauseMenu } from '../../ui/menu';
 import { openShop } from '../../ui/shop';
+import { playCredits } from '../../ui/credits';
+import { TRIAL_BY_ID } from '../../data/trials';
+import { playTower } from '../tower';
+import { TrialScene } from './trial';
+import { QUEST_BY_ID } from '../../data/quests';
+import { mapRoute } from '../../core/world/route';
 
 const STEP = 0.2;
 const RUN_STEP = 0.13;
@@ -46,6 +52,14 @@ export class OverworldScene implements Scene, ScriptHost {
   private camX = 0;
   private camY = 0;
   private cover = new Graphics();
+  /** Dark caves: everything but a circle around you is dark (a Glow friend makes it much wider). */
+  private darkness = new Graphics();
+  /** The stuck helper: after a while with no progress, a hint and a pulsing arrow to the next goal. */
+  private arrow = new Graphics();
+  private idle = 0;
+  private onMap = 0;
+  private stuckKey = '';
+  private hinted = false;
   private app!: App;
 
   constructor(readonly game: Game) {}
@@ -59,7 +73,8 @@ export class OverworldScene implements Scene, ScriptHost {
     this.build();
     this.game.onWorldTap = (x, y) => this.onTap(x, y);
     this.game.touch.setWorldActive(true);
-    this.root.addChild(this.cover);
+    this.root.addChild(this.darkness, this.arrow, this.cover);
+    this.session.notify = message => this.game.toast(message, 5000);
   }
 
   exit(): void {
@@ -180,6 +195,68 @@ export class OverworldScene implements Scene, ScriptHost {
     else if (this.move) this.advanceMove(dt);
     this.animatePlayer(dt);
     this.followCamera(dt);
+    this.drawDarkness();
+    this.stuckHelper(dt);
+  }
+
+  private stuckHelper(dt: number): void {
+    const active = this.game.input.dir() !== null || !!this.move || this.busy > 0 || this.game.focus.open || this.path.length > 0;
+    this.idle = active ? 0 : this.idle + dt;
+    this.onMap += dt;
+    const stage = this.state.quests.main ?? 0;
+    const key = `${this.state.map}|${stage}`;
+    if (key !== this.stuckKey) { this.stuckKey = key; this.onMap = 0; this.hinted = false; }
+    const g = this.arrow.clear();
+    if (!this.game.settings.hints || this.busy || this.game.focus.open) return;
+    const stuck = this.idle > 40 || this.onMap > 300;
+    if (!stuck) return;
+    const text = QUEST_BY_ID.main?.stages[stage];
+    if (!this.hinted && text) { this.hinted = true; this.game.toast(`Hint: ${text} Follow the ★ arrow!`, 6000); }
+    const t = this.questTarget();
+    if (!t) return;
+    const z = this.zoom();
+    const p = this.view.player;
+    const px = p.x * z + this.view.root.x, py = (p.y - 10) * z + this.view.root.y;
+    const tx = (t.x * TILE + TILE / 2) * z + this.view.root.x, ty = (t.y * TILE + TILE / 2) * z + this.view.root.y;
+    const a = Math.atan2(ty - py, tx - px);
+    if (Math.hypot(tx - px, ty - py) < TILE * z * 1.2) return;
+    const r = TILE * z * 1.6, s = TILE * z * 0.45;
+    const cx = px + Math.cos(a) * r, cy = py + Math.sin(a) * r;
+    const pulse = this.game.settings.reducedMotion ? 1 : 0.65 + 0.35 * Math.sin(this.time * 4);
+    const pt = (d: number, side: number) => [cx + Math.cos(a) * d - Math.sin(a) * side, cy + Math.sin(a) * d + Math.cos(a) * side];
+    g.poly([...pt(s, 0), ...pt(-s * 0.7, s * 0.8), ...pt(-s * 0.3, 0), ...pt(-s * 0.7, -s * 0.8)]).fill({ color: 0xffd84a, alpha: pulse }).stroke({ color: 0x2a1f3d, width: Math.max(2, z) });
+  }
+
+  /** Where the quest arrow points: the goal on this map, or the door or map edge on the way to it. */
+  private questTarget(): { x: number; y: number } | null {
+    const goal = QUEST_BY_ID.main?.goals?.[this.state.quests.main ?? 0];
+    if (!goal) return null;
+    if (goal.map === this.state.map) return { x: goal.x, y: goal.y };
+    const hop = mapRoute(MAPS, this.state.map, goal.map)?.[0];
+    if (!hop) return null;
+    if (hop.via.kind === 'warp') return { x: hop.via.x, y: hop.via.y };
+    const side = hop.via.side, w = this.world.w, h = this.world.h;
+    const border: [number, number][] = [];
+    const len = side === 'n' || side === 's' ? w : h;
+    for (let k = 0; k < len; k++) {
+      const [x, y] = side === 'n' ? [k, 0] : side === 's' ? [k, h - 1] : side === 'w' ? [0, k] : [w - 1, k];
+      if (this.world.passable(x, y)) border.push([x, y]);
+    }
+    border.sort((a, b) => Math.hypot(a[0] - this.state.x, a[1] - this.state.y) - Math.hypot(b[0] - this.state.x, b[1] - this.state.y));
+    const [bx, by] = border[0] ?? [this.state.x, this.state.y];
+    return { x: bx + (side === 'e' ? 1 : side === 'w' ? -1 : 0), y: by + (side === 's' ? 1 : side === 'n' ? -1 : 0) };
+  }
+
+  private drawDarkness(): void {
+    const g = this.darkness.clear();
+    if (!this.world.def.dark) return;
+    const z = this.zoom();
+    const p = this.view.player;
+    const cx = p.x * z + this.view.root.x, cy = (p.y - 8) * z + this.view.root.y;
+    const r = (hasAbility(this.session.dex, this.state, 'light') ? 5.5 : 3.5) * TILE * z;
+    const { width: W, height: H } = this.app.host;
+    g.rect(0, 0, W, H).fill({ color: 0x0b0820, alpha: 0.9 }).circle(cx, cy, r * 1.35).cut();
+    g.circle(cx, cy, r * 1.35).fill({ color: 0x0b0820, alpha: 0.45 }).circle(cx, cy, r).cut();
   }
 
   private control(dt: number): void {
@@ -218,6 +295,7 @@ export class OverworldScene implements Scene, ScriptHost {
         return;
       case 'warp':
         this.path = [];
+        if (r.warp.to.startsWith('trial:')) { void this.withBusy(() => this.enterTrial(r.warp.to.slice(6))); return; }
         void this.withBusy(() => this.changeMap(r.warp.to, r.warp.tx, r.warp.ty, r.warp.dir ?? dir));
         return;
       case 'locked':
@@ -270,7 +348,7 @@ export class OverworldScene implements Scene, ScriptHost {
     for (const t of def.triggers) {
       const inX = this.state.x >= t.x && this.state.x < t.x + (t.w ?? 1);
       const inY = this.state.y >= t.y && this.state.y < t.y + (t.h ?? 1);
-      if (inX && inY && (!t.when || evalFlags(t.when, this.state.flags))) {
+      if (inX && inY && (!t.when || evalFlags(t.when, this.world.flags))) {
         this.path = [];
         void this.withBusy(() => this.run(t.script));
         return;
@@ -392,6 +470,7 @@ export class OverworldScene implements Scene, ScriptHost {
       this.state.flags.add(`got:${this.world.def.id}:${o.id}`);
       if (o.item) { this.session.give(o.item); this.toast(`Found ${ITEMS[o.item]?.name ?? o.item}!`); this.sfx('item'); }
       this.view.syncObjects();
+      if (o.script) await this.run(o.script);
       return;
     }
     const abilities: Partial<Record<MapObject['kind'], [string, string, string]>> = {
@@ -399,7 +478,8 @@ export class OverworldScene implements Scene, ScriptHost {
       icewall: ['melt', 'A wall of ice. A Flare friend could melt it with a warm glow.', 'Melt the ice'],
       machine: ['power', 'An old machine. A Volt friend could wake it up.', 'Power it up'],
       boulder: ['shove', 'A big round boulder. A Stone friend could shove it.', ''],
-      'water-gap': ['freeze', 'The water is too wide. A Frost friend could make ice stepping stones.', 'Freeze the water'],
+      'water-gap': ['freeze', 'The stream rushes too fast to paddle. A Frost friend could freeze an ice step.', 'Freeze the water'],
+      updraft: ['updraft', 'A strong wind blows straight up here. A Gust friend could ride it!', 'Ride the updraft'],
     };
     const a = abilities[o.kind];
     if (a) {
@@ -411,6 +491,7 @@ export class OverworldScene implements Scene, ScriptHost {
       const pick = await this.ask(`${friend ? this.session.friendName(friend) : 'Your friend'} can help! ${verb}?`, ['Yes', 'No']);
       this.game.dialogue.close();
       if (pick !== 0) return;
+      if (o.kind === 'updraft') { if (o.script) await this.run(o.script); return; }
       this.world.useAbility(o);
       this.sfx('ability');
       await this.game.tutorial('ability');
@@ -420,6 +501,8 @@ export class OverworldScene implements Scene, ScriptHost {
     if (o.kind === 'nest') return this.sayLines(['A cozy nest. Talk to the helper to let your friends nap.']);
     if (o.kind === 'shelf') return this.sayLines(['Books about Agentmon. One is called "Snacks Friends Love".']);
     if (o.kind === 'beacon') return this.sayLines([o.litBy && this.state.flags.has(o.litBy) ? 'The Beacon shines warm and bright.' : 'The Beacon is dim. Static fog swirls around it.']);
+    if (o.kind === 'lure') return this.sayLines(['A striped tower with a dish on top. It hums, and gray fog puffs out of it.']);
+    if (o.script) return this.run(o.script);
   }
 
   private async sayLines(lines: string[], who?: string): Promise<void> {
@@ -442,6 +525,17 @@ export class OverworldScene implements Scene, ScriptHost {
     if (out === 'lost') { await this.lostSpar(); return; }
     this.world.remove(w.key);
     this.session.save();
+  }
+
+  /** A Trial's door: the puzzle rooms (or, once solved, straight through to where they lead). */
+  private async enterTrial(id: string): Promise<void> {
+    const t = TRIAL_BY_ID[id];
+    if (!t) return;
+    if (this.state.flags.has(`trial:${id}`)) { await this.changeMap(t.to.map, t.to.x, t.to.y, 3); return; }
+    await this.game.fade('out');
+    this.session.save();
+    this.game.app.go(new TrialScene(this.game, id));
+    await this.game.fade('in');
   }
 
   private async changeMap(id: string, x: number, y: number, dir: Dir): Promise<void> {
@@ -490,8 +584,11 @@ export class OverworldScene implements Scene, ScriptHost {
   }
   async shop(id: string): Promise<void> { this.game.dialogue.close(); await openShop(this.game, id); }
   async base(): Promise<void> { this.toast('The Agent Base opens later in the story!'); }
-  async tower(): Promise<void> { this.toast('The Challenge Tower opens after the story!'); }
-  async credits(): Promise<void> { this.toast('The End… for now!'); }
+  async tower(): Promise<void> { this.game.dialogue.close(); await playTower(this.game); }
+  async credits(): Promise<void> {
+    this.game.dialogue.close();
+    await playCredits(this.game, [...this.state.team].map(c => this.session.friendName(c)));
+  }
   async beacon(id: string): Promise<void> { this.view.syncObjects(); this.toast('The Beacon shines again!'); void id; }
   async walk(who: string, path: string): Promise<void> {
     for (const ch of path) {

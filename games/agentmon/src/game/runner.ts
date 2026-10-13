@@ -4,7 +4,7 @@
  */
 import type { Outcome } from '../core/battle/engine';
 import { evalFlags, fillText, type Cmd, type Script } from '../core/script';
-import type { Dir } from '../core/state';
+import { storyFlags, type Dir } from '../core/state';
 import { SCRIPTS } from '../data/dialogue/index';
 import { ITEMS } from '../data/items';
 import { QUEST_BY_ID } from '../data/quests';
@@ -52,12 +52,18 @@ export async function runScript(session: Session, host: ScriptHost, script: Scri
     }
     if ('set' in c) { s.flags.add(c.set); host.refresh(); return; }
     if ('clear' in c) { s.flags.delete(c.clear); host.refresh(); return; }
-    if ('if' in c) return runScript(session, host, evalFlags(c.if, s.flags) ? c.then : c.else ?? [], depth + 1);
+    if ('if' in c) return runScript(session, host, evalFlags(c.if, storyFlags(s, session.dex.species)) ? c.then : c.else ?? [], depth + 1);
     if ('give' in c) {
       const n = c.n ?? 1;
       session.give(c.give, n);
       host.sfx('item');
       host.toast(`Got ${n > 1 ? `${n} ` : ''}${ITEMS[c.give]?.name ?? c.give}!`);
+      return;
+    }
+    if ('take' in c) {
+      const n = c.take ? c.n ?? 1 : 0;
+      s.bag[c.take] = Math.max(0, (s.bag[c.take] ?? 0) - n);
+      host.toast(`Gave ${n > 1 ? `${n} ` : ''}${ITEMS[c.take]?.name ?? c.take}.`);
       return;
     }
     if ('coins' in c) { s.coins += c.coins; host.toast(`Got ${c.coins} coins!`); return; }

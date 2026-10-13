@@ -178,7 +178,7 @@ export function beacon(lit: boolean): PixelCanvas {
   return c.outline(P.ink, true);
 }
 
-/** The Showcase Club's lure tower: a striped mast with a speaker dish (it makes the static fog). */
+/** The Spotlight Club's lure tower: a striped mast with a speaker dish (it makes the static fog). */
 export function lureTower(on: boolean): PixelCanvas {
   const c = new PixelCanvas(24, 48);
   for (let y = 10; y < 46; y++) c.rect(10, y, 4, 1, (y >> 2) % 2 ? 0x9a5fb8 : 0xffd2f0);
@@ -263,4 +263,27 @@ export function rugPlant(): PixelCanvas {
   c.rect(4, 16, 8, 7, 0xc0704a).rect(3, 15, 10, 2, 0xd8885a);
   c.ellipse(8, 9, 6, 7, P.leaf).ellipse(5, 7, 3, 4, P.leafLight).ellipse(11, 6, 3, 4, P.leafDark);
   return c.outline(P.ink, true);
+}
+
+/** A rushing stream tile: too fast to paddle; a Frost friend freezes it into an ice step. */
+export function rapids(seed = 0): PixelCanvas {
+  const c = new PixelCanvas(16, 16);
+  c.rect(0, 0, 16, 16, P.w1);
+  for (let i = 0; i < 5; i++) {
+    const y = (i * 4 + seed * 3) % 16, x = (i * 7 + seed * 5) % 12;
+    c.line(x, y, x + 4, y + 1, P.w3).line(x + 1, y + 1, x + 3, y + 1, P.foam);
+  }
+  c.set((seed * 5) % 16, 15, P.foam).set((seed * 3 + 8) % 16, 0, P.foam);
+  return c;
+}
+
+/** An updraft: a rocky vent with swirling wind (a Gust friend can ride it up or down). */
+export function updraft(): PixelCanvas {
+  const c = new PixelCanvas(16, 32);
+  c.ellipse(8, 28, 7, 3.5, P.r2).ellipse(8, 28, 4.5, 2, P.dark);
+  for (let i = 0; i < 4; i++) {
+    const y0 = 24 - i * 6;
+    for (let t = 0; t < 10; t++) c.set(Math.round(8 + Math.sin(t * 0.7 + i) * (3 + i * 0.6)), y0 - Math.round(t * 0.5), t % 3 === 0 ? P.white : P.sky1);
+  }
+  return c.outline(0x5a7ab0, true);
 }

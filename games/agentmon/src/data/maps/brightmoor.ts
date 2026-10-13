@@ -58,7 +58,8 @@ export const brightmoor: MapDef = {
     { id: 'kid-bo', name: 'Bo', x: 11, y: 15, dir: 0, look: townsLook('bo', { kid: true }), talk: 'bm-bo', wander: 2 },
     { id: 'mr-dale', name: 'Mr. Dale', x: 23, y: 9, dir: 1, look: townsLook('dale', { elder: true }), talk: 'bm-dale' },
     { id: 'tess', name: 'Tess', x: 16, y: 18, dir: 0, look: townsLook('tess'), talk: 'bm-tess', wander: 2 },
-    { id: 'juno-town', name: CAST.juno!.name, x: 16, y: 8, dir: 0, look: CAST.juno!.look, talk: 'juno-town', showIf: 'got-partner & !left-brightmoor' },
+    { id: 'juno-town', name: CAST.juno!.name, x: 16, y: 8, dir: 0, look: CAST.juno!.look, talk: 'juno-town', showIf: 'got-partner & !salt-arrive' },
+    { id: 'juno-home', name: CAST.juno!.name, x: 17, y: 14, dir: 1, look: CAST.juno!.look, talk: 'juno-rematch', showIf: 'credits' },
   ],
   triggers: [
     { x: 14, y: 0, w: 2, h: 1, script: 'not-yet-north', when: '!got-partner' },
@@ -118,6 +119,7 @@ export const academy: MapDef = {
     { id: 'nell', name: CAST.nell!.name, x: 6, y: 3, dir: 0, look: CAST.nell!.look, talk: 'nell' },
     { id: 'juno-academy', name: CAST.juno!.name, x: 8, y: 4, dir: 1, look: CAST.juno!.look, talk: 'juno-academy', showIf: '!met-nell' },
     { id: 'student', name: 'Kip', x: 2, y: 6, dir: 2, look: townsLook('kip', { agent: true, kid: true }), talk: 'academy-kip', wander: 1 },
+    { id: 'tower-host', name: 'Coach Pim', x: 2, y: 3, dir: 0, look: townsLook('pim', { agent: true, hat: 'cap', hatColor: 0xd9604f }), talk: 'tower-host', showIf: 'credits' },
   ],
   triggers: [{ x: 4, y: 6, w: 4, h: 2, script: 'nell-intro', when: '!met-nell' }],
   rest: { x: 9, y: 7 },

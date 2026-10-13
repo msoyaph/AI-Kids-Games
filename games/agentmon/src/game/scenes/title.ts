@@ -3,7 +3,7 @@
  * a new adventure, or clear a slot after a confirm). Saving problems are explained kindly.
  */
 import { Container, Graphics, Sprite } from 'pixi.js';
-import { newGameState } from '../../core/state';
+import { newGameState, type GameState } from '../../core/state';
 import { summarize } from '../../core/save/save';
 import { BEACONS } from '../../data/chapters';
 import { CODEC } from '../../data/index';
@@ -134,14 +134,16 @@ export class TitleScene implements Scene {
 }
 
 /** A brand-new adventure in a slot: Gran's house, then the opening script. */
-export function startAdventure(game: Game, slot: number, name: number, look: { skin: number; hair: number; hairColor: number; outfit: number }, difficulty: 'easy' | 'normal' | 'hard', noSave = false): void {
+export function startAdventure(game: Game, slot: number, name: number, look: { skin: number; hair: number; hairColor: number; outfit: number }, difficulty: 'easy' | 'normal' | 'hard', noSave = false, setup?: (s: GameState) => boolean): void {
   const state = newGameState({ slot, name, look, difficulty, seed: (Date.now() ^ (slot * 7919)) >>> 0, start: { map: START.map, x: START.x, y: START.y }, now: Date.now() });
   state.dir = START.dir;
+  // tests and reviews may start somewhere else (devsetup.ts); then the opening is skipped
+  const skipIntro = setup?.(state) ?? false;
   const session = new Session(state, game.settings, noSave);
   game.session = session;
-  session.enterMap(START.map, START.x, START.y, START.dir);
+  session.enterMap(state.map, state.x, state.y, state.dir);
   session.save();
   const scene = new OverworldScene(game);
   game.app.go(scene);
-  setTimeout(() => void scene.play('intro'), 400);
+  if (!skipIntro) setTimeout(() => void scene.play('intro'), 400);
 }

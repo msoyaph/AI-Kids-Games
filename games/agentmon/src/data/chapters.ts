@@ -30,7 +30,7 @@ export const CHAPTERS: ChapterDef[] = [
   { n: 5, title: 'Whispers in the Woods', areas: ['whisper-woods', 'glimmer-cave'], pathSpars: 8, trainers: ['agent-bea', 'club-dot', 'club-rudy'], befriend: ['poplet'], puzzleRooms: 1 },
   { n: 6, title: 'The Old Mine Beacon', areas: ['cragtop-slopes'], pathSpars: 8, trainers: ['agent-sami', 'mine-helper', 'keeper-vee'], befriend: [], puzzleRooms: 5, beacon: 'beacon-mine' },
   { n: 7, title: 'The Canyon Trail', areas: ['canyon-trail'], pathSpars: 7, trainers: ['agent-noa', 'juno-3'], befriend: [], puzzleRooms: 0 },
-  { n: 8, title: 'The Sunstone Beacon', areas: ['dune-flats'], pathSpars: 8, trainers: ['club-mabel', 'sunstone-helper', 'keeper-sol'], befriend: [], puzzleRooms: 6, beacon: 'beacon-sunstone' },
+  { n: 8, title: 'The Redrock Beacon', areas: ['dune-flats'], pathSpars: 8, trainers: ['club-mabel', 'sunstone-helper', 'keeper-sol'], befriend: [], puzzleRooms: 6, beacon: 'beacon-sunstone' },
   { n: 9, title: 'Over Frost Pass', areas: ['frost-pass'], pathSpars: 8, trainers: ['agent-kit', 'club-velour'], befriend: ['bathlet'], puzzleRooms: 1 },
   { n: 10, title: 'The Summit Beacon', areas: ['frostfall-slopes'], pathSpars: 8, trainers: ['agent-yan', 'summit-helper', 'keeper-yuki'], befriend: [], puzzleRooms: 6, beacon: 'beacon-summit' },
   { n: 11, title: 'Up the Updrafts', areas: ['updraft-ridge'], pathSpars: 8, trainers: ['juno-4', 'club-velour-2'], befriend: [], puzzleRooms: 1 },

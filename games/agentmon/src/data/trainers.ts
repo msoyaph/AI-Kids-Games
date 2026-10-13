@@ -1,5 +1,5 @@
 /**
- * Everyone you spar with by choice: the six Trial Keepers, your rival Juno, the Showcase Club,
+ * Everyone you spar with by choice: the six Trial Keepers, your rival Juno, the Spotlight Club,
  * fellow Field Agents along the routes, and the post-game rematches.
  *
  * Levels are for Normal. Easy and Hard shift Keeper and rival levels (tuning.ts difficulty), and
@@ -78,10 +78,10 @@ export const TRAINERS: TrainerDef[] = [
     team: [mon('fiddlit', 14), mon('leafhauler', 16), mon('frondle', 17)], hardExtra: mon('lullakin', 16),
   },
 
-  // ---- Chapter 5: Whisper Woods and Glimmer Cave (the Showcase Club appears)
+  // ---- Chapter 5: Whisper Woods and Glimmer Cave (the Spotlight Club appears)
   { id: 'agent-bea', name: 'Bette', title: 'Field Agent', kind: 'agent', area: 'whisper-woods', chapter: 5, team: [mon('poplet', 17), mon('zestle', 16)] },
-  { id: 'club-dot', name: 'Dot', title: 'Showcase Club', kind: 'club', area: 'whisper-woods', chapter: 5, team: [mon('leafhauler', 17), mon('poplet', 18)] },
-  { id: 'club-rudy', name: 'Rudy', title: 'Showcase Club', kind: 'club', area: 'glimmer-cave', chapter: 5, team: [mon('glintle', 17), mon('druzette', 18)] },
+  { id: 'club-dot', name: 'Dot', title: 'Spotlight Club', kind: 'club', area: 'whisper-woods', chapter: 5, team: [mon('leafhauler', 17), mon('poplet', 18)] },
+  { id: 'club-rudy', name: 'Rudy', title: 'Spotlight Club', kind: 'club', area: 'glimmer-cave', chapter: 5, team: [mon('glintle', 17), mon('druzette', 18)] },
 
   // ---- Chapter 6: Cragtop and the Old Mine Trial (Volt)
   { id: 'agent-sami', name: 'Sami', title: 'Field Agent', kind: 'agent', area: 'cragtop-slopes', chapter: 6, team: [mon('burrowbat', 20), mon('twirlwing', 20)] },
@@ -95,18 +95,18 @@ export const TRAINERS: TrainerDef[] = [
   { id: 'agent-noa', name: 'Noa', title: 'Field Agent', kind: 'agent', area: 'canyon-trail', chapter: 7, team: [mon('whirrbird', 24), mon('prismble', 24)] },
   { id: 'juno-3', name: 'Juno', title: 'Rival', kind: 'rival', area: 'canyon-trail', chapter: 7, team: [mon('leafhauler', 24), mon('poplet', 24), mon('@rival:2', 26)] },
 
-  // ---- Chapter 8: Dunehollow and the Sunstone Trial (Flare)
-  { id: 'club-mabel', name: 'Mabel', title: 'Showcase Club', kind: 'club', area: 'dune-flats', chapter: 8, team: [mon('zestwick', 26), mon('prismble', 27)] },
-  { id: 'sunstone-helper', name: 'Rio', title: 'Sunstone Helper', kind: 'agent', area: 'sunstone-trial', chapter: 8, team: [mon('poplet', 27), mon('whirrbird', 27)] },
+  // ---- Chapter 8: Dunehollow and the Redrock Trial (Flare)
+  { id: 'club-mabel', name: 'Mabel', title: 'Spotlight Club', kind: 'club', area: 'dune-flats', chapter: 8, team: [mon('zestwick', 26), mon('prismble', 27)] },
+  { id: 'sunstone-helper', name: 'Rio', title: 'Redrock Helper', kind: 'agent', area: 'sunstone-trial', chapter: 8, team: [mon('poplet', 27), mon('whirrbird', 27)] },
   {
-    id: 'keeper-sol', name: 'Sol', title: 'Sunstone Keeper', kind: 'keeper', area: 'sunstone-trial', chapter: 8,
+    id: 'keeper-sol', name: 'Sol', title: 'Redrock Keeper', kind: 'keeper', area: 'sunstone-trial', chapter: 8,
     team: [mon('poplet', 27), mon('whirrbird', 28), mon('burrowbat', 28), mon('fluffkorn', 31)], hardExtra: mon('zestwick', 28),
   },
 
   // ---- Chapter 9: Frost Pass
   { id: 'agent-kit', name: 'Kit', title: 'Field Agent', kind: 'agent', area: 'frost-pass', chapter: 9, team: [mon('hailbit', 29), mon('bathlet', 30)] },
   {
-    id: 'club-velour', name: 'Velour', title: 'Showcase Club Curator', kind: 'club', area: 'frost-pass', chapter: 9, boss: true,
+    id: 'club-velour', name: 'Velour', title: 'Spotlight Club Curator', kind: 'club', area: 'frost-pass', chapter: 9, boss: true,
     team: [mon('prismble', 30), mon('zestwick', 30), mon('leafhauler', 31), mon('fluffkorn', 32)],
   },
 
@@ -121,7 +121,7 @@ export const TRAINERS: TrainerDef[] = [
   // ---- Chapter 11: Updraft Ridge
   { id: 'juno-4', name: 'Juno', title: 'Rival', kind: 'rival', area: 'updraft-ridge', chapter: 11, team: [mon('canopant', 35), mon('fluffkorn', 35), mon('galehum', 35), mon('steambly', 35), mon('@rival:3', 38)] },
   {
-    id: 'club-velour-2', name: 'Velour', title: 'Showcase Club Curator', kind: 'club', area: 'updraft-ridge', chapter: 11, boss: true,
+    id: 'club-velour-2', name: 'Velour', title: 'Spotlight Club Curator', kind: 'club', area: 'updraft-ridge', chapter: 11, boss: true,
     team: [mon('fluorelle', 35), mon('citrivolt', 35), mon('canopant', 36), mon('fluffkorn', 36), mon('prismble', 37)],
   },
 
@@ -136,7 +136,7 @@ export const TRAINERS: TrainerDef[] = [
   { id: 'rematch-marisol', name: 'Marisol', title: 'Lighthouse Keeper', kind: 'rematch', area: 'lighthouse-trial', chapter: 14, team: [mon('hardigrade', 46), mon('grandatee', 47), mon('thermabara', 46), mon('voltabill', 46), mon('grandatee', 48)] },
   { id: 'rematch-oren', name: 'Oren', title: 'Canopy Keeper', kind: 'rematch', area: 'canopy-trial', chapter: 14, team: [mon('fernadore', 46), mon('canopant', 47), mon('starwisp', 46), mon('grandatee', 46), mon('fernadore', 48)] },
   { id: 'rematch-vee', name: 'Vee', title: 'Old Mine Keeper', kind: 'rematch', area: 'old-mine-trial', chapter: 14, team: [mon('citrivolt', 46), mon('voltabill', 47), mon('druzarch', 46), mon('fluorelle', 46), mon('citrivolt', 48)] },
-  { id: 'rematch-sol', name: 'Sol', title: 'Sunstone Keeper', kind: 'rematch', area: 'sunstone-trial', chapter: 14, team: [mon('fluffkorn', 46), mon('thermabara', 47), mon('bouldwom', 46), mon('galehum', 46), mon('fluffkorn', 48)] },
+  { id: 'rematch-sol', name: 'Sol', title: 'Redrock Keeper', kind: 'rematch', area: 'sunstone-trial', chapter: 14, team: [mon('fluffkorn', 46), mon('thermabara', 47), mon('bouldwom', 46), mon('galehum', 46), mon('fluffkorn', 48)] },
   { id: 'rematch-yuki', name: 'Yuki', title: 'Summit Keeper', kind: 'rematch', area: 'summit-trial', chapter: 14, team: [mon('hailcastle', 46), mon('scarfspire', 47), mon('hardigrade', 46), mon('thermabara', 46), mon('scarfspire', 48)] },
   { id: 'rematch-celeste', name: 'Celeste', title: 'Beacon Spire Keeper', kind: 'rematch', area: 'beacon-spire', chapter: 14, team: [mon('starwisp', 47), mon('fluorelle', 47), mon('maplegale', 47), mon('citrivolt', 47), mon('galehum', 48), mon('starwisp', 50)] },
   { id: 'rematch-juno', name: 'Juno', title: 'Rival', kind: 'rematch', area: 'brightmoor', chapter: 14, team: [mon('canopant', 47), mon('fluffkorn', 47), mon('galehum', 47), mon('thermabara', 47), mon('grandatee', 47), mon('@rival:3', 50)] },

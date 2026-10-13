@@ -112,7 +112,7 @@ Two families per element. Each has a real inspiration for its fact page (9 anima
 2. Meadow Path to **Saltwhistle** (coast). Trial 1, Lighthouse: push blocks onto switches. Tide Keeper.
 3. Cliff Road to **Mossgrove** (forest). Trial 2, Canopy: vines and color gates. Leaf Keeper.
 4. Whisper Woods and dark Glimmer Cave (needs Glow light) to **Cragtop** (mountain). Trial 3, Old Mine: power switches, Stone boulders, moving platforms. Volt Keeper.
-5. Canyon Trail to **Dunehollow** (desert canyon). Trial 4, Sunstone Canyon: light beams and mirrors. Flare Keeper.
+5. Canyon Trail to **Dunehollow** (desert canyon). Trial 4, Redrock Canyon: light beams and mirrors. Flare Keeper.
 6. Frost Pass (Flare melts ice walls) to **Frostfall** (icy peak). Trial 5, Summit: ice sliding. Frost Keeper.
 7. Gust updrafts to the **Sky Island**. Trial 6, Beacon Spire: every mechanic plus wind currents. Glow Keeper.
 
@@ -124,7 +124,7 @@ Two families per element. Each has a real inspiration for its fact page (9 anima
 - The 6 Trial Keepers.
 - About 30 townspeople with about 20 small side quests.
 
-**The misguided group: the Showcase Club**
+**The misguided group: the Spotlight Club**
 - They are collectors who want Agentmon in a glittering show.
 - Their "lure towers" call Agentmon to them. Without meaning to, the towers make the static fog.
 - Story ending: they understand, switch the towers off, and turn the show into an open garden where Agentmon come and go freely. Nobody is punished.
@@ -325,7 +325,7 @@ tests/unit  tests/sim (balance, level curve, playthrough bot, pacing)  tests/e2e
    - A solver test for every room; Reset; field abilities.
 7. **World and story.**
    - 6 towns, routes, coast, forest, mountain, canyon, icy peak, sky island.
-   - Full story script, rival, Showcase Club, side quests, Keepers.
+   - Full story script, rival, Spotlight Club, side quests, Keepers.
    - Finale, credits, post-game (Tower, rematches, guardians).
 8. **Menus and onboarding.**
    - Team, Bag, Field Guide, Map, Quests, Settings, Agent Base habitat.

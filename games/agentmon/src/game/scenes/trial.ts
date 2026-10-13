@@ -11,6 +11,7 @@ import { bakeRoom, block, colorGate, colorSwitch, crystal, door, emitter, iceBlo
 import { doorOpen, interact, mirrorAt, move, parseRoom, platformTiles, tickPlatforms, traceBeams, type PuzzleState, type Room } from '../../core/puzzle/puzzle';
 import type { Dir } from '../../core/state';
 import { TRIAL_BY_ID, type TrialDef } from '../../data/trials';
+import { solve } from '../../core/puzzle/solver';
 import { bigTextures } from '../../render/atlas';
 import { h } from '../../ui/dom';
 import type { App, Scene } from '../app';
@@ -46,6 +47,9 @@ export class TrialScene implements Scene {
   private app!: App;
   private busy = false;
   private time = 0;
+  /** R resets the room (keyboard); the Reset button works everywhere. */
+  private resetKey = false;
+  private onKey = (e: KeyboardEvent) => { if (e.code === 'KeyR' && !e.repeat && !this.game.focus.open) this.resetKey = true; };
 
   constructor(private game: Game, trialId: string, private onDone?: () => void) {
     this.trial = TRIAL_BY_ID[trialId]!;
@@ -66,11 +70,13 @@ export class TrialScene implements Scene {
     app.ui.appendChild(this.ui);
     this.game.onWorldTap = (x, y) => this.onTap(x, y);
     this.game.touch.setWorldActive(true);
+    addEventListener('keydown', this.onKey);
     this.loadRoom(this.roomIndex);
     if (this.room.def.tutorial) void this.withBusy(() => this.game.tutorial(this.room.def.tutorial!));
   }
 
   exit(): void {
+    removeEventListener('keydown', this.onKey);
     this.ui.remove();
     this.game.onWorldTap = null;
     this.game.touch.setWorldActive(false);
@@ -193,6 +199,19 @@ export class TrialScene implements Scene {
     await this.withBusy(async () => { await this.game.dialogue.say(this.room.def.hint, 'Hint'); this.game.dialogue.close(); });
   }
 
+  /** The Trial menu (Start / M / Menu): keep going, reset the room, a hint, or leave for now. */
+  private async trialMenu(): Promise<void> {
+    if (this.busy) return;
+    const pick = await this.withBusy(async () => {
+      const r = await this.game.dialogue.ask('Trial menu', ['Keep going', 'Reset room', 'Hint', 'Leave for now']);
+      this.game.dialogue.close();
+      return r;
+    });
+    if (pick === 1) { this.reset(); this.sync(); }
+    else if (pick === 2) await this.showHint();
+    else if (pick === 3) await this.leave();
+  }
+
   private async leave(): Promise<void> {
     if (this.busy) return;
     const pick = await this.withBusy(async () => {
@@ -304,11 +323,29 @@ export class TrialScene implements Scene {
     // the stuck helper: a gentle hint after a long pause or several resets
     this.idle += dt;
     if (!this.hintShown && (this.idle > 75 || this.resets >= 3)) { void this.showHint(); return; }
-    if (input.consume('menu')) { void this.leave(); return; }
+    if (this.resetKey) { this.resetKey = false; this.reset(); this.sync(); return; }
+    if (input.consume('menu')) { void this.trialMenu(); return; }
     if (input.consume('a')) { this.pressA(); return; }
     if (input.consume('b')) return;
     const d = input.dir();
     if (d !== null) this.step(d);
+  }
+
+  /** Capture routes and tests: play the first `n` steps of a solution at once. */
+  demo(n: number): void {
+    const sol = solve(this.room, this.room.start);
+    if (!sol) return;
+    for (const a of sol.actions.slice(0, n)) {
+      if (a === 'wait') this.state = tickPlatforms(this.room, this.state);
+      else if (typeof a === 'string') this.state = interact(this.room, { ...this.state, dir: Number(a[1]) as Dir }, { snip: true, melt: true }).state;
+      else this.state = move(this.room, this.state, a).state;
+    }
+    this.sync();
+  }
+
+  /** The solution from the current state (tests use it to play a room with real key presses). */
+  solution(): string[] {
+    return solve(this.room, this.state)?.actions.map(String) ?? [];
   }
 
   snapshot() {

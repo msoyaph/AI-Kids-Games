@@ -110,3 +110,27 @@ export function useItem(s: GameState, item: string): boolean {
   addItem(s, item, -1);
   return true;
 }
+
+/**
+ * The story flags, plus a few live facts that scripts and maps can ask about by name:
+ *   item:<id>:<n>  you carry at least n of that item     friend:<id>  a friend of that species
+ *   family:<id>    a friend from that species' family    guide:<n>    n kinds befriended
+ *   beacons:<n>    n Beacons relit
+ */
+export function storyFlags(s: GameState, species: Record<string, { family: string } | undefined>): { has(flag: string): boolean } {
+  const friends = () => [...s.team, ...s.base];
+  return {
+    has(flag: string): boolean {
+      if (s.flags.has(flag)) return true;
+      const [kind, a = '', b] = flag.split(':');
+      switch (kind) {
+        case 'item': return (s.bag[a] ?? 0) >= Number(b ?? 1);
+        case 'friend': return friends().some(c => c.species === a);
+        case 'family': { const f = species[a]?.family; return !!f && friends().some(c => species[c.species]?.family === f); }
+        case 'guide': return s.guide.friends.size >= Number(a);
+        case 'beacons': return [...s.flags].filter(x => /^beacon-[a-z]+$/.test(x)).length >= Number(a);
+        default: return false;
+      }
+    },
+  };
+}
