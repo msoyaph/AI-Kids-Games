@@ -309,7 +309,7 @@ Franchise creatures and characters are described here, not named (this is a publ
 | 10 Headless bot × 3 difficulties, pacing, retune | done (credits on Easy/Normal/Hard × 3 partners, fuzzed runs, Mood Match; pacing ≈ 7.4 h on Normal; reports/pacing.md) |
 | 11 Browser tests | done (11 specs × Chromium/WebKit × phone/tablet/desktop; skips are by design: keyboard specs on touch devices, touch specs on desktops, file:// once per browser, perf on local Chromium) |
 | 12 Visual + IP review | done (reports/visual-review.md: all 52 Agentmon, 57 maps, 9 Trials, menus; lemon line redrawn, snow leopards fixed, Trial interiors themed, title fixed) |
-| 13 Site, previews, art, PR (stop before production) | next |
+| 13 Site, previews, art, PR (stop before production) | done up to the PR (CI and the preview link: see the PR); not merged, not released |
 
 **Phase 1 notes:** rules live in `src/core/` (`battle/engine.ts`, `battle/ai.ts`, `befriend.ts`,
 `creature.ts`, `elements.ts`, `save/codec.ts`, `save/save.ts`, `state.ts`), storage in
@@ -392,10 +392,17 @@ come from `sh scripts/when-quiet.sh shots …` with the capture routes (`town&ma
 `dungeon&trial=&room=` with a zero-based room, `guide&page=…`), see reports/visual-review.md.
 Ground colours by theme are checked in `tests/unit/ground.test.ts`.
 
-**Next:** phase 13, the site. `origin/main` has Tuck Pop merged (PR #10), so first merge `main` into
-`agentmon` (it is the last phase), then: status "released" in game.json, `npm run import-game --
-agentmon`, `npm run manifests`, `npm run audit-storage`, the capture route
-`apps/site/scripts/capture/agentmon.ts` (drafted) and `npm run capture-previews -- agentmon`, cover,
-logo and OG image (`apps/site/public/media/agentmon/` drafted, `apps/site/scripts/art/logos.ts` has the
-agentmon style), grid checks with 7 and 8 games, site tests, the PR (CI green, preview link).
-Never merge it and never release to production: the owner plays it first.
+**Phase 13 notes:** listed from game.json ("Ready to play", order 8, not featured, so it stays out of
+the home hero); imported 1.0.0 (983 KB); storage audit in apps/site/STORAGE_AUDIT.md; previews from
+apps/site/scripts/capture/agentmon.ts; cover, logo and OG image in apps/site/public/media/agentmon/
+and public/og/agentmon.jpg; site tests at 8 games. `main` was merged twice (Tuck Pop 2.4.0, then the
+2.4.0 record). Release 2.4.1 (PR #12, the home hero) was still a draft when the PR opened: merge `main`
+again when it lands, keep TheaBonk as the hero's first slide, rerun the site tests (including the
+320/375/390 px hero test).
+
+**Next:** the PR is open (see Progress); never merge it and never release to production: the owner
+plays it first. After approval: merge `main`, bump the site to 2.5.0 (on top of 2.4.1), record the
+approval in DEPLOYMENT.json, `npm run release:local`, then the usual production steps (root CLAUDE.md).
+The owner has also asked for Agentmon 1.1 (design polish, 24 new Agentmon and a guardian, pet care at
+the Agent Base): it starts with a plan to show and wait on (screenshots and a top-10 polish list, a
+design direction with before/after mockups, the new creature sheet), on a new branch.

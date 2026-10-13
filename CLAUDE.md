@@ -337,8 +337,10 @@ gone. No change to ci.yml: Agentmon gets the default checks and Chromium + WebKi
 image, site tests at 8 games.
 
 **Release plan (owner: "Don't merge and don't release to production; I'll play it first and then
-approve"):** the PR keeps the site at 2.4.0. After the owner's approval, the release commit bumps
-the site to 2.5.0, records the approval in DEPLOYMENT.json and runs `npm run release:local` (Space
+approve"):** the PR keeps the site at its current version (2.4.0, then 2.4.1 once PR #12 lands and
+`main` is merged in again; TheaBonk stays the hero's first slide, and Agentmon isn't featured, so it
+isn't in the hero). After the owner's approval, the release commit bumps the site to 2.5.0 on top of
+2.4.1, records the approval in DEPLOYMENT.json and runs `npm run release:local` (Space
 Sky and Light Crossing GPU suites); then AIKG_ALLOW_PRODUCTION=2.5.0 in Vercel Production, merge with
 a merge commit, the production smoke test and Lighthouse, and the record PR.
 
