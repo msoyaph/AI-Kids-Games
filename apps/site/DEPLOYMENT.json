@@ -13,17 +13,17 @@
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
-    "deploymentId": "dpl_FtgxLuCNMft5d72MSYiHWmhwvR17",
-    "deploymentUrl": "https://ai-kids-games-7z9g0vkqf-real-tours.vercel.app",
+    "deploymentId": "dpl_DP3HnJf9wiCSLb7XH978j3DeNVh7",
+    "deploymentUrl": "https://ai-kids-games-5aar4onbj-real-tours.vercel.app",
     "readyState": "READY",
     "publishedAt": "2026-10-13",
     "public": true,
-    "release": "2.4.0",
-    "commit": "22fb160",
-    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/10",
+    "release": "2.4.1",
+    "commit": "5fd33b2",
+    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/12",
     "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
-    "guardLog": "Production deployment of release 2.4.0 approved by the owner on 2026-10-13; GPU browser suites passed on 966d126.",
-    "smokeTest": "Logged-out Playwright suite against production (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone): 141 passed, 72 intentional device/engine skips, 0 failed: every game boots and plays, Tuck Pop places a piece, plays 20 s clean and resumes the saved game after a reload, TheaBonk 2.0 by touch, fullscreen play, saves, favorites and recently played kept, all 7 games listed, no console errors, no other-origin requests. The production Tuck Pop file is byte-identical to the verified build.",
+    "guardLog": "Production deployment of release 2.4.1 approved by the owner on 2026-10-13; GPU browser suites passed on ca22ac6.",
+    "smokeTest": "Logged-out Playwright suite against production (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone): 148 passed, 77 intentional device/engine skips, 0 failed: Home's heading is for screen readers only and Home has no trailer (About's trailer plays muted and captioned); the carousel opens on TheaBonk; Add to Home shows the Safari steps on phone and tablet, opens a captured install prompt, and never shows on a computer or from the Home Screen; the hero stays inside the gutters at 320, 375 and 390 px; all 7 games go home → details → play for 20 s clean with durable saves; favorites and recently played kept; no console errors; no other-origin requests.",
     "lighthouseMobile": {
       "home": {
         "performance": 99,
@@ -38,7 +38,7 @@
         "seo": 100
       },
       "play": {
-        "performance": 89,
+        "performance": 91,
         "performanceExempt": true,
         "accessibility": 100,
         "bestPractices": 100,
@@ -57,8 +57,7 @@
         "seo": 100
       }
     },
-    "ci": "PR #10 at af74bcc: What changed, Repo checks, Website and all seven game jobs green (tuck-pop on Chromium and WebKit with software WebGL); CI passed. Space Sky's and Light Crossing's browser suites ran locally (localSuites).",
-    "tuckPop": "Tuck Pop 1.0.0, build 521,206 bytes, sha256 2075b4c54df451e24cb298710ff679bfee6f15e9049000f5a84e6d222e657cd7 (reproducible: a fresh build matches byte for byte)."
+    "ci": "PR #12 at 134a9db: What changed, Repo checks and Website green; CI passed. Space Sky's and Light Crossing's browser suites ran locally (localSuites)."
   },
   "deploymentProtection": {
     "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",
@@ -69,6 +68,59 @@
   "gameCacheControl": "public, max-age=0, must-revalidate",
   "hashedAssetCacheControl": "public, max-age=31536000, immutable",
   "history": [
+    {
+      "release": "2.4.0",
+      "commit": "22fb160",
+      "production": {
+        "url": "https://ai-kids-games-fawn.vercel.app",
+        "deploymentId": "dpl_FtgxLuCNMft5d72MSYiHWmhwvR17",
+        "deploymentUrl": "https://ai-kids-games-7z9g0vkqf-real-tours.vercel.app",
+        "readyState": "READY",
+        "publishedAt": "2026-10-13",
+        "public": true,
+        "release": "2.4.0",
+        "commit": "22fb160",
+        "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/10",
+        "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+        "guardLog": "Production deployment of release 2.4.0 approved by the owner on 2026-10-13; GPU browser suites passed on 966d126.",
+        "smokeTest": "Logged-out Playwright suite against production (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone): 141 passed, 72 intentional device/engine skips, 0 failed: every game boots and plays, Tuck Pop places a piece, plays 20 s clean and resumes the saved game after a reload, TheaBonk 2.0 by touch, fullscreen play, saves, favorites and recently played kept, all 7 games listed, no console errors, no other-origin requests. The production Tuck Pop file is byte-identical to the verified build.",
+        "lighthouseMobile": {
+          "home": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "details": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "play": {
+            "performance": 89,
+            "performanceExempt": true,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "tuckPopDetails": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "tuckPopPlay": {
+            "performance": 99,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          }
+        },
+        "ci": "PR #10 at af74bcc: What changed, Repo checks, Website and all seven game jobs green (tuck-pop on Chromium and WebKit with software WebGL); CI passed. Space Sky's and Light Crossing's browser suites ran locally (localSuites).",
+        "tuckPop": "Tuck Pop 1.0.0, build 521,206 bytes, sha256 2075b4c54df451e24cb298710ff679bfee6f15e9049000f5a84e6d222e657cd7 (reproducible: a fresh build matches byte for byte)."
+      }
+    },
     {
       "release": "2.3.0",
       "commit": "4d6ed5a",
