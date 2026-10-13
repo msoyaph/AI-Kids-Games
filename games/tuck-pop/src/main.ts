@@ -731,6 +731,7 @@ function hook() {
 async function boot() {
   lay = computeLayout(innerWidth, innerHeight, insets());
   try { await scene.init(canvasEl, lay, view(), dpr()); } catch (err) { console.warn('WebGL unavailable', err); $('#nogl').hidden = false; return; }
+  if (scene.software && scene.dpr !== dpr()) scene.resize(lay, dpr()); // software WebGL: draw at 1× from the start
   applySettings(); bindSettings(); bindButtons(); bindInput(); positionHud();
   addEventListener('resize', () => requestAnimationFrame(resize));
   visualViewport?.addEventListener('resize', () => requestAnimationFrame(resize));

@@ -5,14 +5,16 @@ import { canvas, darken, FONT } from './paint';
 
 const cache = new Map<string, Texture>();
 let dpr = 1;
-export function setWordResolution(next: number) { if (next !== dpr) { dpr = next; for (const t of cache.values()) t.destroy(true); cache.clear(); } }
+/** Textures leave the cache at once but are destroyed later: a word on screen may still show one. */
+const retire = (t: Texture) => { setTimeout(() => t.destroy(true), 5000); };
+export function setWordResolution(next: number) { if (next !== dpr) { dpr = next; for (const t of cache.values()) retire(t); cache.clear(); } }
 
 /** Text as a texture. A second line (after "\n") is drawn smaller, under the first. */
 export function wordTexture(text: string, size: number, color: string): Texture {
   const key = `${text}|${Math.round(size)}|${color}`;
   const hit = cache.get(key);
   if (hit) return hit;
-  if (cache.size > 48) { const [k, t] = cache.entries().next().value as [string, Texture]; t.destroy(true); cache.delete(k); }
+  if (cache.size > 48) { const [k, t] = cache.entries().next().value as [string, Texture]; retire(t); cache.delete(k); }
   const lines = text.split('\n');
   const px = lines.map((_, i) => Math.round(size * dpr * (i === 0 ? 1 : 0.68)));
   const [m] = canvas(1, 1); const mctx = m.getContext('2d')!;

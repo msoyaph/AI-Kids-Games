@@ -5,11 +5,13 @@ test('a gamepad works the menus and the board', async ({ page }) => {
   const problems = watch(page);
   const press = await fakeGamepad(page);
   await page.goto('/');
-  await expect(page.locator('#classic')).toBeFocused();
+  // the home screen focuses Classic once the game has booted (slow on software WebGL)
+  await page.waitForFunction(() => '__tuckpop' in window, null, { timeout: 30_000 });
+  await expect(page.locator('#classic')).toBeFocused({ timeout: 15_000 });
   await press('down'); // to Easy
-  await expect(page.locator('.segmented button').first()).toBeFocused();
+  await expect(page.locator('.segmented button').first()).toBeFocused({ timeout: 15_000 });
   await press('up');
-  await expect(page.locator('#classic')).toBeFocused();
+  await expect(page.locator('#classic')).toBeFocused({ timeout: 15_000 });
   await press('a');
   await expect.poll(async () => (await snapshot(page)).screen).toBe('play');
   await press('rb');

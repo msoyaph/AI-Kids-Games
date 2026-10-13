@@ -80,7 +80,9 @@ export class Scene {
   frames = 0;
   /** True on a software WebGL renderer, or after the frame-rate governor found the device slow. */
   software = false;
-  private bgTex: Texture | null = null; private panelTex: Texture | null = null; private glowTex: Texture | null = null;
+  private bgTex: Texture | null = null; private panelTex: Texture | null = null; private glowTex: Texture | null = null; private slotTex: Texture | null = null;
+  /** What the board last showed, so a redraw (theme, size, resolution) can show it again with the new art. */
+  private shown: { game: Game | null; hidden: number; streak: number; dry: number } = { game: null, hidden: -1, streak: 0, dry: 0 };
 
   async init(canvasEl: HTMLCanvasElement, layout: Layout, view: View, dpr: number) {
     this.renderer = new WebGLRenderer();
@@ -120,17 +122,21 @@ export class Scene {
   /** (Re)draws every texture for the current theme, look and size. */
   rebuild() {
     const { layout: l, view: v, dpr } = this;
+    // The old atlas is destroyed a little later: live particles and words may still use it.
+    const old = this.atlas;
+    if (old) setTimeout(() => old.source.destroy(), 5000);
     this.atlas = buildAtlas(v.theme, l.cell, dpr, v.look);
     if (this.fx) this.fx.setAtlas(this.atlas); else this.fx = new Fx(this.atlas);
     setWordResolution(dpr);
-    this.bgTex?.destroy(true); this.panelTex?.destroy(true); this.glowTex?.destroy(true);
+    // (replaced below before the next draw, so these can go at once)
+    this.bgTex?.destroy(true); this.panelTex?.destroy(true); this.glowTex?.destroy(true); this.slotTex?.destroy(true);
     this.bgTex = textureOf(backgroundCanvas(v.theme, Math.ceil(l.w), Math.ceil(l.h)), 1);
     this.bg.texture = this.bgTex; this.bg.position.set(0, 0); this.bg.width = l.w; this.bg.height = l.h;
     this.panelTex = textureOf(boardCanvas(v.theme, l.cell, dpr, v.look), dpr);
     this.panel.texture = this.panelTex; this.panel.position.set(l.board.x - l.cell * 0.2, l.board.y - l.cell * 0.2);
     const [gc, gctx] = canvas(64, 64); const g = gctx.createRadialGradient(32, 32, 4, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,235,0.9)'); g.addColorStop(1, 'rgba(255,250,210,0)'); gctx.fillStyle = g; gctx.fillRect(0, 0, 64, 64);
     this.glowTex = textureOf(gc, 1); this.glow.texture = this.glowTex; this.glow.position.set(l.board.x + l.board.w / 2, l.board.y + l.board.h / 2); this.glow.width = l.board.w * 1.5; this.glow.height = l.board.h * 1.5; this.glow.alpha = 0;
-    this.slotGlow.texture = slotTexture(l.slots[0], dpr, v.theme.accent); this.slotGlow.anchor.set(0.5); this.slotGlow.visible = false;
+    this.slotTex = slotTexture(l.slots[0], dpr, v.theme.accent); this.slotGlow.texture = this.slotTex; this.slotGlow.anchor.set(0.5); this.slotGlow.visible = false;
     for (let i = 0; i < 64; i++) {
       const x = l.board.x + (i % 8 + 0.5) * l.cell, y = l.board.y + (Math.floor(i / 8) + 0.5) * l.cell;
       for (const s of [this.cells[i]!, this.symbols[i]!, this.items[i]!, this.hints[i]!, this.ghosts[i]!, this.sweepers[i]!, this.flyers[i]!]) { s.position.set(x, y); s.scale.set(1); }
@@ -138,7 +144,12 @@ export class Scene {
     }
     const gap = Math.min(l.streak.w / 8, 26);
     this.layoutDeco();
+    // every sprite moves to the new art now (the old atlas is destroyed in a few seconds)
+    const { game, hidden } = this.shown;
+    if (game) { this.syncBoard(game); this.syncTray(game, hidden); }
+    if (this.drag?.piece) this.drag.set(this.drag.piece, this.drag.color, this.atlas, l.cell, v.symbols);
     this.pips.forEach((p, i) => { p.texture = this.atlas.ring; p.position.set(l.streak.x + l.streak.w / 2 + (i - 3) * gap, l.streak.y + l.streak.h / 2); p.scale.set(0.3); });
+    this.streak(this.shown.streak, this.shown.dry);
     this.dirty = true;
   }
 
@@ -176,6 +187,7 @@ export class Scene {
 
   /** Shows the board exactly as the game has it. */
   syncBoard(g: Game) {
+    this.shown.game = g;
     const a = this.atlas;
     for (let i = 0; i < 64; i++) {
       const color = g.colors[i]!, b = this.cells[i]!, s = this.symbols[i]!, it = this.items[i]!;
@@ -189,6 +201,7 @@ export class Scene {
 
   /** Shows the tray (and the Single block when there is one). `hidden` slots are being dragged. */
   syncTray(g: Game, hidden = -1) {
+    this.shown.game = g; this.shown.hidden = hidden;
     const l = this.layout;
     g.tray.forEach((slot, k) => {
       const v = this.slots[k]!, r = l.slots[k]!;
@@ -227,6 +240,7 @@ export class Scene {
 
   /** Streak pips above the board: lit for the streak, fading as dry moves use up its life. */
   streak(streak: number, dry: number) {
+    this.shown.streak = streak; this.shown.dry = dry;
     const k = Math.min(26, this.layout.streak.w / 8) / this.atlas.cell;
     this.pips.forEach((p, i) => { const on = i < Math.min(7, streak); p.texture = on ? this.atlas.sparkle : this.atlas.ring; p.alpha = on ? (dry === 0 ? 1 : dry === 1 ? 0.75 : 0.5) : 0.4; p.scale.set(on ? k * 1.25 : k * 0.62); });
     this.dirty = true;
