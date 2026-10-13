@@ -1,4 +1,3 @@
-/// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { communityOrigins } from './scripts/generate-community';
@@ -25,7 +24,5 @@ const sitePolicy: Plugin = {
 
 export default defineConfig({
   plugins: [react(),sitePolicy],
-  build: { target: 'es2022',assetsInlineLimit: 0 },
-  // The community games list is generated, not committed: make it before any test imports it.
-  test: { globalSetup: ['./scripts/generate-community.ts'] }
+  build: { target: 'es2022',assetsInlineLimit: 0 }
 });
