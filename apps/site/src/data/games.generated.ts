@@ -454,7 +454,7 @@ export const generatedGames: Game[] = [
     ],
     "ageGuidance": "Ages 6+",
     "minAge": 6,
-    "contentNotes": "A calm puzzle with no violence, timers in the early levels, ads, purchases or chat. Progress and best scores save in this browser only.",
+    "contentNotes": "A calm puzzle with no violence, ads, purchases or chat. No timers, except an optional clock badge in the last Adventure worlds. Progress and best scores save in this browser only.",
     "estimatedPlayTime": "A few minutes a game, plus 60 Adventure levels",
     "quickStart": [
       "Drag a piece from the tray onto the board.",

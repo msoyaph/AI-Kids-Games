@@ -36,7 +36,7 @@
     "Colorblind symbols, high contrast, larger text and read-aloud",
     "Plays with touch, mouse, keyboard or gamepad"
   ],
-  "contentNotes": "A calm puzzle with no violence, timers in the early levels, ads, purchases or chat. Progress and best scores save in this browser only.",
+  "contentNotes": "A calm puzzle with no violence, ads, purchases or chat. No timers, except an optional clock badge in the last Adventure worlds. Progress and best scores save in this browser only.",
   "controls": {
     "types": [
       "Touch",
