@@ -120,6 +120,14 @@ the tablet test now accepts any card from the centred row.
 - The "Watch the trailer" button and its dialog are gone. The trailer lives on About only.
 - The hero carousel opens on TheaBonk (`HERO_LEAD` in `src/pages/Home.tsx`). The other featured
   games follow in catalog order.
+- **"Add to Home"** sits beside Play in the hero, on phones and tablets only (coarse pointer). It
+  never shows once the site is opened from the Home Screen.
+  - The code is `src/lib/install.ts`, imported in main.tsx so Chromium's early
+    `beforeinstallprompt` is kept, plus `src/components/AddToHome.tsx`.
+  - Chrome, Edge and Samsung Internet open their own install prompt.
+  - iPhone and iPad show the Safari steps, with the Play page's note that Home Screen saves are
+    separate from Safari's. Other browsers show the browser-menu steps.
+  - Nothing is stored or sent. The existing manifest is install-ready.
 - **Fix:** the featured thumbnails made the hero wider than the phone (366 px), which pushed it past
   the right gutter and turned a 375 px page sideways. Now the hero column is `minmax(0,1fr)`, and
   on phones the thumbnails share the row at 48–56 px, wrapping only below about 330 px. The phone
