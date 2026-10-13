@@ -7,17 +7,15 @@ import { mkdirSync,readFileSync,writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { renderPage } from '../src/entry-server';
 import { games } from '../src/data/games';
-import { BRAND } from '../src/data/site';
+import { BRAND,PUBLIC_ORIGIN } from '../src/data/site';
 import { llmsFullText,llmsText } from '../src/seo/llms';
 import { pageMeta,sitePaths,unlistedPaths } from '../src/seo/meta';
 import { structuredData } from '../src/seo/schema';
 
-// Canonical origin: SITE_ORIGIN, else the Vercel production domain (available in every Vercel
-// build), else the deployment URL, else local preview.
-const origin = (process.env.SITE_ORIGIN
-  || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '')
-  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')
-  || 'http://127.0.0.1:4190').replace(/\/$/,'');
+// Canonical origin: SITE_ORIGIN (set in Vercel's Production environment), else, on any other Vercel
+// build, the live address (PUBLIC_ORIGIN), else local preview. Not VERCEL_PROJECT_PRODUCTION_URL:
+// Vercel fills it with the attached aikids.games, which isn't connected yet.
+const origin = (process.env.SITE_ORIGIN || (process.env.VERCEL ? PUBLIC_ORIGIN : 'http://127.0.0.1:4190')).replace(/\/$/,'');
 const preview = process.env.VERCEL_ENV === 'preview';
 const escape = (value: string) => value.replace(/[&<>"']/g,char => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[char]!));
 const shell = readFileSync('dist/index.html','utf8');
