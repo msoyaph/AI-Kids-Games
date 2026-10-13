@@ -13,20 +13,19 @@
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
-    "deploymentId": "dpl_J9CH4QjiZXktsabniqKTeY3Pa9AY",
-    "deploymentUrl": "https://ai-kids-games-d52qa3j0h-real-tours.vercel.app",
+    "deploymentId": "dpl_5jsqW2PPkRok73bzQtQz9uD34xYs",
     "readyState": "READY",
     "publishedAt": "2026-10-12",
     "public": true,
-    "release": "2.2.0",
-    "commit": "56d4e5d",
-    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/7",
+    "release": "2.3.0",
+    "commit": "4d6ed5a",
+    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/5",
     "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
-    "guardLog": "Production deployment of release 2.2.0 approved by the owner on 2026-10-12.",
-    "smokeTest": "Logged-out Playwright suite against production on a real GPU (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone): 132 passed, 72 intentional device/engine skips, 0 failed — every game played 20 s on desktop, tablet and phone, TheaBonk 2.0 by touch, fullscreen play incl. each game's own fullscreen button, saves, favorites and recently played kept, no console errors, no other-origin requests.",
+    "guardLog": "Production deployment of release 2.3.0 approved by the owner on 2026-10-12.",
+    "smokeTest": "Logged-out Playwright suite against production (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone): 138 passed, 72 intentional device/engine skips, 0 failed: every game boots and plays, TheaBonk 2.0 by touch, fullscreen play, saves, favorites and recently played kept, the trailer opens muted with captions and plays on Home and About, no console errors, no other-origin requests.",
     "lighthouseMobile": {
       "home": {
-        "performance": 98,
+        "performance": 99,
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
@@ -38,19 +37,14 @@
         "seo": 100
       },
       "play": {
-        "performance": 92,
+        "performance": 55,
         "performanceExempt": true,
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       }
     },
-    "verifiedPreview": {
-      "url": "https://ai-kids-games-git-site-220-real-tours.vercel.app",
-      "check": "Signed-in in-app browser at phone size with touch emulation: TheaBonk listed for computer, tablet and phone, no keyboard screen, \"Play fullscreen?\" once, Tablet tier + Relaxed on a touch-first device. Full local suite on the same build: 132 passed, 0 failed."
-    },
-    "ci": "PR #7: What changed, Repo checks, Website (82 passed) and theabonk (38 passed, 1 flaky on retry: desktop 150% scaling; the 5-minute touch playthrough passed on GitHub's runner) green; CI passed.",
-    "theabonk": "TheaBonk 2.0.0, monorepo tag theabonk-v2.0.0 (f5daf16), build sha256 f1a627e9…d2aa372."
+    "trailer": "Home and the play and details pages make 0 requests to /trailer/ before someone presses play; the files are self-hosted (AV1 WebM 6.3 MB, H.264 7.7 MB at 1080p)."
   },
   "deploymentProtection": {
     "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",

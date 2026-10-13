@@ -237,6 +237,11 @@ this Mac: missing libx265) and @ffprobe-installer/ffprobe for HyperFrames' ffpro
 - README: the trailer plays inline (GitHub user-attachments video, PR #6), links to the release
   and to YouTube (https://www.youtube.com/watch?v=C47DcpiEVo8). The reel shows TheaBonk v1
   footage; recapture it with `npm run capture -- theabonk` in marketing/sizzle if wanted.
+- 2.3.0 LIVE 2026-10-12 (PR #5, merge commit 4d6ed5a; dpl_5jsqW2PPkRok73bzQtQz9uD34xYs): guard
+  log "approved by the owner"; AIKG_ALLOW_PRODUCTION=2.3.0. Production suite 138/0 (72 device and
+  engine skips); Lighthouse mobile home 99/100/100/100, details 99/100/100/100, play 55 (exempt)/
+  100/100/100; 0 trailer requests before play. A local suite failure was the disk filling up
+  (ENOSPC): the reel's build/ folder (1.7 GB) is regenerable, so delete it when space runs low.
 
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
