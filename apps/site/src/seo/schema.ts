@@ -9,6 +9,7 @@ import { findGuide,guides } from '../data/guides';
 import { guideBodies } from '../data/guide-bodies';
 import { BRAND,FOUNDER,PROFILES,SITE_DESCRIPTION } from '../data/site';
 import trailer from '../data/trailer.json';
+import { gameTrailer } from '../data/trailers';
 import { blocksToText } from '../lib/rich-text';
 import { mediaFor } from '../lib/media';
 import { pageMeta } from './meta';
@@ -31,6 +32,19 @@ export function structuredData(pathname: string,origin: string): Graph {
   const crumbs = (items: [string,string][]): BreadcrumbList => ({ '@type': 'BreadcrumbList',itemListElement: items.map(([name,path],index) => ({ '@type': 'ListItem',position: index+1,name,item: url(path) })) });
   const gameList = (list: Game[],name: string): ItemList => ({ '@type': 'ItemList',name,numberOfItems: list.length,itemListElement: list.map((game,index) => ({ '@type': 'ListItem',position: index+1,url: url(`/game/${game.slug}`),name: game.title })) });
 
+  /** A game's own trailer (marketing/sizzle npm run trailers), as the VideoGame's trailer. */
+  function trailerOf(game: Game): VideoObject | undefined {
+    const t = game.community ? undefined : gameTrailer(game.slug);
+    if (!t) return undefined;
+    return {
+      '@type': 'VideoObject',name: `${game.title} trailer`,
+      description: `A ${Math.round(t.seconds)}-second look at ${game.title}, a free game for kids on ${BRAND}. ${t.description.slice(0,3).join(' ')}`,
+      thumbnailUrl: [url(t.poster),url(t.posterWebp)],uploadDate: t.published ?? TRAILER_PUBLISHED,duration: `PT${Math.round(t.seconds)}S`,
+      contentUrl: url(t.sources.find(source => source.type === 'video/mp4')!.src),encodingFormat: 'video/mp4',width: '1280',height: '720',inLanguage: 'en',
+      caption: { '@type': 'MediaObject',contentUrl: url(t.captions),encodingFormat: 'text/vtt',inLanguage: 'en' },
+      isFamilyFriendly: true,publisher,url: url(`/game/${game.slug}#trailer`)
+    };
+  }
   function videoGame(game: Game): VideoGame {
     const ages = /(\d+)(?:–(\d+))?/.exec(game.ageGuidance);
     const media = mediaFor(game);
@@ -44,6 +58,7 @@ export function structuredData(pathname: string,origin: string): Graph {
       isFamilyFriendly: true,isAccessibleForFree: true,
       ...(LICENSES[game.license] ? { license: LICENSES[game.license] } : {}),
       offers: { '@type': 'Offer',price: '0',priceCurrency: 'USD',availability: 'https://schema.org/InStock',url: url(`/play/${game.slug}`) },
+      ...(trailerOf(game) ? { trailer: trailerOf(game) } : {}),
       author: game.community ? { '@type': 'Person',name: game.community.handle } : publisher,publisher
     };
   }

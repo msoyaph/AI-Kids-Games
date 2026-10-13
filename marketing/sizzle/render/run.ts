@@ -1,6 +1,7 @@
 // Render every composition with HyperFrames 0.8.133 (60 fps), then make the deliverables in out/:
 // masters with the mastered sound, web encodes under 8 MB (H.264 and AV1), a poster, a thumbnail
-// and captions. Usage: npm run render [-- <cut>-<16x9|9x16> ...] [--encode-only] [--thumbnail]
+// and captions. Usage: npm run render [-- <cut>-<16x9|9x16> or a prefix such as game- ...]
+// [--encode-only] [--thumbnail]
 import { execFileSync, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -15,7 +16,7 @@ import { idle } from '../guard';
 
 const out = join(sizzle, 'out'), renders = join(sizzle, 'build/renders');
 const args = process.argv.slice(2), only = args.filter(a => !a.startsWith('--')), encodeOnly = args.includes('--encode-only');
-const MB = 1_000_000, WEB_LIMIT = 7.8 * MB;
+const MB = 1_000_000, WEB_LIMIT = 7.8 * MB, GAME_WEB_LIMIT = 3 * MB;
 mkdirSync(out, { recursive: true }); mkdirSync(renders, { recursive: true });
 
 const size = (file: string) => statSync(file).size;
@@ -85,10 +86,11 @@ if (args.includes('--thumbnail')) { await thumbnail(join(out, 'trailer-thumbnail
 
 // 1. Every render and its master (with the mastered sound), then 2. the site's web files.
 let web: { master: string; mix: string; seconds: number } | null = null;
+const gameWeb: { slug: string; master: string; mix: string; seconds: number; vtt: string }[] = [];
 for (const cut of CUTS) {
   for (const format of Object.keys(FORMATS) as Format[]) {
     const name = `${cut.id}-${FORMATS[format].id}`;
-    if (only.length && !only.includes(name)) continue;
+    if (only.length && !only.some(o => name === o || name.startsWith(o))) continue;
     const project = join(sizzle, 'build', name), raw = join(renders, `${name}.mp4`), mix = join(mediaDir, `${cut.id}-mix.wav`), seconds = at(cut.beats);
     if (!existsSync(join(project, 'index.html'))) throw new Error(`Missing ${project}: run npm run compose`);
     console.log(`${name}:`);
@@ -101,6 +103,7 @@ for (const cut of CUTS) {
     console.log(`  master ${(size(master) / MB).toFixed(1)} MB, ${p.streams.find((s: any) => s.width)?.width}×${p.streams.find((s: any) => s.width)?.height}, ${Number(p.format.duration).toFixed(2)} s`);
     writeFileSync(join(out, `ai-kids-games-${cut.id}.en.vtt`), captions(cut));
     if (cut.id === 'reel' && format === 'landscape') web = { master, mix, seconds };
+    if (cut.id.startsWith('game-') && format === 'landscape') gameWeb.push({ slug: cut.id.slice('game-'.length), master, mix, seconds, vtt: captions(cut) });
   }
 }
 
@@ -120,4 +123,20 @@ if (web) {
   await sharp(frame).webp({ quality: 80 }).toFile(join(out, 'trailer-poster.webp'));
   await thumbnail(join(out, 'trailer-thumbnail.jpg'));
   console.log('poster and thumbnail written');
+}
+
+// Each game's own trailer for its page on the site (out/trailers/<slug>/): 720p at 30 fps in H.264
+// and AV1, each under 3 MB, a poster on the game card and captions.
+for (const t of gameWeb) {
+  const dir = join(out, 'trailers', t.slug); mkdirSync(dir, { recursive: true });
+  const mp4 = join(dir, 'trailer-720.mp4'), webm = join(dir, 'trailer-720.webm');
+  h264Web(t.master, mp4, 720, 30, GAME_WEB_LIMIT, t.mix, t.seconds);
+  if (size(mp4) > GAME_WEB_LIMIT) throw new Error(`${mp4} is ${(size(mp4) / MB).toFixed(2)} MB, over ${GAME_WEB_LIMIT / MB} MB`);
+  const kbps = av1Web(t.master, webm, 720, 30, GAME_WEB_LIMIT, t.mix, t.seconds);
+  const frame = join(renders, `${t.slug}-poster.png`);
+  ffmpeg(['-ss', at(10).toFixed(3), '-i', t.master, '-frames:v', '1', frame]);
+  await sharp(frame).resize(1280, 720).jpeg({ quality: 82, mozjpeg: true }).toFile(join(dir, 'poster.jpg'));
+  await sharp(frame).resize(1280, 720).webp({ quality: 80 }).toFile(join(dir, 'poster.webp'));
+  writeFileSync(join(dir, 'trailer.en.vtt'), t.vtt);
+  console.log(`${t.slug} web 720: H.264 ${(size(mp4) / MB).toFixed(2)} MB, AV1 ${(size(webm) / MB).toFixed(2)} MB (${kbps} kb/s), poster and captions`);
 }

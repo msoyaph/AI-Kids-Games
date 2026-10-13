@@ -18,7 +18,7 @@ export const at = (beats: number) => +(beats * BEAT).toFixed(6);
 /** A line stays on screen at least words ÷ 1.8 + 0.5 seconds (a 7-year-old's reading pace). */
 export const minSeconds = (text: string) => text.split(/\s+/).filter(Boolean).length / 1.8 + 0.5;
 
-export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley';
+export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop';
 
 /** A piece of a recorded take (marketing/sizzle/captures/<slug>/<take>.mp4). */
 export interface Shot {
@@ -38,8 +38,8 @@ export interface Shot {
 
 const shot = (slug: Slug, take: string, extra: Omit<Shot, 'slug' | 'take'> = {}): Shot => ({ slug, take, ...extra });
 
-/** Each game's three showcase shots, in the order they play (one bar each). */
-export const REEL: Record<Slug, { shots: [Shot, Shot, Shot]; describe: string }> = {
+/** Each game's three showcase shots in the 60-second reel, in the order they play (one bar each). */
+export const REEL: Record<Exclude<Slug, 'tuck-pop'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
   'calex-cart': {
     describe: 'Karts drift, boost and glide through snowy, neon and canyon tracks.',
     shots: [
@@ -91,7 +91,7 @@ export const REEL: Record<Slug, { shots: [Shot, Shot, Shot]; describe: string }>
 };
 
 /** Showcase order: racing, action, strategy, space wonder, cozy island, farming. */
-export const ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
+export const ORDER: Exclude<Slug, 'tuck-pop'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
 
 export interface Game { slug: Slug; title: string; tagline: string; ages: string; logo: string }
 export function game(slug: Slug): Game {
@@ -157,7 +157,117 @@ const reel15: Cut = {
   ]
 };
 
-export const CUTS = [reel60, reel15];
+/**
+ * Each game's own quick trailer (15 s, 31 beats): a cold open, the game card with its pitch over
+ * three shots, two more shots with one short line, and the end card. Six shots of its real
+ * gameplay, one bar each; `line` is at most five words (it stays up 3.6 s).
+ */
+export const TRAILERS: Record<Slug, { shots: [Shot, Shot, Shot, Shot, Shot, Shot]; line: string; describe: string }> = {
+  'calex-cart': {
+    line: 'Snow, neon and canyon tracks.',
+    describe: 'A kart drifts through a snowy village at night, then boosts through neon and snowy tracks.',
+    shots: [
+      shot('calex-cart', 'lantern-drift', { from: 0.1, sfx: 0.5, sound: 'a kart engine and drift sparks' }),
+      shot('calex-cart', 'avalanche-drift', { from: 0.6 }),
+      shot('calex-cart', 'neon-boost', { from: 0.1, sfx: 0.5, sound: 'a boost whooshes' }),
+      shot('calex-cart', 'race-hud', { from: 0.2 }),
+      shot('calex-cart', 'avalanche-drift', { from: 3.2 }),
+      shot('calex-cart', 'lantern-drift', { from: 3.4 })
+    ]
+  },
+  theabonk: {
+    line: 'Level up. Beat the boss!',
+    describe: 'Thea swings her glowing Bonk Ring through a crowd of cartoon monsters, levels up, explores Rimewood and meets Grumblecap.',
+    shots: [
+      shot('theabonk', 'horde', { from: 0.2, sfx: 0.55, sound: 'bonk, bonk, bonk' }),
+      shot('theabonk', 'ring-wave', { from: 0.2 }),
+      shot('theabonk', 'level-up', { from: 0.6, sfx: 0.5, sound: 'a level-up chime' }),
+      shot('theabonk', 'rimewood', { from: 0.3 }),
+      shot('theabonk', 'boss', { from: 1.25 }),
+      shot('theabonk', 'horde', { from: 2.3 })
+    ]
+  },
+  'vanex-defense': {
+    line: 'Towers, upgrades and giant bosses.',
+    describe: 'Towers zap enemies winding through a snowy maze and along a sky road, then a giant boss arrives.',
+    shots: [
+      shot('vanex-defense', 'frost-maze', { from: 0.4, sfx: 0.5, sound: 'towers zap' }),
+      shot('vanex-defense', 'sky-lane', { from: 0.3 }),
+      shot('vanex-defense', 'matriarch', { from: 7.9, zoom: 1.4, focus: [0.42, 0.24] }),
+      shot('vanex-defense', 'frost-maze', { from: 2.6 }),
+      shot('vanex-defense', 'sky-lane', { from: 2.6 }),
+      shot('vanex-defense', 'matriarch', { from: 11 })
+    ]
+  },
+  'space-sky': {
+    line: 'Visit the Moon and Europa.',
+    describe: 'A rocket flies past a ringed planet, lands on the Moon\'s glowing pad and explores icy Europa.',
+    shots: [
+      shot('space-sky', 'saturn', { from: 0.2, sfx: 0.45, sound: 'a rocket boost' }),
+      shot('space-sky', 'moon-landing', { from: 0 }),
+      shot('space-sky', 'europa', { from: 0.4 }),
+      shot('space-sky', 'saturn', { from: 2.8 }),
+      shot('space-sky', 'moon-landing', { from: 3 }),
+      shot('space-sky', 'europa', { from: 2.8 })
+    ]
+  },
+  'light-crossing': {
+    line: 'Skate, decorate and make friends.',
+    describe: 'Skating through lantern rings on a frozen pond, the island in autumn, a cozy decorated home and a festival.',
+    shots: [
+      shot('light-crossing', 'skate', { from: 0.4, sfx: 0.45, sound: 'skates swish' }),
+      shot('light-crossing', 'autumn', { from: 0.2 }),
+      shot('light-crossing', 'home', { from: 0.2, zoom: 1.6, focus: [0.5, 0.58] }),
+      shot('light-crossing', 'festival', { from: 0.3 }),
+      shot('light-crossing', 'autumn', { from: 2.8 }),
+      shot('light-crossing', 'festival', { from: 3 })
+    ]
+  },
+  'cliff-valley': {
+    line: 'Crops, festivals and crystal mines.',
+    describe: 'Picking ripe crops on the farm, the snowy town square on Starlight Night and the crystal mine.',
+    shots: [
+      shot('cliff-valley', 'harvest', { from: 0.2, sfx: 0.6, sound: 'harvest pops' }),
+      shot('cliff-valley', 'festival', { from: 0.2, sfx: 0.45, sound: 'a festival chime' }),
+      shot('cliff-valley', 'mine', { from: 0.2 }),
+      shot('cliff-valley', 'tablet', { from: 0.4 }),
+      shot('cliff-valley', 'festival', { from: 2.3 }),
+      shot('cliff-valley', 'mine', { from: 1.3 })
+    ]
+  },
+  'tuck-pop': {
+    line: '60 levels and daily puzzles.',
+    describe: 'Bright blocks drop into place, two lines pop with sparkles, the whole board clears with confetti, and an Adventure level and a space theme follow.',
+    shots: [
+      shot('tuck-pop', 'combo', { from: 0, zoom: 1.3, focus: [0.5, 0.5] }),
+      shot('tuck-pop', 'board-clear', { from: 0, zoom: 1.3, focus: [0.5, 0.5] }),
+      shot('tuck-pop', 'adventure', { from: 0, zoom: 1.3, focus: [0.5, 0.5] }),
+      shot('tuck-pop', 'themes', { from: 0, zoom: 1.3, focus: [0.5, 0.5] }),
+      shot('tuck-pop', 'combo', { from: 1.9, zoom: 1.3, focus: [0.5, 0.5] }),
+      shot('tuck-pop', 'adventure', { from: 1.9, zoom: 1.3, focus: [0.5, 0.5] })
+    ]
+  }
+};
+/** The order of the games' trailers (all seven). */
+export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop'];
+export const trailerId = (slug: Slug) => `game-${slug}`;
+
+function gameCut(slug: Slug): Cut {
+  const t = TRAILERS[slug];
+  return {
+    id: trailerId(slug), beats: 31,
+    blocks: [
+      { kind: 'clip', start: 0, end: 4, shot: t.shots[0] },
+      { kind: 'game', start: 4, end: 16, slug, textIn: 4.5, textOut: 16, shots: t.shots.slice(1, 4) },
+      { kind: 'montage', start: 16, end: 24, shots: t.shots.slice(4), lines: [{ text: t.line, at: 16.5, size: 'headline' }] },
+      { kind: 'end', start: 24, end: 31, lines: [{ text: 'Play free', at: 24.5, size: 'line' }, { text: 'No ads. No sign-ups. No tracking.', at: 25, size: 'small' }] }
+    ]
+  };
+}
+
+export const CUTS = [reel60, reel15, ...TRAILER_ORDER.map(gameCut)];
+/** The cuts named on the command line (a cut id, or a prefix such as "game-"); all when none are. */
+export const selectCuts = (names: string[]) => names.length ? CUTS.filter(cut => names.some(name => cut.id === name || cut.id.startsWith(name) || name.startsWith(`${cut.id}-`))) : CUTS;
 
 /** Every line must stay up long enough to read, and blocks must tile the cut with no gaps. */
 export function checkCut(cut: Cut): string[] {

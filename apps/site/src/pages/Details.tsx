@@ -8,6 +8,8 @@ import { FavoriteButton } from '../components/GameCard';
 import GameGrid from '../components/GameGrid';
 import Lightbox from '../components/Lightbox';
 import Preview, { Still } from '../components/Preview';
+import { TrailerInline } from '../components/Trailer';
+import { gameTrailer } from '../data/trailers';
 import { Icon, type IconName } from '../components/Icon';
 import NotFound from './NotFound';
 import { computerOnly } from '../lib/devices';
@@ -22,7 +24,7 @@ export default function Details() {
   const { slug } = useParams(); const game = findAnyGame(slug);
   const [shot,setShot] = useState<number | null>(null);
   if (!game) return <NotFound />;
-  const media = mediaFor(game);
+  const media = mediaFor(game), trailer = game.community ? undefined : gameTrailer(game.slug);
   const devices = game.supportedDevices.map((device,index) => index ? device.toLowerCase() : device);
   // How phones and tablets are held comes from the game itself (game.json); the site never adds its own prompt.
   const handheld = game.supportedDevices.some(device => device !== 'Computer');
@@ -37,6 +39,7 @@ export default function Details() {
         {game.community && <p className="credit"><span className="card-community">{game.community.preview ? 'Preview' : 'Community'}</span> Made by {game.community.handle}</p>}
         <p>{game.community?.longDescription ?? game.description}</p>
         <div className="details-actions"><Link to={`/play/${game.slug}`} className="button primary play"><Icon name="play" filled size={20} />Play</Link><FavoriteButton game={game} large /></div>
+        {trailer && <a className="text-link watch-trailer" href="#trailer">Watch the {Math.round(trailer.seconds)}-second trailer</a>}
       </div>
     </div>
     <dl className="facts">
@@ -45,6 +48,8 @@ export default function Details() {
       <div className="fact"><dt><Icon name={deviceIcon[game.supportedDevices[0]]} />Works on</dt><dd>{list(devices)}{hold}{computerOnly(game) && <span className="fact-note">Needs a keyboard and mouse or a game controller. Touch controls are coming soon.</span>}{game.requirements.length > 0 && <span className="fact-note">Needs {list(game.requirements)}</span>}</dd></div>
       <div className="fact"><dt><Icon name="gamepad" />Controls</dt><dd className="fact-icons">{game.controls.types.map(type => <span key={type} title={type} role="img" aria-label={type}><Icon name={controlIcon[type]} /></span>)}</dd></div>
     </dl>
+    {trailer && <section className="section" id="trailer" aria-labelledby="trailer-title"><div className="section-head"><h2 id="trailer-title" className="title">Trailer</h2></div>
+      <TrailerInline trailer={trailer} name={`the ${game.title} trailer`} id="game-trailer-description" /></section>}
     {media.shots.length > 0 && <section className="section" aria-labelledby="screenshots"><div className="section-head"><h2 id="screenshots" className="title">Screenshots</h2></div>
       <div className="gallery">{media.shots.map((item,index) => <button key={index} onClick={() => setShot(index)} aria-label={`View screenshot: ${item.alt}`}><Still image={item.thumb} alt="" sizes="320px" /></button>)}</div>
       <Lightbox shots={media.shots} index={shot} onIndex={setShot} onClose={() => setShot(null)} /></section>}
