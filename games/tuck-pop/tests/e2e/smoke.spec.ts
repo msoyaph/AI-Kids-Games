@@ -142,3 +142,22 @@ test('Relax gives a free Undo; the Daily puzzle counts its 40 moves down and is 
   expect((await snapshot(page)).board).toEqual(first); // today's puzzle again, from the start
   expect(problems).toEqual([]);
 });
+
+test('Adventure: the map opens level 1, the card shows the goal, and play shows its progress', async ({ page }) => {
+  const problems = watch(page);
+  await page.goto('/');
+  await page.locator('#adventure').click();
+  await expect(page.getByRole('heading', { name: 'Adventure' })).toBeVisible();
+  await expect(page.getByRole('listitem', { name: /Level 2, locked/ })).toBeDisabled();
+  await page.getByRole('listitem', { name: /^Level 1,/ }).click();
+  await expect(page.locator('#intro-title')).toHaveText('Clear 3 lines!');
+  await expect(page.locator('#intro-tip')).toBeVisible();
+  await page.locator('#intro-start').click();
+  await expect.poll(async () => (await snapshot(page)).screen).toBe('play');
+  await expect(page.locator('#goal-text')).toHaveText('Lines');
+  await expect(page.locator('#goal-count')).toHaveText('0/3');
+  await page.keyboard.press('Digit1'); await page.keyboard.press('Enter');
+  await expect.poll(async () => (await snapshot(page)).moves).toBe(1);
+  expect(await page.evaluate(() => Object.keys(localStorage).every(k => k.startsWith('tuckpop.')))).toBe(true);
+  expect(problems).toEqual([]);
+});

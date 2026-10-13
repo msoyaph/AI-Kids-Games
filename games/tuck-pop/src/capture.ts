@@ -4,8 +4,9 @@
  *   ?scene=play      a Classic game from the start
  *   ?scene=combo     a crowded board where a big multi-line clear and a streak come quickly
  *   ?scene=clear     a board one move from a full board clear
- *   &seed=N          the game's seed (default 7);  &speed=K  moves faster (K > 1) or slower
- * Adventure and theme scenes are added with those features.
+ *   ?scene=adventure a Candy level with gems and stones (&level=N for level N, 1–60)
+ *   ?scene=map       the Adventure map with some stars (shown, never saved)
+ *   &seed=N          the game's seed (default 7);  &speed=K  moves faster (K > 1) or slower;  &hud=1 shows the HUD
  */
 import { strongChoice } from './sim/bot';
 import { newGame, type Game } from './sim/game';

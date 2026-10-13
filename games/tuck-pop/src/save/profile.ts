@@ -28,8 +28,9 @@ export interface Profile {
   stats: { games: number; lines: number; placed: number; clears: number; bestStreak: number; dailies: number };
   /** Helper supply, and Classic points counted toward the next earned helper. */
   helpers: { undo: number; shuffle: number; single: number; progress: number };
-  /** Adventure stars, one character per level ('0'–'3'). */
+  /** Adventure stars, one character per level ('0'–'3'), and clock badges ('0' or '1'). */
   adv: string;
+  clock: string;
   themes: ThemeId[];
   /** Daily bests: [yyyymmdd, best score], newest last, at most 30. */
   daily: [number, number][];
@@ -45,6 +46,7 @@ export const defaults = (): Profile => ({
   stats: { games: 0, lines: 0, placed: 0, clears: 0, bestStreak: 0, dailies: 0 },
   helpers: { ...TUNING.helpers.start, progress: 0 },
   adv: '0'.repeat(LEVELS),
+  clock: '0'.repeat(LEVELS),
   themes: ['classic'],
   daily: [],
   tips: 0,
@@ -66,6 +68,7 @@ export function sanitize(raw: unknown): Profile {
   if (!themes.includes('classic')) themes.unshift('classic');
   const theme = typeof s.theme === 'string' && themes.includes(s.theme as ThemeId) ? (s.theme as ThemeId) : 'classic';
   const adv = typeof r.adv === 'string' ? r.adv.replace(/[^0-3]/g, '0').padEnd(LEVELS, '0').slice(0, LEVELS) : d.adv;
+  const clock = typeof r.clock === 'string' ? r.clock.replace(/[^01]/g, '0').padEnd(LEVELS, '0').slice(0, LEVELS) : d.clock;
   const daily = Array.isArray(r.daily) ? r.daily.filter((e): e is [number, number] => Array.isArray(e) && e.length === 2 && Number.isInteger(e[0]) && e[0] >= 20260101 && e[0] <= 99991231 && typeof e[1] === 'number').map(([day, best]) => [day, int(best, 0, BIG, 0)] as [number, number]).slice(-30) : [];
   return {
     v: PROFILE_VERSION,
@@ -78,7 +81,7 @@ export function sanitize(raw: unknown): Profile {
     best: { easy: int(b.easy, 0, BIG, 0), normal: int(b.normal, 0, BIG, 0), relax: int(b.relax, 0, BIG, 0) },
     stats: { games: int(st.games, 0, BIG, 0), lines: int(st.lines, 0, BIG, 0), placed: int(st.placed, 0, BIG, 0), clears: int(st.clears, 0, BIG, 0), bestStreak: int(st.bestStreak, 0, BIG, 0), dailies: int(st.dailies, 0, BIG, 0) },
     helpers: { undo: int(h.undo, 0, cap, d.helpers.undo), shuffle: int(h.shuffle, 0, cap, d.helpers.shuffle), single: int(h.single, 0, cap, d.helpers.single), progress: int(h.progress, 0, BIG, 0) },
-    adv, themes, daily, tips: int(r.tips, 0, 2 ** 30, 0),
+    adv, clock, themes, daily, tips: int(r.tips, 0, 2 ** 30, 0),
   };
 }
 

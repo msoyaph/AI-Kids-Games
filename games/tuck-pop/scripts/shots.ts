@@ -28,6 +28,12 @@ for (const size of ['phone', 'desktop'] as const) {
     { name: `${size}-board-clear`, url: '/?scene=clear&hud=1', size, at: async p => { await until(p, s => s.moves >= 1); await p.waitForTimeout(420); } },
   );
 }
+for (const size of ['phone', 'desktop'] as const) {
+  SHOTS.push(
+    { name: `${size}-map`, url: '/?scene=map', size, at: async p => { await p.waitForTimeout(400); } },
+    { name: `${size}-adventure`, url: '/?scene=adventure&hud=1', size, at: async p => { await until(p, s => s.moves >= 4); await p.waitForTimeout(400); } },
+  );
+}
 SHOTS.push({ name: 'landscape-play', url: '/?scene=play&hud=1&speed=2', size: 'landscape', at: async p => { await until(p, s => s.moves >= 6); await p.waitForTimeout(500); } });
 
 async function server() {

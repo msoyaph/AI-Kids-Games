@@ -37,7 +37,7 @@ export interface Game {
   score: number; streak: number; dry: number; moves: number; lines: number; placed: number;
   boardClears: number; bestStreak: number; collected: number; broken: number;
   shuffles: number; continues: number;
-  /** Relax: one free reshuffle when nothing fits, and one free Undo. */
+  /** Relax: one free reshuffle when nothing fits, and one free Undo. Adventure: one free reshuffle per level. */
   freeShuffle: number; freeUndo: number;
   /** Adventure and Daily: a move limit (0 = none) and a goal. */
   movesLimit: number; goal: Goal | null;
@@ -80,7 +80,7 @@ export function newGame(opts: NewGame): Game {
     tray: [null, null, null], bonus: null,
     score: 0, streak: 0, dry: 0, moves: 0, lines: 0, placed: 0, boardClears: 0, bestStreak: 0, collected: 0, broken: 0,
     shuffles: 0, continues: 0,
-    freeShuffle: opts.mode === 'relax' ? 1 : 0, freeUndo: opts.mode === 'relax' ? 1 : 0,
+    freeShuffle: opts.mode === 'relax' || opts.mode === 'adventure' ? 1 : 0, freeUndo: opts.mode === 'relax' ? 1 : 0,
     movesLimit: opts.movesLimit ?? 0, goal: opts.goal ?? null, weights: opts.weights ?? null,
     over: false, end: '', undo: null,
   };
@@ -245,6 +245,11 @@ function restore(g: Game, s: Snapshot) {
   for (const f of FIELDS) (g as unknown as Record<string, unknown>)[f] = s[f];
   g.colors = s.colors.slice(); g.tray = s.tray.slice();
   g.over = false; g.end = '';
+}
+
+/** A full copy (solvers and bots explore without touching the real game). */
+export function cloneGame(g: Game): Game {
+  return { ...g, colors: g.colors.slice(), tray: g.tray.slice(), undo: null };
 }
 
 /** Cell helpers for views and tests. */

@@ -14,9 +14,12 @@
         <div id="score-panel" class="panel">
           <span class="label">Score</span>
           <b id="score" aria-live="off">0</b>
-          <span class="best"><span id="best-label">Best</span> <b id="best">0</b></span>
-          <div id="goal" hidden><span id="goal-text"></span> <b id="goal-count"></b></div>
-          <div id="moves-left" hidden><span>Moves</span> <b id="moves">0</b></div>
+          <div class="sub">
+            <span id="best-box" class="best"><span id="best-label">Best</span> <b id="best">0</b></span>
+            <span id="goal" hidden><span id="goal-text"></span> <b id="goal-count"></b></span>
+            <span id="moves-left" hidden><span>Moves</span> <b id="moves">0</b></span>
+            <span id="clock" hidden><span>⏱</span> <b id="clock-time">0:00</b></span>
+          </div>
         </div>
         <button id="pause-btn" class="icon" type="button" aria-label="Pause">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>
@@ -47,7 +50,7 @@
             </div>
           </div>
           <button id="relax" class="mode" type="button"><b>Relax</b><small id="relax-info">Calm and cozy, no rush</small></button>
-          <button id="adventure" class="mode" type="button" hidden><b>Adventure</b><small id="adventure-info"></small></button>
+          <button id="adventure" class="mode" type="button"><b>Adventure</b><small id="adventure-info"></small></button>
           <button id="daily" class="mode" type="button"><b>Daily puzzle</b><small id="daily-info"></small></button>
         </div>
         <div class="small-buttons">
@@ -56,6 +59,43 @@
           <button id="help-btn" type="button">How to play</button>
         </div>
         <p id="storage-note" class="note" hidden>This browser can't save progress, so scores last until you close the game.</p>
+      </section>
+
+      <section id="map" class="screen" hidden aria-labelledby="map-title">
+        <div class="card wide map-card">
+          <div class="map-head"><button id="map-back" class="icon" type="button" aria-label="Back to the start"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <h2 id="map-title">Adventure</h2><span id="map-stars" class="pill-stars"></span></div>
+          <div id="world-tabs" class="world-tabs" role="tablist" aria-label="Worlds"></div>
+          <p id="world-lock" class="note" hidden></p>
+          <div id="level-grid" class="level-grid" role="list"></div>
+        </div>
+      </section>
+
+      <section id="intro" class="screen dim" hidden aria-labelledby="intro-title">
+        <div class="card">
+          <p id="intro-world" class="kicker"></p>
+          <h2 id="intro-title">Level 1</h2>
+          <p id="intro-goal" class="goal-big"></p>
+          <p id="intro-moves"></p>
+          <p id="intro-stars" class="stars-line"></p>
+          <p id="intro-tip" class="tip" hidden></p>
+          <label id="intro-clock-row" class="clock-row" hidden><input type="checkbox" id="intro-clock" /> <span id="intro-clock-text"></span></label>
+          <button id="intro-start" class="big" type="button">Start</button>
+          <button id="intro-read" type="button" hidden>Read it to me</button>
+          <button id="intro-back" type="button">Back to the map</button>
+        </div>
+      </section>
+
+      <section id="done" class="screen dim" hidden aria-labelledby="done-title">
+        <div class="card">
+          <h2 id="done-title">Level complete!</h2>
+          <p id="done-stars" class="stars-big" aria-hidden="true"></p>
+          <p id="done-text"></p>
+          <p id="done-earned" class="earned" hidden></p>
+          <button id="done-next" class="big" type="button">Next level</button>
+          <button id="done-retry" type="button">Play again</button>
+          <button id="done-map" type="button">Map</button>
+        </div>
       </section>
 
       <section id="pause" class="screen dim" hidden aria-labelledby="pause-title">
@@ -85,7 +125,7 @@
         <div class="card">
           <h2 id="over-title">Great game!</h2>
           <p id="new-best" class="badge" hidden>New best!</p>
-          <p class="final">Score <b id="final">0</b></p>
+          <p class="final"><span id="final-label">Score</span> <b id="final">0</b></p>
           <p class="final-best"><span id="final-best-label">Your best</span>: <b id="final-best">0</b></p>
           <p id="stat" class="stat"></p>
           <p id="earned" class="earned" hidden></p>

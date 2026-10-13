@@ -161,7 +161,30 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
      worlds.
    - **Runs:** `run.ts` also stores Daily runs (with move limit and weights).
    - **Home:** the drifting blocks stay in bands clear of the menu.
-6. Adventure.
+6. COMPLETE: Adventure (`sim/adventure.ts`, `src/data/levels.json`, `scripts/levels.ts`).
+   - **Structure:** 60 levels in 4 worlds: Meadow (cherries, classic look), Ocean (pearls), Candy
+     (gems), Space (comets). Each level has one goal (lines, items, stones, score) and a move
+     limit.
+   - **Stars:** 3★ ≤ par3 moves, 2★ ≤ par2. Worlds open at 20, 55 and 95 stars; levels open in
+     order.
+   - **Help when stuck:** one free reshuffle per level, plus the helper offer.
+   - **Rewards:** first 3★ earns a helper; finishing a world earns 2.
+   - **Clock:** an optional clock badge in worlds 3–4 that never affects stars (`profile.clock`).
+   - **`npm run levels` (about 75 s):**
+     - generates layouts from a progression table (spare items and stones, no full lines);
+     - a beam-64 solver proves each win and stores its moves in
+       `tests/fixtures/adventure-solutions.json`;
+     - par3 = max(solver + slack, a narrow "good player" search);
+     - grows the move limit (capped) until the casual bot meets its world's floor.
+   - **Casual 1★ rates:** W1 93%, W2 82%, W3 74%, W4 56% (floors 90/75/60/45).
+   - **Casual bot:** now aims at goal items and stones.
+   - **Tests:** `adventure.test.ts` checks well-formed data, that the data hash matches the
+     fixture, that every solution replays to 3★, the per-world casual floors (−5% margin), stars
+     and unlocks.
+   - **Capture:** `?scene=adventure` (Candy level 32, or `&level=N`) and `?scene=map`. Adventure
+     shows the world's theme and music.
+   - **Pitfall:** adding moves didn't help casual play, because casual losses are being stuck
+     mid-tray, not running out of moves. The free reshuffle and spare stones fixed it.
 7. Themes and accessibility.
 8. Hardening and the full browser suite.
 9. Site integration, then a pull request with CI green and the preview link.

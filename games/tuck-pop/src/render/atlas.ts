@@ -8,7 +8,7 @@ import { CanvasSource, Rectangle, Texture } from 'pixi.js';
 import type { Theme } from '../data/themes';
 import { canvas, darken, heart, lighten, mix, rgba, rounded, seeded, star } from './paint';
 
-export type ItemKind = 'fruit' | 'pearl' | 'gem' | 'star';
+export type ItemKind = 'fruit' | 'pearl' | 'gem' | 'comet';
 export interface Atlas {
   cell: number;
   /** block[1..6] colors, block[7] stone, block[8] cracked stone. */
@@ -38,7 +38,7 @@ export function buildAtlas(t: Theme, cell: number, dpr: number, look: Look): Atl
   blockIdx.push(at((x, y) => stone(ctx, x, y, s, t.stone, true, look)));
   const symIdx = [0];
   for (let i = 0; i < 6; i++) symIdx.push(at((x, y) => symbol(ctx, x, y, s, i)));
-  const items = { fruit: at((x, y) => fruit(ctx, x, y, s)), pearl: at((x, y) => pearl(ctx, x, y, s)), gem: at((x, y) => gem(ctx, x, y, s)), star: at((x, y) => goldStar(ctx, x, y, s)) };
+  const items = { fruit: at((x, y) => fruit(ctx, x, y, s)), pearl: at((x, y) => pearl(ctx, x, y, s)), gem: at((x, y) => gem(ctx, x, y, s)), comet: at((x, y) => comet(ctx, x, y, s)) };
   const ghost = at((x, y) => { rounded(ctx, x + s * 0.08, y + s * 0.08, s * 0.84, s * 0.84, s * 0.2); ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fill(); ctx.lineWidth = Math.max(2, s * 0.06); ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.stroke(); });
   const hint = at((x, y) => { const g = ctx.createRadialGradient(x + s / 2, y + s / 2, s * 0.1, x + s / 2, y + s / 2, s * 0.7); g.addColorStop(0, 'rgba(255,255,240,0.85)'); g.addColorStop(1, 'rgba(255,240,180,0)'); ctx.fillStyle = g; ctx.fillRect(x, y, s, s); });
   const shadow = at((x, y) => { rounded(ctx, x + s * 0.06, y + s * 0.06, s * 0.88, s * 0.88, s * 0.22); ctx.fillStyle = 'rgba(40,20,10,0.22)'; ctx.fill(); });
@@ -50,7 +50,7 @@ export function buildAtlas(t: Theme, cell: number, dpr: number, look: Look): Atl
   return {
     cell, canvas: c, source,
     block: blockIdx.map(i => tex(i)), symbol: symIdx.map(i => tex(i)),
-    item: { fruit: tex(items.fruit), pearl: tex(items.pearl), gem: tex(items.gem), star: tex(items.star) },
+    item: { fruit: tex(items.fruit), pearl: tex(items.pearl), gem: tex(items.gem), comet: tex(items.comet) },
     ghost: tex(ghost), hint: tex(hint), shadow: tex(shadow), sparkle: tex(sparkle), ring: tex(ring), confetti: confetti.map(tex),
   };
 }
@@ -149,6 +149,14 @@ function gem(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
   const g = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r); g.addColorStop(0, '#b9fbff'); g.addColorStop(0.5, '#3ad0ff'); g.addColorStop(1, '#1a7bd6');
   ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = '#0d4a8a'; ctx.lineWidth = Math.max(1, s * 0.03); ctx.stroke();
   ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.moveTo(cx - r, cy - r * 0.35); ctx.lineTo(cx + r, cy - r * 0.35); ctx.moveTo(cx - r * 0.3, cy - r * 0.35); ctx.lineTo(cx, cy + r); ctx.lineTo(cx + r * 0.3, cy - r * 0.35); ctx.stroke();
+}
+/** A little comet: a gold star with a soft tail. */
+function comet(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
+  const tail = ctx.createLinearGradient(x + s * 0.12, y + s * 0.82, x + s * 0.5, y + s * 0.5);
+  tail.addColorStop(0, 'rgba(255,214,102,0)'); tail.addColorStop(1, 'rgba(255,240,180,0.9)');
+  ctx.strokeStyle = tail; ctx.lineWidth = s * 0.16; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x + s * 0.14, y + s * 0.8); ctx.lineTo(x + s * 0.5, y + s * 0.5); ctx.stroke();
+  goldStar(ctx, x + s * 0.08, y - s * 0.06, s * 0.9);
 }
 function goldStar(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
   star(ctx, x + s / 2, y + s / 2, s * 0.3, s * 0.14);

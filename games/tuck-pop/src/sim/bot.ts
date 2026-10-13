@@ -2,11 +2,12 @@
  * Two bots that play through the real rules (game.ts), for balance tests (npm run sim), the
  * Adventure level checks and the capture route's autoplay.
  * - Casual: a young player. Looks at the pieces it holds (sometimes only one), never plans the
- *   order, likes clearing lines and snug spots, dislikes leaving lone holes, chooses loosely
- *   and sometimes just drops a piece anywhere it fits.
+ *   order, likes clearing lines and snug spots, dislikes leaving lone holes, aims at the goal's
+ *   items and stones, chooses loosely and sometimes just drops a piece anywhere it fits.
  * - Strong: plans the whole tray (every order, a beam of the best positions) and judges the
  *   board it leaves: room, holes, ragged edges, space for big pieces, then points.
  */
+import { pop } from '../core/bits';
 import { Rng } from '../core/rng';
 import { emptyCells, findLines, fitsAnywhere, newLines } from './board';
 import { canMove, place, type Game, type Move } from './game';
@@ -63,7 +64,9 @@ export function casualChoice(g: Game, rng: Rng): Choice | null {
       findLines(l, h, lines);
       const nl = l & ~lines.clrLo, nh = h & ~lines.clrHi;
       options.push({ slot, pos: i });
-      weights.push(12 * lines.count + 2 * contacts(g.lo, g.hi, p, i) - 4 * Math.max(0, holes(nl, nh) - baseHoles));
+      // with a goal (Adventure), clears that collect items or hit stones are what a child aims for
+      const aim = g.goal ? 10 * (pop(lines.clrLo & g.itemLo) + pop(lines.clrHi & g.itemHi)) + 8 * (pop(lines.clrLo & (g.s1Lo | g.s2Lo)) + pop(lines.clrHi & (g.s1Hi | g.s2Hi))) : 0;
+      weights.push(12 * lines.count + 2 * contacts(g.lo, g.hi, p, i) - 4 * Math.max(0, holes(nl, nh) - baseHoles) + aim);
     }
   }
   if (rng.chance(0.08)) return rng.pick(options);

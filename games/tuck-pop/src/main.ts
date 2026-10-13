@@ -16,6 +16,9 @@ import { dropRun, loadRun, saveRun } from './save/run';
 import { persistent, writeFailed } from './save/storage';
 import { addSingle, canMove, newGame, rescues, shuffle, undo, type Difficulty, type Game, type Move } from './sim/game';
 import { DAILY_MOVES, dailyGame, dailySeed, dayNumber } from './sim/daily';
+import levelData from './data/levels.json';
+import { goalText, LEVELS_PER_WORLD, levelGame, levelOpen, starsFor, starsOf, totalStars, worldDone, worldOpen, WORLDS, type Level } from './sim/adventure';
+import { progress } from './sim/game';
 import { multText } from './sim/scoring';
 import { TUNING } from './tuning';
 import { autoMove, captureScene, captureSpeed, sceneGame } from './capture';
@@ -50,11 +53,19 @@ function insets(): Insets {
   return v;
 }
 const dpr = () => Math.min(2, window.devicePixelRatio || 1);
-const view = (): View => ({ theme: themeById(profile.settings.theme), look: { contrast: profile.settings.contrast }, symbols: profile.settings.symbols, item: 'gem' });
+const LEVELS = levelData.levels as Level[];
+/** The Adventure level being played (or previewed), else null. */
+let level: Level | null = null;
+/** Adventure levels show their world's theme; everything else the player's own. */
+const viewTheme = () => (level ? WORLDS[level.world]!.theme : profile.settings.theme);
+const view = (): View => ({ theme: themeById(viewTheme()), look: { contrast: profile.settings.contrast }, symbols: profile.settings.symbols, item: level ? WORLDS[level.world]!.item : 'gem' });
+let shownTheme = '';
+/** Redraws the canvas if the theme it shows should change (entering or leaving Adventure). */
+function syncView() { const key = `${viewTheme()}|${level?.world ?? ''}`; if (key !== shownTheme) { shownTheme = key; scene.setView(view()); applySettings(); } }
 
 // ---- screens ----
-type ScreenId = 'home' | 'play' | 'pause' | 'over' | 'offer' | 'settings' | 'help';
-const overlays: ScreenId[] = ['home', 'pause', 'over', 'offer', 'settings', 'help'];
+type ScreenId = 'home' | 'play' | 'pause' | 'over' | 'offer' | 'settings' | 'help' | 'map' | 'intro' | 'done';
+const overlays: ScreenId[] = ['home', 'pause', 'over', 'offer', 'settings', 'help', 'map', 'intro', 'done'];
 let screen: ScreenId = 'home';
 let settingsBack: ScreenId = 'home';
 function show(next: ScreenId) {
@@ -64,10 +75,11 @@ function show(next: ScreenId) {
   const active = document.activeElement;
   if (active instanceof HTMLElement && active.closest('.screen[hidden]')) active.blur();
   // the game stays visible under pause, offer, over and settings-from-pause
-  const overGame = !(next === 'home' || next === 'help' || (next === 'settings' && settingsBack === 'home'));
-  $('#hud').hidden = !overGame;
+  const overGame = !(next === 'home' || next === 'help' || next === 'map' || (next === 'settings' && settingsBack === 'home'));
+  $('#hud').hidden = !overGame || next === 'intro';
   scene.showWorld(overGame);
-  const focus: Partial<Record<ScreenId, string>> = { home: '#classic', pause: '#resume', over: '#again', offer: '#offer-no', settings: '#settings-done', help: '#help-done' };
+  if (next === 'home' || next === 'map') { if (next === 'home') level = null; syncView(); }
+  const focus: Partial<Record<ScreenId, string>> = { home: '#classic', pause: '#resume', over: '#again', offer: '#offer-no', settings: '#settings-done', help: '#help-done', map: '#level-grid .next, #level-grid button:not([disabled])', intro: '#intro-start', done: '#done-next:not([hidden]), #done-map' };
   if (focus[next] && !capture) requestAnimationFrame(() => $(focus[next]!).focus({ preventScroll: true }));
   if (next === 'home') { refreshHome(); syncMusic(); }
   scene.dirty = true;
@@ -93,6 +105,9 @@ function updateHud(instant = false) {
   if (instant) shownScore = game.score;
   $('#best-label').textContent = game.mode === 'daily' ? "Today's best" : 'Best';
   $('#moves-left').hidden = !game.movesLimit;
+  $('#goal').hidden = !(level && game.mode === 'adventure');
+  $('#best-box').hidden = game.mode === 'adventure';
+  if (level && game.mode === 'adventure') { $('#goal-text').textContent = goalShort(level); $('#goal-count').textContent = `${Math.min(progress(game), level.goal.target)}/${level.goal.target}`; }
   if (game.movesLimit) $('#moves').textContent = String(Math.max(0, game.movesLimit - game.moves));
   $('#score').textContent = String(shownScore);
   $('#best').textContent = String(Math.max(best, game.score));
@@ -130,7 +145,8 @@ function today() { const d = new Date(); return dayNumber(d.getFullYear(), d.get
 // ---- messages ----
 let toastTimer = 0;
 function toast(text: string) { const t = $('#toast'); t.textContent = text; t.hidden = false; clearTimeout(toastTimer); toastTimer = window.setTimeout(() => (t.hidden = true), 3200); }
-function say(text: string) { $('#live').textContent = text; }
+/** Tells screen readers (and reads aloud when that's on). */
+function say(text: string) { $('#live').textContent = text; speak(text); }
 let storageWarned = false;
 function storageTrouble() { if (storageWarned || !writeFailed()) return; storageWarned = true; toast('Your device is out of space, so progress is kept only until you close the game.'); }
 
@@ -183,7 +199,8 @@ function earnFromPoints(points: number) {
 
 function onEnded() {
   if (!game.over) return;
-  if ((game.mode === 'classic' || game.mode === 'relax') && game.end === 'stuck' && game.continues < TUNING.helpers.continues) {
+  if (game.mode === 'adventure' && game.end === 'goal') { levelWon(); return; }
+  if ((game.mode === 'classic' || game.mode === 'relax' || game.mode === 'adventure') && game.end === 'stuck' && game.continues < TUNING.helpers.continues) {
     const r = rescues(game), h = profile.helpers;
     const can = { undo: r.undo && h.undo > 0, shuffle: r.shuffle && h.shuffle > 0, single: r.single && h.single > 0 };
     if (can.undo || can.shuffle || can.single) {
@@ -197,6 +214,7 @@ function onEnded() {
 }
 
 function finishGame() {
+  if (game.mode === 'adventure') { levelLost(); return; }
   let prev: number, isBest: boolean;
   let earned = '';
   if (game.mode === 'daily') {
@@ -225,6 +243,7 @@ function finishGame() {
   $('#stat').textContent = game.mode === 'daily' && game.end === 'moves' ? `You used all ${DAILY_MOVES} moves and cleared ${game.lines} ${game.lines === 1 ? 'line' : 'lines'}. A new puzzle comes tomorrow!` : statLine(game);
   $('#earned').hidden = !earned; $('#earned').textContent = earned;
   $('#again').textContent = game.mode === 'daily' ? 'Try today\'s puzzle again' : 'Play again';
+  $('#over-home').textContent = 'Home'; $('#final-label').textContent = 'Score';
   show('over');
   if (isBest) { sfx('best'); scene.fx.confetti(lay.w, lay.cell, 110); } else sfx('over');
   say(`${$('#over-title').textContent} Score ${game.score}. ${$('#stat').textContent} ${earned}`);
@@ -273,7 +292,7 @@ function useHelper(kind: 'undo' | 'shuffle' | 'single', fromOffer = false) {
 }
 
 // ---- starting ----
-function syncMusic() { music({ theme: profile.settings.theme, calm: game.mode === 'relax' && screen !== 'home' }); }
+function syncMusic() { music({ theme: viewTheme(), calm: game.mode === 'relax' && screen !== 'home' }); }
 
 let passedBest = false;
 function startGame(g: Game) {
@@ -289,7 +308,10 @@ function startGame(g: Game) {
   if (!capture) saveRun(g);
 }
 /** A fresh game of the same kind (the Daily replays today's puzzle). */
-function again(): Game { return game.mode === 'daily' ? dailyGame(today()) : newGame({ mode: game.mode, difficulty: game.difficulty, seed: freshSeed() }); }
+function again(): Game {
+  if (game.mode === 'adventure' && level) return levelGame(level);
+  return game.mode === 'daily' ? dailyGame(today()) : newGame({ mode: game.mode, difficulty: game.difficulty, seed: freshSeed() });
+}
 function newClassic(difficulty: Difficulty) { unlock(); startGame(newGame({ mode: 'classic', difficulty, seed: freshSeed() })); }
 function freshSeed() { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0]!; }
 
@@ -304,10 +326,141 @@ function refreshHome() {
   document.querySelectorAll<HTMLButtonElement>('.segmented button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.difficulty === d)));
   const relax = capture ? null : loadRun('relax');
   $('#relax-info').textContent = relax && relax.moves > 0 ? `Pick up where you left off · score ${relax.score}` : profile.best.relax ? `Calm and cozy · best ${profile.best.relax}` : 'Calm and cozy, no rush';
+  $('#adventure-info').textContent = `${totalStars(profile.adv)} of ${LEVELS.length * 3} stars · ${WORLDS.filter((_, w) => worldOpen(profile.adv, w)).map(w => w.name).slice(-1)[0]}`;
   const t = today(), done = profile.daily.find(([d]) => d === t);
   $('#daily-info').textContent = done ? `Today's best ${done[1]} · play again any time` : 'A new puzzle every day';
   $('#storage-note').hidden = capture || persistent();
 }
+
+// ---- Adventure ----
+let mapWorld = 0;
+const clock = { on: false, left: 0, out: false };
+const goalShort = (l: Level) => ({ lines: 'Lines', items: WORLDS[l.world]!.itemName[1].replace(/^./, c => c.toUpperCase()), stones: 'Stones', score: 'Score' })[l.goal.kind];
+const starText = (n: number) => '★'.repeat(n) + '☆'.repeat(3 - n);
+
+function openMap(world?: number) {
+  level = null;
+  const open = WORLDS.map((_, w) => worldOpen(profile.adv, w));
+  mapWorld = world ?? Math.max(0, open.lastIndexOf(true));
+  renderMap();
+  show('map');
+}
+function renderMap() {
+  const tabs = $('#world-tabs');
+  tabs.replaceChildren(...WORLDS.map((w, i) => {
+    const b = document.createElement('button'), stars = totalStars(profile.adv.slice(i * LEVELS_PER_WORLD, (i + 1) * LEVELS_PER_WORLD));
+    b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(i === mapWorld));
+    const open = worldOpen(profile.adv, i);
+    b.innerHTML = `<span>${w.name}</span><small>${open ? `★ ${stars}/45` : `🔒 ${w.needs} ★`}</small>`;
+    b.setAttribute('aria-label', open ? `${w.name}: ${stars} of 45 stars` : `${w.name}: opens at ${w.needs} stars`);
+    b.addEventListener('click', () => { sfx('tap'); mapWorld = i; renderMap(); });
+    return b;
+  }));
+  const open = worldOpen(profile.adv, mapWorld), w = WORLDS[mapWorld]!;
+  $('#map-stars').textContent = `★ ${totalStars(profile.adv)}`;
+  $('#world-lock').hidden = open;
+  $('#world-lock').textContent = `${w.name} opens when you have ${w.needs} stars. You have ${totalStars(profile.adv)}.`;
+  const grid = $('#level-grid');
+  let marked = false;
+  grid.replaceChildren(...Array.from({ length: LEVELS_PER_WORLD }, (_, n) => {
+    const i = mapWorld * LEVELS_PER_WORLD + n, stars = starsOf(profile.adv, i), can = levelOpen(profile.adv, i);
+    const b = document.createElement('button');
+    b.type = 'button'; b.setAttribute('role', 'listitem'); b.disabled = !can;
+    if (can && !stars && !marked) { b.classList.add('next'); marked = true; }
+    b.innerHTML = `<b>${n + 1}</b><small>${can ? starText(stars) : '🔒'}</small>`;
+    b.setAttribute('aria-label', `Level ${n + 1}${can ? `, ${stars} ${stars === 1 ? 'star' : 'stars'}` : ', locked'}`);
+    b.addEventListener('click', () => { sfx('tap'); openLevel(i); });
+    return b;
+  }));
+}
+
+function openLevel(i: number) {
+  level = LEVELS[i]!;
+  syncView();
+  game = levelGame(level);
+  playCtl.start(game);
+  updateHud(true);
+  const w = WORLDS[level.world]!, best = starsOf(profile.adv, i);
+  $('#intro-world').textContent = `${w.name} · level ${level.n}`;
+  $('#intro-title').textContent = goalText(level) + '!';
+  $('#intro-goal').textContent = `in ${level.moves} moves`;
+  $('#intro-moves').textContent = best ? `Your best: ${starText(best)}` : '';
+  $('#intro-stars').textContent = `★★★ in ${level.par3} moves · ★★ in ${level.par2}`;
+  $('#intro-tip').hidden = !level.tip; $('#intro-tip').textContent = level.tip ?? '';
+  $('#intro-clock-row').hidden = !level.clock;
+  if (level.clock) $('#intro-clock-text').textContent = `Clock challenge: finish in ${fmtTime(level.clock)} for a clock badge${profile.clock[i] === '1' ? ' (you have it!)' : ''}. Stars don't change.`;
+  $('#intro-read').hidden = !profile.settings.readAloud || !speechOk();
+  show('intro');
+  if (profile.settings.readAloud) readIntro();
+}
+const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+function startLevel() {
+  if (!level) return;
+  clock.on = !!level.clock && $<HTMLInputElement>('#intro-clock').checked; clock.left = level.clock ?? 0; clock.out = false;
+  $('#clock').hidden = !clock.on; $('#clock-time').textContent = fmtTime(clock.left);
+  startGame(levelGame(level));
+}
+function tickClock(dt: number) {
+  if (clock.out) return;
+  clock.left = Math.max(0, clock.left - dt);
+  $('#clock-time').textContent = fmtTime(Math.ceil(clock.left));
+  if (clock.left <= 0) { clock.out = true; toast('The clock ran out. No problem: keep playing for your stars!'); }
+}
+
+function levelWon() {
+  if (!level) return;
+  const i = level.world * LEVELS_PER_WORLD + level.n - 1, stars = starsFor(level, game), before = starsOf(profile.adv, i);
+  const wasDone = worldDone(profile.adv, level.world), totalBefore = totalStars(profile.adv);
+  const earned: string[] = [];
+  if (stars > before) profile.adv = profile.adv.slice(0, i) + String(stars) + profile.adv.slice(i + 1);
+  if (stars === 3 && before < 3) { const e = earnHelper(); if (e) earned.push(e); }
+  if (!wasDone && worldDone(profile.adv, level.world)) { for (let k = 0; k < 2; k++) { const e = earnHelper(); if (e) earned.push(e); } earned.push(`You finished ${WORLDS[level.world]!.name}!`); }
+  if (clock.on && !clock.out && profile.clock[i] !== '1') { profile.clock = profile.clock.slice(0, i) + '1' + profile.clock.slice(i + 1); earned.push('You earned a clock badge!'); }
+  const opened = WORLDS.find(w => w.needs > 0 && totalBefore < w.needs && totalStars(profile.adv) >= w.needs);
+  if (opened) earned.push(`${opened.name} is open!`);
+  profile.stats.games++;
+  persist();
+  clock.on = false; $('#clock').hidden = true;
+  $('#done-title').textContent = stars === 3 ? 'Perfect!' : stars === 2 ? 'Great job!' : 'You did it!';
+  $('#done-stars').textContent = '';
+  $('#done-text').textContent = `${goalText(level)}: done in ${game.moves} moves.${stars < 3 ? ` Try for ★★★ in ${level.par3} moves!` : ''}`;
+  $('#done-earned').hidden = !earned.length; $('#done-earned').textContent = earned.join(' ');
+  const last = level.world * LEVELS_PER_WORLD + level.n >= LEVELS.length || !levelOpen(profile.adv, level.world * LEVELS_PER_WORLD + level.n);
+  $('#done-next').hidden = last;
+  show('done');
+  scene.fx.confetti(lay.w, lay.cell, stars === 3 ? 110 : 60);
+  for (let k = 0; k < stars; k++) setTimeout(() => { $('#done-stars').textContent = starText(k + 1).slice(0, k + 1); sfx('star', k * 4); }, 250 + k * 380);
+  setTimeout(() => { $('#done-stars').textContent = starText(stars); }, 250 + stars * 380);
+  sfx('win');
+  say(`${$('#done-title').textContent} ${stars} ${stars === 1 ? 'star' : 'stars'}. ${$('#done-text').textContent} ${earned.join(' ')}`);
+}
+
+function levelLost() {
+  if (!level) return;
+  clock.on = false; $('#clock').hidden = true;
+  const got = Math.min(progress(game), level.goal.target);
+  $('#over-title').textContent = game.end === 'moves' ? 'Out of moves!' : 'No room left!';
+  $('#new-best').hidden = true;
+  $('#final-label').textContent = goalShort(level);
+  $('#final').textContent = `${got}/${level.goal.target}`;
+  $('#final-best-label').textContent = 'Goal'; $('#final-best').textContent = goalText(level);
+  $('#stat').textContent = got >= level.goal.target * 0.6 ? 'So close! Try again: the level starts the same way each time.' : 'Every try teaches you the board. Have another go!';
+  $('#earned').hidden = true;
+  $('#again').textContent = 'Try again';
+  $('#over-home').textContent = 'Map';
+  show('over');
+  sfx('over');
+  say(`${$('#over-title').textContent} ${$('#stat').textContent}`);
+}
+
+// ---- read-aloud ----
+const speechOk = () => typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined';
+function speak(text: string) {
+  if (!profile.settings.readAloud || !speechOk() || capture) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/[★☆🔒]/g, '')); u.rate = 0.92; u.lang = 'en'; speechSynthesis.speak(u); } catch { /* no voice: the text is on screen */ }
+}
+function readIntro() { if (level) speak(`${goalText(level)}, in ${level.moves} moves. ${level.tip ?? ''}`); }
 
 // ---- settings ----
 function applySettings() {
@@ -402,14 +555,22 @@ function bindButtons() {
   on('#pause-btn', pause);
   on('#resume', () => show('play'));
   on('#restart', () => { dropRun(game.mode as 'classic' | 'relax' | 'daily'); startGame(again()); });
-  on('#quit', () => show('home'));
+  on('#quit', () => (game.mode === 'adventure' ? openMap() : show('home')));
+  on('#adventure', () => openMap());
+  on('#map-back', () => show('home'));
+  on('#intro-start', () => startLevel());
+  on('#intro-back', () => openMap());
+  on('#intro-read', () => readIntro());
+  on('#done-next', () => { if (level && level.world * LEVELS_PER_WORLD + level.n < LEVELS.length) openLevel(level.world * LEVELS_PER_WORLD + level.n); });
+  on('#done-retry', () => startLevel());
+  on('#done-map', () => openMap());
   on('#pause-settings', () => { settingsBack = 'pause'; show('settings'); });
   on('#settings-btn', () => { settingsBack = 'home'; show('settings'); });
   on('#settings-done', () => show(settingsBack));
   on('#help-btn', () => show('help'));
   on('#help-done', () => show('home'));
   on('#again', () => startGame(again()));
-  on('#over-home', () => show('home'));
+  on('#over-home', () => (game.mode === 'adventure' ? openMap() : show('home')));
   on('#offer-undo', () => useHelper('undo', true));
   on('#offer-shuffle', () => useHelper('shuffle', true));
   on('#offer-single', () => useHelper('single', true));
@@ -448,6 +609,7 @@ function frame(now: number) {
     else menuPad(presses);
   }
   if (capture && screen === 'play') autoplay(dt);
+  if (clock.on && screen === 'play' && !game.over) tickClock(dt);
   const animating = updateTweens(dt);
   if (shownScore !== game.score) { shownScore += Math.max(1, Math.ceil((game.score - shownScore) * Math.min(1, dt * 12))); if (shownScore > game.score) shownScore = game.score; $('#score').textContent = String(shownScore); }
   scene.frame(dt, animating);
@@ -466,7 +628,7 @@ let autoWait = 0.8;
 function autoplay(dt: number) {
   autoWait -= dt * captureSpeed;
   if (autoWait > 0 || playCtl.locked || tweensRunning() > 0 && !game.over) return;
-  if (game.over) { autoWait = 1.4; startGame(sceneGame(captureScene!, game.seed + 1)); return; }
+  if (game.over) { autoWait = 1.4; startGame(level ? levelGame(level) : sceneGame(captureScene!, game.seed + 1)); return; }
   const c = autoMove(game);
   if (!c) return;
   autoWait = 0.55;
@@ -501,7 +663,15 @@ async function boot() {
   systemReduced.addEventListener?.('change', () => applySettings());
   hook();
   scene.syncBoard(game); scene.syncTray(game);
-  if (captureScene) {
+  if (captureScene === 'adventure') {
+    // ?scene=adventure[&level=N]: a Candy level with gems and stones (or level N, 1–60)
+    level = LEVELS[Math.min(60, Math.max(1, Number(new URLSearchParams(location.search).get('level')) || 32)) - 1]!;
+    syncView(); startGame(levelGame(level));
+    $('#hud').hidden = !new URLSearchParams(location.search).has('hud');
+  } else if (captureScene === 'map') {
+    profile.adv = '3'.repeat(16) + '2' + '1' + '0'.repeat(42);
+    openMap(1);
+  } else if (captureScene) {
     startGame(sceneGame(captureScene));
     $('#hud').hidden = !new URLSearchParams(location.search).has('hud');
   } else show('home');
