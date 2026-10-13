@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const HOOK = '__blockswip';
-const PREFIX = 'blockswip.';
+const HOOK = '__tuckpop';
+const PREFIX = 'tuckpop.';
 type Snapshot = { screen: string; score: number; timeLeft: number; persistent: boolean; audio: string };
 const snapshot = (page: Page) => page.evaluate(hook => (window as unknown as Record<string, { snapshot(): Snapshot }>)[hook]!.snapshot(), HOOK);
 
@@ -10,14 +10,14 @@ function watch(page: Page) {
   const problems: string[] = [];
   page.on('pageerror', error => problems.push(`page error: ${error.message}`));
   page.on('console', message => { if (message.type() === 'error') problems.push(`console error: ${message.text()}`); });
-  page.on('request', request => { const url = new URL(request.url()); if (!['127.0.0.1:4542', ''].includes(url.host) && url.protocol !== 'data:') problems.push(`request to ${request.url()}`); });
+  page.on('request', request => { const url = new URL(request.url()); if (!['127.0.0.1:4444', ''].includes(url.host) && url.protocol !== 'data:') problems.push(`request to ${request.url()}`); });
   return problems;
 }
 
 test('plays with keyboard or touch, pauses and resumes, with no errors and no network', async ({ page, isMobile }) => {
   const problems = watch(page);
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Blocks (working title)' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tuck Pop' })).toBeVisible();
   await page.getByRole('button', { name: 'Play' }).click();
   await expect.poll(async () => (await snapshot(page)).screen).toBe('play');
   if (isMobile) {
@@ -68,7 +68,7 @@ test('runs inside a sandboxed iframe like on the website', async ({ page }) => {
   await page.route('**/host.html', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><iframe src="/" sandbox="allow-scripts allow-same-origin allow-pointer-lock" allow="fullscreen; gamepad" style="width:960px;height:540px;border:0"></iframe>' }));
   await page.goto('/host.html');
   const frame = page.frameLocator('iframe');
-  await expect(frame.getByRole('heading', { name: 'Blocks (working title)' })).toBeVisible();
+  await expect(frame.getByRole('heading', { name: 'Tuck Pop' })).toBeVisible();
   await frame.getByRole('button', { name: 'Play' }).click();
   await expect(frame.locator('#hud')).toBeVisible();
   expect(problems).toEqual([]);

@@ -7,10 +7,10 @@ export default defineConfig({
   timeout: CI ? 120_000 : 60_000,
   retries: CI ? 1 : 0,
   reporter: CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
-  use: { baseURL: 'http://127.0.0.1:4542', trace: 'retain-on-failure' },
+  use: { baseURL: 'http://127.0.0.1:4444', trace: 'retain-on-failure' },
   webServer: {
-    command: 'npx vite build && npx vite preview --host 127.0.0.1 --port 4542 --strictPort',
-    url: 'http://127.0.0.1:4542',
+    command: 'npx vite build && npx vite preview --host 127.0.0.1 --port 4444 --strictPort',
+    url: 'http://127.0.0.1:4444',
     reuseExistingServer: !CI,
     timeout: 120_000,
   },

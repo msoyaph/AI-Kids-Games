@@ -1,8 +1,8 @@
 {
-  "name": "blocks-wip",
+  "name": "tuck-pop",
   "private": true,
   "version": "0.1.0",
-  "description": "Blocks (working title), a game for Ai Kids Games.",
+  "description": "Tuck Pop, a game for Ai Kids Games.",
   "type": "module",
   "license": "MIT",
   "scripts": {

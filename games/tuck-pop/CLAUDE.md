@@ -1,15 +1,16 @@
-# Seventh game: a kid-friendly block puzzle (working name "Blocks", slug `blocks-wip`)
+# Tuck Pop: a kid-friendly block puzzle (slug `tuck-pop`)
 
 An original 8×8 block puzzle for ages 6+, phone-first. The brief is
-[docs/prompts/blocks-wip.md](../../docs/prompts/blocks-wip.md); the approved plan is summarised
+[docs/prompts/tuck-pop.md](../../docs/prompts/tuck-pop.md); the approved plan is summarised
 below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh-game`.
 
 ## Rules that never change
 
-- **Working name:** the owner picks the final name. Before the game goes on the site (phase 9),
-  rename the folder, slug, title, storage prefix (`blockswip.`) and hook (`__blockswip`) everywhere.
-  No release ever ships with the working name. Until then `game.json` keeps `site.status`
-  "In development", which keeps the game off the website.
+- **Name:** Tuck Pop, chosen by the owner on 2026-10-13 from five candidates checked against
+  app listings. It was renamed from the working slug `blocks-wip` before any game code existed,
+  so nothing was ever saved under the old prefix. Slug `tuck-pop`, storage prefix `tuckpop.`,
+  hook `window.__tuckpop`. `game.json` keeps `site.status` "In development", which keeps the game
+  off the website, until phase 9.
 - **Originality:** never name the game that inspired it or any other block-puzzle title anywhere
   (code, docs, manifest, README). Its layout, wording, score badges, palette and sounds are off
   limits too. Everything is drawn in code and synthesized with Web Audio; no asset files.
@@ -20,8 +21,8 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
   warns at 800 KB) that works from file:// and in the site's sandboxed iframe
   (`allow-scripts allow-same-origin allow-pointer-lock`). Build-only CSP without `unsafe-eval`, so
   Pixi needs `pixi.js/unsafe-eval`.
-- **Storage:** keys `blockswip.save` (profile), `blockswip.run` (current Classic game), probe
-  `blockswip.__probe`. Never `clear()` or touch other keys. Saves are versioned with migrations;
+- **Storage:** keys `tuckpop.save` (profile), `tuckpop.run` (current Classic game), probe
+  `tuckpop.__probe`. Never `clear()` or touch other keys. Saves are versioned with migrations;
   frozen fixtures must keep loading.
 - **Testing on this shared Mac:** never run a browser test while any other test or capture runs
   (`pgrep -fl "[p]laywright test|[v]itest"` must print nothing), and never run unit and browser
@@ -67,7 +68,8 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
 
 ## Status
 
-0. COMPLETE (2026-10-13): scaffolded as `blocks-wip`, listing drafted (status "In development"),
+0. COMPLETE (2026-10-13): scaffolded (as `blocks-wip`, then renamed to `tuck-pop` once the
+   owner picked the name), listing drafted (status "In development"),
    1 MB build check, Pixi dependency. Repo side:
    - Puzzle and Casual genres;
    - the trademark blocklist;
@@ -76,7 +78,6 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
    - Space Sky's and Light Crossing's browser suites moved to `npm run release:local`, enforced by
      the production guard.
 
-   Five name candidates went to the owner.
 1. Core rules — next.
 2. Fair dealer and bots.
 3. Playable Classic.
@@ -85,14 +86,14 @@ below. Built from `templates/game-starter` (`npm run new-game`). Branch `seventh
 6. Adventure.
 7. Themes and accessibility.
 8. Hardening and the full browser suite.
-9. Final name and site integration, then a pull request with CI green and the preview link.
+9. Site integration, then a pull request with CI green and the preview link.
 10. Release, after the owner's approval.
 
 ## Commands
 
 ```bash
-npm run dev --workspace games/blocks-wip
-npm test --workspace games/blocks-wip          # unit tests (vitest)
-npm run build --workspace games/blocks-wip     # typecheck, build, contract check
-npm run test:e2e --workspace games/blocks-wip  # Playwright (nothing else may be testing)
+npm run dev --workspace games/tuck-pop
+npm test --workspace games/tuck-pop          # unit tests (vitest)
+npm run build --workspace games/tuck-pop     # typecheck, build, contract check
+npm run test:e2e --workspace games/tuck-pop  # Playwright (nothing else may be testing)
 ```

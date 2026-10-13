@@ -1,7 +1,6 @@
 <!-- The brief as the owner wrote it, in two messages (the first was cut off at the browser
 tests). Other companies' game titles are replaced with a description in [brackets]. "Block Smash"
-was the brief's working title; the game is built under a working name until the owner picks the
-final one. -->
+was the brief's working title; the owner then chose the name Tuck Pop. -->
 
 # Project: Build "Block Smash", a kid-friendly block puzzle game (inspired by [a popular mobile block puzzle])
 

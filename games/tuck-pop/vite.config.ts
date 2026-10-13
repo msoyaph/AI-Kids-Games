@@ -16,7 +16,7 @@ export default defineConfig({
   base: './',
   plugins: [noNetwork, viteSingleFile({ removeViteModuleLoader: true })],
   build: { target: 'es2020', assetsInlineLimit: 100_000_000, cssCodeSplit: false, modulePreload: false },
-  server: { port: Number(process.env.PORT) || 5542 },
-  preview: { port: Number(process.env.PORT) || 4542 },
+  server: { port: Number(process.env.PORT) || 5444 },
+  preview: { port: Number(process.env.PORT) || 4444 },
   test: { environment: 'node', include: ['tests/unit/**/*.test.ts'] },
 });
