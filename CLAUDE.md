@@ -30,6 +30,40 @@ Commands (root): `npm run dev | build | test | test:e2e` (site), `npm run import
 - Before every commit, check `git log` for commits this session did not make; if any appear,
   stop and tell the owner. Don't rewrite history.
 
+## Community games (owner brief 2026-10-13; branch `community-pipeline`, stacked on `seo-launch`)
+
+Anyone may fork the repo, build a kid-safe game in `community/<slug>/` (source only) and submit it in
+a pull request. Everything up to the owner's final approval is automated. **Nothing from a community
+submission goes live without that approval**, recorded in the game's manifest by the owner's own
+commit (`npm run review-submission -- <PR> --approve`).
+
+**Rules:**
+- **Hosting:** community games are never imported into `apps/site/public/games/`. They are built from
+  source and served from their own origin by the `ai-kids-games-play` Vercel project (`apps/play`):
+  `aikg-<slug>.vercel.app` per game in production, which is its own site because `vercel.app` is on
+  the Public Suffix List.
+- **Not workspaces:** community games are not npm workspaces and never get `npm install`. Their only
+  packages come from `tooling/community-kit` (allowlist, exact versions).
+- **Scope:** a community pull request may change only its own `community/<slug>/`. Every commit
+  needs a DCO sign-off; CI enforces both.
+- **CI:** fork pull requests run only under `pull_request` with read-only permissions and no secrets.
+  Slugs are validated before they reach a shell, and passed through `env:`.
+
+**Plan:** ~/.claude/plans/purring-swinging-church.md (owner-approved). Steps, each one commit:
+1. COMPLETE: submission format.
+   - `docs/community-game.schema.json`.
+   - `validateCommunityManifest`, with the listing rules shared with first-party games in
+     `scripts/lib/manifest.ts`.
+   - `npm run new-community-game` (source only, plus AGENTS.md and CLAUDE.md for assistants).
+   - The game-submission PR template, with the DCO.
+2. `npm run check-submission -- <slug>`.
+3. CI for fork pull requests.
+4. The review kit.
+5. Separate hosting.
+6. The website.
+7. Docs.
+8. The end-to-end proof.
+
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
 
 Owner decisions: TheaBonk and Light Crossing are pulled in last (their own sessions were
