@@ -2,19 +2,20 @@ import { expect, test, type Page } from '@playwright/test';
 import { parseRoom } from '../../src/core/puzzle/puzzle';
 import { solve } from '../../src/core/puzzle/solver';
 import { TRIAL_BY_ID } from '../../src/data/trials';
-import { advance, holdUntil, snap, talk, walk, watch } from './helpers';
+import { advance, snap, talk, walk, walkUntil, watch } from './helpers';
 
 const KEY = ['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'];
 
 /**
- * One step in a Trial room: hold the arrow until the move counts, let go on that frame (holdUntil,
- * inside the page), and wait for the move to finish. Exactly one move: letting go as soon as it
- * counts means a slow device can't add a second.
+ * One step in a Trial room: press the arrow (a quick tap), wait until the room has taken the tap and
+ * the move has finished. A tap is always exactly one move, however slow the machine.
  */
 async function step(page: Page, dir: number) {
-  const before = (await snap(page)).moves ?? 0;
-  await holdUntil(page, KEY[dir]!, { moves: before });
-  await expect.poll(async () => !(await snap(page)).moving, { timeout: 8000, intervals: [30] }).toBe(true);
+  const s0 = await snap(page);
+  const before = s0.moves ?? 0, taps = s0.taps ?? 0;
+  await page.keyboard.press(KEY[dir]!);
+  await expect.poll(async () => ((await snap(page)).taps ?? 0) > taps, { timeout: 15_000, intervals: [30] }).toBe(true);
+  await expect.poll(async () => !(await snap(page)).moving, { timeout: 15_000, intervals: [30] }).toBe(true);
   expect((await snap(page)).moves).toBe(before + 1);
 }
 
@@ -24,13 +25,8 @@ test('keyboard: the Lighthouse Trial, room by room, then the Keeper and the Beac
   const problems = watch(page);
   await page.goto('/?quickstart&fasttext&difficulty=easy&at=lighthouse,4,7&flags=got-partner,mission-1,salt-arrive,met-finch,lighthouse-hall&team=lullakin:16,spinnet:16&quest=4');
   await expect.poll(async () => (await snap(page)).map, { timeout: 20_000 }).toBe('lighthouse');
-  // up the stairs into the Trial
-  await page.keyboard.down('ArrowUp');
-  try {
-    await expect.poll(async () => (await snap(page)).scene, { timeout: 10_000, intervals: [15] }).toBe('trial');
-  } finally {
-    await page.keyboard.up('ArrowUp');
-  }
+  // up the stairs into the Trial, a step at a time (a held key could carry on into the first room)
+  await walkUntil(page, 'ArrowUp', s => s.scene === 'trial');
   await advance(page); // the puzzle tutorial card
   expect((await snap(page)).audio?.song).toBe('trial-1');
   const trial = TRIAL_BY_ID.lighthouse!;

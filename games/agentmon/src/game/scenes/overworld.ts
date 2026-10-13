@@ -293,8 +293,10 @@ export class OverworldScene implements Scene, ScriptHost {
   private control(dt: number): void {
     const input = this.game.input;
     if (this.move) { this.advanceMove(dt); return; }
+    // an arrow tap that went down and up between frames still takes its step
+    const tapped = input.takeTap();
     if (input.consume('menu')) { void this.openMenu(); return; }
-    const held = input.dir();
+    const held = input.dir() ?? tapped;
     if (held !== null) { this.path = []; this.pathGoal = null; }
     if (input.consume('a')) { this.path = []; void this.interact(); return; }
     let dir: Dir | null = held;
@@ -661,7 +663,7 @@ export class OverworldScene implements Scene, ScriptHost {
   snapshot() {
     return {
       map: this.state.map, x: this.state.x, y: this.state.y, dir: this.state.dir, busy: this.busy > 0,
-      moving: !!this.move, team: this.state.team.map(c => ({ species: c.species, level: c.level, energy: c.energy })),
+      moving: !!this.move, taps: this.game.input.tapsTaken, team: this.state.team.map(c => ({ species: c.species, level: c.level, energy: c.energy })),
       wild: this.world.wild.map(w => ({ species: w.species, x: w.x, y: w.y, shimmer: w.shimmer })),
       flags: [...this.state.flags].sort(), coins: this.state.coins, dialogue: this.game.dialogue.open,
       // where the camera is, so tests can tap a tile: screen px = (tile * 16 + 8) * zoom + offset, ÷ dpr
