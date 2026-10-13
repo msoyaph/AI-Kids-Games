@@ -1,0 +1,8 @@
+{
+  "name": "community-star-sprint",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Star Sprint, a community game for AI Kids Games by @starsprint-maker.",
+  "license": "MIT",
+  "dependencies": {}
+}

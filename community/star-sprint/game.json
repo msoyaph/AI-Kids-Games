@@ -1,0 +1,91 @@
+{
+  "$schema": "../../docs/community-game.schema.json",
+  "slug": "star-sprint",
+  "title": "Star Sprint",
+  "tagline": "Race a little comet across the night sky and catch the stars.",
+  "shortDescription": "Glide your comet up and down to catch the stars flying toward you, and steer around the sleepy clouds that make it drowsy.",
+  "longDescription": "Star Sprint is a one-minute sky race. Your little comet zooms along on its own; you glide it up and down to catch the stars coming your way. Catch several in a row for a streak. Sleepy clouds never take points away: bumping one just makes the comet yawn and glide slowly for a moment. The sky speeds up as the minute goes on, and your best score is saved on this device.",
+  "version": "0.1.0",
+  "minAge": 5,
+  "ageRange": "5+",
+  "genres": [
+    "Action"
+  ],
+  "tags": [
+    "Arcade",
+    "Space",
+    "Original"
+  ],
+  "keywords": [
+    "comet game",
+    "catch the stars",
+    "one minute game",
+    "kids arcade",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "One-minute rounds that speed up gently",
+    "Streaks for stars caught in a row",
+    "Plays with keyboard, mouse, touch or gamepad",
+    "Remembers your best score on this device"
+  ],
+  "contentNotes": "Gentle arcade play with no fighting, losing lives or scary content. Clouds only slow the comet down for a moment. The best score saves in this browser.",
+  "controls": {
+    "types": [
+      "Keyboard",
+      "Mouse",
+      "Gamepad",
+      "Touch"
+    ],
+    "quickStart": [
+      "Press Play.",
+      "Glide up and down with the arrow keys, a gamepad stick, or by holding your finger above or below the comet.",
+      "Catch the stars and steer around the sleepy clouds."
+    ],
+    "howToPlay": [
+      "Glide up and down with W and S, the arrow keys, a gamepad's left stick or d-pad, or hold the mouse or a finger above or below the comet.",
+      "Escape or P pauses; gamepad A or Start presses the buttons in menus."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "any",
+  "requirements": [],
+  "playTime": "1 minute per round",
+  "storage": {
+    "prefix": "starsprint.",
+    "keys": [
+      "starsprint.save"
+    ],
+    "probe": "starsprint.__probe"
+  },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
+  "hook": "__starsprint",
+  "capture": {
+    "scenes": [
+      "?scene=title",
+      "?scene=play&seed=7",
+      "?scene=results"
+    ]
+  },
+  "creator": {
+    "handle": "@starsprint-maker"
+  },
+  "license": "MIT",
+  "originality": "Star Sprint is my own game, made with an AI coding assistant from the AI Kids Games starter. The comet, the sleepy clouds, the rules and the sounds are all new and drawn in code. It uses no other companies’ names, characters, art or music.",
+  "submitted": {
+    "date": "2026-10-13",
+    "sourceCommit": "pending"
+  },
+  "listing": "submitted"
+}
