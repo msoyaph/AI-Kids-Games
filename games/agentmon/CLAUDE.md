@@ -610,6 +610,10 @@ commit at the end of every phase, stop before production.
   1.1 with nothing lost, saves again identically, and arrives with its hearts, the Silver Guide and
   the 8 accessories it earned. The worst-case slot test now fills all 77 guide pages and dresses all
   246 friends; a realistic maximal 1.1 slot is 41 KB (budget 64 KB, limit 300 KB).
+- 2026-10-13 Bug found in review: Bubble Catch's arrow keys did nothing, because the game ignores keys
+  while a menu has the keyboard (`uiFocus`). Bubble Catch now listens for its own arrow keys (and A/D)
+  while it runs; the stick and D-pad already worked. tests/e2e/care.spec.ts covers pet, dress up and
+  Bubble Catch with the keyboard (desktop and tablet, Chromium and WebKit).
 - 2026-10-13 Art: Pyrolanterne's tubes now end inside the 32×32 space (its open end was cut flat at
   32 px). The lookalike pass over the 77 sheet found nothing new to change.
 

@@ -23,6 +23,16 @@ export function playBubbleCatch(game: Game, pic: string, name: string): Promise<
     game.focus.push(layer, false);
 
     let caught = 0, fx = 0.5, target: number | null = null, last = performance.now(), t = 0, over = false, raf = 0;
+    // arrow keys (and A/D): the game's own key handling is paused while a menu has the keyboard
+    const keys = new Set<string>();
+    const LEFT = ['ArrowLeft', 'KeyA'], RIGHT = ['ArrowRight', 'KeyD'];
+    const onKey = (e: KeyboardEvent) => {
+      if (![...LEFT, ...RIGHT].includes(e.code)) return;
+      e.preventDefault();
+      if (e.type === 'keydown') keys.add(e.code); else keys.delete(e.code);
+    };
+    addEventListener('keydown', onKey);
+    addEventListener('keyup', onKey);
     const calm = game.settings.reducedMotion;
     const bubbles = Array.from({ length: COUNT }, (_, i) => {
       const b = h('span.bubble');
@@ -52,6 +62,8 @@ export function playBubbleCatch(game: Game, pic: string, name: string): Promise<
       if (over) return;
       over = true;
       cancelAnimationFrame(raf);
+      removeEventListener('keydown', onKey);
+      removeEventListener('keyup', onKey);
       game.focus.pop(layer);
       el.remove();
       resolve(caught);
@@ -63,7 +75,7 @@ export function playBubbleCatch(game: Game, pic: string, name: string): Promise<
       last = now;
       t += dt;
       // the scene polls the gamepad every frame; read what it saw (a second poll would eat presses)
-      const d = game.input.dir() ?? game.input.padHeld;
+      const d = LEFT.some(k => keys.has(k)) ? 1 : RIGHT.some(k => keys.has(k)) ? 2 : game.input.dir() ?? game.input.padHeld;
       const step = 0.65 * dt;
       if (d === 1) { fx -= step; target = null; }
       else if (d === 2) { fx += step; target = null; }
