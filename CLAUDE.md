@@ -490,6 +490,20 @@ back.
   - **Lighthouse mobile:** home 99/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
     Tuck Pop details and play 99/100/100/100.
 
+## Release 2.7.0: Agentmon (owner, 2026-10-13: "Upload the game to the live Production https://ai-kids-games-fawn.vercel.app/")
+- **Scope:** PR #16 (Agentmon 1.1, which carries the 1.0 PR #13). Game 1.1.0. All other games stay at
+  their current versions.
+- **Why 2.7.0:** the other session's 2.6.0 (PR #21, a trailer for every game) was already approved
+  and in CI, so Agentmon ships right after it.
+- **Order:**
+  1. release commit (2.7.0, DEPLOYMENT.json approval);
+  2. `npm run release:local` on a quiet machine, and commit localSuites;
+  3. #21 merged, then `main` merged in again;
+  4. CI green;
+  5. `AIKG_ALLOW_PRODUCTION=2.7.0` in both projects' Production environments;
+  6. merge #16;
+  7. production checks (suite, Lighthouse) and a record PR.
+
 ## Eighth game: Agentmon (owner brief 2026-10-13; slug `agentmon`, branch `agentmon`)
 
 Brief: docs/prompts/agentmon.md. Plan, rules and status: games/agentmon/CLAUDE.md (approved plan in
