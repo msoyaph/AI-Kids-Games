@@ -32,7 +32,7 @@ edit('package.json',text => { const pkg = JSON.parse(text); pkg.name = slug; pkg
 edit('game.json',text => {
   const m = JSON.parse(swap(text));
   m.version = '0.1.0';
-  m.site = { ...m.site,featured: false,status: 'Coming soon',releaseDate: new Date().toISOString().slice(0,10) };
+  m.site = { ...m.site,featured: false,status: 'In development',releaseDate: new Date().toISOString().slice(0,10) };
   return `${JSON.stringify(m,null,2)}\n`;
 });
 edit('README.md',text => text.replace(/^# .*$/m,`# ${title}`).replace(/Don't edit this folder to make a game\. Copy it:[\s\S]*?```\n\n/,''));
@@ -45,5 +45,6 @@ Next:
   npm test --workspace games/${slug}
 
 Make it yours: change the rules in src/sim.ts, the art in src/render.ts and the listing in
-games/${slug}/game.json. Read docs/CREATE-A-GAME.md for the whole path, from the game contract to
+games/${slug}/game.json. It stays off the website while site.status is "In development".
+Read docs/CREATE-A-GAME.md for the whole path, from the game contract to
 trying it on the website (npm run import-game -- ${slug}).`);

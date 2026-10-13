@@ -5,6 +5,23 @@ mode on software WebGL. The full-quality runs and the performance benchmarks bel
 GPU. Run them by hand on your own machine (a Mac with Apple silicon is what the numbers in each
 game's docs were measured on).
 
+## Required before every release: `npm run release:local`
+
+Space Sky's and Light Crossing's browser suites need a real GPU even in their low-quality modes,
+so CI runs only their typecheck, unit tests and build. Before each site release, run their full
+suites on the release machine (with nothing else testing at the same time):
+
+```bash
+npm run release:local                      # both suites; or: npm run release:local -- space-sky
+```
+
+It records each result, the game's version and a hash of the sources it tested in
+`apps/site/DEPLOYMENT.json` (`localSuites`) for the site's current version. Commit that file with
+the release. The production guard (`apps/site/scripts/check-deployment.ts`) refuses a release
+unless both suites passed for that version and for exactly the game sources it ships. The list
+lives in `apps/site/scripts/local-suites.ts`; the goal is to get both suites passing on CI and
+empty it.
+
 > **Never connect a self-hosted runner to this repository.** It is public: anyone can open a
 > pull request, and a self-hosted runner would execute that code on your computer. The games
 > used to ship optional self-hosted workflows from when they were private repos; those were

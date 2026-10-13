@@ -10,7 +10,8 @@ import { resolve } from 'node:path';
 import { readManifest } from './lib/manifest';
 import { gameSlugs,site } from './lib/repo';
 
-const slugs = process.argv.slice(2).length ? process.argv.slice(2) : gameSlugs();
+// By default every game the site ships (a game still "In development" has no build there yet).
+const slugs = process.argv.slice(2).length ? process.argv.slice(2) : gameSlugs().filter(slug => readManifest(slug).site.status !== 'In development');
 let flagged = 0;
 for (const slug of slugs) {
   const m = readManifest(slug);

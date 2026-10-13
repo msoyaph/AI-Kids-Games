@@ -12,9 +12,11 @@ import { root,site } from './lib/repo';
 const SITE = 'https://aikids.games';
 const REPO = 'https://github.com/msoyaph/AI-Kids-Games';
 const check = process.argv.includes('--check');
-const manifests = readManifests();
-const errors = manifests.flatMap(m => validateManifest(m));
+const all = readManifests();
+const errors = all.flatMap(m => validateManifest(m));
 if (errors.length) { console.error(`Game manifests are invalid:\n${errors.map(error => `  • ${error}`).join('\n')}`); process.exit(1); }
+// Games still "In development" are validated but never listed.
+const manifests = all.filter(m => m.site.status !== 'In development');
 // Site order: site.order first (lower first), then featured, newest, and title (stable for diffs).
 manifests.sort((a,b) => (a.site.order ?? 1e9)-(b.site.order ?? 1e9) || Number(b.site.featured)-Number(a.site.featured) || b.site.releaseDate.localeCompare(a.site.releaseDate) || a.title.localeCompare(b.title));
 
@@ -69,8 +71,8 @@ if (existsSync(readme)) {
 const stale = outputs.filter(([file,text]) => !existsSync(file) || readFileSync(file,'utf8') !== text).map(([file]) => file.slice(root.length));
 if (check) {
   if (stale.length) { console.error(`Generated files are out of date: ${stale.join(', ')}. Run npm run manifests.`); process.exit(1); }
-  console.log(`Manifests valid and generated files up to date (${manifests.length} games).`);
+  console.log(`Manifests valid and generated files up to date (${manifests.length} games listed${all.length > manifests.length ? `, ${all.length-manifests.length} in development` : ''}).`);
 } else {
   for (const [file,text] of outputs) writeFileSync(file,text);
-  console.log(`${manifests.length} manifests valid. ${stale.length ? `Updated ${stale.join(', ')}.` : 'Nothing changed.'}`);
+  console.log(`${all.length} manifests valid, ${manifests.length} listed. ${stale.length ? `Updated ${stale.join(', ')}.` : 'Nothing changed.'}`);
 }

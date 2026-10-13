@@ -3,6 +3,7 @@
 // imported. Fix a failure with: npm run import-game -- <slug>
 import { existsSync,readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { readManifest } from './lib/manifest';
 import { buildImportsPath,buildInputsHash,buildSizesPath,gameSlugs,readJson,sha256,site,type BuildImports } from './lib/repo';
 
 const errors: string[] = [];
@@ -10,7 +11,8 @@ const imports = readJson<BuildImports>(buildImportsPath).games;
 const sizes = readJson<Record<string,number>>(buildSizesPath);
 const slugs = gameSlugs();
 
-for (const slug of slugs) if (!imports.some(game => game.slug === slug)) errors.push(`${slug}: games/${slug} has no imported build. Run npm run import-game -- ${slug}.`);
+// A game still "In development" is not on the site yet, so it needs no imported build.
+for (const slug of slugs) if (readManifest(slug).site.status !== 'In development' && !imports.some(game => game.slug === slug)) errors.push(`${slug}: games/${slug} has no imported build. Run npm run import-game -- ${slug}.`);
 for (const game of imports) {
   const file = resolve(site,'public/games',game.slug,'index.html');
   if (!slugs.includes(game.slug)) errors.push(`${game.slug}: recorded in BUILD_IMPORTS.json but games/${game.slug}/game.json does not exist.`);

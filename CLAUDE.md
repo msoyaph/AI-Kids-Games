@@ -243,6 +243,42 @@ this Mac: missing libx265) and @ffprobe-installer/ffprobe for HyperFrames' ffpro
   100/100/100; 0 trailer requests before play. A local suite failure was the disk filling up
   (ENOSPC): the reel's build/ folder (1.7 GB) is regenerable, so delete it when space runs low.
 
+## Seventh game: a block puzzle (owner brief 2026-10-13; working slug `blocks-wip`, branch `seventh-game`)
+
+Brief: docs/prompts/blocks-wip.md. Plan, rules and status: games/blocks-wip/CLAUDE.md.
+
+**Owner decisions:**
+- **CI:** Space Sky's and Light Crossing's browser suites run locally before each release.
+- **Name:** the working name never ships; the owner picks from 5 checked names before phase 9.
+- **Genres and blocklist:** Puzzle and Casual genres; the inspiring title and three other
+  block-puzzle titles join the trademark blocklist.
+- **Versions:** game 1.0.0, site 2.4.0. Stop for production approval.
+
+**Phase 0 (complete), repo side:**
+- `site.status: "In development"` (new) keeps a game validated but off the website, the README,
+  llms.txt and the build-sync check. `npm run new-game` now starts games that way.
+- `.github/scripts/what-changed.mjs` (+ `node --test` tests in the repo checks job) replaces the
+  inline picker:
+  - the game list comes from `games/*`;
+  - root package.json, .nvmrc, ci.yml and `.github/scripts/` run every game;
+  - a lockfile change runs only the workspaces whose entries changed, but any shared dependency
+    runs every game;
+  - root `scripts/` and `docs/` run no game suites; no game uses them.
+- **Space Sky and Light Crossing:** CI runs only their typecheck, unit tests and build. Their
+  browser suites run with `npm run release:local` (scripts/release-local.ts). It refuses while
+  other tests run or with uncommitted game changes, and records passed/failed/flaky, the game
+  version and its build-inputs hash in apps/site/DEPLOYMENT.json `localSuites`.
+- **Production guard:** check-deployment.ts refuses a release without a passing record for its
+  version whose hashes match BUILD_IMPORTS.json (list: apps/site/scripts/local-suites.ts; tests
+  run the guard on temp fixtures).
+- New games default to Chromium + WebKit in CI and to typecheck/test/build checks.
+
+**FOLLOW-UP (owner):** get Space Sky's and Light Crossing's browser suites passing on GitHub's
+runners, then empty `LOCAL_SUITES`.
+
+**Release plan:** in phase 9 the PR keeps the site at 2.3.0. The release commit (phase 10, after
+approval) bumps to 2.4.0, records the approval and runs `npm run release:local`.
+
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
    `npm ci`, `npx playwright install chromium webkit`.

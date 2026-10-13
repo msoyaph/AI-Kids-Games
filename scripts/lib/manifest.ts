@@ -4,11 +4,14 @@ import { existsSync,readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { gameDir,gameSlugs,SLUG } from './repo';
 
-export const GENRES = ['Action','Adventure','Cozy','Farming','Learning','Racing','Strategy'] as const;
+export const GENRES = ['Action','Adventure','Casual','Cozy','Farming','Learning','Puzzle','Racing','Strategy'] as const;
 export const CONTROLS = ['Keyboard','Mouse','Gamepad','Touch'] as const;
 export const DEVICES = ['Computer','Tablet','Phone'] as const;
 export const MOTIONS = ['float','bob','twinkle','drift'] as const;
+/** "In development": validated, but kept off the website, its registry, the README and llms.txt. */
+export const STATUSES = ['Ready to play','Coming soon','In development'] as const;
 export type Genre = typeof GENRES[number];
+export type Status = typeof STATUSES[number];
 export type ControlType = typeof CONTROLS[number];
 export type Device = typeof DEVICES[number];
 export type Motion = typeof MOTIONS[number];
@@ -22,7 +25,7 @@ export interface Manifest {
   storage: { prefix: string; keys: string[]; probe?: string };
   capture: { route: string; script: string };
   license: string; source: string;
-  site: { featured: boolean; releaseDate: string; accentColor: string; coverLayers: Motion[]; status: 'Ready to play' | 'Coming soon'; order?: number };
+  site: { featured: boolean; releaseDate: string; accentColor: string; coverLayers: Motion[]; status: Status; order?: number };
 }
 
 /**
@@ -30,7 +33,7 @@ export interface Manifest {
  * manifest (names, descriptions, tags or keywords). A game's own README may name inspirations
  * with "not affiliated with or endorsed by" wording; manifests may not.
  */
-export const TRADEMARKS = ['minecraft','roblox','fortnite','mario','luigi','nintendo','zelda','pokemon','pokémon','kirby','sonic','sega','playstation','xbox','steam deck','animal crossing','stardew','harvest moon','story of seasons','vampire survivors','survivors-like','brotato','bloons','kingdom rush','plants vs','angry birds','among us','fall guys','rocket league','crash team','splatoon','terraria','lego','disney','pixar','marvel','star wars','hello kitty','peppa','paw patrol','bluey','tetris','pac-man','pacman','candy crush','subway surfers','temple run','fruit ninja','clash of clans','clash royale','brawl stars','genshin','overwatch','league of legends','dota','halo','call of duty','gta','sims'];
+export const TRADEMARKS = ['minecraft','roblox','fortnite','mario','luigi','nintendo','zelda','pokemon','pokémon','kirby','sonic','sega','playstation','xbox','steam deck','animal crossing','stardew','harvest moon','story of seasons','vampire survivors','survivors-like','brotato','bloons','kingdom rush','plants vs','angry birds','among us','fall guys','rocket league','crash team','splatoon','terraria','lego','disney','pixar','marvel','star wars','hello kitty','peppa','paw patrol','bluey','tetris','pac-man','pacman','candy crush','subway surfers','temple run','fruit ninja','clash of clans','clash royale','brawl stars','genshin','overwatch','league of legends','dota','halo','call of duty','gta','sims','block blast','blockblast','woodoku','blockudoku','1010!'];
 
 const ageText = (m: Manifest) => `Ages ${m.ageRange}`;
 export { ageText };
@@ -70,7 +73,7 @@ export function validateManifest(m: Manifest,folder = m.slug): string[] {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(site?.releaseDate ?? '') || Number.isNaN(Date.parse(site?.releaseDate ?? ''))) at('site.releaseDate must be a YYYY-MM-DD date.');
   if (!/^#[0-9a-fA-F]{6}$/.test(site?.accentColor ?? '')) at('site.accentColor must be a #RRGGBB color.');
   list(site?.coverLayers,'site.coverLayers',0,4,MOTIONS);
-  if (!['Ready to play','Coming soon'].includes(site?.status)) at('site.status must be "Ready to play" or "Coming soon".');
+  if (!STATUSES.includes(site?.status)) at(`site.status must be one of ${STATUSES.map(status => `"${status}"`).join(', ')}.`);
   if (site?.order !== undefined && (!Number.isInteger(site.order) || site.order < 1)) at('site.order must be a whole number from 1.');
   // Never another company's game title or trademark, anywhere in the listing.
   const words = JSON.stringify({ ...m,$schema: undefined,capture: undefined,storage: undefined,source: undefined }).toLowerCase();
@@ -84,3 +87,5 @@ export function readManifest(slug: string): Manifest {
   return JSON.parse(readFileSync(file,'utf8')) as Manifest;
 }
 export const readManifests = () => gameSlugs().map(readManifest);
+/** The games the website lists: every game except those still "In development", which stay off the site. */
+export const listedManifests = () => readManifests().filter(m => m.site.status !== 'In development');
