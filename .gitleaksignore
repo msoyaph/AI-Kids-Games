@@ -1,3 +1,6 @@
 # False positives reviewed by hand. Each line is a gitleaks fingerprint (commit:file:rule:line).
 # generic-api-key matched a localStorage key name in the site tests, not a secret:
 c185ff445de5fbdac9eaa383e1506283ce69ce5d:apps/site/tests/e2e/games.ts:generic-api-key:3
+# generic-api-key matched the IndexNow key, which is public by design (search engines fetch it from
+# public/<key>.txt to check that pings come from this site):
+17e7693e021751ed28c93a7ce26c81a934890ef4:apps/site/src/data/site.ts:generic-api-key:18
