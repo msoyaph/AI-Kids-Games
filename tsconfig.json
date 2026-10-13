@@ -10,5 +10,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["scripts", "apps/play/scripts"]
+  "include": ["scripts", "apps/play/scripts", "apps/site/tests/community-pipeline.test.ts"]
 }

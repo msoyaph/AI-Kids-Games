@@ -8,5 +8,12 @@
   "scripts": {
     "build": "tsx scripts/build.ts",
     "serve": "tsx scripts/serve.ts"
+  },
+  "devDependencies": {
+    "pixi.js": "8.22.0",
+    "three": "0.186.1",
+    "tsx": "^4.20.6",
+    "vite": "8.3.4",
+    "vite-plugin-singlefile": "2.3.3"
   }
 }

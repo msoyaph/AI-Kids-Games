@@ -1,4 +1,4 @@
-import { mkdirSync,mkdtempSync,writeFileSync } from 'node:fs';
+import { mkdirSync,mkdtempSync,readFileSync,writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe,expect,it } from 'vitest';
@@ -30,6 +30,12 @@ describe('the play origin',() => {
     const csp = headers(playRoutes({ slugs: [],production: true,siteOrigins: ['https://ai-kids-games-fawn.vercel.app'] }))['Content-Security-Policy']!;
     for (const rule of ["default-src 'none'","connect-src 'none'","frame-src 'none'","form-action 'none'",'frame-ancestors https://ai-kids-games-fawn.vercel.app']) expect(csp).toContain(rule);
     expect(csp).not.toMatch(/unsafe-eval|https?:\/\/(?!ai-kids-games-fawn)/);
+  });
+  it('installs exactly the kit\'s packages: Vercel installs only this project\'s own dependencies',() => {
+    const own = (path: string) => JSON.parse(readFileSync(new URL(path,import.meta.url),'utf8')) as { devDependencies: Record<string,string>; packages?: Record<string,string> };
+    const play = own('../../play/package.json').devDependencies, kit = own('../../../tooling/community-kit/package.json').devDependencies;
+    for (const [name,version] of Object.entries(own('../../../tooling/community-kit/allowlist.json').packages!)) if (!name.startsWith('@types/')) expect(play[name],name).toBe(version);
+    for (const name of ['vite','vite-plugin-singlefile']) expect(play[name],name).toBe(kit[name]);
   });
   it('previews serve games by path behind Vercel sign-in',() => expect(playRoutes({ slugs: ['a'],production: false,siteOrigins: ['https://*.vercel.app'] }).routes).toContainEqual({ handle: 'filesystem' }));
 });
