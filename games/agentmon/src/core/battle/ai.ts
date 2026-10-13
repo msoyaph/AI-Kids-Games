@@ -10,7 +10,7 @@
  * The same scores drive the battle hints (the suggested move).
  */
 import { TUNING } from '../../tuning';
-import { effectiveness } from '../elements';
+import { effectiveness, matchup } from '../elements';
 import { maxEnergy, speciesOf } from '../creature';
 import { Rng } from '../rng';
 import type { BattleDex, Difficulty, Move } from '../types';
@@ -162,4 +162,23 @@ export function suggestMove(dex: BattleDex, b: Battle): string | null {
   moves.sort((x, y) => y.score - x.score);
   const top = moves[0];
   return top && top.action.type === 'move' ? top.action.move : null;
+}
+
+/**
+ * The hint's suggested switch (or null): when the foe is strong against your active friend and an
+ * awake teammate is strong against the foe (and not weak to it), with at least half its energy.
+ */
+export function suggestSwitch(dex: BattleDex, b: Battle): number | null {
+  const side = b.sides[0];
+  const me = side.team[side.active]!;
+  const foe = b.sides[1].team[b.sides[1].active]!;
+  const myEl = dex.species[me.species]!.element, foeEl = dex.species[foe.species]!.element;
+  if (matchup(foeEl, myEl) !== 'strong') return null;
+  let best: number | null = null;
+  side.team.forEach((c, i) => {
+    if (i === side.active || c.energy < maxEnergy(dex, c) * 0.5) return;
+    const el = dex.species[c.species]!.element;
+    if (matchup(el, foeEl) === 'strong' && matchup(foeEl, el) !== 'strong' && (best === null || c.level > side.team[best]!.level)) best = i;
+  });
+  return best;
 }

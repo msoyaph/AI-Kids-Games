@@ -109,8 +109,20 @@ export class World {
 
   objects(): MapObject[] { return this.map.objects.filter(o => this.present(o)); }
 
+  /** What stands on each tile, rebuilt when flags change or a boulder moves (pathfinding asks a lot). */
+  private grid: (MapObject | undefined)[] | null = null;
+  private gridKey = '';
+  private moved = 0;
+
   objectAt(x: number, y: number): MapObject | undefined {
-    return this.objects().find(o => footprint(o).some(t => t.x === x && t.y === y));
+    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return undefined;
+    const key = `${this.s.flags.size}|${Object.keys(this.s.bag).length}|${this.moved}`;
+    if (!this.grid || key !== this.gridKey) {
+      this.gridKey = key;
+      this.grid = new Array(this.w * this.h);
+      for (const o of this.objects()) for (const f of footprint(o)) if (f.x >= 0 && f.y >= 0 && f.x < this.w && f.y < this.h) this.grid[f.y * this.w + f.x] ??= o;
+    }
+    return this.grid[y * this.w + x];
   }
 
   refreshNpcs(): void {
@@ -189,6 +201,7 @@ export class World {
       if (this.passable(bx, by) && !this.wildAt(bx, by) && !this.warpAt(bx, by) && this.ter(bx, by) !== 'water') {
         obj.x = bx;
         obj.y = by;
+        this.moved++;
         return { kind: 'shoved', obj };
       }
     }
@@ -219,7 +232,7 @@ export class World {
       const t = this.ter(x, y);
       if (!kinds.includes(t)) continue;
       if (TER[t].needs && !hasAbility(this.dex, this.s, TER[t].needs!)) continue;
-      if (this.objectAt(x, y) || this.warpAt(x, y)) continue;
+      if (this.objectAt(x, y) || this.warpAt(x, y) || this.byDoor(x, y)) continue;
       out.push([x, y]);
     }
     return out;
@@ -235,13 +248,15 @@ export class World {
   private spawnOne(area: AreaDef, avoid = 5): WildMon | null {
     const tiles = this.areaTiles(area).filter(([x, y]) => Math.abs(x - this.s.x) + Math.abs(y - this.s.y) >= avoid && !this.wildAt(x, y));
     if (!tiles.length || !area.wild.length) return null;
-    const [x, y] = this.rng.pick(tiles);
-    // A gate's helper is always out here while you have no friend of its element yet.
+    // A gate's helper is always out on your side of the gate while you have no friend of its element.
+    const near = area.ensure?.length ? this.reachable() : null;
     const needed = (area.ensure ?? []).find(id => {
       const el = this.dex.species[id]?.element;
       const friend = [...this.s.team, ...this.s.base].some(c => this.dex.species[c.species]?.element === el);
-      return !friend && !this.wild.some(w => w.area === area.id && this.dex.species[w.species]?.element === el);
+      return !friend && !this.wild.some(w => w.area === area.id && this.dex.species[w.species]?.element === el && near!.has(w.y * this.w + w.x));
     });
+    const mine = needed ? tiles.filter(([tx, ty]) => near!.has(ty * this.w + tx)) : [];
+    const [x, y] = this.rng.pick(mine.length ? mine : tiles);
     const e = (needed && area.wild.find(w => w.species === needed)) || this.rng.weighted(area.wild, area.wild.map(w => w.weight));
     const species = this.dex.species[e.species]!;
     const shift = difficultyShift(TUNING.difficulty[this.s.difficulty].wildLevel, area.chapter);
@@ -252,6 +267,27 @@ export class World {
     const mon: WildMon = { key: this.nextKey++, area: area.id, species: species.id, level, shimmer, mood: this.moodFor(area), x, y, dir: this.rng.int(4) as Dir, timer: 0.5 + this.rng.next() * 2, hopped: false };
     this.wild.push(mon);
     return mon;
+  }
+
+  /** Tiles you can walk to from where you stand right now (wild ones don't block). */
+  reachable(): Set<number> {
+    const seen = new Set<number>([this.s.y * this.w + this.s.x]);
+    const queue = [[this.s.x, this.s.y]];
+    while (queue.length) {
+      const [x, y] = queue.pop()!;
+      for (const [dx, dy] of Object.values(DIRS)) {
+        const nx = x! + dx, ny = y! + dy, k = ny * this.w + nx;
+        if (nx < 0 || ny < 0 || nx >= this.w || ny >= this.h || seen.has(k) || !this.passable(nx, ny)) continue;
+        seen.add(k);
+        queue.push([nx, ny]);
+      }
+    }
+    return seen;
+  }
+
+  /** Next to a door (wild ones never stand there, so they never block the way in). */
+  byDoor(x: number, y: number): boolean {
+    return this.def.warps.some(w => Math.abs(w.x - x) + Math.abs(w.y - y) === 1);
   }
 
   /** Fill each wild area up to its number of visible spawns (on entering a map). */
@@ -295,7 +331,7 @@ export class World {
       w.dir = dir;
       const area = AREA_BY_ID[w.area];
       if (!area || !WILD_TERRAIN[area.terrain].includes(this.ter(nx, ny))) continue;
-      if (this.objectAt(nx, ny) || this.wildAt(nx, ny) || this.npcAt(nx, ny) || this.warpAt(nx, ny)) continue;
+      if (this.objectAt(nx, ny) || this.wildAt(nx, ny) || this.npcAt(nx, ny) || this.warpAt(nx, ny) || this.byDoor(nx, ny)) continue;
       if (Math.abs(nx - this.s.x) + Math.abs(ny - this.s.y) <= 1) continue;
       w.x = nx;
       w.y = ny;

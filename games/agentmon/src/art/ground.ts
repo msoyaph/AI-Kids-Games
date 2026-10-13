@@ -107,6 +107,7 @@ export function terrainPixel(t: Ter, x: number, y: number, theme = 0): number {
       return hash32(x >> 4, Math.floor(y / 5), 4) % 3 === 0 ? P.wood2 : P.wood3;
     }
     case 'floor': {
+      if (theme >= 8) return trialFloor(theme, x, y, n);
       const plank = y % 6 === 0 || (x + Math.floor(y / 6) * 5) % 16 === 0;
       return plank ? P.wood1 : hash32(Math.floor((x + Math.floor(y / 6) * 5) / 16), Math.floor(y / 6), 2) % 3 === 0 ? P.wood2 : P.wood3;
     }
@@ -123,6 +124,7 @@ export function terrainPixel(t: Ter, x: number, y: number, theme = 0): number {
       return terrainPixel('grass', x, y, 1);
     }
     case 'wall': {
+      if (theme >= 8) return trialWall(theme, x, y, n);
       if (theme === 3) {
         // indoor wallpaper with a wood skirting board on the lowest row of the wall
         if (y % 16 >= 12) return y % 16 === 12 ? P.wood4 : P.wood2;
@@ -133,11 +135,70 @@ export function terrainPixel(t: Ter, x: number, y: number, theme = 0): number {
   }
 }
 
+/** Square floor tiles with grout lines: `a`/`b` alternate like a checkerboard, `g` is the grout. */
+const tiles = (x: number, y: number, size: number, a: number, b: number, g: number) =>
+  x % size === 0 || y % size === 0 ? g : (Math.floor(x / size) + Math.floor(y / size)) % 2 ? a : b;
+
+/** Trial floors, one look per place (themes 8–13). */
+function trialFloor(theme: number, x: number, y: number, n: number): number {
+  switch (theme) {
+    case 8: return tiles(x, y, 8, 0xf2f4f8, 0xcfe0f2, 0xb8c8dc); // the Lighthouse: white and sea-blue tiles
+    case 9: { // the hollow tree: rings of a cut trunk on every tile
+      const dx = (x % 16) - 7.5, dy = (y % 16) - 7.5, r = Math.sqrt(dx * dx + dy * dy);
+      if (r > 8.2) return 0x8a5a30;
+      return Math.floor(r) % 3 === 0 ? 0xa8743f : r < 2 ? 0xd9a96a : 0xc9965a;
+    }
+    case 10: { // the Old Mine: grey stone and pebbles
+      const peb = cellFeature(x, y, 6, 43, 0.5);
+      if (peb && peb.dy === 0 && (peb.dx === 0 || peb.dx === 1)) return 0x6e6878;
+      if (peb && peb.dy === -1 && peb.dx === 0) return 0xa29cac;
+      return n > 0.97 ? 0xa29cac : 0x8a8494;
+    }
+    case 11: return tiles(x, y, 8, 0xe8a070, 0xdc9060, 0xb86a40); // Redrock: sandstone tiles
+    case 12: { // the Summit: ice tiles with frosty streaks
+      if (x % 16 === 0 || y % 16 === 0) return 0x9cbce8;
+      return (x + y * 2) % 13 === 0 ? P.ice3 : P.ice2;
+    }
+    default: { // the Spire: lavender tiles with a few tiny stars
+      const star = cellFeature(x, y, 10, 47, 0.25);
+      if (star && Math.abs(star.dx) + Math.abs(star.dy) === 0) return 0xfff3a0;
+      return tiles(x, y, 8, 0xb8a8e0, 0xa898d8, 0x8070b8);
+    }
+  }
+}
+
+/** Trial walls (two tiles high), one look per place, with a skirting row at the bottom. */
+function trialWall(theme: number, x: number, y: number, n: number): number {
+  const skirt = y % 16 >= 13;
+  switch (theme) {
+    case 8: // white plaster with a sea-blue stripe
+      if (skirt) return 0x3a5a9a;
+      return y % 16 >= 5 && y % 16 <= 7 ? 0x4f7fd9 : x % 16 === 0 ? 0xe2e8f0 : 0xf6f8fb;
+    case 9: // bark, with moss along the bottom
+      if (skirt) return y % 16 === 13 ? 0x6fbf5f : 0x4f8f3f;
+      return (x * 7 + Math.floor(y / 3)) % 9 === 0 ? 0x5e3e24 : n > 0.9 ? 0x8a6040 : 0x7a5232;
+    case 10: // rock with wooden beams
+      if (x % 32 <= 2 || y % 16 <= 1) return x % 32 === 0 || y % 16 === 0 ? 0x6a4428 : 0x8a5a30;
+      return n > 0.92 ? 0x46404e : n < 0.06 ? 0x6e6878 : 0x5a5464;
+    case 11: // layers of red rock
+      return [0xc86a40, 0xd9774b, 0xe08a5a, 0xd9774b][(Math.floor((y + 8 + Math.floor(Math.sin(x * 0.2) * 1.5)) / 4) % 4 + 4) % 4]!;
+    case 12: // ice bricks
+      if (y % 8 === 0 || (x + ((y >> 3) % 2) * 8) % 16 === 0) return 0x9cbce8;
+      return n > 0.95 ? P.ice3 : 0xd0e6ff;
+    default: { // the Spire: night purple with stars
+      if (skirt) return 0x8a7ac8;
+      const star = cellFeature(x, y, 9, 53, 0.35);
+      if (star && Math.abs(star.dx) + Math.abs(star.dy) <= (star.dx === 0 || star.dy === 0 ? 1 : 0)) return 0xfff3a0;
+      return 0x4a3c7a;
+    }
+  }
+}
+
 export interface GroundSource {
   w: number;
   h: number;
   at(x: number, y: number): Ter;
-  /** 0 normal, 1 forest (darker grass), 2 sky (void is sky). */
+  /** The map's theme (`MapDef.theme`): 0 normal, 1 forest (darker grass), 2 sky (void is sky), … */
   theme?: number;
 }
 

@@ -547,7 +547,7 @@ const fluorelle: Recipe = (p, pose) => {
 
 // ---------------------------------------------------------------------------------------------
 // Volt: lemons
-const LEMON = 0xf8de4a, LEMON_D = 0xd8b420, LEMON_L = 0xfff3a0, LEMLEAF = 0x6fc44f, COPPER = 0xe0884a, ZINC = 0xb8c0cc;
+const LEMON = 0xf8de4a, LEMON_D = 0xd8b420, LEMON_L = 0xfff3a0, COPPER = 0xe0884a, ZINC = 0xb8c0cc, WIRE = 0x6b5a2a, FIZZ = 0xfff07a;
 
 const lemonBody = (p: Painter, cx: number, cy: number, rx: number, ry: number) => {
   p.ellipse(cx, cy, rx, ry, LEMON);
@@ -555,39 +555,51 @@ const lemonBody = (p: Painter, cx: number, cy: number, rx: number, ry: number) =
   p.poly([[cx + rx + 2.5, cy], [cx + rx - 1, cy - 2.5], [cx + rx - 1, cy + 2.5]], LEMON);
 };
 
+/** A lemon battery: a copper strip and a zinc strip poked into the top, with a tiny zigzag spark between them. */
+const battery = (p: Painter, x: number, y: number, gap: number, h: number) => {
+  p.rect(x, y, 2, h, COPPER).rect(x + gap, y, 2, h, ZINC);
+  const mid = x + 1 + gap / 2;
+  p.dot(mid - 2, y + 1, FIZZ).dot(mid - 1, y, FIZZ).dot(mid, y + 1, FIZZ).dot(mid + 1, y, FIZZ);
+};
+
+/** Little pores on the peel, painted onto the lemon only. */
+const peel = (p: Painter, pts: readonly [number, number][]) => { for (const [x, y] of pts) p.paintEllipse(x, y, 0.5, 0.5, LEMON_D); };
+
 const zestle: Recipe = (p, pose) => {
-  p.ellipse(11, 29, 2, 1.5, LEMON_D).ellipse(20, 29, 2, 1.5, LEMON_D);
-  p.ellipse(17, 8, 3, 1.8, LEMLEAF).line(15, 10, 15, 12, 0x6b5a2a);
-  lemonBody(p, 15, 20, 9, 8);
+  p.ellipse(10, 28, 2, 1.5, LEMON_D).ellipse(21, 28, 2, 1.5, LEMON_D);
+  battery(p, 10, 9, 9, 5);
+  lemonBody(p, 16, 20, 11, 7.5);
+  peel(p, [[23, 16], [25, 21], [21, 25], [9, 15]]);
   p.shade();
-  p.circle(21, 23, 1.2, COPPER).circle(23, 19, 1.2, ZINC);
-  p.eyes(9, 16, 7, 3, pose).mouth(13, 23, pose).blush(8, 21).blush(18, 21);
+  p.eyes(10, 17, 7, 3, pose).mouth(14, 23, pose).blush(8, 22).blush(19, 22);
 };
 
 const zestwick: Recipe = (p, pose) => {
-  p.ellipse(10, 29, 2.5, 1.5, LEMON_D).ellipse(22, 29, 2.5, 1.5, LEMON_D);
-  p.dot(4, 6, 0xfff07a).dot(27, 5, 0xfff07a).dot(29, 9, 0xfff07a).dot(2, 10, 0xfff07a);
-  p.ellipse(18, 5, 3.5, 2, LEMLEAF).ellipse(13, 5, 3, 1.8, LEMLEAF).line(16, 7, 16, 9, 0x6b5a2a);
-  lemonBody(p, 16, 19, 11, 10);
-  p.paintPoly([[6, 15], [26, 13], [27, 16], [7, 18]], LEMON_L);
-  p.ellipse(3, 22, 2, 1.5, LEMON).ellipse(29, 21, 2, 1.5, LEMON);
+  p.ellipse(9, 29, 2.5, 1.5, LEMON_D).ellipse(23, 29, 2.5, 1.5, LEMON_D);
+  // taller strips and a fizzing spark that never stops: its wick
+  battery(p, 9, 6, 11, 6);
+  p.dot(15, 3, FIZZ).dot(16, 2, FIZZ).dot(4, 8, FIZZ).dot(28, 7, FIZZ).dot(2, 13, FIZZ);
+  lemonBody(p, 16, 19, 12, 9);
+  p.paintPoly([[6, 14], [26, 12], [27, 15], [7, 17]], LEMON_L);
+  peel(p, [[24, 18], [26, 22], [22, 26], [8, 24]]);
+  p.ellipse(2, 23, 2, 1.5, LEMON).ellipse(30, 22, 2, 1.5, LEMON);
   p.shade();
-  p.circle(22, 24, 1.3, COPPER).circle(25, 20, 1.3, ZINC);
-  p.eyes(9, 17, 8, 3, pose).mouth(14, 24, pose).blush(8, 22).blush(20, 22);
+  p.eyes(9, 17, 8, 3, pose).mouth(14, 24, pose).blush(7, 22).blush(20, 22);
 };
 
 const citrivolt: Recipe = (p, pose) => {
-  // wears its peel like a cape, with a glowing wick on top
+  // wears its peel like a cape, with a glowing lantern on its battery wire
   p.poly([[9, 12], [23, 12], [30, 29], [24, 27], [16, 30], [8, 27], [2, 29]], 0xc9e05a);
   p.paintPoly([[2, 24], [30, 24], [30, 30], [2, 30]], 0xb4cf3f);
-  p.ellipse(16, 4, 2, 3, 0xfff6c0).ellipse(16, 5, 1, 1.5, 0xffd84a);
-  p.line(16, 7, 16, 9, 0x6b5a2a);
+  battery(p, 10, 8, 9, 5);
+  p.line(15, 5, 15, 7, WIRE);
+  p.ellipse(15, 3, 2, 2.5, 0xfff6c0).ellipse(15, 4, 1, 1.2, 0xffd84a);
   p.ellipse(11, 29, 2.5, 1.5, LEMON_D).ellipse(21, 29, 2.5, 1.5, LEMON_D);
-  lemonBody(p, 16, 18, 9, 9);
+  lemonBody(p, 16, 19, 9, 8.5);
+  peel(p, [[22, 16], [23, 21], [9, 23]]);
   p.shade();
-  p.circle(21, 22, 1.2, COPPER).circle(23, 18, 1.2, ZINC);
-  p.shine(16, 4);
-  p.eyes(10, 14, 7, 3, pose).mouth(14, 21, pose).blush(9, 19).blush(19, 19);
+  p.shine(15, 3);
+  p.eyes(10, 15, 7, 3, pose).mouth(14, 22, pose).blush(9, 20).blush(19, 20);
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -640,42 +652,53 @@ const hailcastle: Recipe = (p, pose) => {
 
 // ---------------------------------------------------------------------------------------------
 // Frost: snow leopards
-const SNOW = 0xe9edf4, SNOW_SPOT = 0x8f98ad, SNOW_ICE = 0x9cc4ff;
+const SNOW = 0xe9edf4, SNOW_TAIL = 0xb3bccd, ROSETTE = 0x505a74, SNOW_ICE = 0x6a9ee8;
 
-const spots = (p: Painter, pts: readonly [number, number][], c: number) => { for (const [x, y] of pts) p.dot(x, y, c).dot(x + 1, y, c).dot(x, y + 1, c); };
+/** Snow leopard spots are rings (rosettes), not dots. */
+const rosettes = (p: Painter, pts: readonly [number, number][], c: number) => {
+  for (const [x, y] of pts) p.dot(x + 1, y, c).dot(x, y + 1, c).dot(x + 2, y + 1, c).dot(x + 1, y + 2, c);
+};
+
+/** The long fluffy tail, wrapped round like a scarf, with dark bands across it. */
+const scarf = (p: Painter, pts: readonly [number, number][], r: number, bands: readonly [number, number][], band = ROSETTE) => {
+  p.stroke(pts, r, SNOW_TAIL);
+  const [tx, ty] = pts[pts.length - 1]!;
+  p.circle(tx, ty, r + 0.6, SNOW_TAIL);
+  for (const [x, y] of bands) p.dot(x, y, band).dot(x, y + 1, band);
+};
 
 const scarfcub: Recipe = (p, pose) => {
   p.ellipse(10, 29, 2.5, 1.5, darken(SNOW, 0.15)).ellipse(19, 29, 2.5, 1.5, darken(SNOW, 0.15));
   p.ellipse(16, 23, 8, 6, SNOW);
   p.circle(12, 13, 8, SNOW);
   p.circle(6, 6, 2.5, SNOW).circle(18, 6, 2.5, SNOW);
-  // the tail wrapped round like a scarf
-  p.stroke([[22, 25], [26, 21], [22, 18], [14, 20], [7, 19]], 2, lighten(SNOW, 0.1));
-  spots(p, [[24, 20], [17, 19], [10, 19]], SNOW_SPOT);
-  spots(p, [[19, 24], [16, 9], [7, 10]], SNOW_SPOT);
+  rosettes(p, [[18, 24], [12, 25], [15, 7]], ROSETTE);
+  // the tail wraps round its neck like a scarf, the fluffy tip hanging in front
+  scarf(p, [[23, 27], [27, 23], [24, 20], [16, 21], [8, 20], [5, 24]], 1.8, [[26, 22], [19, 20], [11, 20], [5, 23]]);
   p.shade();
   p.eyes(7, 11, 7, 3, pose, 0x7aa8e8).mouth(11, 16, pose).blush(6, 15).blush(16, 15);
 };
 
 const scarfpaw: Recipe = (p, pose) => {
-  p.stroke([[24, 26], [29, 22], [28, 16]], 2, SNOW);
   p.ellipse(8, 29, 4, 2, SNOW).ellipse(21, 29, 4, 2, SNOW);
   p.ellipse(16, 22, 10, 7, SNOW);
   p.circle(11, 12, 8, SNOW);
   p.circle(5, 5, 2.5, SNOW).circle(17, 5, 2.5, SNOW);
-  spots(p, [[20, 19], [24, 22], [15, 24], [27, 18], [8, 8], [14, 7]], SNOW_SPOT);
+  rosettes(p, [[19, 22], [23, 25], [13, 25], [14, 6]], ROSETTE);
+  scarf(p, [[25, 26], [30, 21], [27, 18], [18, 20], [9, 19], [6, 24]], 2, [[29, 20], [22, 19], [14, 19], [6, 22]]);
   p.shade();
   p.eyes(6, 10, 7, 3, pose, 0x7aa8e8).mouth(10, 15, pose).blush(5, 14).blush(15, 14);
 };
 
 const scarfspire: Recipe = (p, pose) => {
   p.poly([[0, 32], [4, 24], [28, 23], [32, 32]], 0x9aa3b8);
-  p.stroke([[25, 22], [30, 16], [28, 9], [24, 6]], 2, SNOW);
   p.ellipse(9, 23, 3.5, 2, SNOW).ellipse(20, 23, 3.5, 2, SNOW);
   p.ellipse(16, 17, 10, 7, SNOW);
   p.circle(10, 9, 7, SNOW);
   p.circle(5, 3, 2.5, SNOW).circle(15, 3, 2.5, SNOW);
-  spots(p, [[19, 14], [23, 17], [14, 19], [27, 12], [6, 6], [13, 5]], SNOW_ICE);
+  rosettes(p, [[18, 17], [22, 13], [13, 19], [24, 18]], SNOW_ICE);
+  // the elder's tail stands up behind it like a spire, then wraps its neck with frosty bands
+  scarf(p, [[26, 21], [30, 15], [29, 8], [25, 7], [23, 12], [16, 15], [8, 15], [5, 19]], 1.8, [[30, 13], [27, 7], [19, 14], [11, 15]], SNOW_ICE);
   p.shade();
   p.eyes(5, 7, 7, 3, pose, 0x7aa8e8).mouth(9, 12, pose).blush(4, 11).blush(14, 11);
 };

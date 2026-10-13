@@ -139,6 +139,7 @@ export const sandyShore: MapDef = {
 
 /** Inside the Lighthouse: the Trial door (the stairs) and the helper. */
 export const lighthouseHall = trialHall({
+  theme: 8,
   id: 'lighthouse', name: 'Lighthouse', trial: 'lighthouse', music: 'trial-1', intro: 'lighthouse-hall',
   out: [{ map: 'sandy-shore', x: 31, y: 8 }, { map: 'sandy-shore', x: 32, y: 8 }],
   helper: { id: 'lighthouse-helper', name: 'Finch', x: 0, y: 0, dir: 1, look: townsLook('finch', { agent: true, hat: 'cap', hatColor: 0xffffff }), talk: 'trainer-lighthouse-helper', trainer: 'lighthouse-helper' },
@@ -146,6 +147,7 @@ export const lighthouseHall = trialHall({
 
 /** The top of the Lighthouse: Keeper Marisol and the Beacon. */
 export const lighthouseTop = trialTop({
+  theme: 8,
   id: 'lighthouse-top', name: 'Lighthouse top', beacon: 'beacon-lighthouse', out: { map: 'sandy-shore', x: 32, y: 8 },
   keeper: { id: 'keeper-marisol', name: CAST.marisol!.name, x: 0, y: 0, dir: 0, look: CAST.marisol!.look, talk: 'keeper-marisol', trainer: 'keeper-marisol' },
 });

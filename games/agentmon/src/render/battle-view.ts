@@ -21,7 +21,6 @@ const ease = (t: number) => 1 - (1 - t) * (1 - t);
 export class BattleView {
   readonly root = new Container();
   private bg: Sprite;
-  private mask = new Graphics();
   readonly sprites: [Sprite, Sprite];
   private shields: [Graphics, Graphics] = [new Graphics(), new Graphics()];
   private fx = new Container();
@@ -40,8 +39,9 @@ export class BattleView {
     this.bg = new Sprite(art.get(`bg:${kind}`, () => drawBackdrop(kind)));
     this.sprites = [new Sprite(), new Sprite()];
     for (const s of this.sprites) s.anchor.set(0.5, 1);
-    this.root.addChild(this.bg, this.shields[0], this.shields[1], this.sprites[0], this.sprites[1], this.fx, this.mask);
-    this.root.mask = this.mask;
+    // no mask: the backdrop simply runs on under the see-through bottom panel (a stencil mask cost a
+    // few ms a frame on slow tablets)
+    this.root.addChild(this.bg, this.shields[0], this.shields[1], this.sprites[0], this.sprites[1], this.fx);
   }
 
   /** Fit the stage into a rectangle (device pixels). */
@@ -52,7 +52,6 @@ export class BattleView {
     this.bg.scale.set(this.bgScale);
     this.bg.x = l.x + Math.round((l.w - BG_W * this.bgScale) / 2);
     this.bg.y = l.y + Math.round((l.h - BG_H * this.bgScale) / 2);
-    this.mask.clear().rect(l.x, l.y, l.w, l.h).fill(0xffffff);
     const groundY = this.bg.y + GROUND_Y * this.bgScale + this.bgScale * 4;
     const spread = Math.min(l.w * 0.3, 32 * this.monScale * 1.4);
     this.base = [{ x: l.x + l.w / 2 - spread, y: groundY }, { x: l.x + l.w / 2 + spread, y: groundY }];

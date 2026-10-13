@@ -56,6 +56,7 @@ export const CH3: Record<string, Script> = {
     hello: [
       'You climbed my Canopy! I am Oren, the Canopy Keeper.',
       'From up here, you can see the whole forest. See the fog drifting in from the north?',
+      'My friends are Leaf Agentmon. Tip: Flare and Gust moves are super strong against them!',
       'Let\'s make a happy spark together and wake up this Beacon!',
     ],
     win: [

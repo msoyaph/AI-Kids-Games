@@ -5,7 +5,7 @@
  * on the suggested move. Every choice also works with arrows/d-pad and A.
  */
 import { canBefriend, canUseMove, isAllowed, moveCost, type Battle } from '../core/battle/engine';
-import { suggestMove } from '../core/battle/ai';
+import { suggestMove, suggestSwitch } from '../core/battle/ai';
 import { matchup } from '../core/elements';
 import { canSwap, maxEnergy } from '../core/creature';
 import type { BattleDex, Creature, StatusId } from '../core/types';
@@ -139,7 +139,9 @@ export class BattleUI {
     const foe = b.sides[1].team[b.sides[1].active]!;
     const foeEl = SPECIES[foe.species]!.element;
     const hints = this.game.settings.hints;
-    const suggested = hints ? suggestMove(this.dex, b) : null;
+    // a friend on the bench who is much better against this foe: the hint points at Switch instead
+    const switchTo = hints ? suggestSwitch(this.dex, b) : null;
+    const suggested = hints && switchTo === null ? suggestMove(this.dex, b) : null;
     for (;;) {
       const moves = me.moves.map(id => {
         const m = this.dex.moves[id]!;
@@ -154,7 +156,7 @@ export class BattleUI {
       });
       const extra: { label: string; value: Choice | 'switch' | 'bag'; disabled?: boolean; cls?: string; hint?: string }[] = [
         { label: '😴 Rest', value: { type: 'rest' }, disabled: me.energy >= maxEnergy(this.dex, me), hint: 'Get back some energy. It uses your turn.' },
-        { label: '🔄 Switch', value: 'switch', disabled: b.sides[0].team.filter(c => c.energy > 0).length < 2 },
+        { label: switchTo !== null ? '🔄 Switch ★' : '🔄 Switch', value: 'switch', disabled: b.sides[0].team.filter(c => c.energy > 0).length < 2, cls: switchTo !== null ? 'suggested' : '', hint: switchTo !== null ? `${this.names.friend(b.sides[0].team[switchTo]!)} would be super strong here!` : undefined },
         { label: '🎒 Bag', value: 'bag', disabled: !Object.entries(this.game.session!.state.bag).some(([id, n]) => n > 0 && ITEMS[id]?.kind === 'berry') },
       ];
       if (b.kind === 'wild') {
@@ -164,7 +166,7 @@ export class BattleUI {
       }
       const pick = await this.choose<Choice | 'switch' | 'bag'>('', [...moves, ...extra]);
       if (pick === 'switch') {
-        const s = await this.chooseSwitch(b, false);
+        const s = await this.chooseSwitch(b, false, switchTo);
         if (s !== null) return { type: 'switch', to: s };
         continue;
       }
@@ -177,14 +179,15 @@ export class BattleUI {
     }
   }
 
-  async chooseSwitch(b: Battle, forced: boolean): Promise<number | null> {
+  async chooseSwitch(b: Battle, forced: boolean, suggested: number | null = null): Promise<number | null> {
     const team = b.sides[0].team;
     const buttons = team.map((c, i) => ({
-      label: h('span', {}, elementImg(SPECIES[c.species]!.element), h('b', {}, ` ${this.names.friend(c)}`), ` Lv ${c.level} · ${c.energy > 0 ? `Energy ${c.energy}/${maxEnergy(this.dex, c)}` : 'Napping'}`),
+      label: h('span', {}, elementImg(SPECIES[c.species]!.element), h('b', {}, ` ${this.names.friend(c)}`), ` Lv ${c.level} · ${c.energy > 0 ? `Energy ${c.energy}/${maxEnergy(this.dex, c)}` : 'Napping'}`, i === suggested ? h('span.star', { title: 'A good pick!' }, ' ★') : ''),
       value: i as number | null,
       disabled: i === b.sides[0].active || c.energy <= 0,
+      cls: i === suggested ? 'suggested' : '',
     }));
-    if (!forced) buttons.push({ label: h('span', {}, 'Back'), value: null, disabled: false });
+    if (!forced) buttons.push({ label: h('span', {}, 'Back'), value: null, disabled: false, cls: '' });
     return this.choose(forced ? 'Who goes next?' : 'Switch to…', buttons, forced ? undefined : () => null as number | null);
   }
 

@@ -46,11 +46,12 @@ export function homeMap(id: string, name: string, exit: Exit, npcs: NpcDef[]): M
 
 /**
  * A Trial's entrance hall: stairs up to the puzzles (`trial:<id>`), the helper you can spar with,
- * and two door tiles back outside. `music` is the Trial's theme.
+ * and two door tiles back outside. `music` is the Trial's theme; `theme` its walls and floor
+ * (8 lighthouse, 9 hollow tree, 10 mine, 11 red rock, 12 ice, 13 the Spire).
  */
-export function trialHall(o: { id: string; name: string; trial: string; music: string; out: [Exit, Exit]; helper: NpcDef; intro: string }): MapDef {
+export function trialHall(o: { id: string; name: string; trial: string; music: string; out: [Exit, Exit]; helper: NpcDef; intro: string; theme: number }): MapDef {
   return {
-    id: o.id, name: o.name, music: o.music, outdoor: false, battleBg: 'trial', theme: 3,
+    id: o.id, name: o.name, music: o.music, outdoor: false, battleBg: 'trial', theme: o.theme,
     rows: ['WWWWWWWWWW', 'WWWWWWWWWW', 'ffff^^ffff', 'ffffffffff', 'ffffffffff', 'ffffffffff', 'ffffffffff', 'ffffffffff', 'ffffrrffff'],
     objects: [{ kind: 'shelf', x: 0, y: 2 }, { kind: 'shelf', x: 9, y: 2 }, { kind: 'plant', x: 1, y: 7 }, { kind: 'plant', x: 8, y: 7 }, { kind: 'crate', x: 8, y: 3 }],
     warps: [
@@ -69,9 +70,9 @@ export function trialHall(o: { id: string; name: string; trial: string; music: s
  * room, facing the Keeper; the stairs at (9, 7) go back outside. The Keeper greets you when you step
  * forward.
  */
-export function trialTop(o: { id: string; name: string; music?: string; beacon: string; keeper: NpcDef; out: Exit }): MapDef {
+export function trialTop(o: { id: string; name: string; music?: string; beacon: string; keeper: NpcDef; out: Exit; theme: number }): MapDef {
   return {
-    id: o.id, name: o.name, music: o.music ?? 'beacon', outdoor: false, battleBg: 'trial', theme: 3,
+    id: o.id, name: o.name, music: o.music ?? 'beacon', outdoor: false, battleBg: 'trial', theme: o.theme,
     rows: ['WWWWWWWWWWW', 'WWWWWWWWWWW', 'fffffffffff', 'fffffffffff', 'fffffffffff', 'fffffffffff', 'fffffffffff', 'fffffffff^f', 'fffffffffff'],
     objects: [{ kind: 'beacon', x: 5, y: 3, id: 'beacon', litBy: o.beacon }, { kind: 'plant', x: 0, y: 7 }, { kind: 'plant', x: 10, y: 2 }],
     warps: [{ x: 9, y: 7, to: o.out.map, tx: o.out.x, ty: o.out.y, dir: 0 }],

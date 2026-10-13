@@ -114,6 +114,9 @@ export class Music {
 
   constructor(private audio: AudioEngine) {}
 
+  /** The song asked for last (what to go back to after a battle). */
+  get playing(): string { return this.current; }
+
   /** Play a song by name (no change if it is already playing). '' stops. */
   play(id: string): void {
     if (id === this.current) return;

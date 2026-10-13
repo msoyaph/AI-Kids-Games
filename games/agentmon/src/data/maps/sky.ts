@@ -64,7 +64,8 @@ export const updraftRidge: MapDef = {
     { id: 'ridge-kite', name: 'Kite flyer Ana', x: 25, y: 20, dir: 1, look: townsLook('ana', { hat: 'cap', hatColor: 0x3fd0c0 }), talk: 'ridge-ana' },
   ],
   triggers: [
-    { x: 8, y: 14, w: 1, h: 1, script: 'juno-ridge', when: '!juno-4' },
+    { x: 10, y: 11, w: 1, h: 13, script: 'juno-ridge', when: '!juno-4' },
+    { x: 10, y: 25, w: 1, h: 2, script: 'juno-ridge', when: '!juno-4' },
     { x: 8, y: 1, w: 1, h: 9, script: 'club-velour-2', when: '!velour-2' },
   ],
   wild: ['updraft-ridge'],
@@ -128,12 +129,14 @@ export const skyIsland: MapDef = {
 export const restSky = restStopMap('rest-sky', 'Sky Island Rest Stop', { map: 'sky-island', x: 4, y: 11 });
 
 export const spireGate = trialHall({
+  theme: 13,
   id: 'spire-gate', name: 'Beacon Spire', trial: 'spire', music: 'trial-6', intro: 'spire-hall',
   out: [{ map: 'sky-island', x: 15, y: 8 }, { map: 'sky-island', x: 16, y: 8 }],
   helper: { id: 'spire-helper', name: 'Nova', x: 0, y: 0, dir: 1, look: townsLook('nova', { agent: true, scarf: 0xd0c0f8 }), talk: 'trainer-spire-helper', trainer: 'spire-helper' },
 });
 
 const spire = trialTop({
+  theme: 13,
   id: 'spire-top', name: 'Top of the Beacon Spire', beacon: 'beacon-spire', out: { map: 'sky-island', x: 16, y: 8 },
   keeper: { id: 'keeper-celeste', name: CAST.celeste!.name, x: 0, y: 0, dir: 0, look: CAST.celeste!.look, talk: 'keeper-celeste', trainer: 'keeper-celeste' },
 });

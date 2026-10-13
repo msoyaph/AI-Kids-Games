@@ -87,7 +87,7 @@ export class SparkRing {
    * Play the three sparks. `tapped()` returns true once when the player taps / presses A.
    * Returns the heart fill and each tap's angle (null = no tap this spark).
    */
-  async play(tapped: () => boolean, instant = false, onFrame?: (info: SparkInfo | null) => void): Promise<SparkResult> {
+  async play(tapped: () => boolean, instant = false, onFrame?: (info: SparkInfo | null) => void, onSpark?: (fill: number) => void): Promise<SparkResult> {
     const taps: (number | null)[] = [];
     for (let i = 0; i < this.setup.sparks; i++) {
       this.drawRing(i);
@@ -113,6 +113,7 @@ export class SparkRing {
       taps.push(hit);
       const f = hit === null ? 0 : tapFill(this.setup, i, hit);
       this.fillNow += f;
+      onSpark?.(f);
       this.drawHeart();
       this.label.text = f >= 1 ? 'Perfect!' : f > 0 ? 'So close!' : hit === null ? 'The spark went by. That\'s okay!' : 'Missed. That\'s okay!';
       await new Promise(r => setTimeout(r, instant ? 150 : 650));

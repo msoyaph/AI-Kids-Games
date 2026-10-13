@@ -16,6 +16,8 @@ const LINES: [string, string][] = [
 ];
 
 export function playCredits(game: Game, friends: string[]): Promise<void> {
+  const before = game.music.playing;
+  game.music.play('credits');
   return new Promise(resolve => {
     const reduced = game.settings.reducedMotion;
     const roll = h('div.credits-roll', {},
@@ -31,6 +33,7 @@ export function playCredits(game: Game, friends: string[]): Promise<void> {
       removeEventListener('keydown', onKey);
       game.focus.pop(layer);
       el.remove();
+      game.music.play(before);
       resolve();
     };
     const onKey = (e: KeyboardEvent) => { if (['Enter', 'Space', 'KeyZ', 'Escape', 'KeyX'].includes(e.code)) done(); };

@@ -9,6 +9,8 @@ test('keyboard: wake up, meet Chief Nell, choose a partner and spar with Juno', 
   await expect.poll(async () => (await snap(page)).dialogue, { timeout: 5000 }).toBe(true);
   await advance(page);
   expect((await snap(page)).flags).toContain('woke-up');
+  // the first key press starts the sound; Gran's house has its own song
+  expect((await snap(page)).audio).toEqual({ on: true, song: 'home' });
   // out of Gran's house: right, then down through the door
   await walk(page, 'ArrowRight', 1);
   await leave(page, 'ArrowDown', 'brightmoor');

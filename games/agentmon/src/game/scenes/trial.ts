@@ -72,6 +72,7 @@ export class TrialScene implements Scene {
     this.game.touch.setWorldActive(true);
     addEventListener('keydown', this.onKey);
     this.loadRoom(this.roomIndex);
+    this.game.music.play(this.trial.music);
     if (this.room.def.tutorial) void this.withBusy(() => this.game.tutorial(this.room.def.tutorial!));
   }
 
@@ -248,8 +249,13 @@ export class TrialScene implements Scene {
     const dx = tx - this.state.x, dy = ty - this.state.y;
     if (dx === 0 && dy === 0) return;
     const dir: Dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 2 : 1) : dy > 0 ? 0 : 3;
-    // tapping the tile you face, right next to you, is A (turn a mirror, snip vines)
-    if (Math.abs(dx) + Math.abs(dy) === 1 && dir === this.state.dir) { this.pressA(); return; }
+    // tapping the tile you face, right next to you, uses it when there is something to use (turn a
+    // mirror, snip vines, melt an ice block); otherwise it is a step
+    if (Math.abs(dx) + Math.abs(dy) === 1 && dir === this.state.dir) {
+      const k = ty * this.room.w + tx;
+      const ch = this.room.grid[k];
+      if ((ch === 'm' || ch === 'n' || ch === 'V' || ch === 'I') && !this.state.cleared.includes(k)) { this.pressA(); return; }
+    }
     this.step(dir);
   }
 
@@ -263,6 +269,8 @@ export class TrialScene implements Scene {
     const r = move(this.room, this.state, dir);
     this.state = r.state;
     if (r.events.includes('blocked')) { this.sync(); return; }
+    if (r.events.includes('pushed') || r.events.includes('slid')) this.game.sfx('push');
+    if (r.events.includes('filled') || r.events.includes('toggled')) this.game.sfx('click');
     this.moves++;
     this.idle = 0;
     const blocks = new Map<number, { x: number; y: number }>();
@@ -275,6 +283,7 @@ export class TrialScene implements Scene {
   private async solved(): Promise<void> {
     await this.withBusy(async () => {
       await new Promise(res => setTimeout(res, 350));
+      this.game.sfx('solved');
       this.game.toast(`Room ${this.roomIndex + 1} solved! ✨`, 1200);
       if (this.roomIndex + 1 < this.trial.rooms.length) {
         await this.game.fade('out');
@@ -343,12 +352,26 @@ export class TrialScene implements Scene {
     this.sync();
   }
 
+  /** Capture routes: solve the room on its own, one step at a time (for the preview loop). */
+  async autoplay(): Promise<void> {
+    const sol = solve(this.room, this.state);
+    if (!sol) return;
+    for (const a of sol.actions) {
+      while (this.anim || this.busy) await new Promise(r => setTimeout(r, 30));
+      await new Promise(r => setTimeout(r, 260));
+      if (a === 'wait') await new Promise(r => setTimeout(r, PLATFORM_TICK * 1000));
+      else if (typeof a === 'string') { this.state = { ...this.state, dir: Number(a[1]) as Dir }; this.pressA(); }
+      else this.step(a);
+    }
+  }
+
   /** The solution from the current state (tests use it to play a room with real key presses). */
   solution(): string[] {
     return solve(this.room, this.state)?.actions.map(String) ?? [];
   }
 
   snapshot() {
-    return { trial: this.trial.id, room: this.room.def.id, roomIndex: this.roomIndex, x: this.state.x, y: this.state.y, moves: this.moves, solved: this.state.solved, busy: this.busy };
+    return { trial: this.trial.id, room: this.room.def.id, roomIndex: this.roomIndex, x: this.state.x, y: this.state.y, moves: this.moves, solved: this.state.solved, busy: this.busy,
+      view: { x: this.world.x, y: this.world.y, zoom: this.world.scale.x, dpr: this.app.host.dpr } };
   }
 }

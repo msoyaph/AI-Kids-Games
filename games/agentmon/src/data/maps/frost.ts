@@ -67,12 +67,13 @@ export const frostPass: MapDef = {
   ],
   npcs: [
     { id: 'agent-kit', name: 'Kit', x: 8, y: 23, dir: 2, look: townsLook('kit', { agent: true, hat: 'beanie', hatColor: 0x8fb8ff, scarf: 0xffffff }), talk: 'trainer-agent-kit', trainer: 'agent-kit' },
-    { id: 'club-velour', name: CAST.velour!.name, x: 26, y: 14, dir: 1, look: CAST.velour!.look, talk: 'club-velour', hideIf: 'velour-1' },
+    { id: 'club-velour', name: CAST.velour!.name, x: 22, y: 12, dir: 3, look: CAST.velour!.look, talk: 'club-velour', hideIf: 'velour-1' },
     { id: 'pass-hiker', name: 'Hiker Bo', x: 16, y: 6, dir: 0, look: townsLook('hiker-bo', { hat: 'beanie', hatColor: 0xd9604f, scarf: 0xffd84a }), talk: 'pass-hiker' },
   ],
   triggers: [
     { x: 12, y: 27, w: 2, h: 1, script: 'pass-arrive', when: '!pass-arrive' },
-    { x: 24, y: 13, w: 1, h: 2, script: 'club-velour', when: '!velour-1' },
+    { x: 1, y: 11, w: 16, h: 1, script: 'club-velour', when: '!velour-1' },
+    { x: 18, y: 11, w: 11, h: 1, script: 'club-velour', when: '!velour-1' },
   ],
   wild: ['frost-pass'],
 };
@@ -199,12 +200,14 @@ export const frostfallSlopes: MapDef = {
 };
 
 export const summitGate = trialHall({
+  theme: 12,
   id: 'summit-gate', name: 'Summit hall', trial: 'summit', music: 'trial-5', intro: 'summit-hall',
   out: [{ map: 'frostfall-slopes', x: 12, y: 3 }, { map: 'frostfall-slopes', x: 13, y: 3 }],
   helper: { id: 'summit-helper', name: 'Pell', x: 0, y: 0, dir: 1, look: townsLook('pell-helper', { agent: true, hat: 'beanie', hatColor: 0xffffff }), talk: 'trainer-summit-helper', trainer: 'summit-helper' },
 });
 
 export const summitTop = trialTop({
+  theme: 12,
   id: 'summit-top', name: 'The Summit', beacon: 'beacon-summit', out: { map: 'frostfall-slopes', x: 13, y: 3 },
   keeper: { id: 'keeper-yuki', name: CAST.yuki!.name, x: 0, y: 0, dir: 0, look: CAST.yuki!.look, talk: 'keeper-yuki', trainer: 'keeper-yuki' },
 });

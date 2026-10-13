@@ -62,7 +62,7 @@ export const TRAINERS: TrainerDef[] = [
   { id: 'lighthouse-helper', name: 'Finch', title: 'Lighthouse Helper', kind: 'agent', area: 'lighthouse-trial', chapter: 2, team: [mon('lullakin', 9)] },
   {
     id: 'keeper-marisol', name: 'Marisol', title: 'Lighthouse Keeper', kind: 'keeper', area: 'lighthouse-trial', chapter: 2,
-    team: [mon('dewpud', 10), mon('lullakin', 12)], hardExtra: mon('kernip', 11),
+    team: [mon('dewpud', 9), mon('lullakin', 11)], hardExtra: mon('kernip', 11),
   },
 
   // ---- Chapter 3: Cliff Road
@@ -75,7 +75,7 @@ export const TRAINERS: TrainerDef[] = [
   { id: 'canopy-helper', name: 'Tilly', title: 'Canopy Helper', kind: 'agent', area: 'canopy-trial', chapter: 4, team: [mon('snipsy', 14), mon('gleamgrub', 14)] },
   {
     id: 'keeper-oren', name: 'Oren', title: 'Canopy Keeper', kind: 'keeper', area: 'canopy-trial', chapter: 4,
-    team: [mon('fiddlit', 14), mon('leafhauler', 16), mon('frondle', 17)], hardExtra: mon('lullakin', 16),
+    team: [mon('fiddlit', 13), mon('leafhauler', 15), mon('frondle', 16)], hardExtra: mon('lullakin', 16),
   },
 
   // ---- Chapter 5: Whisper Woods and Glimmer Cave (the Spotlight Club appears)

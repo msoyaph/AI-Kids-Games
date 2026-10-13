@@ -93,7 +93,10 @@ export interface MapDef {
   id: string;
   name: string;
   music: string;
-  /** Ground look: 0 normal, 1 forest, 2 sky (void shows sky), 3 indoor, 4 cave, 5 desert, 6 snow, 7 mountain. */
+  /**
+   * Ground look: 0 normal, 1 forest, 2 sky (void shows sky), 3 indoor, 4 cave, 5 desert, 6 snow,
+   * 7 mountain; Trial halls and tops: 8 lighthouse, 9 hollow tree, 10 mine, 11 red rock, 12 ice, 13 the Spire.
+   */
   theme?: number;
   outdoor: boolean;
   rows: string[];

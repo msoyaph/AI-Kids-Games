@@ -33,6 +33,8 @@ export interface BattleSetup {
   guardian?: boolean;
   bg: MapDef['battleBg'];
   seed: number;
+  /** Battle music (battle-wild, battle-trainer, battle-keeper, battle-rival, guardian). */
+  music?: string;
 }
 
 const STATUS_WORD: Record<StatusId, string> = { sleepy: 'Sleepy', dizzy: 'Dizzy', soaked: 'Soaked', toasty: 'Toasty', chilly: 'Chilly' };
@@ -43,6 +45,9 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
   const settings = game.settings;
   const app = game.app;
   const view = new BattleView(app.sprites, setup.bg);
+  const enter = async (side: 0 | 1, c: Creature) => { game.cry(c.species); await view.enter(side, c); };
+  const mapMusic = game.music.playing;
+  game.music.play(setup.music ?? (setup.guardian ? 'guardian' : setup.kind === 'wild' ? 'battle-wild' : 'battle-trainer'));
   view.speed = settings.skipAnimations ? 4 : settings.battleSpeed;
   const foeName = (c: Creature) => (setup.kind === 'wild' ? `the wild ${SPECIES[c.species]!.name}` : `${setup.trainer?.name}'s ${SPECIES[c.species]!.name}`);
   const ui = new BattleUI(game, DEX, { friend: c => session.friendName(c), foe: c => SPECIES[c.species]!.name });
@@ -79,14 +84,14 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
     view.hide(1);
     ui.updateCard(0, null);
     ui.updateCard(1, null);
-    await view.enter(1, active(b, 1));
+    await enter(1, active(b, 1));
     refresh();
     ui.updateCard(0, null);
     const first = active(b, 1);
     if (setup.guardian) await ui.say(`${SPECIES[first.species]!.name}, a guardian of Sunreach, wants to see your friendship!`, 1800);
     else if (setup.kind === 'wild') await ui.say(`A wild ${SPECIES[first.species]!.name} wants to play!${first.shimmer ? ' It shimmers! ✨' : ''}${b.mood === 'grumpy' ? ' It looks grumpy from the static fog.' : b.mood === 'happy' ? ' It looks happy!' : ''}`, 1500);
     else await ui.say(`${setup.trainer!.title} ${setup.trainer!.name} wants a friendly spar!`, 1400);
-    await view.enter(0, active(b, 0));
+    await enter(0, active(b, 0));
     refresh();
     await ui.say(`Go, ${session.friendName(active(b, 0))}!`, 700);
     await game.tutorial('battle');
@@ -95,7 +100,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
       if (b.needsSwitch === 0) {
         const to = await ui.chooseSwitch(b, true);
         resolveTurn(DEX, b, { type: 'switch', to: to! }, { type: 'rest' });
-        await view.enter(0, active(b, 0));
+        await enter(0, active(b, 0));
         refresh();
         await ui.say(`Go, ${session.friendName(active(b, 0))}!`, 700);
         continue;
@@ -125,6 +130,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
     if (outcome === 'won') {
       s.stats.wins++;
       s.coins += b.coins;
+      if (b.coins) game.sfx('coin');
       await ui.say(setup.kind === 'wild' ? 'Great spar! The wild one waves and runs back to play.' : `You won the spar! ${setup.trainer!.name} gives you ${b.coins} coins.`, 1500);
     } else if (outcome === 'lost') {
       await ui.say('Your friends are all tuckered out. Time for a nap!', 1500);
@@ -146,6 +152,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
     if (outcome !== 'lost') await afterLevels();
     return { outcome, befriended };
   } finally {
+    game.music.play(mapMusic);
     game.live.battle = null;
     alive = false;
     removeEventListener('resize', relayout);
@@ -175,6 +182,7 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
         case 'bump': {
           const target = active(b, e.side);
           const mv = lastMove ? DEX.moves[lastMove.move]! : null;
+          game.sfx(e.matchup === 'strong' ? 'super' : e.matchup === 'weak' ? 'weak' : 'bump');
           await view.bump(e.side, e.matchup, mv?.element ?? 'plain', target);
           refresh();
           if (e.matchup === 'strong') { void view.float(e.side, 'Super strong!', 0xffd84a); await ui.say('It\'s super strong!', 700); }
@@ -183,19 +191,20 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
         }
         case 'blocked': await ui.say('The shield blocked half!', 600); break;
         case 'spend': refresh(); break;
-        case 'restore': refresh(); await view.glow(e.side, 0x9ff7a8); void view.float(e.side, `+${e.amount}`, 0x9ff7a8); break;
+        case 'restore': game.sfx('rest'); refresh(); await view.glow(e.side, 0x9ff7a8); void view.float(e.side, `+${e.amount}`, 0x9ff7a8); break;
         case 'status':
           refresh();
-          if (e.on) { await view.status(e.side, app.sprites.status(e.status)); await ui.say(`${cap(name(e.side))} is ${STATUS_WORD[e.status]}!`, 750); }
+          if (e.on) { game.sfx('status'); await view.status(e.side, app.sprites.status(e.status)); await ui.say(`${cap(name(e.side))} is ${STATUS_WORD[e.status]}!`, 750); }
           else await ui.say(`${cap(name(e.side))} is not ${STATUS_WORD[e.status]} anymore.`, 650);
           break;
         case 'boost': {
+          game.sfx('boost');
           const stat = e.stat === 'power' ? 'Power' : e.stat === 'guard' ? 'Guard' : 'Speed';
           await view.boost(e.side, e.stages > 0);
           await ui.say(`${cap(name(e.side))}'s ${stat} went ${e.stages > 0 ? 'up' : 'down'}${Math.abs(e.stages) > 1 ? ' a lot' : ''}!`, 700);
           break;
         }
-        case 'shield': await view.shield(e.side, true); await ui.say(`${cap(name(e.side))} is ready to block!`, 600); break;
+        case 'shield': game.sfx('shield'); await view.shield(e.side, true); await ui.say(`${cap(name(e.side))} is ready to block!`, 600); break;
         case 'wobble': await ui.say(`${cap(name(e.side))} is dizzy and wobbles!`, 700); break;
         case 'asleep': await ui.say(`${cap(name(e.side))} is snoozing… Zzz`, 650); break;
         case 'wake': await ui.say(`${cap(name(e.side))} woke up!`, 600); refresh(); break;
@@ -205,24 +214,26 @@ export async function playBattle(game: Game, setup: BattleSetup): Promise<{ outc
           break;
         case 'tuckered': {
           const c = b.sides[e.side].team[e.index]!;
+          game.sfx('nap');
           await view.nap(e.side, c);
           refresh();
           await ui.say(`${cap(e.side === 0 ? session.friendName(c) : foeName(c))} is tuckered out and takes a little nap.`, 1000);
           break;
         }
         case 'switch':
-          if (e.side === 1) { await view.enter(1, active(b, 1)); refresh(); await ui.say(`${setup.trainer?.name ?? 'They'} sent out ${SPECIES[active(b, 1).species]!.name}!`, 900); }
-          else { await view.enter(0, active(b, 0)); refresh(); await ui.say(`Go, ${session.friendName(active(b, 0))}!`, 600); }
+          if (e.side === 1) { await enter(1, active(b, 1)); refresh(); await ui.say(`${setup.trainer?.name ?? 'They'} sent out ${SPECIES[active(b, 1).species]!.name}!`, 900); }
+          else { await enter(0, active(b, 0)); refresh(); await ui.say(`Go, ${session.friendName(active(b, 0))}!`, 600); }
           for (const side of [0, 1] as const) void view.shield(side, false);
           break;
         case 'xp': break;
         case 'level': {
+          game.sfx('level');
           const c = b.sides[0].team[e.index]!;
           await ui.say(`${session.friendName(c)} grew to level ${e.report.to}!`, 800);
           break;
         }
         case 'befriend':
-          if (e.success) { await view.glow(1, 0xff8fc0); await ui.say(`${SPECIES[active(b, 1).species]!.name} wants to be your friend! 💛`, 1500); }
+          if (e.success) { game.sfx('friend'); game.cry(active(b, 1).species); await view.glow(1, 0xff8fc0); await ui.say(`${SPECIES[active(b, 1).species]!.name} wants to be your friend! 💛`, 1500); }
           else await ui.say(`${SPECIES[active(b, 1).species]!.name} isn't sure yet. ${e.interest > 0 ? 'Maybe try again!' : ''}`, 1100);
           break;
         case 'coins': break;
@@ -293,7 +304,7 @@ export async function playSparkRing(game: Game, parent: import('pixi.js').Contai
   const layer = { el: document.createElement('div') };
   game.focus.push(layer);
   try {
-    const result = await ring.play(tapped, game.settings.skipAnimations, info => { game.live.spark = info; });
+    const result = await ring.play(tapped, game.settings.skipAnimations, info => { game.live.spark = info; }, fill => game.sfx(fill >= 1 ? 'spark-hit' : fill > 0 ? 'spark-near' : 'spark-miss'));
     return result.fill;
   } finally {
     game.live.spark = null;
@@ -306,6 +317,7 @@ export async function playSparkRing(game: Game, parent: import('pixi.js').Contai
 
 export async function growAnimation(game: Game, c: Creature, to: string): Promise<void> {
   const host = game.app.host;
+  game.sfx('grow');
   const scale = Math.max(3, Math.round(Math.min(host.width, host.height) / 90));
   let skip = false;
   const onTap = () => { skip = true; };

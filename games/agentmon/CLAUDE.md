@@ -153,8 +153,67 @@ Ports: dev 5246, preview 4246.
   (cliff tops and faces follow the region).
 - 2026-10-13 Test shortcuts with `?quickstart`: `&at=map,x,y&flags=…&team=species:level,…&items=…&quest=N`
   (`game/devsetup.ts`), so browser tests start where they need to.
+- 2026-10-13 Story moments can't be walked around: each story trigger (Juno, Dot, Rudy, Mabel,
+  Velour) spans a whole line every way forward must cross (worked out with a cut check), and the
+  boss Rest Stops (Frost Pass cabin, ridge camp) come before the line.
+- 2026-10-13 Main quest goals are the tiles where the next story moment happens (a trigger or a
+  Keeper), not the map edge before it. Routes include Trial doors and updrafts (`game/links.ts`).
+- 2026-10-13 Tap-to-move: tapping a door walks in through it; tapping an exit tile at a map's edge
+  walks on to the next place (touch players need no stick for either).
+- 2026-10-13 Capture routes have `&play=1` (moving moments for the site's preview loop) and
+  `&delay=ms`; the hook shows `audio` (on, song) and `view` (camera) for tests.
+- 2026-10-13 Music: 21 tracks from hand-written two-bar motifs (`audio/music.ts`), maps pick theirs
+  by name (`SONG_FOR`); battles pick by opponent; master → limiter (DynamicsCompressor) → speakers.
+  Every Agentmon has a cry from its stage, element and number.
+- 2026-10-13 Bug fixed (found by the save e2e): `#ui > * { pointer-events: auto }` outranked the
+  layers that must let clicks through (the fade, toasts, the battle and Trial overlays, the touch
+  layer), so the invisible fade swallowed every click and tap on menus and dialogue. The rule is now
+  `:where(#ui) > *`. Also fixed: with a menu open, a held d-pad counted as a new press every frame.
+- 2026-10-13 Retune after the playthrough bot (phase 10): friends grow faster (xp.levelCurve 0.8 →
+  0.62, trainerBonus 1.4 → 1.5); Marisol and Oren one level lower. Hints can now star Switch when a
+  friend on the bench is super strong against the foe (and the foe is strong against yours), and
+  every Keeper says which element their friends are and what is strong against it. Bot losses on
+  Normal fell from 18 to 3–7 per playthrough (Easy 1–4, Hard 10–14), mostly one try at a Keeper.
+- 2026-10-13 Wild Agentmon never stand next to a door. A gate's guaranteed helper spawns on your side
+  of the gate (reachable from where you stand).
+- 2026-10-13 Pacing is a model on top of the bot's clock (reports/pacing.md): the bot walks the
+  shortest way and decides at once, so the model adds a kid's exploring (×2 walking), the usual wild
+  spars and Field Guide friends beyond the bot's, side quests (6 min each), chats and menus. Normal
+  comes out at 7.3–7.5 h (inside 8 h ±10%, near the low end).
+- 2026-10-13 A wild Agentmon that isn't tired yet never naps from one bump: it stops at "tired", so
+  there is always a chance to befriend it (found by the touch e2e: a strong partner knocked wild ones
+  out before Befriend could appear). Trainers' friends can still nap from one bump. Only once a spar
+  (`Battle.wasTired`): without that, a wild one that Rested back above tired every turn could never
+  be tuckered out (found while reviewing the rule; unit test in battle.test.ts).
+- 2026-10-13 Bot fix (phase 11): the playthrough sim ran out of memory on Normal seed 3. A tired bot
+  headed for the nearest Rest Stop by map route, the way needed a friend it didn't have, making that
+  friend needed a rest first, and `rest → makeFriendOf → rest` recursed forever (the tired rule above
+  changed the random flow so this seed hit it). A rest started while already on the way to one now
+  ends like the game would: the kid spars on until tuckered out and wakes at the last Rest Stop
+  (counted as a lost spar). Bot fix, not a game change.
+- 2026-10-13 Trials by touch: tapping the tile in front only "presses A" when there is something to
+  use there (a mirror, vines, an ice block); otherwise it is a step forward.
+- 2026-10-13 Performance: the battle stage had a stencil mask that cost ~5 ms a frame at 4× CPU
+  slowdown; it is gone (the backdrop runs on under the see-through bottom panel). Town and battle
+  both hold 16.7 ms (60 fps) at 4× CPU slowdown on this Mac's Chromium.
+- 2026-10-13 Browser test helpers: `tapWalk` taps through story moments it walks into and waits while
+  the scene is busy (taps are ignored during fades); test fix, not a game change.
 - 2026-10-13 Battle menus put the keyboard/gamepad focus on the ★ suggested move when hints are on
   (else the first usable button), so pressing A picks a sensible move.
+- 2026-10-13 Snow leopard line: the tail now shows as a banded grey scarf wrapped round the neck and
+  the spots are rosettes (rings), so the art matches the blurb and the fact (phase 12 review: the
+  scarf was drawn in nearly the body's white and the line read as plain white cats).
+- 2026-10-13 Trial halls and tops have their own look (map themes 8–13: Lighthouse tiles, hollow
+  tree rings and bark, mine stone and timbers, Redrock sandstone, Summit ice, Spire stars), matching
+  their puzzle rooms; before, all twelve were the same wooden house room (phase 12 review).
+- 2026-10-13 Title screen: the title block sits in the sky above the parade (it covered the walking
+  Agentmon), with a bigger outlined logo. The Mood Match capture says a line in the message bar.
+- 2026-10-13 Browser test fix (phase 11): on a small phone the A and B buttons cover the bottom
+  right corner, and the touch test tapped the nearest wild Agentmon even when it stood behind the A
+  button, so every try pressed A instead (WebKit phone). Taps in tests now go only where a tap reaches
+  the world: the canvas or the stick's zone, which passes quick taps on (`reachesWorld` in
+  tests/e2e/helpers.ts, also used by `tapWalk`), the way a kid taps a creature they can see. A first
+  version counted the stick's zone as blocked too and broke every touch run. Test fix, not a game change.
 - 2026-10-13 Spark Ring arcs start a new path for each arc (Pixi joins consecutive arcs with a
   line otherwise); the friend above the ring is sized to stay on screen.
 
@@ -197,6 +256,12 @@ Franchise creatures and characters are described here, not named (this is a publ
   has a "Sun Stone" evolution item. (Internal ids such as `sunstone-gate` stay; players never see them.)
 - Icons: the Stone icon is a mountain peak (a hexagon looked round at 12 px); Chilly is an ice cube
   (it looked like the Frost icon); Toasty is wavy heat lines.
+- Phase 12 art review (lookalike pass on the final drawings):
+  - Lemon line (Zestle, Zestwick, Citrivolt): a round yellow body with a green sprout on top echoed
+    a famous seed creature, and the copper and zinc dots sat on its cheeks, the signature of a famous
+    yellow electric creature → each is now lemon-shaped with pointed ends and peel pores, with a copper
+    strip and a zinc strip poked into its top (a real lemon battery) and a tiny zigzag spark between
+    them; nothing on the cheeks but the blush every Agentmon has.
 
 ## Progress
 | Phase | Status |
@@ -210,11 +275,11 @@ Franchise creatures and characters are described here, not named (this is a publ
 | 6 Puzzles + 6 Trials + solver tests + field abilities | done (Lighthouse Trial e2e: 4 rooms by keyboard, Marisol, Beacon) |
 | 7 World + story content, post-game | done (57 maps, 140+ scripts, 22 side quests, 3 guardian quests; map checks in unit tests) |
 | 8 Menus, Agent Base, save slots, tutorials, stuck helper, reading level | done (phases 6–8 committed together: they share the overworld wiring) |
-| 9 Audio | next (engine, 21 tracks, effects and cries written; wiring in progress) |
-| 10 Headless bot × 3 difficulties, pacing, retune | |
-| 11 Browser tests | |
-| 12 Visual + IP review | |
-| 13 Site, previews, art, PR (stop before production) | |
+| 9 Audio | done (21 tracks, effects, cries, limiter; the hook shows the song; browser tests check it) |
+| 10 Headless bot × 3 difficulties, pacing, retune | done (credits on Easy/Normal/Hard × 3 partners, fuzzed runs, Mood Match; pacing ≈ 7.4 h on Normal; reports/pacing.md) |
+| 11 Browser tests | done (11 specs × Chromium/WebKit × phone/tablet/desktop; skips are by design: keyboard specs on touch devices, touch specs on desktops, file:// once per browser, perf on local Chromium) |
+| 12 Visual + IP review | done (reports/visual-review.md: all 52 Agentmon, 57 maps, 9 Trials, menus; lemon line redrawn, snow leopards fixed, Trial interiors themed, title fixed) |
+| 13 Site, previews, art, PR (stop before production) | next |
 
 **Phase 1 notes:** rules live in `src/core/` (`battle/engine.ts`, `battle/ai.ts`, `befriend.ts`,
 `creature.ts`, `elements.ts`, `save/codec.ts`, `save/save.ts`, `state.ts`), storage in
@@ -282,7 +347,25 @@ game to `reports/tmp/snap` and runs there, so editing can go on.
 Test fix: the map test compared edge offsets with `toBe(-offset)`, which fails for 0 (`-0` is not `0`
 to `Object.is`); it now checks that the two offsets add up to 0.
 
-**Next:** phase 9, audio: wire `src/audio/` (engine with limiter, `music.ts` 21 tracks, `sfx.ts`
-effects and cries) into the game (map music, battle music by opponent, cries, effects, volumes),
-browser check, commit. Then phase 10: the playthrough bot `src/sim/bot.ts` (`npx tsx scripts/bot-run.ts
-seed difficulty fuzz`), the pacing model and `tests/sim/playthrough.test.ts`.
+**Phases 9–10 notes:** audio in `src/audio/` (engine with limiter, `music.ts`, `sfx.ts`); `game.music`,
+`game.sfx()`, `game.cry()`. The playthrough bot is `src/sim/bot.ts` (`npx tsx scripts/bot-run.ts
+<seed> <easy|normal|hard> [fuzz]`, prints losses and spars per chapter); `tests/sim/playthrough.test.ts`
+runs 9 playthroughs, 3 fuzzed ones and a Mood Match one, and writes reports/pacing.md. Routes between
+maps go through `game/links.ts` (Trial doors and updrafts). The bot found and fixed: paths crossing
+door tiles (tap-to-move too), a same-map door loop, the empty Meadow exit trigger that stopped
+tap-to-move, helpers spawning behind their own gate, wild ones blocking doorways.
+
+**Phases 11–12 notes:** browser specs in `tests/e2e/` (opening, trial, touch, gamepad, save, file,
+perf, smoke); run them all with `sh scripts/snap-run.sh e2e` (about 4 minutes, one browser at a time).
+Touch taps in tests go only where a tap reaches the world (`reachesWorld`). The review screenshots
+come from `sh scripts/when-quiet.sh shots …` with the capture routes (`town&map=id,x,y`,
+`dungeon&trial=&room=` with a zero-based room, `guide&page=…`), see reports/visual-review.md.
+Ground colours by theme are checked in `tests/unit/ground.test.ts`.
+
+**Next:** phase 13, the site. `origin/main` has Tuck Pop merged (PR #10), so first merge `main` into
+`agentmon` (it is the last phase), then: status "released" in game.json, `npm run import-game --
+agentmon`, `npm run manifests`, `npm run audit-storage`, the capture route
+`apps/site/scripts/capture/agentmon.ts` (drafted) and `npm run capture-previews -- agentmon`, cover,
+logo and OG image (`apps/site/public/media/agentmon/` drafted, `apps/site/scripts/art/logos.ts` has the
+agentmon style), grid checks with 7 and 8 games, site tests, the PR (CI green, preview link).
+Never merge it and never release to production: the owner plays it first.

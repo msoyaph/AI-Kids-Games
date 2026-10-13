@@ -94,6 +94,8 @@ export interface Battle {
   sides: [BattleSide, BattleSide];
   /** Wild only: missed befriend tries left before it wanders off. */
   interest: number;
+  /** Wild only: it has been tired at least once this spar (so a big bump can now tucker it out). */
+  wasTired?: boolean;
   /** Set when a side's active Agentmon is tuckered out and the player must pick the next one. */
   needsSwitch: Side | null;
   outcome: Outcome | null;
@@ -288,9 +290,16 @@ function doMove(dex: BattleDex, b: Battle, side: Side, moveId: string, rng: Rng,
   const target = active(b, foeSide), tf = activeFighter(b, foeSide);
   if (move.power > 0) {
     const spread = rng.float(TUNING.damage.spreadMin, TUNING.damage.spreadMax);
-    const amount = Math.min(target.energy, bumpAmount(dex, b, side, move, spread));
+    let amount = Math.min(target.energy, bumpAmount(dex, b, side, move, spread));
+    // A wild Agentmon that hasn't been tired yet never naps from one bump: it stops at "tired", so
+    // there is always a chance to befriend it. Only once a spar: after that (say it Rested back up),
+    // bumps can tucker it out, so a spar always ends.
+    const max = maxEnergy(dex, target), tiredAt = Math.floor(max * TUNING.befriend.threshold);
+    const wildFoe = b.kind === 'wild' && foeSide === 1;
+    if (wildFoe && !b.wasTired && target.energy > tiredAt && amount >= target.energy) amount = target.energy - Math.max(1, Math.min(tiredAt, Math.round(max * 0.15)));
     const blocked = tf.shield > 0;
     target.energy -= amount;
+    if (wildFoe && target.energy <= tiredAt) b.wasTired = true;
     if (blocked) ev.push({ t: 'blocked', side: foeSide });
     ev.push({ t: 'bump', side: foeSide, amount, matchup: matchup(move.element, speciesOf(dex, target).element), energy: target.energy });
     if (tf.status?.id === 'sleepy' && target.energy > 0) {

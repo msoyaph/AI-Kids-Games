@@ -76,6 +76,7 @@ export const CH0: Record<string, Script> = {
     say('Here are your Field Agent things.', NELL),
     { give: 'agent-card' }, { give: 'field-guide' }, { give: 'snack-pouch' }, { give: 'berry-bun', n: 5 }, { give: 'pep-berry', n: 3 },
     say('Your Field Guide fills in as you meet and befriend Agentmon. Each page has a real nature fact!', NELL),
+    { tutorial: 'menu' },
     say('Now, your first mission. The Beacon at the Saltwhistle Lighthouse is dimming.', NELL),
     say('Go north through the Meadow Path to Saltwhistle, by the sea. Find the Lighthouse Keeper, Marisol.', NELL),
     say('On the way, you can make more friends. When a wild Agentmon is tired, try Befriend!', NELL),
@@ -91,5 +92,4 @@ export const CH0: Record<string, Script> = {
   'trainer-agent-pia': trainerScript('agent-pia', 'Pia', "Hi! I'm Pia. I just made my first friend. Want to spar?", 'Good spar! You and your friend work well together.', 'Tip: tap a move to see what it does!'),
   'trainer-agent-tomo': trainerScript('agent-tomo', 'Tomo', 'A new Field Agent! Spar with me?', 'You win! I need more practice.', 'Tired friends can Rest in battle. It uses your turn, though!'),
   'meadow-june': [say('I love this path. The tall grass is full of wild Agentmon. Some are a little grumpy from the fog.', 'Ms. June'), say('Grumpy ones are harder to befriend. Try their favorite snack!', 'Ms. June')],
-  'meadow-north': [],
 };

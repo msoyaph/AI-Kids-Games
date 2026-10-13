@@ -32,6 +32,7 @@ test('keyboard: the Lighthouse Trial, room by room, then the Keeper and the Beac
     await page.keyboard.up('ArrowUp');
   }
   await advance(page); // the puzzle tutorial card
+  expect((await snap(page)).audio?.song).toBe('trial-1');
   const trial = TRIAL_BY_ID.lighthouse!;
   for (let i = 0; i < trial.rooms.length; i++) {
     await expect.poll(async () => { const s = await snap(page); return s.scene === 'trial' && s.roomIndex === i && !s.busy; }, { timeout: 10_000 }).toBe(true);

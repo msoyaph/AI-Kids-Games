@@ -31,6 +31,8 @@ export class Input {
   /** True while a DOM menu has the keyboard (the world ignores keys). */
   uiFocus = false;
   private padPrev: boolean[] = [];
+  /** The d-pad/stick direction last frame, for menu navigation (one move per press). */
+  private navPrev: Dir | null = null;
   onDevice: ((d: Device) => void)[] = [];
 
   constructor() {
@@ -114,8 +116,9 @@ export class Input {
     else if (Math.hypot(ax, ay) > 0.45) dir = Math.abs(ax) > Math.abs(ay) ? (ax > 0 ? 2 : 1) : ay > 0 ? 0 : 3;
     const any = dir !== null || gp.buttons.some(x => x.pressed);
     if (any) this.setDevice('gamepad');
-    const prevDir = this.padDir;
-    const out = { nav: dir !== null && dir !== prevDir ? dir : null, a: edge(0), b: edge(1), menu: edge(9) || edge(3) };
+    const prevNav = this.navPrev;
+    this.navPrev = dir;
+    const out = { nav: dir !== null && dir !== prevNav ? dir : null, a: edge(0), b: edge(1), menu: edge(9) || edge(3) };
     if (!this.uiFocus) {
       this.padDir = dir;
       if (out.a) this.pressed.add('a');

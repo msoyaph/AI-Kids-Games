@@ -10,6 +10,10 @@ import { FocusManager } from '../ui/focus';
 import { TouchControls } from '../ui/touch';
 import { TUTORIALS } from '../data/tutorials';
 import type { SparkInfo } from '../render/spark-ring';
+import { AudioEngine } from '../audio/audio';
+import { Music } from '../audio/music';
+import { playCry, playSfx, type Sfx } from '../audio/sfx';
+import { SPECIES } from '../data/species';
 import type { App } from './app';
 import type { Session } from './session';
 import { applySettingsToDom, loadSettings, saveSettings, type Settings } from './settings';
@@ -21,6 +25,8 @@ export class Game {
   readonly touch: TouchControls;
   settings: Settings;
   session: Session | null = null;
+  readonly audio = new AudioEngine();
+  readonly music = new Music(this.audio);
   private toastEl: HTMLElement;
   private fadeEl: HTMLElement;
   /** Moment-to-moment facts for the read-only test hook (the Spark Ring's spark, the battle). */
@@ -31,6 +37,9 @@ export class Game {
   constructor(readonly app: App) {
     this.settings = loadSettings();
     applySettingsToDom(this.settings);
+    this.audio.setVolumes(this.settings.volume);
+    // a soft click for every button press in the menus
+    app.ui.addEventListener('click', e => { if ((e.target as HTMLElement).closest('button')) this.sfx('click'); });
     this.focus = new FocusManager(this.input);
     this.dialogue = new Dialogue(this.input, this.focus, {
       readAloud: () => this.settings.readAloud,
@@ -56,6 +65,15 @@ export class Game {
   saveSettings(): void {
     saveSettings(this.settings);
     applySettingsToDom(this.settings);
+    this.audio.setVolumes(this.settings.volume);
+  }
+
+  sfx(id: Sfx | string): void { playSfx(this.audio, id); }
+
+  /** An Agentmon's own cry. */
+  cry(species: string, happy = true): void {
+    const sp = SPECIES[species];
+    if (sp) playCry(this.audio, { num: sp.num, element: sp.element, stage: sp.stage, guardian: sp.guardian }, happy);
   }
 
   setDifficulty(d: (typeof DIFFICULTIES)[number]): void {

@@ -73,6 +73,7 @@ export const CH7: Record<string, Script> = {
     hello: [
       'You found your way through the sunbeams! I am Sol, the Redrock Keeper.',
       'The fog has dimmed even the desert sun. Let\'s make a spark so bright, the stars can see it!',
+      'Many of my friends are Flare Agentmon. Tip: Tide and Stone moves are super strong against them!',
     ],
     win: [
       'The Redrock Beacon blazes again! Look how the sand sparkles.',

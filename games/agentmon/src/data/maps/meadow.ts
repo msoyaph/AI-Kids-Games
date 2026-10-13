@@ -50,6 +50,6 @@ export const meadowPath: MapDef = {
     { id: 'agent-tomo', name: 'Tomo', x: 18, y: 7, dir: 0, look: townsLook('tomo', { agent: true, hat: 'cap', hatColor: 0x4fa66a }), talk: 'trainer-agent-tomo', trainer: 'agent-tomo' },
     { id: 'hiker-june', name: 'Ms. June', x: 6, y: 14, dir: 0, look: townsLook('june', { hat: 'sunhat', hatColor: 0xffd84a }), talk: 'meadow-june' },
   ],
-  triggers: [{ x: 10, y: 0, w: 2, h: 1, script: 'meadow-north' }],
+  triggers: [],
   wild: ['meadow-path'],
 };

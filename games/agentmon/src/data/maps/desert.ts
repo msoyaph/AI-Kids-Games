@@ -50,7 +50,7 @@ export const canyonTrail: MapDef = {
     { id: 'juno-canyon', name: CAST.juno!.name, x: 16, y: 11, dir: 2, look: CAST.juno!.look, talk: 'juno-canyon', hideIf: 'juno-3' },
     { id: 'canyon-geo', name: 'Dr. Ochre', x: 6, y: 16, dir: 0, look: townsLook('ochre', { glasses: true, hat: 'sunhat', hatColor: 0xd9604f }), talk: 'canyon-ochre' },
   ],
-  triggers: [{ x: 15, y: 10, w: 1, h: 2, script: 'juno-canyon', when: '!juno-3' }],
+  triggers: [{ x: 15, y: 4, w: 1, h: 17, script: 'juno-canyon', when: '!juno-3' }],
   wild: ['canyon-trail'],
 };
 
@@ -161,17 +161,19 @@ export const duneFlats: MapDef = {
     { id: 'club-mabel', name: 'Mabel', x: 12, y: 4, dir: 2, look: { ...CAST.club!.look, skin: 4, hair: 6 }, talk: 'club-mabel' },
     { id: 'flats-guide', name: 'Guide Rami', x: 3, y: 12, dir: 2, look: townsLook('rami', { hat: 'sunhat', hatColor: 0xd9604f }), talk: 'flats-rami' },
   ],
-  triggers: [{ x: 14, y: 4, w: 2, h: 1, script: 'club-mabel', when: '!mabel-met' }],
+  triggers: [{ x: 1, y: 6, w: 28, h: 1, script: 'club-mabel', when: '!mabel-met' }],
   wild: ['dune-flats'],
 };
 
 export const sunstoneGate = trialHall({
+  theme: 11,
   id: 'sunstone-gate', name: 'Redrock Mesa', trial: 'canyon', music: 'trial-4', intro: 'sunstone-hall',
   out: [{ map: 'dune-flats', x: 21, y: 18 }, { map: 'dune-flats', x: 22, y: 18 }],
   helper: { id: 'sunstone-helper', name: 'Rio', x: 0, y: 0, dir: 1, look: townsLook('rio-helper', { agent: true, hat: 'sunhat', hatColor: 0xffd84a }), talk: 'trainer-sunstone-helper', trainer: 'sunstone-helper' },
 });
 
 export const sunstoneTop = trialTop({
+  theme: 11,
   id: 'sunstone-top', name: 'Redrock summit', beacon: 'beacon-sunstone', out: { map: 'dune-flats', x: 22, y: 18 },
   keeper: { id: 'keeper-sol', name: CAST.sol!.name, x: 0, y: 0, dir: 0, look: CAST.sol!.look, talk: 'keeper-sol', trainer: 'keeper-sol' },
 });

@@ -38,7 +38,9 @@ html, body {
 #app { position: fixed; inset: 0; }
 #game { position: absolute; inset: 0; display: block; touch-action: none; image-rendering: pixelated; }
 #ui { position: absolute; inset: 0; pointer-events: none; }
-#ui > * { pointer-events: auto; }
+/* :where() keeps this rule light, so layers that let clicks through (fade, toasts, battle and trial
+   overlays: pointer-events none) still do */
+:where(#ui) > * { pointer-events: auto; }
 img.px, .px { image-rendering: pixelated; image-rendering: crisp-edges; }
 
 button {
@@ -146,7 +148,9 @@ button:focus-visible, [tabindex]:focus-visible { outline: 4px solid #4fa3ff; out
 .coins { margin: 0; font-size: 1.1em; }
 
 /* ---- title, slots, new game ------------------------------------------------------------------- */
-.title-screen { gap: 18px; }
+/* the title block sits in the sky, above the parade of Agentmon walking on the grass (from 72% down) */
+.title-screen { gap: 18px; place-content: start center; padding-top: max(16px, 10vh); }
+.title-screen h1 { font-size: calc(clamp(56px, 9vw, 92px) * var(--ui-scale)); -webkit-text-stroke: 3px var(--line); paint-order: stroke fill; text-shadow: 0 5px 0 var(--line), 0 0 22px rgba(255, 207, 92, 0.4); }
 .tagline { font-size: 1.05em; }
 button.big { min-height: 64px; padding: 0 44px; font-size: 1.3em; }
 .slots-screen { gap: 12px; overflow: auto; }

@@ -72,6 +72,7 @@ export const CH11: Record<string, Script> = {
     hello: [
       'You made it to the top of the Spire! I am Celeste, the last Keeper.',
       'Five Beacons shine below us. This is the sixth. Let\'s make the brightest spark of all!',
+      'Many of my friends are Glow Agentmon. Tip: Leaf and Gust moves are super strong against them!',
     ],
     win: ['The Spire Beacon blazes! Look, {player}! All six Beacons are shining at once!'],
     quest: 16,

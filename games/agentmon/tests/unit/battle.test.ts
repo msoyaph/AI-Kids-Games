@@ -312,3 +312,31 @@ describe('befriending in battle', () => {
     expect(g.outcome).toBeNull();
   });
 });
+
+describe('befriending is always possible', () => {
+  it('a wild Agentmon that is not tired yet stops at tired instead of napping from one big bump', async () => {
+    const { DEX } = await import('../../src/data/index');
+    const { makeCreature, maxEnergy } = await import('../../src/core/creature');
+    const { startBattle, resolveTurn, canBefriend } = await import('../../src/core/battle/engine');
+    const { Rng } = await import('../../src/core/rng');
+    const rng = new Rng(3);
+    const me = makeCreature(DEX, { species: 'voltabill', level: 40 }, rng);
+    const foe = makeCreature(DEX, { species: 'lullakin', level: 3 }, rng);
+    const strong = me.moves.filter(m => DEX.moves[m]!.power > 0).sort((a, b) => DEX.moves[b]!.power - DEX.moves[a]!.power)[0]!;
+    const b = startBattle(DEX, { kind: 'wild', player: [me], foe: [foe], difficulty: 'normal', seed: 1 });
+    resolveTurn(DEX, b, { type: 'move', move: strong }, { type: 'rest' });
+    expect(foe.energy).toBeGreaterThan(0);
+    expect(foe.energy).toBeLessThanOrEqual(Math.floor(maxEnergy(DEX, foe) * 0.4));
+    expect(canBefriend(DEX, b)).toBe(true);
+    // only once a spar: if it rests back above tired, the next big bump tuckers it out (a spar
+    // where you never befriend still ends)
+    foe.energy = maxEnergy(DEX, foe);
+    for (let turn = 0; turn < 5 && !b.outcome; turn++) resolveTurn(DEX, b, { type: 'move', move: strong }, { type: 'rest' });
+    expect(b.outcome).not.toBeNull();
+    expect(foe.energy).toBe(0);
+    // a trainer's friend can still be tuckered out at once
+    const t = startBattle(DEX, { kind: 'trainer', player: [me], foe: [makeCreature(DEX, { species: 'lullakin', level: 3 }, rng)], difficulty: 'normal', seed: 1 });
+    resolveTurn(DEX, t, { type: 'move', move: strong }, { type: 'rest' });
+    expect(t.sides[1].team[0]!.energy).toBe(0);
+  });
+});

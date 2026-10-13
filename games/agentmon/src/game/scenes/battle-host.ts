@@ -34,7 +34,8 @@ export async function runBattleScene(game: Game, req: BattleRequest): Promise<Ou
   if (req.kind === 'trainer') {
     const t = TRAINER_BY_ID[req.trainer]!;
     const foe = trainerTeam(t, s.difficulty, s.starter, TUNING.difficulty[s.difficulty]).map(m => makeCreature(DEX, { species: m.species, level: m.level }, rng));
-    const r = await playBattle(game, { kind: 'trainer', foe, trainer: { name: t.name, title: t.title, gentle: t.gentle }, bg: t.kind === 'keeper' ? 'trial' : bg, seed });
+    const music = t.kind === 'keeper' ? 'battle-keeper' : t.kind === 'rival' || t.id === 'rematch-juno' ? 'battle-rival' : t.kind === 'rematch' ? 'battle-keeper' : 'battle-trainer';
+    const r = await playBattle(game, { kind: 'trainer', foe, trainer: { name: t.name, title: t.title, gentle: t.gentle }, bg: t.kind === 'keeper' ? 'trial' : bg, seed, music });
     return r.outcome;
   }
   const species = req.wild?.species ?? req.species!;

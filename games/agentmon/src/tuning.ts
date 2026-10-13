@@ -74,9 +74,9 @@ export const TUNING = {
 
   xp: {
     /** Total experience needed to reach a level: round(levelCurve * level³). */
-    levelCurve: 0.8,
+    levelCurve: 0.62,
     /** Yield multiplier for Keeper and trainer battles. */
-    trainerBonus: 1.4,
+    trainerBonus: 1.5,
     /** Shared experience (setting on): team members who didn't spar get this share. */
     benchShare: 0.75,
     /** Catch-up: Agentmon below the team's average level get this much more. */

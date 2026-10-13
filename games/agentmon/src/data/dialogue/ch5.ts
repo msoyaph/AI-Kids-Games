@@ -84,6 +84,7 @@ export const CH5: Record<string, Script> = {
     hello: [
       'You made it through my mine! I am Vee, the Old Mine Keeper.',
       'The fog makes the old machines buzz and fizz. Let\'s fix that with a happy spark!',
+      'Most of my friends are Volt Agentmon. Tip: Stone and Glow moves are super strong against them!',
     ],
     win: [
       'The Old Mine Beacon is glowing again! Hear that? The machines purr like happy Zestles.',

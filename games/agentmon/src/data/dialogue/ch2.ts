@@ -61,6 +61,7 @@ export const CH2: Record<string, Script> = {
     hello: [
       'You solved my Trial! Welcome to the top. I am Marisol, the Lighthouse Keeper.',
       'Look at the Beacon. The static fog has made it so dim.',
+      'My friends are Tide Agentmon. Tip: Leaf and Volt moves are super strong against them!',
       'A Beacon wakes up with a big, happy spark. A friendly spar between a Keeper and a Field Agent makes the best spark of all!',
     ],
     win: [

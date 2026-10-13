@@ -55,7 +55,7 @@ export const cliffRoad: MapDef = {
     { id: 'juno-cliff', name: CAST.juno!.name, x: 13, y: 8, dir: 1, look: CAST.juno!.look, talk: 'juno-cliff', hideIf: 'juno-2' },
     { id: 'cliff-hiker', name: 'Mr. Pell', x: 20, y: 4, dir: 0, look: townsLook('pell-hiker', { elder: true, hat: 'sunhat', hatColor: 0x4fa66a }), talk: 'cliff-pell' },
   ],
-  triggers: [{ x: 12, y: 9, w: 1, h: 1, script: 'juno-cliff', when: '!juno-2' }],
+  triggers: [{ x: 12, y: 7, w: 1, h: 1, script: 'juno-cliff', when: '!juno-2' }],
   wild: ['cliff-road'],
 };
 
@@ -172,12 +172,14 @@ export const mossgroveWoods: MapDef = {
 };
 
 export const canopyGate = trialHall({
+  theme: 9,
   id: 'canopy-gate', name: 'Hollow tree', trial: 'canopy', music: 'trial-2', intro: 'canopy-hall',
   out: [{ map: 'mossgrove-woods', x: 14, y: 4 }, { map: 'mossgrove-woods', x: 15, y: 4 }],
   helper: { id: 'canopy-helper', name: 'Tilly', x: 0, y: 0, dir: 1, look: townsLook('tilly', { agent: true, scarf: 0x9ed97a }), talk: 'trainer-canopy-helper', trainer: 'canopy-helper' },
 });
 
 export const canopyTop = trialTop({
+  theme: 9,
   id: 'canopy-top', name: 'Canopy top', beacon: 'beacon-canopy', out: { map: 'mossgrove-woods', x: 15, y: 4 },
   keeper: { id: 'keeper-oren', name: CAST.oren!.name, x: 0, y: 0, dir: 0, look: CAST.oren!.look, talk: 'keeper-oren', trainer: 'keeper-oren' },
 });

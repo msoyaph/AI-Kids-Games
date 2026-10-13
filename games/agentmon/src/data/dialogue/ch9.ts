@@ -51,6 +51,7 @@ export const CH9: Record<string, Script> = {
     hello: [
       'You slid all the way to the top! I am Yuki, the Summit Keeper.',
       'From up here you can see four Beacons shining. Let\'s make it five!',
+      'Most of my friends are Frost Agentmon. Tip: Flare and Glow moves are super strong against them!',
     ],
     win: [
       'The Summit Beacon sparkles like fresh snow!',

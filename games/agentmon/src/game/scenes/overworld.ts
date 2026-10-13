@@ -28,7 +28,7 @@ import { TRIAL_BY_ID } from '../../data/trials';
 import { playTower } from '../tower';
 import { TrialScene } from './trial';
 import { QUEST_BY_ID } from '../../data/quests';
-import { mapRoute } from '../../core/world/route';
+import { routeBetween } from '../links';
 
 const STEP = 0.2;
 const RUN_STEP = 0.13;
@@ -83,6 +83,7 @@ export class OverworldScene implements Scene, ScriptHost {
   }
 
   private build(): void {
+    this.game.music.play(this.world.def.music);
     if (this.view) { this.root.removeChild(this.view.root); this.view.destroy(); }
     this.view = new WorldView(this.app.sprites, this.world, this.state);
     this.root.addChildAt(this.view.root, 0);
@@ -159,6 +160,19 @@ export class OverworldScene implements Scene, ScriptHost {
     const tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE);
     if (tx < 0 || ty < 0 || tx >= this.world.w || ty >= this.world.h) return;
     const w = this.world;
+    // paths never cross a door (it would take you somewhere you didn't tap)
+    const free = (x: number, y: number) => w.passable(x, y) && !w.wildAt(x, y) && !w.warpAt(x, y);
+    // a door: walk up to it and go in
+    if (w.warpAt(tx, ty) && !(tx === this.state.x && ty === this.state.y)) {
+      let best: [number, number][] | null = null;
+      for (const [dx, dy] of [[0, 1], [0, -1], [-1, 0], [1, 0]] as const) {
+        const ax = tx + dx, ay = ty + dy;
+        const p = ax === this.state.x && ay === this.state.y ? [] : free(ax, ay) ? findPath(w.w, w.h, this.state.x, this.state.y, ax, ay, free) : null;
+        if (p && (!best || p.length < best.length)) best = p;
+      }
+      if (best) { this.path = [...best, [tx, ty]]; this.pathGoal = null; }
+      return;
+    }
     const target = w.npcAt(tx, ty) || w.wildAt(tx, ty) || w.objectAt(tx, ty);
     if (target || !w.passable(tx, ty)) {
       // walk next to it, then face it and press A
@@ -167,14 +181,19 @@ export class OverworldScene implements Scene, ScriptHost {
         const ax = tx + dx, ay = ty + dy;
         if (ax === this.state.x && ay === this.state.y) { best = []; break; }
         if (!w.passable(ax, ay) || w.wildAt(ax, ay)) continue;
-        const p = findPath(w.w, w.h, this.state.x, this.state.y, ax, ay, (x, y) => w.passable(x, y) && !w.wildAt(x, y));
+        const p = findPath(w.w, w.h, this.state.x, this.state.y, ax, ay, free);
         if (p && (!best || p.length < best.length)) best = p;
       }
       if (best) { this.path = best; this.pathGoal = { x: tx, y: ty }; }
       return;
     }
-    const p = findPath(w.w, w.h, this.state.x, this.state.y, tx, ty, (x, y) => w.passable(x, y) && !w.wildAt(x, y));
-    if (p) { this.path = p; this.pathGoal = null; }
+    const p = findPath(w.w, w.h, this.state.x, this.state.y, tx, ty, free);
+    if (!p) return;
+    // an exit at the edge of the map: keep walking on to the next place
+    const side = ty === 0 ? 'n' : ty === w.h - 1 ? 's' : tx === 0 ? 'w' : tx === w.w - 1 ? 'e' : null;
+    if (side && w.def.edges?.some(e => e.side === side)) p.push(side === 'n' ? [tx, -1] : side === 's' ? [tx, w.h] : side === 'w' ? [-1, ty] : [w.w, ty]);
+    this.path = p;
+    this.pathGoal = null;
   }
 
   private sinceSave = 0;
@@ -232,7 +251,7 @@ export class OverworldScene implements Scene, ScriptHost {
     const goal = QUEST_BY_ID.main?.goals?.[this.state.quests.main ?? 0];
     if (!goal) return null;
     if (goal.map === this.state.map) return { x: goal.x, y: goal.y };
-    const hop = mapRoute(MAPS, this.state.map, goal.map)?.[0];
+    const hop = routeBetween(this.state.map, goal.map)?.[0];
     if (!hop) return null;
     if (hop.via.kind === 'warp') return { x: hop.via.x, y: hop.via.y };
     const side = hop.via.side, w = this.world.w, h = this.world.h;
@@ -295,6 +314,7 @@ export class OverworldScene implements Scene, ScriptHost {
         return;
       case 'warp':
         this.path = [];
+        this.sfx('door');
         if (r.warp.to.startsWith('trial:')) { void this.withBusy(() => this.enterTrial(r.warp.to.slice(6))); return; }
         void this.withBusy(() => this.changeMap(r.warp.to, r.warp.tx, r.warp.ty, r.warp.dir ?? dir));
         return;
@@ -452,6 +472,7 @@ export class OverworldScene implements Scene, ScriptHost {
         // they turn to face you
         const back: Dir = ([3, 2, 1, 0] as Dir[])[this.state.dir]!;
         if (!n.def.creature) n.dir = back;
+        else this.game.cry(n.def.creature);
         await this.run(n.def.talk);
       } else if (f.kind === 'wild') {
         await this.wildEncounter(f.wild);
@@ -589,7 +610,7 @@ export class OverworldScene implements Scene, ScriptHost {
     this.game.dialogue.close();
     await playCredits(this.game, [...this.state.team].map(c => this.session.friendName(c)));
   }
-  async beacon(id: string): Promise<void> { this.view.syncObjects(); this.toast('The Beacon shines again!'); void id; }
+  async beacon(id: string): Promise<void> { this.view.syncObjects(); this.sfx('beacon'); this.toast('The Beacon shines again!'); void id; }
   async walk(who: string, path: string): Promise<void> {
     for (const ch of path) {
       const dir = ({ d: 0, l: 1, r: 2, u: 3 } as Record<string, Dir>)[ch];
@@ -615,8 +636,8 @@ export class OverworldScene implements Scene, ScriptHost {
   }
   async warp(map: string, x: number, y: number, dir?: Dir): Promise<void> { await this.changeMap(map, x, y, dir ?? 0); }
   async emote(who: string, emote: string): Promise<void> { void who; void emote; await wait(400); }
-  music(id: string): void { void id; }
-  sfx(id: string): void { void id; }
+  music(id: string): void { this.game.music.play(id); }
+  sfx(id: string): void { this.game.sfx(id); }
   toast(text: string): void { this.game.toast(text); }
   tutorial(id: string): Promise<void> { this.game.dialogue.close(); return this.game.tutorial(id); }
   refresh(): void {
@@ -631,6 +652,8 @@ export class OverworldScene implements Scene, ScriptHost {
       moving: !!this.move, team: this.state.team.map(c => ({ species: c.species, level: c.level, energy: c.energy })),
       wild: this.world.wild.map(w => ({ species: w.species, x: w.x, y: w.y, shimmer: w.shimmer })),
       flags: [...this.state.flags].sort(), coins: this.state.coins, dialogue: this.game.dialogue.open,
+      // where the camera is, so tests can tap a tile: screen px = (tile * 16 + 8) * zoom + offset, ÷ dpr
+      view: { x: this.view.root.x, y: this.view.root.y, zoom: this.zoom(), dpr: this.app.host.dpr },
       npcs: this.world.npcs.filter(n => n.visible).map(n => ({ id: n.def.id, x: n.x, y: n.y })),
     };
   }

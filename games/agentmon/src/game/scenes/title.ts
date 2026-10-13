@@ -29,6 +29,7 @@ export class TitleScene implements Scene {
   constructor(private game: Game) {}
 
   enter(app: App): void {
+    this.game.music.play('title');
     this.root.addChild(this.sky);
     const picks = ['spinnet', 'druzling', 'buzzbill', 'kernip', 'hummet', 'lullakin', 'gleamgrub', 'zestle', 'hailbit', 'bathlet'];
     picks.forEach((id, i) => {

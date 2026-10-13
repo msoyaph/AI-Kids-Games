@@ -1,4 +1,8 @@
 import { expect, type Page } from '@playwright/test';
+import { footprint, parseMap } from '../../src/core/world/map';
+import { findPath } from '../../src/core/world/path';
+import { MAPS } from '../../src/data/maps/index';
+import { TER } from '../../src/data/terrain';
 
 /** Collects console errors and any request that leaves the game's own origin (file:// and data: are fine). */
 export function watch(page: Page) {
@@ -13,7 +17,7 @@ export function watch(page: Page) {
 }
 
 export type Spark = { index: number; angle: number; arcAt: number; arc: number };
-export type Snap = { scene: string; trial?: string; room?: string; roomIndex?: number; moves?: number; solved?: boolean; ready?: boolean; spark?: Spark | null; battle?: { turn: number; outcome: string | null } | null; map?: string; x?: number; y?: number; busy?: boolean; moving?: boolean; dialogue?: boolean; flags?: string[]; team?: { species: string }[] };
+export type Snap = { scene: string; frameMs?: number; coins?: number; wild?: { species: string; x: number; y: number }[]; view?: { x: number; y: number; zoom: number; dpr: number }; audio?: { on: boolean; song: string } | null; trial?: string; room?: string; roomIndex?: number; moves?: number; solved?: boolean; ready?: boolean; spark?: Spark | null; battle?: { turn: number; outcome: string | null } | null; map?: string; x?: number; y?: number; busy?: boolean; moving?: boolean; dialogue?: boolean; flags?: string[]; team?: { species: string }[] };
 export const snap = (page: Page) => page.evaluate(() => (window as unknown as { __agentmon: { snapshot(): Snap } }).__agentmon.snapshot());
 
 /** How far the spark is from the middle of the glow, in degrees. */
@@ -74,3 +78,96 @@ export async function leave(page: Page, key: string, map: string) {
   await hold(page, key, s => s.map === map, 8000);
 }
 
+
+// ---- touch helpers --------------------------------------------------------------------------
+
+/** Where a tile is on screen (CSS px), from the hook's camera numbers. */
+export function tileOnScreen(s: Snap, x: number, y: number): { x: number; y: number } {
+  const v = s.view!;
+  return { x: ((x * 16 + 8) * v.zoom + v.x) / v.dpr, y: ((y * 16 + 8) * v.zoom + v.y) / v.dpr };
+}
+
+/**
+ * True when a tap at this point reaches the world: the canvas, or the stick's zone (a quick tap
+ * there is passed on to the world). Not the A, B or Menu buttons, a dialogue or a menu.
+ */
+export async function reachesWorld(page: Page, p: { x: number; y: number }) {
+  return page.evaluate(([x, y]) => {
+    const el = document.elementFromPoint(x!, y!);
+    return el instanceof HTMLCanvasElement || !!el?.classList.contains('tzone');
+  }, [p.x, p.y]);
+}
+
+/** Tiles you can walk on without help from friends (houses, trees, signs and people block). */
+function staticWalk(mapId: string) {
+  const m = parseMap(MAPS[mapId]!);
+  const blocked = new Set<number>();
+  for (const o of m.objects) for (const f of footprint(o)) blocked.add(f.y * m.w + f.x);
+  for (const n of MAPS[mapId]!.npcs) if (!n.wander && !n.showIf && !n.hideIf) blocked.add(n.y * m.w + n.x);
+  return { w: m.w, h: m.h, ok: (x: number, y: number) => { const t = m.ter[y * m.w + x]; return !!t && TER[t].walk && !TER[t].needs && !blocked.has(y * m.w + x); } };
+}
+
+/**
+ * Tap-to-move to a tile (or a door, or an exit at the map's edge), in hops: tap the farthest tile
+ * of the way that is on screen, wait for the walk, and tap again. Stops when the map changes.
+ */
+export async function tapWalk(page: Page, tx: number, ty: number) {
+  const start = await snap(page);
+  const map = start.map!;
+  const g = staticWalk(map);
+  const vp = page.viewportSize()!;
+  for (let hop = 0; hop < 25; hop++) {
+    // a story moment on the way (someone starts talking): tap through it, then keep walking;
+    // taps on the world are ignored while the scene is busy (a fade), so wait until it is free
+    const now = await snap(page);
+    if (now.map === map && (now.dialogue || (now.busy && !now.moving))) await touchAdvance(page);
+    await expect.poll(async () => { const n = await snap(page); return n.map !== map || (n.x === tx && n.y === ty) || (!n.busy && !n.moving && !n.dialogue); }, { timeout: 15_000, intervals: [100] }).toBe(true);
+    const s = await snap(page);
+    if (s.map !== map || (s.x === tx && s.y === ty)) return;
+    const inMap = tx >= 0 && ty >= 0 && tx < g.w && ty < g.h;
+    const path = findPath(g.w, g.h, s.x!, s.y!, Math.max(0, Math.min(g.w - 1, tx)), Math.max(0, Math.min(g.h - 1, ty)), (x, y) => g.ok(x, y) || (x === tx && y === ty), 8000) ?? [[tx, ty] as [number, number]];
+    let pick: [number, number] = inMap ? [tx, ty] : path[path.length - 1] ?? [tx, ty];
+    for (let i = path.length - 1; i >= 0; i--) {
+      const p = tileOnScreen(s, path[i]![0], path[i]![1]);
+      if (p.x > 24 && p.y > 64 && p.x < vp.width - 24 && p.y < vp.height - 24 && await reachesWorld(page, p)) { pick = path[i]!; break; }
+    }
+    const p = tileOnScreen(s, pick[0], pick[1]);
+    await page.touchscreen.tap(p.x, p.y);
+    // wait for the walk to start and finish (if nothing happens, the loop taps again)
+    await page.waitForTimeout(300);
+    await expect.poll(async () => { const n = await snap(page); return n.map !== map || n.busy || !n.moving; }, { timeout: 15_000, intervals: [100] }).toBe(true);
+    await page.waitForTimeout(200);
+  }
+  throw new Error(`could not walk to ${tx},${ty} on ${map}`);
+}
+
+/**
+ * The touch version of `advance`: tap the dialogue box, cards and choices; in battles tap the ★ move
+ * (or Befriend when `befriend` is on and it is ready); in the Spark Ring tap when the spark is in the glow.
+ */
+export async function touchAdvance(page: Page, o: { seconds?: number; befriend?: boolean } = {}) {
+  const until = Date.now() + (o.seconds ?? 30) * 1000;
+  const visible = async (sel: string) => { const l = page.locator(sel).first(); return (await l.isVisible().catch(() => false)) ? l : null; };
+  while (Date.now() < until) {
+    const s = await snap(page);
+    if (s.spark) {
+      if (offGlow(s.spark) < s.spark.arc * 0.25) { const vp = page.viewportSize()!; await page.touchscreen.tap(vp.width / 2, vp.height / 2); await page.waitForTimeout(300); }
+      else await page.waitForTimeout(8);
+      continue;
+    }
+    const card = await visible('.tutorial button, .dlg-choices button, .credits-skip');
+    if (card) { await card.tap(); await page.waitForTimeout(150); continue; }
+    if (o.befriend) {
+      const bf = await visible('.bpanel button.befriend.ready:not([disabled])');
+      if (bf) { await bf.tap(); await page.waitForTimeout(200); continue; }
+      const snack = await visible('.bpanel button:has(.tag.good), .bpanel button:has-text("No snack")');
+      if (snack) { await snack.tap(); await page.waitForTimeout(200); continue; }
+    }
+    const move = await visible('.bpanel button.suggested:not([disabled]), .bpanel .pgrid button:not([disabled])');
+    if (move) { await move.tap(); await page.waitForTimeout(200); continue; }
+    if (s.dialogue) { const box = await visible('.dlg'); if (box) await box.tap({ position: { x: 30, y: 30 } }); await page.waitForTimeout(150); continue; }
+    if (!s.busy && !s.battle) return;
+    await page.waitForTimeout(120);
+  }
+  throw new Error('touch: the scene did not finish');
+}

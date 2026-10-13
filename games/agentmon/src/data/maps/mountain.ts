@@ -65,7 +65,7 @@ export const whisperWoods: MapDef = {
   ],
   triggers: [
     { x: 14, y: 25, w: 2, h: 1, script: 'whisper-arrive', when: '!whisper-arrive' },
-    { x: 12, y: 20, w: 7, h: 1, script: 'club-dot', when: '!beat:club-dot & !dot-met' },
+    { x: 1, y: 22, w: 28, h: 1, script: 'club-dot', when: '!beat:club-dot & !dot-met' },
   ],
   wild: ['whisper-woods'],
 };
@@ -115,7 +115,7 @@ export const glimmerCave: MapDef = {
     { id: 'club-rudy', name: 'Rudy', x: 16, y: 10, dir: 0, look: { ...CAST.club!.look, skin: 1, hair: 3 }, talk: 'club-rudy' },
     { id: 'cave-agent', name: 'Agent Mo', x: 6, y: 14, dir: 2, look: townsLook('mo', { agent: true, hat: 'cap', hatColor: 0xf5c830 }), talk: 'cave-mo' },
   ],
-  triggers: [{ x: 14, y: 11, w: 4, h: 1, script: 'club-rudy', when: '!beat:club-rudy & !rudy-met' }],
+  triggers: [{ x: 9, y: 11, w: 9, h: 1, script: 'club-rudy', when: '!beat:club-rudy & !rudy-met' }],
   wild: ['glimmer-cave'],
 };
 
@@ -240,12 +240,14 @@ export const cragHome = homeMap('crag-home', 'Stone cottage', { map: 'cragtop', 
 ]);
 
 export const oldMine = trialHall({
+  theme: 10,
   id: 'old-mine', name: 'Old Mine', trial: 'mine', music: 'trial-3', intro: 'mine-hall',
   out: [{ map: 'cragtop', x: 22, y: 3 }, { map: 'cragtop', x: 23, y: 3 }],
   helper: { id: 'mine-helper', name: 'Gus', x: 0, y: 0, dir: 1, look: townsLook('gus', { agent: true, hat: 'cap', hatColor: 0xf5c830 }), talk: 'trainer-mine-helper', trainer: 'mine-helper' },
 });
 
 export const mineTop = trialTop({
+  theme: 10,
   id: 'mine-top', name: 'Old Mine lookout', beacon: 'beacon-mine', out: { map: 'cragtop', x: 23, y: 3 },
   keeper: { id: 'keeper-vee', name: CAST.vee!.name, x: 0, y: 0, dir: 0, look: CAST.vee!.look, talk: 'keeper-vee', trainer: 'keeper-vee' },
 });

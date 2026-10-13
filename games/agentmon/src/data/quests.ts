@@ -1,28 +1,29 @@
 /**
  * Quests: the main story and the side quests. Each stage is one short line for the quest log; a
- * finished quest has stage -1. `goal` (main story) is where the quest arrow points for each stage,
- * and where the headless playthrough bot heads next.
+ * finished quest has stage -1. `goals` (main story): the tile where the next story moment happens
+ * (a trigger, a Keeper); the quest arrow and the playthrough bot head there, through doors, Trials
+ * and updrafts (game/links.ts).
  */
 export interface QuestGoal { map: string; x: number; y: number }
 export interface QuestDef { id: string; title: string; side: boolean; stages: string[]; goals?: (QuestGoal | null)[] }
 
 export const MAIN_STAGES: [string, QuestGoal | null][] = [
-  ['Go to the Field Agent Academy, the big blue building in town.', { map: 'brightmoor', x: 19, y: 6 }],
+  ['Go to the Field Agent Academy, the big blue building in town.', { map: 'academy', x: 5, y: 6 }],
   ['Choose a partner in the Academy Garden, east of town.', { map: 'academy-garden', x: 6, y: 4 }],
-  ['Go north on the Meadow Path to Saltwhistle.', { map: 'meadow-path', x: 10, y: 0 }],
-  ['Find Keeper Marisol at the Lighthouse on Sandy Shore.', { map: 'saltwhistle', x: 29, y: 10 }],
-  ['Make a Tide friend, paddle to the Lighthouse and solve its Trial.', { map: 'sandy-shore', x: 31, y: 7 }],
-  ['Take the Cliff Road, west of Saltwhistle, to Mossgrove.', { map: 'cliff-road', x: 12, y: 0 }],
-  ['Solve the Canopy Trial in Mossgrove Woods.', { map: 'mossgrove-woods', x: 14, y: 3 }],
-  ['Find where the fog comes from, in Whisper Woods.', { map: 'whisper-woods', x: 13, y: 20 }],
-  ['Light the way through Glimmer Cave to Cragtop.', { map: 'cragtop-slopes', x: 12, y: 0 }],
-  ['Solve the Old Mine Trial in Cragtop.', { map: 'cragtop', x: 22, y: 2 }],
-  ['Follow the Canyon Trail west to Dunehollow.', { map: 'canyon-trail', x: 0, y: 10 }],
-  ['Solve the Redrock Trial on the Dune Flats.', { map: 'dune-flats', x: 21, y: 17 }],
-  ['Cross Frost Pass to Frostfall.', { map: 'frost-pass', x: 14, y: 0 }],
-  ['Solve the Summit Trial above Frostfall.', { map: 'frostfall-slopes', x: 12, y: 2 }],
-  ['Ride the updraft from Updraft Ridge up to the Sky Island.', { map: 'updraft-ridge', x: 3, y: 5 }],
-  ['Solve the Beacon Spire Trial and relight the last Beacon.', { map: 'sky-island', x: 15, y: 6 }],
+  ['Go north on the Meadow Path to Saltwhistle.', { map: 'saltwhistle', x: 10, y: 20 }],
+  ['Find Keeper Marisol at the Lighthouse on Sandy Shore.', { map: 'sandy-shore', x: 22, y: 10 }],
+  ['Make a Tide friend, paddle to the Lighthouse and solve its Trial.', { map: 'lighthouse-top', x: 5, y: 6 }],
+  ['Take the Cliff Road, west of Saltwhistle, to Mossgrove.', { map: 'mossgrove', x: 14, y: 22 }],
+  ['Solve the Canopy Trial in Mossgrove Woods.', { map: 'canopy-top', x: 5, y: 6 }],
+  ['Find where the fog comes from, in Whisper Woods.', { map: 'whisper-woods', x: 14, y: 22 }],
+  ['Light the way through Glimmer Cave to Cragtop.', { map: 'cragtop', x: 14, y: 20 }],
+  ['Solve the Old Mine Trial in Cragtop.', { map: 'mine-top', x: 5, y: 6 }],
+  ['Follow the Canyon Trail west to Dunehollow.', { map: 'dunehollow', x: 26, y: 10 }],
+  ['Solve the Redrock Trial on the Dune Flats.', { map: 'sunstone-top', x: 5, y: 6 }],
+  ['Cross Frost Pass to Frostfall.', { map: 'frostfall', x: 14, y: 20 }],
+  ['Solve the Summit Trial above Frostfall.', { map: 'summit-top', x: 5, y: 6 }],
+  ['Ride the updraft from Updraft Ridge up to the Sky Island.', { map: 'sky-island', x: 5, y: 19 }],
+  ['Solve the Beacon Spire Trial and relight the last Beacon.', { map: 'spire-top', x: 5, y: 6 }],
   ['Meet the guardian of Sunreach.', { map: 'spire-top', x: 5, y: 6 }],
   ['Sunreach shines! Explore, fill your Field Guide, and try the Challenge Tower.', null],
 ];

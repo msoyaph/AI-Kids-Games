@@ -41,6 +41,7 @@ Object.defineProperty(window, GAME.hook, {
       frames: app?.frames ?? 0,
       frameMs: app ? Math.round(app.frameMs * 10) / 10 : 0,
       capture,
+      audio: game ? { on: game.audio.ready, song: game.music.playing } : null,
       spark: game?.live.spark ?? null,
       battle: game?.live.battle ?? null,
       ...(app?.scene?.snapshot?.() ?? {}),

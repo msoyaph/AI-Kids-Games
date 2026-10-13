@@ -8,6 +8,9 @@
  *   town       Saltwhistle by the sea, with the team out walking   (&map=id,x,y for another place)
  *   dungeon    a Redrock Trial room with light beams, half solved   (&trial=id&room=N&steps=N)
  *   guide      the Field Guide with lots of friends made
+ * For the website's preview loops, `&play=1` keeps the moment moving (a few turns of the spar, the
+ * Spark Ring sweeping and tapped, the whole growing animation, a Trial room solving itself), and
+ * `&delay=ms` waits before it starts.
  */
 import { Container } from 'pixi.js';
 import { sparkSetup, moodRounds } from '../core/befriend';
@@ -21,7 +24,7 @@ import { DEX } from '../data/index';
 import { SPECIES, SPECIES_LIST } from '../data/species';
 import { TUNING } from '../tuning';
 import { BattleView } from '../render/battle-view';
-import { evolutionStill } from '../render/evolution';
+import { evolutionStill, playEvolution } from '../render/evolution';
 import { SparkRing } from '../render/spark-ring';
 import { BattleUI } from '../ui/battle-ui';
 import { wait } from '../ui/dom';
@@ -76,8 +79,12 @@ export class CaptureScene implements Scene {
     return view;
   }
 
+  private get playing() { return this.params().get('play') === '1'; }
+
   private async run(app: App): Promise<void> {
     void app;
+    const delay = Number(this.params().get('delay') ?? 0);
+    if (delay > 0) await wait(delay);
     if (this.kind === 'battle') return this.battle();
     if (this.kind === 'befriend') return this.befriend();
     if (this.kind === 'town') return this.town();
@@ -106,7 +113,8 @@ export class CaptureScene implements Scene {
     await wait(0);
     const scene = new TrialScene(this.game, trial);
     this.game.app.go(scene);
-    scene.demo(Number(p.get('steps') ?? 6));
+    if (this.playing) void scene.autoplay();
+    else scene.demo(Number(p.get('steps') ?? 6));
   }
 
   private async guide(): Promise<void> {
@@ -145,6 +153,26 @@ export class CaptureScene implements Scene {
     ui.placeCards([view.headPoint(0), view.headPoint(1)]);
     await ui.say("It's super strong!", 1);
     await wait(500);
+    if (!this.playing) return;
+    // a few more turns back and forth, gently, for the preview loop
+    const druz = session.state.team[1]!;
+    for (let turn = 0; turn < 3 && foe.energy > 0; turn++) {
+      this.ready = true;
+      await ui.say(`${SPECIES[foe.species]!.name} used ${DEX.moves[foeMove]!.name}!`, 500);
+      await view.lunge(1);
+      await view.bump(0, 'neutral', DEX.moves[foeMove]!.element, me);
+      me.energy = Math.max(1, me.energy - 9);
+      ui.updateCard(0, me);
+      await wait(400);
+      await ui.say(`${session.friendName(me)} used ${DEX.moves[volt]!.name}!`, 500);
+      await view.lunge(0);
+      await view.bump(1, 'strong', 'volt', foe);
+      void view.float(1, 'Super strong!', 0xffd84a);
+      foe.energy = Math.max(0, foe.energy - 22);
+      ui.updateCard(1, foe);
+      await wait(500);
+    }
+    void druz;
   }
 
   private async befriend(): Promise<void> {
@@ -160,6 +188,7 @@ export class CaptureScene implements Scene {
     ui.updateCard(1, foe);
     ui.placeCards([view.headPoint(0), view.headPoint(1)]);
     if (this.mode === 'mood') {
+      await ui.say(`${SPECIES[foe.species]!.name} is ready to be friends!`, 1);
       void playMoodMatch(this.game, moodRounds(foe, this.seed), TUNING.befriend.need, true, SPECIES[foe.species]!.name);
       await wait(300);
       return;
@@ -170,8 +199,22 @@ export class CaptureScene implements Scene {
     const r = Math.min(host.width, host.height) * 0.26;
     const ring = new SparkRing(setup, this.game.app.sprites.creature(foe.species, 32, 'happy', foe.shimmer), { cx: host.width / 2, cy: host.height * 0.52, r, scale: Math.max(2, Math.round(r / 22)), W: host.width, H: host.height });
     this.root.addChild(ring.root);
-    ring.still(1, (setup.arcAt[1] ?? 0) - setup.arc * 0.15, 1, `Spark 2 of ${setup.sparks}`);
-    await wait(300);
+    if (!this.playing) {
+      ring.still(1, (setup.arcAt[1] ?? 0) - setup.arc * 0.15, 1, `Spark 2 of ${setup.sparks}`);
+      await wait(300);
+      return;
+    }
+    // the ring plays for real: the spark sweeps round and a tap lands in the glow
+    ring.destroy();
+    for (let round = 0; round < 3; round++) {
+      const live = new SparkRing({ ...setup, arcAt: setup.arcAt.map(a => (a + round * 70) % 360) }, this.game.app.sprites.creature(foe.species, 32, 'happy', foe.shimmer), { cx: host.width / 2, cy: host.height * 0.52, r, scale: Math.max(2, Math.round(r / 22)), W: host.width, H: host.height });
+      this.root.addChild(live.root);
+      let spark: { angle: number; arcAt: number; arc: number } | null = null;
+      this.ready = true;
+      await live.play(() => !!spark && Math.abs((((spark.angle - spark.arcAt) % 360) + 540) % 360 - 180) < spark.arc * 0.12, false, info => { spark = info; });
+      await wait(600);
+      live.destroy();
+    }
   }
 
   private async evolution(): Promise<void> {
@@ -179,6 +222,11 @@ export class CaptureScene implements Scene {
     const c = session.state.team[0]!;
     const host = this.game.app.host;
     const scale = Math.max(3, Math.round(Math.min(host.width, host.height) / 90));
+    if (this.playing) {
+      void this.game.dialogue.say(`${session.friendName(c)} is growing!`);
+      this.ready = true;
+      await playEvolution(this.root, this.game.app.sprites.creature('zipbill', 32, 'idle', c.shimmer), this.game.app.sprites.creature('voltabill', 32, 'happy', c.shimmer), { W: host.width, H: host.height, scale }, () => false, false);
+    }
     evolutionStill(this.root, this.game.app.sprites.creature('voltabill', 32, 'happy', c.shimmer), { W: host.width, H: host.height, scale });
     void this.game.dialogue.say(`${session.friendName(c)} grew into ${SPECIES.voltabill!.name}!`);
     await wait(1500);
