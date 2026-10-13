@@ -60,6 +60,23 @@ test('layout, touch targets and reduced motion',async ({ page }) => {
   }
   await page.goto('/'); await expect(page.getByRole('button',{ name: 'Pause featured games' })).toHaveCount(0);
 });
+
+// The featured row's thumbnails once set the hero's width, pushing it past the gutter (and a
+// 375 px page sideways); they now share the row and wrap on the narrowest phones.
+test('home fits narrow phones: the hero stays inside the gutters',async ({ page },info) => {
+  test.skip(info.project.name !== 'phone','phone widths');
+  for (const width of [320,375,390]) {
+    await page.setViewportSize({ width,height: 740 }); await page.goto('/');
+    await expect(page.locator('.hero-media')).toBeVisible();
+    const fit = await page.evaluate(() => {
+      const hero = document.querySelector('.hero')!.getBoundingClientRect();
+      const parts = [...document.querySelectorAll('.hero-media,.hero-copy,.slide-picks,.slide-pick')].map(el => el.getBoundingClientRect().right);
+      return { sideways: document.documentElement.scrollWidth - innerWidth, past: Math.max(...parts) - hero.right, gutter: innerWidth - hero.right };
+    });
+    expect(fit,`${width} px`).toEqual({ sideways: 0,past: expect.any(Number),gutter: 16 });
+    expect(fit.past,`${width} px`).toBeLessThanOrEqual(0.5);
+  }
+});
 test('outbound links require the grown-up screen',async ({ page }) => {
   await page.goto('/'); const home = page.url(); await expect(page.getByRole('heading',{ level: 1 })).toBeAttached(); await page.evaluate(() => { const a = document.createElement('a'); a.href = 'https://example.com'; a.textContent = 'Test outside link'; document.querySelector('main')!.prepend(a); });
   await page.getByRole('link',{ name: 'Test outside link' }).click(); await expect(page.getByRole('dialog')).toContainText('Ask a grown-up first!');

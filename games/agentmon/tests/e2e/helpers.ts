@@ -64,13 +64,40 @@ export async function hold(page: Page, key: string, done: (s: Snap) => boolean, 
 }
 
 /**
+ * Hold a key until the game's snapshot shows a change from `before` (or, with `orBusy`, a fade or a
+ * story moment), and let go on that very frame. Both the watching and the letting go happen inside
+ * the page: watching from the test takes a round trip per look, and on a slow or busy machine (CI's
+ * software rendering, or several browsers at once) one round trip can outlast a whole step, so the
+ * game saw the key still held and took a second step. Returns the snapshot at the moment of change.
+ */
+export async function holdUntil(page: Page, code: string, before: Record<string, unknown>, opts: { orBusy?: boolean; timeout?: number } = {}): Promise<Snap> {
+  await page.keyboard.down(code);
+  try {
+    const seen = await page.evaluate(({ code, before, orBusy, timeout }) => new Promise<Record<string, unknown> | null>(resolve => {
+      const hook = (window as unknown as { __agentmon: { snapshot(): Record<string, unknown> } }).__agentmon;
+      const t0 = performance.now();
+      const look = () => {
+        const s = hook.snapshot();
+        if (Object.entries(before).some(([k, v]) => s[k] !== v) || (orBusy && (!!s.busy || !!s.dialogue))) {
+          dispatchEvent(new KeyboardEvent('keyup', { code, key: code }));
+          resolve(s);
+        } else if (performance.now() - t0 > timeout) resolve(null);
+        else requestAnimationFrame(look);
+      };
+      look();
+    }), { code, before, orBusy: !!opts.orBusy, timeout: opts.timeout ?? 8000 });
+    expect(seen, `holding ${code} should change ${Object.keys(before).join(', ')}`).not.toBeNull();
+    return seen as Snap;
+  } finally {
+    await page.keyboard.up(code);
+  }
+}
+
+/**
  * One step: hold the key until the step starts (the player's tile changes, or a door, map edge or
- * story moment takes over), let go, and wait until the player stands still. Letting go during the
- * step means a slow device (CI draws in software at ~15 fps) can never add a step. The key is let go
- * from inside the page on the first frame the step shows: watching from the test instead takes a
- * round trip per look, and on a busy machine (the full matrix runs several browsers at once) that
- * round trip can outlast a whole step, so the game saw the key still held and took a second one.
- * Returns false when something other than a plain step happened.
+ * story moment takes over), let go on that frame (holdUntil), and wait until the player stands
+ * still. Letting go during the step means a slow device can never add a step. Returns false when
+ * something other than a plain step happened.
  */
 /** Wait until nothing is happening: no step, fade or story moment under way (a dialogue counts as settled). */
 async function settled(page: Page) {
@@ -81,28 +108,8 @@ async function oneStep(page: Page, key: string): Promise<boolean> {
   await settled(page);
   const b = await snap(page);
   if (b.dialogue) return false;
-  await page.keyboard.down(key);
-  let moved = false;
-  try {
-    const started = await page.evaluate(({ code, b }) => new Promise<{ moved: boolean } | null>(resolve => {
-      const hook = (window as unknown as { __agentmon: { snapshot(): { x?: number; y?: number; map?: string; busy?: boolean; dialogue?: unknown } } }).__agentmon;
-      const t0 = performance.now();
-      const look = () => {
-        const s = hook.snapshot();
-        const stepped = s.x !== b.x || s.y !== b.y;
-        if (stepped || s.map !== b.map || !!s.busy || !!s.dialogue) {
-          dispatchEvent(new KeyboardEvent('keyup', { code, key: code }));
-          resolve({ moved: stepped });
-        } else if (performance.now() - t0 > 8000) resolve(null);
-        else requestAnimationFrame(look);
-      };
-      look();
-    }), { code: key, b: { x: b.x, y: b.y, map: b.map } });
-    expect(started, `a ${key} step should start within 8 s`).not.toBeNull();
-    moved = started!.moved;
-  } finally {
-    await page.keyboard.up(key);
-  }
+  const s = await holdUntil(page, key, { x: b.x, y: b.y, map: b.map }, { orBusy: true });
+  const moved = s.x !== b.x || s.y !== b.y;
   await settled(page);
   const a = await snap(page);
   return moved && a.map === b.map && !a.dialogue;
