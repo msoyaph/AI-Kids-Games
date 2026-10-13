@@ -60,8 +60,9 @@ class PreviewController {
     if (!previewsAllowed()) return null;
     const ready = [...this.entries].filter(entry => !entry.failed);
     if (matchMedia(TOUCH).matches) {
-      const middle = innerHeight/2;
-      const distance = (entry: PreviewEntry) => { const box = entry.root.getBoundingClientRect(); return Math.abs(box.top+box.height/2-middle); };
+      // nearest the middle of the screen: by row first, then (cards side by side) by column
+      const middle = innerHeight/2, centre = innerWidth/2;
+      const distance = (entry: PreviewEntry) => { const box = entry.root.getBoundingClientRect(); return Math.round(Math.abs(box.top+box.height/2-middle))*10000+Math.abs(box.left+box.width/2-centre); };
       return ready.filter(entry => entry.ratio >= .6).sort((a,b) => distance(a)-distance(b))[0] ?? null;
     }
     const hovered = ready.filter(entry => entry.activeAt > 0).sort((a,b) => b.activeAt-a.activeAt)[0];

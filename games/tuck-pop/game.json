@@ -3,9 +3,9 @@
   "slug": "tuck-pop",
   "title": "Tuck Pop",
   "tagline": "Fit the blocks, fill a line, watch it pop.",
-  "shortDescription": "A bright, friendly block puzzle for ages 6 and up. Drag colorful pieces onto an 8×8 board, fill rows and columns to clear them, and chain clears into streaks.",
+  "shortDescription": "A bright, friendly block puzzle. Drag chunky pieces onto an 8×8 board, fill rows and columns to make them pop, and chain clears into streaks. Classic, Relax, 60 Adventure levels and a Daily puzzle.",
   "longDescription": "Drag chunky, colorful pieces onto an 8×8 board. Fill a whole row or column and it pops; fill several at once, or keep clearing move after move, for bigger scores. Play Classic at your own pace on Easy or Normal, unwind in Relax, solve 60 Adventure levels across four worlds with gems, fruit and stones, or try the Daily puzzle. Helpers like Undo and Shuffle are earned by playing, never bought. Six themes to unlock, colorblind symbols, high contrast, read-aloud and full keyboard and gamepad play.",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "minAge": 6,
   "ageRange": "6+",
   "genres": [
@@ -62,7 +62,7 @@
   ],
   "orientation": "any",
   "requirements": [],
-  "playTime": "A few minutes per game; 60 Adventure levels",
+  "playTime": "A few minutes a game, plus 60 Adventure levels",
   "storage": {
     "prefix": "tuckpop.",
     "keys": [
@@ -80,8 +80,12 @@
   "site": {
     "featured": false,
     "releaseDate": "2026-10-13",
-    "accentColor": "#ffd9a8",
-    "coverLayers": [],
-    "status": "In development"
+    "accentColor": "#ffe0b8",
+    "coverLayers": [
+      "float",
+      "twinkle"
+    ],
+    "status": "Ready to play",
+    "order": 7
   }
 }

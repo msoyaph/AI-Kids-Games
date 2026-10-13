@@ -5,7 +5,8 @@ export const launchGames = [
   { slug: 'theabonk',title: 'TheaBonk',key: 'theabonk.save',prefix: /^theabonk\.save$|^__theabonk_probe__$/ },
   { slug: 'vanex-defense',title: 'Vanex Defense',key: 'vanex-defense-save',prefix: /^vanex-defense-|^__vanex_probe__$/ },
   { slug: 'space-sky',title: 'Space Sky',key: 'spacesky.slot.0',prefix: /^spacesky\.|^__spacesky_probe__$/ },
-  { slug: 'calex-cart',title: 'Calex Cart',key: 'calexcart.slot.1',prefix: /^calexcart\./ }
+  { slug: 'calex-cart',title: 'Calex Cart',key: 'calexcart.slot.1',prefix: /^calexcart\./ },
+  { slug: 'tuck-pop',title: 'Tuck Pop',key: 'tuckpop.run',prefix: /^tuckpop\./ }
 ];
 export async function press(locator: Locator,touch: boolean) { if (touch) await locator.tap(); else await locator.click(); }
 export async function instrument(page: Page) {
@@ -128,6 +129,18 @@ export async function startGame(page: Page,slug: string,touch: boolean): Promise
     // GO continuously pulses: it has no stable animation frame to wait for.
     await expect(go).toBeVisible(); await expect(go).toBeEnabled();
     if (touch) await go.tap({ force: true }); else await go.click({ force: true });
+  } else if (slug === 'tuck-pop') {
+    await press(f.locator('#classic'),touch);
+    await checkAudio(f);
+    await f.waitForFunction(() => (window as any).__tuckpop.snapshot().screen === 'play');
+    if (touch) {
+      // tap a piece, then tap the board (frame coordinates plus the iframe's place on the page)
+      const s = await f.evaluate(() => (window as any).__tuckpop.snapshot().layout);
+      const box = await page.locator('iframe').boundingBox();
+      await page.touchscreen.tap(box!.x+s.slots[0].x+s.slots[0].w/2,box!.y+s.slots[0].y+s.slots[0].h/2);
+      await page.touchscreen.tap(box!.x+s.board.x+s.board.w/2,box!.y+s.board.y+s.board.h/2);
+    } else { await f.locator('body').press('Digit1'); await f.locator('body').press('Enter'); }
+    await expect.poll(() => f.evaluate(() => (window as any).__tuckpop.snapshot().moves)).toBe(1);
   } else if (slug === 'space-sky') {
     await press(f.getByTestId('btn-play'),touch);
     await checkAudio(f);
@@ -205,6 +218,11 @@ export async function verifySaveReload(f: Frame,slug: string) {
   } else if (slug === 'vanex-defense') {
     await f.getByRole('button',{ name:/Settings/ }).click();
     await expect(f.locator('.setting').filter({ hasText:'Screen shake' }).getByRole('radio',{ name:'Off' })).toHaveAttribute('aria-checked','true');
+  } else if (slug === 'tuck-pop') {
+    await f.getByRole('button',{ name:/Continue/ }).click();
+    await f.waitForFunction(() => (window as any).__tuckpop.snapshot().screen === 'play');
+    expect(await f.evaluate(() => (window as any).__tuckpop.snapshot().moves)).toBe(1);
+    expect(await f.evaluate(() => (window as any).__tuckpop.snapshot().persistent)).toBe(true);
   } else if (slug === 'space-sky') {
     await f.getByTestId('btn-play').click();
     await expect(f.getByTestId('slot-0')).toContainText('LaunchTest');

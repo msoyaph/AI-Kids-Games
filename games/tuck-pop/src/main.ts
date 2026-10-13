@@ -661,7 +661,8 @@ function frame(now: number) {
   if (clock.on && screen === 'play' && !game.over) tickClock(dt);
   const animating = updateTweens(dt);
   if (shownScore !== game.score) { shownScore += Math.max(1, Math.ceil((game.score - shownScore) * Math.min(1, dt * 12))); if (shownScore > game.score) shownScore = game.score; $('#score').textContent = String(shownScore); }
-  scene.frame(dt, animating);
+  // Normally only changes are drawn; the capture route draws every frame so recordings flow.
+  scene.frame(dt, animating || capture);
   requestAnimationFrame(frame);
 }
 

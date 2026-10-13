@@ -1,8 +1,8 @@
 {
   "name": "tuck-pop",
   "private": true,
-  "version": "0.1.0",
-  "description": "Tuck Pop, a game for Ai Kids Games.",
+  "version": "1.0.0",
+  "description": "Tuck Pop, a kid-friendly block puzzle for Ai Kids Games.",
   "type": "module",
   "license": "MIT",
   "scripts": {

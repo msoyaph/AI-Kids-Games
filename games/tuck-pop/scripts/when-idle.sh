@@ -2,14 +2,16 @@
 # Runs a command only when no other test run is active on this machine (other sessions share it):
 #   sh scripts/when-idle.sh npx playwright test
 # Waits up to 30 minutes, checking every 10 seconds, then gives up. Not counted: this script's own
-# parent shells (their command lines mention the test command), and orphaned leftovers (a test
-# worker whose run already ended, now owned by launchd).
+# parent shells and the rest of its own pipeline (their command lines mention the test command),
+# and orphaned leftovers (a test worker whose run already ended, now owned by launchd).
 ancestors=" $$ "
 p=$$
 while [ "$p" -gt 1 ] 2>/dev/null; do p=$(ps -o ppid= -p "$p" | tr -d ' '); ancestors="$ancestors$p "; done
+group=$(ps -o pgid= -p $$ | tr -d ' ')
 busy() {
   for pid in $(pgrep -f "[p]laywright test|[v]itest|[c]apture-previews"); do
     case "$ancestors" in *" $pid "*) continue ;; esac
+    [ "$(ps -o pgid= -p "$pid" | tr -d ' ')" = "$group" ] && continue # our own pipeline
     [ "$(ps -o ppid= -p "$pid" | tr -d ' ')" = "1" ] && continue
     return 0
   done

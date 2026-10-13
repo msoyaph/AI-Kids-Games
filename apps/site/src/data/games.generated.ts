@@ -425,5 +425,69 @@ export const generatedGames: Game[] = [
     "featured": true,
     "accentColor": "#f7e3ac",
     "status": "Ready to play"
+  },
+  {
+    "slug": "tuck-pop",
+    "title": "Tuck Pop",
+    "tagline": "Fit the blocks, fill a line, watch it pop.",
+    "description": "A bright, friendly block puzzle. Drag chunky pieces onto an 8×8 board, fill rows and columns to make them pop, and chain clears into streaks. Classic, Relax, 60 Adventure levels and a Daily puzzle.",
+    "version": "1.0.0",
+    "categories": [
+      "Puzzle",
+      "Casual"
+    ],
+    "tags": [
+      "Blocks",
+      "Puzzle",
+      "Relaxing",
+      "Brain game"
+    ],
+    "keywords": [
+      "block puzzle",
+      "line clear",
+      "brain game",
+      "relaxing",
+      "puzzle game for kids",
+      "grid puzzle",
+      "offline game",
+      "browser game"
+    ],
+    "ageGuidance": "Ages 6+",
+    "minAge": 6,
+    "contentNotes": "A calm puzzle with no violence, timers in the early levels, ads, purchases or chat. Progress and best scores save in this browser only.",
+    "estimatedPlayTime": "A few minutes a game, plus 60 Adventure levels",
+    "quickStart": [
+      "Drag a piece from the tray onto the board.",
+      "Fill a whole row or column to clear it.",
+      "Keep clearing to build a streak and a bigger score."
+    ],
+    "controls": {
+      "types": [
+        "Touch",
+        "Mouse",
+        "Keyboard",
+        "Gamepad"
+      ],
+      "howToPlay": [
+        "Drag a piece onto the board with a finger or the mouse, or tap a piece and then tap where it should go.",
+        "Keyboard: 1, 2 or 3 picks a piece, the arrow keys move it, Enter places it, Escape puts it back and U undoes.",
+        "Gamepad: the d-pad moves, A places, B puts the piece back, LB and RB switch pieces and Start pauses."
+      ]
+    },
+    "supportedDevices": [
+      "Phone",
+      "Tablet",
+      "Computer"
+    ],
+    "orientation": "any",
+    "requirements": [],
+    "coverLayers": [
+      "float",
+      "twinkle"
+    ],
+    "releaseDate": "2026-10-13",
+    "featured": false,
+    "accentColor": "#ffe0b8",
+    "status": "Ready to play"
   }
 ];

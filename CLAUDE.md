@@ -277,8 +277,28 @@ Brief: docs/prompts/tuck-pop.md. Plan, rules and status: games/tuck-pop/CLAUDE.m
 **FOLLOW-UP (owner):** get Space Sky's and Light Crossing's browser suites passing on GitHub's
 runners, then empty `LOCAL_SUITES`.
 
-**Release plan:** in phase 9 the PR keeps the site at 2.3.0. The release commit (phase 10, after
-approval) bumps to 2.4.0, records the approval and runs `npm run release:local`.
+**Phases 1–8 complete** (rules, dealer, play, effects and sound, modes, Adventure, themes and
+accessibility, hardening); see games/tuck-pop/CLAUDE.md for details and numbers.
+
+**Phase 9:**
+- The game is listed, built, audited and captured.
+- The README game table is generated between the GAMES markers by `npm run manifests`. It uses a
+  simple Game / What it is / Ages / Source format; the showcase format waits for aikids.games.
+- Site tests now count 7 games (ages 6 → LC, Space Sky, Tuck Pop).
+
+**Release plan:** the PR keeps the site at 2.3.0. The release commit (phase 10, after the owner's
+approval) does three things:
+- bumps to 2.4.0;
+- records the approval;
+- runs `npm run release:local` (Space Sky and Light Crossing GPU suites) and commits
+  DEPLOYMENT.json.
+
+Then: set AIKG_ALLOW_PRODUCTION=2.4.0 in Vercel Production, merge with a merge commit, run the
+production smoke test and Lighthouse, and open the record PR.
+
+**Merge order with the Agentmon branch:** that branch was cut from 4e03eae and still has
+`games/blocks-wip`. Whichever lands second reconciles the lockfile and must not bring that folder
+back.
 
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),

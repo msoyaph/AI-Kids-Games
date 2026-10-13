@@ -101,6 +101,19 @@ Progress (one commit per step):
    Lighthouse mobile: home 99/100/100/100, details 98/100/100/100, play 45 (exempt)/100/100/100.
    Pitfall: in zsh never name a loop variable `path` (it rewrites PATH).
 
+## Tuck Pop, the seventh game (release 2.4.0)
+
+Listed from `games/tuck-pop/game.json`. Its genres are Puzzle and Casual (new categories; the filter
+chips and /category routes come from the games). Art lives in `public/media/tuck-pop/`: a generated
+cover, float and twinkle layers, a logo with per-letter colors, and the OG image. Previews come from
+`scripts/capture/tuck-pop.ts`, which uses the game's own `?scene=` capture route, crops to the
+board, and needs the game to draw every frame in capture mode. Tests now count 7 games (age 6: LC,
+Space Sky, Tuck Pop).
+
+**Preview tie-break:** on touch, the preview nearest the screen's middle plays, by row first and
+then by column. Before this, two cards in the same row tied and the first in the page always won;
+the tablet test now accepts any card from the centred row.
+
 ## Next: Light Crossing v2.0 (owner request, on hold)
 
 Owner wants Light Crossing v2.0 imported and released. On 2026-10-11 its project was on

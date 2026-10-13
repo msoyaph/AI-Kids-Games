@@ -46,6 +46,15 @@
       "importedAt": "2026-10-12"
     },
     {
+      "slug": "tuck-pop",
+      "version": "1.0.0",
+      "source": "games/tuck-pop/dist/index.html",
+      "bytes": 520236,
+      "sha256": "7a0e45826b9de50edb6bd638073684eded5627ad6a6062d708d27b0218c7a838",
+      "inputsSha256": "ac1fd43af9170034eeee86facbfe84565fe98523dd3f3ad5eb6f22af1a81063e",
+      "importedAt": "2026-10-13"
+    },
+    {
       "slug": "vanex-defense",
       "version": "2.0.0",
       "source": "games/vanex-defense/dist/index.html",

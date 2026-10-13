@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+<!-- Tuck Pop cover layer (float): the piece about to tuck in. -->
+<defs><g id="b4"><rect x="0.0" y="6.0" width="100.0" height="100.0" rx="20.0" fill="#795ba6" opacity=".35"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="#9b7cf6"/><path d="M20.0 84.0h60.0a20.0 20.0 0 0 0 20.0-4.0v-10.0" fill="none"/><rect x="0.0" y="82.0" width="100.0" height="18.0" rx="12.0" fill="#8668c4" opacity=".55"/><rect x="6.0" y="5.0" width="88.0" height="12.0" rx="6.0" fill="#fff" opacity=".28"/><ellipse cx="36.0" cy="28.0" rx="24.0" ry="11.0" fill="#fff" opacity=".45" transform="rotate(-20 36.0 28.0)"/><circle cx="19.0" cy="20.0" r="5.0" fill="#fff" opacity=".85"/><rect x="0.0" y="0.0" width="100.0" height="100.0" rx="20.0" fill="none" stroke="#6f528f" stroke-opacity=".45" stroke-width="3.0"/></g></defs>
+<g transform="rotate(-10 760 260)">
+<use href="#b4" transform="translate(560.0 205.0) scale(0.700)"/>
+<use href="#b4" transform="translate(560.0 279.0) scale(0.700)"/>
+<use href="#b4" transform="translate(560.0 353.0) scale(0.700)"/>
+<use href="#b4" transform="translate(634.0 353.0) scale(0.700)"/>
+</g></svg>
