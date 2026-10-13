@@ -84,6 +84,20 @@ Cliff Valley's slot caps are about 10 times their largest real saves), the origi
 Calex Cart's optional time-trial ghosts. If a browser ever runs out of room, every game keeps the
 previous save intact and tells the player (Calex Cart first frees its own playtest log).
 
+## Community games (not on this origin)
+
+Community games (`community/<slug>/`, SUBMITTING.md) never share this origin. Each plays from its own
+address (`aikg-<slug>.vercel.app`, a separate site), so it can't read or change the website's
+`aikg:` keys or any first-party game's saves, and other community games can't read its saves. In
+an iframe, browsers also keep its storage separate per top-level site. They are still held to the
+same rules, checked by `npm run check-submission`:
+- every key starts with the game's own prefix, which no other game (first-party or community) may
+  share or overlap;
+- no `clear()`, sessionStorage, IndexedDB, cookies or Cache Storage;
+- a static scan of the source, plus a 20-second browser run that records every storage call.
+
+They are left out of the size budget above, because their storage belongs to their own origin.
+
 ## Method
 
 1. `npm run audit-storage`: scans each committed build for storage APIs, key-like strings and risky

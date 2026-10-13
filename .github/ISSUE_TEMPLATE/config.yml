@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Submit a game for Community games
+    url: https://github.com/msoyaph/AI-Kids-Games/blob/main/SUBMITTING.md
+    about: Games are submitted as pull requests, not issues. SUBMITTING.md walks through it, step by step.
   - name: Ask a question or share an idea
     url: https://github.com/msoyaph/AI-Kids-Games/discussions
     about: Questions, ideas and show-and-tell go in Discussions.

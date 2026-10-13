@@ -20,6 +20,8 @@ body:
         - Space Sky
         - Calex Cart
         - Cliff Valley
+        - Tuck Pop
+        - A community game
         - Somewhere else in this repo
     validations:
       required: true

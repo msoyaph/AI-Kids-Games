@@ -16,7 +16,7 @@ We'll confirm we got it within a few days, keep you updated, and credit you in t
 
 ## What counts
 
-Anything that could let a game or the website:
+Anything that could let a game (including a community game) or the website:
 
 - send data anywhere, load anything from another site, or track a player;
 - read, change or delete another game's saves or the site's favorites;
@@ -24,16 +24,23 @@ Anything that could let a game or the website:
 - run code from a pull request on someone's computer (for example, a self-hosted runner).
 
 Also: leaked secrets in the repo or its history, and weaknesses in the build or deployment
-pipeline.
+pipeline, including anything that lets a community pull request reach outside its folder, run with
+more permissions, or go live without the owner's approval. A problem with a community game's
+*content* can be reported in public with the *Report a problem with a community game* form.
 
 ## How the project protects players
 
 - The website and every game make **no requests to other origins**. The site's Content Security
   Policy only allows its own origin, and each game is one self-contained file.
 - No accounts, ads, analytics, chat or personal data. Game progress stays in the browser.
-- Games run in a sandboxed iframe (`allow-scripts allow-same-origin allow-pointer-lock`). Because
-  they share the site's origin, **only reviewed first-party games are hosted**; third-party games
-  would need a separate domain (see `apps/site/ADDING_A_GAME.md`).
+- Games run in a sandboxed iframe (`allow-scripts allow-same-origin allow-pointer-lock`). Our own
+  games share the site's origin, so **only reviewed first-party games are hosted there**.
+- **Community games** (by anyone, [SUBMITTING.md](SUBMITTING.md)) are built from source and served
+  from their own address, `aikg-<slug>.vercel.app`: a separate site, whose policy allows no
+  connections and which only the website may frame. Each passes automated checks, and the owner's
+  approval is tied to the exact source reviewed ([MODERATION.md](MODERATION.md)). Their pull requests
+  run only under `pull_request`, read-only and without secrets, and may change only their own
+  folder.
 - **Self-hosted runners are never used** with this public repository. Pull requests from forks
   need a maintainer's approval before their preview deployments run.
 - Secret scanning and Dependabot alerts are on.

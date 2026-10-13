@@ -85,12 +85,21 @@ npm run dev --workspace games/my-game
 build a game with an AI coding assistant, and [AGENTS.md](AGENTS.md) tells the assistant how this
 repo works.
 
-## List your game on AI Kids Games
+## Submit a game
 
-**Coming soon.** We plan to list kid-safe games made by others. Listed games will need to meet
-the kid-safety checklist in [CONTRIBUTING.md](CONTRIBUTING.md), be original work (no other
-companies' characters, names or trademarks), and follow the game contract. The website itself
-never collects any data: listing requests will go through GitHub.
+Made a kid-safe game? Submit it for **[Community games](https://ai-kids-games-fawn.vercel.app/community)**:
+
+```bash
+npm run new-community-game -- my-game --handle @your-nickname
+npm run dev:community -- my-game
+npm run check-submission -- my-game     # every check the reviewers run, with a fix for each
+```
+
+Then open a pull request that changes only `community/my-game/`. Every game passes the same
+automated checks as ours, and a person plays it and reads every word before approving it. Approved
+games run from their own separate address, so they can't reach the website or other games' saves.
+[SUBMITTING.md](SUBMITTING.md) is the full guide (with a section for AI coding assistants), and
+[MODERATION.md](MODERATION.md) explains how reviews work.
 
 ## Made with AI
 
@@ -128,10 +137,13 @@ Each game's own README lists its controls, tests and tools.
 
 ```
 apps/site/                the website (Vite + React): pages, the committed game builds, art and previews
+apps/play/                the play origin: builds community games from source, each on its own address
 games/<slug>/             each game's complete project, with its full history and its game.json
+community/<slug>/         community games: source only, submitted in pull requests (SUBMITTING.md)
 templates/game-starter/   Star Catch, the smallest complete game that follows the contract
-docs/                     guides, the game.json schema and the example briefs
-scripts/                  repo tooling: new-game, import-game, manifests, storage audit, checks
+tooling/community-kit/    the pinned packages and build setup every community game uses
+docs/                     guides, the game.json schemas and the example briefs
+scripts/                  repo tooling: new-game, import-game, manifests, checks, check-submission, review kit
 ```
 
 The website ships each game as one committed file, `apps/site/public/games/<slug>/index.html`.

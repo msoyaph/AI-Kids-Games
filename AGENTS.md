@@ -10,6 +10,10 @@ Instructions for AI coding assistants (and humans) working here. Claude Code als
   one committed file, `apps/site/public/games/<slug>/index.html`, played in a sandboxed iframe.
 - `games/<slug>/`: each game's complete project with its own tests and docs. `game.json` is the
   single source of truth for its listing.
+- `community/<slug>/`: **community games** by anyone, source only, submitted in pull requests
+  ([SUBMITTING.md](SUBMITTING.md), [MODERATION.md](MODERATION.md)). They are not workspaces. They
+  are built with `tooling/community-kit` and served by `apps/play` from their own addresses, never
+  from the website's origin.
 - `templates/game-starter/`: *Star Catch*, the smallest complete game that follows the contract.
 - `scripts/`: repo tooling. `docs/`: guides, the manifest schema and the example briefs.
 - npm workspaces with one root lockfile. Node 24.
@@ -26,6 +30,10 @@ npm run manifests                             # regenerate site registry, README
 npm run import-game -- <slug>                 # build a game and copy it into the website
 npm run new-game -- <slug> --title "Title"    # new game from the starter
 npm run <script> --workspace games/<slug>     # any game's own scripts (typecheck, test, build, ...)
+npm run new-community-game -- <slug> --handle @nickname   # a community game from the starter
+npm run dev:community -- <slug>               # play a community game while building it
+npm run check-submission -- <slug>            # every check a community game must pass
+npm run review-submission -- <PR>             # the owner's review kit (MODERATION.md)
 ```
 
 ## The game contract (every game, no exceptions)
@@ -55,6 +63,11 @@ npm run <script> --workspace games/<slug>     # any game's own scripts (typechec
 - Keep the website's privacy promises: no new origins in its CSP, no cookies, no analytics, and
   outbound links keep the grown-up check.
 - **Never add a self-hosted runner** or a workflow that uses one: this repository is public.
+- **Community games:** when helping someone submit a game, follow SUBMITTING.md's section for
+  assistants and change only that game's `community/<slug>/` folder. Never copy a community game
+  into `apps/site/public/games/`, run `npm install` in its folder, or set its `approval` or
+  `listing` (only the owner's review tool does). Community pull requests run under `pull_request`
+  only, with read-only permissions and no secrets; never use `pull_request_target`.
 - Production deploys need the owner's approval for each release (see `apps/site/DEPLOYMENT.json`
   and `apps/site/scripts/check-deployment.ts`); never bypass or weaken that guard.
 - Run the affected game's own checks (typecheck, unit, build, browser tests) and `npm run check`

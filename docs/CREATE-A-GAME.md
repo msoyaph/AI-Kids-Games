@@ -90,5 +90,7 @@ Draw a cover and logo in `apps/site/public/media/my-game/` and record previews w
   the maintainers review in full, because games share the website's origin.
 - **On your own site:** fork the repo and give your site and games their own name and look (see
   [BRAND.md](../BRAND.md)).
-- **On the AI Kids Games website:** listing outside games is coming soon. Open a *Game listing request* issue
-  to register interest.
+- **On the AI Kids Games website:** submit it as a community game. Start it with
+  `npm run new-community-game -- my-game --handle @your-nickname` (it lives in `community/my-game/`,
+  source only), check it with `npm run check-submission -- my-game` and open a pull request.
+  [SUBMITTING.md](../SUBMITTING.md) is the full guide.

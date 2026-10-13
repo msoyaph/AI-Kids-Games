@@ -10,9 +10,16 @@ manifest, `games/<slug>/game.json`, by `npm run manifests` at the repo root (int
 **WARNING: scripts plus same-origin access in an iframe do not isolate a game
 from this site. Never add third-party games using this embedding setup.** A game
 can access the site's DOM and every localStorage key on the origin. This is
-acceptable only for our own reviewed first-party games. Third-party games would
-need to be served from a separate domain with a separately reviewed sandbox,
-storage and permissions policy. Do not accept arbitrary game uploads.
+acceptable only for our own reviewed first-party games. Do not accept arbitrary
+game uploads.
+
+Games by anyone else are **community games** (`community/<slug>/`, SUBMITTING.md and
+MODERATION.md at the repo root). They are never imported here: the `ai-kids-games-play`
+project (`apps/play`) builds them from source and serves each from its own address,
+`aikg-<slug>.vercel.app`. That is a separate site, because `vercel.app` is on the Public
+Suffix List. Its policy allows no connections, and only this website may frame it. The site
+frames those addresses with the same sandbox and `allow` attributes; its CSP `frame-src` lists
+exactly the approved games' addresses (`vite.config.ts`, from `scripts/generate-community.ts`).
 
 The exact first-party permissions are:
 

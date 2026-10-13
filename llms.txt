@@ -30,7 +30,7 @@ AI Kids Games (https://ai-kids-games-fawn.vercel.app) is a website of original g
 
 - [Create a game](https://github.com/msoyaph/AI-Kids-Games/blob/main/docs/CREATE-A-GAME.md): the game contract and the starter template.
 - [Example briefs](https://github.com/msoyaph/AI-Kids-Games/tree/main/docs/prompts): the prompts the games were built from with Claude Code.
-- [List your game](https://ai-kids-games-fawn.vercel.app/list-your-game): listing games made by others is coming soon; requests go through GitHub.
+- [Submit a game](https://ai-kids-games-fawn.vercel.app/list-your-game): build a kid-safe game from the starter, check it with npm run check-submission and submit it in a pull request ([SUBMITTING.md](https://github.com/msoyaph/AI-Kids-Games/blob/main/SUBMITTING.md)).
 
 ## Optional
 

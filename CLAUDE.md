@@ -125,7 +125,16 @@ commit (`npm run review-submission -- <PR> --approve`).
        set it;
      - Playwright then also builds and serves the play origin on 127.0.0.1:4320;
      - `tests/e2e/community.spec.ts`; `guard(page, origin, allow)` allows exactly the play origin.
-7. Docs.
+7. COMPLETE: docs.
+   - SUBMITTING.md (with a section for AI assistants) and MODERATION.md.
+   - Updated: README (Submit a game, repo structure), CONTRIBUTING (DCO, community path), AGENTS,
+     SECURITY, CREATE-A-GAME §6, ADDING_A_GAME, STORAGE_AUDIT.
+   - Issue templates: the listing form became a contact link; the bug report adds Tuck Pop.
+   - The root llms.txt (npm run manifests) lists approved community games.
+   - The community-scope check also enforces that only the owner's pull request (a branch of this
+     repo, author_association OWNER) may change approval, listing or sourceCommit, or add the
+     game's art. Without that, a merged submission could list itself.
+   - Left as is: the trailer video still says "List your game: coming soon" (a rendered asset).
 8. The end-to-end proof.
 
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
