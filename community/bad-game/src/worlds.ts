@@ -10,5 +10,6 @@ import { WORLD08 } from './world08';
 import { WORLD09 } from './world09';
 import { WORLD10 } from './world10';
 import { WORLD11 } from './world11';
+import { WORLD12 } from './world12';
 
-export const WORLDS = [...WORLD00, ...WORLD01, ...WORLD02, ...WORLD03, ...WORLD04, ...WORLD05, ...WORLD06, ...WORLD07, ...WORLD08, ...WORLD09, ...WORLD10, ...WORLD11];
+export const WORLDS = [...WORLD00, ...WORLD01, ...WORLD02, ...WORLD03, ...WORLD04, ...WORLD05, ...WORLD06, ...WORLD07, ...WORLD08, ...WORLD09, ...WORLD10, ...WORLD11, ...WORLD12];
