@@ -5,7 +5,8 @@
  * seaside promenade and the beach; neighbouring blocks give the street its context. Traffic and
  * citizens come from render/streetlife.ts.
  */
-import { FINISH, emptyCity, layRoad, paint, type City, type Rot, type Thing } from '../sim/city';
+import { FINISH, emptyTown, type Town, type Rot, type Thing } from '../sim/state';
+import { layRoad, paint } from '../sim/roads';
 import { H, W } from '../sim/map';
 import type { FramePoint } from '../render/camera';
 import { boxPoints } from '../render/camera';
@@ -13,8 +14,9 @@ import { boxPoints } from '../render/camera';
 /** The focus block (lots, not roads): x 5–13, z 8–16. */
 export const BLOCK = { x0: 5, z0: 8, x1: 13, z1: 16 } as const;
 
-export function styleFrameCity(seed = 7): City {
-  const c = emptyCity(seed);
+export function styleFrameCity(seed = 7): Town {
+  const c = emptyTown(seed);
+  c.unlocked = ['harbor', 'maple', 'greenway', 'boardwalk', 'hilltop', 'meadows'];
   c.t = 480 * 0.38; // late morning
   // streets: the avenue along the bay, two cross streets, and four running inland
   layRoad(c, 0, 7, W - 1, 7);
@@ -31,7 +33,7 @@ export function styleFrameCity(seed = 7): City {
   paint(c, 8, 16, 11, 16, FINISH.paving);
   paint(c, 12, 16, 13, 16, FINISH.paving);
 
-  const t = (def: string, x: number, z: number, rot: Rot = 0, look = 0): Thing => ({ def, x, z, rot, look });
+  const t = (def: string, x: number, z: number, rot: Rot = 0, look = 0): Thing => ({ id: c.nextId++, def, x, z, rot, look, level: 1, pay: 0, born: 0 });
   c.things.push(
     // the focus block. North row: homes facing the avenue and the bay (their backs to the camera)
     t('cottage', 5, 8, 2, 1), t('bungalow', 7, 8, 2, 0), t('townhouse', 9, 8, 2, 2), t('cottage', 11, 8, 2, 3), t('tree', 13, 9, 0, 0), t('postbox', 13, 8, 0),

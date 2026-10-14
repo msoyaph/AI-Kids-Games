@@ -1,13 +1,24 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Browser tests run against the real single-file build (vite build, then vite preview).
+// On a Mac, Chromium draws with the real GPU (Metal); elsewhere (CI) it falls back to SwiftShader,
+// and E2E_LOW=1 asks the game for its Low quality and gives the tests more time. CI runs one
+// worker (a lesson from the earlier games: parallel software WebGL starves the frame clock).
+// (Adapted from games/fieldlark/playwright.config.ts.)
 const CI = !!process.env.CI;
+const LOW = !!process.env.E2E_LOW;
+const mac = process.platform === 'darwin' && !process.env.E2E_SOFTWARE;
+const gpuArgs = mac ? ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+const chromium = { launchOptions: { args: gpuArgs } };
+
 export default defineConfig({
   testDir: 'tests/e2e',
-  timeout: CI ? 120_000 : 60_000,
+  timeout: (CI || LOW ? 3 : 1) * 60_000,
+  expect: { timeout: (CI || LOW ? 3 : 1) * 8_000 },
   retries: CI ? 1 : 0,
+  workers: CI ? 1 : 2,
   reporter: CI ? [['list'], ['html', { open: 'never' }]] : [['list']],
-  use: { baseURL: 'http://127.0.0.1:4715', trace: 'retain-on-failure' },
+  use: { baseURL: 'http://127.0.0.1:4715', trace: 'retain-on-failure', actionTimeout: 15_000 },
   webServer: {
     command: 'npx vite build && npx vite preview --host 127.0.0.1 --port 4715 --strictPort',
     url: 'http://127.0.0.1:4715',
@@ -15,7 +26,12 @@ export default defineConfig({
     timeout: 120_000,
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 } } },
-    { name: 'phone', use: { ...devices['Pixel 7'] } },
+    { name: 'chromium-desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 }, ...chromium } },
+    { name: 'chromium-tablet', use: { ...devices['Galaxy Tab S4'], ...chromium } },
+    { name: 'chromium-phone', use: { ...devices['Pixel 7'], ...chromium } },
+    { name: 'chromium-phone-sideways', use: { ...devices['Pixel 7 landscape'], ...chromium } },
+    { name: 'webkit-desktop', use: { ...devices['Desktop Safari'], viewport: { width: 1280, height: 720 } } },
+    { name: 'webkit-tablet', use: { ...devices['iPad (gen 7)'] } },
+    { name: 'webkit-phone', use: { ...devices['iPhone 13'] } },
   ],
 });

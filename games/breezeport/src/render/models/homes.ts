@@ -5,11 +5,11 @@
  * call however many colours a street has.
  */
 import type * as THREE from 'three';
-import { bevelBox, box, cyl, merge, PAT, part } from '../geo';
+import { bevelBox, box, cyl, ico, merge, PAT, part } from '../geo';
 import { PAINT } from '../palette';
 import {
   chimney, corners, doorPiece, FACE, flatRoof, gableRoof, hedge, hipRoof, moved, onFace, picketFence, shrub, steppingStones,
-  tinted, TRIM, WHITE, windowPiece, FLOWERS, type Parts,
+  tinted, TRIM, WHITE, windowPiece, FLOWERS, LEAF, type Parts,
 } from './kit';
 
 /** A lot's front edge is at z = +1 (the sidewalk); the house sits back from it. */
@@ -121,5 +121,66 @@ export function bungalow(): THREE.BufferGeometry {
   parts.push(...steppingStones(0.12, pz + 0.2, FRONT - 0.08));
   parts.push(...picketFence(-0.96, 0.96, FRONT - 0.05, [-0.02, 0.26], 0xf6efe0));
   parts.push(...shrub(-0.55, 0.62, 0.12, FLOWERS[4]), ...shrub(0.62, 0.66, 0.1, FLOWERS[2]), ...shrub(0.84, -0.86, 0.13));
+  return merge(parts);
+}
+
+/** The duplex (level 2): two homes side by side under one wide gable, two doors, two porches, a shared lawn. */
+export function duplex(): THREE.BufferGeometry {
+  const w = 1.56, d = 1.06, cz = -0.22, h = 1.12;
+  const parts: Parts = [
+    part(bevelBox(w + 0.06, 0.09, d + 0.06, 0.02), PAINT.stone, { pos: [0, 0.045, cz], pattern: PAT.stone }),
+    part(box(w, h, d), WHITE, { pos: [0, 0.09 + h / 2, cz], pattern: tinted(PAT.siding) }),
+    part(box(0.05, h, 0.06), TRIM, { pos: [0, 0.09 + h / 2, cz + d / 2 + 0.01] }),
+    ...corners(0, cz, w, d, 0.09, 0.09 + h),
+    ...gableRoof(0, cz, w, d, 0.09 + h, PAINT.roofs[2]!, { pitch: 0.58 }),
+    ...chimney(-0.5, cz - 0.2, 1.1, 0.5), ...chimney(0.5, cz - 0.2, 1.1, 0.5),
+  ];
+  for (const s of [-1, 1]) {
+    const [dx, dz] = onFace('s', 0, cz, w, d, s * 0.24);
+    parts.push(...moved(doorPiece(PAINT.door[s < 0 ? 0 : 3]!, 0.2, 0.4, { lamp: true }), dx, 0.09, dz));
+    parts.push(part(bevelBox(0.5, 0.05, 0.22, 0.015), PAINT.roofs[2]!, { pos: [dx, 0.62, dz + 0.12] }));
+    const [wx, wz] = onFace('s', 0, cz, w, d, s * 0.58);
+    parts.push(...moved(windowPiece(0.24, 0.26, { shutters: 0x3f6f7f, flowers: true }), wx, 0.4, wz));
+    parts.push(...moved(windowPiece(0.24, 0.26), onFace('s', 0, cz, w, d, s * 0.42)[0], 0.92, wz));
+    parts.push(...steppingStones(dx, cz + d / 2 + 0.16, FRONT - 0.08));
+  }
+  for (const f of ['e', 'w'] as const) for (const y of [0.4, 0.92]) {
+    const [wx, wz] = onFace(f, 0, cz, w, d, 0);
+    parts.push(...moved(windowPiece(0.22, 0.24), wx, y, wz, FACE[f]));
+  }
+  parts.push(...hedge(-0.95, -0.42, FRONT - 0.12, 0.16), ...hedge(0.42, 0.95, FRONT - 0.12, 0.16), ...shrub(0, 0.62, 0.11, FLOWERS[2]));
+  return merge(parts);
+}
+
+/** The flats (level 3): four storeys of painted brick on a 2 × 2 lot, balconies with plants, a roof garden. */
+export function flats(): THREE.BufferGeometry {
+  const w = 1.5, d = 1.3, cz = -0.2, floor = 0.56, n = 4, base = 0.1, h = floor * n;
+  const parts: Parts = [
+    part(bevelBox(w + 0.06, base, d + 0.06, 0.02), PAINT.stone, { pos: [0, base / 2, cz], pattern: PAT.stone }),
+    part(box(w, h, d), WHITE, { pos: [0, base + h / 2, cz], pattern: tinted(PAT.brick) }),
+    ...flatRoof(0, cz, w, d, base + h, TRIM, 0.1),
+  ];
+  for (let f = 1; f < n; f++) parts.push(part(box(w + 0.03, 0.04, d + 0.03), TRIM, { pos: [0, base + f * floor, cz] }));
+  const [ex, ez] = onFace('s', 0, cz, w, d, 0);
+  parts.push(...moved(doorPiece(0x2f5f6a, 0.3, 0.44, { glassTop: true, lamp: true }), ex, base, ez));
+  parts.push(part(bevelBox(0.56, 0.05, 0.26, 0.015), PAINT.roofs[0]!, { pos: [ex, base + 0.52, ez + 0.11] }));
+  for (let f = 0; f < n; f++) for (const s of [-1, 1]) {
+    if (f === 0 && s === 0) continue;
+    const [wx, wz] = onFace('s', 0, cz, w, d, s * 0.45);
+    const y = base + f * floor + floor * 0.5;
+    parts.push(...moved(windowPiece(0.26, 0.3), wx, y, wz));
+    if (f > 0) {
+      parts.push(part(bevelBox(0.4, 0.035, 0.18, 0.01), PAINT.stone, { pos: [wx, y - 0.2, wz + 0.09] }));
+      parts.push(part(box(0.4, 0.1, 0.012), 0x3b3f46, { pos: [wx, y - 0.13, wz + 0.18] }));
+      parts.push(part(ico(0.045, 0), LEAF, { pos: [wx + 0.12, y - 0.13, wz + 0.1], round: true }));
+    }
+  }
+  for (const f of ['e', 'w'] as const) for (let k = 0; k < n; k++) {
+    const [wx, wz] = onFace(f, 0, cz, w, d, 0);
+    parts.push(...moved(windowPiece(0.22, 0.28), wx, base + k * floor + floor * 0.5, wz, FACE[f]));
+  }
+  parts.push(part(bevelBox(0.7, 0.08, 0.4, 0.02), 0x8a6a4a, { pos: [-0.2, base + h + 0.1, cz - 0.2], pattern: PAT.boards }));
+  for (let i = 0; i < 3; i++) parts.push(...shrub(-0.42 + i * 0.22, cz - 0.2, 0.08, FLOWERS[i + 1]).map(g => g.translate(0, base + h + 0.13, 0)));
+  parts.push(...hedge(-0.95, -0.35, FRONT - 0.12, 0.14), ...hedge(0.35, 0.95, FRONT - 0.12, 0.14));
   return merge(parts);
 }

@@ -1,4 +1,4 @@
-// Copied from games/fieldlark/src/save/storage.ts (the shared engine).
+// Adapted from games/fieldlark/src/save/storage.ts (the shared engine): adds remove() for deleting a slot.
 /**
  * Safe, namespaced localStorage (adapted from the starter template). The game shares the website's
  * origin with other games, so:
@@ -39,6 +39,13 @@ export function write(key: string, value: string): boolean {
   const k = GAME.storagePrefix + key;
   memory.set(k, value);
   try { storage()?.setItem(k, value); return true; } catch { return false; }
+}
+
+/** Remove one of this game's own keys (a deleted slot). */
+export function remove(key: string): void {
+  const k = GAME.storagePrefix + key;
+  memory.delete(k);
+  try { storage()?.removeItem(k); } catch { /* fail quietly */ }
 }
 
 export function readJson<T>(key: string): T | null {

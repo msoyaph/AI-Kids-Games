@@ -4,10 +4,11 @@
  * here because it shares the shops' flat roofs and brick). The awning stripes and the walls take
  * the instance colour.
  */
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import { bevelBox, box, cone, cyl, ico, merge, PAT, part, sphere } from '../geo';
 import { PAINT } from '../palette';
 import { doorPiece, FACE, flatRoof, moved, onFace, shrub, tinted, TRIM, WHITE, windowPiece, FLOWERS, METAL, type Parts } from './kit';
+
 
 /** A shop front facing south at the origin: a glass window wall, a door, a striped awning, a sign board. */
 function shopFront(w: number, h: number, sign: number, o: { door?: number } = {}): Parts {
@@ -126,5 +127,102 @@ export function apartments(): THREE.BufferGeometry {
   parts.push(part(bevelBox(1.0, 0.1, 0.6, 0.02), 0x8a6a4a, { pos: [-0.4, 0.12 + h + 0.12, cz - 0.3], pattern: PAT.boards }));
   for (let i = 0; i < 4; i++) parts.push(...shrub(-0.75 + i * 0.23, cz - 0.3, 0.09, FLOWERS[i]).map(g => g.translate(0, 0.12 + h + 0.15, 0)));
   parts.push(part(cyl(0.18, 0.18, 0.32, 10), 0xb9b2a4, { pos: [0.7, 0.12 + h + 0.3, cz - 0.4], pattern: PAT.boards }), part(cone(0.2, 0.12, 10), 0x8c847a, { pos: [0.7, 0.12 + h + 0.52, cz - 0.4] }));
+  return merge(parts);
+}
+
+/** The bakery (level 1): a cream-painted shop with a striped awning, a bun on its sign, a bread rack and a bench. */
+export function bakery(): THREE.BufferGeometry {
+  const w = 1.4, d = 1.14, cz = -0.25, h = 1.0;
+  const parts: Parts = [
+    part(bevelBox(w + 0.06, 0.08, d + 0.06, 0.02), PAINT.stone, { pos: [0, 0.04, cz], pattern: PAT.stone }),
+    part(box(w, h, d), 0xfbe9cf, { pos: [0, 0.08 + h / 2, cz], pattern: PAT.siding }),
+    ...gableRoofBakery(w, d, cz, 0.08 + h),
+  ];
+  const [fx, fz] = onFace('s', 0, cz, w, d, 0);
+  parts.push(...moved(shopFront(w - 0.12, 0.56, 0x8a5a3b, { door: 0.42 }), fx, 0.08, fz));
+  // the bun on the sign: a round golden loaf with a cross
+  parts.push(part(sphere(0.07, 10, 6), 0xd9963d, { pos: [fx - 0.1, 0.08 + 0.89, fz + 0.09], scale: [1.4, 0.8, 0.6] }), part(box(0.12, 0.012, 0.02), 0xf6e2b8, { pos: [fx - 0.1, 0.08 + 0.92, fz + 0.13] }));
+  // a rack of loaves under the awning
+  parts.push(part(bevelBox(0.42, 0.04, 0.16, 0.01), 0x8a5a3b, { pos: [-0.2, 0.22, fz + 0.2], pattern: PAT.boards }));
+  for (let i = 0; i < 4; i++) parts.push(part(sphere(0.045, 7, 4), i % 2 ? 0xc98a3d : 0xe0a85a, { pos: [-0.35 + i * 0.1, 0.27, fz + 0.2], scale: [1.4, 0.8, 0.9] }));
+  parts.push(part(box(0.03, 0.2, 0.14), 0x8a5a3b, { pos: [-0.4, 0.1, fz + 0.2] }), part(box(0.03, 0.2, 0.14), 0x8a5a3b, { pos: [0.0, 0.1, fz + 0.2] }));
+  parts.push(part(bevelBox(0.36, 0.035, 0.12, 0.01), 0x2f6f7a, { pos: [0.55, 0.14, 0.66], pattern: PAT.boards }), ...[-1, 1].map(s => part(box(0.03, 0.14, 0.1), METAL, { pos: [0.55 + s * 0.15, 0.07, 0.66] })));
+  for (const s of [-1, 1]) {
+    const [wx, wz] = onFace('e', 0, cz, w, d, s * 0.25);
+    parts.push(...moved(windowPiece(0.24, 0.28), wx, 0.48, wz, FACE.e));
+  }
+  parts.push(...shrub(-0.82, 0.55, 0.09, FLOWERS[1]));
+  return merge(parts);
+}
+
+function gableRoofBakery(w: number, d: number, cz: number, y: number): Parts {
+  // a low hipped roof in warm terracotta with a little chimney for the ovens
+  const parts: Parts = [part(bevelBox(w + 0.12, 0.06, d + 0.12, 0.02), TRIM, { pos: [0, y + 0.03, cz] })];
+  const g = new THREE.CylinderGeometry(0.04, Math.SQRT1_2, 1, 4, 1);
+  g.rotateY(Math.PI / 4);
+  parts.push(part(g, PAINT.roofs[1]!, { pos: [0, y + 0.06 + 0.18, cz], scale: [w + 0.16, 0.36, d + 0.16], pattern: PAT.tiles }));
+  parts.push(part(box(0.18, 0.4, 0.18), PAINT.brick, { pos: [0.4, y + 0.3, cz - 0.2], pattern: PAT.brick }), part(cyl(0.03, 0.03, 0.06, 6), 0x5a5f66, { pos: [0.4, y + 0.53, cz - 0.2] }));
+  return parts;
+}
+
+/** The bookshop (level 2): a deep green wooden front, two windows of stacked books, a reading bench, a book on its sign. */
+export function bookshop(): THREE.BufferGeometry {
+  const w = 1.42, d = 1.16, cz = -0.25, h = 1.34;
+  const parts: Parts = [
+    part(bevelBox(w + 0.06, 0.08, d + 0.06, 0.02), PAINT.stone, { pos: [0, 0.04, cz], pattern: PAT.stone }),
+    part(box(w, h, d), PAINT.brick, { pos: [0, 0.08 + h / 2, cz], pattern: PAT.brick }),
+    ...flatRoof(0, cz, w, d, 0.08 + h, PAINT.stone, 0.1),
+  ];
+  const [fx, fz] = onFace('s', 0, cz, w, d, 0);
+  parts.push(part(box(w - 0.06, 0.66, 0.05), 0x2f5a4a, { pos: [fx, 0.08 + 0.33, fz + 0.025], pattern: PAT.boards }));
+  for (const s of [-1, 1]) {
+    parts.push(part(box(0.42, 0.36, 0.03), PAINT.glass, { pos: [fx + s * 0.38, 0.44, fz + 0.055], pattern: PAT.glass }));
+    // stacks of books in the window
+    for (let i = 0; i < 4; i++) parts.push(part(box(0.07, 0.14 + (i % 3) * 0.04, 0.05), [0xe25c4a, 0x3f8fd0, 0xffc23d, 0x5fbf7a][i]!, { pos: [fx + s * 0.38 - 0.13 + i * 0.085, 0.32 + (i % 3) * 0.02, fz + 0.03] }));
+  }
+  parts.push(...moved(doorPiece(0xe9d6a8, 0.2, 0.5, { step: true, glassTop: true }), fx, 0.08, fz + 0.03));
+  parts.push(part(box(w + 0.02, 0.14, 0.08), 0x2f5a4a, { pos: [fx, 0.08 + 0.74, fz + 0.04] }));
+  parts.push(part(box(0.22, 0.08, 0.02), 0xf6efe0, { pos: [fx - 0.08, 0.08 + 0.74, fz + 0.09] }), part(box(0.005, 0.08, 0.025), 0x2f5a4a, { pos: [fx - 0.08, 0.08 + 0.74, fz + 0.09] }));
+  parts.push(part(box(0.3, 0.06, 0.02), WHITE, { pos: [fx + 0.25, 0.08 + 0.74, fz + 0.09], pattern: tinted(PAT.none) }));
+  for (const s of [-1, 0, 1]) {
+    const [wx, wz] = onFace('s', 0, cz, w, d, s * 0.45);
+    parts.push(...moved(windowPiece(0.24, 0.3, { flowers: s !== 0 }), wx, 1.1, wz));
+  }
+  parts.push(part(bevelBox(0.4, 0.035, 0.12, 0.01), WOOD_FRAME, { pos: [-0.45, 0.14, 0.62], pattern: PAT.boards }), ...[-1, 1].map(s => part(box(0.03, 0.14, 0.1), METAL, { pos: [-0.45 + s * 0.17, 0.07, 0.62] })));
+  parts.push(part(box(0.14, 0.1, 0.1), 0xe25c4a, { pos: [-0.5, 0.21, 0.62] }));
+  return merge(parts);
+}
+
+/** The market hall (level 3): two storeys, three arched stalls with striped awnings, flats above, a clock. */
+export function market(): THREE.BufferGeometry {
+  const w = 1.6, d = 1.3, cz = -0.2, h = 2.0, base = 0.1;
+  const parts: Parts = [
+    part(bevelBox(w + 0.06, base, d + 0.06, 0.02), PAINT.stone, { pos: [0, base / 2, cz], pattern: PAT.stone }),
+    part(box(w, h, d), PAINT.stone, { pos: [0, base + h / 2, cz], pattern: PAT.stone }),
+    part(box(w + 0.03, 0.06, d + 0.03), TRIM, { pos: [0, base + 0.86, cz] }),
+    ...flatRoof(0, cz, w, d, base + h, TRIM, 0.12),
+  ];
+  const [fx, fz] = onFace('s', 0, cz, w, d, 0);
+  for (const s of [-1, 0, 1]) {
+    const x = fx + s * 0.5;
+    parts.push(part(box(0.4, 0.5, 0.04), 0x5a4636, { pos: [x, base + 0.3, fz + 0.02] }));
+    parts.push(part(cyl(0.2, 0.2, 0.045, 12, ), 0x5a4636, { pos: [x, base + 0.55, fz + 0.02], rot: [Math.PI / 2, 0, 0], scale: [1, 1, 0.8] }));
+    parts.push(part(box(0.44, 0.03, 0.26), WHITE, { pos: [x, base + 0.62, fz + 0.13], rot: [0.38, 0, 0], pattern: tinted(PAT.stripes) }));
+    // a stall's goods: fruit, flowers or fish (no fish: rolls of cloth)
+    const goods = [[0xe2453a, 0xffb33d, 0x8fd06a], [0xff7a8a, 0xffd34d, 0xb59cff], [0x3f8fd0, 0xf6f0e2, 0x5fbf7a]][s + 1]!;
+    for (let i = 0; i < 3; i++) parts.push(part(sphere(0.045, 6, 4), goods[i]!, { pos: [x - 0.1 + i * 0.1, base + 0.2, fz + 0.12] }));
+    parts.push(part(bevelBox(0.36, 0.06, 0.14, 0.01), 0xd2a26e, { pos: [x, base + 0.14, fz + 0.12], pattern: PAT.boards }));
+  }
+  for (let f = 0; f < 2; f++) for (const s of [-1, -0.33, 0.33, 1]) {
+    const [wx, wz] = onFace('s', 0, cz, w, d, s * 0.6);
+    parts.push(...moved(windowPiece(0.22, 0.32, { flowers: f === 0 }), wx, base + 1.18 + f * 0.5, wz));
+  }
+  for (const f of ['e', 'w'] as const) for (const y of [0.5, 1.2, 1.7]) {
+    const [wx, wz] = onFace(f, 0, cz, w, d, 0);
+    parts.push(...moved(windowPiece(0.26, 0.3), wx, base + y, wz, FACE[f]));
+  }
+  // the clock on the parapet
+  parts.push(part(bevelBox(0.4, 0.4, 0.08, 0.02), TRIM, { pos: [0, base + h + 0.3, cz + d / 2 - 0.02] }), part(cyl(0.14, 0.14, 0.03, 16), 0xfffbe8, { pos: [0, base + h + 0.3, cz + d / 2 + 0.03], rot: [Math.PI / 2, 0, 0], pattern: PAT.glow }));
+  parts.push(part(box(0.012, 0.1, 0.01), 0x2f3540, { pos: [0, base + h + 0.33, cz + d / 2 + 0.05] }), part(box(0.07, 0.012, 0.01), 0x2f3540, { pos: [0.03, base + h + 0.3, cz + d / 2 + 0.05] }));
   return merge(parts);
 }

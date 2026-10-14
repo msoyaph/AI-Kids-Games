@@ -26,6 +26,8 @@ export const fxUniforms = {
   snowAmount: { value: 0 },
   /** Windows and lamps lit (0 by day, 1 at night). */
   nightGlow: { value: 0 },
+  /** A map is showing: buildings and props fade to soft grey so the ground's colours read (0..1). */
+  mapDim: { value: 0 },
 };
 
 /** How hazy a world point is: nothing in the town, more and more out over the countryside and the bay. */
@@ -207,6 +209,7 @@ export function patchMaterial<T extends THREE.MeshLambertMaterial>(m: T, o: Patc
       uniform vec3 hazeColor;
       uniform float snowAmount;
       uniform float nightGlow;
+      uniform float mapDim;
       varying vec3 vFxWorld;
       ${NOISE_GLSL}
       ${CLOUD_GLSL}
@@ -229,6 +232,8 @@ export function patchMaterial<T extends THREE.MeshLambertMaterial>(m: T, o: Patc
     // windows and lamps: a warm light at night (bright enough for the bloom pass to pick up)
     if (o.patterns) end += 'if (vPat > 8.5) outgoingLight = mix(outgoingLight, vec3(1.0, 0.82, 0.5) * 1.9, nightGlow * 0.92);\n';
     if (o.light) end += `${o.light}\n`;
+    // with a map showing, things on the ground fade to a soft grey (the ground carries the colours)
+    if (o.patterns || o.tint) end += 'outgoingLight = mix(outgoingLight, vec3(dot(outgoingLight, vec3(0.3, 0.55, 0.15))) * 1.08 + 0.05, mapDim * 0.7);\n';
     if (!o.noHaze) end += 'outgoingLight = mix(outgoingLight, hazeColor, fxHaze(vFxWorld));\n';
     frag = frag.replace('#include <opaque_fragment>', `${end}#include <opaque_fragment>`);
     sh.fragmentShader = frag;

@@ -8,20 +8,25 @@
 import * as THREE from 'three';
 import type { Season } from '../sim/clock';
 import { duskAmount } from '../sim/clock';
-import type { City } from '../sim/city';
+import type { Town } from '../sim/state';
 import { H, inMap, W } from '../sim/map';
 import { THING } from '../data/things';
 import { openArea, type Insets } from '../ui/layout';
 import { clampTarget, clampZoom, PITCH, placeCamera, project, rayToPlane, screenRay, YAW_STEP, type View } from './camera';
+import { pickWithBoxes, type Picked } from '../input/pick';
+import { TileMarks } from './marks';
 import { fxUniforms } from './fx';
 import { Grass } from './grass';
-import { setGroundSeason, setGroundShade, setGroundTiles } from './ground';
+import { setGroundMap, setGroundSeason, setGroundShade, setGroundTiles } from './ground';
+import type { Census } from '../sim/census';
+import { buildable } from '../sim/map';
 import { Culler, NO_AO } from './instanced';
 import { Lighting } from './lighting';
 import { ObjectView, turnedSize } from './objects';
 import { PostChain } from './post';
 import { QUALITY, type QualityTier } from './quality';
 import { Scenery } from './scenery';
+import { FestivalView } from './festival';
 import { Sky } from './sky';
 import { StreetLife } from './streetlife';
 import { buildTerrain, cullTerrain, setGroundBumps } from './terrain';
@@ -48,9 +53,11 @@ export class CityView {
   private water: THREE.Group;
   private sky = new Sky();
   private scenery = new Scenery();
+  readonly festival = new FestivalView();
   private grass = new Grass();
   readonly objects = new ObjectView();
   readonly walkers = new WalkerView();
+  readonly marks = new TileMarks();
   life: StreetLife | null = null;
   private walkList: Walker[] = [];
   private post: PostChain | null = null;
@@ -72,7 +79,9 @@ export class CityView {
     this.terrain = buildTerrain();
     this.water = buildWater();
     for (const g of [this.sky.mesh, this.water, this.grass.group]) g.traverse(o => o.layers.set(NO_AO));
-    this.scene.add(this.sky.mesh, this.terrain, this.water, this.scenery.group, this.grass.group, this.objects.group, this.walkers.group);
+    this.scene.add(this.sky.mesh, this.terrain, this.water, this.scenery.group, this.grass.group, this.objects.group, this.walkers.group, this.marks.mesh, this.festival.group);
+    this.festival.group.traverse(o => o.layers.set(NO_AO));
+    this.marks.mesh.layers.set(NO_AO);
     this.goal = { ...start };
     this.view = { x: start.x, z: start.z, y: 0, yaw: start.yawStep * YAW_STEP, zoom: clampZoom(start.zoom || 64) };
   }
@@ -136,11 +145,13 @@ export class CityView {
   }
 
   /** Draw the town's roads, lots and things (only when they change). */
-  syncCity(city: City) {
+  syncCity(city: Town) {
+    this.lastTown = city;
+    this.scenery.setProjects(!!city.flags['project-lighthouse'], !!city.flags['project-pier']);
     const v = city.version ?? 0;
     if (v !== this.cityVersion) {
       this.cityVersion = v;
-      setGroundTiles(city);
+      setGroundTiles(city, t => turnedSize(t, THING[t.def]!));
       setGroundShade(city.things, t => { const d = THING[t.def]!; const s = turnedSize(t, d); return { w: s.w, d: s.d, shade: d.shade, inset: d.class === 'tree' ? 0.25 : d.w > 1 ? 0.12 : 0.3 }; });
       // the grass keeps off buildings and roads, and thins round trees and props
       const blocked = new Uint8Array(W * H), finish = Uint8Array.from(city.finish);
@@ -155,6 +166,36 @@ export class CityView {
     }
     if (this.objects.sync(city, this.season)) this.shadowDirty = true;
   }
+
+  private overlay = 'off';
+  private overlayKey = '';
+  /** Show a map (or 'off'): happiness, a service's reach ('svc:school'…), traffic, greenery. */
+  setOverlay(o: string, c: Census, pattern: boolean, traffic: Float32Array | null = null) {
+    this.overlay = o;
+    const key = `${o}|${pattern}|${this.cityVersion}|${c.population}|${c.happy}`;
+    if (key === this.overlayKey) return;
+    this.overlayKey = key;
+    fxUniforms.mapDim.value = o === 'off' ? 0 : 1;
+    if (o === 'off') { setGroundMap(0, null, pattern); return; }
+    const v = new Float32Array(W * H).fill(NaN);
+    if (o === 'happy') {
+      for (const h of c.homes) { const n = c.needs.get(h.id); if (!n) continue; const s = turnedSize(h, THING[h.def]!); for (let z = h.z; z < h.z + s.d; z++) for (let x = h.x; x < h.x + s.w; x++) if (inMap(x, z)) v[z * W + x] = (n.happy - 30) / 70; }
+      setGroundMap(1, v, pattern);
+    } else if (o.startsWith('svc:')) {
+      const cov = c.coverage[o.slice(4) as keyof Census['coverage']];
+      for (let i = 0; i < W * H; i++) if (cov[i]) v[i] = 1;
+      for (const h of c.homes) { const s = turnedSize(h, THING[h.def]!); for (let z = h.z; z < h.z + s.d; z++) for (let x = h.x; x < h.x + s.w; x++) if (inMap(x, z) && !cov[z * W + x]) v[z * W + x] = 0; }
+      setGroundMap(2, v, pattern);
+    } else if (o === 'green') {
+      for (let i = 0; i < W * H; i++) if (buildable(i % W, (i / W) | 0)) v[i] = Math.min(1, c.green[i]! / 6);
+      setGroundMap(1, v, pattern);
+    } else if (o === 'traffic' && traffic) {
+      for (let i = 0; i < W * H; i++) if (traffic[i]! > 0 || (this.lastTown?.roads[i] ?? 0)) v[i] = 1 - Math.min(1, traffic[i]! / 1.4);
+      setGroundMap(1, v, pattern);
+    } else setGroundMap(0, null, pattern);
+  }
+  get overlayOn() { return this.overlay; }
+  private lastTown: Town | null = null;
 
   openCenter() {
     const o = openArea(this.width, this.height, this.insets);
@@ -178,7 +219,8 @@ export class CityView {
     const g = this.goal, v = this.view;
     [g.x, g.z] = clampTarget(g.x, g.z);
     g.zoom = clampZoom(g.zoom);
-    const k = reducedMotion ? 1 : 1 - Math.exp(-dt * 10);
+    this.glide = Math.max(0, this.glide - dt);
+    const k = reducedMotion ? 1 : 1 - Math.exp(-dt * (this.glide > 0 ? 3.2 : 10));
     const goalYaw = g.yawStep * YAW_STEP;
     let dy = goalYaw - v.yaw;
     dy = Math.atan2(Math.sin(dy), Math.cos(dy));
@@ -199,7 +241,8 @@ export class CityView {
       this.shadowDirty = true;
       cullTerrain(this.terrain, this.culler.frustum);
     }
-    this.scenery.update(dt, reducedMotion);
+    this.scenery.update(dt, reducedMotion, duskAmount(t));
+    this.festival.update(dt, reducedMotion, v);
     this.grass.update(v.x, v.z, Math.hypot(this.width, this.height / Math.sin(PITCH)) / v.zoom * 0.6 + 1, QUALITY[this.tier].grass);
     if (this.life) {
       this.life.update(dt);
@@ -228,6 +271,40 @@ export class CityView {
   }
 
   project(x: number, y: number, z: number) { return project(this.camera, this.width, this.height, x, y, z); }
+
+  ray(sx: number, sy: number) { return screenRay(this.camera, this.width, this.height, sx, sy); }
+
+  /** The citizen nearest a screen point (within a finger's width), with the home they belong to. */
+  citizenAt(sx: number, sy: number): { x: number; z: number; home?: number } | null {
+    let best = -1, bestD = 30 * 30;
+    this.walkList.forEach((w, i) => {
+      const p = this.project(w.x, 0.25, w.z);
+      const d = (p.x - sx) ** 2 + (p.y - sy) ** 2;
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    if (best < 0) return null;
+    const w = this.walkList[best]!;
+    return { x: w.x, z: w.z, home: this.life?.drawnHomes[best] };
+  }
+
+  /** The tile (and the thing, if a tall one is in the way) under a screen point. */
+  pick(sx: number, sy: number): Picked | null { return pickWithBoxes(this.ray(sx, sy), this.objects.boxes); }
+
+  /** The middle of a tile, on screen. */
+  tileOnScreen(x: number, z: number) { return this.project(x + 0.5, 0, z + 0.5); }
+
+  /** Snaps the eased view to the goal (after a drag, the map stays exactly under the finger). */
+  snapToGoal() {
+    Object.assign(this.view, { x: this.goal.x, z: this.goal.z, zoom: this.goal.zoom, yaw: this.goal.yawStep * YAW_STEP });
+    placeCamera(this.camera, this.view, this.width, this.height, this.openCenter());
+  }
+
+  /** Glide to a new goal ("Show me"); a cut with reduced motion. */
+  glideTo(to: { x: number; z: number; zoom?: number; yawStep?: number }) {
+    Object.assign(this.goal, { x: to.x, z: to.z, zoom: clampZoom(to.zoom ?? this.goal.zoom), yawStep: to.yawStep ?? this.goal.yawStep });
+    this.glide = this.reducedMotion ? 0 : 1.2;
+  }
+  private glide = 0;
 
   stats() {
     const info = this.renderer.info;

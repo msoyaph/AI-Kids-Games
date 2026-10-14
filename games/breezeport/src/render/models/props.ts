@@ -178,3 +178,75 @@ export function parkArch(): THREE.BufferGeometry {
     ...Array.from({ length: 9 }, (_, i) => part(ico(0.05, 0), i % 2 ? LEAF : 0xff7a8a, { pos: [Math.cos((i / 8) * Math.PI) * 0.34, 0.62 + Math.sin((i / 8) * Math.PI) * 0.34, 0.03] })),
   ]);
 }
+
+/** A duck pond (2 × 2): a round pool with reeds, lily pads, a stepping-stone edge and three ducks. */
+export function pond(): THREE.BufferGeometry {
+  const parts: Parts = [
+    part(cyl(0.86, 0.9, 0.06, 20), PAINT.stone, { pos: [0, 0.03, 0], pattern: PAT.stone }),
+    part(cyl(0.78, 0.78, 0.04, 20), 0x4fb8c8, { pos: [0, 0.05, 0], pattern: PAT.glass }),
+  ];
+  for (let i = 0; i < 6; i++) {
+    const a = i * 1.1;
+    parts.push(part(cyl(0.09, 0.09, 0.01, 8), 0x5fae5a, { pos: [Math.cos(a) * 0.45, 0.075, Math.sin(a) * 0.4] }));
+    if (i % 2) parts.push(part(ico(0.03, 0), 0xff9fd0, { pos: [Math.cos(a) * 0.45, 0.095, Math.sin(a) * 0.4] }));
+  }
+  for (let i = 0; i < 8; i++) {
+    const a = 2.4 + i * 0.18;
+    parts.push(part(cyl(0.008, 0.01, 0.3, 4), 0x5f9e45, { pos: [Math.cos(a) * 0.72, 0.18, Math.sin(a) * 0.72] }));
+    if (i % 3 === 0) parts.push(part(cyl(0.015, 0.015, 0.07, 5), 0x8a5a3b, { pos: [Math.cos(a) * 0.72, 0.32, Math.sin(a) * 0.72] }));
+  }
+  [[-0.2, 0.1, 0], [0.15, -0.2, 1], [0.3, 0.25, 2]].forEach(([x, z, k]) => {
+    const r = (k ?? 0) * 2;
+    parts.push(part(sphere(0.06, 8, 5), k === 0 ? 0x6f8f5a : WHITE, { pos: [x!, 0.1, z!], scale: [1.2, 0.8, 1], rot: [0, r, 0] }));
+    parts.push(part(sphere(0.035, 7, 4), k === 0 ? 0x2f6f4a : WHITE, { pos: [x! + Math.cos(r) * 0.06, 0.15, z! - Math.sin(r) * 0.06] }));
+    parts.push(part(cone(0.015, 0.03, 4), 0xf2a93b, { pos: [x! + Math.cos(r) * 0.095, 0.15, z! - Math.sin(r) * 0.095], rot: [0, r, -Math.PI / 2] }));
+  });
+  return merge(parts);
+}
+
+/** A skate park (3 × 3): a smooth concrete pad with a quarter pipe, a fun box, a rail and a bowl, and graffiti-free bright paint. */
+export function skatepark(): THREE.BufferGeometry {
+  const C = 0xc9c4ba, EDGE = 0x8c949a;
+  const parts: Parts = [part(bevelBox(2.8, 0.06, 2.8, 0.02), C, { pos: [0, 0.03, 0] })];
+  // a quarter pipe along the back: a curved ramp in five steps of slope
+  for (let i = 0; i < 5; i++) {
+    const a0 = (i / 5) * (Math.PI / 2) * 0.9, a1 = ((i + 1) / 5) * (Math.PI / 2) * 0.9;
+    const p0 = [-0.7 - Math.sin(a0) * 0.5, 0.56 - Math.cos(a0) * 0.5], p1 = [-0.7 - Math.sin(a1) * 0.5, 0.56 - Math.cos(a1) * 0.5];
+    const len = Math.hypot(p1[0]! - p0[0]!, p1[1]! - p0[1]!);
+    parts.push(part(box(2.4, 0.04, len + 0.02), C, { pos: [0, (p0[1]! + p1[1]!) / 2 + 0.06, (p0[0]! + p1[0]!) / 2], rot: [Math.atan2(p1[1]! - p0[1]!, -(p1[0]! - p0[0]!)), 0, 0] }));
+  }
+  parts.push(part(box(2.4, 0.5, 0.2), C, { pos: [0, 0.31, -1.3] }), part(cyl(0.025, 0.025, 2.4, 6), 0x3f8fd0, { pos: [0, 0.57, -1.2], rot: [0, 0, Math.PI / 2] }));
+  // a fun box and a rail
+  parts.push(part(bevelBox(0.7, 0.18, 0.5, 0.03), 0x5fbf7a, { pos: [-0.6, 0.15, 0.4] }), part(box(0.7, 0.02, 0.5), EDGE, { pos: [-0.6, 0.25, 0.4] }));
+  parts.push(part(box(0.9, 0.025, 0.025), 0xef6a55, { pos: [0.6, 0.24, 0.6] }), ...[-1, 1].map(s => part(box(0.03, 0.2, 0.03), 0xef6a55, { pos: [0.6 + s * 0.4, 0.14, 0.6] })));
+  // a little bowl, painted in a sunny ring
+  parts.push(part(cyl(0.4, 0.4, 0.02, 16), 0xffc23d, { pos: [0.7, 0.065, -0.1] }), part(cyl(0.32, 0.32, 0.025, 16), C, { pos: [0.7, 0.07, -0.1] }));
+  parts.push(part(bevelBox(0.36, 0.035, 0.12, 0.01), 0xb07a4f, { pos: [-1.1, 0.14, 1.2], pattern: PAT.boards }));
+  return merge(parts);
+}
+
+/** The tram stop (1 × 1): a slim glass shelter with a curved roof and a round tram badge. */
+export function tramStop(): THREE.BufferGeometry {
+  return merge([
+    part(bevelBox(0.86, 0.05, 0.3, 0.015), 0xf6c84b, { pos: [0, 0.7, -0.08] }),
+    ...[-1, 1].map(s => part(box(0.03, 0.68, 0.03), 0x3b3f46, { pos: [s * 0.4, 0.34, -0.2] })),
+    part(box(0.8, 0.48, 0.02), 0xbfe6f2, { pos: [0, 0.36, -0.22], pattern: PAT.glass }),
+    part(bevelBox(0.5, 0.03, 0.1, 0.008), WOOD, { pos: [0, 0.16, -0.14], pattern: PAT.boards }),
+    part(cyl(0.012, 0.012, 0.82, 5), METAL, { pos: [0.48, 0.41, 0.14] }),
+    part(cyl(0.09, 0.09, 0.02, 12), 0xf2a93b, { pos: [0.48, 0.82, 0.14], rot: [Math.PI / 2, 0, 0] }),
+    part(box(0.08, 0.02, 0.025), WHITE, { pos: [0.48, 0.84, 0.14] }), part(box(0.02, 0.07, 0.025), WHITE, { pos: [0.48, 0.81, 0.14] }),
+  ]);
+}
+
+/** Scaffolding round a building going up: poles, boards, a little crane arm and safety netting. */
+export function scaffold(): THREE.BufferGeometry {
+  const parts: Parts = [part(box(1.5, 0.5, 1.2), 0xd9cdb6, { pos: [0, 0.25, -0.25] })];
+  for (const x of [-0.8, 0, 0.8]) for (const z of [-0.9, 0.4]) parts.push(part(cyl(0.02, 0.02, 1.2, 5), 0xf2a93b, { pos: [x, 0.6, z] }));
+  for (const y of [0.4, 0.8, 1.15]) {
+    parts.push(part(box(1.66, 0.03, 0.12), 0xc79a68, { pos: [0, y, 0.46], pattern: PAT.boards }), part(box(1.66, 0.03, 0.12), 0xc79a68, { pos: [0, y, -0.96], pattern: PAT.boards }));
+    parts.push(part(box(1.62, 0.02, 0.02), 0xf2a93b, { pos: [0, y + 0.12, 0.4] }));
+  }
+  parts.push(part(box(1.5, 0.5, 0.01), 0x8fc8f2, { pos: [0, 0.75, 0.47], pattern: PAT.glass }));
+  parts.push(part(cyl(0.03, 0.03, 1.7, 6), 0xf2c84b, { pos: [0.7, 0.85, -0.6] }), part(box(1.1, 0.05, 0.05), 0xf2c84b, { pos: [0.3, 1.7, -0.6] }), part(box(0.01, 0.4, 0.01), 0x3b3f46, { pos: [-0.15, 1.5, -0.6] }), part(box(0.14, 0.1, 0.14), 0xb07a4f, { pos: [-0.15, 1.28, -0.6] }));
+  return merge(parts);
+}

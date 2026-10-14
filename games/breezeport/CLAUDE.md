@@ -24,6 +24,7 @@ under the working name "City WIP" (`city-wip`), before any save existed.
   - `sh scripts/when-quiet.sh e2e|sim|shots …` (from games/breezeport) waits, then runs.
   - Never run unit and browser tests at the same time.
   - On 2026-10-14 a Shooberry preview capture hung for hours. The owner then allowed the style-frame shots to run alongside it ("Take your shots now"). That was a one-off, not a standing rule.
+- **Never pipe the quiet check** (`quiet-check.mjs | head && …` hides its exit code). Gate with `node scripts/quiet-check.mjs >/dev/null && …`, or use `when-quiet.sh`. On 2026-10-14 a half-second unit test slipped through this way while Fieldlark's `release:local` was running.
 - **Disk:** run `df -h ~` at the start of every phase. Under 2 GB, clean only our own regenerable files.
 - **Commits:** before each one, check `git log` for commits this session didn't make. Messages are "Breezeport, phase N: …", with a `Tests:` line and the trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
@@ -110,6 +111,19 @@ npx tsx games/breezeport/scripts/models.mts     # triangles per model (CPU only)
 - 2026-10-14: **Phone HUD.** Under 520 px, the date pill hides and happiness shows as the face alone (its value is in the label), so the goal reads in full.
 - 2026-10-14: **Shadows of things that move** (cars and people) are soft blobs, so the shadow map can stay still.
 - 2026-10-14: **The branch starts before Fieldlark merges** (the owner's go came first; the engine is self-contained here).
+- 2026-10-14 (phase 2–9 work):
+  - **No "while you were away" bonus.** It would need the real clock, and the brief rules out real-world timers. Town time runs only while the town is on screen.
+  - **The old harbour has 36 jobs** on the coast road's network, so a town grows before workplaces open (chapter 3). Shop jobs count half against workplace demand (part-time), so a town with shops still wants workplaces.
+  - **Old Harbor reaches z 31** (Greenway starts at 32): the first four chapters need room for homes, a school, a library and a skate park.
+  - **Growth:** the first 8 buildings the player's zoning grows come every 10 s (the tutorial); after that a zone looks for a lot every 80 s plus 0.2 s per building (at most 110 s), and a level-up every 70 s (plus 0.2 s per building, at most 110 s).
+  - **Traffic:** people travel to places within 24 tiles along the roads, the nearer the likelier (e^−d/8), and trips share equally short ways, so a second street really helps.
+  - **Caps the sim enforces:** 900 buildings and 1,500 decorations (a save then always fits its 28 KB cap). Placing past them says "The town is full of those!"
+  - **The backup key** holds the slot number, a line break and the save exactly (no JSON wrapping, so no escaping).
+  - **Bike lanes and tram tracks** are drawn by the ground shader (+32 and +64 in the tile map's red); trams run in the right-hand lane (cars queue behind them) and turn back at the end of the line; cyclists ride the bike lanes by the curb.
+  - **Town projects show:** the lighthouse is dark until relit (then two soft beams sweep the bay at dusk), City Hall gets a clock face on each side of its belfry, and the ferry sails from the mended pier.
+  - **The festival:** night falls with paper lanterns along the streets round the stage, kites over the beach and soft fireworks over the bay; the credits come after 12 s (4 s with less motion).
+  - **The showcase town** (`?scene=showcase&seed=7`) is built in code by the town's own rules, for captures, the cover and the big-town performance check.
+  - **"Welcome the first family"** counts the first home the player's zoning grows (the three old cottages were already there).
 
 ## Names (phase 0: five proposals, web-checked 2026-10-14; the owner picked **Breezeport**)
 **How they were checked:**

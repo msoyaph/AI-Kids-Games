@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import { hashInts } from '../core/rng';
 import type { Season } from '../sim/clock';
 import { BEACH, H, inland, W } from '../sim/map';
-import { FINISH } from '../sim/city';
+import { FINISH } from '../sim/state';
 import { patchMaterial } from './fx';
 import { GROUND_GLSL, groundUniforms } from './ground';
 import { InstancedLayer, NO_AO } from './instanced';

@@ -20,7 +20,7 @@ export const FOV = 30;
 export const fovFor = (viewH: number) => Math.min(FOV, Math.max(20, 20 + ((viewH - 320) * 10) / 220));
 /**
  * Pixels per tile at the screen's middle (CSS px, so the same on every screen). `min` keeps a tile at
- * least 32 px wide when zoomed all the way out; `max` is close enough to admire a crop or an animal.
+ * least 32 px wide when zoomed all the way out; `max` is close enough to admire a doorway or a window box.
  * `default` is the smallest starting zoom on a tablet or computer (see `startZoomRange`).
  */
 export const ZOOM = { min: 32, max: 240, default: 80 } as const;

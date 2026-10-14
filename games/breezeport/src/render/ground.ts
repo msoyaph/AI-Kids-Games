@@ -6,18 +6,23 @@
  * shore's distance; contact shade sits under everything standing on the ground.
  *
  * Two small data textures cover the drawn world:
- * - the tile map (one texel a tile, nearest): red = road links (N 1, E 2, S 4, W 8) + 16 for road;
+ * - the tile map (one texel a tile, nearest): red = road links (N 1, E 2, S 4, W 8) + 16 for road,
+ *   + 32 for a bike lane (green strips by the curbs), + 64 for tram tracks (rails in both lanes);
  *   green = sidewalk corners (NE 1, SE 2, SW 4, NW 8) + crossings (N 16, E 32, S 64, W 128);
- *   blue = the lot's finish (sim/city.ts FINISH);
- * - the shade map (two texels a tile, linear): red = contact shade, green = lawn (softened edges).
+ *   blue = the lot's finish (sim/state.ts FINISH); alpha = the zone painted there (1–4), + 8 once a
+ *   building stands on it (the zone's tint shows only on empty lots);
+ * - the shade map (two texels a tile, linear): red = contact shade, green = lawn (softened edges),
+ *   blue = land that isn't open yet (a soft mist, like Fieldlark's locked land); alpha = the map
+ *   being shown (0 no data, 1–255 the value), coloured by `gMap` (1 a heat ramp, 2 coverage).
  *
  * (The idea of a data-texture ground follows games/fieldlark/src/render/ground.ts; the town's
  * streets, lots and shore are new.)
  */
 import * as THREE from 'three';
 import type { Season } from '../sim/clock';
-import { FINISH, isRoad, linkCount, type City, type Thing } from '../sim/city';
-import { BEACH, H, inMap, W, WATER_Y } from '../sim/map';
+import { FINISH, type Town, type Thing } from '../sim/state';
+import { isRoad, linkCount } from '../sim/roads';
+import { areaAt, BEACH, H, inMap, W, WATER_Y } from '../sim/map';
 import { SPAN, WORLD0 } from './land';
 import { SEASON_PALETTES, STREET } from './palette';
 
@@ -33,6 +38,11 @@ export const groundUniforms = {
   gPaving: color(STREET.paving), gPavingAlt: color(STREET.pavingAlt), gGravel: color(STREET.gravel), gSand: color(STREET.sand), gWetSand: color(STREET.wetSand), gBed: color(STREET.bed),
   gFlower0: color(), gFlower1: color(), gFlower2: color(), gFlower3: color(),
   gFlowerAmt: { value: 1 },
+  gMist: color(0xe6efe9),
+  gMap: { value: 0 },
+  gPattern: { value: 0 },
+  gZone1: color(0x8fe0c0), gZone2: color(0x8fc8f2), gZone3: color(0xf6d27a), gZone4: color(0x9ad87a),
+  gBike: color(0x67b98a), gRail: color(0xc9ced6),
 };
 
 /** The shore's curve in GLSL (the same function as sim/map.ts seaEdge). */
@@ -48,6 +58,11 @@ uniform vec3 gAsphalt; uniform vec3 gSidewalk; uniform vec3 gCurb; uniform vec3 
 uniform vec3 gPaving; uniform vec3 gPavingAlt; uniform vec3 gGravel; uniform vec3 gSand; uniform vec3 gWetSand; uniform vec3 gBed;
 uniform vec3 gFlower0; uniform vec3 gFlower1; uniform vec3 gFlower2; uniform vec3 gFlower3;
 uniform float gFlowerAmt;
+uniform vec3 gMist;
+uniform float gMap;
+uniform float gPattern;
+uniform vec3 gZone1; uniform vec3 gZone2; uniform vec3 gZone3; uniform vec3 gZone4;
+uniform vec3 gBike; uniform vec3 gRail;
 ${SHORE_GLSL}
 vec2 gUv(vec2 p) { return (p - ${WORLD0.toFixed(1)}) / ${SPAN.toFixed(1)}; }
 float gBox(vec2 f, vec2 a, vec2 b) { vec2 c = (a + b) * 0.5, h = (b - a) * 0.5; vec2 d = abs(f - c) - h; return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0); }
@@ -64,7 +79,11 @@ vec3 groundGrass(vec2 p, float lawn) {
   return c * (0.92 + 0.16 * fxNoise(p * 0.55));
 }
 
-vec3 roadColor(vec2 p, vec2 f, int links, int extra) {
+/** Tram rails: a steel line with a dark groove beside it, at distance d from the rail's middle. */
+float railLine(float d) { return 1.0 - smoothstep(0.008, 0.016, abs(d)); }
+float railGroove(float d) { return 1.0 - smoothstep(0.016, 0.03, abs(d)); }
+
+vec3 roadColor(vec2 p, vec2 f, int links, int extra, int lanes) {
   bool cN = (links & 1) != 0, cE = (links & 2) != 0, cS = (links & 4) != 0, cW = (links & 8) != 0;
   const float SW = 0.16;
   // the sidewalks: strips along unlinked edges and rounded corners where two roads meet
@@ -98,6 +117,33 @@ vec3 roadColor(vec2 p, vec2 f, int links, int extra) {
   if ((extra & 32) != 0) zebra = max(zebra, step(0.76, f.x) * step(f.x, 0.96) * step(0.5, fract(f.y * 8.0 + 0.25)));
   if ((extra & 128) != 0) zebra = max(zebra, step(f.x, 0.24) * step(0.04, f.x) * step(0.5, fract(f.y * 8.0 + 0.25)));
   c = mix(c, gPaint * (0.9 + 0.1 * fine), zebra * 0.9 * (0.85 + 0.15 * bars));
+  // a bike lane: a green strip along each curb with a white edge, on straight stretches
+  if ((lanes & 1) != 0 && (ns || ew) && n <= 2) {
+    float a = ns ? f.x : f.y;
+    float strip = max(1.0 - smoothstep(0.05, 0.058, abs(a - 0.22)), 1.0 - smoothstep(0.05, 0.058, abs(a - 0.78)));
+    float edge = max(1.0 - smoothstep(0.006, 0.012, abs(a - 0.283)), 1.0 - smoothstep(0.006, 0.012, abs(a - 0.717)));
+    c = mix(c, gBike * (0.9 + 0.12 * fine), strip * 0.9);
+    c = mix(c, gPaint, edge * 0.85);
+  }
+  // tram tracks: two rails in each lane, from the middle of the tile out to each linked side
+  if ((lanes & 2) != 0) {
+    float groove = 0.0, steel = 0.0;
+    for (int k = 0; k < 4; k++) {
+      bool on = k == 0 ? cN : k == 1 ? cE : k == 2 ? cS : cW;
+      if (!on) continue;
+      // along: 0 at the middle, 0.5 at the edge; across: distance from the road's centre line
+      float along = k == 0 ? 0.5 - f.y : k == 1 ? f.x - 0.5 : k == 2 ? f.y - 0.5 : 0.5 - f.x;
+      float across = (k == 0 || k == 2) ? f.x - 0.5 : f.y - 0.5;
+      float inside = step(-0.2, along);
+      for (int j = 0; j < 4; j++) {
+        float off = j == 0 ? -0.23 : j == 1 ? -0.11 : j == 2 ? 0.11 : 0.23;
+        groove = max(groove, railGroove(across - off) * inside);
+        steel = max(steel, railLine(across - off) * inside);
+      }
+    }
+    c *= 1.0 - 0.35 * groove;
+    c = mix(c, gRail * (0.95 + 0.1 * fine), steel * 0.9);
+  }
   // the curb: a shadow on the road side, a bright lip, then the paving slabs
   vec3 walk = gSidewalk * (0.94 + 0.08 * fxNoise(p * 4.0));
   vec2 slab = fract(p * 4.0);
@@ -117,7 +163,7 @@ vec3 groundColor(vec3 w, vec3 n) {
   float fine = fxNoise(p * 3.1);
   vec3 c;
   if ((r & 16) != 0) {
-    c = roadColor(p, f, r & 15, g);
+    c = roadColor(p, f, r & 15, g, r >> 5);
   } else {
     c = groundGrass(p, sh.g);
     // wildflower specks in wild grass, at most one in each 0.4-tile cell
@@ -129,6 +175,14 @@ vec3 groundColor(vec3 w, vec3 n) {
     float hc = fract(h * 37.7);
     vec3 fc = hc < 0.25 ? gFlower0 : hc < 0.5 ? gFlower1 : hc < 0.75 ? gFlower2 : gFlower3;
     c = mix(c, fc, speck);
+    // a zoned lot with nothing on it yet: a soft tint of the zone's colour, with a dashed edge
+    int zn = int(t.a * 255.0 + 0.5);
+    if (zn > 0 && zn < 8) {
+      vec3 zc = zn == 1 ? gZone1 : zn == 2 ? gZone2 : zn == 3 ? gZone3 : gZone4;
+      float e = min(min(f.x, f.y), min(1.0 - f.x, 1.0 - f.y));
+      float dash = step(0.5, fract((f.x + f.y) * 4.0));
+      c = mix(c, zc, 0.38 + 0.4 * (1.0 - smoothstep(0.03, 0.07, e)) * dash);
+    }
     if (b == ${FINISH.paving}) {
       // plaza paving: big pale slabs in two tones
       vec2 q = floor(p * 2.0);
@@ -155,7 +209,28 @@ vec3 groundColor(vec3 w, vec3 n) {
   float under = smoothstep(${(WATER_Y + 0.02).toFixed(3)}, ${(WATER_Y - 0.2).toFixed(3)}, w.y);
   c = mix(c, gBed * (0.8 + 0.3 * fine), under);
   // contact shade under and around things
-  return c * (1.0 - sh.r * 0.45);
+  c *= 1.0 - sh.r * 0.45;
+  // land that isn't open yet: paler and softer under a light mist, never washed out
+  float l = dot(c, vec3(0.3, 0.55, 0.15));
+  c = mix(c, mix(vec3(l), gMist, 0.35), sh.b * 0.42);
+  // a map: coral (could be better) → sunny yellow → green (great), or a service's teal reach
+  if (gMap > 0.5 && sh.a > 0.01) {
+    float v = clamp((sh.a * 255.0 - 1.0) / 254.0, 0.0, 1.0);
+    vec3 m = gMap < 1.5
+      ? (v < 0.5 ? mix(vec3(0.94, 0.42, 0.33), vec3(0.98, 0.83, 0.33), v * 2.0) : mix(vec3(0.98, 0.83, 0.33), vec3(0.36, 0.78, 0.45), (v - 0.5) * 2.0))
+      : (v > 0.5 ? vec3(0.18, 0.64, 0.69) : vec3(0.94, 0.42, 0.33));
+    float a = 0.66;
+    // colourblind patterns: cross-hatch for low, dots for middling, plain for high
+    if (gPattern > 0.5) {
+      vec2 q = w.xz * 4.0;
+      float hatch = step(0.82, fract(q.x + q.y)) + step(0.82, fract(q.x - q.y));
+      float dots = 1.0 - step(0.18, length(fract(q) - 0.5));
+      float pv = gMap < 1.5 ? v : (v > 0.5 ? 1.0 : 0.0);
+      m *= 1.0 - 0.45 * (pv < 0.4 ? min(1.0, hatch) : pv < 0.7 ? dots : 0.0);
+    }
+    c = mix(c * 0.85, m, a);
+  }
+  return c;
 }`;
 
 const tileData = new Uint8Array(SPAN * SPAN * 4);
@@ -178,7 +253,7 @@ function textures() {
  * Roads that reach the town's edge carry on out into the countryside (the roads out of town), so
  * the street doesn't stop at a grassy wall. Returns road-ness for any tile of the drawn world.
  */
-export function roadAnywhere(c: City, x: number, z: number): boolean {
+export function roadAnywhere(c: Town, x: number, z: number): boolean {
   if (inMap(x, z)) return isRoad(c, x, z);
   if (z < 0 || ((x < 0 || x >= W) && z >= H)) return false; // the bay, and the far corners
   // straight on only: a road running out of the west or east edge keeps its row, south its column
@@ -187,20 +262,26 @@ export function roadAnywhere(c: City, x: number, z: number): boolean {
   return isRoad(c, x, H - 1) && isRoad(c, x, H - 2);
 }
 
-function linksAnywhere(c: City, x: number, z: number) {
+function linksAnywhere(c: Town, x: number, z: number) {
   return (roadAnywhere(c, x, z - 1) ? 1 : 0) | (roadAnywhere(c, x + 1, z) ? 2 : 0) | (roadAnywhere(c, x, z + 1) ? 4 : 0) | (roadAnywhere(c, x - 1, z) ? 8 : 0);
 }
 
 /** Roads, sidewalk corners, crossings and lot finishes: when roads or lots change. */
-export function setGroundTiles(c: City) {
+export function setGroundTiles(c: Town, footprint: (t: Thing) => { w: number; d: number }) {
   textures();
+  const occupied = new Uint8Array(W * H);
+  for (const t of c.things) {
+    const f = footprint(t);
+    for (let z = Math.floor(t.z); z < Math.ceil(t.z + f.d); z++) for (let x = Math.floor(t.x); x < Math.ceil(t.x + f.w); x++) if (inMap(x, z)) occupied[z * W + x] = 1;
+  }
   for (let j = 0; j < SPAN; j++) for (let i = 0; i < SPAN; i++) {
     const x = i + WORLD0, z = j + WORLD0;
     const o = (j * SPAN + i) * 4;
-    let r = 0, g = 0, b = FINISH.wild as number;
+    let r = 0, g = 0, b = FINISH.wild as number, a = 0;
     if (roadAnywhere(c, x, z)) {
       const L = linksAnywhere(c, x, z);
       r = 16 | L;
+      if (inMap(x, z)) r |= (c.rflags[z * W + x]! & 3) << 5;
       const road = (dx: number, dz: number) => roadAnywhere(c, x + dx, z + dz);
       if ((L & 1) && (L & 2) && !road(1, -1)) g |= 1;
       if ((L & 4) && (L & 2) && !road(1, 1)) g |= 2;
@@ -216,16 +297,22 @@ export function setGroundTiles(c: City) {
       }
     } else if (inMap(x, z)) {
       b = c.finish[z * W + x]!;
+      const zone = c.zones[z * W + x]!;
+      a = zone ? zone + (occupied[z * W + x] ? 8 : 0) : 0;
     }
-    tileData[o] = r; tileData[o + 1] = g; tileData[o + 2] = b; tileData[o + 3] = 255;
+    tileData[o] = r; tileData[o + 1] = g; tileData[o + 2] = b; tileData[o + 3] = a;
   }
-  // lawns, softened at the edges (green channel of the shade map)
+  // lawns, softened at the edges (green), and land that isn't open yet (blue)
+  const open = new Set(c.unlocked);
   for (let j = 0; j < SN; j++) for (let i = 0; i < SN; i++) {
     const x = Math.floor(i / SPT) + WORLD0, z = Math.floor(j / SPT) + WORLD0;
-    const lawn = inMap(x, z) && !isRoad(c, x, z) && c.finish[z * W + x]! !== FINISH.wild;
+    const lawn = inMap(x, z) && !isRoad(c, x, z) && (c.finish[z * W + x]! !== FINISH.wild || c.zones[z * W + x]! > 0);
     shadeData[(j * SN + i) * 4 + 1] = lawn ? 255 : 0;
+    const area = inMap(x, z) ? areaAt(x, z) : null;
+    shadeData[(j * SN + i) * 4 + 2] = area && !open.has(area.id) ? 255 : 0;
   }
   blurChannel(1, 1);
+  blurChannel(2, 2);
   tileTex!.needsUpdate = true;
   shadeTex!.needsUpdate = true;
 }
@@ -278,4 +365,38 @@ export function setGroundSeason(season: Season) {
   const f = pal.flower;
   u.gFlower0.value.setHex(f[0]!); u.gFlower1.value.setHex(f[1 % f.length]!); u.gFlower2.value.setHex(f[2 % f.length]!); u.gFlower3.value.setHex(f[3 % f.length]!);
   u.gFlowerAmt.value = season === 'winter' ? 0.15 : season === 'autumn' ? 0.6 : 1;
+}
+
+/**
+ * Show a map on the ground: `values` per tile (0–1, or NaN where there's nothing to show), `mode`
+ * 1 a heat ramp (coral → yellow → green), 2 coverage (teal inside, coral outside), 0 off. Each value
+ * spreads a tile round its lot, so it shows round the buildings standing on it.
+ */
+export function setGroundMap(mode: 0 | 1 | 2, values: Float32Array | null, pattern: boolean) {
+  textures();
+  groundUniforms.gMap.value = mode;
+  groundUniforms.gPattern.value = pattern ? 1 : 0;
+  for (let i = 0; i < SN * SN; i++) shadeData[i * 4 + 3] = 0;
+  if (mode && values) {
+    const spread = new Float32Array(W * H).fill(NaN);
+    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+      const v = values[z * W + x]!;
+      if (Number.isNaN(v)) continue;
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, nz = z + dz;
+        if (!inMap(nx, nz)) continue;
+        const j = nz * W + nx;
+        const own = !Number.isNaN(values[j]!);
+        if (own && (dx || dz)) continue;
+        spread[j] = Number.isNaN(spread[j]!) ? v : Math.min(spread[j]!, v);
+      }
+    }
+    for (let j = 0; j < SN; j++) for (let i = 0; i < SN; i++) {
+      const x = Math.floor(i / SPT) + WORLD0, z = Math.floor(j / SPT) + WORLD0;
+      if (!inMap(x, z)) continue;
+      const v = spread[z * W + x]!;
+      if (!Number.isNaN(v)) shadeData[(j * SN + i) * 4 + 3] = 1 + Math.round(Math.min(1, Math.max(0, v)) * 254);
+    }
+  }
+  shadeTex!.needsUpdate = true;
 }
