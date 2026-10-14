@@ -10,7 +10,7 @@ from this file alone.
 |---|---|---|
 | 0 | Setup, originality, IP log, five names | **done** |
 | 1 | Style frame and engine checks; **stop for the owner's approval of the look** | **done**: v2 approved ("Ok good graphics quality") |
-| 2 | Simulation core and both bots | |
+| 2 | Simulation core and both bots | **done**: 50/50 levels (good bot), 50/50 within two tries (casual), 5.0 h pacing |
 | 3 | Vertical slice (World 1, levels 1–3), draft PR to prove CI | |
 | 4 | Content, world by world (24 plants, 20 critters, 6 bosses, 50 levels) | |
 | 5 | Interface, Seed and Invader Books, settings, audio | |
@@ -131,6 +131,25 @@ stays on the owner's machine (`.reference/`, git-ignored) and nothing is copied 
 - **Interface:** plant cards as round clay-pot badges (a left column on phones), seed selection with the
   level's critters shown as cards, wave progress as a footprint path with picnic-flag milestones, a final-wave
   "Here they come!" card, 1×/2× and pause. The HUD and menus are a crisp DOM overlay over the 3D scene.
+
+## Rules decisions (phase 2, from the bots' balance runs)
+
+- `src/sim/game.ts` (pure, 60 Hz, seeded) + `src/sim/bot.ts`; all numbers in `src/data/tuning.ts`;
+  levels in `src/data/levels.ts` (rows per world: the new plant, the new critter, the boss; waves
+  are made from a seeded budget and spread over 48 s + 6 s per wave); Challenges, Garden Party and
+  the Daily in `src/data/modes.ts`. `npx tsx scripts/balance.ts` prints the table quickly.
+- A level's new plant is usable in that level (with its tip). Start: Rowan and Comfrey.
+- A swarm (ants, moths) takes one snack together. Magpies never take snacks (they borrow one plant
+  and drop it two tiles on). A packrat trades one plant for a pebble, then goes home. Moths flutter
+  low (any plant reaches them); moths and owlets only come out in dusk levels. Grasshoppers hop at
+  most 3 plants. Boss levels keep the boss's lane free of gaps and hot tiles, bring a lighter
+  escort, start with +100 compost; the boss walks in partway into the last wave.
+- **The trowel** (`dig` command): dig up a plant to make room, no compost back. Added because a lane
+  full of producers with a critter nibbling a blocker could never end (found by the bot).
+- When the garden is clear, the next wave comes within 8 s (a breather, not a jump).
+- No single plant is required: without Comfrey (Yarrow instead) the good bot wins 36/38 of the levels
+  where Yarrow exists; without Boxwood 45/49. A frog needs a straight shooter (Rowan, Arrowhead,
+  Wisteria, Milkweed or Primrose); early in the Greenhouse that's Rowan or Arrowhead.
 
 ## Architecture (`src/`)
 
