@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.11.0",
+  "release": "2.12.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.11.0",
+    "release": "2.12.0",
     "date": "2026-10-14",
     "approvedBy": "Owner",
-    "scope": "Shooberry 1.0.0, the tenth game (list position 10): a 3D lane-defense garden game for ages 7+ (24 plants, 20 critters, 5 mini-bosses and the Snack Parade float, 50 Adventure levels in five worlds, Garden Party, 20 Challenges, a Daily garden, the Seed and Invader Books). Listed \"Ready to play\" with its cover, logo, OG image, preview loop, six stills and a 15-second trailer; its build is games/shooberry imported unchanged (BUILD_IMPORTS.json). Also: gameplay preview loops for Cliff Valley, Vanex Defense, Space Sky and Calex Cart, recorded from the builds that ship (they showed only a still); their screenshot covers and galleries stay. In the AI Kids Games app for assistants Shooberry is a fullscreen game (the app's catalog follows the released games). Every game other than Shooberry stays at its current version and build.",
-    "note": "Owner wrote: \"Ok good graphics quality, now finish the game end to end and deploy it to production\" (2026-10-14), then \"Once done and complete, and deploy all changes and games to production\", and reported \"Cliff Valley, Vanex Defense, Space Sky, and Calex Cart preview is not playing the video\". Built as 2.10.0; the owner then chose to ship Fieldlark first as 2.10.0 (#28), so this is 2.11.0 at list position 10. Guard: scripts/check-deployment.ts needs this record for 2.11.0, a passing localSuites record for 2.11.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.11.0 in the Production environment of ai-kids-games and ai-kids-games-play, and a build from main."
+    "scope": "The home page's \"All games\" list shows the newest games first (games released after the first launch day, newest first: Shooberry, Fieldlark, Agentmon, Tuck Pop, then the launch games in catalog order), and game grids are 3 equal columns on desktop (tablets keep balanced rows of 2, phones one column). Site code only: every game stays at its current version and build; the MCP app stays at 1.2.0.",
+    "note": "Owner wrote: \"Put our new games on first lines of the \"All Games\" list. And make the gallery in 3 Columns on Desktop\" (2026-10-14), after \"keep going and deploy to production when green\". Guard: scripts/check-deployment.ts needs this record for 2.12.0, a passing localSuites record for 2.12.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.12.0 in the Production environment of ai-kids-games and ai-kids-games-play, and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
