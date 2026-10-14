@@ -607,6 +607,11 @@ Plan, rules and status: games/fieldlark/CLAUDE.md (plans: games/fieldlark/docs/P
   - Open a PR, get CI green and hand over the preview link. **Stop before production:** the owner
     plays it and approves the release.
   - This replaces the earlier "deploy when complete".
+- **Phase 15 (site step):** game 1.0.0 listed "Ready to play" at `site.order` 10 (the first of
+  Fieldlark and Shooberry to merge takes 9), imported, storage audited, art, previews, its 15-second
+  trailer (`npm run publish:trailers -- fieldlark` in marketing/sizzle publishes one game and keeps the
+  others), site tests at 9 games, and the MCP app bumped to 1.1.0 (owner-approved; its production
+  still needs the owner's approval in apps/mcp/DEPLOYMENT.json).
 
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),

@@ -110,7 +110,7 @@ function build(c: Composition) {
       case 'clip': show(segs[0], block.start > 0, tail); break;
       case 'logo': {
         if (segs[0]) c.shot(segs[0], { x: 0, y: 0, w: W, h: H, z: 2, blur: true, extra: tail });
-        const id = c.layer(start, end, `<div class="lockup big light">${WORDMARK(true)}</div>`, 'display:flex;align-items:center;justify-content:center', 'txt', 20);
+        const id = c.layer(start, end, block.slug ? `<div class="lockup big light"><img class="wm gamelogo" src="logos/${block.slug}.svg" alt=""></div>` : `<div class="lockup big light">${WORDMARK(true)}</div>`, 'display:flex;align-items:center;justify-content:center', 'txt', 20);
         popIn(c, id, start);
         break;
       }
@@ -211,6 +211,7 @@ html, body { width: ${W}px; height: ${H}px; overflow: hidden; background: #0F111
 .lockup { display: inline-flex; align-items: center; gap: ${P ? 26 : 30}px; }
 .lockup .wm { height: ${P ? 150 : 160}px; width: auto; }
 .lockup.big .wm { height: ${P ? 190 : 210}px; }
+.lockup.big .wm.gamelogo { height: ${P ? 300 : 340}px; max-width: ${P ? 960 : 1500}px; }
 .lockup.light .wm { filter: drop-shadow(0 4px 24px rgb(0 0 0 / .45)); }
 .markbox .icon { width: 100%; height: 100%; }
 .chip { display: inline-block; padding: 18px 40px 22px; border-radius: 28px; background: rgb(255 255 255 / .96); color: ${INK}; box-shadow: 0 20px 50px rgb(0 0 0 / .3); }
@@ -261,7 +262,7 @@ export function compose(cut: Cut, format: Format) {
   link(join(root, 'apps/site/src/assets/fonts/nunito-latin-wght.woff2'), join(dir, 'fonts/nunito.woff2'));
   link(join(dirname(require.resolve('gsap/package.json')), 'dist/gsap.min.js'), join(dir, 'gsap.min.js'));
   for (const [from, to] of [['wordmark.png', 'wordmark.png'], ['wordmark-dark.png', 'wordmark-dark.png'], ['icon-source.webp', 'icon.webp']]) link(join(root, 'docs/brand', from), join(dir, 'brand', to));
-  for (const slug of new Set(cut.blocks.flatMap(b => b.kind === 'game' ? [b.slug] : b.kind === 'montage' ? b.shots.map((s: Shot) => s.slug) : []))) link(game(slug).logo, join(dir, 'logos', `${slug}.svg`));
+  for (const slug of new Set(cut.blocks.flatMap(b => b.kind === 'game' ? [b.slug] : b.kind === 'montage' ? b.shots.map((s: Shot) => s.slug) : b.kind === 'logo' && b.slug ? [b.slug] : []))) link(game(slug).logo, join(dir, 'logos', `${slug}.svg`));
   writeFileSync(join(dir, 'index.html'), page(c));
   writeFileSync(join(dir, 'hyperframes.json'), JSON.stringify({ $schema: 'https://hyperframes.heygen.com/schema/hyperframes.json', paths: { assets: '.' } }, null, 2) + '\n');
   return dir;

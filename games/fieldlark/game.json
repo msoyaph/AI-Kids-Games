@@ -2,10 +2,10 @@
   "$schema": "../../docs/game.schema.json",
   "slug": "fieldlark",
   "title": "Fieldlark",
-  "tagline": "Wake up the town farm, one field at a time.",
-  "shortDescription": "Build and grow a 3D farm from above: plant 30 real crops, raise animals, run a mill and a bakery, fill orders for the town and bring back the Harvest Fair.",
-  "longDescription": "A sleepy community farm needs a new keeper. Plough fields, plant real crops and look after them for better harvests, plant orchards, keep happy animals, and turn your harvest into flour, bread, jam and sweaters. Fill orders for the little river town, trade with friendly neighbour farms, decorate, and win ribbons at the seasonal fairs. There is no energy and nothing ever wilts: farm time only moves while you play.",
-  "version": "0.1.0",
+  "tagline": "Wake up the town farm, field by field.",
+  "shortDescription": "Build and grow a 3D farm from above: plant 30 real crops, raise animals, run workshops, sell at your own farm stand and bring back the town's Harvest Fair.",
+  "longDescription": "A sleepy community farm needs a new keeper. Plough fields, plant 30 real crops and care for the soil, plant orchards, keep happy animals, and turn your harvest into flour, bread, jam and sweaters. Price your own stand on the Larkford square, sign contracts with the bakery, the school, a cafe and a fabric shop, and welcome helpers who water, pick and deliver. Dig water channels, grow anything in a greenhouse, try ideas in the Farm Lab, cross crops near your bees for new varieties, and win ribbons at the seasonal fairs. The Farm Book has a real fact for every crop and animal. There is no energy and nothing ever wilts: farm time only moves while you play.",
+  "version": "1.0.0",
   "minAge": 8,
   "ageRange": "8–14",
   "genres": [
@@ -17,7 +17,8 @@
     "3D",
     "Farming",
     "Building",
-    "Learning"
+    "Learning",
+    "Seasons"
   ],
   "keywords": [
     "farm game",
@@ -30,13 +31,14 @@
     "learning game"
   ],
   "features": [
-    "A 3D farm diorama you build and manage from above",
-    "30 real crops with a fact for each",
-    "Plays with touch, mouse and keyboard, or a gamepad",
-    "No energy, no timers, nothing ever wilts",
-    "One self-contained HTML file that works offline"
+    "A 3D farm diorama you build and manage from above, through all four seasons",
+    "30 real crops, 10 fruit trees and bushes, and 7 animals, with a real fact for each",
+    "Your own farm stand, contracts with the town, and helpers who learn their jobs",
+    "Soil health, water channels, greenhouses, a Farm Lab and new crop varieties",
+    "Plays with touch, mouse and keyboard, or a gamepad, with Low, Medium and High graphics",
+    "No energy, no timers, nothing ever wilts"
   ],
-  "contentNotes": "Gentle farming with no fighting or scary content. Nothing ever wilts, dies or gets sick, and there are no timers outside play. Some reading, with read-aloud. The farm saves in this browser.",
+  "contentNotes": "Gentle farming with no fighting or scary content. Nothing ever wilts, dies or gets sick, there are no timers outside play, and pricing mistakes only mean selling a little less. Some reading, with read-aloud. The farm saves in this browser.",
   "controls": {
     "types": [
       "Keyboard",
@@ -45,14 +47,16 @@
       "Touch"
     ],
     "quickStart": [
-      "Press Start farming.",
-      "Tap an empty field and choose seeds.",
-      "Tap ripe crops to pick them, then sell them in the barn."
+      "Press Start farming and read Hattie's welcome.",
+      "Tap an empty field and choose seeds, then water them.",
+      "Tap ripe crops to pick them, and fill an order on the board by the dock."
     ],
     "howToPlay": [
-      "Tap or click a tile to use it; drag across fields to plant or pick a whole row.",
+      "Tap or click a tile to use it; drag across fields to plant, water or pick a whole row.",
       "Drag to move around, pinch or scroll to zoom, and twist two fingers or press Q and E to turn.",
-      "With a gamepad, move the tile cursor with the left stick, press A to use a tile, and turn with the bumpers."
+      "Tap the farmhouse for the Farm Book, the Ledger, helpers and the Farm Lab; tap the date for the weather.",
+      "Keyboard: number keys pick the tools shown on the tool bar, B opens Build mode, T moves into the tool bar, Escape goes back.",
+      "Gamepad: the left stick moves the tile cursor, A uses a tile, the bumpers turn, X opens the tools, Y Build mode, B goes back and Start the menu."
     ]
   },
   "devices": [
@@ -92,7 +96,7 @@
     "network": false
   },
   "capture": {
-    "route": "?scene=farm&seed=7",
+    "route": "?scene=showcase&seed=7",
     "script": "apps/site/scripts/capture/fieldlark.ts"
   },
   "license": "MIT",
@@ -101,7 +105,11 @@
     "featured": false,
     "releaseDate": "2026-10-14",
     "accentColor": "#cfe8b0",
-    "coverLayers": [],
-    "status": "In development"
+    "coverLayers": [
+      "float",
+      "twinkle"
+    ],
+    "status": "Ready to play",
+    "order": 10
   }
 }

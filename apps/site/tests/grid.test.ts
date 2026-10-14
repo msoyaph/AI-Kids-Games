@@ -8,6 +8,7 @@ describe('balanced grid',() => {
     expect(balancedRows(6,3)).toEqual([3,3]);
     expect(balancedRows(7,3)).toEqual([2,2,3]);
     expect(balancedRows(8,3)).toEqual([2,3,3]);
+    expect(balancedRows(9,3)).toEqual([3,3,3]);
     expect(balancedRows(12,3)).toEqual([3,3,3,3]);
     expect(balancedRows(1,3)).toEqual([1]);
     expect(balancedRows(5,2)).toEqual([1,2,2]);
@@ -27,6 +28,8 @@ describe('balanced grid',() => {
     expect(gridSpans(5).map(span => span.md)).toEqual([2,1,1,1,1]);
     expect(gridSpans(8).map(span => span.lg)).toEqual([3,3,2,2,2,2,2,2]);
     expect(gridSpans(8).map(span => span.md)).toEqual([1,1,1,1,1,1,1,1]);
+    expect(gridSpans(9).map(span => span.lg)).toEqual([2,2,2,2,2,2,2,2,2]);
+    expect(gridSpans(9).map(span => span.md)).toEqual([2,1,1,1,1,1,1,1,1]);
     expect(gridSpans(1)[0]).toEqual({ lg: 6,md: 2,solo: true });
   });
 });

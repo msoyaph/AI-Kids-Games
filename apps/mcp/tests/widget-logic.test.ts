@@ -25,7 +25,8 @@ describe('pause and round-end signals',() => {
   it('exist for every game that plays here, and read hooks and markers that are in the verified builds',() => {
     const marks: Record<string,string[]> = {
       'tuck-pop': ['__tuckpop','snapshot'],agentmon: ['__agentmon','panel.menu.pause'],'calex-cart': ['__calex'],'light-crossing': ['panel center pause'],
-      'space-sky': ['pause-menu','race-result','complete-stats'],theabonk: ['__theabonk'],'vanex-defense': ['__vanexTest']
+      'space-sky': ['pause-menu','race-result','complete-stats'],theabonk: ['__theabonk'],'vanex-defense': ['__vanexTest'],
+      fieldlark: ['section.panel','aria-label','Settings']
     };
     for (const game of catalog.games.filter(entry => entry.embed !== 'site')) {
       expect(SIGNALS[game.slug],game.slug).toBeTypeOf('function');

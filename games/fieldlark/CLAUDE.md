@@ -410,14 +410,14 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 | Visual pass (style frame, close camera, sideways phones, Low budget) | done, approved by the owner |
 | Merge main + rename to Fieldlark | done |
 | 7 Story, onboarding and the audit's bugs | done (185 unit tests; e2e smoke + story 46/0) |
-| 8 Books, ledger and the farmhouse hub | done in code (195 unit tests); browser check pending a quiet machine |
-| 9 Soil, weather, breeding, fair categories | done in code (221 unit tests); browser check pending a quiet machine |
-| 10 Farmhands as workers | done in code (232 unit tests); browser check pending a quiet machine |
-| 11 Larkford town square: the farm stand and contracts | done in code (247 unit tests); browser check pending a quiet machine |
-| 12 Channels, sprinklers, greenhouses, the Farm Lab | done in code (264 unit tests); browser check pending a quiet machine |
+| 8 Books, ledger and the farmhouse hub | done in code (195 unit tests); browser-checked in phase 14 (systems.spec) |
+| 9 Soil, weather, breeding, fair categories | done in code (221 unit tests); browser-checked in phase 14 (systems.spec) |
+| 10 Farmhands as workers | done in code (232 unit tests); browser-checked in phase 14 (systems.spec) |
+| 11 Larkford town square: the farm stand and contracts | done in code (247 unit tests); browser-checked in phase 14 (systems.spec) |
+| 12 Channels, sprinklers, greenhouses, the Farm Lab | done in code (264 unit tests); browser-checked in phase 14 (systems.spec) |
 | 13 The look everywhere, seasons, night, music | done, checked on the GPU (day, night, snow, rain, mist, town, greenhouse) |
-| 14 Save v2, bot and pacing, performance, full QA | done (273 unit, 15 sim, 106 e2e on Chromium and WebKit) |
-| 15 Site step, trailer, MCP catalog, PR and preview | — |
+| 14 Save v2, bot and pacing, performance, full QA | done (273 unit, 15 sim; e2e 102 passed, 18 device skips, on Chromium and WebKit) |
+| 15 Site step, trailer, MCP catalog, PR and preview | done up to the PR; **stopped before production** |
 
 **Phases 1–2 notes:**
 - Build 638 KB.
@@ -550,6 +550,24 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 - The hook's snapshot now also reports the chapter, stats, Lab ideas, helpers, stand shelves and
   reduced motion (copies, read-only).
 
-**Next:** phase 15 (`docs/PLAN-2.md` §3): merge `origin/main`, version 1.0.0 and "Ready to play",
-the site import, storage audit, art, previews, the 15-second trailer, site tests and grid count,
-manifests and the MCP catalog bump, then the PR, CI and the preview link. **Stop before production.**
+- Correction: the phase 14 commit message says "e2e 106 passed (22 device skips)". The real count
+  was 102 passed and 18 skipped (a full run of 100 passed and 2 failed in systems.spec, then that spec
+  rerun after the fix: 38 passed, 4 skipped).
+
+**Phase 15 notes:**
+- Game 1.0.0, listed "Ready to play" at `site.order` 10 (Shooberry's PR wants 9; the first PR to merge
+  takes 9, so swap at merge time if this one lands first). Imported (`npm run import-game -- fieldlark`),
+  manifests, storage audit (apps/site/STORAGE_AUDIT.md: worst case 346 KB, a finished story about 20 KB
+  a copy, measured on bot playthroughs), cover, layers, logo and OG image, previews from
+  `apps/site/scripts/capture/fieldlark.ts`, site tests at 9 games.
+- Trailer: `marketing/sizzle/capture/games/fieldlark.ts`; six shots (farm, a real drag-to-harvest with
+  its pops, night, town, winter, the animals) and the line "Seasons, helpers and harvest fairs."
+- MCP app 1.1.0 (owner-approved bump; production only with the owner's approval): Fieldlark plays
+  full-screen in assistants; it counts as paused while its Menu or Settings is open.
+- Capture pitfall: once, a take opened at the widest zoom instead of the URL's `zoom`; a retake was
+  right. Look at every take before using it.
+
+**Next:** the owner plays the preview and approves the release. Then release by the repo's path (see
+Workspace): the version bump and DEPLOYMENT.json approval, `release:local`, CI, AIKG_ALLOW_PRODUCTION
+(site and MCP app), merge, production checks and a record PR. If Shooberry merges first, merge `main`
+in and reconcile the order, counts and generated files.
