@@ -679,11 +679,17 @@ from origin/main d693372. Brief: docs/prompts/breezeport.md. Plan, rules and sta
 - **Engine:** copied and adapted from Fieldlark's (provenance header on each file; `scripts/engine-drift.mjs`), not a
   shared package, so Fieldlark's verified build stays untouched. Fieldlark (#28, release 2.10.0) was merged into
   `breezeport` on 2026-10-14 (a merge, never a rebase); `node games/breezeport/scripts/engine-drift.mjs` shows no drift
-  beyond provenance lines. Shooberry (#27) is still open: merge `main` in again when it lands.
+  beyond provenance lines. Shooberry (#27, release 2.11.0) was merged in the same way after it landed.
 - **Repo side:** the Simulation genre (schema, manifest validator, the site's Category, the MCP catalog's list); the
   inspiring city builders and their publisher on the trademark blocklist, with a site manifest test.
 - **Release (owner, 2026-10-14):** "Go, Breezeport. Once done and complete, deploy the game to live production. Then
   create a 1 minute sizzle reel YT 1920×1080 and 1080x1920." That replaces the brief's stop before production.
+  - **Release 2.12.0, list position 11, with MCP app 1.3.0** (PR #32). Game 1.0.0; every other game stays at its
+    version.
+  - **Order:** merge main → 2.12.0 / MCP 1.3.0 approvals quoting the owner → `npm run release:local` on a quiet
+    machine (build games/space-sky first: its suite serves dist/) → CI green → `AIKG_ALLOW_PRODUCTION` 2.12.0 on
+    ai-kids-games and ai-kids-games-play and 1.3.0 on ai-kids-games-mcp → merge → production checks and a record PR.
+  - **Then the reels:** `breezeport-reel` in marketing/sizzle (60 s, 16:9 and 9:16), like Fieldlark's.
 - **Other sessions:** never run heavy work alongside another session's (games/breezeport/scripts/quiet-check.mjs, and
   respect its exit code).
 

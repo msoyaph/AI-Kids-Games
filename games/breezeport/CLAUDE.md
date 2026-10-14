@@ -14,9 +14,9 @@ under the working name "City WIP" (`city-wip`), before any save existed.
 - **Worktree:** `~/Documents/AI City Builders/AI-Kids-Games-city` (a path with spaces: quote it).
   - Branch `breezeport`, cut from `origin/main` d693372 (release 2.9.0 plus MCP app 1.0.0) on 2026-10-14.
   - Phase 0 was built on a local-only branch, `city-styleframe` (from `origin/fieldlark` 41688c3), which is never pushed.
-- **Fieldlark** (#28) and **Shooberry** (#27) were still open at the owner's go.
-  - Breezeport doesn't depend on them: its engine is a copy in this folder.
-  - When either merges, merge `main` in (never rebase), reconcile `site.order`, the game counts and the generated files, and run `node scripts/engine-drift.mjs` against the merged Fieldlark.
+- **Fieldlark** (#28, 2.10.0) and **Shooberry** (#27, 2.11.0) were still open at the owner's go; both have since been merged into `breezeport` (merges, never rebases), with `site.order`, the game counts and the generated files reconciled.
+  - Breezeport doesn't depend on them: its engine is a copy in this folder (`node scripts/engine-drift.mjs` against the merged Fieldlark shows no drift beyond provenance lines).
+  - If another release lands on `main` first, merge it in the same way and bump the release past it.
 - **Never touch** other sessions' checkouts or worktrees: the main checkout, `AI-Kids-Games-garden`, `FarmerTown/AI-Kids-Games-farm`, or the agentmon, mcp, counts, record and yt worktrees.
 - **Heavy runs:** `node games/breezeport/scripts/quiet-check.mjs` before any browser test, Vitest run, capture or long simulation, and **respect its exit code**.
   - Exit 0 means quiet: go ahead. Exit 1 means busy: wait, and don't start.
@@ -173,11 +173,11 @@ npx tsx games/breezeport/scripts/models.mts     # triangles per model (CPU only)
 | 1 Setup and name | done: scaffold, rename, Simulation genre, blocklist and site test, brief, docs, engine-drift |
 | 2–8 Town, sims, story, saves, UI | done (checkpoint commit 1dde1de): the 80 × 80 town, roads and zones, growth, services and happiness, budget and grant, traffic and transit (bus, bike, tram), eco, districts, 9 chapters, projects, endless goals, 3 slots, title, tools, maps, City Hall, music, the festival night, the showcase town |
 | 9 Balance, saves, performance, QA | done: 127 unit tests, 9 sim tests and 113 browser tests pass (13 skip by design); the big town runs at 60 fps on every tier |
-| 10 Site, release, reels | in progress: listed at position 11, imported, art, storage audit, MCP signal; previews, trailer, PR, release and the 60-second reels next |
+| 10 Site, release, reels | in progress: listed at position 11, imported, art, storage audit, MCP signal, previews, PR #32, the 2.12.0 / MCP 1.3.0 approvals; the trailer's 9:16 render, `release:local`, production and the 60-second reels next |
 
 **Style frame, measured** (M3 Pro, `scripts/shots.mjs`): Low on the phone draws 31 calls and 77k triangles at 60 fps; Low on the desktop draws 36 calls and 126k triangles at 60 fps. The full table is in docs/PLAN.md. The build is 817 KB.
 
-**Next:** finish phase 9: `npx vitest run tests/sim` (pacing on 6 seeds, the broke run, strategies) on a quiet machine; then the browser suites (`sh scripts/when-quiet.sh e2e`), the visual review with `scripts/shots.mjs` (style frame and `scene=showcase`), and the performance numbers. Then phase 10: listing, import, storage audit, art, previews, trailer, MCP catalog, PR, release, the sizzle reels.
+**Next:** when the machine is quiet, render the trailer's 9:16 cut and the 60-second reel (`breezeport-reel`, 16:9 and 9:16) and review them; `npm run publish:trailers -- breezeport`; `npm run release:local`; CI green on #32; `AIKG_ALLOW_PRODUCTION`; merge; production checks; the record PR; deliver the reels.
 
 **Pacing (2026-10-14, final data):** six seeds take 6.12, 6.17, 6.55, 6.38, 6.23 and 6.35 hours (mean 6.30). The longest chapter is 85 minutes (seed 3, Seaside Boardwalk); the longest wait for coins is 30 s. The broke run (every chapter starts with 0 coins) finishes on city grants, and no one-track strategy earns over 15% more than the mix or ends up happier.
 
