@@ -15,6 +15,10 @@ function play(level: LevelSpec & { plants: string[] }, skill: Skill, seed: numbe
   return { won: g.result === 'won', stars: stars(g), time: g.t, umbrellas: g.stats.umbrellasUsed, seeds: g.cards.map(c => c.plant) };
 }
 
+/** Each world plays 10 levels with both bots (whole levels of the real rules): seconds here, up to a
+ *  minute on CI's shared runners, so these tests get more than vitest's default 5 s. */
+const SIM_TIMEOUT = 120_000;
+
 /** Minutes a child spends around each try: choosing seeds, tips, the results screen. */
 const AROUND_A_TRY = 0.9;
 const rows: string[] = [], pace: { world: string; minutes: number }[] = [];
@@ -22,7 +26,7 @@ const usage: Record<string, number> = {};
 
 for (const [wi, world] of WORLD_DEFS.entries()) {
   describe(`balance: ${world.id}`, () => {
-    it('the good bot wins every level, and the casual bot wins each on its first or second try', () => {
+    it('the good bot wins every level, and the casual bot wins each on its first or second try', { timeout: SIM_TIMEOUT }, () => {
       let minutes = 0;
       for (const level of LEVELS.filter(l => l.worldIndex === wi)) {
         const good = play(level, 'good', 1), c1 = play(level, 'casual', 1), c2 = c1.won ? c1 : play(level, 'casual', 2);
@@ -38,14 +42,14 @@ for (const [wi, world] of WORLD_DEFS.entries()) {
 }
 
 describe('balance: other modes', () => {
-  it('every Challenge is winnable by both bots', () => {
+  it('every Challenge is winnable by both bots', { timeout: SIM_TIMEOUT }, () => {
     for (const c of CHALLENGES) {
       expect(play(c, 'good', 1).won, `${c.id} good`).toBe(true);
       const c1 = play(c, 'casual', 1);
       expect(c1.won || play(c, 'casual', 2).won, `${c.id} casual`).toBe(true);
     }
   });
-  it('a week of Daily gardens are winnable by the casual bot with every plant', () => {
+  it('a week of Daily gardens are winnable by the casual bot with every plant', { timeout: SIM_TIMEOUT }, () => {
     const all = LEVELS.at(-1)!.plants;
     for (let d = 14; d <= 20; d++) { const daily = dailyLevel(`2026-10-${d}`, all); expect(play(daily, 'casual', 1).won || play(daily, 'casual', 2).won, daily.id).toBe(true); }
   });
