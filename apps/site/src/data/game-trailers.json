@@ -205,5 +205,28 @@
       "On screen: “Seasons, helpers and harvest fairs.”",
       "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
     ]
+  },
+  "shooberry": {
+    "seconds": 15,
+    "published": "2026-10-14",
+    "poster": "/trailer/shooberry/poster.jpg",
+    "posterWebp": "/trailer/shooberry/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/shooberry/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/shooberry/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/shooberry/trailer.en.vtt",
+    "description": [
+      "Shooberry gameplay: Rowan Flickers and Maple Twirlers shoo an Ant Column in the Meadow Picnic, the Grand Snail boss slides in, then gardens in the Pumpkin Patch at dusk, the Glass Greenhouse, the Cactus Garden and the Cloud Garden.",
+      "The Shooberry logo and its pitch: “Plant friendly helpers and save the picnic snacks.” Ages 7+.",
+      "On screen: “Plant helpers. Save the picnic!”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
   }
 }

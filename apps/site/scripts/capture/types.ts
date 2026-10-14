@@ -66,4 +66,9 @@ export interface Scenario {
   loopOrder?: string[];
   /** Seconds of each take used in the loop (including the crossfade). */
   clipSeconds?: number;
+  /**
+   * false: record only the loop and poster. The game's gallery comes from elsewhere (its own
+   * screenshots, src/data/temporary-art.ts), so no stills are written and old ones are removed.
+   */
+  gallery?: false;
 }
