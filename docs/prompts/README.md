@@ -14,6 +14,7 @@ borrow its structure for your own game.
 | Cliff Valley | Pixel-art farming life-sim | 8–14 | [cliff-valley.md](cliff-valley.md) |
 | Tuck Pop | Block puzzle | 6+ | [tuck-pop.md](tuck-pop.md) |
 | Agentmon | Creature-befriending pixel RPG | 7–12 | [agentmon.md](agentmon.md) |
+| Farm WIP (working name) | 3D farm-building and management | 8–14 | [farm-wip.md](farm-wip.md) |
 
 ## What they have in common
 

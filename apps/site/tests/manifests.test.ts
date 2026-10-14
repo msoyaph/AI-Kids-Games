@@ -31,6 +31,12 @@ describe('game manifests (games/<slug>/game.json)',() => {
       expect(validateManifest(m).some(error => error.includes('another company')),text).toBe(true);
     }
   });
+  it('reject the farm-building game and publisher that inspired the farm game, by name',() => {
+    for (const [field,text] of [['tagline','Like FarmVille, for kids.'],['tagline','A Farmville-style farm.'],['tagline','From the makers of Zynga games.']] as const) {
+      const m = sample(); m[field] = text;
+      expect(validateManifest(m).some(error => error.includes('another company')),text).toBe(true);
+    }
+  });
   it('reject storage keys outside the game\'s own prefix',() => {
     const m = sample(); m.storage.keys = [...m.storage.keys,'aikg:favorites'];
     expect(validateManifest(m)).toContain('cliff-valley: storage key "aikg:favorites" does not start with the prefix "cliffvalley.".');

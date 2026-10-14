@@ -536,6 +536,19 @@ at the Agent Base. Game 1.1.0, re-imported; no new storage keys and no save migr
 load as they are, tested with a real 1.0 save). The PR keeps the site at its current version; the
 owner plays it first, and the release (on its own or together with 1.0) bumps the site then.
 
+## Farm game (owner brief 2026-10-13; working slug `farm-wip`, branch `farm-wip`)
+
+A 3D farm-building and management game for ages 8–14, built in its own worktree
+(~/Documents/FarmerTown/AI-Kids-Games-farm) from origin/main f331dd9. Brief: docs/prompts/farm-wip.md.
+Plan, rules and status: games/farm-wip/CLAUDE.md (approved plan in games/farm-wip/docs/PLAN.md).
+
+- **Name:** "Farm WIP" is a working name. The owner picks one of five web-checked names before the
+  site step, and the slug, prefix and hook are renamed then, before any player has a save.
+- **Repo side:** the inspiration's title and its publisher join the trademark blocklist, with a site
+  manifest test.
+- **Other sessions:** never run heavy tests alongside another session's
+  (games/farm-wip/scripts/quiet-check.mjs, and respect its exit code).
+
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
    `npm ci`, `npx playwright install chromium webkit`.

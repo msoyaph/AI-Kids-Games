@@ -1,0 +1,84 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "farm-wip",
+  "title": "Farm WIP",
+  "tagline": "Catch the stars before time runs out.",
+  "shortDescription": "Fly a little firefly across the night sky and catch as many stars as you can in 60 seconds. A tiny starter game for building your own.",
+  "longDescription": "Farm WIP is the AI Kids Games starter template: a tiny but complete game that follows the game contract. A firefly flies toward wherever you steer it with the keyboard, a gamepad, the mouse or a finger, catching stars for 60 seconds. Replace its rules, art and name with your own game, and keep the plumbing: the single-file build, safe storage, the test hook, the capture route and the tests.",
+  "version": "0.1.0",
+  "minAge": 5,
+  "ageRange": "5+",
+  "genres": [
+    "Action"
+  ],
+  "tags": [
+    "Stars",
+    "Starter"
+  ],
+  "keywords": [
+    "starter game",
+    "template",
+    "arcade",
+    "kids game",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "Plays with keyboard, mouse, touch or gamepad",
+    "Remembers your best score on this device",
+    "One self-contained HTML file that works offline"
+  ],
+  "contentNotes": "Gentle arcade play with no fighting or scary content. The best score saves in this browser.",
+  "controls": {
+    "types": [
+      "Keyboard",
+      "Mouse",
+      "Gamepad",
+      "Touch"
+    ],
+    "quickStart": [
+      "Press Play.",
+      "Fly with the arrow keys, a gamepad stick, or hold your finger where you want to go.",
+      "Catch as many stars as you can before the time runs out."
+    ],
+    "howToPlay": [
+      "Fly with WASD or the arrow keys, a gamepad's left stick or d-pad, or hold the mouse or a finger where you want to go.",
+      "Escape or P pauses; gamepad A or Start presses the buttons in menus."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "any",
+  "requirements": [],
+  "playTime": "1 minute per round",
+  "storage": {
+    "prefix": "farmwip.",
+    "keys": [
+      "farmwip.save"
+    ],
+    "probe": "farmwip.__probe"
+  },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
+  "capture": {
+    "route": "?scene=play&seed=7",
+    "script": "apps/site/scripts/capture/farm-wip.ts"
+  },
+  "license": "MIT",
+  "source": "games/farm-wip",
+  "site": {
+    "featured": false,
+    "releaseDate": "2026-10-14",
+    "accentColor": "#d9d4f6",
+    "coverLayers": [],
+    "status": "In development"
+  }
+}
