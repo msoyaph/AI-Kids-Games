@@ -75,7 +75,17 @@ export interface Farm {
   /** Lifetime counters: `harvest`, `harvest:wheat`, `orders`, `made:bread`… (see `bump`). */
   stats: Record<string, number>;
   story: StoryState;
+  /** Crop varieties found by crossing (src/sim/varieties.ts). */
+  discovered: string[];
+  /** Ideas for the Farm Lab: earned from levels, contracts, fair ribbons and new varieties. */
+  ideas: number;
+  /** Fair ribbons, newest last (the ribbon wall), and how many of each there are in all. */
+  ribbons: Ribbon[];
+  ribbonCount: [gold: number, silver: number, bronze: number, thanks: number];
 }
+
+/** A ribbon from a fair: which fair (by season), which category, and the place (1–4; 4 is "thank you for coming"). */
+export interface Ribbon { season: number; cat: string; place: 1 | 2 | 3 | 4; grand?: boolean }
 
 /** A new farm's camera. Zoom 0 means "not set yet": the game frames the farmhouse and fields for the screen. */
 export const HOME_VIEW: CameraSave = { x: 37.5, z: 38.5, yawStep: 0, zoom: 0 };
@@ -110,5 +120,9 @@ export function newFarm(seed: number): Farm {
     coop: null,
     stats: {},
     story: newStory(),
+    discovered: [],
+    ideas: 0,
+    ribbons: [],
+    ribbonCount: [0, 0, 0, 0],
   };
 }

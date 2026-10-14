@@ -18,6 +18,7 @@ import { areaAt } from '../sim/map';
 import type { Farm } from '../sim/state';
 import { chapterComplete, chapterOf, endlessProgress, finishChapter, holdGrandFair, nextGoal, readyForGrandFair, beginChapter, storyDone, goalProgress } from '../sim/story';
 import { raining } from '../sim/weather';
+import { dayIndex } from '../sim/clock';
 import { levelOf } from '../sim/world';
 import { h } from '../ui/h';
 import type { Panels } from '../ui/panels';
@@ -190,6 +191,9 @@ export class StoryFlow {
       ['barn', st('harvest') >= 1],
       ['orders', st('sold') >= 1 && farm.orders.length > 0],
       ['farmhouse', st('harvest') >= 8],
+      ['weather', dayIndex(farm.t) >= 2],
+      ['soil', st('harvest') >= 14 || farm.story.chapter >= 1],
+      ['heirloom', farm.story.chapter >= 3],
       ['rain', raining(farm.seed, farm.t)],
       ['stars', st('stars3') >= 1],
       ['compost', count(farm, 'fertilizer') >= 1],
@@ -230,7 +234,7 @@ export function tilesFor(farm: Farm, g: Goal): { x: number; z: number }[] {
   if (g.kind === 'animals') return farm.objects.filter(isHome);
   if (g.kind !== 'stat') return [];
   const k = g.key;
-  if (k === 'cleared') return farm.objects.filter(o => { const a = o.kind === 'debris' ? areaAt(o.x, o.z) : null; return !!a && farm.unlocked.includes(a); });
+  if (k === 'cleared') return farm.objects.filter(o => { const a = o.kind === 'debris' && o.def !== 'mushrooms' ? areaAt(o.x, o.z) : null; return !!a && farm.unlocked.includes(a); });
   if (k === 'planted' || k.startsWith('planted')) return fields.filter(f => !f.crop);
   if (k === 'watered' || k === 'composted') return fields.filter(f => fieldState(farm, f) === 'growing' && !(k === 'watered' ? f.watered : f.fertilized));
   if (k === 'harvest' || k === 'stars3' || k === 'rotation') return fields.filter(f => fieldState(farm, f) === 'ready');

@@ -15,8 +15,9 @@ import { sizeOf } from '../sim/world';
 import type { TallBox } from '../input/pick';
 import { InstancedLayer } from './instanced';
 import { Materials } from './materials';
-import { compostBin, cottage, dock, oldLog, placeholder, stone, weeds } from './models/buildings';
+import { compostBin, cottage, dock, forage, oldLog, placeholder, stone, weeds } from './models/buildings';
 import { cropModel, readyBadge, soilModel } from './models/crops';
+import { VARIETY } from '../data/varieties';
 import { beehive, coop, cowBarn, duckHouse, goatPen, kennel, sheepShed } from './models/animals';
 import { treeModel, type TreeLook } from './models/trees';
 import { TREE } from '../data/orchard';
@@ -36,7 +37,7 @@ import type { OtherObj } from '../sim/objects';
 const BUILDING_MODELS: Record<string, () => THREE.BufferGeometry> = {
   cottage, dock, compost: compostBin, board: () => orderBoard().translate(0.5, 0, 0.5), coop, cowbarn: cowBarn, sheepshed: sheepShed, goatpen: goatPen, duckhouse: duckHouse, beehive, kennel,
 };
-const DEBRIS_MODELS: Record<string, () => THREE.BufferGeometry> = { weeds, stone, log: oldLog };
+const DEBRIS_MODELS: Record<string, () => THREE.BufferGeometry> = { weeds, stone, log: oldLog, mushrooms: forage };
 
 /** How a fruit tree looks right now. */
 export function treeLook(farm: Farm, o: OtherObj): TreeLook {
@@ -92,7 +93,7 @@ export class ObjectView {
     // a key from everything that changes how things look
     let key = `${this.badges}|${this.hiddenId}|${farm.objects.length}|${farm.paths}`;
     for (const o of farm.objects) {
-      if (o.kind === 'field') key += `|${o.id}:${o.crop ?? ''}:${o.watered ? 1 : 0}:${o.crop ? stageOf(growth(farm, o), fieldState(farm, o) === 'ready') : ''}`;
+      if (o.kind === 'field') key += `|${o.id}:${o.variety ?? o.crop ?? ''}:${o.watered ? 1 : 0}:${o.crop ? stageOf(growth(farm, o), fieldState(farm, o) === 'ready') : ''}`;
       else if (o.kind === 'tree') key += `|${o.id}:${o.x},${o.z}:${treeLook(farm, o)}`;
       else key += `|${o.id}:${o.x},${o.z},${o.rot}${isHome(o) && homeReady(farm, o) ? '!' : ''}`;
     }
@@ -113,7 +114,10 @@ export class ObjectView {
           if (!crop) continue;
           const ready = fieldState(farm, o) === 'ready';
           const stage = stageOf(growth(farm, o), ready);
-          this.layer(`crop:${crop.id}:${stage}`, () => cropModel(crop, stage)).push(cx, y + 0.06, cz, ((o.x * 7 + o.z * 3) % 3 - 1) * 0.04);
+          // a variety is the same plant with its own colour of crop
+          const v = o.variety ? VARIETY[o.variety] : undefined;
+          const look = v ? { ...crop, color: { ...crop.color, crop: v.color } } : crop;
+          this.layer(`crop:${v?.id ?? crop.id}:${stage}`, () => cropModel(look, stage)).push(cx, y + 0.06, cz, ((o.x * 7 + o.z * 3) % 3 - 1) * 0.04);
           if (ready) this.ready.push({ x: o.x, z: o.z, y });
           if (ready && this.badges) this.layer('badge', readyBadge, false).push(cx, y + 0.9, cz, 0);
         }

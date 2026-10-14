@@ -16,6 +16,9 @@ import { machinesCatchUp, workMachines } from './production';
 import { boatCatchUp, boatTick, refillBoard, type Order } from './orders';
 import { neighborsTick, type Coop, type Visit } from './neighbors';
 import { endlessTick, type EndlessGoal } from './story';
+import { dayIndex } from './clock';
+import { firstSnow, hayTied, HAY_XP, SNOW_XP, spawnMushrooms, SUNNY_BOOST, tidyHay, todaysEvent, type DayEvent } from './forecast';
+import { brushAll } from './animals';
 
 export type SimEvent =
   | { type: 'rain-start' }
@@ -28,15 +31,20 @@ export type SimEvent =
   | { type: 'boat-back'; orders: Order[] }
   | { type: 'coop-done'; coop: Coop }
   | { type: 'visit'; visit: Visit }
-  | { type: 'endless-done'; goals: EndlessGoal[] };
+  | { type: 'endless-done'; goals: EndlessGoal[] }
+  | { type: 'new-day'; event: DayEvent | null; hay: boolean; mushrooms: number; firstSnow: boolean };
 
 /** Moves the farm clock on by `dt` seconds of play and returns what happened. */
 export function advance(farm: Farm, dt: number): SimEvent[] {
   if (!(dt > 0)) return [];
   const events: SimEvent[] = [];
-  const level0 = levelOf(farm), season0 = seasonOf(farm.t), wasRaining = raining(farm.seed, farm.t);
+  const level0 = levelOf(farm), season0 = seasonOf(farm.t), wasRaining = raining(farm.seed, farm.t), day0 = dayIndex(farm.t);
   farm.t += dt;
   restTrees(farm, dt);
+  if (dayIndex(farm.t) !== day0) events.push(newDay(farm));
+  const today = todaysEvent(farm);
+  // a sunny spell: growing crops come on a little faster all day
+  if (today === 'sunny') for (const o of farm.objects) if (o.kind === 'field' && o.crop && farm.t < o.readyAt) o.readyAt = Math.max(farm.t, o.readyAt - dt * SUNNY_BOOST);
   const nowRaining = raining(farm.seed, farm.t);
   if (nowRaining) {
     for (const o of farm.objects) if (o.kind === 'field' && o.crop && !o.watered && fieldState(farm, o) === 'growing') o.watered = true;
@@ -44,7 +52,10 @@ export function advance(farm: Farm, dt: number): SimEvent[] {
   }
   compostTick(farm, events);
   const made = workMachines(farm);
-  if (made) events.push({ type: 'goods-ready', count: made });
+  if (made) {
+    events.push({ type: 'goods-ready', count: made });
+    if (today === 'snow') farm.xp += made * SNOW_XP;
+  }
   const fresh = refillBoard(farm);
   if (fresh) events.push({ type: 'new-orders', count: fresh });
   const back = boatTick(farm);
@@ -60,6 +71,20 @@ export function advance(farm: Farm, dt: number): SimEvent[] {
   const net = safetyNet(farm);
   if (net) events.push(net);
   return events;
+}
+
+/** A new day begins: its weather event, and what getting ready for it brought. */
+function newDay(farm: Farm): SimEvent {
+  tidyHay(farm);
+  const day = dayIndex(farm.t);
+  const event = todaysEvent(farm);
+  const hay = event === 'windy' && hayTied(farm, day);
+  if (hay) {
+    farm.xp += HAY_XP;
+    for (const o of farm.objects) if (isHome(o)) brushAll(farm, o);
+  }
+  const mushrooms = event === 'misty' ? spawnMushrooms(farm, day) : 0;
+  return { type: 'new-day', event, hay, mushrooms, firstSnow: firstSnow(farm.seed, day) };
 }
 
 /** The compost bin turns scraps into a bag of compost, one bag at a time, while it has scraps. */

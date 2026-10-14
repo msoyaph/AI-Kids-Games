@@ -31,11 +31,16 @@ import { levelOf } from './sim/world';
 import { fill, h } from './ui/h';
 import { Hud } from './ui/hud';
 import { icon } from './ui/icons';
+import { itemIcon } from './ui/itemIcons';
 import { Panels } from './ui/panels';
 import { settingsPanel } from './ui/settingsPanel';
 import { bookPanel } from './ui/bookPanel';
 import { farmhousePanel } from './ui/farmhousePanel';
 import { ledgerPanel } from './ui/ledgerPanel';
+import { forecastPanel } from './ui/forecastPanel';
+import { ribbonsPanel } from './ui/ribbonsPanel';
+import { SoilTags } from './ui/soilTags';
+import { VARIETY } from './data/varieties';
 import { speak, stopSpeaking } from './ui/speech';
 
 declare global { interface Window { __noWebGL2?: boolean } }
@@ -98,6 +103,7 @@ function boot() {
   // --- feedback: floating numbers over tiles, and spoken lines ---
   const floats = h('div.floats', { 'aria-hidden': 'true' });
   uiRoot.appendChild(floats);
+  const soilTags = new SoilTags(uiRoot);
   /** Floating labels: readable pills over a tile that rise and fade; several at once stack up instead of overlapping. */
   const floating: { el: HTMLElement; x: number; y: number; until: number }[] = [];
   function float(tile: TileRef, text: string, kind: 'good' | 'info' = 'good') {
@@ -125,6 +131,17 @@ function boot() {
     toolChanged: () => refreshTools(),
     did: (kind, tile) => view.life.helpers.react(kind, tile.x, tile.z, performance.now() / 1000),
     farmhouse: () => openFarmhouse(),
+    discovered: id => {
+      const v = VARIETY[id];
+      if (!v) return;
+      sfx.levelUp();
+      const parents = v.parents!.map(p => VARIETY[p]?.name ?? CROPS.find(c => c.id === p)?.name ?? p);
+      panels.show('A new variety!', h('div.discovery', null,
+        h('div.card-head', null, itemIcon(id, 56), h('h3', null, v.name)),
+        h('p', null, `The bees carried pollen between your ${parents[0]} and ${parents[1]}. Their seeds made something new: ${v.name}!`),
+        h('p', null, 'Its seeds are now in the Seeds list. It sells for a little more, and it can win “Best new variety” at the fair.'),
+        h('p.note', null, '+1 Lab idea.')), { kind: 'card', keepsTime: true });
+    },
   });
 
   // --- placing things: the ghost in the farm, and a bar with Turn, Place and Cancel ---
@@ -159,6 +176,7 @@ function boot() {
     zoom: dir => { view.goal.zoom = Math.min(ZOOM.max, Math.max(ZOOM.min, view.goal.zoom * (dir > 0 ? 1.3 : 1 / 1.3))); },
     tool: id => { play.pickTool(id); showTool(); },
     goals: () => story.tapGoal(),
+    date: () => { if (screen === 'farm' && !panels.open) panels.show('Weather', forecastPanel(farm, () => { dirty = true; }, say), { kind: 'card', keepsTime: true }); },
   });
   /** "Show me": glide to these tiles unless they are all on screen already. Returns false if there was nothing to show. */
   function showMe(tiles: { x: number; z: number }[]): boolean {
@@ -324,6 +342,7 @@ function boot() {
       { id: 'book', title: 'Farm Book', text: 'Every crop, tree and animal', icon: 'books', open: openBook },
       { id: 'ledger', title: 'Ledger', text: 'Coins, crops and seasons', icon: 'ledger', open: openLedger },
       { id: 'goals', title: 'Goals', text: 'What to do next', icon: 'star', open: () => story.openGoals() },
+      { id: 'ribbons', title: 'Ribbon wall', text: `${farm.ribbonCount.reduce((a, b) => a + b, 0)} fair ribbons`, icon: 'level', open: () => panels.show('Ribbon wall', ribbonsPanel(farm), { keepsTime: true }) },
     ]), { keepsTime: true });
   }
 
@@ -356,6 +375,13 @@ function boot() {
         break;
       }
       case 'goods-ready': break;
+      case 'new-day':
+        if (e.event === 'sunny') say('A sunny spell! Crops grow a little faster today.');
+        else if (e.event === 'windy') say(e.hay ? `A windy day, and the hay is tied down! The animals are happy: +15 XP.` : 'A windy day! The hay blows about, but all is well.');
+        else if (e.event === 'misty' && e.mushrooms) say('A misty morning! Mushrooms popped up at the edges of your land. Tap them to pick them.');
+        else if (e.event === 'snow' && e.firstSnow) say('The first snow of winter! A cosy day for the workshops.');
+        else if (e.event === 'warmnight') say('A warm summer day. Look out for fireflies tonight!');
+        break;
       case 'endless-done':
         sfx.levelUp();
         for (const g of e.goals) say(`Goal done: ${g.text}! +${g.coins} coins.`);
@@ -539,6 +565,8 @@ function boot() {
       else if (now > flashUntil) view.showHighlight(null);
     }
     refreshPlaceBar();
+    if (screen === 'farm' && play.tool === 'seeds' && !play.building && !play.placing && !panels.open) soilTags.show(farm, (x, z) => view.tileOnScreen(x, z), view.width, view.height);
+    else soilTags.hide();
     if (!glLost) {
       view.update(dt, farm.t);
       view.render(dt);

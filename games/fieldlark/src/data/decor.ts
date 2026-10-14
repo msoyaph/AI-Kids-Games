@@ -43,6 +43,7 @@ export const DECOR: readonly DecorDef[] = [
   { id: 'bunting', name: 'Fair Bunting', w: 1, d: 1, cost: 0, level: 1, beauty: 6, set: 'fair', height: 1.6 },
   { id: 'ribbonarch', name: 'Ribbon Arch', w: 1, d: 1, cost: 0, level: 1, beauty: 10, set: 'fair', height: 1.7 },
   { id: 'prizestand', name: 'Prize Stand', w: 1, d: 1, cost: 0, level: 1, beauty: 8, set: 'fair', height: 1.0 },
+  { id: 'ribbonwall', name: 'Ribbon Wall', w: 1, d: 1, cost: 0, level: 1, beauty: 6, set: 'ribbons', height: 1.1 },
   { id: 'rosearch', name: 'Rose Arch', w: 1, d: 1, cost: 0, level: 1, beauty: 10, set: 'garden', height: 1.7 },
   { id: 'topiary', name: 'Topiary Bird', w: 1, d: 1, cost: 0, level: 1, beauty: 8, set: 'garden', height: 1.2 },
   { id: 'sundial', name: 'Sundial', w: 1, d: 1, cost: 0, level: 1, beauty: 8, set: 'garden', height: 0.8 },
@@ -59,6 +60,7 @@ export const DECOR_BY_ID: Record<string, DecorDef> = Object.fromEntries(DECOR.ma
 /** Decoration sets and how they're described when earned. */
 export const SETS: Record<string, { name: string; how: string }> = {
   fair: { name: 'Fair Set', how: 'a rosette at a seasonal fair' },
+  ribbons: { name: 'Ribbon Wall', how: 'your first fair ribbon' },
   garden: { name: 'Garden Set', how: 'a story chapter' },
   country: { name: 'Country Set', how: 'a gift from the neighbours' },
   winter: { name: 'Winter Set', how: 'the first winter' },

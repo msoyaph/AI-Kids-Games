@@ -45,8 +45,10 @@ for (const m of MACHINES) (BUILDINGS as BuildingDef[]).push({ id: m.id, name: m.
 export const BUILDING: Record<string, BuildingDef> = Object.fromEntries(BUILDINGS.map(b => [b.id, b]));
 
 /** Old clutter on a sleepy farm: tap to clear it. Scraps go to the compost bin. */
-export const DEBRIS: Record<string, { name: string; scraps: number; coins: number }> = {
+export const DEBRIS: Record<string, { name: string; scraps: number; coins: number; gives?: { id: string; n: number } }> = {
   weeds: { name: 'Weeds', scraps: 1, coins: 0 },
   stone: { name: 'Stone', scraps: 0, coins: 3 },
   log: { name: 'Old log', scraps: 2, coins: 1 },
+  // after a misty morning (src/sim/forecast.ts)
+  mushrooms: { name: 'Mushrooms', scraps: 0, coins: 0, gives: { id: 'mushroom', n: 3 } },
 };

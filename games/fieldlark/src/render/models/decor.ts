@@ -103,6 +103,17 @@ const MODELS: Record<string, () => THREE.BufferGeometry> = {
   bunting: () => merge([part(cyl(0.035, 0.035, 1.6, 5), WOOD_DARK, { pos: [-0.35, 0.8, 0] }), part(cyl(0.035, 0.035, 1.6, 5), WOOD_DARK, { pos: [0.35, 0.8, 0] }), ...[0xe25c4a, 0xffd34d, 0x6fa8d6, 0x6fbf73, 0xff9fb8].map((c, i) => part(cone(0.07, 0.16, 3), c, { pos: [-0.28 + i * 0.14, 1.42 - Math.sin((i / 4) * Math.PI) * 0.08, 0], rot: [Math.PI, 0, 0] }))]),
   ribbonarch: () => merge([part(torus(0.45, 0.06, 6, 14, Math.PI), 0xffffff, { pos: [0, 0.9, 0] }), part(cyl(0.05, 0.05, 0.9, 5), WHITE, { pos: [0.45, 0.45, 0] }), part(cyl(0.05, 0.05, 0.9, 5), WHITE, { pos: [-0.45, 0.45, 0] }), part(box(0.25, 0.25, 0.04), 0x4f8fd6, { pos: [0, 1.35, 0.05], rot: [0, 0, Math.PI / 4] }), part(cyl(0.08, 0.08, 0.05, 8), 0xffd34d, { pos: [0, 1.35, 0.08], rot: [Math.PI / 2, 0, 0] })]),
   prizestand: () => merge([part(box(0.6, 0.5, 0.4), WOOD, { pos: [0, 0.25, 0] }), part(box(0.66, 0.05, 0.46), WOOD_DARK, { pos: [0, 0.52, 0] }), part(sphere(0.18, 8, 6), 0xf08a24, { pos: [0, 0.7, 0], scale: [1.3, 0.9, 1.1] }), part(box(0.18, 0.18, 0.03), 0x4f8fd6, { pos: [0.2, 0.3, 0.21], rot: [0, 0, Math.PI / 4] })]),
+  // the ribbon wall: a little board on two posts with a gold, a silver and a blue rosette
+  ribbonwall: () => merge([
+    part(cyl(0.04, 0.04, 1.1, 5), WOOD_DARK, { pos: [-0.38, 0.55, 0] }), part(cyl(0.04, 0.04, 1.1, 5), WOOD_DARK, { pos: [0.38, 0.55, 0] }),
+    part(bevelBox(0.86, 0.5, 0.06), WOOD, { pos: [0, 0.82, 0], pattern: PAT.boards }),
+    ...[[-0.24, 0xffc93d], [0, 0xd9dde4], [0.24, 0x4f8fd6]].flatMap(([x, c]) => [
+      part(cyl(0.085, 0.085, 0.03, 10), c as number, { pos: [x as number, 0.88, 0.05], rot: [Math.PI / 2, 0, 0] }),
+      part(cyl(0.045, 0.045, 0.035, 8), 0xfffaf0, { pos: [x as number, 0.88, 0.06], rot: [Math.PI / 2, 0, 0] }),
+      part(box(0.05, 0.16, 0.012), c as number, { pos: [(x as number) - 0.03, 0.74, 0.05], rot: [0, 0, 0.2] }),
+      part(box(0.05, 0.16, 0.012), c as number, { pos: [(x as number) + 0.03, 0.74, 0.05], rot: [0, 0, -0.2] }),
+    ]),
+  ]),
   rosearch: () => merge([part(torus(0.42, 0.05, 5, 12, Math.PI), GREEN, { pos: [0, 0.95, 0] }), part(cyl(0.05, 0.05, 0.95, 5), GREEN, { pos: [0.42, 0.47, 0] }), part(cyl(0.05, 0.05, 0.95, 5), GREEN, { pos: [-0.42, 0.47, 0] }), ...Array.from({ length: 8 }, (_, i) => { const a = (i / 7) * Math.PI; return part(ico(0.07, 0), i % 2 ? 0xff7a9a : 0xffffff, { pos: [Math.cos(a) * 0.42, 0.95 + Math.sin(a) * 0.42, 0.05] }); })]),
   topiary: () => merge([part(box(0.36, 0.3, 0.36), 0xc2563a, { pos: [0, 0.15, 0] }), part(sphere(0.24, 8, 6), GREEN, { pos: [0, 0.55, 0], scale: [1, 0.9, 1.3] }), part(sphere(0.13, 7, 5), GREEN, { pos: [0, 0.8, 0.22] }), part(cone(0.07, 0.25, 5), GREEN, { pos: [0, 0.65, -0.35], rot: [-1.0, 0, 0] })]),
   sundial: () => merge([part(cyl(0.12, 0.16, 0.55, 8), STONE, { pos: [0, 0.27, 0] }), part(cyl(0.24, 0.24, 0.05, 12), 0xe8e0cc, { pos: [0, 0.57, 0] }), part(box(0.02, 0.14, 0.16), METAL, { pos: [0, 0.65, 0], rot: [0, 0, 0] })]),

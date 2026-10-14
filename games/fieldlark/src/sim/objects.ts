@@ -4,6 +4,7 @@
  * turns). `occupancy` maps every covered tile to its object.
  */
 import type { CropFamily } from '../data/crops';
+import { SOIL_START } from './soil';
 import { areaAt, H, tileAt, W, type AreaId } from './map';
 
 export type ObjKind = 'field' | 'building' | 'tree' | 'decor' | 'debris';
@@ -27,12 +28,24 @@ export interface FieldObj extends BaseObj {
   fertilized: boolean;
   /** A different family from last time (crop rotation). */
   rotation: boolean;
-  /** Nitrogen left by a legume before it. */
+  /** The soil had nitrogen to spare when it was planted (a care point and one more to pick). */
   boost: boolean;
+  /** The soil had plenty of humus when it was planted (a care point). */
+  humus: boolean;
   /** The family of the last crop harvested here. */
   last: CropFamily | null;
-  /** The last crop was a legume: the next one gets the boost. */
-  legumeLeft: boolean;
+  /** Soil: nitrogen and humus, 0..3 each (src/sim/soil.ts). */
+  nit: number;
+  hum: number;
+  /** When it was last left empty (null while something grows), for a season's rest. */
+  restSince: number | null;
+  /** The variety growing (src/data/varieties.ts), or null for the ordinary kind. */
+  variety: string | null;
+}
+
+/** A new, empty field: tired soil, nothing growing. */
+export function newField(id: number, x: number, z: number, t: number): FieldObj {
+  return { id, kind: 'field', def: 'field', x, z, rot: 0, crop: null, plantedAt: 0, readyAt: 0, watered: false, fertilized: false, rotation: false, boost: false, humus: false, last: null, nit: SOIL_START.nit, hum: SOIL_START.hum, restSince: t, variety: null };
 }
 
 export interface OtherObj extends BaseObj {

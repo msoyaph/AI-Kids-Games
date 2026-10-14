@@ -23,12 +23,12 @@ export function itemIcon(id: string, size = 36): SVGSVGElement {
   svg.setAttribute('aria-hidden', 'true');
   svg.classList.add('item-icon');
   const item = ITEMS[id];
-  const crop = CROP[id];
+  const crop = CROP[id] ?? (item?.base ? CROP[item.base] : undefined);
   const main = hex(item?.color ?? 0xcccccc);
   const leaf = hex(crop?.color.leaf ?? 0x6fbf73);
   const accent = crop?.color.accent !== undefined ? hex(crop.color.accent) : '#ffffff';
   const add = (tag: string, attrs: Record<string, string | number>) => svg.appendChild(el(tag, attrs));
-  const SPECIAL: Record<string, string> = { fertilizer: 'sack', egg: 'egg', duckegg: 'egg', milk: 'bottle', goatmilk: 'bottle', wool: 'yarn', honey: 'jar', lemon: 'lemon', almond: 'nut', walnut: 'nut', hazelnut: 'nut' };
+  const SPECIAL: Record<string, string> = { fertilizer: 'sack', egg: 'egg', duckegg: 'egg', milk: 'bottle', goatmilk: 'bottle', wool: 'yarn', honey: 'jar', lemon: 'lemon', almond: 'nut', walnut: 'nut', hazelnut: 'nut', mushroom: 'mushroom' };
   const shape: string = crop?.shape ?? SPECIAL[id] ?? 'round';
   switch (shape) {
     case 'grain':
@@ -97,6 +97,12 @@ export function itemIcon(id: string, size = 36): SVGSVGElement {
     case 'lemon':
       add('ellipse', { cx: 12, cy: 13, rx: 7, ry: 8.5, fill: main, transform: 'rotate(-35 12 13)' });
       add('path', { d: 'M15 4c3-1 5 0 6 2-2 1-4 1-6-2z', fill: leaf });
+      break;
+    case 'mushroom':
+      add('rect', { x: 9.5, y: 12, width: 5, height: 9, rx: 2, fill: '#f6ecd8' });
+      add('path', { d: 'M3.5 13c0-5 4-8.5 8.5-8.5s8.5 3.5 8.5 8.5z', fill: main });
+      add('circle', { cx: 9, cy: 9, r: 1, fill: '#d9b58a' });
+      add('circle', { cx: 14.5, cy: 8, r: 0.8, fill: '#d9b58a' });
       break;
     case 'nut':
       add('path', { d: 'M12 3c5 0 8 4 8 9.5S16.5 21 12 21 4 18 4 12.5 7 3 12 3z', fill: main });

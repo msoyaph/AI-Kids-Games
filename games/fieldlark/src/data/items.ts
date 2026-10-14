@@ -6,6 +6,7 @@
 import { ANIMALS } from './animals';
 import { CROPS } from './crops';
 import { TREES } from './orchard';
+import { VARIETIES, VARIETY_PRICE } from './varieties';
 import { RECIPE, RECIPES } from './production';
 
 export type ItemKind = 'crop' | 'fruit' | 'animal' | 'good' | 'supply';
@@ -21,12 +22,16 @@ export interface ItemDef {
   sellable: boolean;
   /** For crops: the seasons they grow in (prices are a bit lower then). */
   seasons?: string[];
+  /** For a crop variety: the ordinary crop it is a kind of. */
+  base?: string;
 }
 
 const items: ItemDef[] = [
   ...CROPS.map(c => ({ id: c.id, name: c.name, kind: 'crop' as const, price: c.price, color: c.color.crop, sellable: true, seasons: c.seasons })),
+  ...VARIETIES.map(v => { const c = CROPS.find(x => x.id === v.crop)!; return { id: v.id, name: v.name, kind: 'crop' as const, price: Math.round(c.price * VARIETY_PRICE), color: v.color, sellable: true, seasons: c.seasons, base: c.id }; }),
   ...TREES.map(t => ({ id: t.fruit, name: t.fruitName, kind: 'fruit' as const, price: t.price, color: t.color.fruit, sellable: true, seasons: t.seasons })),
   ...ANIMALS.filter(a => a.product).map(a => ({ id: a.product!, name: a.productName, kind: 'animal' as const, price: a.price, color: a.color.body === 0xffffff ? 0xf6f0e4 : a.id === 'bee' ? 0xf2b33a : a.color.body, sellable: true })),
+  { id: 'mushroom', name: 'Mushrooms', kind: 'fruit', price: 9, color: 0xb98a5a, sellable: true },
   { id: 'fertilizer', name: 'Compost', kind: 'supply', price: 0, color: 0x7d5a3d, sellable: false },
 ];
 

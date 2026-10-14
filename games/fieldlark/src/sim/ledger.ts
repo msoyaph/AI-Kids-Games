@@ -3,7 +3,7 @@
  * per crop", which teaches planning. Quick crops pay a little, often; slow crops pay more each time
  * and leave you free to do other things while they grow.
  */
-import { CROPS, type CropDef } from '../data/crops';
+import { CROPS, profitPerMinute, type CropDef } from '../data/crops';
 import { SEASONS, seasonName } from './clock';
 import type { Farm, LedgerSeason } from './state';
 import { levelOf } from './world';
@@ -16,7 +16,7 @@ export function pageLabel(season: number, short = false): string {
 }
 
 /** Coins a field of this crop makes for each minute it grows (one star, ordinary price, after the seeds). */
-export const coinsPerMinute = (c: CropDef) => (c.price * c.yield - c.seed) / c.growMin;
+export const coinsPerMinute = profitPerMinute;
 /** Coins one harvest of this crop makes after the seeds (one star, ordinary price). */
 export const coinsPerHarvest = (c: CropDef) => c.price * c.yield - c.seed;
 

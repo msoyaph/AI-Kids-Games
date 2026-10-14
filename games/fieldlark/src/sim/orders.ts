@@ -4,7 +4,6 @@
  * back with the coins and a thank-you. There are no deadlines: orders wait as long as you like, and
  * any order can be swapped for a new one, free.
  */
-import { next } from '../core/rng';
 import { ANIMALS } from '../data/animals';
 import { PEOPLE } from '../data/cast';
 import { CROPS } from '../data/crops';
@@ -15,7 +14,7 @@ import { animalsIn, isHome } from './animals';
 import { count, take } from './inventory';
 import { isMachine } from './production';
 import type { Farm } from './state';
-import { bump, earn, levelOf } from './world';
+import { bump, earn, levelOf, roll } from './world';
 
 export interface OrderItem { id: string; n: number }
 export interface Order { id: number; who: string; items: OrderItem[]; coins: number; xp: number; story?: string; note?: string }
@@ -27,12 +26,7 @@ export const TRIP = 120;
 /** Seconds before an empty board slot gets a new order. */
 export const REFILL = 20;
 
-/** One roll from the farm's own random stream. */
-export function roll(farm: Farm): number {
-  const [v, s] = next(farm.rng);
-  farm.rng = s;
-  return v;
-}
+export { roll };
 const pick = <T>(farm: Farm, list: readonly T[]) => list[Math.floor(roll(farm) * list.length)]!;
 
 /** Everything the farm can get right now: crops it may plant, fruit it grows, animal products, workshop goods. */

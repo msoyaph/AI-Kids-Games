@@ -15,6 +15,8 @@ export interface HudHandlers {
   zoom(dir: 1 | -1): void;
   tool(id: string): void;
   goals(): void;
+  /** The date pill: the weather forecast. */
+  date(): void;
 }
 
 export class Hud {
@@ -61,7 +63,7 @@ export class Hud {
       h('div.topbar', null,
         this.goal,
         h('div.pills', null,
-          h('span.pill.date', { title: 'Season and day' }, this.dateIcon, this.date),
+          h('button.pill.date', { title: 'Season, day and the forecast', onclick: () => on.date() }, this.dateIcon, this.date),
           h('span.pill.coins', { title: 'Coins' }, icon('coin', 24, 'Coins'), this.coins),
           h('span.pill.level', { title: 'Farm level' }, icon('level', 24, 'Farm level'), this.level, h('span.bar.mini', null, this.levelBar)),
           h('button.icon-button.menu', { 'aria-label': 'Menu', onclick: () => on.menu() }, icon('menu', 28)))),
@@ -95,6 +97,7 @@ export class Hud {
     if (label === this.lastDate) return;
     this.lastDate = label;
     this.date.textContent = label;
+    this.date.parentElement?.setAttribute('aria-label', `${label}. Weather forecast`);
     fill(this.dateIcon, icon(seasonOf(t) as IconName, 22));
   }
 

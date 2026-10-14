@@ -201,7 +201,7 @@ export function beauty(farm: Farm): { score: number; tier: string; next: number 
   for (const o of farm.objects) {
     if (o.kind === 'decor') { score += DECOR_BY_ID[o.def]?.beauty ?? 0; kinds.add(o.def); }
     else if (o.kind === 'tree' && TREE[o.def]) { score += 1; kinds.add(o.def); }
-    else if (o.kind === 'debris') { const a = areaAt(o.x, o.z); if (a && farm.unlocked.includes(a)) score -= 0.5; }
+    else if (o.kind === 'debris' && o.def !== 'mushrooms') { const a = areaAt(o.x, o.z); if (a && farm.unlocked.includes(a)) score -= 0.5; }
   }
   let paths = 0;
   for (let i = 0; i < farm.paths.length; i++) if (farm.paths.charCodeAt(i) !== 48) paths += PATHS.find(p => p.id === farm.paths.charCodeAt(i) - 48)?.beauty ?? 0;

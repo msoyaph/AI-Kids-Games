@@ -210,6 +210,17 @@ export function oldLog(): THREE.BufferGeometry {
   ]);
 }
 
+/** Mushrooms to forage after a misty morning: a mossy patch with brown field mushrooms. */
+export function forage(): THREE.BufferGeometry {
+  const parts: THREE.BufferGeometry[] = [part(ico(0.2, 1), 0x6f9e48, { pos: [0.5, 0.02, 0.5], scale: [1.5, 0.22, 1.3], round: true, pattern: PAT.moss })];
+  const spots: [number, number, number][] = [[0.42, 0.45, 1.9], [0.62, 0.55, 1.5], [0.5, 0.68, 1.2], [0.3, 0.6, 1.1], [0.66, 0.36, 1]];
+  for (const [x, z, s] of spots) {
+    parts.push(part(cyl(0.022 * s, 0.03 * s, 0.09 * s, 6), 0xf6ecd8, { pos: [x, 0.045 * s, z] }));
+    parts.push(part(sphere(0.06 * s, 8, 4), 0xb98a5a, { pos: [x, 0.095 * s, z], scale: [1, 0.55, 1] }));
+  }
+  return merge(parts);
+}
+
 /** A little cluster of toadstools. */
 export function mushrooms(x: number, z: number, y = 0, n = 3): THREE.BufferGeometry[] {
   const out: THREE.BufferGeometry[] = [];

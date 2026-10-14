@@ -73,6 +73,11 @@ export const FACTS: readonly Fact[] = [
   { about: 'idea:compost', text: 'Compost is old plant scraps that worms and tiny living things turn into rich food for soil.', check: 'US EPA, "Composting At Home"' },
   { about: 'idea:bees', text: 'Bees carry pollen from flower to flower. That helps many fruits and vegetables grow.', check: 'USDA, "The Importance of Pollinators"' },
   { about: 'idea:rain', text: 'Plants drink water through their roots. Rain saves farmers lots of watering.', check: 'Britannica, "plant: water uptake"' },
+  { about: 'idea:nitrogen', text: 'Plants need nitrogen to grow green leaves. Hungry crops like wheat and squash use up a lot of it.', check: 'USDA SARE, "Building Soils for Better Crops": nitrogen' },
+  { about: 'idea:humus', text: 'Humus is the dark, crumbly part of soil, made from old plants. It holds water like a sponge and feeds tiny soil creatures.', check: 'Britannica, "humus"' },
+  { about: 'idea:breeding', text: 'When bees carry pollen from one kind of plant to another, the seeds can mix both parents. Growers keep the best ones, year after year.', check: 'Britannica, "plant breeding"; "pollination"' },
+  { about: 'idea:heirloom', text: 'Heirloom seeds are old kinds of plants. Families and growers have saved their seeds for many years.', check: 'University of Illinois Extension, "Heirloom vegetables"' },
+  { about: 'forage:mushroom', text: 'Mushrooms are not plants. They are fungi, and they love damp, misty weather. Never eat a wild mushroom unless an expert grown-up says it is safe.', check: 'Britannica, "mushroom"; "fungus"' },
 ];
 
 export const factAbout = (about: string) => FACTS.find(f => f.about === about);

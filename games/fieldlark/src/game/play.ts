@@ -32,7 +32,7 @@ import { playTimeLabel } from '../sim/clock';
 import { care, clearDebris, fertilize, fieldAt, fieldState, harvest, plant, plow, water } from '../sim/fields';
 import { count } from '../sim/inventory';
 import { areaAt, areaDef, tileAt } from '../sim/map';
-import type { OtherObj } from '../sim/objects';
+import type { FieldObj, OtherObj } from '../sim/objects';
 import type { Farm } from '../sim/state';
 import { compostTree, inFruitSeason, isTree, pickTree, treeCare, treeRipe, treeState } from '../sim/trees';
 import { objAt } from '../sim/world';
@@ -49,6 +49,9 @@ import { townPanel } from '../ui/townPanel';
 import { MACHINE } from '../data/production';
 import { collectGoods, isMachine, machineState } from '../sim/production';
 import { itemDef } from '../data/items';
+import { VARIETY } from '../data/varieties';
+import { soilDots, soilWord } from '../sim/soil';
+import { varietyName } from '../sim/varieties';
 
 export type Tool = 'hand' | 'plow' | 'seeds' | 'water' | 'compost';
 
@@ -70,6 +73,8 @@ export interface PlayHost {
   did?(kind: 'harvest' | 'water' | 'plant', tile: TileRef): void;
   /** Open the farmhouse (the Farm Book, the Ledger, goals…). */
   farmhouse?(): void;
+  /** The bees made a new variety (a celebration card). */
+  discovered?(variety: string): void;
 }
 
 export class Play {
@@ -102,7 +107,7 @@ export class Play {
     return [
       { id: 'hand', label: 'Farm', icon: 'farm', key: '1' },
       { id: 'plow', label: 'Plough', icon: 'plough', key: '2' },
-      { id: 'seeds', label: this.seed ? CROP[this.seed]!.name : 'Seeds', icon: 'seeds', key: '3' },
+      { id: 'seeds', label: this.seed ? itemDef(this.seed).name : 'Seeds', icon: 'seeds', key: '3' },
       { id: 'water', label: 'Water', icon: 'water', key: '4' },
       { id: 'compost', label: 'Compost', icon: 'compost', key: '5' },
       { id: 'barn', label: 'Barn', icon: 'barn', key: '6' },
@@ -172,7 +177,8 @@ export class Play {
       case 'seeds': {
         if (!f) { if (!dragging) this.host.say('Seeds go in fields. Plough a field first.'); return; }
         if (f.crop || !this.seed) { if (!dragging) this.inspect(tile); return; }
-        const r = plant(farm, f, this.seed, isWater);
+        const v = VARIETY[this.seed];
+        const r = plant(farm, f, v ? v.crop : this.seed, isWater, v ? v.id : null);
         if (r.ok) { sfx.plant(); this.host.changed(); this.host.did?.('plant', tile); }
         else if (!dragging) { sfx.nope(); this.host.say(r.why); }
         return;
@@ -215,7 +221,8 @@ export class Play {
         }
         if (o?.kind === 'debris') {
           const r = clearDebris(farm, o.id);
-          if (r.ok) { sfx.clear(); this.host.float(tile, r.coins ? `+${r.coins}` : r.scraps ? `+${r.scraps} scraps` : 'Cleared!', 'good'); this.host.changed(); }
+          if (r.ok) { sfx.clear(); this.host.float(tile, r.got ? `+${r.got.n} ${itemDef(r.got.id).name}` : r.coins ? `+${r.coins}` : r.scraps ? `+${r.scraps} scraps` : 'Cleared!', 'good'); this.host.changed(); }
+          else this.host.say(r.why);
           return;
         }
         if (f && !f.crop) { this.openSeeds(f.id); return; }
@@ -230,9 +237,10 @@ export class Play {
     const r = harvest(farm, f);
     if (r.ok) {
       sfx.harvest(r.stars);
-      this.host.float(tile, `+${r.amount} ${CROP[r.crop]!.name} ${'★'.repeat(r.stars)}`, 'good');
+      this.host.float(tile, `+${r.amount} ${itemDef(r.item).name} ${'★'.repeat(r.stars)}`, 'good');
       this.host.changed();
       this.host.did?.('harvest', tile);
+      if (r.discovered) this.host.discovered?.(r.discovered);
     } else { sfx.nope(); this.host.say(r.why); }
   }
 
@@ -468,14 +476,16 @@ export class Play {
       const c = care(farm, o);
       const left = Math.max(0, o.readyAt - farm.t);
       const body = h('div.field-card', null,
-        h('div.card-head', null, itemIcon(crop.id, 48), h('div', null, h('h3', null, crop.name), fieldState(farm, o) === 'ready' ? h('p', null, 'Ready to pick!') : h('p', null, `Ready in ${playTimeLabel(left)}`))),
+        h('div.card-head', null, itemIcon(o.variety ?? crop.id, 48), h('div', null, h('h3', null, varietyName(o.variety, crop.name)), fieldState(farm, o) === 'ready' ? h('p', null, 'Ready to pick!') : h('p', null, `Ready in ${playTimeLabel(left)}`))),
         h('p.care-title', null, 'Care so far: ', starsEl(c.stars, 18)),
         h('ul.care', null,
           careRow(c.watered, 'Watered', 'Rain or the watering can'),
           careRow(c.compost, 'Compost', 'Grows faster, too'),
           careRow(c.rotation, 'Crop rotation', 'A different kind of crop from last time'),
-          careRow(c.nitrogen, 'Nitrogen', 'Beans, peas or clover grew here before'),
+          careRow(c.nitrogen, 'Nitrogen', 'Rich soil: beans, peas or clover feed it'),
+          careRow(c.humus, 'Humus', 'Rich soil: compost and clover feed it'),
           crop.flowers ? careRow(c.bees, 'Bees', 'A beehive nearby') : null),
+        soilRows(o.nit, o.hum),
         h('div.card-buttons', null,
           !o.watered && fieldState(farm, o) === 'growing' ? h('button.primary', { onclick: () => { water(farm, o); sfx.water(); this.host.changed(); p.close(); } }, 'Water it') : null,
           !o.fertilized && fieldState(farm, o) === 'growing' ? h('button', { disabled: count(farm, 'fertilizer') === 0, onclick: () => { const r = fertilize(farm, o); if (r.ok) { sfx.plant(); this.host.changed(); p.close(); } } }, `Add compost (${count(farm, 'fertilizer')})`) : null));
@@ -529,7 +539,10 @@ export class Play {
   /** Choose seeds; with `fieldId`, plant that field right away. */
   openSeeds(fieldId: number | null) {
     const p = this.host.panels;
-    const panel = p.show('Seeds', seedsPanel(this.farm, this.seed, id => {
+    const field = fieldId !== null ? this.farm.objects.find(o => o.id === fieldId && o.kind === 'field') as FieldObj | undefined : undefined;
+    const soil = field ? h('div.seed-soil', null, h('b', null, 'This field’s soil'), soilRows(field.nit, field.hum),
+      field.nit < 2 ? h('small', null, 'Beans, peas or clover would add nitrogen.') : null) : null;
+    const panel = p.show('Seeds', [...(soil ? [soil] : []), seedsPanel(this.farm, this.seed, id => {
       this.seed = id;
       this.tool = 'seeds';
       p.close(panel);
@@ -538,7 +551,7 @@ export class Play {
         if (f) this.act({ x: f.x, z: f.z }, false);
       }
       this.host.toolChanged();
-    }), { keepsTime: true });
+    })], { keepsTime: true });
   }
 
   openTown() {
@@ -588,6 +601,13 @@ export class Play {
     if (empty) return `Plant your ${empty} empty field${empty > 1 ? 's' : ''}`;
     return 'Your crops are growing';
   }
+}
+
+/** The soil now, in dots and words (src/sim/soil.ts). */
+export function soilRows(nit: number, hum: number) {
+  return h('div.book-rows', null,
+    h('div.book-row.soil-row', null, h('span', null, 'Nitrogen in the soil'), h('b', { 'aria-label': `${soilWord(nit)}, ${nit} of 3` }, h('span.soil-dots', { 'aria-hidden': 'true' }, soilDots(nit)), ` ${soilWord(nit)}`)),
+    h('div.book-row.soil-row', null, h('span', null, 'Humus in the soil'), h('b', { 'aria-label': `${soilWord(hum)}, ${hum} of 3` }, h('span.soil-dots', { 'aria-hidden': 'true' }, soilDots(hum)), ` ${soilWord(hum)}`)));
 }
 
 function careRow(ok: boolean, label: string, tip: string) {

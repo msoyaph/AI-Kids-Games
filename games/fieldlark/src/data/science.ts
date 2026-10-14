@@ -16,17 +16,19 @@ export interface SciencePage {
 
 export const SCIENCE: readonly SciencePage[] = [
   {
-    id: 'soil', title: 'Healthy soil', icon: 'compost', facts: ['idea:compost', 'idea:legumes'],
+    id: 'soil', title: 'Healthy soil', icon: 'compost', facts: ['idea:nitrogen', 'idea:humus', 'idea:legumes'],
     game: [
-      'Compost makes a crop grow faster, and it earns a care point.',
-      'Beans, peas and clover leave nitrogen behind. The next crop in that field gets a care point.',
+      'Every field has nitrogen and humus, from 0 to 3 dots. Choose Seeds to see them.',
+      'Hungry crops use up nitrogen. Beans, peas and clover put it back.',
+      'Compost and clover add humus. Growing the same family twice uses some up.',
+      'Soil with 2 dots or more of each gives a crop two care points.',
     ],
   },
   {
     id: 'rotation', title: 'Crop rotation', icon: 'plough', facts: ['idea:rotation'],
     game: [
-      'Plant a different kind of crop from last time, and the field gives a care point.',
-      'Each crop page says which family it is in.',
+      'Plant a different family from last time, and the field gives a care point.',
+      'Rotating also keeps the humus in the soil. Each crop page says which family it is in.',
     ],
   },
   {
@@ -37,10 +39,19 @@ export const SCIENCE: readonly SciencePage[] = [
     ],
   },
   {
-    id: 'water', title: 'Rain and water', icon: 'water', facts: ['idea:rain'],
+    id: 'breeding', title: 'New varieties', icon: 'seeds', facts: ['idea:breeding', 'idea:heirloom'],
     game: [
-      'A watered crop earns a care point.',
-      'On a rainy day, every growing crop gets a drink for free.',
+      'From chapter 4, heirloom seeds are in the Seeds list.',
+      'Plant two kinds of one crop side by side, with a beehive close by.',
+      'When you pick them, the bees may have made a new variety!',
+    ],
+  },
+  {
+    id: 'weather', title: 'Weather', icon: 'rain', facts: ['idea:rain', 'forage:mushroom'],
+    game: [
+      'Tap the date to see the weather for the next few days.',
+      'Rain waters every crop. A sunny spell makes them grow faster.',
+      'After a misty morning, look for mushrooms at the edges of your land.',
     ],
   },
 ];

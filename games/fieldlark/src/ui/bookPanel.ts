@@ -11,6 +11,8 @@ import { factAbout } from '../data/facts';
 import { itemDef } from '../data/items';
 import { TREES, type TreeDef } from '../data/orchard';
 import { SCIENCE } from '../data/science';
+import { VARIETY } from '../data/varieties';
+import { varietiesOf } from '../sim/varieties';
 import type { Season } from '../sim/clock';
 import type { Farm } from '../sim/state';
 import { levelOf } from '../sim/world';
@@ -70,6 +72,7 @@ export function bookPanel(farm: Farm, start: Tab = 'crops'): HTMLElement {
           c.wet ? row('Needs', 'Wet ground by the water') : null,
           row('You grew', String(grown(c.id))),
           c.level > level ? row('Seeds from', `Farm level ${c.level}`) : null),
+        ...varietyRows(c),
         h('div.card-buttons', null, readButton(`${c.name}. ${fact}`))];
     }
     if (p.tab === 'trees') {
@@ -97,6 +100,19 @@ export function bookPanel(farm: Farm, start: Tab = 'crops'): HTMLElement {
         a.product ? row('You collected', String(farm.stats[`collect:${a.product}`] ?? 0)) : null,
         a.level > level ? row('Home in the shop from', `Farm level ${a.level}`) : null),
       h('div.card-buttons', null, readButton(`${a.plural}. ${fact}`))];
+  };
+
+  /** A crop's varieties: heirlooms and the ones you found are named; the rest are a puzzle with a clue. */
+  const varietyRows = (c: CropDef): HTMLElement[] => {
+    const list = varietiesOf(c.id);
+    if (!list.length) return [];
+    const nameOf = (id: string) => (id === c.id ? `ordinary ${c.name}` : VARIETY[id]?.name ?? id);
+    return [h('div.book-game', null, h('b', null, 'Varieties'), ...list.map(v => {
+      const known = v.heirloom || farm.discovered.includes(v.id);
+      return h('div.variety-row', null, known ? itemIcon(v.id, 28) : icon('lock', 28),
+        h('div', null, h('b', null, known ? v.name : 'Not found yet'),
+          h('small', null, v.heirloom ? 'Heirloom seeds, from chapter 4' : known ? 'You found it!' : `Clue: ${nameOf(v.parents![0])} next to ${nameOf(v.parents![1])}, near bees`)));
+    }))];
   };
 
   const render = () => {

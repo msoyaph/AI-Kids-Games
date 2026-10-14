@@ -379,3 +379,27 @@ html.reduced-motion *, html.reduced-motion *::before, html.reduced-motion *::aft
 .profit-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .profit-body small { color: var(--ink-soft); font-size: calc(13px * var(--ts)); }
 .profit-body .bar { width: 100%; height: 10px; background: var(--paper); }
+.forecast-days, .fair-classes, .ribbon-wall { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.forecast-days li, .fair-classes li, .ribbon-wall li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: var(--paper-2); }
+.forecast-days li > div, .fair-classes li > div, .ribbon-wall li > div { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.forecast-days small, .fair-classes small, .ribbon-wall small, .fair-cat > small { color: var(--ink-soft); font-size: calc(14px * var(--ts)); }
+.forecast-days button { align-self: flex-start; }
+.done-note { color: var(--sage-dark); }
+.ribbon-counts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.ribbon-count { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 14px; background: var(--paper-2); text-align: center; }
+.ribbon-count small { font-size: calc(12px * var(--ts)); color: var(--ink-soft); }
+.soil-row { display: flex; align-items: center; gap: 8px; }
+.soil-dots { letter-spacing: 2px; color: var(--sage-dark); }
+.seed-card .tag { padding: 0 8px; border-radius: 999px; background: #fff1c2; color: var(--ink); }
+.seed-soil { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 16px; background: #f1ead8; }
+.seed-soil small { color: var(--ink-soft); font-size: calc(14px * var(--ts)); }
+.soil-tags { position: absolute; inset: 0; pointer-events: none !important; z-index: 1; }
+.soil-tag {
+  position: absolute; left: 0; top: 0; display: flex; flex-direction: column; padding: 2px 6px; border-radius: 8px;
+  background: rgba(255, 253, 247, 0.92); box-shadow: 0 1px 4px rgba(54, 52, 43, 0.25);
+  font: 700 11px/1.15 var(--font); color: var(--ink); white-space: nowrap; letter-spacing: 0.5px;
+}
+.soil-tag.rich { background: rgba(232, 246, 222, 0.95); }
+.variety-row { display: flex; align-items: center; gap: 10px; }
+.variety-row > div { display: flex; flex-direction: column; }
+.variety-row small { color: var(--ink-soft); font-size: calc(13px * var(--ts)); }

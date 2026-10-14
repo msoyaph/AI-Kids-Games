@@ -47,7 +47,7 @@ export function sell(farm: Farm, id: string, stars: Stars, n: number): { ok: tru
   const each = priceOf(farm, id, stars);
   if (!take(farm, id, n, stars)) return { ok: false, why: 'You don’t have that many.' };
   const coins = each * n;
-  earn(farm, coins, d.kind === 'crop' ? id : undefined);
+  earn(farm, coins, d.kind === 'crop' ? d.base ?? id : undefined);
   bump(farm, 'sold', n);
   return { ok: true, coins };
 }

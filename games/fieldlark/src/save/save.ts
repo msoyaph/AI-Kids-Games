@@ -5,6 +5,9 @@
  * never overwritten (the game says so and plays from memory instead).
  */
 import { CROP } from '../data/crops';
+import { VARIETY } from '../data/varieties';
+import { SOIL_MAX, SOIL_START } from '../sim/soil';
+import type { Ribbon } from '../sim/state';
 import { ITEMS } from '../data/items';
 import { AREA_IDS, type AreaId } from '../sim/map';
 import type { FieldObj, Obj, ObjKind } from '../sim/objects';
@@ -16,6 +19,8 @@ import { NEIGHBOR } from '../data/cast';
 import { read, write, writeJson } from './storage';
 
 export const SAVE_KEY = 'save';
+/** The ribbon wall keeps the newest ribbons (the counts keep them all). */
+export const RIBBONS_KEPT = 48;
 export const SAVE_VERSION = 1;
 
 type Raw = Record<string, unknown>;
@@ -45,8 +50,12 @@ function decodeObj(v: unknown): Obj | null {
     const f: FieldObj = {
       ...base, kind: 'field', crop,
       plantedAt: crop ? num(r.plantedAt, 0, 0) : 0, readyAt: crop ? num(r.readyAt, 0, 0) : 0,
-      watered: r.watered === true, fertilized: r.fertilized === true, rotation: r.rotation === true, boost: r.boost === true,
-      last: FAMILIES.has(r.last as never) ? (r.last as FieldObj['last']) : null, legumeLeft: r.legumeLeft === true,
+      watered: r.watered === true, fertilized: r.fertilized === true, rotation: r.rotation === true, boost: r.boost === true, humus: r.humus === true,
+      last: FAMILIES.has(r.last as never) ? (r.last as FieldObj['last']) : null,
+      // before soil health, a legume's nitrogen was a yes/no
+      nit: int(r.nit, r.legumeLeft === true ? 2 : SOIL_START.nit, 0, SOIL_MAX), hum: int(r.hum, SOIL_START.hum, 0, SOIL_MAX),
+      restSince: crop ? null : num(r.restSince, 0, 0),
+      variety: crop && typeof r.variety === 'string' && VARIETY[r.variety]?.crop === crop ? r.variety : null,
     };
     return f;
   }
@@ -156,6 +165,12 @@ export function decodeFarm(input: unknown): DecodeResult {
       })) : [];
       return { chapter: int(st.chapter, 0, 0, 8), base: numRecord(st.base), introSeen: st.introSeen === true, creditsSeen: st.creditsSeen === true, endless, endlessDone: int(st.endlessDone, 0, 0) };
     })(),
+    discovered: Array.isArray(raw.discovered) ? [...new Set(raw.discovered.filter((id): id is string => typeof id === 'string' && !!VARIETY[id] && !VARIETY[id]!.heirloom))] : [],
+    ideas: int(raw.ideas, 0, 0),
+    ribbons: Array.isArray(raw.ribbons) ? raw.ribbons.filter((r): r is Raw => !!r && typeof r === 'object').map(r => ({
+      season: int(r.season, 0, 0), cat: String(r.cat), place: int(r.place, 4, 1, 4) as Ribbon['place'], ...(r.grand === true ? { grand: true } : {}),
+    })).slice(-RIBBONS_KEPT) : [],
+    ribbonCount: Array.isArray(raw.ribbonCount) && raw.ribbonCount.length === 4 ? raw.ribbonCount.map(n => int(n, 0, 0)) as Farm['ribbonCount'] : [0, 0, 0, 0],
     coop: (() => {
       const c = raw.coop as Raw | null | undefined;
       if (!c || typeof c !== 'object' || !NEIGHBOR[c.neighbor as string] || !ITEMS[c.item as string]) return null;

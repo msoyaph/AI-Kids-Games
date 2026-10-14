@@ -6,7 +6,7 @@ import { NEIGHBOR, PERSON } from '../data/cast';
 import { CHAPTERS, SPEAKERS, type Line } from '../data/chapters';
 import { itemDef } from '../data/items';
 import { sfx } from '../audio/engine';
-import { bestEntries, categoryOf, type Entry, type FairCategory, type FairResult } from '../sim/fair';
+import { bestEntries, CAT_NAME, categoryOf, ENTRY_CATS, type Entry, type EntryCategory, type FairResult } from '../sim/fair';
 import { bestStars, type Stars } from '../sim/inventory';
 import type { Farm } from '../sim/state';
 import { chapterOf, endlessProgress, goalProgress, readyForGrandFair, storyDone } from '../sim/story';
@@ -79,39 +79,71 @@ export function goalsPanel(farm: Farm, onGrandFair: () => void): HTMLElement {
     readyForGrandFair(farm) ? h('button.big.primary', { onclick: onGrandFair }, 'Start the Grand Harvest Fair!') : null);
 }
 
-const CATS: [FairCategory, string][] = [['grown', 'Grown'], ['animal', 'From animals'], ['made', 'Made']];
+const ENTRY_HELP: Record<EntryCategory, string> = {
+  produce: 'Your best crop, fruit or animal product.',
+  made: 'Something from your workshops. More steps of making score more.',
+  variety: 'A variety you found by crossing two kinds.',
+};
 
-/** Choosing fair entries: one per category, from what's in the barn (best stars shown). */
+/** Choosing fair entries: one per class, from what's in the barn (best stars shown). */
 export function fairPanel(farm: Farm, name: string, enter: (entries: Entry[]) => void): HTMLElement {
-  const chosen: Partial<Record<FairCategory, Entry>> = {};
+  const chosen: Partial<Record<EntryCategory, Entry>> = {};
   for (const e of bestEntries(farm)) chosen[categoryOf(e.id)!] = e;
   const root = h('div.fair');
   const render = () => {
     fill(root,
-      h('p', null, `Welcome to the ${name}! Enter one thing in each class. The judge looks at stars, at what it is, and at how lovely your farm is. Everything comes home with you afterwards.`),
-      ...CATS.map(([cat, label]) => {
+      h('p', null, `Welcome to the ${name}! Enter one thing in each class. The judge also walks round for the prettiest farm. Everything comes home with you afterwards.`),
+      ...ENTRY_CATS.map(cat => {
         const options = Object.keys(farm.inv).filter(id => categoryOf(id) === cat && bestStars(farm, id) > 0).sort((a, b) => bestStars(farm, b) - bestStars(farm, a));
         const cur = chosen[cat];
         return h('div.fair-cat', null,
-          h('h3', null, label),
+          h('h3', null, CAT_NAME[cat]),
+          h('small', null, ENTRY_HELP[cat]),
           options.length ? h('div.fair-options', null, ...options.slice(0, 8).map(id => h('button.fair-option', {
             class: cur?.id === id ? 'chosen' : '', 'aria-pressed': String(cur?.id === id),
             onclick: () => { chosen[cat] = cur?.id === id ? undefined : { id, stars: bestStars(farm, id) as Stars }; render(); },
-          }, itemIcon(id, 32), h('small', null, itemDef(id).name), starsEl(bestStars(farm, id), 12)))) : h('p.note', null, 'Nothing for this class yet.'));
+          }, itemIcon(id, 32), h('small', null, itemDef(id).name), starsEl(bestStars(farm, id), 12)))) : h('p.note', null, cat === 'variety' ? 'None yet. Cross two kinds of a crop near a beehive!' : 'Nothing for this class yet.'));
       }),
-      h('button.big.primary', { disabled: !Object.values(chosen).some(Boolean), onclick: () => enter(Object.values(chosen).filter((e): e is Entry => !!e)) }, 'Enter the fair!'));
+      h('div.fair-cat', null, h('h3', null, CAT_NAME.pretty), h('small', null, 'No entry needed: paths, flowers and decorations all count.')),
+      h('button.big.primary', { onclick: () => enter(Object.values(chosen).filter((e): e is Entry => !!e)) }, 'Enter the fair!'));
   };
   render();
   return root;
 }
 
-const PLACES = ['', 'First place! A gold rosette!', 'Second place! A silver rosette!', 'Third place! A bronze rosette!', 'A “thank you for coming” ribbon!'];
+export const RIBBON_NAME = ['', 'Gold rosette', 'Silver rosette', 'Bronze rosette', 'Thank-you ribbon'] as const;
+const RIBBON_COLOR = ['', '#ffc93d', '#d9dde4', '#d9925a', '#7cc4f2'];
+
+/** A rosette drawn in SVG (shape and words, not colour alone). */
+export function rosette(place: number, size = 40): SVGSVGElement {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 40 48');
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size * 1.2));
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', RIBBON_NAME[place] ?? 'Ribbon');
+  const c = RIBBON_COLOR[place] ?? '#7cc4f2';
+  const add = (tag: string, a: Record<string, string | number>) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(a)) e.setAttribute(k, String(v)); svg.appendChild(e); };
+  add('path', { d: 'M12 26l-5 20 7-4 4 6 3-20z', fill: c, stroke: '#00000022' });
+  add('path', { d: 'M28 26l5 20-7-4-4 6-3-20z', fill: c, stroke: '#00000022' });
+  for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; add('circle', { cx: 20 + Math.cos(a) * 12, cy: 18 + Math.sin(a) * 12, r: 5, fill: c }); }
+  add('circle', { cx: 20, cy: 18, r: 10, fill: '#fffaf0' });
+  add('text', { x: 20, y: 22, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: '#3d3a2f' });
+  svg.lastElementChild!.textContent = place <= 3 ? String(place) : '♥';
+  return svg;
+}
 
 export function fairResults(r: FairResult): HTMLElement {
   return h('div.fair-results', null,
-    h('p.fair-place', null, PLACES[Math.min(4, r.place)] ?? ''),
-    h('ol.scores', null, ...r.scores.map(s => h('li', { class: s.you ? 'you' : '' }, h('b', null, s.who), h('span', null, `${s.score} points`)))),
-    h('p', null, r.coins ? `Prize: ${r.coins} coins` : '', r.prize ? ' and a decoration for your farm (in Decorate → storage).' : '.'),
+    h('ul.fair-classes', null, ...r.cats.map(c => h('li', null,
+      rosette(c.place, 36),
+      h('div', null,
+        h('b', null, CAT_NAME[c.cat]),
+        h('small', null, `${RIBBON_NAME[c.place]}${c.entry ? ` for your ${itemDef(c.entry.id).name}` : ''}${c.giant ? ' (a giant one!)' : ''} · ${c.scores.find(s => s.you)!.score} points`))))),
+    h('p', null, `Prizes: ${r.coins} coins`, r.ideas ? ` and ${r.ideas} Lab idea${r.ideas === 1 ? '' : 's'}` : '', '.'),
+    r.prize ? h('p', null, 'A gold rosette! A prize decoration is waiting in Decorate → In storage.') : null,
+    r.wall ? h('p', null, 'Your first ribbon! A ribbon wall for your yard is in Build → Decorate.') : null,
     h('p.note', null, 'Your entries are back in the barn.'));
 }
 

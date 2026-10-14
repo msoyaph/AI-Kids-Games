@@ -409,9 +409,9 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 | 0–6 Setup, engine, fields, orchards and animals, production, build mode, town | done (118 unit tests; 44 e2e) |
 | Visual pass (style frame, close camera, sideways phones, Low budget) | done, approved by the owner |
 | Merge main + rename to Fieldlark | done |
-| 7 Story, onboarding and the audit's bugs | done (185 unit tests; 64 e2e) |
-| 8 Books, ledger and the farmhouse hub | — |
-| 9 Soil, weather, breeding, fair categories | — |
+| 7 Story, onboarding and the audit's bugs | done (185 unit tests; e2e smoke + story 46/0) |
+| 8 Books, ledger and the farmhouse hub | done in code (195 unit tests); browser check pending a quiet machine |
+| 9 Soil, weather, breeding, fair categories | done in code (221 unit tests); browser check pending a quiet machine |
 | 10 Farmhands as workers | — |
 | 11 Larkford town square: the farm stand and contracts | — |
 | 12 Channels, sprinklers, greenhouses, the Farm Lab | — |
@@ -441,6 +441,24 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
   Goals for systems that don't exist yet can't be met until their phase lands.
 - The credits name the new cast and the six farmhands.
 
-**Next:** phase 8 (`docs/PLAN-2.md` §3): the Crop and Animal Books, the Ledger charts and profit per
-crop, the stand's lessons page, and the farmhouse panel as the hub (Helpers, Farm Book, Ledger, Lab,
-Ribbons).
+**Phase 8 notes:**
+- The farmhouse (tap the cottage, or Menu → Farmhouse) is the hub: Farm Book, Ledger, Goals, Ribbon
+  wall. Phases 10–12 add Farmhands and the Lab there.
+- Crop prices were rebalanced so later crops pay more a minute (`tests/unit/ledger.test.ts` holds the
+  trend). The stand's lessons page lands with the stand in phase 11.
+
+**Phase 9 notes:**
+- Soil (`sim/soil.ts`): new and old fields start at nitrogen 1, humus 1 (old saves: a legume's old
+  `legumeLeft` becomes nitrogen 2). The care points are fixed at planting (`boost`, `humus`).
+- Forecast (`sim/forecast.ts`): one seeded event a day; rain keeps `weather.ts`'s days, snow keeps its
+  noise. Effects run in `tick.ts` (`new-day` event). Mushrooms are debris `mushrooms` that give the
+  `mushroom` item; they don't count as clearing clutter or lower beauty.
+- Varieties (`data/varieties.ts`): their harvest is its own item (`<crop>-<key>`, `base` = the crop),
+  used for selling, the stand and the fair only; workshops and orders use the ordinary crop. A missed
+  cross makes the next 10% likelier (`flags.crossTries`).
+- Fair: classes produce / made / variety / pretty; ribbons in `farm.ribbons` (newest 48) and
+  `farm.ribbonCount`; the first ribbon unlocks the Ribbon Wall decoration (`set:ribbons`).
+- Ideas (`farm.ideas`) are earned now (ribbons, varieties); the Lab spends them in phase 12.
+- Not yet drawn (phase 13): weather effects for wind, mist and fireflies.
+
+**Next:** phase 10, farmhands as workers (`docs/PLAN-2.md` §2.1).

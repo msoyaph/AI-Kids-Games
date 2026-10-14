@@ -1,4 +1,5 @@
 /** Lookups over the farm: what is where, sizes, levels, and the ledger. */
+import { next } from '../core/rng';
 import { BUILDING } from '../data/buildings';
 import { levelForXp } from '../data/tuning';
 import { seasonCount } from './clock';
@@ -66,4 +67,11 @@ export function newId(farm: Farm) { return farm.nextId++; }
 /** Lifetime counters (harvests, deliveries, trades…) that story goals and the ledger read. */
 export function bump(farm: Farm, key: string, n = 1) {
   if (n > 0) farm.stats[key] = (farm.stats[key] ?? 0) + n;
+}
+
+/** One roll from the farm's own random stream (kept in the save, so a farm replays the same way). */
+export function roll(farm: Farm): number {
+  const [v, s] = next(farm.rng);
+  farm.rng = s;
+  return v;
 }

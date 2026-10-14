@@ -5,7 +5,7 @@
  */
 import { noise } from '../core/rng';
 import { AREAS, tileAt } from '../sim/map';
-import type { FieldObj, Obj, OtherObj } from '../sim/objects';
+import { newField, type FieldObj, type Obj, type OtherObj } from '../sim/objects';
 
 /** The six old fields, right beside the cottage, so the first view shows the farmhouse and its fields together. */
 export const START_FIELDS: [number, number][] = [[38, 37], [39, 37], [38, 38], [39, 38], [38, 39], [39, 39]];
@@ -27,7 +27,7 @@ export function startObjects(): Obj[] {
   // the old keeper's dog stayed with the farm
   add({ kind: 'building', def: 'kennel', x: 38, z: 40, rot: 0, data: { animals: [{ name: 'Rufus', readyAt: 1e12, fed: false, brushed: false }] } });
   for (const [x, z] of START_FIELDS) {
-    add({ kind: 'field', def: 'field', x, z, rot: 0, crop: null, plantedAt: 0, readyAt: 0, watered: false, fertilized: false, rotation: false, boost: false, last: null, legumeLeft: false });
+    add(newField(0, x, z, 0));
   }
   // clutter: about one tile in nine, a little more on land that has been asleep longer
   for (const a of AREAS) {

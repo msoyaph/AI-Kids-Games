@@ -6,12 +6,15 @@
 import { CROPS, profitPerMinute, type CropDef } from '../data/crops';
 import { seasonName, seasonOf } from '../sim/clock';
 import { freePlanting } from '../sim/fields';
+import { seedPrice, varietyChoice } from '../sim/varieties';
+import type { VarietyDef } from '../data/varieties';
 import type { Farm } from '../sim/state';
 import { levelOf } from '../sim/world';
 import { h } from './h';
 import { icon } from './icons';
 import { itemIcon } from './itemIcons';
 
+/** `choose` gets a crop id, or a variety id (src/data/varieties.ts). */
 export function seedsPanel(farm: Farm, current: string | null, choose: (id: string) => void): HTMLElement {
   const season = seasonOf(farm.t), level = levelOf(farm);
   const now: CropDef[] = [], later: CropDef[] = [], locked: CropDef[] = [];
@@ -33,10 +36,23 @@ export function seedsPanel(farm: Farm, current: string | null, choose: (id: stri
         : h('small', null, free ? 'Free!' : `${c.seed}`, free ? null : icon('coin', 14), ` · ${c.growMin} min`),
     state === 'now' ? h('small.hint', { title: 'Coins a field earns for each minute it grows' }, `≈ ${ppm < 10 ? ppm.toFixed(1) : Math.round(ppm)} a minute`) : null);
   };
+  const varietyCard = (c: CropDef, v: VarietyDef) => {
+    const price = seedPrice(c, v.id);
+    return h('button.seed-card.variety', {
+      class: v.id === current ? 'current' : '',
+      disabled: farm.coins < price,
+      'aria-label': `${v.name}, ${v.heirloom ? 'heirloom' : 'your own variety'}. ${price} coins, ready in ${c.growMin} minutes.`,
+      onclick: () => choose(v.id),
+    },
+    itemIcon(v.id, 40),
+    h('b', null, v.name),
+    h('small', null, `${price}`, icon('coin', 14), ` · ${c.growMin} min`),
+    h('small.tag', null, v.heirloom ? 'Heirloom' : 'Your own!'));
+  };
   return h('div.seeds', null,
     farm.freeSeeds > 0 ? h('p.free-note', null, `You have ${farm.freeSeeds} free plantings of the cheapest seeds!`) : null,
     h('h3', null, `Grows in ${seasonName(season)}`),
-    h('div.seed-grid', null, ...now.map(c => card(c, 'now'))),
+    h('div.seed-grid', null, ...now.flatMap(c => [card(c, 'now'), ...varietyChoice(farm, c.id).map(v => varietyCard(c, v))])),
     later.length ? h('h3', null, 'Other seasons') : null,
     later.length ? h('div.seed-grid', null, ...later.map(c => card(c, 'later'))) : null,
     locked.length ? h('h3', null, 'Coming at higher farm levels') : null,
