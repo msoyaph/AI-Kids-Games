@@ -25,7 +25,7 @@ const notFound = () => page('Page not found','This page wandered off. Head back 
 
 /** Every indexable path: the sitemap, IndexNow and the build's static pages all use this list. */
 export function sitePaths() {
-  return ['/','/games','/community','/faq','/parents','/guides',...guidePaths(),'/privacy','/about','/list-your-game',...categories.map(category => `/category/${category.toLowerCase()}`),...games.map(game => `/game/${game.slug}`),...communityGames.map(game => `/game/${game.slug}`)];
+  return ['/','/games','/community','/faq','/parents','/guides',...guidePaths(),'/privacy','/terms','/about','/list-your-game',...categories.map(category => `/category/${category.toLowerCase()}`),...games.map(game => `/game/${game.slug}`),...communityGames.map(game => `/game/${game.slug}`)];
 }
 const guidePaths = () => guides.map(guide => `/guides/${guide.slug}`);
 /** Pages that get static HTML but stay out of the sitemap: play pages (the details page is the one to find) and Favorites. */
@@ -64,6 +64,7 @@ export function pageMeta(pathname: string): PageMeta {
     case '/faq': return page('Parent FAQ',`Is ${BRAND} really free? Are there ads, purchases or chat? What data is collected, what ages are the games for, and do they work on iPad?`);
     case '/parents': return page('For parents',`What ${BRAND} does and doesn’t do: no ads, purchases, chat or tracking. Ages and content notes for every game, and saves that stay on your device.`);
     case '/privacy': return page('Privacy',`${BRAND} collects nothing: no accounts, ads, analytics, cookies or tracking. Game progress stays in your browser on your device.`);
+    case '/terms': return page('Terms of use',`${BRAND} is free to play, with no ads, purchases or accounts. The code is open source under the MIT License; the name and logo are ours. No warranty.`);
     case '/about': return page('About',`${BRAND} makes free, open-source browser games for kids with AI coding tools. No ads, purchases, sign-ups or tracking. Watch the trailer.`);
     case '/list-your-game': return page('Submit a game',`How to build a kid-safe game from the ${BRAND} starter, with an AI helper if you like, check it and submit it for the Community games shelf.`);
     case '/favorites': return page('Favorites','Your favorite games, saved on this device. Tap the heart on any game to keep it here.',{ index: false });

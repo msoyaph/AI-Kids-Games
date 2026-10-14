@@ -1,4 +1,4 @@
-import { devices,expect,test,type Page } from '@playwright/test';
+import { devices,expect,test,type Page } from './fixtures';
 import { guard as guardOrigin,instrument,pastTouchGate,startGame } from './games';
 const guard = (page: Page) => guardOrigin(page,new URL(test.info().project.use.baseURL!).origin);
 
@@ -170,9 +170,26 @@ test('opened from the Home Screen (standalone): no card, no prompt, safe areas i
   expect(await page.locator('meta[name="apple-mobile-web-app-title"]').getAttribute('content')).toBe('AI Kids Games');
   const manifest = await (await page.request.get('/manifest.webmanifest')).json();
   expect(manifest).toMatchObject({ display: 'standalone',start_url: '/',scope: '/' });
-  // the play bar pads itself with the safe-area insets
-  expect(await page.locator('.play-bar').evaluate(el => getComputedStyle(el).paddingTop)).not.toBe('');
   await page.screenshot({ path: `test-results/standalone-${info.project.name}.png` });
+});
+
+test('from the Home Screen the game gets the whole screen, with a glass back button',async ({ page },info) => {
+  test.skip(!/phone|tablet/.test(info.project.name),'phones and tablets');
+  await page.addInitScript(homeScreen);
+  await openPlay(page,'light-crossing');
+  // No bar: the game fills the screen; the page keeps its heading for screen readers.
+  await expect(page.locator('.play-bar')).toHaveCount(0);
+  await expect(page.getByRole('heading',{ level: 1,name: 'Light Crossing' })).toBeAttached();
+  const stage = await page.locator('.play-stage').boundingBox(), viewport = page.viewportSize()!;
+  expect(Math.round(stage!.y)).toBe(0); expect(Math.round(stage!.height)).toBe(viewport.height);
+  const back = page.getByRole('link',{ name: 'Back to Light Crossing' });
+  const box = await back.boundingBox();
+  expect(box).toMatchObject({ width: 48,height: 48 });
+  expect(box!.x).toBeGreaterThanOrEqual(10); expect(box!.y).toBeGreaterThanOrEqual(10);
+  expect(await back.evaluate(el => [getComputedStyle(el).borderRadius,getComputedStyle(el).backdropFilter || getComputedStyle(el).getPropertyValue('-webkit-backdrop-filter')])).toEqual(['50%',expect.stringContaining('blur')]);
+  await page.screenshot({ path: `test-results/home-screen-play-${info.project.name}.png` });
+  await back.click();
+  await expect(page).toHaveURL(/\/game\/light-crossing$/);
 });
 
 test('Android: entering fullscreen locks the game’s orientation; leaving unlocks it',async ({ browser,browserName }) => {

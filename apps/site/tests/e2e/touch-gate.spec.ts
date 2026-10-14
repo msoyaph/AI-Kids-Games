@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 import { games } from '../../src/data/games';
 import { computerOnly } from '../../src/lib/devices';
 // Computer-only games come from the manifests (src/lib/devices.ts). Once every game lists touch

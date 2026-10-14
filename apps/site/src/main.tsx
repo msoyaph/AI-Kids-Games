@@ -1,4 +1,4 @@
-import { lazy, Suspense, Component, type ComponentType, type ReactNode } from 'react';
+import { lazy, Suspense, Component, useEffect, type ComponentType, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import ExitGuard from './components/ExitGuard';
@@ -10,7 +10,7 @@ import './styles.css';
 const loaders: Record<PageName,() => Promise<{ default: ComponentType }>> = {
   Home: () => import('./pages/Home'),Browse: () => import('./pages/Browse'),Details: () => import('./pages/Details'),Play: () => import('./pages/Play'),
   Favorites: () => import('./pages/Favorites'),Parents: () => import('./pages/Parents'),Faq: () => import('./pages/Faq'),Guides: () => import('./pages/Guides'),
-  Guide: () => import('./pages/Guide'),Community: () => import('./pages/Community'),About: () => import('./pages/About'),Privacy: () => import('./pages/Privacy'),ListYourGame: () => import('./pages/ListYourGame'),
+  Guide: () => import('./pages/Guide'),Community: () => import('./pages/Community'),About: () => import('./pages/About'),Privacy: () => import('./pages/Privacy'),Terms: () => import('./pages/Terms'),ListYourGame: () => import('./pages/ListYourGame'),
   NotFound: () => import('./pages/NotFound')
 };
 /** Pages load on demand, except one whose code is already here (the first page), which renders at once. */
@@ -19,6 +19,11 @@ const pages = {} as Pages;
 for (const name of Object.keys(loaders) as PageName[]) {
   const Lazy = lazy(loaders[name]);
   pages[name] = () => { const Page = ready[name]; return Page ? <Page /> : <Lazy />; };
+}
+
+function AppReady() {
+  useEffect(() => { document.documentElement.dataset.app = 'ready'; },[]);
+  return null;
 }
 
 class FriendlyBoundary extends Component<{ children: ReactNode },{ failed: boolean }> {
@@ -32,5 +37,7 @@ class FriendlyBoundary extends Component<{ children: ReactNode },{ failed: boole
 // the same markup in one step, with no loading screen in between.
 const first = pageFor(location.pathname);
 void loaders[first]().then(module => { ready[first] = module.default; },() => {}).finally(() => {
-  createRoot(document.getElementById('root')!).render(<FriendlyBoundary><BrowserRouter><PreferencesProvider><Suspense fallback={<div className="route-loading" role="status">Loading…</div>}><AppRoutes pages={pages} /></Suspense><ExitGuard /></PreferencesProvider></BrowserRouter></FriendlyBoundary>);
+  // The prebuilt HTML is inert until this first render replaces it: <html data-app="ready"> says the
+  // page now answers taps (tests wait for it before pressing anything right after loading).
+  createRoot(document.getElementById('root')!).render(<FriendlyBoundary><AppReady /><BrowserRouter><PreferencesProvider><Suspense fallback={<div className="route-loading" role="status">Loading…</div>}><AppRoutes pages={pages} /></Suspense><ExitGuard /></PreferencesProvider></BrowserRouter></FriendlyBoundary>);
 });

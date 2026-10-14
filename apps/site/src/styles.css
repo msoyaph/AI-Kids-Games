@@ -89,7 +89,18 @@ button,a { -webkit-tap-highlight-color: transparent; }
 .nav-link:hover { color: var(--ink); background: var(--paper); }
 .nav-link.active { color: var(--ink); box-shadow: inset 0 -3px 0 var(--ink); border-radius: 0; }
 .nav-count { min-width: 22px; padding: 0 6px; border-radius: 999px; background: var(--mist); color: var(--ink); font-size: 13px; line-height: 22px; text-align: center; }
-.header-actions { display: flex; gap: 4px; }
+.header-actions { display: flex; align-items: center; gap: 4px; }
+/* GitHub boxes: quiet outlined pills. The header's has the mark and name (the mark alone on
+   phones); a game's has Code (its folder) and Fork. Every part is a 48 px target. */
+.repo-box { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 48px; height: 48px; padding: 0 16px 0 14px; margin-right: 6px; border: 1.5px solid var(--mist); border-radius: 999px; color: var(--ink); font-size: 16px; font-weight: 700; transition: background-color .15s, border-color .15s; }
+.repo-box:hover { background: var(--mist); }
+.repo-box:focus-visible { outline: 3px solid var(--go); outline-offset: 2px; }
+.repo-group { display: inline-flex; align-items: stretch; border: 1.5px solid var(--mist); border-radius: 999px; background: var(--surface); overflow: hidden; }
+.repo-part { display: inline-flex; align-items: center; gap: 6px; min-height: 45px; padding: 0 14px; color: var(--ink); font-size: 15px; font-weight: 700; transition: background-color .15s; }
+.repo-part + .repo-part { border-left: 1.5px solid var(--mist); }
+.repo-part:hover { background: var(--mist); }
+.repo-part:focus-visible { outline: 3px solid var(--go); outline-offset: -3px; }
+.hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 main { min-height: 70vh; }
 .site-footer { margin-top: 96px; padding-block: 32px 40px; box-shadow: 0 -1px 0 var(--mist); }
 .footer-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; color: var(--slate); }
@@ -322,6 +333,12 @@ main { min-height: 70vh; }
 .device-notice .button { background: #F1F3F6; color: #16191F; }
 .play-message { padding: 10px 20px; background: #181B21; color: #A2A9B6; }
 .play-bar-spacer { width: 96px; }
+/* From the Home Screen (src/lib/fullscreen.ts standaloneDisplay): no bar, the game fills the
+   screen, and a frosted-glass circle takes you back, clear of the notch and rounded corners. */
+.app-back { position: fixed; z-index: 20; top: max(10px,env(safe-area-inset-top)); left: max(10px,env(safe-area-inset-left)); display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; color: #fff; background: rgb(22 25 31 / .32); -webkit-backdrop-filter: blur(14px) saturate(1.5); backdrop-filter: blur(14px) saturate(1.5); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .38), 0 6px 18px rgb(0 0 0 / .28); transition: background-color .15s, transform .15s; }
+.app-back:hover { background: rgb(22 25 31 / .5); }
+.app-back:active { transform: scale(.94); }
+.app-back:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 /* Opened from the Home Screen (black-translucent status bar): keep clear of the notch and the bar. */
 .play-bar { padding-top: max(4px,env(safe-area-inset-top)); padding-left: max(8px,env(safe-area-inset-left)); padding-right: max(8px,env(safe-area-inset-right)); }
 
@@ -380,6 +397,9 @@ main { min-height: 70vh; }
   :root { --gutter: 16px; }
   .main-nav { display: none; }
   .header-actions { margin-left: auto; }
+  .header-inner { gap: 12px; }
+  .repo-box { width: 48px; padding: 0; margin-right: 2px; }
+  .repo-box-label { display: none; }
   .bottom-nav { position: fixed; z-index: 30; inset: auto 0 0 0; display: grid; grid-template-columns: repeat(4,1fr); padding: 4px 8px max(4px,env(safe-area-inset-bottom)); background: var(--surface); box-shadow: 0 -1px 0 var(--mist); }
   .bottom-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; border-radius: var(--radius-control); color: var(--slate); font-size: 13px; font-weight: 700; }
   .bottom-nav a.active { color: var(--ink); }
@@ -406,6 +426,9 @@ main { min-height: 70vh; }
   .games-table th, .games-table td { padding: 2px 0; border: 0; }
   .play-bar .label { display: none; }
 }
+/* Phones under 375 px: the brand and three buttons don't fit, so the header's GitHub box
+   steps aside; each game's box and the footer still link to GitHub. */
+@media (max-width: 374px) { .repo-box { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

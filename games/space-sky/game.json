@@ -71,6 +71,15 @@
     "WebGL 2"
   ],
   "playTime": "About 5–6 hours",
+  "sessionMinutes": [
+    10,
+    30
+  ],
+  "moods": [
+    "curious",
+    "exciting"
+  ],
+  "embed": "fullscreen",
   "storage": {
     "prefix": "spacesky.",
     "keys": [

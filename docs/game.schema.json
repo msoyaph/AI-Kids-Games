@@ -23,6 +23,9 @@
     "devices",
     "orientation",
     "playTime",
+    "sessionMinutes",
+    "moods",
+    "embed",
     "storage",
     "safety",
     "capture",
@@ -204,6 +207,51 @@
     "playTime": {
       "type": "string",
       "minLength": 3
+    },
+    "sessionMinutes": {
+      "type": "array",
+      "description": "One sitting, in whole minutes: [shortest, typical longest]. playTime is the whole game; this is what \"a quick game\" filters on.",
+      "prefixItems": [
+        {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240
+        },
+        {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "moods": {
+      "type": "array",
+      "description": "How the game feels (1–3), for requests like \"something calm\" in AI assistants.",
+      "items": {
+        "enum": [
+          "calm",
+          "cozy",
+          "cheerful",
+          "exciting",
+          "brainy",
+          "creative",
+          "curious"
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true
+    },
+    "embed": {
+      "enum": [
+        "inline",
+        "fullscreen",
+        "site"
+      ],
+      "description": "How the game plays inside AI assistants (apps/mcp): \"inline\" in the chat card (light games), \"fullscreen\" only (heavy games, e.g. 3D), or \"site\" when it can't run there, so the card links to the website."
     },
     "storage": {
       "type": "object",

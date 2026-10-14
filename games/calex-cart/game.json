@@ -69,6 +69,15 @@
   "orientation": "landscape",
   "requirements": [],
   "playTime": "About 7–8 hours, plus replay",
+  "sessionMinutes": [
+    5,
+    20
+  ],
+  "moods": [
+    "exciting",
+    "cheerful"
+  ],
+  "embed": "fullscreen",
   "storage": {
     "prefix": "calexcart.",
     "keys": [

@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 import { games } from '../../src/data/games';
 const allGames = (page: import('@playwright/test').Page) => page.getByRole('region',{ name: 'All games',exact: true });
 test('home, details, favorites and reload',async ({ page }) => {

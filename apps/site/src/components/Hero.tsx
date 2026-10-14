@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Game } from '../data/games';
 import { mediaFor } from '../lib/media';
 import AddToHome from './AddToHome';
+import { GameRepoBox } from './GitHub';
 import { Icon } from './Icon';
 import Preview from './Preview';
 
@@ -28,7 +29,7 @@ export default function Hero({ games }: { games: Game[] }) {
     <div className="hero-copy" aria-live={paused || reduced ? 'polite' : 'off'}>
       <h2 className="hero-logo"><img src={media.logo} alt={game.title} width={440} height={130} /></h2>
       <p className="hero-line">{game.tagline}</p>
-      <span className="badge">{game.ageGuidance}</span>
+      <div className="hero-meta"><span className="badge">{game.ageGuidance}</span><GameRepoBox game={game} /></div>
       <div className="hero-actions"><Link to={`/play/${game.slug}`} className="button primary play"><Icon name="play" filled size={20} />Play</Link><AddToHome /></div>
       <div className="hero-controls">
         <div className="slide-picks" role="group" aria-label="Choose a featured game">{games.map((item,i) => <button key={item.slug} className="slide-pick" aria-label={`Show ${item.title}`} aria-current={i === index} onClick={() => setIndex(i)}><img src={mediaFor(item).cover} alt="" width={64} height={36} loading="lazy" /></button>)}</div>

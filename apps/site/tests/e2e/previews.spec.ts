@@ -1,4 +1,4 @@
-import { expect,test,type Page } from '@playwright/test';
+import { expect,test,type Page } from './fixtures';
 
 const playing = (page: Page) => page.evaluate(() => [...document.querySelectorAll('video')].filter(video => !video.paused && video.readyState > 2).map(video => video.dataset.game));
 const videoRequests = (page: Page) => { const urls: string[] = []; page.on('request',request => { if (/\/media\/[^/]+\/loop\.(webm|mp4)/.test(request.url())) urls.push(request.url()); }); return urls; };

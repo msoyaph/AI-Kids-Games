@@ -8,6 +8,7 @@
 //   workspace entries). Any other entry is a shared dependency, so every game runs.
 // Root scripts/ and docs/ are repo tooling: the repo checks cover them, and no game uses them.
 // community/<slug>/ and tooling/community-kit run no game suites: the community jobs check those.
+// apps/mcp (the AI Kids Games app for assistants) runs none either: the MCP app job checks it.
 import { execFileSync } from 'node:child_process';
 import { existsSync,readdirSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -24,13 +25,14 @@ export function allGames(root = '.') {
   return [...games,STARTER];
 }
 
-/** The workspace a lockfile path belongs to: a game slug, the starter, "site", or null (shared). */
+/** The workspace a lockfile path belongs to: a game slug, the starter, "site", "mcp", "community", or null (shared). */
 function owner(path,games) {
   const game = path.match(/^games\/([a-z0-9-]+)(?:\/|$)/)?.[1];
   if (game && games.includes(game)) return game;
   if (/^templates\/game-starter(?:\/|$)/.test(path)) return STARTER;
   if (/^apps\/site(?:\/|$)/.test(path)) return 'site';
   if (/^tooling\/community-kit(?:\/|$)/.test(path)) return 'community';
+  if (/^apps\/mcp(?:\/|$)/.test(path)) return 'mcp';
   return null;
 }
 
@@ -48,7 +50,7 @@ export function lockfileGames(before,after,games) {
     // A workspace's own entry, its nested node_modules, or the node_modules link npm makes to it.
     const workspace = owner(path,games) ?? (entry?.link ? owner(entry.resolved ?? '',games) : null);
     if (!workspace) return 'all';
-    if (workspace !== 'site' && workspace !== 'community') picked.add(workspace);
+    if (workspace !== 'site' && workspace !== 'community' && workspace !== 'mcp') picked.add(workspace);
   }
   return [...picked];
 }

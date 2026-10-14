@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 test('loading screen covers a throttled game download',async ({ page,context },info) => {
   test.skip(info.project.name !== 'desktop','Run the network timing check once.');
   test.setTimeout(90000);

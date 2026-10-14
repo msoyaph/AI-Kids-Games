@@ -1,9 +1,10 @@
 # AI Kids Games CI. GitHub's standard Ubuntu runners only: self-hosted runners must never be used
 # with this public repository (scripts/check-repo.ts fails the build if one ever appears).
 #
-# The repo checks and the website always run. Each game (and the starter template) runs its own
-# typecheck, unit tests, build and browser tests only when its folder or shared files change
-# (.github/scripts/what-changed.mjs), in the game's low-quality test mode on software WebGL.
+# The repo checks, the website and the MCP app (apps/mcp) always run. Each game (and the starter
+# template) runs its own typecheck, unit tests, build and browser tests only when its folder or
+# shared files change (.github/scripts/what-changed.mjs), in the game's low-quality test mode on
+# software WebGL.
 # Space Sky's and Light Crossing's browser suites need a real GPU, so they run on the release
 # machine instead (npm run release:local), and the production guard requires that recorded run.
 # Community games (community/<slug>/, SUBMITTING.md): a pull request that touches community/ may
@@ -112,6 +113,39 @@ jobs:
         with:
           name: site-playwright
           path: apps/site/test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  mcp:
+    name: MCP app
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Typecheck and unit tests
+        run: npm run typecheck --workspace apps/mcp && npm test --workspace apps/mcp
+      - name: Build (production gate, widget, function)
+        run: npm run build --workspace apps/mcp
+      - name: MCP Inspector checks (tools, calls, widget resources; both protocol eras)
+        run: npm run inspect --workspace apps/mcp
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: The widget in a host-like sandbox (a light game inline, a heavy one fullscreen)
+        run: npm run test:e2e --workspace apps/mcp
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: mcp-playwright
+          path: apps/mcp/test-results/
           retention-days: 14
           if-no-files-found: ignore
 
@@ -255,7 +289,7 @@ jobs:
 
   passed:
     name: CI passed
-    needs: [changes, checks, site, game, community, submission]
+    needs: [changes, checks, site, mcp, game, community, submission]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

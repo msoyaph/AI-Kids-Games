@@ -6,7 +6,7 @@ import { categories,games } from '../src/data/games';
 import { faq } from '../src/data/faq';
 import { guides } from '../src/data/guides';
 import { guideBodies } from '../src/data/guide-bodies';
-import { FOUNDER,INDEXNOW_KEY,PROFILES } from '../src/data/site';
+import { FOUNDER,INDEXNOW_KEY,MCP_ENDPOINT,PROFILES } from '../src/data/site';
 import { INLINE,type Block } from '../src/lib/rich-text';
 import { pageFor } from '../src/routes';
 import { llmsFullText,llmsText } from '../src/seo/llms';
@@ -37,7 +37,7 @@ describe('page metadata',() => {
     for (const guide of guides) expect(listed).toContain(`/guides/${guide.slug}`);
     for (const category of categories) expect(listed).toContain(`/category/${category.toLowerCase()}`);
     expect(listed.some(path => path.startsWith('/play/'))).toBe(false);
-    expect(listed).toEqual(expect.arrayContaining(['/','/games','/community','/faq','/guides','/parents','/privacy','/about']));
+    expect(listed).toEqual(expect.arrayContaining(['/','/games','/community','/faq','/guides','/parents','/privacy','/terms','/about']));
   });
   it('lists exactly the released games: none still in development',() => {
     expect(games.map(game => game.slug).sort()).toEqual(listedManifests().map(m => m.slug).sort());
@@ -101,8 +101,16 @@ describe('structured data (schema.org, with what search engines require)',() => 
     expect(video!.description.length).toBeGreaterThan(100);
     for (const url of [...video!.thumbnailUrl,video!.contentUrl,video!.caption.contentUrl]) expect(existsSync(pub(local(url))),url).toBe(true);
   });
-  it('links only to this site, its profiles, schema.org and the games’ license',() => {
-    const allowed = [ORIGIN,...PROFILES,FOUNDER.profile,'https://schema.org','https://opensource.org/licenses/MIT'];
+  it('gives every game page its own trailer as the VideoGame\'s trailer, with its own files',() => {
+    for (const game of games) {
+      const [videoGame] = of(`/game/${game.slug}`,'VideoGame');
+      const video = videoGame!.trailer;
+      expect(video,game.slug).toMatchObject({ '@type': 'VideoObject',name: `${game.title} trailer`,duration: 'PT15S',uploadDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) });
+      for (const url of [...video.thumbnailUrl,video.contentUrl,video.caption.contentUrl]) expect(existsSync(pub(local(url))),url).toBe(true);
+    }
+  });
+  it('links only to this site, its profiles, its app for AI assistants, schema.org and the games’ license',() => {
+    const allowed = [ORIGIN,...PROFILES,FOUNDER.profile,MCP_ENDPOINT,'https://schema.org','https://opensource.org/licenses/MIT'];
     for (const path of [...sitePaths(),...unlistedPaths()]) {
       const urls = JSON.stringify(structuredData(path,ORIGIN)).match(/https?:\/\/[^"]+/g) ?? [];
       for (const url of urls) expect(allowed.some(prefix => url.startsWith(prefix)),`${path}: ${url}`).toBe(true);
@@ -133,7 +141,7 @@ describe('the FAQ and guides',() => {
 
 describe('routes',() => {
   it('show the right page for each address',() => {
-    const expected: [string,string][] = [['/','Home'],['/games','Browse'],['/category/action','Browse'],['/game/tuck-pop','Details'],['/play/tuck-pop','Play'],['/favorites','Favorites'],['/parents','Parents'],['/faq','Faq'],['/guides','Guides'],['/guides/what-makes-a-game-kid-safe','Guide'],['/about','About'],['/privacy','Privacy'],['/list-your-game','ListYourGame'],['/community','Community'],['/nope','NotFound'],['/game/a/b','NotFound']];
+    const expected: [string,string][] = [['/','Home'],['/games','Browse'],['/category/action','Browse'],['/game/tuck-pop','Details'],['/play/tuck-pop','Play'],['/favorites','Favorites'],['/parents','Parents'],['/faq','Faq'],['/guides','Guides'],['/guides/what-makes-a-game-kid-safe','Guide'],['/about','About'],['/privacy','Privacy'],['/terms','Terms'],['/list-your-game','ListYourGame'],['/community','Community'],['/nope','NotFound'],['/game/a/b','NotFound']];
     for (const [path,page] of expected) expect(pageFor(path),path).toBe(page);
   });
 });

@@ -1,0 +1,468 @@
+{
+  "games": [
+    {
+      "slug": "cliff-valley",
+      "title": "Cliff Valley",
+      "tagline": "Grow a farm, make friends, fix the valley.",
+      "pitch": "Great-Aunt Rosemary’s old farm is yours! Grow crops, raise animals, fish, cook, explore a 40-floor mine and help the villagers repair Cliff Valley after the big storm.",
+      "minAge": 8,
+      "ageRange": "8–14",
+      "genres": [
+        "Farming",
+        "Cozy",
+        "Adventure"
+      ],
+      "tags": [
+        "Farming",
+        "Animals",
+        "Mining",
+        "Fishing",
+        "Friends",
+        "Pixel art"
+      ],
+      "devices": [
+        "Computer",
+        "Tablet",
+        "Phone"
+      ],
+      "controls": [
+        "Keyboard",
+        "Mouse",
+        "Gamepad",
+        "Touch"
+      ],
+      "orientation": "any",
+      "requirements": [],
+      "playTime": "About 8 hours, plus endless farming",
+      "sessionMinutes": [
+        15,
+        45
+      ],
+      "moods": [
+        "cozy",
+        "calm"
+      ],
+      "embed": "site",
+      "contentNotes": "Farming and friendship with mild cartoon cave critters that bounce away. No harsh penalties: fainting or staying up late just sends you home with nothing lost. No romance. Three farm save slots and settings stay in this browser.",
+      "quickStart": [
+        "Move with WASD or the arrow keys, a gamepad stick, or tap the ground.",
+        "Use your tool with Space, a click, gamepad A or the big yellow button.",
+        "Grow crops, ship them in the bin and fill the Valley Hall boards."
+      ],
+      "version": "1.0.0",
+      "accentColor": "#d8ecc4",
+      "page": "/game/cliff-valley",
+      "cover": "/media/cliff-valley/temp/cover.webp",
+      "logo": "/media/cliff-valley/logo.svg"
+    },
+    {
+      "slug": "light-crossing",
+      "title": "Light Crossing",
+      "tagline": "Make a little island shine.",
+      "pitch": "Build a cozy life on Driftlight Isle. Befriend your neighbors, fish, catch bugs, decorate a walk-in home and light the old lighthouse for the Lantern Crossing festival.",
+      "minAge": 6,
+      "ageRange": "6+",
+      "genres": [
+        "Cozy",
+        "Adventure"
+      ],
+      "tags": [
+        "Island",
+        "Fishing",
+        "Bugs",
+        "Decorating",
+        "Neighbors",
+        "Seasons"
+      ],
+      "devices": [
+        "Computer",
+        "Tablet",
+        "Phone"
+      ],
+      "controls": [
+        "Touch",
+        "Keyboard",
+        "Mouse",
+        "Gamepad"
+      ],
+      "orientation": "any",
+      "requirements": [],
+      "playTime": "About 6 hours of story, then endless island life",
+      "sessionMinutes": [
+        10,
+        30
+      ],
+      "moods": [
+        "cozy",
+        "creative",
+        "calm"
+      ],
+      "embed": "fullscreen",
+      "contentNotes": "Peaceful island life with no combat. Reading helps with conversations and missions, and read-aloud can speak them. Three save slots and automatic saves stay in this browser.",
+      "quickStart": [
+        "Walk with WASD or the arrow keys, or drag anywhere on a touch screen.",
+        "Press E, Space, gamepad A or the big A button to talk, dig, fish and catch bugs.",
+        "Help your neighbors and light the lighthouse for the festival."
+      ],
+      "version": "2.0.0",
+      "accentColor": "#c7f1dd",
+      "page": "/game/light-crossing",
+      "cover": "/media/light-crossing/cover.svg",
+      "logo": "/media/light-crossing/logo.svg",
+      "build": {
+        "path": "/games/light-crossing/index.html",
+        "bytes": 1250266,
+        "sha256": "7730e932006a60cc50f2112548c387a97f26ceb650fb7cf279360abea8b732c8"
+      }
+    },
+    {
+      "slug": "theabonk",
+      "title": "TheaBonk",
+      "tagline": "Small hero. Mighty big bonks.",
+      "pitch": "Help Thea push back the Gloom with her glowing Bonk Ring. Dodge waves of cartoon monsters, pick new powers as you level up and survive until dawn.",
+      "minAge": 8,
+      "ageRange": "8+",
+      "genres": [
+        "Action",
+        "Adventure"
+      ],
+      "tags": [
+        "Monsters",
+        "Power-ups",
+        "3D",
+        "Survival"
+      ],
+      "devices": [
+        "Computer",
+        "Tablet",
+        "Phone"
+      ],
+      "controls": [
+        "Keyboard",
+        "Mouse",
+        "Gamepad",
+        "Touch"
+      ],
+      "orientation": "landscape",
+      "requirements": [],
+      "playTime": "10–20 minutes per run",
+      "sessionMinutes": [
+        10,
+        20
+      ],
+      "moods": [
+        "exciting"
+      ],
+      "embed": "fullscreen",
+      "contentNotes": "Fantasy combat against cartoon monsters, fast movement and colorful effects. No realistic blood or gore. Action may feel intense. Unlocks and settings save in this browser.",
+      "quickStart": [
+        "Move Thea with WASD, the arrow keys, a gamepad stick, or your left thumb on a phone or tablet.",
+        "Her Bonk Ring bonks monsters all by itself. Stay on the move!",
+        "When you level up, pick a new power with 1–4, a click, or a tap."
+      ],
+      "version": "2.0.0",
+      "accentColor": "#e1dafa",
+      "page": "/game/theabonk",
+      "cover": "/media/theabonk/cover.svg",
+      "logo": "/media/theabonk/logo.svg",
+      "build": {
+        "path": "/games/theabonk/index.html",
+        "bytes": 975472,
+        "sha256": "f1a627e9e3c10c9f3fcd8801a974fba068353b841250cd5443bfe2d37d2aa372"
+      }
+    },
+    {
+      "slug": "vanex-defense",
+      "title": "Vanex Defense",
+      "tagline": "Build the maze. Hold the line.",
+      "pitch": "Command an elemental defense grid. Build and maze towers, counter each wave’s elements, specialize, field a hero and hold the line across six worlds, or build your own map.",
+      "minAge": 10,
+      "ageRange": "10–14",
+      "genres": [
+        "Strategy",
+        "Action"
+      ],
+      "tags": [
+        "Towers",
+        "Elements",
+        "Maze",
+        "Robots",
+        "Heroes",
+        "Map editor"
+      ],
+      "devices": [
+        "Computer",
+        "Tablet",
+        "Phone"
+      ],
+      "controls": [
+        "Touch",
+        "Mouse",
+        "Keyboard"
+      ],
+      "orientation": "any",
+      "requirements": [],
+      "playTime": "15–25 minutes per sector; 8–12 hours for the campaign",
+      "sessionMinutes": [
+        15,
+        25
+      ],
+      "moods": [
+        "exciting",
+        "brainy"
+      ],
+      "embed": "fullscreen",
+      "contentNotes": "Sci-fi battles against crystal robots: towers fire energy beams and constructs shatter into crystal shards. No blood, gore or scary horror. Campaign progress and settings save in this browser.",
+      "quickStart": [
+        "Tap or click a tower card, then an open square, to build.",
+        "Make a maze so the constructs walk past your towers.",
+        "Read the wave intel, then start the next wave."
+      ],
+      "version": "2.0.0",
+      "accentColor": "#dbe7c8",
+      "page": "/game/vanex-defense",
+      "cover": "/media/vanex-defense/temp/cover.webp",
+      "logo": "/media/vanex-defense/logo.svg",
+      "build": {
+        "path": "/games/vanex-defense/index.html",
+        "bytes": 1111865,
+        "sha256": "2f1c45616d99ad68622661922a2563d11ac833dc02adcc497235cd1967163818"
+      }
+    },
+    {
+      "slug": "space-sky",
+      "title": "Space Sky",
+      "tagline": "Your rocket. A universe of wonder.",
+      "pitch": "Build your own rocket and fly through the solar system in 3D. Land on planets and moons, meet friendly aliens, learn real space facts and collect space badges.",
+      "minAge": 6,
+      "ageRange": "6–10",
+      "genres": [
+        "Adventure",
+        "Learning"
+      ],
+      "tags": [
+        "Space",
+        "Rockets",
+        "Planets",
+        "Science",
+        "Aliens",
+        "3D"
+      ],
+      "devices": [
+        "Computer",
+        "Tablet",
+        "Phone"
+      ],
+      "controls": [
+        "Touch",
+        "Keyboard",
+        "Mouse",
+        "Gamepad"
+      ],
+      "orientation": "landscape",
+      "requirements": [
+        "WebGL 2"
+      ],
+      "playTime": "About 5–6 hours",
+      "sessionMinutes": [
+        10,
+        30
+      ],
+      "moods": [
+        "curious",
+        "exciting"
+      ],
+      "embed": "fullscreen",
+      "contentNotes": "Friendly aliens, real space facts and no scary content. There is no game over. Three save slots and settings stay in this browser. Needs WebGL 2, which current browsers on computers, tablets and phones support.",
+      "quickStart": [
+        "Make your astronaut, then press Go! at the Academy.",
+        "Steer with the arrow keys, a gamepad stick or the left half of the screen. Boost with Space or the orange button.",
+        "Land, explore and collect space badges."
+      ],
+      "version": "2.0.0",
+      "accentColor": "#d9d4f6",
+      "page": "/game/space-sky",
+      "cover": "/media/space-sky/temp/cover.webp",
+      "logo": "/media/space-sky/logo.svg",
+      "build": {
+        "path": "/games/space-sky/index.html",
+        "bytes": 1508694,
+        "sha256": "875e329efd1c8a1d8b40da92d3c358db3b041434ff89f8c9e5e3329f68784718"
+      }
+    },
+    {
+      "slug": "calex-cart",
+      "title": "Calex Cart",
+      "tagline": "Drift, boost and chase the finish.",
+      "pitch": "Drift, boost and glide through 20 bright tracks in an original 3D kart racer. Win five cups, including the snowy Frost Cup, earn Driving School medals, chase ghosts or race a friend.",
+      "minAge": 10,
+      "ageRange": "10–14",
+      "genres": [
+        "Racing",
+        "Action"
+      ],
+      "tags": [
+        "Karts",
+        "Drift",
+        "Split-screen",
+        "Trophies",
+        "Time Trial",
+        "Battle"
+      ],
+      "devices": [
+        "Computer",
+        "Tablet",
+        "Phone"
+      ],
+      "controls": [
+        "Keyboard",
+        "Gamepad",
+        "Touch"
+      ],
+      "orientation": "landscape",
+      "requirements": [],
+      "playTime": "About 7–8 hours, plus replay",
+      "sessionMinutes": [
+        5,
+        20
+      ],
+      "moods": [
+        "exciting",
+        "cheerful"
+      ],
+      "embed": "fullscreen",
+      "contentNotes": "Cartoon kart battles and silly spin-outs. Three save slots, settings and Time Trial ghosts stay in this browser. Split-screen needs a keyboard or gamepads; touch controls are for solo play.",
+      "quickStart": [
+        "Turn your phone sideways, or use the keyboard or a gamepad.",
+        "Steer, hold Drift around corners and let go for a boost.",
+        "Grab item boxes and race to the finish line."
+      ],
+      "version": "0.2.0",
+      "accentColor": "#f7e3ac",
+      "page": "/game/calex-cart",
+      "cover": "/media/calex-cart/temp/cover.webp",
+      "logo": "/media/calex-cart/logo.svg",
+      "build": {
+        "path": "/games/calex-cart/index.html",
+        "bytes": 1245756,
+        "sha256": "f750b8679bed7a9b9b7a4c16765c4002ca5f3106db02989f186116d26e6698f4"
+      }
+    },
+    {
+      "slug": "tuck-pop",
+      "title": "Tuck Pop",
+      "tagline": "Fit the blocks, fill a line, watch it pop.",
+      "pitch": "A bright, friendly block puzzle. Drag chunky pieces onto an 8×8 board, fill rows and columns to make them pop, and chain clears into streaks. Classic, Relax, 60 Adventure levels and a Daily puzzle.",
+      "minAge": 6,
+      "ageRange": "6+",
+      "genres": [
+        "Puzzle",
+        "Casual"
+      ],
+      "tags": [
+        "Blocks",
+        "Puzzle",
+        "Relaxing",
+        "Brain game"
+      ],
+      "devices": [
+        "Phone",
+        "Tablet",
+        "Computer"
+      ],
+      "controls": [
+        "Touch",
+        "Mouse",
+        "Keyboard",
+        "Gamepad"
+      ],
+      "orientation": "any",
+      "requirements": [],
+      "playTime": "A few minutes a game, plus 60 Adventure levels",
+      "sessionMinutes": [
+        3,
+        10
+      ],
+      "moods": [
+        "calm",
+        "brainy"
+      ],
+      "embed": "inline",
+      "contentNotes": "A calm puzzle with no violence, ads, purchases or chat. No timers, except an optional clock badge in the last Adventure worlds. Progress and best scores save in this browser only.",
+      "quickStart": [
+        "Drag a piece from the tray onto the board.",
+        "Fill a whole row or column to clear it.",
+        "Keep clearing to build a streak and a bigger score."
+      ],
+      "version": "1.0.0",
+      "accentColor": "#ffe0b8",
+      "page": "/game/tuck-pop",
+      "cover": "/media/tuck-pop/cover.svg",
+      "logo": "/media/tuck-pop/logo.svg",
+      "build": {
+        "path": "/games/tuck-pop/index.html",
+        "bytes": 521206,
+        "sha256": "2075b4c54df451e24cb298710ff679bfee6f15e9049000f5a84e6d222e657cd7"
+      }
+    },
+    {
+      "slug": "agentmon",
+      "title": "Agentmon",
+      "tagline": "Befriend creatures and relight the six Beacons.",
+      "pitch": "Join the Field Agent Academy, make friends with 77 cute creatures and solve puzzle Trials to clear the static fog. A gentle pixel-art adventure where nobody gets hurt.",
+      "minAge": 7,
+      "ageRange": "7–12",
+      "genres": [
+        "Adventure",
+        "RPG"
+      ],
+      "tags": [
+        "Creatures",
+        "Pixel art",
+        "Puzzles",
+        "Exploring",
+        "Nature facts",
+        "Turn-based"
+      ],
+      "devices": [
+        "Computer",
+        "Tablet",
+        "Phone"
+      ],
+      "controls": [
+        "Keyboard",
+        "Mouse",
+        "Gamepad",
+        "Touch"
+      ],
+      "orientation": "any",
+      "requirements": [],
+      "playTime": "About 8 hours, plus post-game",
+      "sessionMinutes": [
+        15,
+        45
+      ],
+      "moods": [
+        "cheerful",
+        "curious"
+      ],
+      "embed": "inline",
+      "contentNotes": "Gentle sparring only: tired creatures take a nap and are never hurt or lost. Losing sends you to a Rest Stop with nothing taken. No purchases, ads, chat or random reward packs. Some reading, with read-aloud. Saves stay in this browser.",
+      "quickStart": [
+        "Press Play, pick a slot and make your Field Agent.",
+        "Walk with the touch stick, the arrow keys or a gamepad, or tap where you want to go.",
+        "Press A to talk, spar and befriend; B goes back."
+      ],
+      "version": "1.1.0",
+      "accentColor": "#ffcf5c",
+      "page": "/game/agentmon",
+      "cover": "/media/agentmon/cover.svg",
+      "logo": "/media/agentmon/logo.svg",
+      "build": {
+        "path": "/games/agentmon/index.html",
+        "bytes": 1156768,
+        "sha256": "d1bcc6ee13128406486862b91e8b2061ec0e46ff0429fc71ef57816dd602180d"
+      }
+    }
+  ]
+}
