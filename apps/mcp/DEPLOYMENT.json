@@ -1,0 +1,9 @@
+{
+  "provider": "Vercel",
+  "project": "real-tours/ai-kids-games-mcp",
+  "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/mcp)",
+  "release": "0.1.0",
+  "productionApproval": null,
+  "note": "Production needs the owner's approval for this exact version here, AIKG_ALLOW_PRODUCTION set to it in this project's Production environment, and a build from main (scripts/check-deployment.ts). It ships together with the website release whose Privacy, For Parents and Terms pages describe it.",
+  "preview": null
+}

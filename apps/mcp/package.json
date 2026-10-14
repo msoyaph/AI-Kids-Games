@@ -1,0 +1,35 @@
+{
+  "name": "@ai-kids-games/mcp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "The AI Kids Games app for AI assistants: an MCP server with game cards and a player (Vercel project ai-kids-games-mcp).",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "serve": "tsx scripts/serve.ts",
+    "dev": "tsx scripts/build.ts && tsx scripts/serve.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "inspect": "tsx scripts/inspect.ts",
+    "refresh-egress": "tsx scripts/refresh-egress.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.2.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.2.0",
+    "@modelcontextprotocol/core": "2.2.0",
+    "@modelcontextprotocol/ext-apps": "2.0.3",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3",
+    "vite": "8.3.4",
+    "vite-plugin-singlefile": "2.3.3",
+    "vitest": "^5.0.3"
+  }
+}

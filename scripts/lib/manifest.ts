@@ -110,7 +110,7 @@ export function validateManifest(m: Manifest,folder = m.slug): string[] {
   list(site?.coverLayers,'site.coverLayers',0,4,MOTIONS);
   if (!STATUSES.includes(site?.status)) at(`site.status must be one of ${STATUSES.map(status => `"${status}"`).join(', ')}.`);
   if (site?.order !== undefined && (!Number.isInteger(site.order) || site.order < 1)) at('site.order must be a whole number from 1.');
-  const [shortest,longest] = Array.isArray(m.sessionMinutes) ? m.sessionMinutes : [];
+  const [shortest,longest] = Array.isArray(m.sessionMinutes) ? m.sessionMinutes : [NaN,NaN];
   if (m.sessionMinutes?.length !== 2 || !Number.isInteger(shortest) || !Number.isInteger(longest) || shortest < 1 || longest < shortest || longest > 240) at('sessionMinutes must be [shortest, longest] whole minutes for one sitting, from 1 to 240.');
   list(m.moods,'moods',1,3,MOODS);
   if (!EMBEDS.includes(m.embed)) at(`embed must be one of ${EMBEDS.map(embed => `"${embed}"`).join(', ')}.`);
@@ -127,6 +127,8 @@ export function readManifest(slug: string): Manifest {
 export const readManifests = () => gameSlugs().map(readManifest);
 /** The games the website lists: every game except those still "In development", which stay off the site. */
 export const listedManifests = () => readManifests().filter(m => m.site.status !== 'In development');
+/** Site order: site.order first (lower first), then featured, newest, and title (stable for diffs). */
+export const bySiteOrder = (a: Manifest,b: Manifest) => (a.site.order ?? 1e9)-(b.site.order ?? 1e9) || Number(b.site.featured)-Number(a.site.featured) || b.site.releaseDate.localeCompare(a.site.releaseDate) || a.title.localeCompare(b.title);
 
 // ---- Community games (community/<slug>/game.json; SUBMITTING.md, docs/community-game.schema.json) ----
 

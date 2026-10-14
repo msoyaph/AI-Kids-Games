@@ -10,7 +10,7 @@
 // --check fails (for CI) when any generated file is out of date instead of writing it.
 import { existsSync,readFileSync,writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ageText,readManifests,validateManifest,type Manifest } from './lib/manifest';
+import { ageText,bySiteOrder,readManifests,validateManifest,type Manifest } from './lib/manifest';
 import { buildImportsPath,readJson,root,site,type BuildImports } from './lib/repo';
 import { buildCatalog } from './lib/catalog';
 import type { Game } from '../apps/site/src/data/games';
@@ -24,8 +24,7 @@ const errors = all.flatMap(m => validateManifest(m));
 if (errors.length) { console.error(`Game manifests are invalid:\n${errors.map(error => `  • ${error}`).join('\n')}`); process.exit(1); }
 // Games still "In development" are validated but never listed.
 const manifests = all.filter(m => m.site.status !== 'In development');
-// Site order: site.order first (lower first), then featured, newest, and title (stable for diffs).
-manifests.sort((a,b) => (a.site.order ?? 1e9)-(b.site.order ?? 1e9) || Number(b.site.featured)-Number(a.site.featured) || b.site.releaseDate.localeCompare(a.site.releaseDate) || a.title.localeCompare(b.title));
+manifests.sort(bySiteOrder);
 
 const entry = (m: Manifest): Game => ({
   slug: m.slug,title: m.title,tagline: m.tagline,description: m.shortDescription,version: m.version,
