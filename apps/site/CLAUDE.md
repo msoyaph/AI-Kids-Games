@@ -217,7 +217,7 @@ browser); the launch tests start a new Agentmon adventure in slot 1 and continue
 ## Fieldlark, the ninth game (owner's "finish end to end" brief, 2026-10-14; PR, then the owner's approval)
 
 Listed from `games/fieldlark/game.json` (1.0.0, "Ready to play", ages 8–14, Farming / Strategy / Cozy,
-`site.order` 10: Shooberry's PR also wants 9, and the owner said the first to merge takes 9). Art in
+`site.order` 9: Shooberry's release stalled, and the owner chose to ship Fieldlark first, as site 2.10.0). Art in
 `public/media/fieldlark/`: a generated cover (the cottage, fields of wheat, strawberries and cabbages,
 the hen house, the river with the Little Lark at the dock), float (the lark) and twinkle layers, a logo
 ("Field" in white, "lark" in butter yellow, outlined green; `scripts/art/logos.ts`), and the OG image

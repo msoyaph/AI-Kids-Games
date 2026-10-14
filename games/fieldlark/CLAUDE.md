@@ -555,8 +555,8 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
   rerun after the fix: 38 passed, 4 skipped).
 
 **Phase 15 notes:**
-- Game 1.0.0, listed "Ready to play" at `site.order` 10 (Shooberry's PR wants 9; the first PR to merge
-  takes 9, so swap at merge time if this one lands first). Imported (`npm run import-game -- fieldlark`),
+- Game 1.0.0, listed "Ready to play" at `site.order` 9 (site 2.10.0: Shooberry's release stalled, and
+  the owner chose to ship Fieldlark first). Imported (`npm run import-game -- fieldlark`),
   manifests, storage audit (apps/site/STORAGE_AUDIT.md: worst case 346 KB, a finished story about 20 KB
   a copy, measured on bot playthroughs), cover, layers, logo and OG image, previews from
   `apps/site/scripts/capture/fieldlark.ts`, site tests at 9 games.
@@ -567,7 +567,12 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 - Capture pitfall: once, a take opened at the widest zoom instead of the URL's `zoom`; a retake was
   right. Look at every take before using it.
 
-**Next:** the owner plays the preview and approves the release. Then release by the repo's path (see
-Workspace): the version bump and DEPLOYMENT.json approval, `release:local`, CI, AIKG_ALLOW_PRODUCTION
-(site and MCP app), merge, production checks and a record PR. If Shooberry merges first, merge `main`
-in and reconcile the order, counts and generated files.
+**Production approval (owner, 2026-10-14, in chat):** "once done and complete, deploy the game to live
+production. Then create a 1 minute sizzle reel YT 1920×1080 and 1080x1920 video game. Should be exciting
+and should excite and wonder kids to play". Shooberry's release had stalled, so the owner chose
+"Stop it; Fieldlark first": site 2.10.0 with Fieldlark at position 9, MCP app 1.1.0 (PR #28).
+
+**Next:** `release:local` on a quiet machine, CI, AIKG_ALLOW_PRODUCTION (ai-kids-games and
+ai-kids-games-play 2.10.0, ai-kids-games-mcp 1.1.0), merge PR #28, production checks and a record PR.
+Then the 60-second reel (`fieldlark-reel` in marketing/sizzle/reel.config.ts; its takes are in
+capture/games/fieldlark.ts), 16:9 and 9:16 for YouTube.
