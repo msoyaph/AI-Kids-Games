@@ -40,6 +40,8 @@ import { ledgerPanel } from './ui/ledgerPanel';
 import { forecastPanel } from './ui/forecastPanel';
 import { ribbonsPanel } from './ui/ribbonsPanel';
 import { SoilTags } from './ui/soilTags';
+import { helpersPanel } from './ui/helpersPanel';
+import { helperSlots, JOB_WORKER } from './sim/helpers';
 import { VARIETY } from './data/varieties';
 import { speak, stopSpeaking } from './ui/speech';
 
@@ -131,18 +133,20 @@ function boot() {
     toolChanged: () => refreshTools(),
     did: (kind, tile) => view.life.helpers.react(kind, tile.x, tile.z, performance.now() / 1000),
     farmhouse: () => openFarmhouse(),
-    discovered: id => {
-      const v = VARIETY[id];
-      if (!v) return;
-      sfx.levelUp();
-      const parents = v.parents!.map(p => VARIETY[p]?.name ?? CROPS.find(c => c.id === p)?.name ?? p);
-      panels.show('A new variety!', h('div.discovery', null,
-        h('div.card-head', null, itemIcon(id, 56), h('h3', null, v.name)),
-        h('p', null, `The bees carried pollen between your ${parents[0]} and ${parents[1]}. Their seeds made something new: ${v.name}!`),
-        h('p', null, 'Its seeds are now in the Seeds list. It sells for a little more, and it can win “Best new variety” at the fair.'),
-        h('p.note', null, '+1 Lab idea.')), { kind: 'card', keepsTime: true });
-    },
+    discovered: id => showDiscovery(id),
   });
+  /** The bees made a new variety: a celebration card (`by`: a helper picked it). */
+  function showDiscovery(id: string, by?: string) {
+    const v = VARIETY[id];
+    if (!v) return;
+    sfx.levelUp();
+    const parents = v.parents!.map(p => VARIETY[p]?.name ?? CROPS.find(c => c.id === p)?.name ?? p);
+    panels.show('A new variety!', h('div.discovery', null,
+      h('div.card-head', null, itemIcon(id, 56), h('h3', null, v.name)),
+      h('p', null, `${by ? `${by} spotted it while picking! ` : ''}The bees carried pollen between your ${parents[0]} and ${parents[1]}. Their seeds made something new: ${v.name}!`),
+      h('p', null, 'Its seeds are now in the Seeds list. It sells for a little more, and it can win “Best new variety” at the fair.'),
+      h('p.note', null, '+1 Lab idea.')), { kind: 'card', keepsTime: true });
+  }
 
   // --- placing things: the ghost in the farm, and a bar with Turn, Place and Cancel ---
   const ghost = new Ghost();
@@ -341,6 +345,7 @@ function boot() {
     panels.show('The Farmhouse', farmhousePanel([
       { id: 'book', title: 'Farm Book', text: 'Every crop, tree and animal', icon: 'books', open: openBook },
       { id: 'ledger', title: 'Ledger', text: 'Coins, crops and seasons', icon: 'ledger', open: openLedger },
+      { id: 'helpers', title: 'Helpers', text: farm.helpers.length ? `${farm.helpers.length} on the farm` : helperSlots(farm) ? 'Someone is here to help!' : 'Coming in chapter 3', icon: 'farm', open: () => panels.show('Helpers', helpersPanel(farm, () => { dirty = true; }, say), { keepsTime: true }), ...(helperSlots(farm) || farm.helpers.length ? {} : { later: 'Coming in chapter 3' }) },
       { id: 'goals', title: 'Goals', text: 'What to do next', icon: 'star', open: () => story.openGoals() },
       { id: 'ribbons', title: 'Ribbon wall', text: `${farm.ribbonCount.reduce((a, b) => a + b, 0)} fair ribbons`, icon: 'level', open: () => panels.show('Ribbon wall', ribbonsPanel(farm), { keepsTime: true }) },
     ]), { keepsTime: true });
@@ -375,6 +380,8 @@ function boot() {
         break;
       }
       case 'goods-ready': break;
+      case 'helper-skill': say(`${e.name} is now a level ${e.level} ${JOB_WORKER[e.job]}!`); break;
+      case 'helper-found': showDiscovery(e.variety, e.name); break;
       case 'new-day':
         if (e.event === 'sunny') say('A sunny spell! Crops grow a little faster today.');
         else if (e.event === 'windy') say(e.hay ? `A windy day, and the hay is tied down! The animals are happy: +15 XP.` : 'A windy day! The hay blows about, but all is well.');

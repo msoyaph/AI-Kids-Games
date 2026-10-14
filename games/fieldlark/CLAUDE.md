@@ -412,7 +412,7 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 | 7 Story, onboarding and the audit's bugs | done (185 unit tests; e2e smoke + story 46/0) |
 | 8 Books, ledger and the farmhouse hub | done in code (195 unit tests); browser check pending a quiet machine |
 | 9 Soil, weather, breeding, fair categories | done in code (221 unit tests); browser check pending a quiet machine |
-| 10 Farmhands as workers | — |
+| 10 Farmhands as workers | done in code (232 unit tests); browser check pending a quiet machine |
 | 11 Larkford town square: the farm stand and contracts | — |
 | 12 Channels, sprinklers, greenhouses, the Farm Lab | — |
 | 13 The look everywhere, seasons, night, music | — |
@@ -461,4 +461,16 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 - Ideas (`farm.ideas`) are earned now (ribbons, varieties); the Lab spends them in phase 12.
 - Not yet drawn (phase 13): weather effects for wind, mist and fireflies.
 
-**Next:** phase 10, farmhands as workers (`docs/PLAN-2.md` §2.1).
+**Phase 10 notes:**
+- `sim/helpers.ts`: each helper has a job, a task (an `Action` for `act`) and `nextAt`; the task is done
+  when the clock reaches it. The UI and story say "helpers" (the goals did already); code comments say
+  farmhands too.
+- **Decision:** a watering or harvesting patch is a whole open area (or everywhere), chosen from a
+  list, instead of a rectangle dragged on the map. It works the same with touch, mouse, keyboard and
+  gamepad, and kids can read it.
+- Deliveries send board orders only (not story requests). Contract drops and stand restocking join
+  in phase 11.
+- The 3D figures: hands 0–5 are Fen…Moss (`HELPER_LOOK` in `data/cast.ts`). A hired helper's figure
+  follows their sim task; volunteers without a job keep pottering and reacting to the player.
+
+**Next:** phase 11, the Larkford town square, the farm stand and contracts (`docs/PLAN-2.md` §2.3–2.4).

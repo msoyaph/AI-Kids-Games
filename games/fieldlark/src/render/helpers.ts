@@ -1,9 +1,11 @@
 /**
  * The farmhands: friendly volunteers from Larkford who help out on the community farm. They are not
- * the player (there is no avatar). They walk the farm doing the work you'd expect: raking by the
- * fields, carrying buckets of water to the troughs, brushing the animals, carrying crates of produce
- * down to the dock, resting by the cottage. They come over to help when you harvest, water or plant.
- * They are only a picture: they never change the farm, and taps go through them.
+ * the player (there is no avatar). Once a farmhand is welcomed as a helper with a job
+ * (src/sim/helpers.ts), their figure follows the sim: it walks to each task and acts it out. Until
+ * then, and for anyone without a job, they potter about doing the work you'd expect: raking by the
+ * fields, carrying buckets to the troughs, brushing the animals, carrying crates to the dock, resting
+ * by the cottage, and coming over to help when you harvest, water or plant. They are only a picture:
+ * the drawing never changes the farm, and taps go through them.
  *
  * Each body part is one instanced mesh for everyone (head, torso, arm, leg, and the things they
  * carry), so a few farmhands cost a handful of draw calls. Clothes, hair and skin colours come from a
@@ -12,8 +14,11 @@
 import * as THREE from 'three';
 import { DECOR_BY_ID } from '../data/decor';
 import { animalForHome } from '../data/animals';
+import { HELPER_LOOK } from '../data/cast';
 import { H, tileAt, W } from '../sim/map';
 import type { Obj } from '../sim/objects';
+import type { Helper as SimHelper } from '../sim/helpers';
+import { objAt as objAtTile } from '../sim/world';
 import type { Farm } from '../sim/state';
 import { sizeOf } from '../sim/world';
 import { patchMaterial } from './fx';
@@ -22,14 +27,9 @@ import { groundY } from './land';
 
 // tint channels (carried in the geometry's `pattern` attribute)
 const SHIRT = 1, PANTS = 2, HAIR = 3, SKIN = 4, HAT = 5;
-const PEOPLE = 4;
-/** Shirt, trousers, hair, skin and hat band for each farmhand. */
-const PALETTE: [number, number, number, number, number][] = [
-  [0xf2b84b, 0x3f6fa8, 0x5a3a24, 0xf1c7a0, 0xd9534a],
-  [0xe8706a, 0x6f8f4a, 0x2b1d14, 0x9a6a48, 0x4f8fd6],
-  [0x7fc4d8, 0x8a5a3b, 0xd98a40, 0xe7b48c, 0x6fae5a],
-  [0xa98bd8, 0x4a5a70, 0xcfc8bc, 0xc68c63, 0xf2b84b],
-];
+const PEOPLE = HELPER_LOOK.length;
+/** Shirt, trousers, hair, skin and hat band for each farmhand (src/data/cast.ts). */
+const PALETTE = HELPER_LOOK;
 
 const palUniform = { value: PALETTE.flat().map(h => new THREE.Color(h)) };
 const bodyMat = patchMaterial(new THREE.MeshLambertMaterial({ vertexColors: true }), {
@@ -151,6 +151,8 @@ interface Step { to?: [number, number]; act?: Action; dur?: number; item?: Item 
 
 interface Hand {
   who: number;
+  /** The sim task this figure is acting out (hired helpers only). */
+  simKey: string;
   x: number; z: number; facing: number;
   steps: Step[];
   path: [number, number][];
@@ -237,12 +239,12 @@ export class Helpers {
     }
     this.grid = g;
     const homes = farm.objects.filter(o => !!animalForHome(o.def) && o.def !== 'kennel').length;
-    const want = Math.min(PEOPLE, 2 + (homes >= 2 ? 1 : 0) + (homes >= 4 ? 1 : 0));
+    const want = Math.min(PEOPLE, Math.max(farm.helpers.length, 2 + (homes >= 2 ? 1 : 0) + (homes >= 4 ? 1 : 0)));
     const door = this.cottageDoor(farm);
     while (this.hands.length < want) {
       const i = this.hands.length;
       const [x, z] = door ?? [40, 42];
-      this.hands.push({ who: i, x: x + 0.3 * i, z: z + 0.4, facing: 0, steps: [], path: [], act: 'idle', timer: 1 + i, item: null, phase: i, busyUntil: 0 });
+      this.hands.push({ who: i, simKey: '', x: x + 0.3 * i, z: z + 0.4, facing: 0, steps: [], path: [], act: 'idle', timer: 1 + i, item: null, phase: i, busyUntil: 0 });
     }
     this.hands.length = want;
     // drop paths that now cross something new
@@ -366,11 +368,42 @@ export class Helpers {
     }
   }
 
+  /** A hired helper's figure: act out their current sim task (or rest by the cottage). */
+  private follow(h: Hand, sim: SimHelper) {
+    const t = sim.job === 'rest' ? null : sim.task;
+    const key = t ? `${t.action.type}:${t.x},${t.z}` : 'rest';
+    if (key === h.simKey) return;
+    h.simKey = key;
+    h.path = []; h.timer = 0; h.act = 'idle';
+    const farm = this.farm;
+    if (!t || !farm) {
+      const c = farm?.objects.find(o => o.def === 'cottage');
+      const spot = c ? this.front(c) : null;
+      h.steps = spot ? [{ to: [spot[0] + (h.who % 3 - 1) * 0.5, spot[1] + 0.3], item: null }, { act: 'look', dur: 600 }] : [{ act: 'look', dur: 600 }];
+      return;
+    }
+    const target = objAtTile(farm, t.x, t.z);
+    const at = (target ? this.front(target) : null) ?? this.nearestWalkable(t.x, t.z + 1) ?? [t.x + 0.5, t.z + 1.5];
+    const face: [number, number] = [t.x + 0.5, t.z + 0.5];
+    const long = 600; // until the sim moves them on
+    switch (t.action.type) {
+      case 'water': h.steps = [{ to: at, item: 'can' }, { act: 'pour', dur: long, face, item: 'can' }]; break;
+      case 'harvest': case 'pickTree': case 'collect': h.steps = [{ to: at, item: 'basket' }, { act: 'pick', dur: long, face, item: 'basket' }]; break;
+      case 'feed': h.steps = [{ to: at, item: 'bucket' }, { act: 'pour', dur: long, face, item: 'bucket' }]; break;
+      case 'brush': h.steps = [{ to: at, item: 'brush' }, { act: 'brush', dur: long, face, item: 'brush' }]; break;
+      default: h.steps = [{ to: at, item: 'crate' }, { act: 'lift', dur: long, face, item: 'crate' }]; break;
+    }
+  }
+
   /** Come and help with something the player just did at a tile. */
   react(kind: 'harvest' | 'water' | 'plant', x: number, z: number, now: number) {
     if (!this.hands.length) return;
-    const free = this.hands.filter(h => h.item !== 'crate' && h.item !== 'bucket');
-    const pool = free.length ? free : this.hands;
+    // volunteers without a job (or resting helpers) come over; working helpers keep at their job
+    const sims = this.farm?.helpers ?? [];
+    const idle = this.hands.filter(h => !sims[h.who] || sims[h.who]!.job === 'rest');
+    if (!idle.length) return;
+    const free = idle.filter(h => h.item !== 'crate' && h.item !== 'bucket');
+    const pool = free.length ? free : idle;
     const h = pool.reduce((a, b) => (Math.hypot(a.x - x, a.z - z) < Math.hypot(b.x - x, b.z - z) ? a : b));
     if (now < h.busyUntil) return;
     h.busyUntil = now + 4;
@@ -388,7 +421,15 @@ export class Helpers {
 
   update(dt: number, reduced: boolean) {
     this.t += dt;
-    for (const h of this.hands) this.step(h, dt);
+    const sims = this.farm?.helpers ?? [];
+    // someone new was welcomed: they join the figures on the farm
+    if (this.farm && sims.length > this.hands.length) this.setFarm(this.farm);
+    for (const h of this.hands) {
+      const sim = sims[h.who];
+      if (sim && sim.job !== 'rest') this.follow(h, sim);
+      else if (h.simKey && h.simKey !== 'rest') { h.simKey = ''; h.steps = []; h.timer = 0; h.path = []; h.item = null; }
+      this.step(h, dt);
+    }
     this.draw(reduced);
   }
 

@@ -11,6 +11,7 @@ import type { Obj } from './objects';
 import type { BoatState, Order } from './orders';
 import type { NeighborState, Coop } from './neighbors';
 import { newStory, type StoryState } from './story';
+import type { Helper } from './helpers';
 
 export interface CameraSave {
   /** Where the camera looks, in tile units. */
@@ -82,6 +83,8 @@ export interface Farm {
   /** Fair ribbons, newest last (the ribbon wall), and how many of each there are in all. */
   ribbons: Ribbon[];
   ribbonCount: [gold: number, silver: number, bronze: number, thanks: number];
+  /** Farmhands and their jobs (src/sim/helpers.ts). */
+  helpers: Helper[];
 }
 
 /** A ribbon from a fair: which fair (by season), which category, and the place (1–4; 4 is "thank you for coming"). */
@@ -124,5 +127,6 @@ export function newFarm(seed: number): Farm {
     ideas: 0,
     ribbons: [],
     ribbonCount: [0, 0, 0, 0],
+    helpers: [],
   };
 }

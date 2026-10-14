@@ -19,6 +19,7 @@ import type { Farm } from '../sim/state';
 import { chapterComplete, chapterOf, endlessProgress, finishChapter, holdGrandFair, nextGoal, readyForGrandFair, beginChapter, storyDone, goalProgress } from '../sim/story';
 import { raining } from '../sim/weather';
 import { dayIndex } from '../sim/clock';
+import { helperSlots } from '../sim/helpers';
 import { levelOf } from '../sim/world';
 import { h } from '../ui/h';
 import type { Panels } from '../ui/panels';
@@ -194,6 +195,7 @@ export class StoryFlow {
       ['weather', dayIndex(farm.t) >= 2],
       ['soil', st('harvest') >= 14 || farm.story.chapter >= 1],
       ['heirloom', farm.story.chapter >= 3],
+      ['helpers', helperSlots(farm) > farm.helpers.length],
       ['rain', raining(farm.seed, farm.t)],
       ['stars', st('stars3') >= 1],
       ['compost', count(farm, 'fertilizer') >= 1],

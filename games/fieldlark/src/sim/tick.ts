@@ -19,6 +19,7 @@ import { endlessTick, type EndlessGoal } from './story';
 import { dayIndex } from './clock';
 import { firstSnow, hayTied, HAY_XP, SNOW_XP, spawnMushrooms, SUNNY_BOOST, tidyHay, todaysEvent, type DayEvent } from './forecast';
 import { brushAll } from './animals';
+import { helpersTick, type HelperEvent } from './helpers';
 
 export type SimEvent =
   | { type: 'rain-start' }
@@ -32,7 +33,8 @@ export type SimEvent =
   | { type: 'coop-done'; coop: Coop }
   | { type: 'visit'; visit: Visit }
   | { type: 'endless-done'; goals: EndlessGoal[] }
-  | { type: 'new-day'; event: DayEvent | null; hay: boolean; mushrooms: number; firstSnow: boolean };
+  | { type: 'new-day'; event: DayEvent | null; hay: boolean; mushrooms: number; firstSnow: boolean }
+  | HelperEvent;
 
 /** Moves the farm clock on by `dt` seconds of play and returns what happened. */
 export function advance(farm: Farm, dt: number): SimEvent[] {
@@ -56,6 +58,7 @@ export function advance(farm: Farm, dt: number): SimEvent[] {
     events.push({ type: 'goods-ready', count: made });
     if (today === 'snow') farm.xp += made * SNOW_XP;
   }
+  events.push(...helpersTick(farm));
   const fresh = refillBoard(farm);
   if (fresh) events.push({ type: 'new-orders', count: fresh });
   const back = boatTick(farm);

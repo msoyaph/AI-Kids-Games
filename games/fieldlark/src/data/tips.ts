@@ -17,6 +17,7 @@ export const TIPS: Record<string, Tip> = {
   soil: { id: 'soil', title: 'Healthy soil', text: 'Choose Seeds to see each field’s soil. Clover and compost make it rich, for better crops.' },
   weather: { id: 'weather', title: 'The weather', text: 'Tap the date to see the weather for the next few days.' },
   heirloom: { id: 'heirloom', title: 'Heirloom seeds', text: 'Heirloom seeds are in the Seeds list now. Plant two kinds side by side near bees to find new ones!' },
+  helpers: { id: 'helpers', title: 'A helper!', text: 'Someone from Larkford wants to help. Tap the farmhouse, then Helpers, to say hello and give them a job.' },
   shop: { id: 'shop', title: 'The shop', text: 'The shop has animal homes, workshops and fruit trees. Choose one, then tap where it should go.' },
   animals: { id: 'animals', title: 'Animals', text: 'Tap a home to see its animals. Feed and brush them for better products. They are fine on their own too.' },
   workshop: { id: 'workshop', title: 'Workshops', text: 'Tap a workshop and press Make. It works through its list, and finished goods wait for you.' },

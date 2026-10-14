@@ -8,6 +8,9 @@ import { CROP } from '../data/crops';
 import { VARIETY } from '../data/varieties';
 import { SOIL_MAX, SOIL_START } from '../sim/soil';
 import type { Ribbon } from '../sim/state';
+import { JOBS, MAX_HELPERS, type Helper } from '../sim/helpers';
+import { HELPER_NAMES } from '../data/cast';
+import { RECIPE } from '../data/production';
 import { ITEMS } from '../data/items';
 import { AREA_IDS, type AreaId } from '../sim/map';
 import type { FieldObj, Obj, ObjKind } from '../sim/objects';
@@ -62,6 +65,21 @@ function decodeObj(v: unknown): Obj | null {
   const o: Obj = { ...base, kind: base.kind as Exclude<ObjKind, 'field'> };
   if (r.data && typeof r.data === 'object') o.data = r.data as Record<string, unknown>;
   return o;
+}
+
+/** A farmhand: name by their place in the list, a known job, and fresh task timing (they look around again on load). */
+function decodeHelper(r: Raw, i: number, t: number): Helper {
+  const job = (JOBS as readonly string[]).includes(r.job as string) || r.job === 'rest' ? (r.job as Helper['job']) : 'rest';
+  const done = (r.done ?? {}) as Raw;
+  return {
+    name: HELPER_NAMES[i]!, job,
+    zone: r.zone === 'all' || AREA_IDS.includes(r.zone as AreaId) ? (r.zone as Helper['zone']) : 'all',
+    homes: Array.isArray(r.homes) ? r.homes.filter(isNum).map(Math.round) : [],
+    machine: isNum(r.machine) ? Math.round(r.machine) : null,
+    recipe: typeof r.recipe === 'string' && RECIPE[r.recipe] ? r.recipe : null,
+    done: Object.fromEntries(JOBS.map(j => [j, int(done[j], 0, 0)])) as Helper['done'],
+    task: null, nextAt: t, x: num(r.x, 37, 0, 55), z: num(r.z, 40, 0, 55),
+  };
 }
 
 /** `savedAt` is the real time of the save (ms), kept beside the farm for the "while you were away" bonus. */
@@ -171,6 +189,7 @@ export function decodeFarm(input: unknown): DecodeResult {
       season: int(r.season, 0, 0), cat: String(r.cat), place: int(r.place, 4, 1, 4) as Ribbon['place'], ...(r.grand === true ? { grand: true } : {}),
     })).slice(-RIBBONS_KEPT) : [],
     ribbonCount: Array.isArray(raw.ribbonCount) && raw.ribbonCount.length === 4 ? raw.ribbonCount.map(n => int(n, 0, 0)) as Farm['ribbonCount'] : [0, 0, 0, 0],
+    helpers: Array.isArray(raw.helpers) ? raw.helpers.filter((x): x is Raw => !!x && typeof x === 'object').slice(0, MAX_HELPERS).map((x, i) => decodeHelper(x, i, num(raw.t, 0, 0))) : [],
     coop: (() => {
       const c = raw.coop as Raw | null | undefined;
       if (!c || typeof c !== 'object' || !NEIGHBOR[c.neighbor as string] || !ITEMS[c.item as string]) return null;

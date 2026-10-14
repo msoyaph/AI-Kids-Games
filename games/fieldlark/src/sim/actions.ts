@@ -21,7 +21,7 @@ import { TUNING } from '../data/tuning';
 
 export type Action =
   | { type: 'plow'; x: number; z: number }
-  | { type: 'plant'; x: number; z: number; crop: string }
+  | { type: 'plant'; x: number; z: number; crop: string; variety?: string }
   | { type: 'water'; x: number; z: number }
   | { type: 'fertilize'; x: number; z: number }
   | { type: 'harvest'; x: number; z: number }
@@ -67,7 +67,7 @@ const no = (why: string): ActResult => ({ ok: false, why });
 export function act(farm: Farm, a: Action): ActResult {
   switch (a.type) {
     case 'plow': return plow(farm, a.x, a.z);
-    case 'plant': { const f = fieldAt(farm, a.x, a.z); return f ? plant(farm, f, a.crop, isWater) : no('Seeds go in fields.'); }
+    case 'plant': { const f = fieldAt(farm, a.x, a.z); return f ? plant(farm, f, a.crop, isWater, a.variety ?? null) : no('Seeds go in fields.'); }
     case 'water': { const f = fieldAt(farm, a.x, a.z); return f ? water(farm, f) : no('Water growing crops.'); }
     case 'fertilize': { const f = fieldAt(farm, a.x, a.z); return f ? fertilize(farm, f) : no('Compost goes on growing crops.'); }
     case 'harvest': { const f = fieldAt(farm, a.x, a.z); return f ? harvest(farm, f) : no('Nothing to pick there.'); }

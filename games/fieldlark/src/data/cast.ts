@@ -31,6 +31,15 @@ export const PEOPLE: readonly Person[] = [
 
 /** The farmhands: volunteers from Larkford who help on the community farm (names web-checked). */
 export const HELPER_NAMES = ['Fen', 'Juno', 'Wren', 'Bea', 'Kit', 'Moss'] as const;
+/** Each farmhand's shirt, trousers, hair, skin and hat band (the 3D farmhands and their portraits). */
+export const HELPER_LOOK: readonly [shirt: number, pants: number, hair: number, skin: number, hat: number][] = [
+  [0xf2b84b, 0x3f6fa8, 0x5a3a24, 0xf1c7a0, 0xd9534a],
+  [0xe8706a, 0x6f8f4a, 0x2b1d14, 0x9a6a48, 0x4f8fd6],
+  [0x7fc4d8, 0x8a5a3b, 0xd98a40, 0xe7b48c, 0x6fae5a],
+  [0xa98bd8, 0x4a5a70, 0xcfc8bc, 0xc68c63, 0xf2b84b],
+  [0x8fcf7a, 0x7a4a6a, 0x1f1a17, 0x6b4a34, 0xe8706a],
+  [0xf29ab8, 0x3f7f86, 0xb8763f, 0xf3d2b4, 0x7fc4d8],
+];
 /** The town's businesses (contracts) and who runs them. */
 export const CAFE = 'The Lark’s Nest';
 export const FABRIC_SHOP = 'Bobbin & Thread';
