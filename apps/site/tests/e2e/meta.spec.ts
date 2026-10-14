@@ -1,4 +1,4 @@
-import { expect,test } from '@playwright/test';
+import { expect,test } from './fixtures';
 import { INDEXNOW_KEY } from '../../src/data/site';
 
 // Launch metadata served with the build: per-page titles, canonical URLs, Open Graph images,
