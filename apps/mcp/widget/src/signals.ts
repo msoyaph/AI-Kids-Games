@@ -13,6 +13,8 @@ export const SIGNALS: Record<string,(w: Win,d: Document) => GameState> = {
   'space-sky': (_w,d) => has(d,'[data-testid="race-result"],[data-testid="complete-stats"]') ? 'ended' : has(d,'[data-testid="pause-menu"]') ? 'paused' : 'playing',
   theabonk: w => ['dead','won'].includes(w.__theabonk?.world?.state) ? 'ended' : w.__theabonk?.paused ? 'paused' : 'playing',
   fieldlark: (_w,d) => has(d,'section.panel[aria-label="Menu"],section.panel[aria-label="Settings"]') ? 'paused' : 'playing',
+  // Breezeport: the town's clock stops on the title screen and while its Menu or Settings is open
+  breezeport: (w,d) => w.__breezeport?.snapshot?.()?.screen === 'title' || has(d,'section.panel[aria-label="Menu"],section.panel[aria-label="Settings"]') ? 'paused' : 'playing',
   'vanex-defense': w => { const s = w.__vanexTest?.state?.(); return !s ? 'playing' : s.state && s.state !== 'playing' ? 'ended' : s.paused || s.modal ? 'paused' : 'playing'; }
 };
 

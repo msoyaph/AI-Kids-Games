@@ -235,6 +235,25 @@ checked at 9 (3 × 3); the launch tests start a new farm ("Start farming", then 
 continue it after a reload ("Keep farming"). The storage audit adds `fieldlark.save`, `.save.bak`,
 `.settings` and the rare `.save.broken` (worst case 346 KB, a finished story about 40 KB).
 
+## Breezeport, the city builder (owner's "Go, Breezeport", 2026-10-14; release 2.12.0 after Shooberry's 2.11.0)
+
+Listed from `games/breezeport/game.json` (1.0.0, "Ready to play", ages 8–14, Simulation / Strategy,
+`site.order` 11: Shooberry's PR #27 takes 10). Simulation is a new category (its filter chip and
+/category route come from the games). Art in `public/media/breezeport/`: a cover (City Hall with its
+clock, pastel clapboard houses and shops, the coral tram and the teal bus, the Ferris wheel, and the
+striped lighthouse on its islet in the bay), drift (clouds and a sailboat) and twinkle layers, a logo
+("Breeze" white, "port" coral, teal edge; `scripts/art/logos.ts`) and the OG image (only
+`og/breezeport.jpg` and the refreshed `og/site.jpg` are kept; `og/agentmon.jpg` came out
+byte-different again and was restored). Previews come from `scripts/capture/breezeport.ts`: the
+game's own `?scene=showcase` route (a grown town built in code that never saves) with `&t=` for the
+season and hour, `&festival=1` for the Bay Festival's night, `&map=` for a map and `&hud=0`; the
+canvas is recorded, so the HUD is left out. Its trailer and 60-second reel takes are in
+`marketing/sizzle/capture/games/breezeport.ts`. Tests count 10 games before Shooberry merges (age 8:
+8 games; age 10: 10; Simulation: Breezeport); the launch tests start a new story town (Play, New town,
+Story, "Become the mayor!", Marisol's lines) and continue it after a reload ("Continue <name>"). The
+storage audit adds `breezeport.slot1`–`slot3`, `.bak`, `.settings` and the rare `.broken` (worst case
+141 KB). When Shooberry lands, merge `main` in and recount (11 games).
+
 ## Next: Light Crossing v2.0 (owner request, on hold)
 
 Owner wants Light Crossing v2.0 imported and released. On 2026-10-11 its project was on
