@@ -2,6 +2,7 @@ import './style.css';
 import { GAME } from './config';
 import { audio, sfx } from './audio/engine';
 import { CROPS } from './data/crops';
+import { CHAPTERS } from './data/chapters';
 import { NEIGHBOR } from './data/cast';
 import { xpForLevel } from './data/tuning';
 import { Play } from './game/play';
@@ -15,6 +16,7 @@ import { Controller } from './input/controller';
 import type { TileRef } from './input/pick';
 import { boxPoints, tileWidthOnScreen, YAW_STEP, ZOOM } from './render/camera';
 import { objPoints, showFrame, startFrame, startPoints } from './game/framing';
+import { StoryFlow } from './game/storyFlow';
 import { openArea, setRailSide } from './ui/layout';
 import { onLockedLand } from './render/objects';
 import { Governor, guessTier, isSoftwareRenderer, urlTier, type QualityTier } from './render/quality';
@@ -59,9 +61,13 @@ function boot() {
   const canvas = $<HTMLCanvasElement>('#farm');
   const uiRoot = $('#ui');
   const settings: Settings = loadSettings();
-  const loaded = capture ? null : loadFarm();
-  const farm: Farm = scene === 'showcase' ? showcaseFarm(num('seed') ?? 7) : scene === 'styleframe' ? styleFrameFarm(num('seed') ?? 7) : loaded && loaded.status !== 'future' ? loaded.farm : newFarm(capture ? num('seed') ?? 7 : Math.floor(Math.random() * 2 ** 31));
-  const futureSave = loaded?.status === 'future';
+  const loadedRaw = capture ? null : loadFarm();
+  // an unreadable save was copied aside (or can't be, so this visit won't save over it)
+  const brokenSave = loadedRaw?.status === 'broken' ? loadedRaw : null;
+  const loaded = loadedRaw && loadedRaw.status !== 'broken' ? loadedRaw : null;
+  const staged = scene === 'showcase' || scene === 'build' || scene === 'fair' || scene === 'ending';
+  const farm: Farm = staged ? showcaseFarm(num('seed') ?? 7) : scene === 'styleframe' ? styleFrameFarm(num('seed') ?? 7) : loaded && loaded.status !== 'future' ? loaded.farm : newFarm(capture ? num('seed') ?? 7 : Math.floor(Math.random() * 2 ** 31));
+  const futureSave = loaded?.status === 'future' || (brokenSave !== null && !brokenSave.kept);
   if (capture) {
     farm.t = num('t') ?? farm.t;
     farm.cam = { x: num('x') ?? farm.cam.x, z: num('z') ?? farm.cam.z, yawStep: num('yaw') ?? farm.cam.yawStep, zoom: num('zoom') ?? farm.cam.zoom ?? 0 };
@@ -148,7 +154,7 @@ function boot() {
     turn: dir => { controller.turn(dir); sfx.turn(); },
     zoom: dir => { view.goal.zoom = Math.min(ZOOM.max, Math.max(ZOOM.min, view.goal.zoom * (dir > 0 ? 1.3 : 1 / 1.3))); },
     tool: id => { play.pickTool(id); showTool(); },
-    goals: () => { if (!showMe(play.hintTiles())) panels.show('Goals', h('p', null, 'The story’s goals arrive soon. For now: ', play.hint().toLowerCase(), '.'), { kind: 'card' }); },
+    goals: () => story.tapGoal(),
   });
   /** "Show me": glide to these tiles unless they are all on screen already. Returns false if there was nothing to show. */
   function showMe(tiles: { x: number; z: number }[]): boolean {
@@ -164,6 +170,32 @@ function boot() {
     if (f) { view.glideTo(f); sfx.turn(); }
     return !!f;
   }
+  // --- one-time tips: a small card above the tool bar that never blocks the farm ---
+  let tipEl: HTMLElement | null = null, tipTimer = 0;
+  function showTip(title: string, text: string) {
+    tipEl?.remove();
+    clearTimeout(tipTimer);
+    const el = h('aside.tip-card', { role: 'status', 'aria-live': 'polite' },
+      h('b', null, title), h('p', null, text),
+      h('button.primary', { onclick: () => { el.remove(); if (tipEl === el) tipEl = null; } }, 'Got it'));
+    tipEl = el;
+    uiRoot.appendChild(el);
+    tipTimer = window.setTimeout(() => { el.remove(); if (tipEl === el) tipEl = null; }, 22000);
+  }
+
+  const story = new StoryFlow({
+    farm: () => farm,
+    panels,
+    readAloud: () => settings.readAloud,
+    hints: () => settings.hints,
+    say,
+    changed: () => { dirty = true; refreshHud(); },
+    showMe: tiles => showMe(tiles),
+    hintTiles: () => play.hintTiles(),
+    playing: () => screen === 'farm' && !capture && !glLost,
+    showTip,
+  });
+
   /** A tool for something that's off screen: glide there. */
   function showTool() {
     if (play.building || play.placing) return;
@@ -194,14 +226,25 @@ function boot() {
       else if (name === 'build') { if (!panels.open) play.setBuilding(!play.building); }
       else if (name === 'undo') play.undoBuild();
       else if (name === 'rotatePiece') play.turnPlacing();
+      else if (name === 'tools') { if (!panels.open) hud.focusTools(); }
       else if (name.startsWith('tool')) {
-        const t = play.tools()[Number(name.slice(4)) - 1];
-        if (t) play.pickTool(t.id);
+        // the number keys match the labels on the tool bar (Shop is 7, Build 8, Town 9)
+        const t = play.tools().find(x => x.key === name.slice(4));
+        if (t) { play.pickTool(t.id); showTool(); }
       }
     },
-    active: () => screen === 'farm' && !panels.open && !glLost,
+    active: () => screen === 'farm' && !panels.open && !glLost && !hud.toolsFocused,
     reducedMotion: reduced,
   });
+  // the tool bar, when it has focus (gamepad X or T): arrows and the d-pad move along it, Enter / A
+  // picks a tool, Escape / B goes back to the farm
+  hud.tools.addEventListener('keydown', e => {
+    const k = e.key;
+    if (k === 'ArrowLeft' || k === 'ArrowUp') { e.preventDefault(); panels.moveFocus(-1, 0, hud.tools); }
+    else if (k === 'ArrowRight' || k === 'ArrowDown') { e.preventDefault(); panels.moveFocus(1, 0, hud.tools); }
+    else if (k === 'Escape') { e.preventDefault(); canvas.focus({ preventScroll: true }); }
+  });
+  hud.tools.addEventListener('click', () => { if (controller.lastDevice === 'pad' || controller.lastDevice === 'key') canvas.focus({ preventScroll: true }); });
   let flashUntil = 0;
 
   // --- settings ---
@@ -241,7 +284,10 @@ function boot() {
         h('button.big.primary', { onclick: () => startFarm() }, hasSave ? 'Keep farming' : 'Start farming'),
         h('button', { onclick: openSettings }, icon('gear', 24), ' Settings')),
       !persistent() && !capture ? h('p.note.storage-note', null, 'This browser can’t keep your farm, so it lasts until you close the game.') : null,
-      futureSave ? h('p.note.storage-note', null, 'Your farm was saved by a newer version of this game, so it stays safe and untouched. This visit plays a new farm that won’t be saved.') : null);
+      loaded?.status === 'future' ? h('p.note.storage-note', null, 'Your farm was saved by a newer version of this game, so it stays safe and untouched. This visit plays a new farm that won’t be saved.') : null,
+      brokenSave ? h('p.note.storage-note', null, brokenSave.kept
+        ? 'Your saved farm couldn’t be read, so a copy is kept safe and untouched. You can start a new farm.'
+        : 'Your saved farm couldn’t be read, so it stays safe and untouched. This visit plays a new farm that won’t be saved.') : null);
     uiRoot.appendChild(title);
     requestAnimationFrame(() => title?.querySelector<HTMLElement>('.primary')?.focus({ preventScroll: true }));
   }
@@ -262,6 +308,7 @@ function boot() {
       const bonus = catchUp(farm, away);
       if (bonus >= 60) say(`While you were away, your crops grew for ${Math.round(bonus / 60)} more minute${bonus >= 120 ? 's' : ''}.`);
     }
+    if (!capture) story.start();
   }
 
   function openMenu() {
@@ -292,6 +339,10 @@ function boot() {
         break;
       }
       case 'goods-ready': break;
+      case 'endless-done':
+        sfx.levelUp();
+        for (const g of e.goals) say(`Goal done: ${g.text}! +${g.coins} coins.`);
+        break;
       case 'coop-done':
         sfx.levelUp();
         panels.show('Co-op order done!', h('p', null, `You and ${NEIGHBOR[e.coop.neighbor]?.who ?? 'your neighbour'} filled the big order together: +${e.coop.coins} coins!`), { kind: 'card' });
@@ -321,18 +372,31 @@ function boot() {
     hud.setDate(farm.t);
     hud.setCoins(farm.coins);
     hud.setLevel(level, hi > lo ? (farm.xp - lo) / (hi - lo) : 1);
-    hud.setGoal(play.hint(), null);
+    if (play.placing || play.building || capture) hud.setGoal(play.hint(), null);
+    else { const g = story.goal(); hud.setGoal(g.text, g.progress); }
   }
 
   // --- saving ---
   let dirty = false;
   let lastSaveT = farm.t;
+  /** The browser's storage is full: say so once, keep playing, and try again with every save. */
+  let storageFull = false;
   function save() {
     if (capture || futureSave || screen !== 'farm') return;
     farm.cam = { ...view.goal };
-    saveFarm(farm, Date.now());
+    const ok = saveFarm(farm, Date.now());
     lastSaveT = farm.t;
     dirty = false;
+    if (!ok && persistent() && !storageFull) {
+      storageFull = true;
+      panels.show('Out of room to save', h('div', null,
+        h('p', null, 'This browser has run out of room to save your farm.'),
+        h('p', null, 'Don’t worry: your farm is still here, and the last save is safe. Keep playing! The game will save again as soon as there is room.'),
+        h('p.note', null, 'A grown-up can make room by closing other tabs or freeing up space on this device.')), { kind: 'card', keepsTime: true });
+    } else if (ok && storageFull) {
+      storageFull = false;
+      say('Your farm is saving again.');
+    }
   }
   document.addEventListener('visibilitychange', () => {
     audio.setHidden(document.hidden);
@@ -407,7 +471,12 @@ function boot() {
     fps = fps * 0.95 + (real > 0 ? 1 / real : 60) * 0.05;
     const pad = controller.update(dt);
     // menus by gamepad: d-pad moves focus, A presses, B goes back
-    if (pad && (panels.open || screen === 'title')) {
+    if (pad && !panels.open && screen === 'farm' && hud.toolsFocused) {
+      if (pad.pressed.has('left') || pad.pressed.has('up')) panels.moveFocus(-1, 0, hud.tools);
+      if (pad.pressed.has('right') || pad.pressed.has('down')) panels.moveFocus(1, 0, hud.tools);
+      if (pad.pressed.has('a') && now - lastPadA > 200) { lastPadA = now; (document.activeElement as HTMLElement | null)?.click(); canvas.focus({ preventScroll: true }); }
+      if (pad.pressed.has('b')) canvas.focus({ preventScroll: true });
+    } else if (pad && (panels.open || screen === 'title')) {
       const scope = panels.topEl ?? title;
       if (pad.pressed.has('up')) panels.moveFocus(0, -1, scope);
       if (pad.pressed.has('down')) panels.moveFocus(0, 1, scope);
@@ -419,7 +488,7 @@ function boot() {
     const playing = screen === 'farm' && !panels.stopsTime && !document.hidden && !glLost;
     if (playing) for (const e of advance(farm, dt * speed)) onEvent(e);
     if (screen === 'farm') {
-      if (now - hudAt > 200) { hudAt = now; refreshHud(); }
+      if (now - hudAt > 200) { hudAt = now; refreshHud(); story.tick(); }
       if (farm.t - lastSaveT > 30 || (dirty && farm.t - lastSaveT > 3)) save();
     }
     view.setReducedMotion(reduced());
@@ -498,7 +567,13 @@ function boot() {
 
   $('#boot').classList.add('done');
   setTimeout(() => $('#boot').remove(), 500);
-  if (scene === 'farm' || scene === 'showcase' || scene === 'styleframe') startFarm();
+  if (scene === 'farm' || staged || scene === 'styleframe') {
+    startFarm();
+    // capture scenes for the website's previews and the trailer
+    if (scene === 'build') play.setBuilding(true);
+    if (scene === 'fair') { farm.flags.fairEarly = 1; story.openFair(false); }
+    if (scene === 'ending') { farm.story.chapter = CHAPTERS.length; farm.story.creditsSeen = false; story.showCredits(); }
+  }
   else showTitle();
   requestAnimationFrame(frame);
 

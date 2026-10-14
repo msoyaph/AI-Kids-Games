@@ -13,7 +13,7 @@ import type { Stack } from '../sim/inventory';
 import type { Order } from '../sim/orders';
 import type { Coop, NeighborState } from '../sim/neighbors';
 import { NEIGHBOR } from '../data/cast';
-import { readJson, writeJson } from './storage';
+import { read, write, writeJson } from './storage';
 
 export const SAVE_KEY = 'save';
 export const SAVE_VERSION = 1;
@@ -168,9 +168,27 @@ export function decodeFarm(input: unknown): DecodeResult {
 export const encodeFarm = (farm: Farm, savedAt?: number) => ({ ...farm, v: SAVE_VERSION, ...(savedAt !== undefined ? { savedAt } : {}) });
 
 /** Loads the saved farm, or null when there is none. */
-export function loadFarm(): DecodeResult | null {
-  const raw = readJson<unknown>(SAVE_KEY);
-  return raw === null ? null : decodeFarm(raw);
+/**
+ * Load the saved farm (null: no save yet). A save that can't be read at all is never overwritten:
+ * it is first copied aside to `<prefix>save.broken`, and if even that fails the game plays from
+ * memory without saving ('broken').
+ */
+export function loadFarm(): DecodeResult | { status: 'broken'; kept: boolean } | null {
+  const text = read(SAVE_KEY);
+  if (!text) return null;
+  let raw: unknown;
+  try { raw = JSON.parse(text); } catch {
+    const kept = read(BROKEN_KEY) === text || write(BROKEN_KEY, text);
+    return { status: 'broken', kept };
+  }
+  return decodeFarm(raw);
 }
 
+/** Where an unreadable save is kept, untouched. */
+export const BROKEN_KEY = 'save.broken';
+
+/**
+ * Write the save. Returns false when the browser refused (for example, its storage is full): the
+ * previous save is then still there, whole (a storage write either happens completely or not at all).
+ */
 export const saveFarm = (farm: Farm, savedAt?: number) => writeJson(SAVE_KEY, encodeFarm(farm, savedAt));

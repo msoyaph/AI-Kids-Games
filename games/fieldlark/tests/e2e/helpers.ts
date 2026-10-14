@@ -42,8 +42,23 @@ export function watch(page: Page) {
   return problems;
 }
 
-/** From the title screen into the farm. */
+/** From the title screen into the farm, reading through the chapter's opening lines. */
 export async function startFarming(page: Page) {
   await page.getByRole('button', { name: /farming/i }).click();
   await expect.poll(async () => (await snapshot(page)).screen).toBe('farm');
+  await readStory(page);
+}
+
+/** Press through any story dialogue on screen (Next… OK!), and close a tip card if one is up. */
+export async function readStory(page: Page) {
+  for (let i = 0; i < 16; i++) {
+    const next = page.locator('.story-card button.primary');
+    if (!(await next.count())) break;
+    await next.first().click();
+    await page.waitForTimeout(60);
+  }
+  // the first tip arrives just after the opening lines: wait for it and put it away
+  const tip = page.locator('.tip-card button');
+  await tip.first().waitFor({ timeout: 1500 }).catch(() => {});
+  if (await tip.count()) await tip.first().click();
 }

@@ -83,3 +83,47 @@ describe('saving', () => {
     expect(s.quality).toBe('auto');
   });
 });
+
+describe('a full or broken storage never loses a save', () => {
+  /** Like fakeStorage, but full: any write that would make a value longer than before throws. */
+  function fullStorage(start: Record<string, string>) {
+    const s = fakeStorage(start);
+    const set = s.setItem;
+    s.setItem = (k: string, v: string) => {
+      if (k.endsWith('__probe')) return set(k, v);
+      if (v.length > (s.data.get(k)?.length ?? 0)) { const e = new Error('The quota has been exceeded.'); e.name = 'QuotaExceededError'; throw e; }
+      set(k, v);
+    };
+    return s;
+  }
+
+  it('a refused write reports false, and the last save stays whole', () => {
+    const farm = newFarm(5);
+    farm.coins = 321;
+    const before = JSON.stringify(encodeFarm(farm, 1000));
+    const s = fullStorage({ [`${GAME.storagePrefix}save`]: before });
+    useStorage(s);
+    farm.coins = 999999;
+    farm.objects.push(...farm.objects.slice(0, 20).map((o, i) => ({ ...o, id: 9000 + i })));
+    expect(saveFarm(farm, 2000)).toBe(false);
+    expect(s.data.get(`${GAME.storagePrefix}save`)).toBe(before);
+    const back = loadFarm();
+    expect(back && back.status !== 'broken' && back.farm.coins).toBe(321);
+    expect(persistent()).toBe(true);
+  });
+
+  it('an unreadable save is copied aside before anything could overwrite it', () => {
+    const s = fakeStorage({ [`${GAME.storagePrefix}save`]: '{"v":1,"coins":12' });
+    useStorage(s);
+    const r = loadFarm();
+    expect(r).toEqual({ status: 'broken', kept: true });
+    expect(s.data.get(`${GAME.storagePrefix}save.broken`)).toBe('{"v":1,"coins":12');
+  });
+
+  it('if the copy can’t be made either, it says so (and the game then won’t save over it)', () => {
+    const s = fullStorage({ [`${GAME.storagePrefix}save`]: '{"v":1,"coins":12' });
+    useStorage(s);
+    expect(loadFarm()).toEqual({ status: 'broken', kept: false });
+    expect(s.data.get(`${GAME.storagePrefix}save`)).toBe('{"v":1,"coins":12');
+  });
+});

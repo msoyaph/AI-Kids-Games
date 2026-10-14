@@ -2,10 +2,8 @@
 
 A 3D farm-building and management game for ages 8–14, for AI Kids Games. **Fieldlark** (slug `fieldlark`,
 storage prefix `fieldlark.`, hook `__fieldlark`) is the owner's pick of 2026-10-14; until then it was
-built under the working name "Farm WIP" (slug `farm-wip`, prefix `farmwip.`, no player saves existed).
-The rest of this paragraph is the original note:
-is the **working name**: the owner picks the final name from the five in "Names" before the site step,
-and phase 11 renames everything. Brief: `docs/prompts/fieldlark.md`. Approved plan (2026-10-13):
+built under the working name "Farm WIP" (slug `farm-wip`, prefix `farmwip.`; no player saves existed).
+Brief: `docs/prompts/fieldlark.md`. Approved plan (2026-10-13):
 `games/fieldlark/docs/PLAN.md`, which holds the full game design, architecture and the 13 phases.
 The second plan (owner-approved 2026-10-14, phases 7–15 and ten new mechanics) is `docs/PLAN-2.md`.
 
@@ -292,6 +290,24 @@ from their ingredients in `items.ts`), `decor.ts` (decorations, paths, sets, lan
   - **Before** (old renderer, same corner): Low 41 / 100k, Medium 72 / 175k, High 72 / 178k on the
     phone.
 
+- 2026-10-14, phase 7:
+  - **Story moments vs tips.** Chapter dialogue and rewards are modal cards that stop the clock. Tips
+    are a small `aside.tip-card` that doesn't block the farm and hides itself after 22 s. Stall hints
+    are toasts ("A little hint: …") after 150 s with nothing moving forward, then every 240 s.
+  - **One action dispatcher.** `sim/actions.ts` `act(farm, action)` is what the UI, the farmhands,
+    the bot and the tests all call.
+  - **Unreadable saves** are copied to `fieldlark.save.broken` before anything else happens. If that
+    copy can't be made, the game treats the save like one from the future: it never overwrites it.
+  - **Full storage:** a refused write keeps the last good save as it was. The player gets one
+    friendly "Out of room to save" card (the clock keeps going), then a toast once saving works
+    again.
+  - **Number keys go by the tool's label,** not its position, so 7 is Shop, 8 Animals and 9 Town on
+    every screen. **T** (or gamepad **X**) moves focus to the tool bar: arrows move, Enter picks,
+    Escape goes back to the farm.
+  - **Reading level:** `core/readability.ts` (from Light Crossing). Every story line, goal, hint,
+    request and tip is grade 7 or below, and each group averages 4.5 or below. Lines of five words or
+    fewer skip the per-line check, where the formula misfires.
+
 ## The owner's "go" (2026-10-14) for docs/PLAN-2.md
 - **Name:** **Fieldlark** (slug `fieldlark`, storage prefix `fieldlark.`).
 - **Plan:** approved as written, with these notes:
@@ -375,23 +391,33 @@ Other companies' games are described here, not named (this is a public repo).
   - farm dog "Barley" → **Rufus**: a classic farm series has a rancher called Barley;
   - sheep "Lambkin" → **Dumpling**: a children's TV fire-station show has a lamb called Lambykins;
   - duck "Waddle" → **Dabble**: a cartoon has a duck called Waddle.
+- 2026-10-14, new cast for PLAN-2 (web and store searches, plus each big farm game and kids' TV
+  franchise; no trademark registers):
+  - farmhand names **Pip** and **Rafi** dropped: Pip is a barn mouse in a farm cartoon and a rabbit in
+    a preschool show; Rafi is a 2026 preschool show's wizard, and a 2023 show has a farm dog "Raffi".
+    **Fen** replaces Pip. The six farmhands are Fen, Juno, Wren, Bea, Kit and Moss, all clear (Moss is
+    only an item in one farm game and the title of a VR game whose hero has another name);
+  - café owner **Rosa** is clear with one caveat: a classic fire-station show has a café cat called
+    Rosa. So the café is **The Lark's Nest**, never "Rosa's Café";
+  - **Mr. Hollis** and his fabric shop **Bobbin & Thread** are clear.
 
 ## Progress
+Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest follows `docs/PLAN-2.md`.
+
 | Phase | Status |
 |---|---|
-| 0 Setup and names | done |
-| 1 Engine and world | done (committed with phase 2) |
-| 2 Fields and crops | done (73 unit tests; 44 e2e on Chromium and WebKit × phone, tablet and desktop) |
-| 3 Orchards and animals | done (committed with 4–6) |
-| 4 Production | done (committed with 3, 5, 6) |
-| 5 Build mode and land | done (committed with 3, 4, 6) |
-| 6 Town and neighbors | done (118 unit tests; 44 e2e) |
-| 7 Story and progression | — |
-| 8 Books and ledger | — |
-| 9 Look and sound | — |
-| 10 Balance, performance, QA | — |
-| 11 Name and rename | waits for the owner's pick |
-| 12 Site step | — |
+| 0–6 Setup, engine, fields, orchards and animals, production, build mode, town | done (118 unit tests; 44 e2e) |
+| Visual pass (style frame, close camera, sideways phones, Low budget) | done, approved by the owner |
+| Merge main + rename to Fieldlark | done |
+| 7 Story, onboarding and the audit's bugs | done (185 unit tests; 64 e2e) |
+| 8 Books, ledger and the farmhouse hub | — |
+| 9 Soil, weather, breeding, fair categories | — |
+| 10 Farmhands as workers | — |
+| 11 Larkford town square: the farm stand and contracts | — |
+| 12 Channels, sprinklers, greenhouses, the Farm Lab | — |
+| 13 The look everywhere, seasons, night, music | — |
+| 14 Save v2, bot and pacing, performance, full QA | — |
+| 15 Site step, trailer, MCP catalog, PR and preview | — |
 
 **Phases 1–2 notes:**
 - Build 638 KB.
@@ -409,13 +435,12 @@ Other companies' games are described here, not named (this is a public repo).
   - made goods need their own icon shapes (flour looks blank on a white card);
   - the bare-bush snow is a box.
 
-**Next:** phase 7, story and progression:
-- `sim/story.ts`: chapters, goals from `farm.stats`, story requests on the board, the Grand Fair and
-  endless goals;
-- dialogue cards with read-aloud;
-- the seasonal fair UI;
-- onboarding tips and stall hints;
-- the goals panel;
-- the credits;
-- web-check the cast names (Hattie, Tomasz, Amara, Silas, Wendell, Mrs. Penrose, Ingrid, Femi,
-  Mr. Lu).
+**Phase 7 notes:**
+- `game/storyFlow.ts` runs the story on screen; `data/chapters.ts` is the final eight-chapter arc
+  (it already names later mechanics: helpers, contracts, channels, the greenhouse, the Lab).
+  Goals for systems that don't exist yet can't be met until their phase lands.
+- The credits name the new cast and the six farmhands.
+
+**Next:** phase 8 (`docs/PLAN-2.md` §3): the Crop and Animal Books, the Ledger charts and profit per
+crop, the stand's lessons page, and the farmhouse panel as the hub (Helpers, Farm Book, Ledger, Lab,
+Ribbons).

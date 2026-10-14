@@ -84,6 +84,7 @@ export function plant(farm: Farm, f: FieldObj, cropId: string, isWater: (x: numb
   f.watered = raining(farm.seed, farm.t);
   f.fertilized = false;
   bump(farm, 'planted');
+  bump(farm, `planted:${crop.id}`);
   if (f.rotation) bump(farm, 'rotation');
   return { ok: true };
 }

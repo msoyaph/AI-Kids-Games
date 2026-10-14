@@ -27,7 +27,8 @@ export class Hud {
   private goal: HTMLElement;
   private goalText: HTMLElement;
   private goalBar: HTMLElement;
-  private tools: HTMLElement;
+  /** The tool bar (gamepad X / the T key move focus into it). */
+  readonly tools: HTMLElement;
   private edges: () => void = () => {};
   private lastDate = '';
   private lastCoins = -1;
@@ -72,6 +73,16 @@ export class Hud {
       this.tools);
     root.appendChild(this.el);
   }
+
+  /** Move keyboard / gamepad focus into the tool bar, on the tool in use. */
+  focusTools() {
+    const b = this.tools.querySelector<HTMLElement>('.tool.active') ?? this.tools.querySelector<HTMLElement>('.tool');
+    b?.focus({ preventScroll: true });
+    b?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }
+
+  /** Is focus in the tool bar? */
+  get toolsFocused() { return this.tools.contains(document.activeElement); }
 
   set visible(v: boolean) {
     this.el.hidden = !v;

@@ -119,7 +119,8 @@ export function credits(): HTMLElement {
   return h('div.credits', null,
     h('h3', null, 'The farm is wide awake!'),
     h('p', null, 'Larkford has its Harvest Fair back, and it’s all thanks to you, keeper.'),
-    h('p', null, 'Starring Hattie, Silas, Tomasz, Amara, Wendell, Mrs. Penrose, Ingrid, Femi, Mr. Lu, and Rufus the dog.'),
+    h('p', null, 'Starring Hattie, Silas, Tomasz, Amara, Rosa, Mr. Hollis, Wendell, Mrs. Penrose, Ingrid, Femi, Mr. Lu, and Rufus the dog.'),
+    h('p', null, 'With Fen, Juno, Wren, Bea, Kit and Moss, the best farmhands in Larkford.'),
     h('p', null, 'Every crop and every fact is real. Everything else was made up with care.'),
     h('p', null, 'Made for AI Kids Games. Built with Claude.'),
     h('p', null, 'The farm keeps going: new goals, new seasons, a fair at the end of every season. Happy farming!'));

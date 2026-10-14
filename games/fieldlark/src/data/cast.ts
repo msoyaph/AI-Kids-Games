@@ -25,7 +25,15 @@ export const PEOPLE: readonly Person[] = [
   { id: 'silas', name: 'Silas', role: 'the ferry keeper, captain of the Little Lark', likes: ['fruit', 'animal', 'good'], color: { coat: 0x3f6fa8, hair: 0x9a9a9a, skin: 0xd9a07a } },
   { id: 'wendell', name: 'Wendell', role: 'the librarian', likes: ['jam', 'juice', 'honey', 'good'], color: { coat: 0x8a6ab8, hair: 0x3d3a35, skin: 0xc98f6a } },
   { id: 'penrose', name: 'Mrs. Penrose', role: 'the Harvest Fair judge', likes: ['good', 'fruit'], color: { coat: 0xd9534a, hair: 0xb0b0b8, skin: 0xf2c9a8 } },
+  { id: 'rosa', name: 'Rosa', role: 'who runs The Lark’s Nest café', likes: ['juice', 'cake', 'milk', 'honey', 'fruit'], color: { coat: 0xe8706a, hair: 0x3a2418, skin: 0xd9a07a } },
+  { id: 'hollis', name: 'Mr. Hollis', role: 'who keeps Bobbin & Thread, the fabric shop', likes: ['wool', 'cotton', 'flax', 'yarn', 'cloth', 'linen'], color: { coat: 0x4a5a70, hair: 0xd8d0c4, skin: 0xf0c8a0 } },
 ];
+
+/** The farmhands: volunteers from Larkford who help on the community farm (names web-checked). */
+export const HELPER_NAMES = ['Fen', 'Juno', 'Wren', 'Bea', 'Kit', 'Moss'] as const;
+/** The town's businesses (contracts) and who runs them. */
+export const CAFE = 'The Lark’s Nest';
+export const FABRIC_SHOP = 'Bobbin & Thread';
 
 export const PERSON: Record<string, Person> = Object.fromEntries(PEOPLE.map(p => [p.id, p]));
 
