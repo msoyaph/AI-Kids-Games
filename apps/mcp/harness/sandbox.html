@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Sandbox proxy</title>
+<style>html,body{margin:0;height:100%;background:transparent}iframe{display:block;border:0;width:100%;height:100%}</style>
+</head>
+<body>
+<script>
+// The MCP Apps sandbox proxy (spec 2026-01-26), as hosts run it: a separate origin that receives the
+// widget's HTML from the host, renders it in an inner frame under the resource's declared CSP (and the
+// host's sandbox flags), and relays JSON-RPC messages both ways.
+let inner = null;
+const policy = csp => {
+  const list = (key, extra = []) => [...extra, ...((csp && csp[key]) || [])].join(' ');
+  const res = list('resourceDomains');
+  return [
+    "default-src 'none'",
+    `script-src 'self' 'unsafe-inline' ${res}`,
+    `style-src 'self' 'unsafe-inline' ${res}`,
+    `img-src 'self' data: ${res}`,
+    `media-src 'self' data: ${res}`,
+    res ? `font-src ${res}` : '',
+    `connect-src ${list('connectDomains') || "'none'"}`,
+    `frame-src ${list('frameDomains') || "'none'"}`,
+    `base-uri ${list('baseUriDomains') || "'self'"}`,
+    "object-src 'none'"
+  ].filter(Boolean).join('; ');
+};
+addEventListener('message', event => {
+  const message = event.data;
+  if (event.source === parent) {
+    if (message && message.method === 'ui/notifications/sandbox-resource-ready') {
+      const { html, csp, sandbox } = message.params;
+      const head = `<meta http-equiv="Content-Security-Policy" content="${policy(csp).replace(/"/g, '&quot;')}">`;
+      inner = document.createElement('iframe');
+      inner.setAttribute('sandbox', sandbox || 'allow-scripts allow-same-origin allow-forms');
+      inner.setAttribute('allow', '');
+      inner.title = 'Widget';
+      inner.srcdoc = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, match => match + head) : head + html;
+      document.body.append(inner);
+      return;
+    }
+    if (inner) inner.contentWindow.postMessage(message, '*');
+  } else if (inner && event.source === inner.contentWindow) {
+    parent.postMessage(message, '*');
+  }
+});
+parent.postMessage({ jsonrpc: '2.0', method: 'ui/notifications/sandbox-proxy-ready', params: {} }, '*');
+</script>
+</body>
+</html>

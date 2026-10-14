@@ -41,6 +41,15 @@ describe('game manifests (games/<slug>/game.json)',() => {
     const m = sample(); m.storage.keys = [...m.storage.keys,'aikg:favorites'];
     expect(validateManifest(m)).toContain('cliff-valley: storage key "aikg:favorites" does not start with the prefix "cliffvalley.".');
   });
+  it('say how each game plays in AI assistants: one sitting, its moods and how it embeds',() => {
+    const m = sample(); m.sessionMinutes = [30,10]; m.moods = ['spooky' as Manifest['moods'][number]]; m.embed = 'popup' as Manifest['embed'];
+    const errors = validateManifest(m);
+    expect(errors).toContain('cliff-valley: sessionMinutes must be [shortest, longest] whole minutes for one sitting, from 1 to 240.');
+    expect(errors).toContain('cliff-valley: moods: "spooky" is not one of calm, cozy, cheerful, exciting, brainy, creative, curious.');
+    expect(errors).toContain('cliff-valley: embed must be one of "inline", "fullscreen", "site".');
+    const n = sample(); delete (n as Partial<Manifest>).embed;
+    expect(validateManifest(n)).toContain('cliff-valley: embed must be one of "inline", "fullscreen", "site".');
+  });
   it('require touch controls for phones and tablets, and an age range that starts at minAge',() => {
     const m = sample(); m.controls.types = ['Keyboard']; m.ageRange = '9–14';
     const errors = validateManifest(m);

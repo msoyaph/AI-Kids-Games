@@ -81,6 +81,19 @@ npm run manifests                   # adds it to the site's game list
 npm run dev                         # http://127.0.0.1:5190/game/my-game
 ```
 
+Three fields describe how the game shows up in AI assistants (the AI Kids Games app, `apps/mcp`):
+- `sessionMinutes` is one sitting, `[shortest, longest]`, which is what "a quick game" means.
+- `moods` (1–3 of calm, cozy, cheerful, exciting, brainy, creative, curious).
+- `embed`:
+  - `"inline"` if the game plays well in a small chat card;
+  - `"fullscreen"` if it needs the whole screen (3D, or lots of controls);
+  - `"site"` if it can't run there, so the card sends people to the website.
+
+  A game can run there only if it works under a strict Content Security Policy: no `eval` and no
+  `new Function` (PixiJS needs its eval-free module), no network, no workers. It must also keep
+  running when gamepad access is denied: wrap `navigator.getGamepads()` in try/catch. Check with
+  `npm run test:e2e --workspace apps/mcp`.
+
 Draw a cover and logo in `apps/site/public/media/my-game/` and record previews with
 `npm run capture-previews --workspace apps/site -- my-game` (see `apps/site/ADDING_A_GAME.md`).
 

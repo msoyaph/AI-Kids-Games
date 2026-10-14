@@ -72,6 +72,15 @@
   "orientation": "any",
   "requirements": [],
   "playTime": "About 8 hours, plus endless farming",
+  "sessionMinutes": [
+    15,
+    45
+  ],
+  "moods": [
+    "cozy",
+    "calm"
+  ],
+  "embed": "site",
   "storage": {
     "prefix": "cliffvalley.",
     "keys": [

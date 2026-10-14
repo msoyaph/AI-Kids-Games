@@ -10,6 +10,11 @@ export const BRAND = 'AI Kids Games';
 export const PUBLIC_ORIGIN = 'https://ai-kids-games-fawn.vercel.app';
 export const TAGLINE = 'The games kids love. None of the stuff parents don’t.';
 export const SITE_DESCRIPTION = 'Free browser games for kids: kart racing, farming, tower defense, space adventures, puzzles and more. No ads, purchases, sign-ups or tracking.';
+/**
+ * The AI Kids Games app for AI assistants (apps/mcp, Vercel project ai-kids-games-mcp). Switch it to
+ * https://aikids.games/mcp once the domain is live and /mcp is served there.
+ */
+export const MCP_ENDPOINT = 'https://ai-kids-games-mcp.vercel.app/mcp';
 /** The project's own profiles (structured data `sameAs`; the About page links them): GitHub, YouTube, Facebook. */
 export const PROFILES = [REPO,'https://www.youtube.com/@aikidsgamesph','https://www.facebook.com/ai.kids.games'] as const;
 /** The person behind the project (structured data `founder`). */

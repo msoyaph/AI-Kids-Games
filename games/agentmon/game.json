@@ -76,6 +76,15 @@
   "orientation": "any",
   "requirements": [],
   "playTime": "About 8 hours, plus post-game",
+  "sessionMinutes": [
+    15,
+    45
+  ],
+  "moods": [
+    "cheerful",
+    "curious"
+  ],
+  "embed": "inline",
   "storage": {
     "prefix": "agentmon.",
     "keys": [

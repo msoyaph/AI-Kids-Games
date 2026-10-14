@@ -72,6 +72,16 @@
   "orientation": "any",
   "requirements": [],
   "playTime": "About 6 hours of story, then endless island life",
+  "sessionMinutes": [
+    10,
+    30
+  ],
+  "moods": [
+    "cozy",
+    "creative",
+    "calm"
+  ],
+  "embed": "fullscreen",
   "storage": {
     "prefix": "lightcrossing.",
     "keys": [

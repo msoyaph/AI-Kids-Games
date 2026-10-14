@@ -68,6 +68,14 @@
   "orientation": "landscape",
   "requirements": [],
   "playTime": "10–20 minutes per run",
+  "sessionMinutes": [
+    10,
+    20
+  ],
+  "moods": [
+    "exciting"
+  ],
+  "embed": "fullscreen",
   "storage": {
     "prefix": "theabonk.",
     "keys": [
