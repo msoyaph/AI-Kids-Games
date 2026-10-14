@@ -528,7 +528,7 @@
     {
       "slug": "breezeport",
       "title": "Breezeport",
-      "tagline": "Grow a sleepy seaside town into a happy city.",
+      "tagline": "Grow a seaside town into a happy city.",
       "pitch": "Be the junior mayor of a seaside town in 3D: draw roads, zone homes and shops, build parks, schools and clinics, run buses and a tram, and keep your citizens happy.",
       "minAge": 8,
       "ageRange": "8–14",
@@ -581,8 +581,8 @@
       "logo": "/media/breezeport/logo.svg",
       "build": {
         "path": "/games/breezeport/index.html",
-        "bytes": 988757,
-        "sha256": "fdd210ca0b51476456a8431527d0fcf1773a90a978a1f0682479d9c43ff70bf0"
+        "bytes": 988848,
+        "sha256": "2911f114792f7851646f488e3db529ef388cccb0c057dd51c3719f3098fc2d28"
       }
     }
   ]

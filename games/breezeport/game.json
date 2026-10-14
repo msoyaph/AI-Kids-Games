@@ -2,7 +2,7 @@
   "$schema": "../../docs/game.schema.json",
   "slug": "breezeport",
   "title": "Breezeport",
-  "tagline": "Grow a sleepy seaside town into a happy city.",
+  "tagline": "Grow a seaside town into a happy city.",
   "shortDescription": "Be the junior mayor of a seaside town in 3D: draw roads, zone homes and shops, build parks, schools and clinics, run buses and a tram, and keep your citizens happy.",
   "longDescription": "Breezeport has gone quiet since its Bay Festival stopped, and the town needs a junior mayor. With Marisol the city planner, draw roads and zone homes, shops and workplaces, and watch new buildings grow where people want them. Build parks, a school, a library, a clinic and a safety station, draw bus routes, paint bike lanes and lay a tram line, and read the town's maps to see where people are happy, where streets are busy and where it needs more green. Check the budget at City Hall, add solar roofs and recycling, and open new districts until the whole bay comes to the festival. Then keep building, or open Creative mode and build anything. There is no energy, nothing ever burns down, and the town can never go broke: town time only moves while you play.",
   "version": "1.0.0",

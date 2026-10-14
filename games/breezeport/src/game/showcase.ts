@@ -92,8 +92,11 @@ export function showcaseTown(seed = 7): Town {
       addThing(t, { def, x: lot.x, z: lot.z, rot: lot.rot, level, look: Math.floor(noise(lot.x, lot.z, 17) * looks), solar: noise(lot.x, lot.z, 19) < 0.3 });
     }
   }
+  // zoned tiles that never made a whole lot go back to plain land (no tinted squares in the pictures)
+  let occ = occupancy(t);
+  for (let i = 0; i < W * H; i++) if (t.zones[i] && t.zones[i] !== ZONE.park && !occ[i]) t.zones[i] = ZONE.none;
   // parks: trees, flower beds and benches on park lots; trees in the middle of blocks
-  const occ = occupancy(t);
+  occ = occupancy(t);
   for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
     const i = idx(x, z);
     if (!buildable(x, z) || isRoad(t, x, z) || occ[i] || atCap(t, 'tree')) continue;

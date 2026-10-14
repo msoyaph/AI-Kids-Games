@@ -172,13 +172,16 @@ npx tsx games/breezeport/scripts/models.mts     # triangles per model (CPU only)
 | 0 Plan, names, style frame | done; approved 2026-10-14 ("Go, Breezeport") |
 | 1 Setup and name | done: scaffold, rename, Simulation genre, blocklist and site test, brief, docs, engine-drift |
 | 2–8 Town, sims, story, saves, UI | done (checkpoint commit 1dde1de): the 80 × 80 town, roads and zones, growth, services and happiness, budget and grant, traffic and transit (bus, bike, tram), eco, districts, 9 chapters, projects, endless goals, 3 slots, title, tools, maps, City Hall, music, the festival night, the showcase town |
-| 9 Balance, saves, performance, QA | in progress: pacing done (all 9 sim tests pass); 127 unit tests pass; browser suites and the visual review next |
+| 9 Balance, saves, performance, QA | done: 127 unit tests, 9 sim tests and 113 browser tests pass (13 skip by design); the big town runs at 60 fps on every tier |
+| 10 Site, release, reels | in progress: listed at position 11, imported, art, storage audit, MCP signal; previews, trailer, PR, release and the 60-second reels next |
 
 **Style frame, measured** (M3 Pro, `scripts/shots.mjs`): Low on the phone draws 31 calls and 77k triangles at 60 fps; Low on the desktop draws 36 calls and 126k triangles at 60 fps. The full table is in docs/PLAN.md. The build is 817 KB.
 
 **Next:** finish phase 9: `npx vitest run tests/sim` (pacing on 6 seeds, the broke run, strategies) on a quiet machine; then the browser suites (`sh scripts/when-quiet.sh e2e`), the visual review with `scripts/shots.mjs` (style frame and `scene=showcase`), and the performance numbers. Then phase 10: listing, import, storage audit, art, previews, trailer, MCP catalog, PR, release, the sizzle reels.
 
 **Pacing (2026-10-14, final data):** six seeds take 6.12, 6.17, 6.55, 6.38, 6.23 and 6.35 hours (mean 6.30). The longest chapter is 85 minutes (seed 3, Seaside Boardwalk); the longest wait for coins is 30 s. The broke run (every chapter starts with 0 coins) finishes on city grants, and no one-track strategy earns over 15% more than the mix or ends up happier.
+
+**The big town, measured** (M3 Pro, `scripts/shots.mjs` on `?scene=showcase&seed=7&hud=0`: 557 buildings, about 1,800 people, cars, trams, bikes and walkers): 60 fps on every tier. Low on a phone draws 35 calls and 81k triangles (187k zoomed all the way out); Medium 45 and 107k; High 83 and 199k. On a desktop: Low 40 and 133k, Medium 50 and 165k, High 94 and 379k (1.06M and 114 calls zoomed all the way out).
 
 **Pacing tools:** a scratchpad sweep runs the bot with tuning overrides (`{"growth":{…},"pops":[…],"rewards":[…]}`); the bot reports the town at each chapter's end and where the longest coin wait was. Findings so far:
 - Old Harbor holds about 205 people before Maple Row opens (chapter 5), so chapter 4's goal stays at 185.

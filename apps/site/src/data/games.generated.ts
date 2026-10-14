@@ -789,7 +789,7 @@ export const generatedGames: Game[] = [
   {
     "slug": "breezeport",
     "title": "Breezeport",
-    "tagline": "Grow a sleepy seaside town into a happy city.",
+    "tagline": "Grow a seaside town into a happy city.",
     "description": "Be the junior mayor of a seaside town in 3D: draw roads, zone homes and shops, build parks, schools and clinics, run buses and a tram, and keep your citizens happy.",
     "version": "1.0.0",
     "categories": [

@@ -42,7 +42,7 @@ export const scenario: Scenario = {
       async act(ctx) {
         await ctx.cut();
         await ctx.hold(['ArrowUp'], 500);
-        await ctx.still('Main Street: the tram, buses, bikes and people on their way');
+        await ctx.still('Up close: flats with roof gardens, shops, parks and a tram stop');
         await ctx.wait(1700);
       },
     },
@@ -53,7 +53,7 @@ export const scenario: Scenario = {
       async act(ctx) {
         await ctx.cut();
         await ctx.hold(['ArrowLeft'], 500);
-        await ctx.still('Lit windows, street lamps and the lighthouse sweeping the bay at night');
+        await ctx.still('Lit windows and street lamps on a summer night by the bay');
         await ctx.wait(1700);
       },
     },
