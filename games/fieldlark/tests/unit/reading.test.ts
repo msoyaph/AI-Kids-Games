@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { CHAPTERS } from '../../src/data/chapters';
+import { SCIENCE } from '../../src/data/science';
 import { TIPS } from '../../src/data/tips';
 import { READING_TARGET, readability } from '../../src/core/readability';
 
@@ -15,6 +16,7 @@ function lines(): { group: string; where: string; text: string }[] {
     for (const r of c.requests) out.push({ group: 'requests', where: r.id, text: r.note });
   });
   for (const t of Object.values(TIPS)) out.push({ group: 'tips', where: t.id, text: t.text });
+  for (const s of SCIENCE) for (const g of s.game) out.push({ group: 'science', where: s.id, text: g });
   return out;
 }
 

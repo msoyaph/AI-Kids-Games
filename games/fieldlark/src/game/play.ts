@@ -68,6 +68,8 @@ export interface PlayHost {
   toolChanged(): void;
   /** The player did some farm work at a tile (the farmhands come over to help). */
   did?(kind: 'harvest' | 'water' | 'plant', tile: TileRef): void;
+  /** Open the farmhouse (the Farm Book, the Ledger, goals…). */
+  farmhouse?(): void;
 }
 
 export class Play {
@@ -505,6 +507,7 @@ export class Play {
       return;
     }
     if (o?.kind === 'building' && (o.def === 'board' || o.def === 'dock')) { this.openTown(); return; }
+    if (o?.kind === 'building' && o.def === 'cottage' && this.host.farmhouse) { this.host.farmhouse(); return; }
     if (o?.kind === 'building') {
       const b = BUILDING[o.def];
       if (o.def === 'compost') {

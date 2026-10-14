@@ -189,6 +189,7 @@ export class StoryFlow {
       ['pick', fields.some(f => fieldState(farm, f) === 'ready')],
       ['barn', st('harvest') >= 1],
       ['orders', st('sold') >= 1 && farm.orders.length > 0],
+      ['farmhouse', st('harvest') >= 8],
       ['rain', raining(farm.seed, farm.t)],
       ['stars', st('stars3') >= 1],
       ['compost', count(farm, 'fertilizer') >= 1],

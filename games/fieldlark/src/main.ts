@@ -33,6 +33,9 @@ import { Hud } from './ui/hud';
 import { icon } from './ui/icons';
 import { Panels } from './ui/panels';
 import { settingsPanel } from './ui/settingsPanel';
+import { bookPanel } from './ui/bookPanel';
+import { farmhousePanel } from './ui/farmhousePanel';
+import { ledgerPanel } from './ui/ledgerPanel';
 import { speak, stopSpeaking } from './ui/speech';
 
 declare global { interface Window { __noWebGL2?: boolean } }
@@ -121,6 +124,7 @@ function boot() {
     say,
     toolChanged: () => refreshTools(),
     did: (kind, tile) => view.life.helpers.react(kind, tile.x, tile.z, performance.now() / 1000),
+    farmhouse: () => openFarmhouse(),
   });
 
   // --- placing things: the ghost in the farm, and a bar with Turn, Place and Cancel ---
@@ -311,11 +315,24 @@ function boot() {
     if (!capture) story.start();
   }
 
+  // --- the farmhouse: the Farm Book, the Ledger and goals (later: farmhands, the Lab, ribbons) ---
+  const openBook = () => panels.show('Farm Book', bookPanel(farm), { keepsTime: true });
+  const openLedger = () => panels.show('Farm Ledger', ledgerPanel(farm), { keepsTime: true });
+  function openFarmhouse() {
+    if (screen !== 'farm') return;
+    panels.show('The Farmhouse', farmhousePanel([
+      { id: 'book', title: 'Farm Book', text: 'Every crop, tree and animal', icon: 'books', open: openBook },
+      { id: 'ledger', title: 'Ledger', text: 'Coins, crops and seasons', icon: 'ledger', open: openLedger },
+      { id: 'goals', title: 'Goals', text: 'What to do next', icon: 'star', open: () => story.openGoals() },
+    ]), { keepsTime: true });
+  }
+
   function openMenu() {
     if (screen !== 'farm' || panels.open) return;
     const close = () => panels.close();
     panels.show('Menu', h('div.menu-list', null,
       h('button.primary', { onclick: close }, 'Back to the farm'),
+      h('button', { onclick: () => { close(); openFarmhouse(); } }, icon('farm', 26), 'Farmhouse: Farm Book and Ledger'),
       h('button', { onclick: () => { close(); openSettings(); } }, icon('gear', 26), 'Settings'),
       h('button', { onclick: () => { close(); save(); showTitle(); } }, icon('farm', 26), 'Title screen')), { kind: 'card' });
   }
