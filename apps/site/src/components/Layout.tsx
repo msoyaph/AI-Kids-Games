@@ -34,7 +34,7 @@ export default function Layout() {
     <main id="main-content" tabIndex={-1}><Outlet /></main>
     <footer className="site-footer"><div className="container footer-inner">
       <p>No ads. No subscriptions. No sign-ups. No tracking.</p>
-      <nav className="footer-links" aria-label="Site information"><Link to="/parents">For parents</Link><Link to="/faq">Parent FAQ</Link><Link to="/guides">Guides</Link><Link to="/privacy">Privacy</Link><Link to="/about">About</Link><Link to="/community">Community games</Link><Link to="/list-your-game">Submit a game</Link><a href={REPO}>Build your own</a></nav>
+      <nav className="footer-links" aria-label="Site information"><Link to="/parents">For parents</Link><Link to="/faq">Parent FAQ</Link><Link to="/guides">Guides</Link><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link><Link to="/about">About</Link><Link to="/community">Community games</Link><Link to="/list-your-game">Submit a game</Link><a href={REPO}>Build your own</a></nav>
       <p>© {new Date().getFullYear()} {BRAND}</p>
     </div></footer>
     <nav className="bottom-nav" aria-label="Mobile navigation"><NavLink to="/" end><Icon name="home" />Home</NavLink><NavLink to="/games"><Icon name="grid" />Games</NavLink><NavLink to="/favorites"><Icon name="heart" />Favorites</NavLink><NavLink to="/parents"><Icon name="shield" />Parents</NavLink></nav>

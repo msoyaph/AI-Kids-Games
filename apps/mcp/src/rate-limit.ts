@@ -3,7 +3,7 @@
 // and every count is dropped when its minute is up. Assistants call from a few shared addresses (all of
 // Claude's traffic comes from one Anthropic range), so their published ranges get a higher limit.
 import { createHmac,randomBytes } from 'node:crypto';
-import egress from './data/egress.json';
+import egress from './data/egress.json' with { type: 'json' };
 
 export const LIMITS = { windowMs: 60_000,perAddress: 120,perAssistantAddress: 3000,perInstance: 12_000 };
 export type Limit = { ok: true } | { ok: false; retryAfter: number };

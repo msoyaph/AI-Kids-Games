@@ -37,7 +37,7 @@ describe('page metadata',() => {
     for (const guide of guides) expect(listed).toContain(`/guides/${guide.slug}`);
     for (const category of categories) expect(listed).toContain(`/category/${category.toLowerCase()}`);
     expect(listed.some(path => path.startsWith('/play/'))).toBe(false);
-    expect(listed).toEqual(expect.arrayContaining(['/','/games','/community','/faq','/guides','/parents','/privacy','/about']));
+    expect(listed).toEqual(expect.arrayContaining(['/','/games','/community','/faq','/guides','/parents','/privacy','/terms','/about']));
   });
   it('lists exactly the released games: none still in development',() => {
     expect(games.map(game => game.slug).sort()).toEqual(listedManifests().map(m => m.slug).sort());
@@ -133,7 +133,7 @@ describe('the FAQ and guides',() => {
 
 describe('routes',() => {
   it('show the right page for each address',() => {
-    const expected: [string,string][] = [['/','Home'],['/games','Browse'],['/category/action','Browse'],['/game/tuck-pop','Details'],['/play/tuck-pop','Play'],['/favorites','Favorites'],['/parents','Parents'],['/faq','Faq'],['/guides','Guides'],['/guides/what-makes-a-game-kid-safe','Guide'],['/about','About'],['/privacy','Privacy'],['/list-your-game','ListYourGame'],['/community','Community'],['/nope','NotFound'],['/game/a/b','NotFound']];
+    const expected: [string,string][] = [['/','Home'],['/games','Browse'],['/category/action','Browse'],['/game/tuck-pop','Details'],['/play/tuck-pop','Play'],['/favorites','Favorites'],['/parents','Parents'],['/faq','Faq'],['/guides','Guides'],['/guides/what-makes-a-game-kid-safe','Guide'],['/about','About'],['/privacy','Privacy'],['/terms','Terms'],['/list-your-game','ListYourGame'],['/community','Community'],['/nope','NotFound'],['/game/a/b','NotFound']];
     for (const [path,page] of expected) expect(pageFor(path),path).toBe(page);
   });
 });

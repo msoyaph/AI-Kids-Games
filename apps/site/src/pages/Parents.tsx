@@ -29,6 +29,10 @@ export default function Parents() {
     <section className="section prose" aria-labelledby="questions"><h2 id="questions" className="title">Questions?</h2>
       <p>The <Link to="/faq">parent FAQ</Link> answers the common ones: what’s free, what data is collected, ages, devices and offline play. Our <Link to="/guides">guides for parents</Link> cover choosing ad-free games, what makes a game kid-safe, and building a first game with your kid.</p>
     </section>
+    <section className="section prose" aria-labelledby="assistants"><h2 id="assistants" className="title">In ChatGPT or Claude</h2>
+      <p>You can also find our games from an AI assistant. Add the AI Kids Games app to ChatGPT or Claude, then ask something like “a calm puzzle for my 7-year-old”. It shows each game as a card with its ages and content notes, and you can try one together right there.</p>
+      <p>These assistants are made for teens and adults (ChatGPT for ages 13 and up, Claude for 18 and up), so the app is for you, the grown-up. It speaks to parents and never invites children to chat with the assistant. Progress made in the chat may not be saved; play here to keep it. The app receives only the choices you make there, never your conversation: see the <Link to="/privacy">privacy page</Link>.</p>
+    </section>
     <section className="section prose" aria-labelledby="makers"><h2 id="makers" className="title">Made in the open</h2>
       <p>Every game here is open source, so you can read exactly what it does. Families and young makers can build their own kid-safe games from the same starter and <Link to="/list-your-game">submit them</Link>. Every <Link to="/community">community game</Link> passes the same checks, is approved by a person, and runs from its own separate address.</p>
     </section>

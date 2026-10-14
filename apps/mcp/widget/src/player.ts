@@ -19,20 +19,20 @@ import { BRAND,link } from './views';
 type Build = NonNullable<GameOutput['game']['build']>;
 const hex = (buffer: ArrayBuffer) => [...new Uint8Array(buffer)].map(byte => byte.toString(16).padStart(2,'0')).join('');
 
-/** Streams the build from the website, reporting progress; the size must be exactly the verified one. */
+/** Streams the build from the website, reporting progress. Reads at most one byte more than the verified size, so a changed file fails verification. */
 export async function download(build: Build,progress: (share: number) => void) {
   const response = await fetch(build.url,{ mode: 'cors',credentials: 'omit',referrerPolicy: 'no-referrer' });
   if (!response.ok || !response.body) throw new Error(`The website answered ${response.status}.`);
-  const reader = response.body.getReader(), bytes = new Uint8Array(build.bytes);
+  const reader = response.body.getReader(), bytes = new Uint8Array(build.bytes+1);
   let got = 0;
   for (;;) {
     const { done,value } = await reader.read();
     if (done) break;
-    if (got+value.length > build.bytes) throw new Error('Larger than the verified build.');
-    bytes.set(value,got); got += value.length; progress(got/build.bytes);
+    const take = Math.min(value.length,bytes.length-got);
+    bytes.set(value.subarray(0,take),got); got += take; progress(Math.min(1,got/build.bytes));
+    if (got === bytes.length) { await reader.cancel(); break; }
   }
-  if (got !== build.bytes) throw new Error('Smaller than the verified build.');
-  return bytes;
+  return bytes.subarray(0,got);
 }
 export const verified = async (bytes: Uint8Array,build: Build) => bytes.length === build.bytes && hex(await crypto.subtle.digest('SHA-256',bytes as Uint8Array<ArrayBuffer>)) === build.sha256;
 
@@ -88,7 +88,7 @@ export function player(host: Host,data: GameOutput,{ autostart }: { autostart: b
   host.onTeardown(() => { clearInterval(timer); frame?.remove(); });
 
   const mount = (html: string) => {
-    frame = h('iframe',{ title: `${game.title}, the game`,sandbox: 'allow-scripts allow-same-origin allow-pointer-lock',allow: 'fullscreen; gamepad',allowfullscreen: true,referrerpolicy: 'no-referrer' });
+    frame = h('iframe',{ title: `${game.title}, the game`,sandbox: 'allow-scripts allow-same-origin allow-pointer-lock',allow: 'fullscreen; gamepad',referrerpolicy: 'no-referrer' });
     stage.replaceChildren(frame);
     frame.srcdoc = html;
     frame.addEventListener('load',() => {
@@ -96,7 +96,7 @@ export function player(host: Host,data: GameOutput,{ autostart }: { autostart: b
       let ok = false;
       try { ok = frame!.contentWindow?.location.href === 'about:srcdoc'; } catch { /* blocked */ }
       if (!ok && frame!.dataset.written !== '1') {
-        const blank = h('iframe',{ title: `${game.title}, the game`,sandbox: 'allow-scripts allow-same-origin allow-pointer-lock',allow: 'fullscreen; gamepad',allowfullscreen: true,referrerpolicy: 'no-referrer','data-written': '1' });
+        const blank = h('iframe',{ title: `${game.title}, the game`,sandbox: 'allow-scripts allow-same-origin allow-pointer-lock',allow: 'fullscreen; gamepad',referrerpolicy: 'no-referrer','data-written': '1' });
         stage.replaceChildren(blank); frame = blank;
         const doc = blank.contentDocument!; doc.open(); doc.write(html); doc.close();
       }

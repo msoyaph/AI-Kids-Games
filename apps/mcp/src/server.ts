@@ -9,7 +9,7 @@ import type { CatalogGame } from './data/types';
 import { gameOutput,listOutput,parentOutput,type GameView } from './schemas';
 import { BUILD_TEMPLATE,BUILD_URI,WIDGET_MIME,WIDGET_URI } from './shared';
 import { argText,description,instructions,parentInfo,sourceLine,tools } from './text';
-import pkg from '../package.json';
+import pkg from '../package.json' with { type: 'json' };
 
 export interface ServerOptions {
   site: Site;

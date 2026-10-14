@@ -58,3 +58,8 @@ test('community games and the community kit run no game suites',() => {
   const kit = (version) => ({ ...base,'node_modules/@ai-kids-games/community-kit': { resolved: 'tooling/community-kit',link: true },'tooling/community-kit': { name: '@ai-kids-games/community-kit',version } });
   assert.deepEqual(lockfileGames(lock(kit('1.0.0')),lock(kit('1.0.1')),games),[]);
 });
+test('the MCP app (apps/mcp) runs no game suites: its own job checks it',() => {
+  assert.deepEqual(pick({ event: 'pull_request',changed: ['apps/mcp/src/server.ts','apps/mcp/package.json'],games }).games,[]);
+  const app = (version) => ({ ...base,'node_modules/@ai-kids-games/mcp': { resolved: 'apps/mcp',link: true },'apps/mcp': { name: '@ai-kids-games/mcp',version },'apps/mcp/node_modules/@modelcontextprotocol/core': { version } });
+  assert.deepEqual(lockfileGames(lock(app('0.1.0')),lock(app('0.2.0')),games),[]);
+});

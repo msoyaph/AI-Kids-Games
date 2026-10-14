@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "inspect": "tsx scripts/inspect.ts",
-    "refresh-egress": "tsx scripts/refresh-egress.ts"
+    "refresh-egress": "tsx scripts/refresh-egress.ts",
+    "harness": "tsx harness/run.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.2.0",

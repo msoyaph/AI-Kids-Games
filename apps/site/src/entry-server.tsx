@@ -19,10 +19,11 @@ import Guide from './pages/Guide';
 import Community from './pages/Community';
 import About from './pages/About';
 import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 import ListYourGame from './pages/ListYourGame';
 import NotFound from './pages/NotFound';
 
-const pages: Pages = { Home,Browse,Details,Play,Favorites,Parents,Faq,Guides,Guide,Community,About,Privacy,ListYourGame,NotFound };
+const pages: Pages = { Home,Browse,Details,Play,Favorites,Parents,Faq,Guides,Guide,Community,About,Privacy,Terms,ListYourGame,NotFound };
 
 export function renderPage(url: string) {
   return renderToString(<StaticRouter location={url}><PreferencesProvider><AppRoutes pages={pages} /><ExitGuard /></PreferencesProvider></StaticRouter>);

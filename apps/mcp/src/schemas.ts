@@ -12,7 +12,7 @@ export const gameSchema = z.object({
   slug: z.string(),title: z.string(),tagline: z.string(),pitch: z.string(),
   ages: z.string().describe('Suggested ages, e.g. "6+" or "10–14".'),minAge: z.number(),
   genres: z.array(z.string()),devices: z.array(z.string()),controls: z.array(z.string()),moods: z.array(z.string()),
-  sessionMinutes: z.tuple([z.number(),z.number()]).optional().describe('One sitting, [shortest, longest] minutes.'),
+  sessionMinutes: z.array(z.number()).length(2).optional().describe('One sitting, [shortest, longest] minutes.'),
   playTime: z.string(),contentNotes: z.string(),quickStart: z.array(z.string()),
   embed: z.enum(['inline','fullscreen','site']).describe('How it plays here: inline, fullscreen, or only on the website.'),
   url: z.string().describe('The game\'s page on the website. Share this link.'),cover: z.string(),logo: z.string().optional(),

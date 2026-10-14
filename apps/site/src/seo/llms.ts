@@ -30,6 +30,7 @@ ${communitySection(origin,community)}
 - [Parent FAQ](${origin}/faq): free, no ads or purchases, what data is collected (none), ages, devices and offline play.
 - [For parents](${origin}/parents): age guidance, content notes and controls for every game.
 - [Privacy](${origin}/privacy): no accounts, ads, analytics or tracking; saves stay on the device.
+- [Terms of use](${origin}/terms): free to play; open-source code under the MIT License; the name and logo are ours.
 
 ## Guides
 

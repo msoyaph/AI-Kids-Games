@@ -29,6 +29,10 @@ export function faq(games: Game[]): Question[] {
       { p: 'Game progress, settings, favorites and recently played are saved in your browser’s storage on this device. They are never sent to us.' },
       { p: 'Like any website, our host (Vercel) processes standard request data, such as IP addresses, to deliver the pages and keep them secure. We don’t use it to identify or track anyone. The details are on the [privacy page](/privacy).' }
     ] },
+    { id: 'assistants',question: 'Can I use AI Kids Games in ChatGPT or Claude?',answer: [
+      { p: 'Yes. The AI Kids Games app lets an AI assistant find a game by age, kind of game, device, time or mood, show it as a card with its ages and content notes, and let you try it together in the chat.' },
+      { p: 'Those assistants are for teens and adults, so the app is for parents and caregivers. It receives only the choices you make there, never your conversation, and it sets no cookies. Progress made in the chat may not be saved; play on the website to keep it. The details are on the [privacy page](/privacy).' }
+    ] },
     { id: 'chat',question: 'Can strangers contact my child?',answer: [
       { p: 'No. There is no chat, messaging, comments, uploading or online multiplayer, so no one can reach your child through the site or the games.' },
       { p: 'Any link that leaves the site asks a grown-up first.' }
