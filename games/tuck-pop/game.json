@@ -63,6 +63,15 @@
   "orientation": "any",
   "requirements": [],
   "playTime": "A few minutes a game, plus 60 Adventure levels",
+  "sessionMinutes": [
+    3,
+    10
+  ],
+  "moods": [
+    "calm",
+    "brainy"
+  ],
+  "embed": "inline",
   "storage": {
     "prefix": "tuckpop.",
     "keys": [

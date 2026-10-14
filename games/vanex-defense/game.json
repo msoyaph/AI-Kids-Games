@@ -70,6 +70,15 @@
   "orientation": "any",
   "requirements": [],
   "playTime": "15–25 minutes per sector; 8–12 hours for the campaign",
+  "sessionMinutes": [
+    15,
+    25
+  ],
+  "moods": [
+    "exciting",
+    "brainy"
+  ],
+  "embed": "fullscreen",
   "storage": {
     "prefix": "vanex-defense-",
     "keys": [
