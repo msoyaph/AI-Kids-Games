@@ -184,7 +184,7 @@ function boot() {
     overlay: (o: Overlay) => { if (o !== 'off' && !town.flags.openedMaps) { town.flags.openedMaps = 1; dirty = true; } view.setOverlay(o, sim.census, settings.colorblind, sim.traffic); },
   });
   const story = new StoryFlow({
-    town: () => town, sim: () => sim, panels, say, readAloud: () => settings.readAloud,
+    town: () => town, sim: () => sim, panels, say, readAloud: () => settings.readAloud, hints: () => settings.hints && !capture,
     openCreative: () => { if (!settings.creative) { settings.creative = true; if (!capture) saveSettings(settings); } },
     changed: () => { dirty = true; refreshTools(); },
     festival: () => festival(),

@@ -43,7 +43,7 @@ async function pushIn(ctx: TakeContext, x: number, y: number, ticks: number, eve
 
 // Town times (a day is 480 s, a season 5 days, spring first): summer midday, a summer evening just
 // before dusk (for the time-lapse), a summer night, a winter afternoon, an autumn day, spring.
-const SUMMER = 6 * 480 + 200, DUSK = 6 * 480 + 330, NIGHT = 6 * 480 + 458, WINTER = 16 * 480 + 260, AUTUMN = 11 * 480 + 220, SPRING = 2 * 480 + 200;
+const SUMMER = 6 * 480 + 200, DUSK = 6 * 480 + 290, NIGHT = 6 * 480 + 458, WINTER = 16 * 480 + 260, AUTUMN = 11 * 480 + 220, SPRING = 2 * 480 + 200;
 const show = (q: string) => `?scene=showcase&seed=7&hud=0&${q}`;
 
 const PHONE: Device = { width: 844, height: 390, scale: 2, touch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' };
@@ -125,7 +125,7 @@ export const scenario: Scenario = {
     {
       // a time-lapse: the afternoon turns to dusk and night, windows and lamps light up, the lighthouse sweeps the bay
       id: 'timelapse',
-      query: show(`x=40&z=12&zoom=70&t=${DUSK}&speed=40`),
+      query: show(`x=40&z=12&zoom=70&t=${DUSK}&speed=20`),
       async setup(ctx) { await ready(ctx); },
       async act(ctx) { await ctx.cut(); await ctx.wait(6500); },
     },

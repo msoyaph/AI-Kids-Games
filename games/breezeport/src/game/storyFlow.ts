@@ -23,6 +23,8 @@ export interface StoryDeps {
   panels: Panels;
   say(text: string): void;
   readAloud(): boolean;
+  /** Settings → Hints (off in captures). */
+  hints(): boolean;
   /** Chapter 1 is done: Creative mode opens for every slot. */
   openCreative(): void;
   changed(): void;
@@ -93,7 +95,7 @@ export class StoryFlow {
     // the stall hint
     const key = currentGoals(t).map(g => { const p = progress(t, s.census, s.trips, g); return `${g.id}:${Math.round(p.value)}`; }).join(',');
     if (key !== this.lastProgress) { this.lastProgress = key; this.stallSince = t.t; this.nextHintAt = 150; }
-    else if (t.t - this.stallSince > this.nextHintAt) {
+    else if (t.t - this.stallSince > this.nextHintAt && this.d.hints()) {
       this.nextHintAt += 240;
       const g = currentGoals(t).find(x => !progress(t, s.census, s.trips, x).done);
       if (g) this.d.say(`A little hint: ${g.hint ?? goalHint(g)}`);
