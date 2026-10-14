@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.5.0",
+  "release": "2.7.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.5.0",
+    "release": "2.7.0",
     "date": "2026-10-13",
     "approvedBy": "Owner",
-    "scope": "SEO and AI search (PR #15): every page prerendered with its real words, structured data (typed JSON-LD, FAQPage, VideoObject, Organization sameAs), the Parent FAQ, three guides, a Safety and privacy section on every game page, llms.txt, IndexNow, consistent \"AI Kids Games\" branding, and the new logo, favicons and share images. Community games (PR #17): anyone can submit a kid-safe game in community/<slug>/ (source only); npm run check-submission; fork-safe CI (scope, DCO, owner-only approval fields); the owner's review kit; a separate play origin per game (Vercel project ai-kids-games-play, aikg-<slug>.vercel.app); the Community page and shelf (hidden until the owner approves a game), the submission guide, SUBMITTING.md and MODERATION.md. Also the 2.4.1 production record (PR #14). All seven games stay at their current versions: their projects have no newer finished versions (Agentmon is not for release).",
-    "note": "Owner wrote, with the community games brief (after the SEO brief): \"Once done and complete, update everything including all the games to live production.\" Guard: scripts/check-deployment.ts needs this record for 2.5.0, a passing localSuites record for 2.5.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.5.0 in the Production environment of both Vercel projects (ai-kids-games and ai-kids-games-play, whose production build runs the same guard), and a build from main."
+    "scope": "Agentmon, the eighth game (PR #16, which carries PR #13): a creature-befriending pixel RPG for ages 7 to 12, at version 1.1.0: 77 original Agentmon to befriend with a timing or mood game, gentle turn-based sparring, six puzzle Trials, the post-game Banyan Hollow, and pet care at the Agent Base (pet, snacks, Bubble Catch, 12 earned accessories). One self-contained 1,130 KB file; saves only under agentmon. keys (storage audit clean); no ads, purchases, chat, accounts or network. The listing (Ready to play, order 8, not featured), the RPG category, previews, cover, logo and OG image. All other games stay at their current versions.",
+    "note": "Owner wrote: \"Upload the game to the live Production https://ai-kids-games-fawn.vercel.app/\" (after Agentmon 1.0 and 1.1 were built and their PRs opened with \"I'll play it first and then approve\"). Released after 2.6.0 (PR #21, the trailers), so this is 2.7.0. Guard: scripts/check-deployment.ts needs this record for 2.7.0, a passing localSuites record for 2.7.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.7.0 in the Production environment of both Vercel projects (ai-kids-games and ai-kids-games-play), and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
@@ -297,8 +297,8 @@
     }
   ],
   "localSuites": {
-    "release": "2.5.0",
-    "commit": "16e3637",
+    "release": "2.7.0",
+    "commit": "3db0970",
     "suites": [
       {
         "game": "space-sky",
@@ -309,18 +309,18 @@
         "failed": 0,
         "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-13T19:32:12.574Z"
+        "ranAt": "2026-10-14T00:46:13.186Z"
       },
       {
         "game": "light-crossing",
         "version": "2.0.0",
         "inputsSha256": "0d32ecc81e1e11c1d80b41619c3eef1516fac32b7b7d42f09a283f0197922232",
         "command": "npx playwright test --reporter=list,json --workers=2 --retries=1",
-        "passed": 190,
+        "passed": 191,
         "failed": 0,
-        "flaky": 1,
+        "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-13T20:21:04.181Z"
+        "ranAt": "2026-10-14T00:43:32.402Z"
       }
     ]
   }

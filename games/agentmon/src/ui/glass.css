@@ -1,0 +1,126 @@
+/*
+ * Glass touch controls, adapted from TheaBonk (games/theabonk/src/ui/glass.css) so the family of
+ * games feels the same: the same layered "fake glass" (no backdrop blur, which costs frames on
+ * phones), the same floating stick and bead. Agentmon uses one stick, big A and B buttons and a
+ * Menu button.
+ */
+.glass-ui {
+  --g-o: 1;
+  --g-tint: 42, 33, 64;
+  --g-a: 0.34;
+  --g-rim: 255, 248, 236;
+  --g-b: clamp(112px, 30vmin, 168px);
+  --g-ab: max(64px, calc(var(--g-b) * 0.56));
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.glass-ui.hidden { display: none; }
+.glass-ui[data-size='s'] { --g-b: clamp(96px, 24vmin, 140px); }
+.glass-ui[data-size='l'] { --g-b: clamp(128px, 36vmin, 196px); }
+.glass-ui.hc { --g-a: 0.62; --g-tint: 12, 8, 24; }
+
+.glass { position: absolute; border-radius: 50%; isolation: isolate; }
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  opacity: var(--g-o);
+  background:
+    radial-gradient(90% 70% at 32% 16%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.03) 72%),
+    rgba(var(--g-tint), var(--g-a));
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.6),
+    inset 0 0 0 1.5px rgba(var(--g-rim), 0.42),
+    inset 0 0 18px rgba(var(--g-rim), 0.14),
+    0 0 0 1px rgba(16, 10, 32, 0.42),
+    0 6px 16px rgba(12, 8, 24, 0.32);
+}
+
+/* the stick's thumb zone: the left part of the screen below the top bar */
+.tzone { position: absolute; left: 0; bottom: 0; pointer-events: auto; touch-action: none; }
+
+.gstick {
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  width: var(--g-b);
+  height: var(--g-b);
+  margin: calc(var(--g-b) / -2) 0 0 calc(var(--g-b) / -2);
+  transform: translate3d(var(--sx, -999px), var(--sy, -999px), 0);
+  will-change: transform;
+}
+.gstick.idle { --g-o: 0.6; }
+.gstick-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0;
+  background: conic-gradient(from -44deg, rgba(255, 255, 255, 0.25) 0deg, #fff 22deg 66deg, rgba(255, 255, 255, 0.25) 88deg, transparent 88deg 360deg);
+  transform: rotate(var(--ang, 0deg));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7.5px), #000 calc(100% - 7px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 7.5px), #000 calc(100% - 7px));
+}
+.gstick.active .gstick-ring { opacity: var(--mag, 0); }
+.gstick-knob {
+  left: 50%;
+  top: 50%;
+  width: 44%;
+  height: 44%;
+  margin: -22% 0 0 -22%;
+  transform: translate3d(var(--kx, 0px), var(--ky, 0px), 0);
+  will-change: transform;
+}
+.gstick-knob.back { transition: transform 0.16s cubic-bezier(0.3, 1.5, 0.55, 1); }
+.gstick-knob::after {
+  background: radial-gradient(farthest-side at 50% 62%, rgba(var(--g-rim), 0.4), rgba(var(--g-rim), 0.18) 58%, rgba(var(--g-tint), 0.6) 100%);
+  box-shadow: inset 0 -6px 10px rgba(12, 8, 24, 0.32), inset 0 0 0 1.5px rgba(255, 255, 255, 0.65), 0 0 0 1px rgba(16, 10, 32, 0.45), 0 5px 10px rgba(8, 4, 18, 0.38);
+}
+.gstick-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(42% 36% at 38% 30%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.38) 38%, rgba(255, 255, 255, 0) 72%);
+}
+
+.gbtn {
+  --d: var(--g-ab);
+  width: var(--d);
+  height: var(--d);
+  margin: calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
+  left: var(--x, 0px);
+  top: var(--y, 0px);
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  min-width: 48px;
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  color: rgb(var(--g-rim));
+  font: 900 max(16px, calc(var(--d) * 0.34)) / 1 ui-rounded, system-ui, sans-serif;
+  text-shadow: 0 1px 2px rgba(10, 6, 20, 0.75);
+  pointer-events: auto;
+  touch-action: none;
+  cursor: pointer;
+  transition: transform 0.08s ease-out;
+}
+.gbtn:active, .gbtn.down { transform: scale(0.92); }
+.gbtn.down::after { background: radial-gradient(90% 70% at 32% 16%, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 62%), rgba(var(--g-rim), 0.45); }
+.gbtn-a { --g-tint: 70, 110, 60; }
+.gbtn-b { --d: calc(var(--g-ab) * 0.82); --g-tint: 110, 60, 70; }
+.gbtn-menu { --d: 52px; border-radius: 16px; font-size: 13px; letter-spacing: 0.04em; }
+.gbtn-menu::after { border-radius: 16px; }
+.gbtn small { display: block; font-size: 10px; font-weight: 800; opacity: 0.9; letter-spacing: 0.06em; }
+
+.reduced-motion .gstick-knob.back { transition: none; }

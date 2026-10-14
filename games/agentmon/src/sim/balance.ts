@@ -1,0 +1,132 @@
+/**
+ * The balance simulation: thousands of AI-vs-AI spars, measuring win rates by Agentmon, by
+ * element and by move. Used by tests/sim/balance.test.ts (bounds) and writes reports/balance.md.
+ */
+import { makeCreature } from '../core/creature';
+import { Rng } from '../core/rng';
+import type { BattleDex, Creature, Element, Species } from '../core/types';
+import { runBattle } from './battle-runner';
+
+export interface Tally { wins: number; games: number }
+const rate = (t: Tally) => (t.games ? t.wins / t.games : 0);
+
+export interface BalanceReport {
+  battles: number;
+  stalemates: number;
+  avgTurns: number;
+  /** 1-vs-1 win rate by species, within its own growth stage. */
+  species: Record<string, Tally>;
+  /** Win rate by element (all 1-vs-1 spars). */
+  elements: Record<string, Tally>;
+  /** 3-vs-3 team spars: win rate of teams containing each species. */
+  teams: Record<string, Tally>;
+  /** Each attack move's share of all attack picks, and its "picked when usable" share. */
+  moves: Record<string, { picks: number; share: number }>;
+}
+
+const STAGE_LEVEL: Record<number, number> = { 1: 14, 2: 28, 3: 45 };
+
+function fresh(dex: BattleDex, s: Species, level: number, rng: Rng): Creature {
+  return makeCreature(dex, { species: s.id, level, personality: 'curious' }, rng);
+}
+
+export function simulateBalance(dex: BattleDex, opts: { seedsPerPair: number; teamBattles: number; seed?: number }): BalanceReport {
+  const rng = new Rng(opts.seed ?? 2026);
+  const all = Object.values(dex.species).filter(s => !s.guardian);
+  const report: BalanceReport = { battles: 0, stalemates: 0, avgTurns: 0, species: {}, elements: {}, teams: {}, moves: {} };
+  const tally = (rec: Record<string, Tally>, key: string, win: boolean) => {
+    const t = (rec[key] ??= { wins: 0, games: 0 });
+    t.games++;
+    if (win) t.wins++;
+  };
+  let turns = 0;
+  const picks = new Map<string, number>();
+  const addPicks = (m: Map<string, number>) => { for (const [k, v] of m) if (!k.startsWith(':')) picks.set(k, (picks.get(k) ?? 0) + v); };
+
+  for (const stage of [1, 2, 3]) {
+    const group = all.filter(s => s.stage === stage);
+    const level = STAGE_LEVEL[stage]!;
+    for (const a of group) for (const b of group) {
+      if (a.id === b.id) continue;
+      for (let i = 0; i < opts.seedsPerPair; i++) {
+        const seed = rng.int(2 ** 31);
+        const r = runBattle(dex, { kind: 'trainer', player: [fresh(dex, a, level, rng)], foe: [fresh(dex, b, level, rng)], difficulty: 'normal', playerAi: 'normal', foeAi: 'normal', seed });
+        report.battles++;
+        turns += r.turns;
+        if (r.outcome !== 'won' && r.outcome !== 'lost') { report.stalemates++; continue; }
+        const aWon = r.outcome === 'won';
+        tally(report.species, a.id, aWon);
+        tally(report.species, b.id, !aWon);
+        tally(report.elements, a.element, aWon);
+        tally(report.elements, b.element, !aWon);
+        addPicks(r.picks[0]);
+        addPicks(r.picks[1]);
+      }
+    }
+  }
+
+  const finals = all.filter(s => s.stage === 3);
+  for (let i = 0; i < opts.teamBattles; i++) {
+    const pickTeam = () => rng.shuffle([...finals]).slice(0, 3);
+    const ta = pickTeam(), tb = pickTeam();
+    const seed = rng.int(2 ** 31);
+    const r = runBattle(dex, { kind: 'trainer', player: ta.map(s => fresh(dex, s, 45, rng)), foe: tb.map(s => fresh(dex, s, 45, rng)), difficulty: 'normal', playerAi: 'hard', foeAi: 'hard', seed });
+    report.battles++;
+    turns += r.turns;
+    if (r.outcome !== 'won' && r.outcome !== 'lost') { report.stalemates++; continue; }
+    for (const s of ta) tally(report.teams, s.id, r.outcome === 'won');
+    for (const s of tb) tally(report.teams, s.id, r.outcome === 'lost');
+    addPicks(r.picks[0]);
+    addPicks(r.picks[1]);
+  }
+
+  report.avgTurns = turns / Math.max(1, report.battles);
+  const attackPicks = [...picks.entries()].filter(([id]) => (dex.moves[id]?.power ?? 0) > 0);
+  const totalAttack = attackPicks.reduce((sum, [, v]) => sum + v, 0);
+  for (const [id, v] of picks) report.moves[id] = { picks: v, share: (dex.moves[id]?.power ?? 0) > 0 ? v / Math.max(1, totalAttack) : 0 };
+  return report;
+}
+
+export function elementRates(r: BalanceReport): Record<Element, number> {
+  return Object.fromEntries(Object.entries(r.elements).map(([k, t]) => [k, rate(t)])) as Record<Element, number>;
+}
+
+export function speciesRates(r: BalanceReport): Record<string, number> {
+  return Object.fromEntries(Object.entries(r.species).map(([k, t]) => [k, rate(t)]));
+}
+
+export function teamRates(r: BalanceReport): Record<string, number> {
+  return Object.fromEntries(Object.entries(r.teams).map(([k, t]) => [k, rate(t)]));
+}
+
+export function balanceMarkdown(r: BalanceReport, dex: BattleDex): string {
+  const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
+  const sp = speciesRates(r), el = elementRates(r), tm = teamRates(r);
+  const lines = [
+    '# Agentmon balance report',
+    '',
+    `Generated by \`npm run test:sim\` (tests/sim/balance.test.ts). ${r.battles} AI-vs-AI spars, ${r.stalemates} stalemates, ${r.avgTurns.toFixed(1)} turns on average.`,
+    '',
+    '## Elements (1-vs-1, all stages)',
+    '',
+    '| Element | Win rate |',
+    '|---|---|',
+    ...Object.entries(el).sort((a, b) => b[1] - a[1]).map(([e, v]) => `| ${e} | ${pct(v)} |`),
+    '',
+    '## Agentmon (1-vs-1 within each growth stage; 3-vs-3 teams of third stages)',
+    '',
+    '| # | Agentmon | Stage | Element | 1-vs-1 | Teams |',
+    '|---|---|---|---|---|---|',
+    ...Object.values(dex.species).filter(s => !s.guardian).sort((a, b) => a.num - b.num)
+      .map(s => `| ${s.num} | ${s.name} | ${s.stage} | ${s.element} | ${pct(sp[s.id] ?? 0)} | ${tm[s.id] !== undefined ? pct(tm[s.id]!) : '—'} |`),
+    '',
+    '## Most picked attack moves (share of all attack picks)',
+    '',
+    '| Move | Element | Power | Cost | Share |',
+    '|---|---|---|---|---|',
+    ...Object.entries(r.moves).filter(([, m]) => m.share > 0).sort((a, b) => b[1].share - a[1].share).slice(0, 15)
+      .map(([id, m]) => { const mv = dex.moves[id]!; return `| ${mv.name} | ${mv.element} | ${mv.power} | ${mv.cost} | ${pct(m.share)} |`; }),
+    '',
+  ];
+  return lines.join('\n');
+}

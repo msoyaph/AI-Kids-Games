@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Agentmon cover: a Field Agent and the three partners on the cliff above Saltwhistle at dusk, the Lighthouse Beacon shining again and the static fog drifting away. Colors from the game (art/palette.ts, creatures.ts, props.ts). Safe area: top 22% and side 6% are background only. Spinnet bobs in cover-bob.svg; sparkles twinkle in cover-twinkle.svg. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2f6b"/>
+      <stop offset=".45" stop-color="#8f6fbd"/>
+      <stop offset=".8" stop-color="#f5a8b8"/>
+      <stop offset="1" stop-color="#ffd6a8"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5f9fe0"/>
+      <stop offset="1" stop-color="#2f6fc0"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#fff3b0" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#fff3b0" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="aurora" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7ef0c8" stop-opacity="0"/>
+      <stop offset=".3" stop-color="#7ef0c8" stop-opacity=".45"/>
+      <stop offset=".65" stop-color="#ff9ad8" stop-opacity=".4"/>
+      <stop offset="1" stop-color="#ffd86b" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6c8"/><stop offset=".35" stop-color="#ffd86b" stop-opacity=".75"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient>
+    <radialGradient id="fog" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#cfc6e6" stop-opacity=".55"/><stop offset="1" stop-color="#cfc6e6" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <!-- aurora ribbons, high in the sky -->
+  <path d="M60 120C360 40 620 170 900 90s520-40 660 30v60c-180-60-420-20-640 50S330 210 60 190z" fill="url(#aurora)"/>
+  <path d="M180 60C460 10 700 110 980 40s420 0 560 50v30c-170-40-360-20-560 40S420 100 180 100z" fill="url(#aurora)" opacity=".6"/>
+  <!-- the sea, far below -->
+  <rect y="520" width="1600" height="380" fill="url(#sea)"/>
+  <path d="M0 560h380l-120 24zM520 548h300l-100 18zM140 640l260-16-90 34zM1380 600l220-14v30z" fill="#a8dcff" opacity=".55"/>
+  <!-- fog drifting away to the left -->
+  <ellipse cx="180" cy="470" rx="260" ry="90" fill="url(#fog)"/>
+  <ellipse cx="420" cy="520" rx="220" ry="70" fill="url(#fog)" opacity=".7"/>
+  <!-- the lighthouse on its little island, the Beacon lit -->
+  <path d="M1040 560 1120 512h180l70 48z" fill="#e0b878"/><path d="M1060 556 1124 516h170l56 40z" fill="#f0d098"/>
+  <path d="M1210 330 70 250v190z" fill="url(#beam)" opacity=".85"/>
+  <circle cx="1210" cy="330" r="96" fill="url(#glow)"/>
+  <g>
+    <path d="M1172 520h76l-10-46h-56z" fill="#d9604f"/><path d="M1182 474h56l-8-48h-40z" fill="#fff8ee"/><path d="M1190 426h40l-6-44h-28z" fill="#d9604f"/><path d="M1196 382h28l-4-30h-20z" fill="#fff8ee"/>
+    <path d="M1210 520h38l-10-46-8-48-6-44-4-30h-10z" fill="#000" opacity=".1"/>
+    <rect x="1186" y="344" width="48" height="12" rx="3" fill="#4a4a5a"/><rect x="1192" y="312" width="36" height="32" rx="4" fill="#ffd86b"/><rect x="1192" y="312" width="18" height="32" fill="#fff3b0"/>
+    <path d="M1186 314l24-32 24 32z" fill="#d9604f"/><path d="M1210 282l24 32h-24z" fill="#b84a3c"/>
+  </g>
+  <!-- the cliff top, grass and a sandy path -->
+  <path d="M0 700C220 650 420 640 640 652s520 10 700-10 260-8 260-8v266H0z" fill="#3f9a4f"/>
+  <path d="M0 720C230 674 430 664 650 676s520 8 700-12 250-6 250-6v242H0z" fill="#5cb85f"/>
+  <path d="M0 720C230 674 430 664 650 676l-120 40C330 700 160 720 0 760z" fill="#74c868"/>
+  <path d="M560 900 700 700h150L960 900z" fill="#e8c890"/><path d="M560 900 700 700h70l-40 200z" fill="#f2d8a8"/>
+  <path d="M120 760l14-22 14 22zM300 730l12-20 12 20zM1380 760l14-22 14 22zM1500 730l12-20 12 20zM1080 780l14-22 14 22z" fill="#2f7a3e"/>
+  <!-- Druzling, sitting on the left: a sandy rock with a crystal window -->
+  <ellipse cx="560" cy="842" rx="80" ry="14" fill="#2a4a2a" opacity=".3"/>
+  <g>
+    <path d="M490 836c-14-70 20-118 72-122s92 38 80 120z" fill="#c9a06a"/><path d="M490 836c-14-70 20-118 72-122l-12 122z" fill="#ddb880"/>
+    <ellipse cx="566" cy="796" rx="34" ry="26" fill="#6a3f9a"/><path d="M540 796l14-20 22 2 16 18-14 18h-24z" fill="#a97ae8"/><path d="M554 776l22 2-12 18z" fill="#d6b8ff"/>
+    <circle cx="540" cy="752" r="7" fill="#2a1f3d"/><circle cx="586" cy="752" r="7" fill="#2a1f3d"/><circle cx="542" cy="749" r="2.5" fill="#fff"/><circle cx="588" cy="749" r="2.5" fill="#fff"/>
+    <ellipse cx="528" cy="768" rx="9" ry="5" fill="#ff9aa5" opacity=".6"/><ellipse cx="600" cy="768" rx="9" ry="5" fill="#ff9aa5" opacity=".6"/>
+  </g>
+  <!-- Buzzbill on the right: a brown pup with a yellow zigzag bill -->
+  <ellipse cx="1000" cy="846" rx="84" ry="14" fill="#2a4a2a" opacity=".3"/>
+  <g>
+    <path d="M1056 830c40 6 70-6 80-26-30 6-56 4-80-6z" fill="#6a4a30"/>
+    <ellipse cx="1000" cy="800" rx="70" ry="48" fill="#8a5a3a"/><path d="M930 800a70 48 0 0 1 70-48v96a70 48 0 0 1-70-48z" fill="#a06a44"/>
+    <ellipse cx="1004" cy="818" rx="40" ry="22" fill="#c48a5a"/>
+    <path d="M948 786c-28-10-62-10-82-2-10 4-10 14-2 18l10 3-8 7 10 6-6 7c22 8 54 6 80-6z" fill="#e0a820"/>
+    <path d="M948 786c-28-10-62-10-82-2-10 4-10 14-2 18l10 3c26-6 52-8 74-6z" fill="#f5c830"/><path d="M948 786c-26-8-54-8-74-2 22-2 48 0 70 6z" fill="#ffe27a"/>
+    <circle cx="966" cy="770" r="7" fill="#2a1f3d"/><circle cx="1002" cy="768" r="7" fill="#2a1f3d"/><circle cx="968" cy="767" r="2.5" fill="#fff"/><circle cx="1004" cy="765" r="2.5" fill="#fff"/>
+    <rect x="958" y="836" width="18" height="16" rx="6" fill="#6a4a30"/><rect x="1018" y="836" width="18" height="16" rx="6" fill="#6a4a30"/>
+  </g>
+  <!-- the Field Agent, waving -->
+  <ellipse cx="780" cy="856" rx="70" ry="14" fill="#2a4a2a" opacity=".35"/>
+  <g>
+    <rect x="752" y="784" width="22" height="66" rx="9" fill="#3a3a5a"/><rect x="784" y="784" width="22" height="66" rx="9" fill="#3a3a5a"/>
+    <rect x="746" y="840" width="32" height="16" rx="6" fill="#fff8ee"/><rect x="780" y="840" width="32" height="16" rx="6" fill="#fff8ee"/>
+    <path d="M734 666h92l16 128H718z" fill="#3f7fd0"/><path d="M734 666h46v128h-62z" fill="#5f9fe8"/>
+    <path d="M778 666v128" stroke="#2f5fa8" stroke-width="5"/><rect x="740" y="700" width="20" height="14" rx="3" fill="#ffd86b"/>
+    <path d="M826 682l52-60" stroke="#3f7fd0" stroke-width="24" stroke-linecap="round"/><circle cx="884" cy="614" r="15" fill="#f2c8a0"/>
+    <path d="M736 684 712 752" stroke="#5f9fe8" stroke-width="24" stroke-linecap="round"/><circle cx="708" cy="760" r="14" fill="#e8b890"/>
+    <circle cx="780" cy="612" r="62" fill="#f2c8a0"/>
+    <path d="M718 606a62 62 0 0 1 124 0c-16-14-34-20-62-20s-46 6-62 20z" fill="#5a3a24"/><path d="M718 606a62 62 0 0 1 62-62v42c-28 0-46 6-62 20z" fill="#6f4a2e"/>
+    <path d="M716 604c-4 14-2 26 4 36l12-10c-4-8-4-18-2-26zM844 604c4 14 2 26-4 36l-12-10c4-8 4-18 2-26z" fill="#4a2e1c"/>
+    <circle cx="760" cy="622" r="8" fill="#2a1f3d"/><circle cx="800" cy="622" r="8" fill="#2a1f3d"/><circle cx="762" cy="619" r="3" fill="#fff"/><circle cx="802" cy="619" r="3" fill="#fff"/>
+    <ellipse cx="744" cy="642" rx="11" ry="6" fill="#ff9aa5" opacity=".6"/><ellipse cx="816" cy="642" rx="11" ry="6" fill="#ff9aa5" opacity=".6"/>
+    <path d="M770 646q10 9 20 0" fill="none" stroke="#2a1f3d" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>
