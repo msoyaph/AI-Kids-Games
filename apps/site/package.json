@@ -14,7 +14,9 @@
     "lighthouse": "tsx scripts/lighthouse.ts",
     "indexnow": "tsx scripts/indexnow.ts",
     "page-weight": "tsx scripts/page-weight.ts",
-    "review-screens": "tsx scripts/review-screens.ts"
+    "review-screens": "tsx scripts/review-screens.ts",
+    "test:smoke": "tsx scripts/smoke.ts",
+    "plays": "tsx scripts/plays.ts"
   },
   "dependencies": {
     "react": "^19.2.0",

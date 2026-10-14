@@ -7,3 +7,4 @@ test-results/
 *.tar.gz
 .vercel
 captures/
+plays-history.csv
