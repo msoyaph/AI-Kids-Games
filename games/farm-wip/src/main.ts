@@ -1,132 +1,357 @@
 import './style.css';
 import { GAME } from './config';
-import { newGame, step, STEP, timeLeft, WORLD, type State, type Vec } from './sim';
-import { draw, resize } from './render';
-import { direction, listen, padConfirm } from './input';
-import { load, persistent, save, type Save } from './storage';
-import { audioState, ting, unlock } from './audio';
+import { audio, sfx } from './audio/engine';
+import { CROPS } from './data/crops';
+import { xpForLevel } from './data/tuning';
+import { Play } from './game/play';
+import { Controller } from './input/controller';
+import type { TileRef } from './input/pick';
+import { YAW_STEP, ZOOM } from './render/camera';
+import { onLockedLand } from './render/objects';
+import { Governor, guessTier, isSoftwareRenderer, urlTier, type QualityTier } from './render/quality';
+import { FarmView } from './render/view';
+import { loadFarm, saveFarm } from './save/save';
+import { loadSettings, saveSettings, type Settings } from './save/settings';
+import { persistent } from './save/storage';
+import { seasonName, seasonOf, type Season } from './sim/clock';
+import { newFarm, type Farm } from './sim/state';
+import { advance, catchUp, type SimEvent } from './sim/tick';
+import { levelOf } from './sim/world';
+import { h } from './ui/h';
+import { Hud } from './ui/hud';
+import { icon } from './ui/icons';
+import { Panels } from './ui/panels';
+import { settingsPanel } from './ui/settingsPanel';
+import { speak, stopSpeaking } from './ui/speech';
 
-type Screen = 'title' | 'play' | 'paused' | 'results';
+declare global { interface Window { __noWebGL2?: boolean } }
 
 /**
- * Capture route: ?scene=title|play|results (and optionally &seed=N) shows a fixed, good-looking
- * moment for the website's previews and screenshots. In capture mode the firefly flies itself
- * and nothing is ever saved, so captures never touch a player's progress.
+ * Capture route for the website's previews and screenshots: ?scene=title|farm (and &seed=N, &t=
+ * seconds of farm time, &yaw=0..7, &zoom=px per tile, &x= &z= camera target). It shows a staged farm
+ * in memory and never reads or writes the player's save.
  */
 const params = new URLSearchParams(location.search);
-const scene = params.get('scene') as Screen | null;
+const scene = params.get('scene');
 const capture = scene !== null;
-const seedFrom = () => Number(params.get('seed')) || (capture ? 7 : Math.floor(Math.random() * 1e6));
-/** ?seconds=N makes a shorter (or longer) round, for tests and for trying things out. */
-const duration = Math.min(600, Math.max(3, Number(params.get('seconds')) || 60));
+const num = (k: string) => (params.has(k) && Number.isFinite(Number(params.get(k))) ? Number(params.get(k)) : null);
+/** ?speed=N runs farm time N times faster (1–120): for tests and trying things out. */
+const speed = Math.min(120, Math.max(1, num('speed') ?? 1));
 
-const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
-const canvas = $<HTMLCanvasElement>('#game');
-const ctx = canvas.getContext('2d')!;
-const screens = { title: $('#title'), paused: $('#paused'), results: $('#results') };
-const hud = $('#hud'), soundButton = $<HTMLButtonElement>('#sound');
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 
-let data: Save = capture ? { v: 2, best: 0, plays: 0, sound: true } : load();
-let state: State = newGame(seedFrom(), duration);
-let screen: Screen = 'title';
-let combo = 0, comboUntil = 0;
-
-function show(next: Screen) {
-  screen = next;
-  for (const [name, el] of Object.entries(screens)) el.hidden = name !== next;
-  hud.hidden = next === 'title';
-  $('#best').textContent = String(data.best);
-  $('#final').textContent = String(state.score);
-  soundButton.textContent = `Sound: ${data.sound ? 'on' : 'off'}`;
-  soundButton.setAttribute('aria-pressed', String(data.sound));
-  $('#storage-note').hidden = capture || persistent();
-  const focus = next === 'title' ? '#play' : next === 'paused' ? '#resume' : next === 'results' ? '#again' : null;
-  if (focus) $(focus).focus();
-}
-
-function start() {
-  unlock();
-  state = newGame(seedFrom(), duration);
-  combo = 0;
-  show('play');
-}
-
-function finish() {
-  if (!capture) {
-    data = { ...data, best: Math.max(data.best, state.score), plays: data.plays + 1 };
-    save(data);
+function boot() {
+  const canvas = $<HTMLCanvasElement>('#farm');
+  const uiRoot = $('#ui');
+  const settings: Settings = loadSettings();
+  const loaded = capture ? null : loadFarm();
+  const farm: Farm = loaded && loaded.status !== 'future' ? loaded.farm : newFarm(capture ? num('seed') ?? 7 : Math.floor(Math.random() * 2 ** 31));
+  const futureSave = loaded?.status === 'future';
+  if (capture) {
+    farm.t = num('t') ?? farm.t;
+    farm.cam = { x: num('x') ?? farm.cam.x, z: num('z') ?? farm.cam.z, yawStep: num('yaw') ?? 0, zoom: num('zoom') ?? ZOOM.default };
   }
-  show('results');
-}
 
-const pause = () => { if (screen === 'play') show('paused'); };
-const resume = () => { unlock(); if (screen === 'paused') show('play'); };
+  // quality: the URL, then Settings, then a guess from the device; software WebGL always gets Low
+  const forced = urlTier();
+  let tier: QualityTier = forced ?? (settings.quality === 'auto' ? guessTier() : settings.quality);
+  const view = new FarmView(canvas, farm.cam, tier !== 'low');
+  try {
+    const gl = view.renderer.getContext();
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : '';
+    if (isSoftwareRenderer(name)) tier = 'low';
+  } catch { /* no renderer info */ }
+  const governor = settings.quality === 'auto' && !forced && !capture ? new Governor(tier) : null;
+  view.setQuality(tier);
 
-/** Where the firefly is, as a 0–1 fraction of the canvas (the world is letterboxed into it). */
-function playerOnCanvas(): Vec {
-  const { width, height } = canvas, scale = Math.min(width / WORLD.w, height / WORLD.h);
-  return { x: ((width - WORLD.w * scale) / 2 + state.player.x * scale) / width, y: ((height - WORLD.h * scale) / 2 + state.player.y * scale) / height };
-}
+  const panels = new Panels(uiRoot);
+  type Screen = 'title' | 'farm';
+  let screen: Screen = 'title';
+  let glLost = false;
+  const reduced = () => settings.reducedMotion;
 
-/** Capture mode's autopilot: drift toward the nearest star. */
-function autopilot(): Vec {
-  const p = state.player;
-  const target = state.stars.reduce((a, b) => (Math.hypot(a.x - p.x, a.y - p.y) < Math.hypot(b.x - p.x, b.y - p.y) ? a : b));
-  const dx = target.x - p.x, dy = target.y - p.y, len = Math.hypot(dx, dy) || 1;
-  return { x: (dx / len) * 0.7, y: (dy / len) * 0.7 };
-}
+  // --- feedback: floating numbers over tiles, and spoken lines ---
+  const floats = h('div.floats', { 'aria-hidden': 'true' });
+  uiRoot.appendChild(floats);
+  function float(tile: TileRef, text: string, kind: 'good' | 'info' = 'good') {
+    const p = view.tileOnScreen(tile.x, tile.z);
+    const el = h('span.float', { class: kind, style: `left:${p.x}px;top:${p.y - 30}px` }, text);
+    floats.appendChild(el);
+    setTimeout(() => el.remove(), 1300);
+  }
+  function say(text: string) {
+    panels.toast(text);
+    if (settings.readAloud) speak(text);
+  }
 
-let last = performance.now(), acc = 0;
-function frame(now: number) {
-  acc = Math.min(acc + (now - last) / 1000, 0.25);
-  last = now;
-  if (screen === 'play') {
-    const input = capture ? autopilot() : direction(playerOnCanvas());
-    for (; acc >= STEP && !state.over; acc -= STEP) {
-      const caught = step(state, input);
-      if (caught) { combo = now < comboUntil ? combo + 1 : 0; comboUntil = now + 1500; ting(combo, data.sound); }
+  const play = new Play({
+    farm: () => farm,
+    view,
+    panels,
+    changed: () => { dirty = true; },
+    float,
+    say,
+    toolChanged: () => refreshTools(),
+  });
+
+  const hud = new Hud(uiRoot, {
+    menu: () => openMenu(),
+    turn: dir => { controller.turn(dir); sfx.turn(); },
+    zoom: dir => { view.goal.zoom = Math.min(ZOOM.max, Math.max(ZOOM.min, view.goal.zoom * (dir > 0 ? 1.3 : 1 / 1.3))); },
+    tool: id => play.pickTool(id),
+    goals: () => panels.show('Goals', h('p', null, 'The story’s goals arrive soon. For now: ', play.hint().toLowerCase(), '.'), { kind: 'card' }),
+  });
+  hud.visible = false;
+  const refreshTools = () => hud.setTools(play.tools(), play.tool);
+  refreshTools();
+
+  const controller = new Controller(canvas, view, {
+    tapTile: (tile, s) => { if (controller.lastDevice === 'touch' || controller.lastDevice === 'mouse') controller.cursor = null; view.showHighlight(tile); flashUntil = performance.now() + 700; play.tap(tile, s.x, s.y); },
+    wantsPaint: tile => play.wantsPaint(tile),
+    paintTile: tile => play.paint(tile),
+    paintEnd: () => play.paintEnd(),
+    command: name => {
+      if (name === 'menu') { if (!panels.back()) openMenu(); }
+      else if (name === 'back') { if (!panels.back() && play.tool !== 'hand') { play.tool = 'hand'; refreshTools(); } }
+      else if (name.startsWith('tool')) {
+        const t = play.tools()[Number(name.slice(4)) - 1];
+        if (t) play.pickTool(t.id);
+      }
+    },
+    active: () => screen === 'farm' && !panels.open && !glLost,
+    reducedMotion: reduced,
+  });
+  let flashUntil = 0;
+
+  // --- settings ---
+  function applySettings() {
+    const root = document.documentElement;
+    root.style.setProperty('--ts', String([1, 1.15, 1.3][settings.textSize]));
+    root.classList.toggle('reduced-motion', settings.reducedMotion);
+    root.classList.toggle('colorblind', settings.colorblind);
+    audio.setVolumes(settings.volume);
+    if (!settings.readAloud) stopSpeaking();
+  }
+  applySettings();
+  function onSettings(s: Settings) {
+    Object.assign(settings, s);
+    applySettings();
+    if (!capture) saveSettings(settings);
+    if (!forced) {
+      const want: QualityTier = settings.quality === 'auto' ? governor?.tier ?? guessTier() : settings.quality;
+      if (want !== view.tier) view.setQuality(want);
     }
-    if (state.over && !capture) finish();
-    if (state.over && capture) state = newGame(seedFrom());
-    $('#score').textContent = String(state.score);
-    $('#time').textContent = String(timeLeft(state));
-  } else {
-    acc = 0;
-    if (padConfirm()) (screen === 'paused' ? resume : start)();
   }
-  draw(ctx, state, now, reducedMotion);
+  const openSettings = () => panels.show('Settings', settingsPanel(structuredClone(settings), onSettings));
+
+  // --- screens ---
+  let title: HTMLElement | null = null;
+  function showTitle() {
+    screen = 'title';
+    hud.visible = false;
+    title?.remove();
+    const hasSave = !!loaded && loaded.status !== 'future' && !capture;
+    title = h('section.title-screen', { 'aria-label': GAME.title },
+      h('h1.logo', null, GAME.title, h('small', null, 'Grow a farm the whole town will love')),
+      h('div.title-buttons', null,
+        h('button.big.primary', { onclick: () => startFarm() }, hasSave ? 'Keep farming' : 'Start farming'),
+        h('button', { onclick: openSettings }, icon('gear', 24), ' Settings')),
+      !persistent() && !capture ? h('p.note.storage-note', null, 'This browser can’t keep your farm, so it lasts until you close the game.') : null,
+      futureSave ? h('p.note.storage-note', null, 'Your farm was saved by a newer version of this game, so it stays safe and untouched. This visit plays a new farm that won’t be saved.') : null);
+    uiRoot.appendChild(title);
+    requestAnimationFrame(() => title?.querySelector<HTMLElement>('.primary')?.focus({ preventScroll: true }));
+  }
+
+  let awayGiven = false;
+  function startFarm() {
+    audio.unlock();
+    title?.remove();
+    title = null;
+    screen = 'farm';
+    hud.visible = true;
+    refreshHud();
+    canvas.focus({ preventScroll: true });
+    // "while you were away": a small, capped head start for growing things (never anything taken)
+    if (!awayGiven && loaded?.savedAt && !capture) {
+      awayGiven = true;
+      const away = (Date.now() - loaded.savedAt) / 1000;
+      const bonus = catchUp(farm, away);
+      if (bonus >= 60) say(`While you were away, your crops grew for ${Math.round(bonus / 60)} more minute${bonus >= 120 ? 's' : ''}.`);
+    }
+  }
+
+  function openMenu() {
+    if (screen !== 'farm' || panels.open) return;
+    const close = () => panels.close();
+    panels.show('Menu', h('div.menu-list', null,
+      h('button.primary', { onclick: close }, 'Back to the farm'),
+      h('button', { onclick: () => { close(); openSettings(); } }, icon('gear', 26), 'Settings'),
+      h('button', { onclick: () => { close(); save(); showTitle(); } }, icon('farm', 26), 'Title screen')), { kind: 'card' });
+  }
+
+  // --- things that happen on their own ---
+  function onEvent(e: SimEvent) {
+    switch (e.type) {
+      case 'rain-start': say('Rain! Every growing crop gets a drink.'); break;
+      case 'compost-ready': say('A bag of compost is ready in the barn.'); break;
+      case 'season': say(`${seasonName(e.season as Season)} is here! New seeds are in season.`); break;
+      case 'safety-net':
+        panels.show('A seed pouch!', h('div', null,
+          h('p', null, `Coins are low, so here are ${e.seeds} free plantings of the cheapest seeds. Plant them, pick them and sell them, and you’re back in business!`)),
+        { kind: 'card' });
+        break;
+      case 'level-up': {
+        sfx.levelUp();
+        const fresh = CROPS.filter(c => c.level === e.level).map(c => c.name);
+        panels.show(`Farm level ${e.level}!`, h('div', null,
+          h('p', null, 'Your farm is growing up.'),
+          fresh.length ? h('p', null, `New seeds: ${fresh.join(', ')}.`) : null), { kind: 'card' });
+        break;
+      }
+    }
+  }
+
+  function refreshHud() {
+    const level = levelOf(farm);
+    const lo = xpForLevel(level), hi = xpForLevel(level + 1);
+    hud.setDate(farm.t);
+    hud.setCoins(farm.coins);
+    hud.setLevel(level, hi > lo ? (farm.xp - lo) / (hi - lo) : 1);
+    hud.setGoal(play.hint(), null);
+  }
+
+  // --- saving ---
+  let dirty = false;
+  let lastSaveT = farm.t;
+  function save() {
+    if (capture || futureSave || screen !== 'farm') return;
+    farm.cam = { ...view.goal };
+    saveFarm(farm, Date.now());
+    lastSaveT = farm.t;
+    dirty = false;
+  }
+  document.addEventListener('visibilitychange', () => {
+    audio.setHidden(document.hidden);
+    if (document.hidden) save();
+  });
+  addEventListener('pagehide', save);
+
+  // --- the 3D drawing can be lost (a phone under pressure): pause with a friendly card ---
+  let glCard: HTMLElement | null = null;
+  canvas.addEventListener('webglcontextlost', e => {
+    e.preventDefault();
+    glLost = true;
+    glCard = h('div.glcard', { role: 'alert' }, h('p.storage-note', null, 'Taking a little break… the farm will be back in a moment.'));
+    uiRoot.appendChild(glCard);
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    glLost = false;
+    view.setQuality(view.tier);
+    glCard?.remove();
+    glCard = null;
+  });
+
+  // --- the gesture that unlocks sound ---
+  const unlock = () => audio.unlock();
+  addEventListener('pointerdown', unlock, { passive: true });
+  addEventListener('keydown', unlock);
+
+  // safe-area insets, measured once per resize from a probe element
+  const insetProbe = h('div', { style: 'position:fixed;inset:0;pointer-events:none;visibility:hidden;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)' });
+  document.body.appendChild(insetProbe);
+  function resize() {
+    const cs = getComputedStyle(insetProbe);
+    const px = (v: string) => parseFloat(v) || 0;
+    view.resize(innerWidth, innerHeight, { top: px(cs.paddingTop), right: px(cs.paddingRight), bottom: px(cs.paddingBottom), left: px(cs.paddingLeft) });
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  // --- the loop ---
+  let last = performance.now();
+  let fps = 60;
+  let lastPadA = 0;
+  let hudAt = 0;
+  function frame(now: number) {
+    const real = Math.min(0.25, (now - last) / 1000);
+    last = now;
+    const dt = Math.min(0.1, real);
+    fps = fps * 0.95 + (real > 0 ? 1 / real : 60) * 0.05;
+    const pad = controller.update(dt);
+    // menus by gamepad: d-pad moves focus, A presses, B goes back
+    if (pad && (panels.open || screen === 'title')) {
+      const scope = panels.topEl ?? title;
+      if (pad.pressed.has('up')) panels.moveFocus(0, -1, scope);
+      if (pad.pressed.has('down')) panels.moveFocus(0, 1, scope);
+      if (pad.pressed.has('left')) panels.moveFocus(-1, 0, scope);
+      if (pad.pressed.has('right')) panels.moveFocus(1, 0, scope);
+      if (pad.pressed.has('a') && now - lastPadA > 200) { lastPadA = now; (document.activeElement as HTMLElement | null)?.click(); }
+      if (pad.pressed.has('b')) panels.back();
+    }
+    const playing = screen === 'farm' && !panels.stopsTime && !document.hidden && !glLost;
+    if (playing) for (const e of advance(farm, dt * speed)) onEvent(e);
+    if (screen === 'farm') {
+      if (now - hudAt > 200) { hudAt = now; refreshHud(); }
+      if (farm.t - lastSaveT > 30 || (dirty && farm.t - lastSaveT > 3)) save();
+    }
+    view.setWorld(seasonOf(farm.t), farm.unlocked);
+    view.objects.badges = settings.colorblind;
+    view.objects.sync(farm, onLockedLand(farm));
+    const shown = controller.cursor ?? (controller.lastDevice === 'mouse' ? controller.hover : null);
+    if (shown) view.showHighlight(shown);
+    else if (now > flashUntil) view.showHighlight(null);
+    if (!glLost) {
+      view.update(dt, farm.t, reduced());
+      document.documentElement.style.setProperty('--sky-top', view.lighting.sky.top);
+      document.documentElement.style.setProperty('--sky-bottom', view.lighting.sky.bottom);
+      view.render();
+    }
+    if (governor && screen === 'farm') {
+      const next = governor.sample(real);
+      if (next) view.setQuality(next);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // --- the read-only test hook: copies only, never changes the farm or its save ---
+  Object.defineProperty(window, GAME.hook, {
+    value: Object.freeze({
+      title: GAME.title,
+      snapshot: () => structuredClone({
+        screen, capture, panel: panels.open, t: farm.t, season: seasonOf(farm.t), coins: farm.coins, xp: farm.xp, level: levelOf(farm),
+        unlocked: [...farm.unlocked], tool: play.tool, seed: play.seed, inv: farm.inv, freeSeeds: farm.freeSeeds,
+        fields: farm.objects.filter(o => o.kind === 'field').map(o => ({ x: o.x, z: o.z, crop: o.kind === 'field' ? o.crop : null, ready: o.kind === 'field' && !!o.crop && farm.t >= o.readyAt, watered: o.kind === 'field' && o.watered })),
+        camera: { ...view.goal, yaw: view.view.yaw / YAW_STEP }, cursor: controller.cursor, lastDevice: controller.lastDevice,
+        quality: view.tier, fps: Math.round(fps), persistent: persistent(), audio: audio.state, ...view.stats(),
+      }),
+      /** Where a tile's middle is on screen (CSS px), for tests that tap it. */
+      tileOnScreen: (x: number, z: number) => { const p = view.tileOnScreen(x, z); return { x: p.x, y: p.y }; },
+      /** What a tap at (x, y) would pick. */
+      pickAt: (x: number, y: number) => view.pick(x, y),
+      openArea: () => { const c = view.openCenter(); return { x: c.x, y: c.y }; },
+    }),
+  });
+
+  $('#boot').classList.add('done');
+  setTimeout(() => $('#boot').remove(), 500);
+  if (scene === 'farm') startFarm();
+  else showTitle();
   requestAnimationFrame(frame);
+
 }
 
-// Events: buttons, Escape / P to pause, and pause whenever the game loses focus (another tab,
-// or a tap outside the iframe on the website).
-$('#play').addEventListener('click', start);
-$('#again').addEventListener('click', start);
-$('#resume').addEventListener('click', resume);
-$('#pause-button').addEventListener('click', pause);
-soundButton.addEventListener('click', () => { data = { ...data, sound: !data.sound }; if (!capture) save(data); unlock(); show(screen); });
-addEventListener('keydown', event => {
-  unlock();
-  if (event.code === 'Escape' || event.code === 'KeyP') screen === 'play' ? pause() : resume();
-});
-addEventListener('pointerdown', unlock);
-addEventListener('blur', pause);
-document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
-addEventListener('resize', () => resize(canvas));
-listen(canvas);
-resize(canvas);
-
-// The read-only test hook: tests and the website's preview capture read the game through it.
-// snapshot() returns a copy, so nothing outside can change the game or its saves.
-Object.defineProperty(window, GAME.hook, {
-  value: Object.freeze({
-    title: GAME.title,
-    snapshot: () => structuredClone({ screen, score: state.score, timeLeft: timeLeft(state), over: state.over, player: state.player, stars: state.stars, persistent: persistent(), audio: audioState(), best: data.best }),
-  }),
-});
-
-if (scene === 'play') { state = newGame(seedFrom()); for (let i = 0; i < 240; i++) step(state, autopilot()); show('play'); }
-else if (scene === 'results') { state = newGame(seedFrom()); state.score = 24; state.over = true; show('results'); }
-else show('title');
-requestAnimationFrame(frame);
+if (window.__noWebGL2) {
+  Object.defineProperty(window, GAME.hook, { value: Object.freeze({ title: GAME.title, snapshot: () => ({ screen: 'no-webgl' }) }) });
+} else {
+  try {
+    boot();
+  } catch (err) {
+    // the 3D engine couldn't start: say so kindly instead of showing a blank page
+    console.warn(err);
+    document.getElementById('boot')?.remove();
+    document.body.appendChild(h('div.early', { role: 'alert', 'data-testid': 'no-webgl' },
+      h('h1', null, 'The farm couldn’t start'), h('p', null, 'This device couldn’t start the 3D drawing. Try reloading, or another browser.'),
+      h('button', { onclick: () => location.reload() }, 'Try again')));
+  }
+}

@@ -2,33 +2,41 @@
   "$schema": "../../docs/game.schema.json",
   "slug": "farm-wip",
   "title": "Farm WIP",
-  "tagline": "Catch the stars before time runs out.",
-  "shortDescription": "Fly a little firefly across the night sky and catch as many stars as you can in 60 seconds. A tiny starter game for building your own.",
-  "longDescription": "Farm WIP is the AI Kids Games starter template: a tiny but complete game that follows the game contract. A firefly flies toward wherever you steer it with the keyboard, a gamepad, the mouse or a finger, catching stars for 60 seconds. Replace its rules, art and name with your own game, and keep the plumbing: the single-file build, safe storage, the test hook, the capture route and the tests.",
+  "tagline": "Wake up the town farm, one field at a time.",
+  "shortDescription": "Build and grow a 3D farm from above: plant 30 real crops, raise animals, run a mill and a bakery, fill orders for the town and bring back the Harvest Fair.",
+  "longDescription": "A sleepy community farm needs a new keeper. Plough fields, plant real crops and look after them for better harvests, plant orchards, keep happy animals, and turn your harvest into flour, bread, jam and sweaters. Fill orders for the little river town, trade with friendly neighbour farms, decorate, and win ribbons at the seasonal fairs. There is no energy and nothing ever wilts: farm time only moves while you play.",
   "version": "0.1.0",
-  "minAge": 5,
-  "ageRange": "5+",
+  "minAge": 8,
+  "ageRange": "8–14",
   "genres": [
-    "Action"
+    "Farming",
+    "Strategy",
+    "Cozy"
   ],
   "tags": [
-    "Stars",
-    "Starter"
+    "3D",
+    "Farming",
+    "Building",
+    "Learning"
   ],
   "keywords": [
-    "starter game",
-    "template",
-    "arcade",
-    "kids game",
+    "farm game",
+    "farm builder",
+    "3d farm",
+    "crops",
+    "kids farming game",
     "browser game",
-    "offline game"
+    "offline game",
+    "learning game"
   ],
   "features": [
-    "Plays with keyboard, mouse, touch or gamepad",
-    "Remembers your best score on this device",
+    "A 3D farm diorama you build and manage from above",
+    "30 real crops with a fact for each",
+    "Plays with touch, mouse and keyboard, or a gamepad",
+    "No energy, no timers, nothing ever wilts",
     "One self-contained HTML file that works offline"
   ],
-  "contentNotes": "Gentle arcade play with no fighting or scary content. The best score saves in this browser.",
+  "contentNotes": "Gentle farming with no fighting or scary content. Nothing ever wilts, dies or gets sick, and there are no timers outside play. Some reading, with read-aloud. The farm saves in this browser.",
   "controls": {
     "types": [
       "Keyboard",
@@ -37,13 +45,14 @@
       "Touch"
     ],
     "quickStart": [
-      "Press Play.",
-      "Fly with the arrow keys, a gamepad stick, or hold your finger where you want to go.",
-      "Catch as many stars as you can before the time runs out."
+      "Press Start farming.",
+      "Tap an empty field and choose seeds.",
+      "Tap ripe crops to pick them, then sell them in the barn."
     ],
     "howToPlay": [
-      "Fly with WASD or the arrow keys, a gamepad's left stick or d-pad, or hold the mouse or a finger where you want to go.",
-      "Escape or P pauses; gamepad A or Start presses the buttons in menus."
+      "Tap or click a tile to use it; drag across fields to plant or pick a whole row.",
+      "Drag to move around, pinch or scroll to zoom, and twist two fingers or press Q and E to turn.",
+      "With a gamepad, move the tile cursor with the left stick, press A to use a tile, and turn with the bumpers."
     ]
   },
   "devices": [
@@ -52,12 +61,15 @@
     "Phone"
   ],
   "orientation": "any",
-  "requirements": [],
-  "playTime": "1 minute per round",
+  "requirements": [
+    "WebGL 2"
+  ],
+  "playTime": "About 6–8 hours of story, then endless farming",
   "storage": {
     "prefix": "farmwip.",
     "keys": [
-      "farmwip.save"
+      "farmwip.save",
+      "farmwip.settings"
     ],
     "probe": "farmwip.__probe"
   },
@@ -69,7 +81,7 @@
     "network": false
   },
   "capture": {
-    "route": "?scene=play&seed=7",
+    "route": "?scene=farm&seed=7",
     "script": "apps/site/scripts/capture/farm-wip.ts"
   },
   "license": "MIT",
@@ -77,7 +89,7 @@
   "site": {
     "featured": false,
     "releaseDate": "2026-10-14",
-    "accentColor": "#d9d4f6",
+    "accentColor": "#cfe8b0",
     "coverLayers": [],
     "status": "In development"
   }

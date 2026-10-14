@@ -69,7 +69,64 @@ Ports: dev 5446, preview 4446. They are computed from the slug and don't collide
 game's. Tuck Pop is 4444/5444.
 
 ## Architecture
-See `docs/PLAN.md` → "Architecture". This section is updated as each phase lands.
+(The full design is in `docs/PLAN.md`.)
+
+**`src/sim/`** is pure: no DOM, `Date` or `Math.random`, checked by `tests/unit/purity.test.ts`.
+- `map.ts`: the fixed 56×56 land. Areas, terrace levels with smoothed corners, water, and `topY`
+  (where a tap meets a tile).
+- `clock.ts`: play-time days (8 min) and seasons (6 days).
+- `state.ts`: the `Farm` JSON, which is the save.
+- `objects.ts`: footprints and `canPlace`.
+- `world.ts`: occupancy, `objAt`, levels, and the ledger (`earn` and `spend`).
+- `fields.ts`: plough, plant, water, compost, harvest, clear clutter, and care → stars.
+- `inventory.ts`: the barn, by stars.
+- `market.ts`: seasonal prices; more stars always pay more.
+- `weather.ts`: rain days.
+- `tick.ts`: `advance` (rain watering, the compost bin, level-ups, the safety net), `stuck`, and
+  `catchUp` (the away bonus).
+
+**`src/data/`**
+- `crops.ts`: 30 crops.
+- `facts.ts`: every real fact, with a `check`.
+- `items.ts`, `buildings.ts`, `start.ts` (the starting farm and its clutter), `orchard.ts`
+  (phase 3 data).
+- `tuning.ts`: every balance number, and the XP curve.
+
+**`src/render/`**: Three.js.
+- `view.ts`: renderer, scene, eased camera, and picking with tall boxes.
+- `camera.ts`: pure camera math (zoom in px per tile, view offset to the open area).
+- `terrain.ts`, `water.ts`, `scenery.ts`, `lighting.ts` (day to dusk, rim colour, sky CSS vars).
+- `objects.ts`: instanced fields, crops, buildings and clutter.
+- `quality.ts`: tiers and the governor.
+- `models/`: `nature`, `crops` (30 × 4 stages), `buildings`.
+
+**`src/input/`**
+- `gestures.ts`: tap, drag, pinch, twist, wheel and hover.
+- `controller.ts`: camera moves, keys, the gamepad tile cursor, and drag painting.
+- `pick.ts`: DDA tile picking, `rayBox`, and generous `pickNear`.
+- `gamepad.ts`
+
+**`src/game/play.ts`**: the tools (hand, plough, seeds, water, compost, barn) and what a tap or a
+drag does with each.
+
+**`src/ui/`**
+- `h.ts`: a tiny DOM helper.
+- `panels.ts`: the panel stack, toasts, focus navigation, and the ghost-click shield.
+- `hud.ts`, `layout.ts` (HUD sizes and the supported viewports).
+- `settingsPanel.ts`, `seedsPanel.ts`, `barnPanel.ts`.
+- `icons.ts` and `itemIcons.ts`: SVG drawn in code.
+- `speech.ts`: local voices only.
+
+**Other**
+- `src/save/`: storage, `save.ts` (versioned decode/repair, with `savedAt` for the away bonus), and
+  `settings.ts`.
+- `src/audio/engine.ts`: Web Audio, limiter, and interface and farming sounds.
+- `src/main.ts`: boot, the loop, saving, sim events, the test hook and the capture route.
+
+**URL switches** (none of them saves anything unless you play normally):
+- `?scene=title|farm`, with `&seed=&t=&yaw=&zoom=&x=&z=`: capture route, never saves.
+- `?quality=low|medium|high`
+- `?speed=N` (1–120): faster farm time, for tests.
 
 ## Decisions (small calls the plan didn't cover; newest last)
 - 2026-10-13: the brief stopped at "…seasonal looks". The owner chose the plan's defaults:
@@ -82,6 +139,38 @@ See `docs/PLAN.md` → "Architecture". This section is updated as each phase lan
   has a train, and a river already runs along the starting plot.
 - 2026-10-13: the currency is plain **coins**, as the brief says, with an original coin design: a
   wheat-sheaf stamp.
+- 2026-10-13 (phase 1):
+  - **Zoom** is pixels per tile at the screen's middle: 12–72, default 38. 72 keeps a tile at
+    least 59 px tall.
+  - **Camera:** tilt 55°, field of view 30°.
+  - **View offset:** the camera's target shows in the middle of the open area between the HUD
+    bars.
+- 2026-10-13 (phase 1): **terrace corners are smoothed.** No land tile is more than one level above
+  any of its 8 neighbours. One hilltop corner tile (33,17) is level 1, so placing things needs flat
+  ground (`canPlace` → 'uneven').
+- 2026-10-13 (phase 1): **finger targets in the tap test.** Every tile must take a 44 px finger at
+  ≥ 3 of 8 turns at the closest zoom. An inner terrace corner, raised on two sides, is open to
+  exactly 3 turns. A tap on any tile's middle works at all 8 turns, and the test counts that every
+  tile was framed.
+- 2026-10-13 (phase 2): **the hand tool does most things.** It picks (tap or drag a row), clears
+  clutter, opens Seeds on an empty field, and opens a care card on a growing crop. The other tools
+  are for painting rows. A drag that starts where the tool can't act pans the view.
+- 2026-10-13 (phase 2): **care points → stars.**
+  - Points: watered, compost, rotation (a different family from last time), nitrogen (a legume
+    before), and bees (flowering crops; phase 3).
+  - 0 points → 1 star, 1–2 → 2 stars, 3 or more → 3 stars.
+  - Nitrogen and bees each add +1 to the harvest.
+  - Compost makes the crop grow 25% faster.
+- 2026-10-13 (phase 2): **prices.** In season ×0.9, out of season ×1.15, and a daily wobble of
+  ±6%. Each extra star pays at least one more coin. ↑ marks a price more than 2% above usual.
+- 2026-10-13 (phase 2): **the safety net** gives 6 free plantings of the cheapest seeds. It kicks in
+  when coins are below the cheapest seeds and nothing is growing or sellable.
+- 2026-10-13 (phase 2): **the away bonus** is real time since the save, capped at 10 minutes of
+  growing. It moves growth timers only; the clock and seasons don't move.
+- 2026-10-13 (phase 2): **ghost clicks.** A tap that opens a panel is followed by the browser's own
+  click at the same spot, which chose a seed by itself on phones (found by the touch e2e). Panels
+  now ignore a click within 24 px of the opening tap for 0.5 s; keyboard and gamepad presses are
+  never blocked.
 
 ## Names (phase 0: five proposals, web-checked; the owner picks one before the site step)
 **How they were checked (2026-10-13).** Web searches limited to each store's domain: the App Store
@@ -141,8 +230,8 @@ Other companies' games are described here, not named (this is a public repo).
 | Phase | Status |
 |---|---|
 | 0 Setup and names | done |
-| 1 Engine and world | — |
-| 2 Fields and crops | — |
+| 1 Engine and world | done (committed with phase 2) |
+| 2 Fields and crops | done (73 unit tests; 44 e2e on Chromium and WebKit × phone, tablet and desktop) |
 | 3 Orchards and animals | — |
 | 4 Production | — |
 | 5 Build mode and land | — |
@@ -154,4 +243,13 @@ Other companies' games are described here, not named (this is a public repo).
 | 11 Name and rename | waits for the owner's pick |
 | 12 Site step | — |
 
-**Next:** phase 1 (engine and world), then phase 2 (fields and crops).
+**Phases 1–2 notes:**
+- Build 638 KB.
+- The farm draws in about 20 draw calls on High.
+- `src/data/orchard.ts` is written ahead for phase 3.
+- Not done yet (later phases): rain and snow effects, crop sway, a model for the compost bin's
+  bags, the cottage and dock doing anything (story and orders), and the Crop Book showing the facts.
+
+**Next:** phase 3, orchards and animals: trees and bushes (data in `src/data/orchard.ts`), 7
+animals and their homes, feed and brush, happiness, bee pollination (`setBeesNear` in
+`src/sim/fields.ts`), the dog, and the first build menu entries for buying them.
