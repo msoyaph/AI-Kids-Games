@@ -1,0 +1,31 @@
+{
+  "name": "breezeport",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Breezeport, a game for AI Kids Games.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && node scripts/check-build.mjs",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:sim": "vitest run tests/sim",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^24.19.2",
+    "@types/three": "0.186.0",
+    "postprocessing": "6.39.5",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.4",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  }
+}

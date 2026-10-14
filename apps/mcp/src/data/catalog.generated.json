@@ -586,6 +586,66 @@
         "bytes": 744942,
         "sha256": "d28ef30782dd4732e8c3a968b88633928dda2342bbaa1ed70fa08c20d729efd3"
       }
+    },
+    {
+      "slug": "breezeport",
+      "title": "Breezeport",
+      "tagline": "Grow a seaside town into a happy city.",
+      "pitch": "Be the junior mayor of a seaside town in 3D: draw roads, zone homes and shops, build parks, schools and clinics, run buses and a tram, and keep your citizens happy.",
+      "minAge": 8,
+      "ageRange": "8–14",
+      "genres": [
+        "Simulation",
+        "Strategy"
+      ],
+      "tags": [
+        "3D",
+        "Building",
+        "City",
+        "Planning",
+        "Learning"
+      ],
+      "devices": [
+        "Computer",
+        "Tablet",
+        "Phone"
+      ],
+      "controls": [
+        "Keyboard",
+        "Mouse",
+        "Gamepad",
+        "Touch"
+      ],
+      "orientation": "any",
+      "requirements": [
+        "WebGL 2"
+      ],
+      "playTime": "About 6–8 hours of story, then endless building",
+      "sessionMinutes": [
+        15,
+        45
+      ],
+      "moods": [
+        "creative",
+        "cozy"
+      ],
+      "embed": "fullscreen",
+      "contentNotes": "Gentle city building with no fighting, fires, disasters or crime. A missing service only makes people a little less happy, and the town can never go broke. Some reading, with read-aloud. The town saves in this browser.",
+      "quickStart": [
+        "Press New town and meet Marisol, the city planner.",
+        "Pick Roads and drag along the grid to draw a street.",
+        "Pick Zones, paint homes beside the street, and watch the first family move in."
+      ],
+      "version": "1.0.0",
+      "accentColor": "#bfe9ec",
+      "page": "/game/breezeport",
+      "cover": "/media/breezeport/poster.jpg",
+      "logo": "/media/breezeport/logo.svg",
+      "build": {
+        "path": "/games/breezeport/index.html",
+        "bytes": 991282,
+        "sha256": "f5c9bd0b5228bf3a2aa34502fdd7800d99977fe38ef9b89359136d2e9713a7a2"
+      }
     }
   ]
 }

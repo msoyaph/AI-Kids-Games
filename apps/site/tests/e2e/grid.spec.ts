@@ -5,7 +5,7 @@ import { gridSpans } from '../../src/lib/grid';
 // Temporary mock entries rendered with the site's real CSS and grid rule. Desktop: 3 equal columns,
 // every full row spans the grid and the last row starts at the left. Tablet: balanced rows of 2, no
 // lonely last card. One game: a centred card.
-for (const count of [1,4,5,6,7,8,9,10,12]) test(`game grid with ${count} games`,async ({ page },info) => {
+for (const count of [1,4,5,6,7,8,9,10,11,12]) test(`game grid with ${count} games`,async ({ page },info) => {
   await page.goto('/about'); await page.locator('main h1').waitFor();
   const spans = gridSpans(count);
   await page.evaluate(({ spans }) => {

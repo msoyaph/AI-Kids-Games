@@ -256,6 +256,24 @@ Calex Cart) a gameplay loop from the builds that ship: `scripts/capture/<slug>.t
 takes with `gallery: false` (loop and poster only; their screenshot covers and galleries stay), and
 `loop: true` in `src/data/temporary-art.ts` turns the loop on (mediaFor, the registry, media tests).
 
+## Breezeport, the city builder (owner's "Go, Breezeport", 2026-10-14; release 2.12.0 after Shooberry's 2.11.0)
+
+Listed from `games/breezeport/game.json` (1.0.0, "Ready to play", ages 8–14, Simulation / Strategy,
+`site.order` 11, after Shooberry's 10). Simulation is a new category (its filter chip and
+/category route come from the games). Art in `public/media/breezeport/`: a cover (City Hall with its
+clock, pastel clapboard houses and shops, the coral tram and the teal bus, the Ferris wheel, and the
+striped lighthouse on its islet in the bay), drift (clouds and a sailboat) and twinkle layers, a logo
+("Breeze" white, "port" coral, teal edge; `scripts/art/logos.ts`) and the OG image (only
+`og/breezeport.jpg` and the refreshed `og/site.jpg` are kept; `og/agentmon.jpg` came out
+byte-different again and was restored). Previews come from `scripts/capture/breezeport.ts`: the
+game's own `?scene=showcase` route (a grown town built in code that never saves) with `&t=` for the
+season and hour, `&festival=1` for the Bay Festival's night, `&map=` for a map and `&hud=0`; the
+canvas is recorded, so the HUD is left out. Its trailer and 60-second reel takes are in
+`marketing/sizzle/capture/games/breezeport.ts`. Tests count 11 games (age 8: 9 games; age 10: 11;
+Simulation: Breezeport; the grid at 11); the launch tests start a new story town (Play, New town, Story,
+"Become the mayor!", Marisol's lines) and continue it after a reload ("Continue <name>"). The storage
+audit adds `breezeport.slot1`–`slot3`, `.bak`, `.settings` and the rare `.broken` (worst case 141 KB).
+
 ## New games first, 3 columns on desktop (owner, 2026-10-14; release 2.12.0)
 
 "Put our new games on first lines of the "All Games" list. And make the gallery in 3 Columns on
