@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Shooberry</title>
+  </head>
+  <body>
+    <div id="boot" role="status"><div class="sprout" aria-hidden="true"></div><p>Growing the garden…</p></div>
+    <canvas id="game" aria-label="The picnic garden: five garden beds in front of a picnic blanket"></canvas>
+
+    <div id="hud" hidden>
+      <div id="topbar">
+        <div id="compost" class="chip" role="status" aria-live="polite" aria-label="Compost">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="22" r="11" fill="#5e3a22" stroke="#2b1910" stroke-width="2.5"/><path d="M20 21c-7 0-12-4-13-9 6 0 11 3 13 9zM20 21c7 0 12-4 13-9-6 0-11 3-13 9z" fill="#8fe05a" stroke="#2b1910" stroke-width="2.2" stroke-linejoin="round"/></svg>
+          <b id="compost-count">0</b>
+        </div>
+        <div id="snacks" class="chip" role="status" aria-label="Snacks left: 3"><span class="snack" data-i="0">🥪</span><span class="snack" data-i="1">🍎</span><span class="snack" data-i="2">🧁</span></div>
+        <div id="waves" role="progressbar" aria-label="Wave progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="track"><div class="fill"></div><div class="head"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="22" r="13" fill="#ff9a6c" stroke="#2b1910" stroke-width="3"/><path d="M14 10c-2-5-6-6-8-5M26 10c2-5 6-6 8-5" stroke="#2b1910" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="15" cy="20" r="4.5" fill="#fff" stroke="#2b1910" stroke-width="2"/><circle cx="25" cy="20" r="4.5" fill="#fff" stroke="#2b1910" stroke-width="2"/><circle cx="14" cy="20.5" r="2.2" fill="#1d1410"/><circle cx="24" cy="20.5" r="2.2" fill="#1d1410"/><path d="M15 28c3 3 7 3 10 0" stroke="#2b1910" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg></div></div>
+          <div class="flags"></div>
+        </div>
+        <button id="speed" class="round" type="button" aria-label="Speed: normal" aria-pressed="false">1×</button>
+        <button id="pause-button" class="round" type="button" aria-label="Pause">❚❚</button>
+      </div>
+      <div id="cards" role="radiogroup" aria-label="Plants"></div>
+      <div id="banner" role="status" aria-live="assertive"></div>
+      <div id="info" role="dialog" aria-modal="false" hidden></div>
+    </div>
+
+    <section id="title" class="screen" hidden aria-labelledby="title-name">
+      <h1 id="title-name" class="logo"><span>Shooberry</span></h1>
+      <p class="tag">Plant friendly helpers. Shoo the critters. Save the picnic!</p>
+      <div class="menu">
+        <button class="big" data-go="map" type="button">Play</button>
+        <button data-go="party" type="button">Garden Party</button>
+        <button data-go="challenges" type="button">Challenges</button>
+        <button data-go="daily" type="button">Daily Garden</button>
+        <button data-go="books" type="button">Books</button>
+        <button data-go="settings" type="button">Settings</button>
+      </div>
+      <p id="storage-note" class="note" hidden>This browser can't save progress, so it lasts until you close the game.</p>
+    </section>
+
+    <section id="map" class="screen panel" hidden aria-labelledby="map-title">
+      <header><button class="round back" data-back type="button" aria-label="Back">‹</button><h2 id="map-title">Adventure</h2><span class="stars-total"></span></header>
+      <div class="tabs" role="tablist" aria-label="Worlds"></div>
+      <p class="twist"></p>
+      <div class="levels"></div>
+    </section>
+
+    <section id="challenges" class="screen panel" hidden aria-labelledby="challenges-title">
+      <header><button class="round back" data-back type="button" aria-label="Back">‹</button><h2 id="challenges-title">Challenges</h2></header>
+      <div class="list"></div>
+    </section>
+
+    <section id="seeds" class="screen panel" hidden aria-labelledby="seeds-title">
+      <header><button class="round back" data-back type="button" aria-label="Back">‹</button><h2 id="seeds-title">Choose your seeds</h2></header>
+      <div class="coming"><h3>Coming to the picnic</h3><div class="critters"></div></div>
+      <div class="chosen" aria-live="polite"></div>
+      <div class="offer"></div>
+      <footer><button class="pick" type="button">Pick for me</button><button class="big go" type="button">Let's grow!</button></footer>
+    </section>
+
+    <section id="paused" class="screen" hidden aria-labelledby="paused-title">
+      <h2 id="paused-title">Paused</h2>
+      <div class="menu">
+        <button id="resume" class="big" type="button">Keep playing</button>
+        <button id="restart" type="button">Start again</button>
+        <button data-go="settings" type="button">Settings</button>
+        <button id="leave" type="button">Leave the garden</button>
+      </div>
+    </section>
+
+    <section id="result" class="screen" hidden aria-labelledby="result-title">
+      <h2 id="result-title"></h2>
+      <div class="stars" aria-hidden="true"></div>
+      <p class="message"></p>
+      <div class="unlock"></div>
+      <div class="menu"></div>
+    </section>
+
+    <section id="books" class="screen panel" hidden aria-labelledby="books-title">
+      <header><button class="round back" data-back type="button" aria-label="Back">‹</button><h2 id="books-title">Books</h2></header>
+      <div class="tabs" role="tablist" aria-label="Books"><button role="tab" data-book="seeds" type="button">Seed Book</button><button role="tab" data-book="critters" type="button">Invader Book</button></div>
+      <div class="pages"><div class="grid"></div><article class="page" aria-live="polite"></article></div>
+    </section>
+
+    <section id="settings" class="screen panel" hidden aria-labelledby="settings-title">
+      <header><button class="round back" data-back type="button" aria-label="Back">‹</button><h2 id="settings-title">Settings</h2></header>
+      <form class="options" onsubmit="return false">
+        <label>Music <input type="range" name="music" min="0" max="1" step="0.1" /></label>
+        <label>Sounds <input type="range" name="sfx" min="0" max="1" step="0.1" /></label>
+        <label class="check"><input type="checkbox" name="autoCollect" /> Collect compost by itself</label>
+        <label class="check"><input type="checkbox" name="fast" /> Start levels at double speed</label>
+        <label class="check"><input type="checkbox" name="patterns" /> Patterns for colourblind players</label>
+        <label class="check"><input type="checkbox" name="reducedMotion" /> Less motion</label>
+        <label class="check"><input type="checkbox" name="largeText" /> Bigger text</label>
+        <label class="check"><input type="checkbox" name="readAloud" /> Read tips aloud</label>
+        <label>Graphics <select name="quality"><option value="auto">Automatic</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+        <button type="button" class="danger" id="start-over">Start over (forget my progress)</button>
+      </form>
+    </section>
+
+    <section id="tip" class="screen" hidden role="dialog" aria-modal="true" aria-labelledby="tip-title">
+      <div class="card-panel"><img alt="" /><h2 id="tip-title"></h2><p></p><div class="menu"><button class="big ok" type="button">Got it!</button><button class="say" type="button" aria-label="Read aloud">🔊</button></div></div>
+    </section>
+
+    <div id="rotate" hidden role="alert"><div class="phone" aria-hidden="true"></div><p>Turn your phone sideways to play</p></div>
+    <script>
+      // The garden needs WebGL 2. Check before the game loads, note which graphics chip draws it (a
+      // software renderer starts on Low at 1×), and show a friendly screen when it's missing.
+      // Adapted from Space Sky's index.html.
+      (function () {
+        var ok = false;
+        try {
+          var c = document.createElement('canvas');
+          var gl = window.WebGL2RenderingContext ? c.getContext('webgl2') : null;
+          ok = !!gl;
+          if (gl) {
+            var info = gl.getExtension('WEBGL_debug_renderer_info');
+            window.__gardenGpu = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || '');
+          }
+          var lose = gl && gl.getExtension('WEBGL_lose_context');
+          if (lose) lose.loseContext();
+        } catch (e) { ok = false; }
+        if (ok) return;
+        window.__noWebGL2 = true;
+        var boot = document.getElementById('boot');
+        if (boot) boot.remove();
+        var box = document.createElement('div');
+        box.id = 'nogl';
+        box.setAttribute('role', 'alert');
+        box.setAttribute('data-testid', 'no-webgl');
+        box.innerHTML =
+          '<svg viewBox="0 0 120 120" aria-hidden="true"><ellipse cx="60" cy="96" rx="40" ry="10" fill="#8f6440"/>' +
+          '<path d="M60 94 C60 70 58 56 60 40" stroke="#3f8a42" stroke-width="6" fill="none" stroke-linecap="round"/>' +
+          '<path d="M60 62 C44 60 34 48 34 36 C48 38 58 48 60 62 Z M60 52 C74 48 84 38 86 26 C72 28 62 38 60 52 Z" fill="#6cbc58"/>' +
+          '<circle cx="54" cy="80" r="3" fill="#2a1d17"/><circle cx="66" cy="80" r="3" fill="#2a1d17"/></svg>' +
+          '<h1>This device can’t grow the garden</h1>' +
+          '<p>Shooberry needs 3D graphics (WebGL 2), and this browser can’t do that right now.</p>' +
+          '<p>Try a different browser, or ask a grown-up to update this device.</p>' +
+          '<button type="button" onclick="location.reload()">Try again</button>';
+        document.body.appendChild(box);
+      })();
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

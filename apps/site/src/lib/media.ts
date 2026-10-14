@@ -16,15 +16,18 @@ export function mediaFor(game: Pick<Game,'slug' | 'coverLayers'> & { community?:
   }
   const entry = captured[game.slug];
   const image = (name: string) => ({ avif: `${base}/${name}.avif`,webp: `${base}/${name}.webp`,jpg: `${base}/${name}.jpg` });
-  // TEMPORARY ART (see src/data/temporary-art.ts): the game's own screenshots stand in for a
-  // drawn cover and captured loop that no longer match the game. No layers, no loop.
+  /** Captured gameplay, absent for games that have not been captured yet. */
+  const loopOf = (e: Captured | undefined) => e ? { webm: `${base}/loop.webm`,mp4: `${base}/loop.mp4`,poster: image('poster'),seconds: e.loopSeconds } as { webm: string; mp4: string; poster: ReturnType<typeof image>; seconds: number } | undefined : undefined;
+  // TEMPORARY ART (see src/data/temporary-art.ts): the game's own screenshots stand in for a drawn
+  // cover that no longer matches the game. No layers; a loop only once one is recorded from the
+  // current build (`loop`).
   const temporary = temporaryArt[game.slug];
   if (temporary) return {
     cover: `${base}/temp/cover.webp`,
     layers: [] as { motion: string; src: string }[],
     logo: `${base}/logo.svg`,
     og: `/og/${game.slug}.jpg`,
-    preview: undefined,
+    preview: temporary.loop ? loopOf(entry) : undefined,
     shots: temporary.shots.map((alt,index) => ({ alt,full: image(`temp/shot-${index+1}`),thumb: image(`temp/shot-${index+1}-thumb`) })),
     temporary: true
   };
@@ -33,8 +36,7 @@ export function mediaFor(game: Pick<Game,'slug' | 'coverLayers'> & { community?:
     layers: game.coverLayers.map(motion => ({ motion,src: `${base}/cover-${motion}.svg` })) as { motion: string; src: string }[],
     logo: `${base}/logo.svg`,
     og: `/og/${game.slug}.jpg`,
-    /** Captured gameplay, absent for games that have not been captured yet. */
-    preview: entry ? { webm: `${base}/loop.webm`,mp4: `${base}/loop.mp4`,poster: image('poster'),seconds: entry.loopSeconds } as { webm: string; mp4: string; poster: ReturnType<typeof image>; seconds: number } | undefined : undefined,
+    preview: loopOf(entry),
     shots: entry ? entry.shots.map((alt,index) => ({ alt,full: image(`shot-${index+1}`),thumb: image(`shot-${index+1}-thumb`) })) : [],
     temporary: false
   };

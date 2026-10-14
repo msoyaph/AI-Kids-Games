@@ -18,7 +18,7 @@ export const at = (beats: number) => +(beats * BEAT).toFixed(6);
 /** A line stays on screen at least words ÷ 1.8 + 0.5 seconds (a 7-year-old's reading pace). */
 export const minSeconds = (text: string) => text.split(/\s+/).filter(Boolean).length / 1.8 + 0.5;
 
-export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop' | 'agentmon' | 'fieldlark' | 'breezeport';
+export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport';
 
 /** A piece of a recorded take (marketing/sizzle/captures/<slug>/<take>.mp4). */
 export interface Shot {
@@ -39,7 +39,7 @@ export interface Shot {
 const shot = (slug: Slug, take: string, extra: Omit<Shot, 'slug' | 'take'> = {}): Shot => ({ slug, take, ...extra });
 
 /** Each game's three showcase shots in the 60-second reel, in the order they play (one bar each). */
-export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 'breezeport'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
+export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
   'calex-cart': {
     describe: 'Karts drift, boost and glide through snowy, neon and canyon tracks.',
     shots: [
@@ -91,7 +91,7 @@ export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 
 };
 
 /** Showcase order: racing, action, strategy, space wonder, cozy island, farming. */
-export const ORDER: Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 'breezeport'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
+export const ORDER: Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
 
 export interface Game { slug: Slug; title: string; tagline: string; ages: string; logo: string }
 export function game(slug: Slug): Game {
@@ -271,9 +271,21 @@ export const TRAILERS: Record<Slug, { shots: [Shot, Shot, Shot, Shot, Shot, Shot
       shot('fieldlark', 'animals', { from: 0.5 })
     ]
   },
+  shooberry: {
+    line: 'Plant helpers. Save the picnic!',
+    describe: 'Rowan Flickers and Maple Twirlers shoo an Ant Column in the Meadow Picnic, the Grand Snail boss slides in, then gardens in the Pumpkin Patch at dusk, the Glass Greenhouse, the Cactus Garden and the Cloud Garden.',
+    shots: [
+      shot('shooberry', 'wave', { from: 0.2 }),
+      shot('shooberry', 'boss', { from: 0.3 }),
+      shot('shooberry', 'dusk', { from: 0.2 }),
+      shot('shooberry', 'greenhouse', { from: 0.3 }),
+      shot('shooberry', 'desert', { from: 0.2 }),
+      shot('shooberry', 'cloud', { from: 0.3 })
+    ]
+  },
   breezeport: {
     line: 'Buses, trams and a festival!',
-    describe: 'A busy seaside town by the bay, a new street drawn and homes zoned until the first family moves in, the tram and buses on Main Street, lit windows and the lighthouse at night, the Bay Festival with lanterns, kites and fireworks, and snowy roofs in winter.',
+    describe: 'A busy seaside town by the bay, a new street drawn and homes zoned until the first family moves in, the tram and buses on Main Street, lit windows and street lamps at night, the Bay Festival with lanterns, kites and fireworks, and snowy roofs in winter.',
     shots: [
       shot('breezeport', 'town', { from: 0.2 }),
       shot('breezeport', 'build', { from: 0.4, focus: [0.5, 0.5], sfx: 0.5, sound: 'a road laid and a new home popping up' }),
@@ -284,8 +296,8 @@ export const TRAILERS: Record<Slug, { shots: [Shot, Shot, Shot, Shot, Shot, Shot
     ]
   }
 };
-/** The order of the games' trailers (all ten). */
-export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop', 'agentmon', 'fieldlark', 'breezeport'];
+/** The order of the games' trailers (all eleven). */
+export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop', 'agentmon', 'fieldlark', 'shooberry', 'breezeport'];
 export const trailerId = (slug: Slug) => `game-${slug}`;
 
 function gameCut(slug: Slug): Cut {

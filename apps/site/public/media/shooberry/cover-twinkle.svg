@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (twinkle): sparkles around the flicked berry and Comfrey's fresh compost. -->
+  <g fill="#fffbe0" stroke="#ffd84d" stroke-width="3" stroke-linejoin="round">
+    <path d="M1100 470l7 19 19 7-19 7-7 19-7-19-19-7 19-7z"/>
+    <path d="M1010 600l5 13 13 5-13 5-5 13-5-13-13-5 13-5z"/>
+    <path d="M1130 560l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/>
+    <path d="M430 610l6 15 15 6-15 6-6 15-6-15-15-6 15-6z"/>
+    <path d="M668 640l4 11 11 4-11 4-4 11-4-11-11-4 11-4z"/>
+  </g>
+</svg>

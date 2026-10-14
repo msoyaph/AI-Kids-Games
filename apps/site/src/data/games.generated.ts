@@ -787,6 +787,87 @@ export const generatedGames: Game[] = [
     "license": "MIT"
   },
   {
+    "slug": "shooberry",
+    "title": "Shooberry",
+    "tagline": "Plant friendly helpers and save the picnic snacks.",
+    "description": "Grow a garden of friendly plant helpers and shoo silly critters away from the picnic. A bright 3D lane-strategy game where nobody gets hurt.",
+    "version": "1.0.0",
+    "categories": [
+      "Strategy",
+      "Casual"
+    ],
+    "tags": [
+      "Garden",
+      "Lane strategy",
+      "Picnic",
+      "Plants",
+      "3D",
+      "Nature facts"
+    ],
+    "keywords": [
+      "lane defense",
+      "garden strategy",
+      "plant defense",
+      "kids strategy game",
+      "garden game",
+      "strategy game for kids",
+      "browser game",
+      "offline game"
+    ],
+    "ageGuidance": "Ages 7+",
+    "minAge": 7,
+    "contentNotes": "Silly critters try to sneak picnic snacks, and plants shoo them home with berries, seeds, scents and chimes. Nobody gets hurt: critters poof into leaves and run off, nibbled plants just wilt, and a lost level is simply tried again with a hint. No purchases, ads, chat or timers. Some reading, with read-aloud tips. Progress saves in this browser.",
+    "estimatedPlayTime": "About 5 hours of Adventure, plus endless and challenge modes",
+    "quickStart": [
+      "Press Play, pick level 1 and press \"Let's grow!\".",
+      "Choose a plant card, then tap a garden spot to plant it.",
+      "Comfrey makes compost to pay for more plants. Keep the critters away from the picnic!"
+    ],
+    "controls": {
+      "types": [
+        "Touch",
+        "Mouse",
+        "Keyboard",
+        "Gamepad"
+      ],
+      "howToPlay": [
+        "Touch or mouse: tap a plant card, then a garden spot (or drag the card onto the garden). Press and hold a card or a plant to read about it.",
+        "Compost is collected for you; turn that off in Settings and tap the piles yourself. The trowel card digs up a plant to make room.",
+        "Keyboard: arrow keys or WASD move the garden cursor, 1–9 or Q and E choose a plant, Enter or Space plants, T picks the trowel, C collects all compost, F switches speed, Escape or P pauses.",
+        "Gamepad: the stick or d-pad moves the cursor, LB and RB choose a plant, A plants, B cancels, X collects all compost, Y switches speed, Start pauses.",
+        "Each lane has a picnic umbrella that pops open once to send nearby critters back. Three snacks saved means three stars."
+      ]
+    },
+    "supportedDevices": [
+      "Computer",
+      "Tablet",
+      "Phone"
+    ],
+    "orientation": "landscape",
+    "requirements": [
+      "WebGL 2"
+    ],
+    "coverLayers": [],
+    "releaseDate": "2026-10-14",
+    "featured": false,
+    "accentColor": "#ffd0dc",
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "shooberry.",
+      "keys": [
+        "shooberry.save"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
+  },
+  {
     "slug": "breezeport",
     "title": "Breezeport",
     "tagline": "Grow a seaside town into a happy city.",

@@ -97,6 +97,8 @@ Every game needs real gameplay previews. They are produced the same way for ever
    its own production hooks, URL params and real UI/keys; never edit the build.
    `continues: true` keeps playing in the previous take's page (e.g. to reach a boss);
    `crop` zooms into part of the frame; `loopOrder` picks the loop order and poster.
+   `gallery: false` records only the loop and poster, for a game on temporary art that keeps its
+   own screenshots as the gallery (`loop: true` in `src/data/temporary-art.ts`).
 2. Run `npm run capture-previews -- <slug>`. It serves `public/`, opens the game in
    full Chromium with the real GPU (Metal flags, 1920×1080, headed — headless gives no
    smooth capture) and records each take from the game canvas at 60 fps, so DOM
