@@ -78,6 +78,9 @@ export async function newStoryTown(page: Page) {
   await readStory(page);
 }
 
+/** A tool on the tool bar, by its label (its accessible name is "Roads (2)" and so on). */
+export const toolButton = (page: Page, label: string) => page.getByRole('button', { name: new RegExp(`^${label} \\(\\d\\)$`) });
+
 /** A tap (touch on phones and tablets, a click with a mouse). */
 export async function tap(page: Page, p: { x: number; y: number }, touch: boolean) {
   if (touch) await page.touchscreen.tap(p.x, p.y); else await page.mouse.click(p.x, p.y);

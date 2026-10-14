@@ -785,5 +785,93 @@ export const generatedGames: Game[] = [
       "network": false
     },
     "license": "MIT"
+  },
+  {
+    "slug": "breezeport",
+    "title": "Breezeport",
+    "tagline": "Grow a sleepy seaside town into a happy city.",
+    "description": "Be the junior mayor of a seaside town in 3D: draw roads, zone homes and shops, build parks, schools and clinics, run buses and a tram, and keep your citizens happy.",
+    "version": "1.0.0",
+    "categories": [
+      "Simulation",
+      "Strategy"
+    ],
+    "tags": [
+      "3D",
+      "Building",
+      "City",
+      "Planning",
+      "Learning"
+    ],
+    "keywords": [
+      "city builder",
+      "city planning",
+      "3d city game",
+      "town builder",
+      "kids city game",
+      "mayor game",
+      "browser game",
+      "offline game"
+    ],
+    "ageGuidance": "Ages 8–14",
+    "minAge": 8,
+    "contentNotes": "Gentle city building with no fighting, fires, disasters or crime. A missing service only makes people a little less happy, and the town can never go broke. Some reading, with read-aloud. The town saves in this browser.",
+    "estimatedPlayTime": "About 6–8 hours of story, then endless building",
+    "quickStart": [
+      "Press New town and meet Marisol, the city planner.",
+      "Pick Roads and drag along the grid to draw a street.",
+      "Pick Zones, paint homes beside the street, and watch the first family move in."
+    ],
+    "controls": {
+      "types": [
+        "Keyboard",
+        "Mouse",
+        "Gamepad",
+        "Touch"
+      ],
+      "howToPlay": [
+        "Tap or click to look at anything; drag with a tool to draw roads or paint zones.",
+        "Drag to move around, pinch or scroll to zoom, and twist two fingers or press Q and E to turn.",
+        "Tap a citizen to see what they wish for; tap a shop's coin bubble to collect.",
+        "Keyboard: number keys pick the tools on the tool bar, M opens the maps, Ctrl or Cmd + Z undoes, Escape goes back.",
+        "Gamepad: the left stick moves the tile cursor, A uses a tile (press A at the start and end of a road), the bumpers turn, X opens the tools, Y the maps, B goes back and Start the menu."
+      ]
+    },
+    "supportedDevices": [
+      "Computer",
+      "Tablet",
+      "Phone"
+    ],
+    "orientation": "any",
+    "requirements": [
+      "WebGL 2"
+    ],
+    "coverLayers": [
+      "drift",
+      "twinkle"
+    ],
+    "releaseDate": "2026-10-14",
+    "featured": false,
+    "accentColor": "#bfe9ec",
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "breezeport.",
+      "keys": [
+        "breezeport.slot1",
+        "breezeport.slot2",
+        "breezeport.slot3",
+        "breezeport.bak",
+        "breezeport.broken",
+        "breezeport.settings"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
   }
 ];

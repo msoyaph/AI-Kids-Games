@@ -10,6 +10,15 @@
       "importedAt": "2026-10-13"
     },
     {
+      "slug": "breezeport",
+      "version": "1.0.0",
+      "source": "games/breezeport/dist/index.html",
+      "bytes": 988757,
+      "sha256": "fdd210ca0b51476456a8431527d0fcf1773a90a978a1f0682479d9c43ff70bf0",
+      "inputsSha256": "08ffa02bb9717b70475b58d1b2d4b1fa52a26cc0a6e3b8e095eb4154508b90f8",
+      "importedAt": "2026-10-14"
+    },
+    {
       "slug": "calex-cart",
       "version": "0.2.0",
       "source": "games/calex-cart/dist/index.html",

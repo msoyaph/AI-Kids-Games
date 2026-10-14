@@ -67,14 +67,14 @@ export const scenario: Scenario = {
       audio: true,
       async setup(ctx) {
         await ready(ctx);
-        await ctx.page.getByRole('button', { name: /^Roads/ }).click();
+        await ctx.page.getByRole('button', { name: /^Roads \(\d\)$/ }).click();
         await ctx.wait(400);
       },
       async act(ctx) {
         await ctx.cut();
         await drag(ctx, [40, 17], [40, 22], 900);
         await ctx.wait(400);
-        await ctx.page.getByRole('button', { name: /^Zones/ }).click();
+        await ctx.page.getByRole('button', { name: /^Zones \(\d\)$/ }).click();
         await ctx.page.getByRole('button', { name: 'Homes' }).click();
         await ctx.wait(250);
         await drag(ctx, [38, 17], [39, 22], 900);
@@ -156,7 +156,7 @@ export const scenario: Scenario = {
       async act(ctx) {
         await ctx.cut();
         await ctx.wait(500);
-        await ctx.page.getByRole('button', { name: /^Maps/ }).click();
+        await ctx.page.getByRole('button', { name: /^Maps \(\d\)$/ }).click();
         await ctx.wait(400);
         await ctx.page.getByRole('button', { name: 'Happiness', exact: true }).click();
         await ctx.wait(2200);
@@ -197,7 +197,7 @@ export const scenario: Scenario = {
       id: 'phone',
       query: '?scene=town&seed=7&x=39&z=18&zoom=110&speed=40',
       source: 'tab', device: PHONE, audio: true,
-      async setup(ctx) { await ready(ctx); await ctx.page.getByRole('button', { name: /^Roads/ }).click(); await ctx.wait(400); },
+      async setup(ctx) { await ready(ctx); await ctx.page.getByRole('button', { name: /^Roads \(\d\)$/ }).click(); await ctx.wait(400); },
       async act(ctx) {
         await ctx.cut();
         await ctx.wait(400);
@@ -212,7 +212,7 @@ export const scenario: Scenario = {
       source: 'tab', device: TABLET,
       async setup(ctx) {
         await ready(ctx);
-        await ctx.page.getByRole('button', { name: /^Zones/ }).click();
+        await ctx.page.getByRole('button', { name: /^Zones \(\d\)$/ }).click();
         await ctx.page.getByRole('button', { name: 'Homes' }).click();
         await ctx.wait(400);
       },

@@ -4,7 +4,7 @@
  */
 import { expect, test } from '@playwright/test';
 import { newTown } from '../../src/sim/newtown';
-import { fakeGamepad, open, readStory, snapshot, tap, tileOnScreen, watch, withTown } from './helpers';
+import { fakeGamepad, open, readStory, snapshot, tap, tileOnScreen, toolButton, watch, withTown } from './helpers';
 
 /** A story town at chapter 3 (maps, transit and services open), in slot 1. */
 function chapterTown(chapter = 3) {
@@ -21,7 +21,7 @@ test('the maps show happiness, a service’s reach and greenery, with patterns f
   await open(page);
   await page.getByRole('button', { name: /^Continue / }).click();
   await readStory(page);
-  await page.getByRole('button', { name: /^Maps/ }).click();
+  await toolButton(page, 'Maps').click();
   for (const name of ['Happiness', 'School', 'Greenery', 'Traffic']) {
     await page.getByRole('button', { name, exact: true }).click();
     await expect.poll(async () => (await snapshot(page)).sub).not.toBe('');
@@ -35,7 +35,7 @@ test('City Hall shows the budget, the charts and the town projects', async ({ pa
   await open(page);
   await page.getByRole('button', { name: /^Continue / }).click();
   await readStory(page);
-  await page.getByRole('button', { name: /^City Hall/ }).click();
+  await toolButton(page, 'City Hall').click();
   const hall = page.getByRole('dialog', { name: 'City Hall' });
   await expect(hall).toBeVisible();
   await expect(hall.getByText('Relight the lighthouse')).toBeVisible();
@@ -54,11 +54,11 @@ test('Creative mode: build anything for free, then remove it', async ({ page, ha
   await open(page);
   await page.getByRole('button', { name: /^Continue / }).click();
   expect((await snapshot(page)).mode).toBe('creative');
-  await page.getByRole('button', { name: /^Parks/ }).click();
+  await toolButton(page, 'Parks').click();
   await page.getByRole('button', { name: /^Tree/ }).first().click();
   expect((await snapshot(page)).placing?.def).toBe('tree');
   const before = (await snapshot(page)).things;
-  const p = await tileOnScreen(page, 36.5, 14.5);
+  const p = await tileOnScreen(page, 36, 14);
   await tap(page, p, hasTouch);
   if (hasTouch) await tap(page, p, true); // a finger moves the ghost first, then places
   await expect.poll(async () => (await snapshot(page)).things).toBe(before + 1);
@@ -84,7 +84,7 @@ test('every button is at least 48 px both ways', async ({ page }) => {
   await readStory(page);
   expect(await small()).toEqual([]);
   for (const tool of ['Roads', 'Zones', 'Parks', 'Services', 'Transit', 'Build', 'Maps']) {
-    await page.getByRole('button', { name: new RegExp(`^${tool}`) }).click();
+    await toolButton(page, tool).click();
     expect(await small(), tool).toEqual([]);
   }
   await page.getByRole('button', { name: 'Menu' }).click();

@@ -5,7 +5,7 @@
  * requests anywhere.
  */
 import { expect, test, type Page } from '@playwright/test';
-import { dragTiles, newStoryTown, open, pickAt, PREFIX, snapshot, tileOnScreen, watch } from './helpers';
+import { dragTiles, newStoryTown, open, pickAt, PREFIX, snapshot, tileOnScreen, toolButton, watch } from './helpers';
 
 /** Zoom out until every tile is well inside the open part of the screen. */
 async function inView(page: Page, tiles: [number, number][]) {
@@ -38,11 +38,11 @@ test('draws a street and zones homes, and a family moves in', async ({ page, has
   await newStoryTown(page);
   await inView(page, [[40, 17], [40, 20], [38, 17], [39, 20]]);
   const before = await snapshot(page);
-  await page.getByRole('button', { name: /^Roads/ }).click();
+  await toolButton(page, 'Roads').click();
   await dragTiles(page, [40, 17], [40, 20], hasTouch);
   await expect.poll(async () => (await snapshot(page)).roads).toBe(before.roads + 4);
   expect((await snapshot(page)).coins).toBeLessThan(before.coins);
-  await page.getByRole('button', { name: /^Zones/ }).click();
+  await toolButton(page, 'Zones').click();
   await page.getByRole('button', { name: 'Homes' }).click();
   await dragTiles(page, [38, 17], [39, 20], hasTouch);
   // homes grow on the new lots (town time runs fast here)
@@ -57,7 +57,7 @@ test('a tap picks the tile under it, and a building’s card opens', async ({ pa
   const p = await tileOnScreen(page, 40, 13);
   expect(await pickAt(page, p.x, p.y)).toMatchObject({ x: 40, z: 13 });
   // City Hall (41–44, 8–10) opens its card
-  const hall = await tileOnScreen(page, 42.5, 9.5);
+  const hall = await tileOnScreen(page, 42, 9);
   if (hasTouch) await page.touchscreen.tap(hall.x, hall.y); else await page.mouse.click(hall.x, hall.y);
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(problems).toEqual([]);

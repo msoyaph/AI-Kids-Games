@@ -8,7 +8,8 @@ export const launchGames = [
   { slug: 'calex-cart',title: 'Calex Cart',key: 'calexcart.slot.1',prefix: /^calexcart\./ },
   { slug: 'tuck-pop',title: 'Tuck Pop',key: 'tuckpop.run',prefix: /^tuckpop\./ },
   { slug: 'agentmon',title: 'Agentmon',key: 'agentmon.slot1',prefix: /^agentmon\./ },
-  { slug: 'fieldlark',title: 'Fieldlark',key: 'fieldlark.save',prefix: /^fieldlark\./ }
+  { slug: 'fieldlark',title: 'Fieldlark',key: 'fieldlark.save',prefix: /^fieldlark\./ },
+  { slug: 'breezeport',title: 'Breezeport',key: 'breezeport.slot1',prefix: /^breezeport\./ }
 ];
 export async function press(locator: Locator,touch: boolean) { if (touch) await locator.tap(); else await locator.click(); }
 export async function instrument(page: Page) {
@@ -144,6 +145,15 @@ export async function startGame(page: Page,slug: string,touch: boolean): Promise
       await page.touchscreen.tap(box!.x+s.board.x+s.board.w/2,box!.y+s.board.y+s.board.h/2);
     } else { await f.locator('body').press('Digit1'); await f.locator('body').press('Enter'); }
     await expect.poll(() => f.evaluate(() => (window as any).__tuckpop.snapshot().moves)).toBe(1);
+  } else if (slug === 'breezeport') {
+    // a new story town in slot 1 (Play, New town, Story, its name), then Marisol's welcome; it saves as it starts
+    await press(f.getByRole('button',{ name:'Play',exact:true }),touch);
+    await press(f.getByRole('button',{ name:'New town' }).first(),touch);
+    await press(f.getByRole('button',{ name:/^Story/ }),touch);
+    await press(f.getByRole('button',{ name:'Become the mayor!' }),touch);
+    await checkAudio(f);
+    for (let i = 0; i < 10 && await f.locator('.story-card button.primary').count(); i++) await press(f.locator('.story-card button.primary'),touch);
+    await f.waitForFunction(() => (window as any).__breezeport.snapshot().screen === 'city');
   } else if (slug === 'fieldlark') {
     // a new farm: Hattie's welcome (the clock waits while she talks), then the farm saves as the chapter begins
     await press(f.getByRole('button',{ name:'Start farming' }),touch);
@@ -241,6 +251,12 @@ export async function verifySaveReload(f: Frame,slug: string) {
     await f.waitForFunction(() => (window as any).__tuckpop.snapshot().screen === 'play');
     expect(await f.evaluate(() => (window as any).__tuckpop.snapshot().moves)).toBe(1);
     expect(await f.evaluate(() => (window as any).__tuckpop.snapshot().persistent)).toBe(true);
+  } else if (slug === 'breezeport') {
+    // the town is kept: Continue <name>, and Marisol's welcome doesn't play again
+    await f.getByRole('button',{ name:/^Continue / }).click();
+    await f.waitForFunction(() => (window as any).__breezeport.snapshot().screen === 'city');
+    await expect(f.locator('.story-card')).toHaveCount(0);
+    expect(await f.evaluate(() => (window as any).__breezeport.snapshot().persistent)).toBe(true);
   } else if (slug === 'fieldlark') {
     // the farm is kept: Keep farming, and the story carries on without Hattie's welcome again
     await f.getByRole('button',{ name:'Keep farming' }).click();
