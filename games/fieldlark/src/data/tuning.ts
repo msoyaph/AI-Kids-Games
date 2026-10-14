@@ -30,7 +30,7 @@ export const TUNING = {
   /** The safety net: free plantings when there's no other way to get going. */
   safetySeeds: 6,
   /** XP to reach each level after 1 (grows gently). */
-  xpCurve: { base: 30, growth: 1.32, cap: 40 },
+  xpCurve: { base: 30, growth: 1.48, cap: 40 },
 };
 
 /** Total XP needed to reach `level` (level 1 needs 0). */

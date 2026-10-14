@@ -5,7 +5,8 @@
 import * as THREE from 'three';
 
 /** Painted patterns (the shader draws them on the part's surfaces). */
-export const PAT = { none: 0, planks: 1, boards: 2, shingles: 3, stone: 4, straw: 5, bark: 6, moss: 7, keep: 8 } as const;
+/** Painted patterns (fx.ts). `keep`: never tinted per instance. `glow`: windows and lamps, lit at night. */
+export const PAT = { none: 0, planks: 1, boards: 2, shingles: 3, stone: 4, straw: 5, bark: 6, moss: 7, keep: 8, glow: 9 } as const;
 // (keep: no pattern, and never tinted by the instance colour; see fx.ts `tint`)
 
 export interface PartOpts {

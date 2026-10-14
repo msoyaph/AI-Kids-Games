@@ -78,6 +78,7 @@
     "prefix": "fieldlark.",
     "keys": [
       "fieldlark.save",
+      "fieldlark.save.bak",
       "fieldlark.save.broken",
       "fieldlark.settings"
     ],

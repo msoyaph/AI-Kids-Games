@@ -415,8 +415,8 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 | 10 Farmhands as workers | done in code (232 unit tests); browser check pending a quiet machine |
 | 11 Larkford town square: the farm stand and contracts | done in code (247 unit tests); browser check pending a quiet machine |
 | 12 Channels, sprinklers, greenhouses, the Farm Lab | done in code (264 unit tests); browser check pending a quiet machine |
-| 13 The look everywhere, seasons, night, music | — |
-| 14 Save v2, bot and pacing, performance, full QA | — |
+| 13 The look everywhere, seasons, night, music | code done and checked on the GPU (day, night, snow, rain, mist, town, greenhouse); final recapture pending |
+| 14 Save v2, bot and pacing, performance, full QA | save v2, backup, budget, bot, pacing and economy sims done; max-farm perf, new e2e specs and visual review left |
 | 15 Site step, trailer, MCP catalog, PR and preview | — |
 
 **Phases 1–2 notes:**
@@ -499,5 +499,41 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
   showed the level-up card. The tick now compares with `flags.levelSeen` (old saves start at their
   level, and get the Lab ideas their levels would have earned).
 
-**Next:** phase 13 (the look everywhere, music) needs the GPU; while the machine is busy, phase 14's
-CPU work (save v2, the bot and the pacing sim) can go first.
+**Phase 13 notes:**
+- `fx.ts`: `snowAmount` (snow settles on what faces the sky, patchy; materials with `snow: true`),
+  `nightGlow` (parts with `PAT.glow` = 9 light up warm at night: windows, lamps, lanterns), and the
+  haze now leaves Larkford's square clear. Stone patterns map flat on top faces (the cobbles).
+- `render/weather.ts`: rain and snow fall in the vertex shader (one draw each), fireflies on warm nights,
+  two thin mist sheets on misty mornings (kept light: a strong mist washed everything out). Main sets
+  `view.weatherNow` and `view.snowTarget` every frame (`weatherFor`).
+- Sky stars at night (`sky.ts`), frost along the banks in winter (`water.ts`), spring blossom petals
+  (`life.ts`), a warm glow in greenhouse glass at night.
+- `audio/music.ts`: generative music by season and time of day on the music bus; animal voices and
+  the boat's horn in `sfx`.
+- The showcase farm now shows the late game: a greenhouse, channels and a sprinkler, helpers at work,
+  the stand stocked, the ribbon wall.
+
+**Phase 14 notes (so far):**
+- **Save format 2** (`save/compact.ts`): objects as tuples in order with a per-save word list, times
+  to 0.1 s, paths run-length coded, the story base cut to the current goals. A worst-case farm is
+  115 KB (`tests/unit/storage.test.ts` budget: 140 KB a copy). Format-1 fixtures in `tests/fixtures/`.
+- **Backup:** `fieldlark.save.bak`, written with a save every 5 minutes of play, only after the main
+  write worked. An unreadable main save is kept as `save.broken` and the backup takes over.
+- **The bot** (`tests/sim/bot.ts`) plays like a kid: 6 s an action, a learning pause the first times it
+  does something new, story reading counted. Chores and story jobs take turns.
+- **Pacing** (`tests/sim/pacing.test.ts`, 6 seeds): every farm reaches the credits; mean 6–8 h
+  (measured 6.0–6.4 across seeds, range about 5.5–8.5 h); no chapter over 4 h; coin waits under 2
+  min; starting a chapter with 0 coins and an empty barn still finishes it.
+- **Economy** (`tests/sim/economy.test.ts`): from a chapter-5 farm, two hours with one crop only,
+  one stand price for everything, or no workshops: none earns more than 15% over the mix (pricing
+  a bit high earns about 10% more, which is the stand's lesson).
+- **Balance changes:** a few goal counts raised (early chapters had 5–20 minutes of play), land costs
+  500 / 2,500 / 4,500 / 6,500 / 12,000 at levels 4 / 9 / 12 / 15 / 18, XP curve growth 1.48.
+- **Fixes found by the bot:** helpers on Deliveries now leave alone anything an open story request
+  needs (they sold the milk Mrs. Penrose's cheese needed via the stand); the picnic hint points to the
+  greenhouse for out-of-season strawberries.
+- `npm test` now runs the unit tests and the sims (about 10 s); CI's default game job runs it.
+
+**Next:** finish phase 14: new e2e specs (farmhouse, stand, forecast, helpers, gamepad, 48 px layout,
+reduced motion), the maximum-farm performance pass, and the visual review at every tier; then
+phase 15.

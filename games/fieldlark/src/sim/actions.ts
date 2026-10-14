@@ -22,6 +22,7 @@ import { restock, setPrice, stock, unstock } from './stand';
 import { sendDrop } from './contracts';
 import { isGreenhouse, pickPlot, plantPlot } from './greenhouse';
 import { learn } from './lab';
+import { digChannel } from './water';
 
 export type Action =
   | { type: 'plow'; x: number; z: number }
@@ -57,7 +58,8 @@ export type Action =
   | { type: 'sendDrop'; business: BusinessId }
   | { type: 'plantPlot'; building: number; plot: number; crop: string; variety?: string }
   | { type: 'pickPlot'; building: number; plot: number }
-  | { type: 'learn'; idea: string };
+  | { type: 'learn'; idea: string }
+  | { type: 'dig'; x: number; z: number };
 
 export type ActResult = { ok: true; [k: string]: unknown } | { ok: false; why: string };
 
@@ -118,5 +120,6 @@ export function act(farm: Farm, a: Action): ActResult {
     case 'plantPlot': { const o = objById(farm, a.building); return o && isGreenhouse(o) ? plantPlot(farm, o, a.plot, a.crop, a.variety ?? null) : no('That is not a greenhouse.'); }
     case 'pickPlot': { const o = objById(farm, a.building); return o && isGreenhouse(o) ? pickPlot(farm, o, a.plot) : no('That is not a greenhouse.'); }
     case 'learn': return learn(farm, a.idea);
+    case 'dig': return digChannel(farm, a.x, a.z);
   }
 }

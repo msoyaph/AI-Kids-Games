@@ -18,6 +18,10 @@ import type { FieldObj } from '../sim/objects';
 import { newFarm, type Farm } from '../sim/state';
 import { startJob } from '../sim/production';
 import { advance } from '../sim/tick';
+import { plantPlot } from '../sim/greenhouse';
+import { assign, hire } from '../sim/helpers';
+import { stock } from '../sim/stand';
+import { digChannel } from '../sim/water';
 
 const isWater = (x: number, z: number) => x >= 0 && z >= 0 && x < 56 && z < 56 && tileAt(x, z).water;
 
@@ -53,6 +57,20 @@ export function showcaseFarm(seed = 7): Farm {
   for (let z = 40; z <= 43; z++) paintPath(farm, 40, z, 2);
   for (let x = 40; x <= 44; x++) placeDecor(farm, 'picket', { x, z: 45, rot: 0 });
   for (const [x, z, d] of [[39, 45, 'flowers_sun'], [45, 45, 'flowers_rose'], [46, 45, 'flowers_sky'], [44, 43, 'bench'], [39, 43, 'lamp'], [47, 43, 'scarecrow'], [48, 47, 'haybale']] as const) placeDecor(farm, d, { x, z, rot: 0 });
+  // late in the story: helpers at work, a greenhouse, water channels from the river, the stand stocked
+  farm.story.chapter = 7;
+  farm.story.introSeen = true;
+  farm.flags.levelSeen = 14;
+  farm.flags['set:ribbons'] = 1;
+  const gh = place('greenhouse', 46, 39);
+  if (gh) for (const [i, c] of ['strawberry', 'bellpepper', 'watermelon', 'cabbage'].entries()) plantPlot(farm, gh, i, c);
+  for (let z = 37; z <= 41; z++) { const o = farm.objects.find(ob => ob.x === 49 && ob.z === z); if (!o) digChannel(farm, 49, z); }
+  for (let z = 37; z <= 40; z++) { if (!farm.objects.some(o => o.x === 48 && o.z === z)) { const r = plow(farm, 48, z); if (r.ok) plant(farm, r.field, z % 2 ? 'bokchoy' : 'cabbage', isWater); } }
+  placeDecor(farm, 'sprinkler', { x: 48, z: 41, rot: 0 });
+  placeDecor(farm, 'ribbonwall', { x: 34, z: 42, rot: 0 });
+  const cot = farm.objects.find(o => o.def === 'cottage')!;
+  for (const job of ['water', 'animals', 'deliver'] as const) { if (hire(farm, { x: cot.x + 1, z: cot.z + 3 })) assign(farm, farm.helpers.length - 1, job, { homes: farm.objects.filter(o => o.def === 'coop' || o.def === 'cowbarn').map(o => o.id) }); }
+  for (const [i, id] of ['strawberry', 'egg', 'honey', 'cabbage', 'bread', 'pumpkin'].entries()) { add(farm, id, 3, 8); stock(farm, i, id, 3, 6); }
   // things growing and being made
   for (let i = 0; i < 90; i++) advance(farm, 2);
   add(farm, 'wheat', 2, 12);

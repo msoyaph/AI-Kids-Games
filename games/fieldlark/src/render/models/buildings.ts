@@ -37,7 +37,7 @@ export function roof(cx: number, cz: number, w: number, d: number, y: number, co
 function addWindow(parts: Parts, x: number, y: number, z: number, face: 1 | -1, w = 0.42, h = 0.4, flowers = true) {
   const o = face * 0.03;
   parts.push(part(bevelBox(w + 0.1, h + 0.1, 0.06, 0.015), TRIM, { pos: [x, y, z + o] }));
-  parts.push(part(box(w, h, 0.04), GLASS, { pos: [x, y, z + o * 1.6] }));
+  parts.push(part(box(w, h, 0.04), GLASS, { pattern: PAT.glow, pos: [x, y, z + o * 1.6] }));
   parts.push(part(box(0.035, h, 0.05), TRIM, { pos: [x, y, z + o * 2] }), part(box(w, 0.035, 0.05), TRIM, { pos: [x, y, z + o * 2] }));
   for (const s of [-1, 1]) parts.push(part(box(0.16, h + 0.06, 0.04), SHUTTER, { pos: [x + s * (w / 2 + 0.14), y, z + o * 1.4], pattern: PAT.boards }));
   if (!flowers) return;
@@ -89,7 +89,7 @@ export function cottage(): THREE.BufferGeometry {
   parts.push(part(bevelBox(0.58, 0.86, 0.06, 0.015), TRIM, { pos: [cx, base + 0.43, f + 0.02] }));
   parts.push(part(box(0.46, 0.78, 0.05), DOOR, { pos: [cx, base + 0.39, f + 0.04], pattern: PAT.boards }));
   parts.push(part(sphere(0.03, 6, 4), 0xf2c94c, { pos: [cx + 0.15, base + 0.4, f + 0.08] }));
-  parts.push(part(box(0.18, 0.14, 0.03), GLASS, { pos: [cx, base + 0.62, f + 0.075] }));
+  parts.push(part(box(0.18, 0.14, 0.03), GLASS, { pattern: PAT.glow, pos: [cx, base + 0.62, f + 0.075] }));
   parts.push(part(bevelBox(0.72, 0.08, 0.32, 0.02), STONE, { pos: [cx, 0.08, f + 0.2], pattern: PAT.stone }));
   parts.push(part(box(0.86, 0.06, 0.42), ROOF, { pos: [cx, base + 0.98, f + 0.2], rot: [0.32, 0, 0], pattern: PAT.shingles }));
   for (const s of [-1, 1]) parts.push(part(box(0.05, 0.05, 0.36), WOOD_DARK, { pos: [cx + s * 0.36, base + 0.88, f + 0.15], rot: [-0.6, 0, 0] }));
@@ -102,12 +102,12 @@ export function cottage(): THREE.BufferGeometry {
   for (const s of [-1, 1]) {
     const x = cx + s * (w / 2 + 0.03);
     parts.push(part(bevelBox(0.06, 0.48, 0.5, 0.015), TRIM, { pos: [x, base + 0.62, cz] }));
-    parts.push(part(box(0.04, 0.38, 0.4), GLASS, { pos: [x + s * 0.01, base + 0.62, cz] }));
+    parts.push(part(box(0.04, 0.38, 0.4), GLASS, { pattern: PAT.glow, pos: [x + s * 0.01, base + 0.62, cz] }));
     parts.push(part(box(0.05, 0.38, 0.035), TRIM, { pos: [x + s * 0.02, base + 0.62, cz] }));
   }
   // a round window in the front gable
   parts.push(part(cyl(0.15, 0.15, 0.05, 12), TRIM, { pos: [cx, base + wallH + 0.34, f - 0.02], rot: [Math.PI / 2, 0, 0] }));
-  parts.push(part(cyl(0.11, 0.11, 0.06, 12), GLASS, { pos: [cx, base + wallH + 0.34, f - 0.01], rot: [Math.PI / 2, 0, 0] }));
+  parts.push(part(cyl(0.11, 0.11, 0.06, 12), GLASS, { pattern: PAT.glow, pos: [cx, base + wallH + 0.34, f - 0.01], rot: [Math.PI / 2, 0, 0] }));
   // the stone chimney
   parts.push(part(box(0.34, 1.0, 0.34), STONE, { pos: [cx + 0.68, base + wallH + 0.55, cz - 0.38], pattern: PAT.stone }));
   parts.push(part(bevelBox(0.42, 0.08, 0.42, 0.02), 0x8f877c, { pos: [cx + 0.68, base + wallH + 1.08, cz - 0.38] }));

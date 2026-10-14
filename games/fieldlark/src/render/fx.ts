@@ -5,6 +5,7 @@
  * uniforms drives them all. Reduced motion sets the wind and the cloud drift to zero.
  */
 import * as THREE from 'three';
+import { SQUARE } from '../sim/map';
 
 export const fxUniforms = {
   fxTime: { value: 0 },
@@ -17,13 +18,18 @@ export const fxUniforms = {
   rimStrength: { value: 0.35 },
   /** The sky's colour at the horizon: far land fades into it. */
   hazeColor: { value: new THREE.Color(0xdfeaf0) },
+  /** Snow lying on roofs, tops and treetops (0..1, winter). */
+  snowAmount: { value: 0 },
+  /** Windows and lamps lit (0 by day, 1 at night). */
+  nightGlow: { value: 0 },
 };
 
-/** How hazy a world point is: nothing on the farm, more and more out across the countryside. */
+/** How hazy a world point is: nothing on the farm or in Larkford's square, more and more out across the countryside. */
 export const HAZE_GLSL = /* glsl */ `
 float fxHaze(vec3 w) {
-  vec2 o = max(vec2(0.0), max(-w.xz, w.xz - 56.0));
-  return smoothstep(3.0, 25.0, length(o)) * 0.88;
+  float d = length(max(vec2(0.0), max(-w.xz, w.xz - 56.0)));
+  d = min(d, length(max(vec2(0.0), max(vec2(${SQUARE.x0 - 1}.0, ${Math.floor(SQUARE.z0) - 1}.0) - w.xz, w.xz - vec2(${Math.ceil(SQUARE.x1) + 1}.0, ${SQUARE.z1 + 1}.0)))));
+  return smoothstep(3.0, 25.0, d) * 0.88;
 }`;
 
 export const NOISE_GLSL = /* glsl */ `
@@ -55,7 +61,7 @@ vec3 fxPattern(vec3 col, float pid, vec3 op, vec3 on) {
   vec3 an = abs(on);
   vec2 uv = an.x > an.z ? op.zy : op.xy;
   float k = 1.0;
-  if (pid < 2.5 && an.y > 0.75) uv = op.xz;
+  if ((pid < 2.5 || (pid > 3.5 && pid < 4.5)) && an.y > 0.75) uv = op.xz;
   if (pid < 1.5) {
     float v = uv.y * 7.5, row = floor(v), f = fract(v);
     float seam = smoothstep(0.0, 0.1, f) * smoothstep(1.0, 0.9, f);
@@ -121,6 +127,8 @@ interface PatchOpts {
    * flower's petals but not its stem (PAT.keep). One layer then draws several looks.
    */
   tint?: boolean;
+  /** Snow settles on what faces the sky (in winter, `snowAmount`). */
+  snow?: boolean;
 }
 
 /**
@@ -179,6 +187,8 @@ export function patchMaterial<T extends THREE.MeshLambertMaterial>(m: T, o: Patc
       uniform vec3 rimColor;
       uniform float rimStrength;
       uniform vec3 hazeColor;
+      uniform float snowAmount;
+      uniform float nightGlow;
       varying vec3 vFxWorld;
       ${NOISE_GLSL}
       ${CLOUD_GLSL}
@@ -188,9 +198,18 @@ export function patchMaterial<T extends THREE.MeshLambertMaterial>(m: T, o: Patc
     if (o.patterns) frag = frag.replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb = fxPattern(diffuseColor.rgb, vPat, vObjPos, normalize(vObjN));');
     if (o.color) frag = frag.replace('#include <color_fragment>', `#include <color_fragment>\n${o.color}`);
     if (o.normal) frag = frag.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>\n${o.normal}`);
+    // snow: whiten what faces the sky (the normal is in view space; this is the world's up), in soft patches
+    if (o.snow) frag = frag.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      if (snowAmount > 0.0) {
+        float up = dot(normal, normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz));
+        float lie = smoothstep(0.45, 0.8, up) * smoothstep(0.3, 0.6, fxNoise(vFxWorld.xz * 2.7) * 0.7 + 0.3) * snowAmount;
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.96, 0.97, 1.0), lie);
+      }`);
     if (o.clouds !== false) frag = frag.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>\nreflectedLight.directDiffuse *= fxCloud(vFxWorld.xz);`);
     let end = '';
     if (o.rim) end += 'outgoingLight += rimColor * pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 2.4) * rimStrength;\n';
+    // windows and lamps: a warm light at night (bright enough for the bloom pass to pick up)
+    if (o.patterns) end += 'if (vPat > 8.5) outgoingLight = mix(outgoingLight, vec3(1.0, 0.82, 0.5) * 1.9, nightGlow * 0.92);\n';
     if (o.light) end += `${o.light}\n`;
     if (!o.noHaze) end += 'outgoingLight = mix(outgoingLight, hazeColor, fxHaze(vFxWorld));\n';
     frag = frag.replace('#include <opaque_fragment>', `${end}#include <opaque_fragment>`);

@@ -1,8 +1,9 @@
 /**
- * Saving the farm: one key (`<prefix>save`), versioned. `decodeFarm` never throws: it migrates
- * older versions step by step, then checks every field and falls back to a fresh value for anything
- * missing or broken, so a damaged save still loads. A save from a newer version of the game is
- * never overwritten (the game says so and plays from memory instead).
+ * Saving the farm: `<prefix>save`, versioned, plus a backup copy (`<prefix>save.bak`) written every
+ * few minutes of play. Format 2 is format 1 written small (src/save/compact.ts). `decodeFarm` never
+ * throws: it unpacks a format-2 save, then checks every field of the plain (format 1) shape and falls
+ * back to a fresh value for anything missing or broken, so a damaged save still loads. A save from a
+ * newer version of the game is never overwritten (the game says so and plays from memory instead).
  */
 import { CROP } from '../data/crops';
 import { VARIETY } from '../data/varieties';
@@ -24,17 +25,23 @@ import type { Stack } from '../sim/inventory';
 import type { Order } from '../sim/orders';
 import type { Coop, NeighborState } from '../sim/neighbors';
 import { NEIGHBOR } from '../data/cast';
-import { read, write, writeJson } from './storage';
+import { read, write } from './storage';
+import { pack, unpack } from './compact';
 
 export const SAVE_KEY = 'save';
 /** The ribbon wall keeps the newest ribbons (the counts keep them all). */
 export const RIBBONS_KEPT = 48;
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
+/** The backup copy: the last good save from a few minutes ago. */
+export const BACKUP_KEY = 'save.bak';
 
 type Raw = Record<string, unknown>;
 
-/** MIGRATIONS[v] turns a version-v save into a version v+1 save. */
-export const MIGRATIONS: Record<number, (raw: Raw) => Raw> = {};
+/**
+ * Older shapes: format 1 is the plain shape the checks below read; format 2 is the same thing
+ * packed, so it is unpacked first. (A future format 3 would add its step here.)
+ */
+const TO_PLAIN: Record<number, (raw: Raw) => Raw> = { 2: unpack };
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const num = (v: unknown, d: number, min = -Infinity, max = Infinity) => (isNum(v) ? Math.min(max, Math.max(min, v)) : d);
@@ -132,14 +139,15 @@ function decodeOrder(v: unknown): Order | null {
 }
 const orderList = (v: unknown): Order[] => (Array.isArray(v) ? v.map(decodeOrder).filter((o): o is Order => !!o) : []);
 
-export type DecodeResult = { farm: Farm; status: 'ok' | 'new' | 'repaired' | 'future'; savedAt: number | null };
+/** `fromBackup`: the main save couldn't be read, so this is the backup from a few minutes before. */
+export type DecodeResult = { farm: Farm; status: 'ok' | 'new' | 'repaired' | 'future'; savedAt: number | null; fromBackup?: boolean };
 
 export function decodeFarm(input: unknown): DecodeResult {
   if (!input || typeof input !== 'object') return { farm: newFarm(1), status: 'new', savedAt: null };
   let raw = { ...(input as Raw) };
   const version = int(raw.v, 1, 1);
   if (version > SAVE_VERSION) return { farm: newFarm(int(raw.seed, 1)), status: 'future', savedAt: null };
-  for (let v = version; v < SAVE_VERSION; v++) raw = MIGRATIONS[v]!(raw);
+  if (TO_PLAIN[version]) raw = TO_PLAIN[version]!(raw);
   const fresh = newFarm(int(raw.seed, 1, 0));
   let repaired = false;
   const take = <T>(value: T, ok: boolean, fallback: T): T => { if (!ok) repaired = true; return ok ? value : fallback; };
@@ -243,7 +251,7 @@ export function decodeFarm(input: unknown): DecodeResult {
   return { farm, status: repaired ? 'repaired' : 'ok', savedAt: isNum(raw.savedAt) ? raw.savedAt : null };
 }
 
-export const encodeFarm = (farm: Farm, savedAt?: number) => ({ ...farm, v: SAVE_VERSION, ...(savedAt !== undefined ? { savedAt } : {}) });
+export const encodeFarm = (farm: Farm, savedAt?: number) => pack(farm, savedAt);
 
 /** Loads the saved farm, or null when there is none. */
 /**
@@ -253,10 +261,18 @@ export const encodeFarm = (farm: Farm, savedAt?: number) => ({ ...farm, v: SAVE_
  */
 export function loadFarm(): DecodeResult | { status: 'broken'; kept: boolean } | null {
   const text = read(SAVE_KEY);
-  if (!text) return null;
-  let raw: unknown;
-  try { raw = JSON.parse(text); } catch {
+  const parse = (t: string | null): unknown => { if (!t) return undefined; try { return JSON.parse(t); } catch { return undefined; } };
+  if (!text) {
+    // no main save, but a backup (the main one was lost): carry on from the backup
+    const bak = parse(read(BACKUP_KEY));
+    return bak && typeof bak === 'object' ? { ...decodeFarm(bak), fromBackup: true } : null;
+  }
+  const raw = parse(text);
+  if (raw === undefined) {
     const kept = read(BROKEN_KEY) === text || write(BROKEN_KEY, text);
+    const bak = parse(read(BACKUP_KEY));
+    // the unreadable save is kept aside; the backup from a few minutes before takes over
+    if (kept && bak && typeof bak === 'object') return { ...decodeFarm(bak), fromBackup: true };
     return { status: 'broken', kept };
   }
   return decodeFarm(raw);
@@ -269,4 +285,10 @@ export const BROKEN_KEY = 'save.broken';
  * Write the save. Returns false when the browser refused (for example, its storage is full): the
  * previous save is then still there, whole (a storage write either happens completely or not at all).
  */
-export const saveFarm = (farm: Farm, savedAt?: number) => writeJson(SAVE_KEY, encodeFarm(farm, savedAt));
+export function saveFarm(farm: Farm, savedAt?: number, backup = false): boolean {
+  const text = JSON.stringify(encodeFarm(farm, savedAt));
+  const ok = write(SAVE_KEY, text);
+  // the backup only follows a save that worked, so it is always a whole, good copy
+  if (ok && backup) write(BACKUP_KEY, text);
+  return ok;
+}

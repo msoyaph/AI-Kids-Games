@@ -15,6 +15,7 @@ import { ITEMS, itemDef } from '../data/items';
 import { dayIndex, seasonOf, type Season } from './clock';
 import { add, count, roomLeft, take, type Stars } from './inventory';
 import { priceOf } from './market';
+import { neededForStory, storyNeeds } from './orders';
 import type { Farm } from './state';
 import { bump, earn, roll } from './world';
 
@@ -187,12 +188,16 @@ export function standTip(day: StandDay | undefined, kinds: number): string | nul
 export function restockTask(farm: Farm): number | null {
   if (!standOpen(farm)) return null;
   const s = shelves(farm);
-  const i = s.findIndex(x => x.item && x.n < x.keep && count(farm, x.item, x.stars) > 0);
+  const story = storyNeeds(farm);
+  const i = s.findIndex(x => x.item && x.n < x.keep && count(farm, x.item, x.stars) > 0 && !neededForStory(farm, x.item, 1, story));
   return i >= 0 ? i : null;
 }
 
 export function restock(farm: Farm, i: number): { ok: true; n: number } | Fail {
   const slot = shelves(farm)[i];
   if (!slot?.item) return { ok: false, why: 'That shelf is empty.' };
-  return stock(farm, i, slot.item, slot.stars, Math.max(0, slot.keep - slot.n));
+  // never take what a story request on the board still needs
+  const keepForStory = storyNeeds(farm).get(slot.item) ?? 0;
+  const n = Math.min(slot.keep - slot.n, count(farm, slot.item) - keepForStory);
+  return n > 0 ? stock(farm, i, slot.item, slot.stars, n) : { ok: false, why: 'Kept for a story request.' };
 }

@@ -65,7 +65,7 @@ const MODELS: Record<string, () => THREE.BufferGeometry> = {
   ]),
   lamp: () => merge([
     part(cyl(0.05, 0.08, 1.2, 6), METAL, { pos: [0, 0.6, 0] }),
-    part(cyl(0.12, 0.08, 0.2, 6), 0xffe9a8, { pos: [0, 1.3, 0] }),
+    part(cyl(0.12, 0.08, 0.2, 6), 0xffe9a8, { pos: [0, 1.3, 0], pattern: PAT.glow }),
     part(cone(0.16, 0.12, 6), METAL, { pos: [0, 1.46, 0] }),
   ]),
   scarecrow: () => merge([
@@ -136,12 +136,12 @@ const MODELS: Record<string, () => THREE.BufferGeometry> = {
   paperlanterns: () => merge([
     part(cyl(0.035, 0.035, 1.6, 5), WOOD_DARK, { pos: [-0.4, 0.8, 0] }), part(cyl(0.035, 0.035, 1.6, 5), WOOD_DARK, { pos: [0.4, 0.8, 0] }),
     part(cyl(0.008, 0.008, 0.8, 3), 0x3d3a35, { pos: [0, 1.5, 0], rot: [0, 0, Math.PI / 2] }),
-    ...[-0.25, 0, 0.25].map((x, i) => part(sphere(0.09, 8, 6), [0xff9a5a, 0xffd34d, 0xf29ab8][i]!, { pos: [x, 1.36, 0], scale: [1, 1.2, 1] })),
+    ...[-0.25, 0, 0.25].map((x, i) => part(sphere(0.09, 8, 6), [0xff9a5a, 0xffd34d, 0xf29ab8][i]!, { pos: [x, 1.36, 0], scale: [1, 1.2, 1], pattern: PAT.glow })),
   ]),
   lanternpost: () => merge([
     part(cyl(0.05, 0.06, 1.2, 6), 0x3d3a35, { pos: [0, 0.6, 0] }),
     part(box(0.36, 0.04, 0.04), 0x3d3a35, { pos: [0.14, 1.2, 0] }),
-    part(bevelBox(0.16, 0.22, 0.16, 0.03), 0xfff1b0, { pos: [0.28, 1.06, 0] }),
+    part(bevelBox(0.16, 0.22, 0.16, 0.03), 0xfff1b0, { pos: [0.28, 1.06, 0], pattern: PAT.glow }),
     part(cone(0.13, 0.12, 4), 0x3d3a35, { pos: [0.28, 1.22, 0], rot: [0, Math.PI / 4, 0] }),
   ]),
   gardenmill: () => merge([
@@ -162,7 +162,7 @@ const MODELS: Record<string, () => THREE.BufferGeometry> = {
   cart: () => merge([part(box(1.4, 0.3, 0.7), WOOD, { pos: [1, 0.45, 0.5] }), part(torus(0.25, 0.04, 5, 12), WOOD_DARK, { pos: [0.6, 0.25, 0.88] }), part(torus(0.25, 0.04, 5, 12), WOOD_DARK, { pos: [1.4, 0.25, 0.88] }), part(box(0.05, 0.05, 0.9), WOOD_DARK, { pos: [1.9, 0.35, 0.5], rot: [0, Math.PI / 2, 0.2] }), part(ico(0.18, 0), 0xf08a24, { pos: [0.8, 0.72, 0.5] }), part(ico(0.15, 0), 0xe8cf7a, { pos: [1.2, 0.7, 0.45] })]),
   milkcans: () => merge([part(cyl(0.11, 0.13, 0.36, 8), 0xdfe8ee, { pos: [-0.12, 0.18, 0] }), part(cyl(0.06, 0.09, 0.1, 8), 0xdfe8ee, { pos: [-0.12, 0.41, 0] }), part(cyl(0.11, 0.13, 0.36, 8), 0xdfe8ee, { pos: [0.16, 0.18, 0.1] }), part(cyl(0.06, 0.09, 0.1, 8), 0xdfe8ee, { pos: [0.16, 0.41, 0.1] })]),
   snowfolk: () => merge([part(sphere(0.28, 8, 6), WHITE, { pos: [0, 0.28, 0] }), part(sphere(0.2, 8, 6), WHITE, { pos: [0, 0.68, 0] }), part(cone(0.04, 0.16, 5), 0xf08a24, { pos: [0, 0.7, 0.22], rot: [Math.PI / 2, 0, 0] }), part(cyl(0.18, 0.18, 0.05, 8), 0xe25c4a, { pos: [0, 0.82, 0] }), part(cyl(0.12, 0.13, 0.18, 8), 0xe25c4a, { pos: [0, 0.94, 0] })]),
-  lanterns: () => merge([part(cyl(0.035, 0.035, 1.5, 5), WOOD_DARK, { pos: [-0.38, 0.75, 0] }), part(cyl(0.035, 0.035, 1.5, 5), WOOD_DARK, { pos: [0.38, 0.75, 0] }), ...[0xffd34d, 0xff9f6b, 0xffe9a8].map((c, i) => part(sphere(0.08, 6, 4), c, { pos: [-0.22 + i * 0.22, 1.32 - (i === 1 ? 0.08 : 0), 0], scale: [1, 1.2, 1] }))]),
+  lanterns: () => merge([part(cyl(0.035, 0.035, 1.5, 5), WOOD_DARK, { pos: [-0.38, 0.75, 0] }), part(cyl(0.035, 0.035, 1.5, 5), WOOD_DARK, { pos: [0.38, 0.75, 0] }), ...[0xffd34d, 0xff9f6b, 0xffe9a8].map((c, i) => part(sphere(0.08, 6, 4), c, { pos: [-0.22 + i * 0.22, 1.32 - (i === 1 ? 0.08 : 0), 0], scale: [1, 1.2, 1], pattern: PAT.glow }))]),
   pinetree: () => merge([part(cyl(0.05, 0.07, 0.3, 5), WOOD_DARK, { pos: [0, 0.15, 0] }), part(cone(0.36, 0.55, 7), 0x3f8f5a, { pos: [0, 0.55, 0] }), part(cone(0.26, 0.45, 7), 0x3f8f5a, { pos: [0, 0.88, 0] }), part(ico(0.06, 0), 0xffd34d, { pos: [0, 1.15, 0] })]),
 };
 

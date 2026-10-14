@@ -58,7 +58,7 @@ export const BED_Y = 0.52;
 
 /** A channel tile: a trench of earth with arms towards joined neighbours (mask: 1 north, 2 east, 4 south, 8 west), water inside when wet. */
 export function channelPiece(mask: number, wet: boolean): THREE.BufferGeometry {
-  const EARTH = 0x7d5a3d, WATER = 0x5fb6e6, MUD = 0x5e4430;
+  const EARTH = 0x7d5a3d, WATER = 0x6aa9c4, MUD = 0x5e4430;
   const p: THREE.BufferGeometry[] = [part(box(0.62, 0.045, 0.62), EARTH, { pos: [0, 0.02, 0] }), part(box(0.42, 0.03, 0.42), wet ? WATER : MUD, { pos: [0, 0.035, 0] })];
   const dirs: [number, number, number][] = [[1, 0, -1], [2, 1, 0], [4, 0, 1], [8, -1, 0]];
   for (const [bit, dx, dz] of dirs) {

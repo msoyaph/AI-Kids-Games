@@ -18,5 +18,5 @@ export default defineConfig({
   build: { target: 'es2020', assetsInlineLimit: 100_000_000, cssCodeSplit: false, modulePreload: false },
   server: { port: Number(process.env.PORT) || 5769 },
   preview: { port: Number(process.env.PORT) || 4769 },
-  test: { environment: 'node', include: ['tests/unit/**/*.test.ts'] },
+  test: { environment: 'node', include: ['tests/unit/**/*.test.ts', 'tests/sim/**/*.test.ts'], testTimeout: 600_000 },
 });

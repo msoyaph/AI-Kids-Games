@@ -212,7 +212,7 @@ export class Play {
         if (dragging) return;
         if (o && isHome(o) && animalForHome(o.def)?.product && animalsIn(o).some(a => isReady(farm, a))) {
           const r = collect(farm, o);
-          if (r.ok) { sfx.harvest(Math.max(...r.got.map(g => g.stars))); this.host.float({ x: o.x, z: o.z }, `+${r.total} ${animalForHome(o.def)!.productName}`, 'good'); this.host.changed(); }
+          if (r.ok) { sfx.harvest(Math.max(...r.got.map(g => g.stars))); sfx.animal(animalForHome(o.def)!.id); this.host.float({ x: o.x, z: o.z }, `+${r.total} ${animalForHome(o.def)!.productName}`, 'good'); this.host.changed(); }
           else this.host.say(r.why);
           return;
         }

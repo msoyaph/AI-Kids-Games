@@ -50,6 +50,9 @@ const material = patchMaterial(new THREE.MeshLambertMaterial({ color: 0xffffff, 
       float foam = 1.0 - smoothstep(0.0, 0.035 + 0.07 * fn, depth);
       foam *= 0.5 + 0.5 * smoothstep(0.3, 0.65, fxNoise(p * 3.2 - fxTime * 0.25));
       col = mix(col, vec3(0.97, 0.99, 1.0), foam * 0.7);
+      // winter: a rim of frost along the banks, patchy and pale
+      float frost = snowAmount * (1.0 - smoothstep(0.05, 0.45, depth)) * smoothstep(0.35, 0.6, fxNoise(p * 4.0));
+      col = mix(col, vec3(0.9, 0.95, 1.0), frost * 0.85);
       diffuseColor.rgb = col;
       diffuseColor.a = max(mix(0.5, 0.93, smoothstep(0.0, 0.9, depth)), foam * 0.75);
     }`,

@@ -90,11 +90,11 @@ export const PATHS: readonly PathDef[] = [
 export interface LandDef { area: 'meadow' | 'orchard' | 'pond' | 'riverside' | 'hilltop'; cost: number; level: number; blurb: string }
 /** The land to open, in the order the story brings it. */
 export const LAND: readonly LandDef[] = [
-  { area: 'meadow', cost: 400, level: 4, blurb: 'Big flat fields for big harvests.' },
-  { area: 'orchard', cost: 1500, level: 8, blurb: 'Sunny terraces, just right for fruit trees.' },
-  { area: 'pond', cost: 2600, level: 11, blurb: 'A pond for ducks, and wet fields for rice.' },
-  { area: 'riverside', cost: 4200, level: 14, blurb: 'More land by the river, and a second dock.' },
-  { area: 'hilltop', cost: 7000, level: 17, blurb: 'The top of the hill: bees, breezes and the best view.' },
+  { area: 'meadow', cost: 500, level: 4, blurb: 'Big flat fields for big harvests.' },
+  { area: 'orchard', cost: 2500, level: 9, blurb: 'Sunny terraces, just right for fruit trees.' },
+  { area: 'pond', cost: 4500, level: 12, blurb: 'A pond for ducks, and wet fields for rice.' },
+  { area: 'riverside', cost: 6500, level: 15, blurb: 'More land by the river, and a second dock.' },
+  { area: 'hilltop', cost: 12000, level: 18, blurb: 'The top of the hill: bees, breezes and the best view.' },
 ];
 
 /** Beauty rating names, from a sleepy farm to a picture-perfect one. */

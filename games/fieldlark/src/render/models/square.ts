@@ -19,7 +19,7 @@ function shop(parts: Parts, x: number, z: number, w: number, d: number, h: numbe
   const fz = z + front * (d / 2 + 0.02);
   parts.push(part(box(0.42, 0.7, 0.05), WOOD_DARK, { pos: [x, 0.35, fz], pattern: PAT.planks }));
   for (const sx of [-1, 1]) {
-    parts.push(part(box(0.42, 0.38, 0.05), GLASS, { pos: [x + sx * w * 0.28, h * 0.55, fz] }));
+    parts.push(part(box(0.42, 0.38, 0.05), GLASS, { pattern: PAT.glow, pos: [x + sx * w * 0.28, h * 0.55, fz] }));
     parts.push(part(box(0.5, 0.06, 0.08), TRIM, { pos: [x + sx * w * 0.28, h * 0.55 - 0.22, fz + front * 0.02] }));
   }
   parts.push(part(bevelBox(w * 0.5, 0.26, 0.06, 0.02), sign, { pos: [x, h * 0.9, fz + front * 0.03] }));
@@ -57,7 +57,7 @@ export function squareModel(): THREE.BufferGeometry {
   p.push(part(sphere(0.12, 8, 5), 0x9fd6f0, { pos: [44.6, 1.08, 63.2] }));
   // lamps and bunting across the square
   for (const [lx, lz] of [[42.2, 62.4], [47.6, 62.4], [42.2, 67.6], [47.6, 67.6]] as const) {
-    p.push(part(cyl(0.04, 0.05, 1.5, 6), 0x3d3a35, { pos: [lx, 0.75, lz] }), part(bevelBox(0.18, 0.22, 0.18, 0.03), 0xfff1b0, { pos: [lx, 1.6, lz] }), part(cone(0.16, 0.14, 4), 0x3d3a35, { pos: [lx, 1.78, lz], rot: [0, Math.PI / 4, 0] }));
+    p.push(part(cyl(0.04, 0.05, 1.5, 6), 0x3d3a35, { pos: [lx, 0.75, lz] }), part(bevelBox(0.18, 0.22, 0.18, 0.03), 0xfff1b0, { pos: [lx, 1.6, lz], pattern: PAT.glow }), part(cone(0.16, 0.14, 4), 0x3d3a35, { pos: [lx, 1.78, lz], rot: [0, Math.PI / 4, 0] }));
   }
   const flags = [0xe25c4a, 0xffd34d, 0x6fa8d6, 0x8fd06a, 0xf29ab8];
   for (let i = 0; i < 14; i++) {

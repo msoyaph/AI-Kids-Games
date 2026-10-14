@@ -20,6 +20,9 @@ import { ObjectView } from './objects';
 import { AnimalView } from './animals';
 import { TownView } from './town';
 import { TownSquare } from './square';
+import { WeatherFx, type WeatherNow } from './weather';
+import { Materials } from './materials';
+import { duskAmount } from '../sim/clock';
 import { PostChain } from './post';
 import { QUALITY, type QualityTier } from './quality';
 import { Scenery } from './scenery';
@@ -54,6 +57,8 @@ export class FarmView {
   readonly animals = new AnimalView();
   readonly town = new TownView();
   readonly square = new TownSquare();
+  readonly weather = new WeatherFx();
+  private snowNow = 0;
   readonly life = new Life();
   private post: PostChain | null = null;
   private worldKey = '';
@@ -82,7 +87,7 @@ export class FarmView {
     this.water = buildWater();
     // no ambient occlusion on the sky, water, grass and little bits of life (see NO_AO)
     for (const g of [this.sky.mesh, this.water, this.grass.group, this.life.group]) g.traverse(o => o.layers.set(NO_AO));
-    this.scene.add(this.sky.mesh, this.terrain, this.water, this.scenery.group, this.grass.group, this.objects.group, this.animals.group, this.town.group, this.square.group, this.life.group);
+    this.scene.add(this.sky.mesh, this.terrain, this.water, this.scenery.group, this.grass.group, this.objects.group, this.animals.group, this.town.group, this.square.group, this.life.group, this.weather.group);
     this.goal = { ...start };
     this.view = { x: start.x, z: start.z, y: 0, yaw: start.yawStep * YAW_STEP, zoom: clampZoom(start.zoom || 64) };
     this.view.y = this.groundUnder(start.x, start.z);
@@ -233,8 +238,23 @@ export class FarmView {
     const spec = QUALITY[this.tier];
     this.grass.update(v.x, v.z, Math.hypot(this.width, this.height / Math.sin(PITCH)) / v.zoom * 0.6 + 1, spec.grass);
     this.life.update(dt, this.camera, v, spec.particles, reducedMotion);
+    // night: windows and lamps glow, greenhouses glow warm, stars come out
+    const night = duskAmount(t);
+    fxUniforms.nightGlow.value = night;
+    this.sky.setStars(night);
+    Materials.glassInst.emissive.setRGB(0.55, 0.42, 0.22).multiplyScalar(night);
+    // weather: falling rain or snow, fireflies, mist; snow settles in winter; gusts on windy days
+    const w = this.weatherNow;
+    this.weather.update(w, v.x, v.z, dt, spec.particles, reducedMotion);
+    this.snowNow += (this.snowTarget - this.snowNow) * Math.min(1, dt * 0.25);
+    fxUniforms.snowAmount.value = this.snowNow;
+    fxUniforms.windStrength.value = reducedMotion ? 0 : w.wind;
     this.post?.grade.set(this.lighting.grade);
   }
+
+  /** What the weather is doing now (set by the game every frame), and how much snow should lie. */
+  weatherNow: WeatherNow = { rain: false, snow: false, fireflies: false, mist: 0, wind: 1 };
+  snowTarget = 0;
 
   /** Snaps the eased view to the goal (after a drag, the map stays exactly under the finger). */
   snapToGoal() {

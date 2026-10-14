@@ -22,6 +22,30 @@ export class Sky {
     this.mesh.renderOrder = -10;
     this.mesh.frustumCulled = false;
     this.mesh.name = 'sky';
+    // stars for the lantern night: a fixed scatter over the upper sky, fading in after dusk
+    const pts: number[] = [];
+    let s = 7;
+    const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+    for (let i = 0; i < 420; i++) {
+      const y = 0.12 + rnd() * 0.88, a = rnd() * Math.PI * 2, r = Math.sqrt(1 - y * y);
+      pts.push(Math.cos(a) * r * 0.98, y * 0.98, Math.sin(a) * r * 0.98);
+    }
+    const sg = new THREE.BufferGeometry();
+    sg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    this.starMat = new THREE.PointsMaterial({ color: 0xfff8e0, size: 2, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, fog: false });
+    this.stars = new THREE.Points(sg, this.starMat);
+    this.stars.frustumCulled = false;
+    this.stars.renderOrder = -9;
+    this.mesh.add(this.stars);
+  }
+
+  private stars: THREE.Points;
+  private starMat: THREE.PointsMaterial;
+
+  /** Stars at night (0..1). */
+  setStars(amount: number) {
+    this.starMat.opacity = Math.max(0, amount * 1.2 - 0.2);
+    this.stars.visible = this.starMat.opacity > 0.01;
   }
 
   /** Recolour (only when the colours change). */

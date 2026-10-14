@@ -16,19 +16,19 @@ const lambert = (o: THREE.MeshLambertMaterialParameters = {}) => new THREE.MeshL
 // material shared by both kinds would swap programs on every draw.
 export const Materials = {
   /** Faceted props and buildings, with their painted planks, shingles and stone. */
-  flat: patchMaterial(lambert(), { key: 'flat', rim: true, patterns: true }),
-  flatInst: patchMaterial(lambert(), { key: 'flat-i', rim: true, patterns: true }),
+  flat: patchMaterial(lambert(), { key: 'flat', rim: true, patterns: true, snow: true }),
+  flatInst: patchMaterial(lambert(), { key: 'flat-i', rim: true, patterns: true, snow: true }),
   /** The same, with unpatterned parts tinted per instance (produce on the farm stand). */
-  flatTintInst: patchMaterial(lambert(), { key: 'flat-ti', rim: true, patterns: true, tint: true }),
+  flatTintInst: patchMaterial(lambert(), { key: 'flat-ti', rim: true, patterns: true, tint: true, snow: true }),
   /** Smooth-shaded animals, people and the boat. */
   smooth: patchMaterial(lambert({ flatShading: false }), { key: 'smooth', rim: true }),
   smoothInst: patchMaterial(lambert({ flatShading: false }), { key: 'smooth-i', rim: true }),
   /** Crops and flowers: they sway in the wind. */
   plantInst: patchMaterial(lambert(), { key: 'plant-i', rim: true, wind: 'plant' }),
   /** Trees and bushes: soft round canopies that sway, and bark on the trunks. */
-  treeInst: patchMaterial(lambert({ flatShading: false }), { key: 'tree-i', rim: true, wind: 'tree', patterns: true }),
+  treeInst: patchMaterial(lambert({ flatShading: false }), { key: 'tree-i', rim: true, wind: 'tree', patterns: true, snow: true }),
   /** The same, with the canopy tinted per instance (two looks of a tree in one layer). */
-  treeTintInst: patchMaterial(lambert({ flatShading: false }), { key: 'tree-ti', rim: true, wind: 'tree', patterns: true, tint: true }),
+  treeTintInst: patchMaterial(lambert({ flatShading: false }), { key: 'tree-ti', rim: true, wind: 'tree', patterns: true, tint: true, snow: true }),
   /** Grass tufts and wildflowers around the view. */
   grassInst: patchMaterial(lambert({ side: THREE.DoubleSide }), { key: 'grass-i', wind: 'grass' }),
   /** Greenhouse glass: see-through, pale and bright. */

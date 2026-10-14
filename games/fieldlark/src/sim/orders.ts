@@ -95,6 +95,16 @@ export function refillBoard(farm: Farm): number {
 
 export const canFill = (farm: Farm, o: Order) => o.items.every(x => count(farm, x.id) >= x.n);
 
+/** What the story requests on the board still need, by item (helpers leave these alone). */
+export function storyNeeds(farm: Farm): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const o of farm.orders) if (o.story) for (const x of o.items) out.set(x.id, (out.get(x.id) ?? 0) + x.n);
+  return out;
+}
+
+/** Would using `n` of an item leave too few for the story requests? */
+export const neededForStory = (farm: Farm, id: string, n: number, needs = storyNeeds(farm)) => needs.has(id) && count(farm, id) - n < needs.get(id)!;
+
 /** Send an order's crate down to the dock (the boat takes it on its next trip). */
 export function deliver(farm: Farm, orderId: number): { ok: true } | { ok: false; why: string } {
   const i = farm.orders.findIndex(o => o.id === orderId);

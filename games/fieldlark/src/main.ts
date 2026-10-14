@@ -1,6 +1,7 @@
 import './style.css';
 import { GAME } from './config';
 import { audio, sfx } from './audio/engine';
+import { music } from './audio/music';
 import { CROPS } from './data/crops';
 import { CHAPTERS } from './data/chapters';
 import { NEIGHBOR, PERSON } from './data/cast';
@@ -24,7 +25,9 @@ import { FarmView } from './render/view';
 import { loadFarm, saveFarm } from './save/save';
 import { loadSettings, saveSettings, type Settings } from './save/settings';
 import { persistent } from './save/storage';
-import { seasonName, seasonOf, type Season } from './sim/clock';
+import { dayFrac, dayIndex, duskAmount, SEASON_DAYS, seasonName, seasonOf, type Season } from './sim/clock';
+import { dayEvent, todaysEvent } from './sim/forecast';
+import { raining, snowing } from './sim/weather';
 import { newFarm, type Farm } from './sim/state';
 import { advance, catchUp, type SimEvent } from './sim/tick';
 import { levelOf } from './sim/world';
@@ -316,6 +319,7 @@ function boot() {
         h('button', { onclick: openSettings }, icon('gear', 24), ' Settings')),
       !persistent() && !capture ? h('p.note.storage-note', null, 'This browser can’t keep your farm, so it lasts until you close the game.') : null,
       loaded?.status === 'future' ? h('p.note.storage-note', null, 'Your farm was saved by a newer version of this game, so it stays safe and untouched. This visit plays a new farm that won’t be saved.') : null,
+      loaded?.fromBackup ? h('p.note.storage-note', null, 'Your last save couldn’t be read, so your farm from a few minutes before is back. The unreadable save is kept safe.') : null,
       brokenSave ? h('p.note.storage-note', null, brokenSave.kept
         ? 'Your saved farm couldn’t be read, so a copy is kept safe and untouched. You can start a new farm.'
         : 'Your saved farm couldn’t be read, so it stays safe and untouched. This visit plays a new farm that won’t be saved.') : null);
@@ -381,6 +385,7 @@ function boot() {
       case 'new-orders': if (!farm.flags.sawOrders) { farm.flags.sawOrders = 1; say('New orders on the board by the dock!'); } break;
       case 'boat-back': {
         const coins = e.orders.reduce((s, o) => s + o.coins, 0);
+        sfx.horn();
         sfx.coins();
         say(`The Little Lark is back from Larkford: +${coins} coins!`);
         break;
@@ -451,13 +456,16 @@ function boot() {
 
   // --- saving ---
   let dirty = false;
-  let lastSaveT = farm.t;
+  let lastSaveT = farm.t, lastBackupT = -Infinity;
   /** The browser's storage is full: say so once, keep playing, and try again with every save. */
   let storageFull = false;
   function save() {
     if (capture || futureSave || screen !== 'farm') return;
     farm.cam = { ...view.goal };
-    const ok = saveFarm(farm, Date.now());
+    // a backup copy every five minutes of play (the website's storage audit counts both)
+    const backup = farm.t - lastBackupT >= 300;
+    const ok = saveFarm(farm, Date.now(), backup);
+    if (ok && backup) lastBackupT = farm.t;
     lastSaveT = farm.t;
     dirty = false;
     if (!ok && persistent() && !storageFull) {
@@ -530,7 +538,25 @@ function boot() {
     view.snapToGoal();
   }
 
-  // --- the loop ---
+  /** What the sky is doing now, for the drawing: rain, snow, mist, fireflies, wind, and snow lying in winter. */
+function weatherFor(farm: Farm, view: FarmView) {
+  const today = todaysEvent(farm), f = dayFrac(farm.t), night = duskAmount(farm.t);
+  const w = view.weatherNow;
+  w.rain = raining(farm.seed, farm.t);
+  w.snow = snowing(farm.seed, farm.t);
+  w.fireflies = today === 'warmnight' && night > 0.6;
+  w.mist = today === 'misty' ? Math.max(0, Math.min(1, 1 - (f - 0.32) * 5)) : 0;
+  w.wind = today === 'windy' ? 2.2 : 1;
+  // snow lies from the first snowfall of the winter until spring
+  let lying = false;
+  if (seasonOf(farm.t) === 'winter') {
+    const d0 = dayIndex(farm.t), start = d0 - (d0 % SEASON_DAYS);
+    for (let d = start; d <= d0 && !lying; d++) if (dayEvent(farm.seed, d) === 'snow' && (d < d0 || f >= 0.3)) lying = true;
+  }
+  view.snowTarget = lying ? 1 : 0;
+}
+
+// --- the loop ---
   /** Draw calls and triangles of the last frames (the hook reports the steady and the busiest). */
   const drawnLog: [number, number][] = [];
   let last = performance.now();
@@ -566,6 +592,8 @@ function boot() {
     }
     view.setReducedMotion(reduced());
     view.setWorld(seasonOf(farm.t), farm.unlocked);
+    weatherFor(farm, view);
+    if (screen === 'farm' && !capture) music.update(seasonOf(farm.t), duskAmount(farm.t));
     view.objects.badges = settings.colorblind;
     view.syncFarm(farm, onLockedLand(farm));
     view.animals.update(farm, now / 1000, view.view.yaw, reduced());

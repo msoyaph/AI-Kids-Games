@@ -2,7 +2,7 @@
  * Sound, all synthesized with Web Audio (no audio files). One AudioContext, created on the first
  * tap or key press (browsers block sound before that), with music and effects buses into a gentle
  * limiter. Every call is guarded: if audio is missing or blocked, the game plays on silently.
- * Phase 9 adds the music and the full set of effects; this is the engine and the interface sounds.
+ * The music lives in music.ts; this is the engine, the interface sounds, the animals and the boat.
  */
 
 type Bus = 'music' | 'sfx';
@@ -104,4 +104,18 @@ export const sfx = {
   harvest: (stars: number) => { const base = 523 * (1 + (stars - 1) * 0.125); audio.tone(base, 0.08, { gain: 0.12 }); audio.tone(base * 1.25, 0.08, { gain: 0.1, delay: 0.06 }); if (stars >= 2) audio.tone(base * 1.5, 0.12, { gain: 0.09, delay: 0.12 }); if (stars >= 3) audio.tone(base * 2, 0.16, { type: 'sine', gain: 0.08, delay: 0.18 }); },
   coins: () => { audio.tone(988, 0.06, { type: 'square', gain: 0.04 }); audio.tone(1319, 0.12, { type: 'square', gain: 0.04, delay: 0.06 }); },
   levelUp: () => { [523, 659, 784, 1047].forEach((f, i) => audio.tone(f, 0.18, { gain: 0.1, delay: i * 0.1 })); },
+  /** The animals, in friendly little synth voices (never loud, never sudden). */
+  animal: (id: string) => {
+    switch (id) {
+      case 'chicken': for (let i = 0; i < 3; i++) audio.tone(880 + i * 60, 0.06, { type: 'square', gain: 0.03, delay: i * 0.09, slide: 1.25 }); break;
+      case 'cow': audio.tone(150, 0.7, { type: 'sawtooth', gain: 0.045, slide: 0.8 }); break;
+      case 'sheep': for (let i = 0; i < 4; i++) audio.tone(420 - i * 6, 0.09, { type: 'sawtooth', gain: 0.03, delay: i * 0.07 }); break;
+      case 'goat': for (let i = 0; i < 3; i++) audio.tone(520 - i * 10, 0.08, { type: 'sawtooth', gain: 0.03, delay: i * 0.06 }); break;
+      case 'duck': audio.tone(330, 0.1, { type: 'square', gain: 0.035, slide: 0.7 }); audio.tone(330, 0.1, { type: 'square', gain: 0.035, delay: 0.16, slide: 0.7 }); break;
+      case 'bee': audio.tone(220, 0.4, { type: 'sawtooth', gain: 0.02, slide: 1.06 }); break;
+      case 'dog': audio.tone(500, 0.08, { type: 'square', gain: 0.04, slide: 0.6 }); audio.tone(520, 0.09, { type: 'square', gain: 0.04, delay: 0.14, slide: 0.6 }); break;
+    }
+  },
+  /** The Little Lark's horn: two soft, low toots. */
+  horn: () => { audio.tone(196, 0.45, { type: 'sawtooth', gain: 0.045 }); audio.tone(196, 0.6, { type: 'sawtooth', gain: 0.045, delay: 0.55 }); audio.tone(147, 0.6, { type: 'sine', gain: 0.05, delay: 0.55 }); },
 };

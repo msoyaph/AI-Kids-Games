@@ -12,7 +12,7 @@ import { act } from '../../src/sim/actions';
 import { START_FIELDS } from '../../src/data/start';
 
 /** Every stat a goal may count: what the game bumps today, and what the later systems bump. */
-const KNOWN = /^(cleared|planted|planted:[a-z]+|watered|harvest|orders|composted|collect:[a-z]+|made:[a-z]+|ploughed|rotation|stars3|trades|coops|fairs|story:[a-z-]+|stand-sold|hired|contract:[a-z]+|contracts-done|planted-heirloom|bred|channel-wet|auto-watered|greenhouse-picked|lab|helper:[a-z]+)$/;
+const KNOWN = /^(cleared|planted|planted:[a-z]+|watered|harvest|orders|composted|collect:[a-z]+|made|made:[a-z]+|ploughed|rotation|stars3|trades|coops|fairs|story:[a-z-]+|stand-sold|hired|contract:[a-z]+|contracts-done|planted-heirloom|bred|channel-wet|auto-watered|greenhouse-picked|lab|helper:[a-z]+)$/;
 
 describe('story', () => {
   it('has eight chapters, each with goals, lines and a reward, in plain known terms', () => {
@@ -36,8 +36,8 @@ describe('story', () => {
     farm.stats.cleared = 40; // earlier play
     beginChapter(farm);
     const g = CHAPTERS[0]!.goals.find(x => x.id === 'c1-clear')!;
-    expect(goalProgress(farm, g)).toEqual({ have: 0, need: 5, done: false });
-    farm.stats.cleared = 45;
+    expect(goalProgress(farm, g)).toEqual({ have: 0, need: 6, done: false });
+    farm.stats.cleared = 46;
     expect(goalProgress(farm, g).done).toBe(true);
   });
 

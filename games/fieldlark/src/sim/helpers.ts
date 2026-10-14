@@ -26,7 +26,7 @@ import { fieldState } from './fields';
 import { roomLeft } from './inventory';
 import { areaAt, type AreaId } from './map';
 import type { Obj, OtherObj } from './objects';
-import { canFill } from './orders';
+import { canFill, neededForStory, storyNeeds } from './orders';
 import { canSendDrop } from './contracts';
 import { readyPlots } from './greenhouse';
 import { restockTask } from './stand';
@@ -167,9 +167,12 @@ export function findTask(farm: Farm, h: Helper): Task | null {
     case 'deliver': {
       const dock = farm.objects.find(x => x.def === 'dock');
       if (!dock) return null;
-      const c = farm.contracts.find(x => canSendDrop(farm, x));
+      // anything a story request on the board needs is kept for it (that's the player's to send)
+      const story = storyNeeds(farm);
+      const spare = (items: { id: string; n: number }[]) => !items.some(x => neededForStory(farm, x.id, x.n, story));
+      const c = farm.contracts.find(x => canSendDrop(farm, x) && spare(x.basket));
       if (c) return { action: { type: 'sendDrop', business: c.business }, x: dock.x, z: dock.z };
-      const o = farm.orders.find(x => !x.story && canFill(farm, x));
+      const o = farm.orders.find(x => !x.story && canFill(farm, x) && spare(x.items));
       if (o) return { action: { type: 'deliver', order: o.id }, x: dock.x, z: dock.z };
       const slot = restockTask(farm);
       // the stand is in town, down the river: they set off from the dock

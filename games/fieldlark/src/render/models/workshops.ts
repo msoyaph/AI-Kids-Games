@@ -16,7 +16,7 @@ function house(def: MachineDef, wallH = 1.0): THREE.BufferGeometry[] {
   const f = cz - 0.05 + bd / 2;
   const win = (x: number) => [
     part(bevelBox(0.38, 0.36, 0.05, 0.012), TRIM, { pos: [x, 0.66, f + 0.015] }),
-    part(box(0.3, 0.28, 0.05), GLASS, { pos: [x, 0.66, f + 0.025] }),
+    part(box(0.3, 0.28, 0.05), GLASS, { pattern: PAT.glow, pos: [x, 0.66, f + 0.025] }),
     part(box(0.03, 0.28, 0.06), TRIM, { pos: [x, 0.66, f + 0.03] }),
     part(bevelBox(0.42, 0.08, 0.12, 0.015), WOOD, { pos: [x, 0.45, f + 0.07], pattern: PAT.planks }),
     ...[-0.12, 0, 0.12].map((dx, i) => part(ico(0.04, 0), [0xff7a8a, 0xffd34d, 0xffffff][i]!, { pos: [x + dx, 0.51, f + 0.09] })),
@@ -46,7 +46,7 @@ export function windmill(def: MachineDef): THREE.BufferGeometry {
     part(cyl(0.55, 0.75, 2.0, 10), def.color.wall, { pos: [cx, 1.1, cz], pattern: PAT.boards }),
     part(cone(0.7, 0.72, 10), def.color.roof, { pos: [cx, 2.46, cz], pattern: PAT.shingles }),
     part(box(0.34, 0.55, 0.05), WOOD_DARK, { pos: [cx, 0.38, cz + 0.72] }),
-    part(box(0.22, 0.22, 0.05), GLASS, { pos: [cx, 1.45, cz + 0.6] }),
+    part(box(0.22, 0.22, 0.05), GLASS, { pattern: PAT.glow, pos: [cx, 1.45, cz + 0.6] }),
     part(cyl(0.07, 0.07, 0.3, 6), WOOD_DARK, { pos: [cx, 2.0, cz + 0.72], rot: [Math.PI / 2, 0, 0] }),
   ];
   // four sails, set at a jaunty angle

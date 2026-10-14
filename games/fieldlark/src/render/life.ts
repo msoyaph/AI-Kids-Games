@@ -1,7 +1,7 @@
 /**
  * Little bits of life around the farm, all made in code and cheap: chimney smoke, a gentle sparkle
  * over crops that are ready to pick, butterflies around the flowers, a few birds crossing the sky,
- * leaves drifting down in autumn, and the farmhands (render/helpers.ts). Butterflies, birds and leaves
+ * leaves drifting down in autumn and blossom in spring, and the farmhands (render/helpers.ts). Butterflies, birds and leaves
  * stay away with reduced motion; smoke and sparkles stand still.
  *
  * Flash safety: sparkles are small, soft and slow (well under three a second), and never in sync.
@@ -58,6 +58,8 @@ function birdGeo(): THREE.BufferGeometry {
 
 const BUTTERFLY_COLORS = [0xffffff, 0xffd34d, 0xff9f4a, 0x9fd0ff, 0xf6a6d0];
 const LEAF_COLORS = [0xe8742c, 0xf0a030, 0xd9452c, 0xe8c040];
+/** Blossom petals drifting in spring. */
+const PETAL_COLORS = [0xffffff, 0xffd6e0, 0xffc2d4, 0xfff0f4];
 
 export class Life {
   readonly group = new THREE.Group();
@@ -167,18 +169,19 @@ export class Life {
       }
     }
     this.birds.end();
-    // autumn leaves drifting down around the view
+    // autumn leaves (and spring blossom) drifting down around the view
     this.leaves.begin();
-    if (moving && this.season === 'autumn') {
-      const n = Math.round(24 * amount);
+    if (moving && (this.season === 'autumn' || this.season === 'spring')) {
+      const spring = this.season === 'spring';
+      const n = Math.round((spring ? 18 : 24) * amount);
       for (let i = 0; i < n; i++) {
         const f = (t * 0.09 + i / n) % 1;
         const x = v.x + Math.sin(i * 12.9) * 9 + Math.sin(t * 0.7 + i) * 0.6 + f * 1.5, z = v.z + Math.cos(i * 7.3) * 6;
         const y = groundY(x, z) + 3.2 * (1 - f) + 0.05;
         e.set(t * 2 + i, t * 1.3 + i, t * 1.7);
         q.setFromEuler(e);
-        m.compose(p.set(x, y, z), q, sc.setScalar(1));
-        this.leaves.pushMatrix(m, LEAF_COLORS[i % LEAF_COLORS.length]);
+        m.compose(p.set(x, y, z), q, sc.setScalar(spring ? 0.6 : 1));
+        this.leaves.pushMatrix(m, (spring ? PETAL_COLORS : LEAF_COLORS)[i % 4]);
       }
     }
     this.leaves.end();
