@@ -1,0 +1,116 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "breezeport",
+  "title": "Breezeport",
+  "tagline": "Grow a sleepy seaside town into a happy city.",
+  "shortDescription": "Be the junior mayor of a seaside town in 3D: draw roads, zone homes and shops, build parks, schools and clinics, run buses and a tram, and keep your citizens happy.",
+  "longDescription": "Breezeport has gone quiet since its Bay Festival stopped, and the town needs a junior mayor. With Marisol the city planner, draw roads and zone homes, shops and workplaces, and watch new buildings grow where people want them. Build parks, a school, a library, a clinic and a safety station, draw bus routes, paint bike lanes and lay a tram line, and read the town's maps to see where people are happy, where streets are busy and where it needs more green. Check the budget at City Hall, add solar roofs and recycling, and open new districts until the whole bay comes to the festival. Then keep building, or open Creative mode and build anything. There is no energy, nothing ever burns down, and the town can never go broke: town time only moves while you play.",
+  "version": "0.1.0",
+  "minAge": 8,
+  "ageRange": "8–14",
+  "genres": [
+    "Simulation",
+    "Strategy"
+  ],
+  "tags": [
+    "3D",
+    "Building",
+    "City",
+    "Planning",
+    "Learning"
+  ],
+  "keywords": [
+    "city builder",
+    "city planning",
+    "3d city game",
+    "town builder",
+    "kids city game",
+    "mayor game",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "A 3D seaside town you plan from above: roads, zones, parks, services and landmarks",
+    "Citizens you can see walking, cycling, riding buses and driving, each with simple needs",
+    "Happiness, services, traffic and greenery maps, with colorblind patterns",
+    "Bus routes, bike lanes, a tram, solar roofs and recycling for a greener town",
+    "A story with a festival ending, then endless goals and a Creative mode",
+    "Plays with touch, mouse and keyboard, or a gamepad, with Low, Medium and High graphics",
+    "No energy, no timers, nothing ever burns down"
+  ],
+  "contentNotes": "Gentle city building with no fighting, fires, disasters or crime. A missing service only makes people a little less happy, and the town can never go broke. Some reading, with read-aloud. The town saves in this browser.",
+  "controls": {
+    "types": [
+      "Keyboard",
+      "Mouse",
+      "Gamepad",
+      "Touch"
+    ],
+    "quickStart": [
+      "Press New town and meet Marisol, the city planner.",
+      "Pick Roads and drag along the grid to draw a street.",
+      "Pick Zones, paint homes beside the street, and watch the first family move in."
+    ],
+    "howToPlay": [
+      "Tap or click to look at anything; drag with a tool to draw roads or paint zones.",
+      "Drag to move around, pinch or scroll to zoom, and twist two fingers or press Q and E to turn.",
+      "Tap a citizen to see what they wish for; tap a shop's coin bubble to collect.",
+      "Keyboard: number keys pick the tools on the tool bar, M opens the maps, Ctrl or Cmd + Z undoes, Escape goes back.",
+      "Gamepad: the left stick moves the tile cursor, A uses a tile (press A at the start and end of a road), the bumpers turn, X opens the tools, Y the maps, B goes back and Start the menu."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "any",
+  "requirements": [
+    "WebGL 2"
+  ],
+  "playTime": "About 6–8 hours of story, then endless building",
+  "sessionMinutes": [
+    15,
+    45
+  ],
+  "moods": [
+    "creative",
+    "cozy"
+  ],
+  "embed": "fullscreen",
+  "storage": {
+    "prefix": "breezeport.",
+    "keys": [
+      "breezeport.slot1",
+      "breezeport.slot2",
+      "breezeport.slot3",
+      "breezeport.bak",
+      "breezeport.broken",
+      "breezeport.settings"
+    ],
+    "probe": "breezeport.__probe"
+  },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
+  "capture": {
+    "route": "?scene=showcase&seed=7",
+    "script": "apps/site/scripts/capture/breezeport.ts"
+  },
+  "license": "MIT",
+  "source": "games/breezeport",
+  "site": {
+    "featured": false,
+    "releaseDate": "2026-10-14",
+    "accentColor": "#bfe9ec",
+    "coverLayers": [
+      "drift",
+      "twinkle"
+    ],
+    "status": "In development"
+  }
+}

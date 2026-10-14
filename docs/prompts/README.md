@@ -14,6 +14,7 @@ borrow its structure for your own game.
 | Cliff Valley | Pixel-art farming life-sim | 8–14 | [cliff-valley.md](cliff-valley.md) |
 | Tuck Pop | Block puzzle | 6+ | [tuck-pop.md](tuck-pop.md) |
 | Agentmon | Creature-befriending pixel RPG | 7–12 | [agentmon.md](agentmon.md) |
+| Breezeport | 3D seaside city builder | 8–14 | [breezeport.md](breezeport.md) |
 
 ## What they have in common
 

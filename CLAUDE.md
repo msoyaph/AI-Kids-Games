@@ -590,6 +590,22 @@ at the Agent Base. Game 1.1.0, re-imported; no new storage keys and no save migr
 load as they are, tested with a real 1.0 save). The PR keeps the site at its current version; the
 owner plays it first, and the release (on its own or together with 1.0) bumps the site then.
 
+## Breezeport, the city builder (owner brief 2026-10-14; slug `breezeport`, branch `breezeport`)
+A 3D seaside city builder for ages 8–14, built in its own worktree (`~/Documents/AI City Builders/AI-Kids-Games-city`)
+from origin/main d693372. Brief: docs/prompts/breezeport.md. Plan, rules and status: games/breezeport/CLAUDE.md
+(approved plan: games/breezeport/docs/PLAN.md).
+- **Name:** **Breezeport**, the owner's pick of five web-checked names (2026-10-14). The working name was "City WIP";
+  "Agent City Builders" is the owner's project label and never ships.
+- **Engine:** copied and adapted from Fieldlark's (provenance header on each file; `scripts/engine-drift.mjs`), not a
+  shared package, so Fieldlark's verified build stays untouched. Fieldlark (#28) and Shooberry (#27) were still open
+  at the go; merge `main` in when they land.
+- **Repo side:** the Simulation genre (schema, manifest validator, the site's Category, the MCP catalog's list); the
+  inspiring city builders and their publisher on the trademark blocklist, with a site manifest test.
+- **Release (owner, 2026-10-14):** "Go, Breezeport. Once done and complete, deploy the game to live production. Then
+  create a 1 minute sizzle reel YT 1920×1080 and 1080x1920." That replaces the brief's stop before production.
+- **Other sessions:** never run heavy work alongside another session's (games/breezeport/scripts/quiet-check.mjs, and
+  respect its exit code).
+
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
    `npm ci`, `npx playwright install chromium webkit`.

@@ -31,6 +31,12 @@ describe('game manifests (games/<slug>/game.json)',() => {
       expect(validateManifest(m).some(error => error.includes('another company')),text).toBe(true);
     }
   });
+  it('reject the city-building games that inspired Breezeport, and their publisher, by name',() => {
+    for (const text of ['Like CityVille, by the sea.','From the makers of Zynga games.','A SimCity for kids.','Cities: Skylines for kids.','A Townscaper-style town.']) {
+      const m = sample(); m.tagline = text;
+      expect(validateManifest(m).some(error => error.includes('another company')),text).toBe(true);
+    }
+  });
   it('reject storage keys outside the game\'s own prefix',() => {
     const m = sample(); m.storage.keys = [...m.storage.keys,'aikg:favorites'];
     expect(validateManifest(m)).toContain('cliff-valley: storage key "aikg:favorites" does not start with the prefix "cliffvalley.".');
