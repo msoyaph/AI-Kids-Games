@@ -1,4 +1,6 @@
 import { expect, type Page } from '@playwright/test';
+import { encodeFarm } from '../../src/save/save';
+import type { Farm } from '../../src/sim/state';
 
 export const HOOK = '__fieldlark';
 export const PREFIX = 'fieldlark.';
@@ -10,6 +12,37 @@ export interface Snapshot {
   lastDevice: string; quality: string; fps: number; persistent: boolean; audio: string; drawCalls: number; triangles: number;
   xp: number; level: number; tool: string; seed: string | null; inv: Record<string, [number, number, number]>; freeSeeds: number;
   fields: { x: number; z: number; crop: string | null; ready: boolean; watered: boolean }[];
+  chapter: number; stats: Record<string, number>; ideas: number; reducedMotion: boolean;
+  helpers: { name: string; job: string }[];
+  stand: { item: string | null; n: number; price: number }[];
+}
+
+/** A farm saved before the page loads (built in Node with the game's own code). */
+export async function withSave(page: Page, farm: Farm) {
+  const text = JSON.stringify(encodeFarm(farm, Date.now()));
+  await page.addInitScript(([key, value]) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem(key, value); sessionStorage.setItem('seeded', '1'); } }, [`${PREFIX}save`, text] as const);
+}
+
+/** A pretend gamepad (standard mapping): `press(name)` taps a button for exactly one frame of the game's polling (adapted from Tuck Pop). */
+export async function fakeGamepad(page: Page) {
+  await page.addInitScript(() => {
+    const pad = { taps: new Array(17).fill(0) as number[], axes: [0, 0, 0, 0], polls: 0 };
+    (window as unknown as { __pad: typeof pad }).__pad = pad;
+    navigator.getGamepads = () => {
+      pad.polls++;
+      const buttons = pad.taps.map(n => ({ pressed: n > 0, value: n > 0 ? 1 : 0, touched: n > 0 }));
+      pad.taps = pad.taps.map(n => Math.max(0, n - 1));
+      return [{ id: 'Test pad', index: 0, connected: true, mapping: 'standard', timestamp: performance.now(), axes: pad.axes, buttons, hapticActuator: null, vibrationActuator: null } as unknown as Gamepad];
+    };
+  });
+  const index: Record<string, number> = { a: 0, b: 1, x: 2, y: 3, lb: 4, rb: 5, back: 8, start: 9, up: 12, down: 13, left: 14, right: 15 };
+  type Pad = { __pad: { taps: number[]; polls: number } };
+  const polls = () => page.evaluate(() => (window as unknown as Pad).__pad.polls);
+  return async (name: keyof typeof index) => {
+    // the game reads the pad once a frame: tap for one read, then wait for a released read
+    const from = await page.evaluate(i => { const pad = (window as unknown as Pad).__pad; pad.taps[i] = 1; return pad.polls; }, index[name]!);
+    await expect.poll(polls, { timeout: 30_000 }).toBeGreaterThanOrEqual(from + 3);
+  };
 }
 
 export const snapshot = (page: Page) => page.evaluate(hook => (window as unknown as Record<string, { snapshot(): Snapshot }>)[hook]!.snapshot(), HOOK);

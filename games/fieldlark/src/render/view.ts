@@ -118,6 +118,7 @@ export class FarmView {
     this.lighting.setShadows(spec.shadows, spec.shadowMap);
     fxUniforms.rimStrength.value = spec.rim ? 0.3 : 0;
     setGroundBumps(tier !== 'low');
+    this.objects.lowDetail = tier === 'low';
     // Low tone-maps in the renderer; Medium and High in the post pass (ACES, like Space Sky)
     this.renderer.toneMapping = spec.post ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1;

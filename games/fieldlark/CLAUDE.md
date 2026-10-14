@@ -415,8 +415,8 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 | 10 Farmhands as workers | done in code (232 unit tests); browser check pending a quiet machine |
 | 11 Larkford town square: the farm stand and contracts | done in code (247 unit tests); browser check pending a quiet machine |
 | 12 Channels, sprinklers, greenhouses, the Farm Lab | done in code (264 unit tests); browser check pending a quiet machine |
-| 13 The look everywhere, seasons, night, music | code done and checked on the GPU (day, night, snow, rain, mist, town, greenhouse); final recapture pending |
-| 14 Save v2, bot and pacing, performance, full QA | save v2, backup, budget, bot, pacing and economy sims done; max-farm perf, new e2e specs and visual review left |
+| 13 The look everywhere, seasons, night, music | done, checked on the GPU (day, night, snow, rain, mist, town, greenhouse) |
+| 14 Save v2, bot and pacing, performance, full QA | done (273 unit, 15 sim, 106 e2e on Chromium and WebKit) |
 | 15 Site step, trailer, MCP catalog, PR and preview | — |
 
 **Phases 1–2 notes:**
@@ -534,6 +534,22 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
   greenhouse for out-of-season strawberries.
 - `npm test` now runs the unit tests and the sims (about 10 s); CI's default game job runs it.
 
-**Next:** finish phase 14: new e2e specs (farmhouse, stand, forecast, helpers, gamepad, 48 px layout,
-reduced motion), the maximum-farm performance pass, and the visual review at every tier; then
-phase 15.
+- **Browser tests** (`tests/e2e/systems.spec.ts`): the farmhouse (Farm Book fact, science page,
+  Ledger charts and profit), helpers (welcome Fen, give a job), the forecast card, the stand (stock,
+  price, a shopper buys at `?speed=40`), a fake gamepad (X, d-pad, A, Start, B), 48 px controls on the
+  farm and in the new panels, and reduced motion. Farms are built in Node and saved before the page
+  loads (`withSave`). Pitfall: a new panel ignores a second click on the spot that opened it for half
+  a second (the ghost-click shield), so tests wait 600 ms before clicking inside a fresh panel.
+- **Maximum farm** (`npx tsx scripts/maxfarm.mts`, every free tile a ripe crop, every system in use):
+  60 fps on every tier on the M3 Pro. Low on a phone: 52 draws, 266k triangles at the start (82 /
+  670k zoomed out). Low now builds crops with fewer facets (`geo.ts` `lowDetail`; strawberries 2,916 →
+  1,296 triangles): the same shapes. The normal starting view is unchanged: Low phone 51 / 63k.
+- **Visual review** (`reports/visual/p13`, `p14`, git-ignored): the style frame at every tier
+  matches the approved look; the late-game showcase in day, night, snow, rain, mist, the town and a
+  greenhouse.
+- The hook's snapshot now also reports the chapter, stats, Lab ideas, helpers, stand shelves and
+  reduced motion (copies, read-only).
+
+**Next:** phase 15 (`docs/PLAN-2.md` §3): merge `origin/main`, version 1.0.0 and "Ready to play",
+the site import, storage audit, art, previews, the 15-second trailer, site tests and grid count,
+manifests and the MCP catalog bump, then the PR, CI and the preview link. **Stop before production.**

@@ -361,7 +361,7 @@ html.reduced-motion *, html.reduced-motion *::before, html.reduced-motion *::aft
 .season-chips { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .chip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; background: var(--paper); font-size: calc(14px * var(--ts)); }
 .book-game { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 16px; background: #fff6dc; }
-.tabs.small button { min-height: 44px; font-size: calc(15px * var(--ts)); }
+.tabs.small button { min-height: 48px; font-size: calc(15px * var(--ts)); }
 .chart { width: 100%; height: auto; max-height: 220px; }
 .chart-num { font: 700 11px var(--font); fill: var(--ink); }
 .chart-label { font: 700 11px var(--font); fill: var(--ink-soft); }

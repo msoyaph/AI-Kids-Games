@@ -27,7 +27,7 @@ import { orderBoard } from './models/town';
 import { CORNER_DECOR, decorModel, fencePiece } from './models/decor';
 import { DECOR_BY_ID, PATHS } from '../data/decor';
 import { H, W } from '../sim/map';
-import { box, merge, part } from './geo';
+import { box, lowDetail, merge, part } from './geo';
 import { animalForHome } from '../data/animals';
 import { animalsIn, isHome, isReady } from '../sim/animals';
 import { inFruitSeason, treeGrowth, treeRipe } from '../sim/trees';
@@ -74,6 +74,8 @@ export class ObjectView {
   badges = false;
   /** Something being moved is drawn as the ghost instead. */
   hiddenId: number | null = null;
+  /** Low quality: crops are built with fewer facets (the same shapes). */
+  lowDetail = false;
   /** Goes up every time the drawn things change. */
   version = 0;
   /** Ready fields (tile corners), for the harvest sparkles. */
@@ -98,7 +100,7 @@ export class ObjectView {
   /** Rebuild if anything visible changed. Cheap to call every frame. */
   sync(farm: Farm, locked: (o: Obj) => boolean) {
     // a key from everything that changes how things look
-    let key = `${this.badges}|${this.hiddenId}|${farm.objects.length}|${farm.paths}|${farm.flags['lab:culverts'] ? 1 : 0}`;
+    let key = `${this.badges}|${this.lowDetail}|${this.hiddenId}|${farm.objects.length}|${farm.paths}|${farm.flags['lab:culverts'] ? 1 : 0}`;
     for (const o of farm.objects) {
       if (o.kind === 'field') key += `|${o.id}:${o.variety ?? o.crop ?? ''}:${o.watered ? 1 : 0}:${o.crop ? stageOf(growth(farm, o), fieldState(farm, o) === 'ready') : ''}`;
       else if (o.kind === 'tree') key += `|${o.id}:${o.x},${o.z}:${treeLook(farm, o)}`;
@@ -125,7 +127,7 @@ export class ObjectView {
           // a variety is the same plant with its own colour of crop
           const v = o.variety ? VARIETY[o.variety] : undefined;
           const look = v ? { ...crop, color: { ...crop.color, crop: v.color } } : crop;
-          this.layer(`crop:${v?.id ?? crop.id}:${stage}`, () => cropModel(look, stage)).push(cx, y + 0.06, cz, ((o.x * 7 + o.z * 3) % 3 - 1) * 0.04);
+          this.layer(`crop:${v?.id ?? crop.id}:${stage}${this.lowDetail ? ':lo' : ''}`, () => (this.lowDetail ? lowDetail(() => cropModel(look, stage)) : cropModel(look, stage))).push(cx, y + 0.06, cz, ((o.x * 7 + o.z * 3) % 3 - 1) * 0.04);
           if (ready) this.ready.push({ x: o.x, z: o.z, y });
           if (ready && this.badges) this.layer('badge', readyBadge, false).push(cx, y + 0.9, cz, 0);
         }

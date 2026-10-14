@@ -138,11 +138,20 @@ export function bevelBox(w: number, h: number, d: number, b = 0.03): THREE.Buffe
 }
 
 // Short primitive constructors (low segment counts: the look is faceted and soft-lit).
+/** Segment scale for round shapes: 1 normally, less while building Low's lighter models (`lowDetail`). */
+let DETAIL = 1;
+const seg = (n: number, min: number) => Math.max(min, Math.round(n * DETAIL));
+/** Build models with fewer facets on round shapes (the same silhouettes, for Low). */
+export function lowDetail<T>(make: () => T): T {
+  DETAIL = 0.55;
+  try { return make(); } finally { DETAIL = 1; }
+}
+
 export const box = (w: number, h: number, d: number) => new THREE.BoxGeometry(w, h, d);
-export const cyl = (rt: number, rb: number, h: number, seg = 8) => new THREE.CylinderGeometry(rt, rb, h, seg);
-export const cone = (r: number, h: number, seg = 8) => new THREE.ConeGeometry(r, h, seg);
-export const ico = (r: number, detail = 0) => new THREE.IcosahedronGeometry(r, detail);
+export const cyl = (rt: number, rb: number, h: number, s = 8) => new THREE.CylinderGeometry(rt, rb, h, seg(s, 4));
+export const cone = (r: number, h: number, s = 8) => new THREE.ConeGeometry(r, h, seg(s, 3));
+export const ico = (r: number, detail = 0) => new THREE.IcosahedronGeometry(r, DETAIL < 1 ? Math.max(0, detail - 1) : detail);
 export const dodec = (r: number) => new THREE.DodecahedronGeometry(r, 0);
-export const sphere = (r: number, w = 8, h = 6) => new THREE.SphereGeometry(r, w, h);
+export const sphere = (r: number, w = 8, h = 6) => new THREE.SphereGeometry(r, seg(w, 4), seg(h, 3));
 export const torus = (r: number, t: number, rs = 5, ts = 10, arc = Math.PI * 2) => new THREE.TorusGeometry(r, t, rs, ts, arc);
 export const oct = (r: number) => new THREE.OctahedronGeometry(r, 0);

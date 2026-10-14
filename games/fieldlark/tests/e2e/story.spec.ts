@@ -13,7 +13,7 @@ test('a new farm starts with Hattie, then the first goal and a tip that never bl
   expect((await snapshot(page)).t).toBe(t0);
   for (let i = 0; i < 8 && (await card.count()); i++) await card.locator('button.primary').click();
   await expect(card).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Goals' })).toContainText('Clear 5 bits of old clutter');
+  await expect(page.getByRole('button', { name: 'Goals' })).toContainText('Clear 6 bits of old clutter');
   // a tip arrives as a small card; the farm keeps running under it
   await expect(page.locator('.tip-card')).toBeVisible({ timeout: 8000 });
   const t1 = (await snapshot(page)).t;

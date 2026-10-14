@@ -650,6 +650,10 @@ function weatherFor(farm: Farm, view: FarmView) {
         fields: farm.objects.filter(o => o.kind === 'field').map(o => ({ x: o.x, z: o.z, crop: o.kind === 'field' ? o.crop : null, ready: o.kind === 'field' && !!o.crop && farm.t >= o.readyAt, watered: o.kind === 'field' && o.watered })),
         camera: { ...view.goal, yaw: view.view.yaw / YAW_STEP }, cursor: controller.cursor, lastDevice: controller.lastDevice,
         quality: view.tier, fps: Math.round(fps), persistent: persistent(), audio: audio.state, ...view.stats(),
+        chapter: farm.story.chapter, stats: farm.stats, ideas: farm.ideas,
+        helpers: farm.helpers.map(hp => ({ name: hp.name, job: hp.job })),
+        stand: farm.stand.slots.map(sl => ({ item: sl.item, n: sl.n, price: sl.price })),
+        reducedMotion: settings.reducedMotion,
         drawn: drawnLog.length ? {
           calls: [Math.min(...drawnLog.map(d => d[0])), Math.max(...drawnLog.map(d => d[0]))],
           triangles: [Math.min(...drawnLog.map(d => d[1])), Math.max(...drawnLog.map(d => d[1]))],
