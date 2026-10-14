@@ -37,6 +37,20 @@
     ],
     "capturedAt": "2026-10-11"
   },
+  "shooberry": {
+    "loopSeconds": 7.8,
+    "mp4Bytes": 715656,
+    "webmBytes": 733436,
+    "shots": [
+      "The Meadow Picnic: Rowan Flickers and Maple Twirlers shoo an Ant Column and a Roly-poly while Comfrey makes compost",
+      "The Grand Snail, the Meadow Picnic's boss, slides in while a magpie flies over",
+      "The Pumpkin Patch at dusk, where evening flowers wake up",
+      "The Cloud Garden, high in the sky, with gaps between the beds",
+      "The Glass Greenhouse, with water channels where water plants grow",
+      "The Cactus Garden, where hot tiles dry plants out unless they sit beside a channel"
+    ],
+    "capturedAt": "2026-10-14"
+  },
   "space-sky": {
     "loopSeconds": 8,
     "mp4Bytes": 699733,

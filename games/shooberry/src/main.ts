@@ -172,11 +172,14 @@ function boot() {
   const challengeContext = (id: string): Context => { const c = CHALLENGES.find(x => x.id === id)!; return { mode: 'challenge', spec: c, offered: c.plants.filter(p => unlockedPlants().includes(p) || c.fixedSeeds?.includes(p)), seeds: [] }; };
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
+  /** Seeds are remembered per level and Challenge, and once for all Daily gardens (a new one each day). */
+  const seedKey = (c: Context) => (c.mode === 'daily' ? 'daily' : c.spec.id);
+
   function startContext(c: Context) {
     unlock();
     ctx = c;
     if (c.spec.fixedSeeds || c.spec.curling || c.spec.noPlanting) return beginPlay(c, c.spec.fixedSeeds ?? []);
-    const remembered = data.lastSeeds[c.spec.id] ?? [];
+    const remembered = data.lastSeeds[seedKey(c)] ?? [];
     const kinds = [...new Set(c.spec.waves.flatMap(w => w.spawns.map(s => s.critter)))];
     const recommend = () => chooseSeeds(c.spec, c.offered, c.spec.seedSlots, 'good', 1);
     M.seeds({ title: c.level ? `${WORLDS.find(w => w.id === c.level!.world)!.name} ${c.level.index + 1}` : c.spec.name, slots: c.spec.seedSlots, offered: c.offered, chosen: remembered.length ? remembered : recommend(), critters: kinds, newCritter: c.level?.row.meet, dusk: !!c.spec.dusk }, thumb, chosen => beginPlay(c, chosen), recommend);
@@ -199,7 +202,7 @@ function boot() {
   function beginPlay(c: Context, seeds: string[]) {
     ctx = c;
     c.seeds = seeds;
-    if (c.mode !== 'demo' && seeds.length) { data.lastSeeds[c.spec.id] = seeds; store(); }
+    if (c.mode !== 'demo' && seeds.length) { data.lastSeeds[seedKey(c)] = seeds; store(); }
     const seed = (c.mode === 'daily' ? 7 : 1) + (c.spec.id.length * 13);
     play = new Play(c.spec, seeds, { seed, autoCollect: data.settings.autoCollect, speed: data.settings.speed }, music);
     play.testSpeed = testSpeed;
@@ -241,10 +244,8 @@ function boot() {
       go('result', false);
       return;
     }
-    if (won) {
-      data.stars[c.spec.id] = Math.max(starsFor(c.spec.id), got);
-      if (c.mode === 'daily') data.daily[c.spec.id.replace('daily-', '')] = Math.max(data.daily[c.spec.id.replace('daily-', '')] ?? 0, got);
-    }
+    if (won && c.mode === 'daily') { const day = c.spec.id.replace('daily-', ''); data.daily[day] = Math.max(data.daily[day] ?? 0, got); }
+    else if (won) data.stars[c.spec.id] = Math.max(starsFor(c.spec.id), got);
     store();
     const next = c.level ? LEVELS[LEVELS.indexOf(c.level) + 1] : undefined;
     const buttons: M.ResultInfo['buttons'] = [];
@@ -437,7 +438,7 @@ function boot() {
   // ---------------------------------------------------------------- start
   resize();
   const levelParam = params.get('level');
-  const sceneLevel: Record<string, [string, number]> = { play: ['meadow-7', 110], wave: ['meadow-7', 110], boss: ['meadow-10', 330], planting: ['greenhouse-3', 26], stress: ['meadow-6', 0] };
+  const sceneLevel: Record<string, [string, number]> = { play: ['meadow-7', 110], wave: ['meadow-7', 110], boss: ['meadow-10', 385], planting: ['greenhouse-3', 26], stress: ['meadow-6', 0] };
   if (scene === 'world') { const w = params.get('w') ?? 'meadow'; startDemo(`${w}-6`, 120); }
   else if (scene && scene !== 'title' && sceneLevel[scene]) startDemo(...sceneLevel[scene]!);
   else startDemo();

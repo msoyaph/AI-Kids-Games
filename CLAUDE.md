@@ -544,6 +544,21 @@ back.
   - **Lighthouse mobile:** home 99/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
     Tuck Pop details and play 99/100/100/100.
 
+## Ninth game: Shooberry (owner brief 2026-10-14; slug `shooberry`, branch `garden-wip`, worktree ~/Documents/AI-Kids-Games-garden)
+A 3D lane-defense garden game (Three.js 0.186.1, ages 7+): plant friendly helpers, shoo silly critters,
+save the picnic. Rules, decisions, the IP log and status are in games/shooberry/CLAUDE.md.
+- **Owner:** approved the look ("Ok good graphics quality"), picked the name Shooberry, then "now finish
+  the game end to end and deploy it to production" (replaces the brief's stop before production).
+- **Release 2.10.0** (2.9.0 was the assistants app, shipped by the MCP session the same day; `main` was
+  merged in). Game 1.0.0; every other game stays at its version.
+- **Repo side:** `pvz`, `popcap` and `plants versus` on the trademark blocklist (phase 0). Shooberry is a
+  fullscreen game in the assistants app (its signal reads the hook's `screen`). marketing/sizzle gained
+  `npm run publish:trailers -- <slug>` (publish one game's trailer, keep the others' files and data).
+- **Order:** release commit (2.10.0, DEPLOYMENT.json approval quoting the owner) → `npm run release:local`
+  on a quiet machine → PR, CI green → `AIKG_ALLOW_PRODUCTION=2.10.0` on ai-kids-games and
+  ai-kids-games-play (the MCP project stays at 1.0.0, already allowed) → merge → production checks and
+  a record PR.
+
 ## Release 2.7.0: Agentmon (owner, 2026-10-13: "Upload the game to the live Production https://ai-kids-games-fawn.vercel.app/")
 - **Scope:** PR #16 (Agentmon 1.1, which carries the 1.0 PR #13). Game 1.1.0. All other games stay at
   their current versions.

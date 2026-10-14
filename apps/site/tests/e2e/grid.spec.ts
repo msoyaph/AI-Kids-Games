@@ -4,7 +4,7 @@ import { gridSpans } from '../../src/lib/grid';
 
 // Temporary mock entries rendered with the site's real CSS and grid rule: the balanced grid
 // must give full rows with no gaps and no lonely last card for any count.
-for (const count of [1,4,5,6,7,8,12]) test(`balanced grid with ${count} games`,async ({ page },info) => {
+for (const count of [1,4,5,6,7,8,9,12]) test(`balanced grid with ${count} games`,async ({ page },info) => {
   await page.goto('/about'); await page.locator('main h1').waitFor();
   const spans = gridSpans(count);
   await page.evaluate(({ spans }) => {

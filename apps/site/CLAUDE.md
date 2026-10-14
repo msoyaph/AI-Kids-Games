@@ -214,6 +214,20 @@ Trial take is cropped to the room. Loop 7.8 s.
 Tests now count 8 games (age 7: LC, Space Sky, Tuck Pop, Agentmon); the grid is checked at 8 (unit and
 browser); the launch tests start a new Agentmon adventure in slot 1 and continue it after a reload.
 
+## Shooberry, the ninth game (release 2.10.0)
+
+Listed from `games/shooberry/game.json` (Strategy and Casual, ages 7+, order 9, landscape, WebGL 2). Art
+in `public/media/shooberry/`: a cover (the meadow picnic: Rowan Flicker flicks a berry at the Snack Snail,
+Comfrey Crumble, an Ant Column, the gingham blanket and basket) with `drift` (clouds) and `twinkle`
+layers, a berry-red logo with the game's ink outline, and the OG image (`og.ts` also re-encoded
+`og/agentmon.jpg` byte-different, so it was restored; `og/site.jpg` now says 9 games). Previews come from
+`scripts/capture/shooberry.ts`: the game's `?scene=` routes, all recorded from the canvas (the HUD is DOM
+and hidden there); loop 7.8 s (wave, boss, dusk, cloud) and six stills. The trailer is in
+`public/trailer/shooberry/`. Tests count 9 games (age 7: Light Crossing, Space Sky, Tuck Pop, Agentmon,
+Shooberry; the grid at 9); the launch tests play Adventure level 1 (seeds, tips, a plant) and, after a
+reload, check that level 1 remembers the seeds and skips the tips. `boot()` turns phones sideways for it,
+as for the other landscape games.
+
 ## Next: Light Crossing v2.0 (owner request, on hold)
 
 Owner wants Light Crossing v2.0 imported and released. On 2026-10-11 its project was on

@@ -18,7 +18,7 @@ export const at = (beats: number) => +(beats * BEAT).toFixed(6);
 /** A line stays on screen at least words ÷ 1.8 + 0.5 seconds (a 7-year-old's reading pace). */
 export const minSeconds = (text: string) => text.split(/\s+/).filter(Boolean).length / 1.8 + 0.5;
 
-export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop' | 'agentmon';
+export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop' | 'agentmon' | 'shooberry';
 
 /** A piece of a recorded take (marketing/sizzle/captures/<slug>/<take>.mp4). */
 export interface Shot {
@@ -39,7 +39,7 @@ export interface Shot {
 const shot = (slug: Slug, take: string, extra: Omit<Shot, 'slug' | 'take'> = {}): Shot => ({ slug, take, ...extra });
 
 /** Each game's three showcase shots in the 60-second reel, in the order they play (one bar each). */
-export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
+export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon' | 'shooberry'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
   'calex-cart': {
     describe: 'Karts drift, boost and glide through snowy, neon and canyon tracks.',
     shots: [
@@ -91,7 +91,7 @@ export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon'>, { shots: [Shot
 };
 
 /** Showcase order: racing, action, strategy, space wonder, cozy island, farming. */
-export const ORDER: Exclude<Slug, 'tuck-pop' | 'agentmon'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
+export const ORDER: Exclude<Slug, 'tuck-pop' | 'agentmon' | 'shooberry'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
 
 export interface Game { slug: Slug; title: string; tagline: string; ages: string; logo: string }
 export function game(slug: Slug): Game {
@@ -258,10 +258,22 @@ export const TRAILERS: Record<Slug, { shots: [Shot, Shot, Shot, Shot, Shot, Shot
       shot('agentmon', 'spark-ring', { from: 1.5 }),
       shot('agentmon', 'trial', { from: 0.3 })
     ]
+  },
+  shooberry: {
+    line: 'Plant helpers. Save the picnic!',
+    describe: 'Rowan Flickers and Maple Twirlers shoo an Ant Column in the Meadow Picnic, the Grand Snail boss slides in, then gardens in the Pumpkin Patch at dusk, the Glass Greenhouse, the Cactus Garden and the Cloud Garden.',
+    shots: [
+      shot('shooberry', 'wave', { from: 0.2 }),
+      shot('shooberry', 'boss', { from: 0.3 }),
+      shot('shooberry', 'dusk', { from: 0.2 }),
+      shot('shooberry', 'greenhouse', { from: 0.3 }),
+      shot('shooberry', 'desert', { from: 0.2 }),
+      shot('shooberry', 'cloud', { from: 0.3 })
+    ]
   }
 };
-/** The order of the games' trailers (all eight). */
-export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop', 'agentmon'];
+/** The order of the games' trailers (all nine). */
+export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop', 'agentmon', 'shooberry'];
 export const trailerId = (slug: Slug) => `game-${slug}`;
 
 function gameCut(slug: Slug): Cut {

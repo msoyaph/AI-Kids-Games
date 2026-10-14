@@ -69,6 +69,16 @@
     "WebGL 2"
   ],
   "playTime": "About 5 hours of Adventure, plus endless and challenge modes",
+  "sessionMinutes": [
+    10,
+    30
+  ],
+  "moods": [
+    "cheerful",
+    "brainy",
+    "exciting"
+  ],
+  "embed": "fullscreen",
   "storage": {
     "prefix": "shooberry.",
     "keys": [

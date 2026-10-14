@@ -11,18 +11,37 @@ from this file alone.
 | 0 | Setup, originality, IP log, five names | **done** |
 | 1 | Style frame and engine checks; **stop for the owner's approval of the look** | **done**: v2 approved ("Ok good graphics quality") |
 | 2 | Simulation core and both bots | **done**: 50/50 levels (good bot), 50/50 within two tries (casual), 5.0 h pacing |
-| 3 | Vertical slice (World 1, levels 1–3), draft PR to prove CI | |
-| 4 | Content, world by world (24 plants, 20 critters, 6 bosses, 50 levels) | |
-| 5 | Interface, Seed and Invader Books, settings, audio | |
-| 6 | Garden Party, 20 Challenges, Daily, balance and pacing | |
-| 7 | Performance, browser tests, visual review | |
-| 8 | Name, site, trailer, PR with CI green and the preview link; **stop before production** | |
+| 3 | Vertical slice (World 1, levels 1–3) | **done** (85b75e8, with 4–5): the CI proof moved to the release PR |
+| 4 | Content, world by world (24 plants, 20 critters, 6 bosses, 50 levels) | **done** (85b75e8) |
+| 5 | Interface, Seed and Invader Books, settings, audio | **done** (85b75e8) |
+| 6 | Garden Party, 20 Challenges, Daily, balance and pacing | **done**: reports/balance.md, reports/pacing.md (5.0 h) |
+| 7 | Performance, browser tests, visual review | **done** (34d2a10): 53 browser tests on 6 projects, CI rehearsal (software WebGL) green, reports/perf.md |
+| 8 | Name, site, trailer, PR, **production** (owner: "now finish the game end to end and deploy it to production") | **in progress**: listed, imported, audited, art, previews and trailer done; release **2.10.0** next |
+
+## Release 2.10.0 (site) with Shooberry 1.0.0
+
+- `main` moved while this was built: the MCP session shipped website **2.9.0** and the AI Kids Games app for
+  assistants (apps/mcp 1.0.0) on 2026-10-14, so Shooberry ships as website **2.10.0**. `origin/main` was
+  merged into `garden-wip` (4da351e; the lockfile conflict was only the new workspace entries).
+- Manifest fields from 2.9.0: `sessionMinutes` [10, 30], `moods` cheerful/brainy/exciting, `embed` fullscreen
+  (a 3D game, like Space Sky). The assistants app's catalog picks Shooberry up from `npm run manifests`; its
+  pause/round-end signal reads the hook's `screen` (apps/mcp/widget/src/signals.ts). The game reads gamepads
+  in a try/catch, so assistant frames without gamepad access keep running.
+- Site: cover (meadow picnic: Rowan flicks a berry at the Snack Snail, Comfrey, the ant column, the gingham
+  blanket) with `drift` (clouds) and `twinkle` layers, logo (berry red, ink outline, like the title), OG
+  image, a 7.8 s loop and 6 stills from `apps/site/scripts/capture/shooberry.ts` (the game's ?scene= routes;
+  the boss scene is meadow-10 at 385 s, when the Grand Snail is mid-garden), and a 15 s trailer
+  (marketing/sizzle; `npm run publish:trailers -- shooberry` publishes only this game's trailer).
+- Storage audit: one key, `shooberry.save`; a complete save is 11.8 KB (budget 100 KB, enforced). Daily
+  gardens record only in `daily` (the last 30) and share one remembered seed list.
+- Fixed while finishing: "Patterns for colourblind players" did nothing (now a cross on spots a card can't
+  go, a striped struck-through cost on cards you can't afford); the gamepad is read once per frame.
 
 ## Rules that never change
 
-- **The owner's process:** "Wait for my approval of the look, then continue autonomously." "Stop before
-  production; I'll play it first and approve the release myself." One signed-off commit per phase
-  (`git commit -s`), with this file kept current.
+- **The owner's process:** "Wait for my approval of the look, then continue autonomously." The brief's "Stop
+  before production" was replaced on 2026-10-14 by "Ok good graphics quality, now finish the game end to end
+  and deploy it to production". One signed-off commit per phase (`git commit -s`), with this file kept current.
 - **Shared machine:** work only in the worktree `~/Documents/AI-Kids-Games-garden` (branch `garden-wip`).
   Another session builds a different 3D diorama game, `farm-wip` (`~/Documents/FarmerTown/AI-Kids-Games-farm`);
   others run tests in their own worktrees. "Never run heavy tests alongside another session's tests, and always
