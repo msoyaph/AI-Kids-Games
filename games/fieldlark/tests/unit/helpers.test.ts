@@ -19,7 +19,7 @@ const fields = (farm: Farm) => farm.objects.filter((o): o is FieldObj => o.kind 
 const run = (farm: Farm, seconds: number) => { for (let i = 0; i < seconds * 2; i++) advance(farm, 0.5); };
 const cottage = { x: 36, z: 40 };
 /** A farm in chapter 3 with plenty of coins and every level open. */
-const ready = (seed = 1) => { const farm = newFarm(seed); farm.story.chapter = 2; farm.coins = 50000; farm.xp = 1e7; return farm; };
+const ready = (seed = 1) => { const farm = newFarm(seed); farm.story.chapter = 2; farm.coins = 50000; farm.xp = 1e7; farm.flags.levelSeen = 40; return farm; };
 const place = (farm: Farm, def: string, x: number, z: number) => { const r = buyAndPlace(farm, { kind: 'building', def }, { x, z, rot: 0 }); if (!r.ok) throw new Error(r.why); return r.obj as OtherObj; };
 
 describe('hiring', () => {

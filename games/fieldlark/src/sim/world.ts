@@ -1,7 +1,7 @@
 /** Lookups over the farm: what is where, sizes, levels, and the ledger. */
 import { next } from '../core/rng';
 import { BUILDING } from '../data/buildings';
-import { levelForXp } from '../data/tuning';
+import { levelForXp, TUNING } from '../data/tuning';
 import { seasonCount } from './clock';
 import { tileKey, tilesOf, type Obj, type Size } from './objects';
 import type { Farm, LedgerSeason } from './state';
@@ -63,6 +63,13 @@ export function earn(farm: Farm, coins: number, fromCrop?: string) {
 }
 
 export function newId(farm: Farm) { return farm.nextId++; }
+
+/** Coins to make the barn bigger next (null: as big as it gets). The Farm Lab's builders take a fifth off. */
+export function barnUpgradeCost(farm: Farm): number | null {
+  const cost = TUNING.barnUpgrade[farm.barnLevel + 1];
+  if (cost === undefined) return null;
+  return farm.flags['lab:barn'] ? Math.round(cost * 0.8) : cost;
+}
 
 /** Lifetime counters (harvests, deliveries, trades…) that story goals and the ledger read. */
 export function bump(farm: Farm, key: string, n = 1) {

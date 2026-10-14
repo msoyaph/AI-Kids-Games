@@ -14,11 +14,14 @@ import { h } from './h';
 import { icon } from './icons';
 import { itemIcon } from './itemIcons';
 
-/** `choose` gets a crop id, or a variety id (src/data/varieties.ts). */
-export function seedsPanel(farm: Farm, current: string | null, choose: (id: string) => void): HTMLElement {
+/** `choose` gets a crop id, or a variety id (src/data/varieties.ts). `glass`: a greenhouse bed, where every season is fine (but rice stays in its paddy). */
+export function seedsPanel(farm: Farm, current: string | null, choose: (id: string) => void, glass = false): HTMLElement {
   const season = seasonOf(farm.t), level = levelOf(farm);
   const now: CropDef[] = [], later: CropDef[] = [], locked: CropDef[] = [];
-  for (const c of CROPS) (c.level > level ? locked : c.seasons.includes(season) ? now : later).push(c);
+  for (const c of CROPS) {
+    if (glass && c.wet) continue;
+    (c.level > level ? locked : glass || c.seasons.includes(season) ? now : later).push(c);
+  }
   const card = (c: CropDef, state: 'now' | 'later' | 'locked') => {
     const free = state === 'now' && freePlanting(farm, c);
     const affordable = free || farm.coins >= c.seed;
@@ -51,7 +54,7 @@ export function seedsPanel(farm: Farm, current: string | null, choose: (id: stri
   };
   return h('div.seeds', null,
     farm.freeSeeds > 0 ? h('p.free-note', null, `You have ${farm.freeSeeds} free plantings of the cheapest seeds!`) : null,
-    h('h3', null, `Grows in ${seasonName(season)}`),
+    h('h3', null, glass ? 'Grows under glass' : `Grows in ${seasonName(season)}`),
     h('div.seed-grid', null, ...now.flatMap(c => [card(c, 'now'), ...varietyChoice(farm, c.id).map(v => varietyCard(c, v))])),
     later.length ? h('h3', null, 'Other seasons') : null,
     later.length ? h('div.seed-grid', null, ...later.map(c => card(c, 'later'))) : null,

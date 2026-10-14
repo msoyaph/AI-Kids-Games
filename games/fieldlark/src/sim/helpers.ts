@@ -28,6 +28,7 @@ import { areaAt, type AreaId } from './map';
 import type { Obj, OtherObj } from './objects';
 import { canFill } from './orders';
 import { canSendDrop } from './contracts';
+import { readyPlots } from './greenhouse';
 import { restockTask } from './stand';
 import { cantStart, isMachine, machineState, slotsOf } from './production';
 import type { Farm } from './state';
@@ -136,8 +137,9 @@ export function findTask(farm: Farm, h: Helper): Task | null {
       if (roomLeft(farm) < 6) return null;
       const ready = farm.objects.filter(o => inZone(farm, h, o.x, o.z) && ((o.kind === 'field' && fieldState(farm, o) === 'ready') || (isTree(o) && treeRipe(farm, o))));
       const o = nearest(h, ready);
-      if (!o) return null;
-      return { action: o.kind === 'field' ? { type: 'harvest', x: o.x, z: o.z } : { type: 'pickTree', id: o.id }, x: o.x, z: o.z };
+      if (o) return { action: o.kind === 'field' ? { type: 'harvest', x: o.x, z: o.z } : { type: 'pickTree', id: o.id }, x: o.x, z: o.z };
+      const bed = readyPlots(farm).find(b => inZone(farm, h, b.o.x, b.o.z));
+      return bed ? { action: { type: 'pickPlot', building: bed.o.id, plot: bed.i }, x: bed.o.x, z: bed.o.z } : null;
     }
     case 'animals': {
       const homes = h.homes.map(id => objById(farm, id)).filter((o): o is Obj => !!o && isHome(o)) as OtherObj[];
@@ -159,7 +161,7 @@ export function findTask(farm: Farm, h: Helper): Task | null {
       const s = machineState(m);
       if (s.shelf.length && roomLeft(farm) >= s.shelf.length) return { action: { type: 'collectGoods', machine: m.id }, x: m.x, z: m.z };
       const rec = h.recipe ? RECIPE[h.recipe] : undefined;
-      if (rec && s.queue.length < slotsOf(m) && !cantStart(farm, m, rec)) return { action: { type: 'make', machine: m.id, recipe: rec.id }, x: m.x, z: m.z };
+      if (rec && s.queue.length < slotsOf(m, farm) && !cantStart(farm, m, rec)) return { action: { type: 'make', machine: m.id, recipe: rec.id }, x: m.x, z: m.z };
       return null;
     }
     case 'deliver': {
@@ -202,7 +204,7 @@ export function helpersTick(farm: Farm): HelperEvent[] {
       const next = findTask(farm, h);
       if (next && h.job !== 'rest') {
         h.task = next;
-        h.nextAt += PACE[skillLevel(h.done[h.job]) - 1]!;
+        h.nextAt += PACE[skillLevel(h.done[h.job]) - 1]! * (farm.flags['lab:quick'] ? 0.9 : 1);
       } else {
         h.nextAt = Math.max(h.nextAt, farm.t) + REST_LOOK;
       }

@@ -6,7 +6,7 @@
 import { animalsIn, brushAll, buyAnimal, collect, feedAll, isHome } from './animals';
 import { buyAndPlace, type Buyable } from './build';
 import { openLand, paintPath, placeDecor } from './decorate';
-import { clearDebris, fieldAt, fertilize, harvest, plant, plow, water } from './fields';
+import { clearDebris, fieldAt, fertilize, harvest, plant, plow, water, waterNear } from './fields';
 import type { Stars } from './inventory';
 import { tileAt, type AreaId } from './map';
 import { sell } from './market';
@@ -16,11 +16,12 @@ import { deliver, skipOrder } from './orders';
 import { collectGoods, isMachine, startJob, upgradeMachine } from './production';
 import type { Farm } from './state';
 import { compostTree, isTree, pickTree } from './trees';
-import { objById, spend } from './world';
-import { TUNING } from '../data/tuning';
+import { barnUpgradeCost, objById, spend } from './world';
 import type { BusinessId } from '../data/businesses';
 import { restock, setPrice, stock, unstock } from './stand';
 import { sendDrop } from './contracts';
+import { isGreenhouse, pickPlot, plantPlot } from './greenhouse';
+import { learn } from './lab';
 
 export type Action =
   | { type: 'plow'; x: number; z: number }
@@ -53,7 +54,10 @@ export type Action =
   | { type: 'unstock'; slot: number }
   | { type: 'setPrice'; slot: number; price: number }
   | { type: 'restock'; slot: number }
-  | { type: 'sendDrop'; business: BusinessId };
+  | { type: 'sendDrop'; business: BusinessId }
+  | { type: 'plantPlot'; building: number; plot: number; crop: string; variety?: string }
+  | { type: 'pickPlot'; building: number; plot: number }
+  | { type: 'learn'; idea: string };
 
 export type ActResult = { ok: true; [k: string]: unknown } | { ok: false; why: string };
 
@@ -76,7 +80,7 @@ export function act(farm: Farm, a: Action): ActResult {
   switch (a.type) {
     case 'plow': return plow(farm, a.x, a.z);
     case 'plant': { const f = fieldAt(farm, a.x, a.z); return f ? plant(farm, f, a.crop, isWater, a.variety ?? null) : no('Seeds go in fields.'); }
-    case 'water': { const f = fieldAt(farm, a.x, a.z); return f ? water(farm, f) : no('Water growing crops.'); }
+    case 'water': { const f = fieldAt(farm, a.x, a.z); if (!f) return no('Water growing crops.'); const r = water(farm, f); if (r.ok) waterNear(farm, f); return r; }
     case 'fertilize': { const f = fieldAt(farm, a.x, a.z); return f ? fertilize(farm, f) : no('Compost goes on growing crops.'); }
     case 'harvest': { const f = fieldAt(farm, a.x, a.z); return f ? harvest(farm, f) : no('Nothing to pick there.'); }
     case 'clear': return clearDebris(farm, a.id);
@@ -94,8 +98,8 @@ export function act(farm: Farm, a: Action): ActResult {
     case 'collectGoods': { const m = machine(farm, a.machine); return m ? collectGoods(farm, m) : no('That is not a workshop.'); }
     case 'upgradeMachine': { const m = machine(farm, a.machine); return m ? upgradeMachine(farm, m) : no('That is not a workshop.'); }
     case 'upgradeBarn': {
-      const cost = TUNING.barnUpgrade[farm.barnLevel + 1];
-      if (cost === undefined) return no('The barn is as big as it gets.');
+      const cost = barnUpgradeCost(farm);
+      if (cost === null) return no('The barn is as big as it gets.');
       if (!spend(farm, cost)) return no(`A bigger barn costs ${cost} coins.`);
       farm.barnLevel++;
       return { ok: true };
@@ -111,5 +115,8 @@ export function act(farm: Farm, a: Action): ActResult {
     case 'setPrice': return setPrice(farm, a.slot, a.price) ? { ok: true } : no('No such shelf.');
     case 'restock': return restock(farm, a.slot);
     case 'sendDrop': return sendDrop(farm, a.business);
+    case 'plantPlot': { const o = objById(farm, a.building); return o && isGreenhouse(o) ? plantPlot(farm, o, a.plot, a.crop, a.variety ?? null) : no('That is not a greenhouse.'); }
+    case 'pickPlot': { const o = objById(farm, a.building); return o && isGreenhouse(o) ? pickPlot(farm, o, a.plot) : no('That is not a greenhouse.'); }
+    case 'learn': return learn(farm, a.idea);
   }
 }

@@ -31,6 +31,8 @@ export const Materials = {
   treeTintInst: patchMaterial(lambert({ flatShading: false }), { key: 'tree-ti', rim: true, wind: 'tree', patterns: true, tint: true }),
   /** Grass tufts and wildflowers around the view. */
   grassInst: patchMaterial(lambert({ side: THREE.DoubleSide }), { key: 'grass-i', wind: 'grass' }),
+  /** Greenhouse glass: see-through, pale and bright. */
+  glassInst: patchMaterial(new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide }), { key: 'glass-i', rim: true }),
   /** Soft round shadows under things when the shadow map is off. */
   blob: new THREE.MeshBasicMaterial({ color: 0x1d2a12, transparent: true, opacity: 0.22, depthWrite: false }),
   /** Unlit vertex colours (highlights, glows). */

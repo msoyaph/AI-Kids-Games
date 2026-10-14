@@ -9,12 +9,13 @@ import { assign, hire } from '../../src/sim/helpers';
 import { add, count } from '../../src/sim/inventory';
 import { obtainable, TRIP } from '../../src/sim/orders';
 import { priceOf } from '../../src/sim/market';
-import { buyChance, priceWord, setPrice, shelfCount, shelves, shelfPrice, SHELF_MAX, standOpen, standTick, stock, unstock, WANTED } from '../../src/sim/stand';
+import { buyChance, priceWord, setPrice, shelfCount, shelves, shelfPrice, SHELF_MAX, standOpen, stock, unstock, WANTED } from '../../src/sim/stand';
 import { newFarm, type Farm } from '../../src/sim/state';
 import { advance } from '../../src/sim/tick';
 
 const run = (farm: Farm, seconds: number) => { for (let i = 0; i < seconds; i++) advance(farm, 1); };
-const atChapter = (ch: number, seed = 1) => { const farm = newFarm(seed); farm.story.chapter = ch; farm.coins = 5000; farm.xp = 1e7; return farm; };
+const atChapter = (ch: number, seed = 1) => { const farm = newFarm(seed); farm.story.chapter = ch; farm.coins = 5000; farm.xp = 1e7; farm.flags.levelSeen = levelOf(farm); return farm; };
+import { levelOf } from '../../src/sim/world';
 
 describe('the farm stand', () => {
   it('opens in chapter 2 with six shelves (more from the Lab)', () => {

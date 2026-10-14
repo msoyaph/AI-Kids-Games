@@ -41,6 +41,15 @@ export function tileFits(farm: Farm, x: number, z: number, level: number, occ = 
   return canPlace(occ, farm.unlocked, { x, z, rot: 0 }, { w: 1, d: 1 }).ok && tileAt(x, z).level === level;
 }
 
+/** Why the story or the Lab keeps this out of the Shop for now (null: it's in). */
+export function notYet(farm: Farm, b: Buyable): string | null {
+  const n = b.kind === 'building' ? BUILDING[b.def]?.needs : undefined;
+  if (!n) return null;
+  if (n.chapter !== undefined && farm.story.chapter < n.chapter) return n.why;
+  if (n.flag && !farm.flags[n.flag]) return n.why;
+  return null;
+}
+
 /** Can this be placed here? (Doesn't check coins.) */
 export function placeCheck(farm: Farm, b: Buyable, at: { x: number; z: number; rot: number }, ignore?: number): { ok: true } | { ok: false; why: string } {
   const info = buyableInfo(b);
@@ -56,6 +65,8 @@ export function buyAndPlace(farm: Farm, b: Buyable, at: { x: number; z: number; 
   const info = buyableInfo(b);
   if (!info) return { ok: false, why: 'That can’t be built.' };
   if (levelOf(farm) < info.level) return { ok: false, why: `${info.name} comes at farm level ${info.level}.` };
+  const later = notYet(farm, b);
+  if (later) return { ok: false, why: later };
   const where = placeCheck(farm, b, at);
   if (!where.ok) return where;
   if (!spend(farm, info.cost)) return { ok: false, why: `${info.name} costs ${info.cost} coins.` };

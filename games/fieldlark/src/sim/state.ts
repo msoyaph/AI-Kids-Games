@@ -110,7 +110,7 @@ export function newFarm(seed: number): Farm {
     xp: 0,
     unlocked: ['home'],
     cam: { ...HOME_VIEW },
-    flags: {},
+    flags: { levelSeen: 1 },
     objects,
     nextId: Math.max(0, ...objects.map(o => o.id)) + 1,
     inv: {},

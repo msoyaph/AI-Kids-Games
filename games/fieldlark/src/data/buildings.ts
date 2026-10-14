@@ -23,6 +23,10 @@ export interface BuildingDef {
   needsWater?: boolean;
   /** How tall it is (for tap picking). */
   height?: number;
+  /** Greenhouses: how many beds inside. */
+  plots?: number;
+  /** Only in the Shop once the story or the Farm Lab gets there. */
+  needs?: { chapter?: number; flag?: string; why: string };
 }
 
 export const BUILDINGS: readonly BuildingDef[] = [
@@ -36,6 +40,9 @@ export const BUILDINGS: readonly BuildingDef[] = [
   { id: 'beehive', name: 'Beehive', w: 1, d: 1, cost: 220, level: 6, holds: 'bee', cap: 1, height: 0.9 },
   { id: 'sheepshed', name: 'Sheep Shed', w: 3, d: 2, cost: 360, level: 7, holds: 'sheep', cap: 5, height: 1.5 },
   { id: 'goatpen', name: 'Goat Pen', w: 2, d: 2, cost: 300, level: 9, holds: 'goat', cap: 4, height: 1.3 },
+  { id: 'greenhouse', name: 'Little Greenhouse', w: 2, d: 2, cost: 600, level: 1, plots: 4, height: 1.7, needs: { chapter: 5, why: 'Greenhouses come in chapter 6.' } },
+  { id: 'greenhouse_m', name: 'Glasshouse', w: 3, d: 3, cost: 1400, level: 1, plots: 8, height: 2.1, needs: { chapter: 5, flag: 'lab:medium', why: 'Try “Glasshouse” in the Farm Lab.' } },
+  { id: 'greenhouse_l', name: 'Big Glasshouse', w: 4, d: 3, cost: 2600, level: 1, plots: 12, height: 2.3, needs: { chapter: 5, flag: 'lab:large', why: 'Try “Big glasshouse” in the Farm Lab.' } },
   { id: 'duckhouse', name: 'Duck House', w: 2, d: 2, cost: 260, level: 11, holds: 'duck', cap: 6, needsWater: true, height: 1.1 },
 ];
 

@@ -29,7 +29,7 @@ import { DECOR_BY_ID, PATHS } from '../data/decor';
 import { decorPanel, landPanel, type DecorChoice } from '../ui/buildPanels';
 import { AREAS } from '../sim/map';
 import { playTimeLabel } from '../sim/clock';
-import { care, clearDebris, fertilize, fieldAt, fieldState, harvest, plant, plow, water } from '../sim/fields';
+import { care, clearDebris, fertilize, fieldAt, fieldState, harvest, plant, plow, water, waterNear } from '../sim/fields';
 import { count } from '../sim/inventory';
 import { areaAt, areaDef, tileAt } from '../sim/map';
 import type { FieldObj, OtherObj } from '../sim/objects';
@@ -51,6 +51,9 @@ import { collectGoods, isMachine, machineState } from '../sim/production';
 import { itemDef } from '../data/items';
 import { VARIETY } from '../data/varieties';
 import { soilDots, soilWord } from '../sim/soil';
+import { digChannel } from '../sim/water';
+import { isGreenhouse } from '../sim/greenhouse';
+import { greenhousePanel } from '../ui/greenhousePanel';
 import { varietyName } from '../sim/varieties';
 
 export type Tool = 'hand' | 'plow' | 'seeds' | 'water' | 'compost';
@@ -83,7 +86,7 @@ export class Play {
   placing: Placing | null = null;
   /** Build mode: moving, painting paths, fences and flowers, clearing, decorating, land, undo. */
   building = false;
-  buildSub: 'move' | 'path' | 'paint' | 'erase' = 'move';
+  buildSub: 'move' | 'path' | 'paint' | 'erase' | 'channel' = 'move';
   buildChoice: number | string = 1;
   readonly undo = new UndoStack();
   private strokeSaved = false;
@@ -94,7 +97,7 @@ export class Play {
 
   tools(): HudTool[] {
     if (this.building) {
-      const paintLabel = this.buildSub === 'path' ? PATHS.find(p => p.id === this.buildChoice)?.name ?? 'Path' : this.buildSub === 'paint' ? DECOR_BY_ID[this.buildChoice as string]?.name ?? 'Decorate' : 'Decorate';
+      const paintLabel = this.buildSub === 'path' ? PATHS.find(p => p.id === this.buildChoice)?.name ?? 'Path' : this.buildSub === 'channel' ? 'Channel' : this.buildSub === 'paint' ? DECOR_BY_ID[this.buildChoice as string]?.name ?? 'Decorate' : 'Decorate';
       return [
         { id: 'b-move', label: 'Move', icon: 'turn', key: '1' },
         { id: 'b-decor', label: paintLabel, icon: 'star', key: '2' },
@@ -186,7 +189,7 @@ export class Play {
       case 'water': {
         if (!f) { if (!dragging) this.host.say('Water growing crops.'); return; }
         const r = water(farm, f);
-        if (r.ok) { sfx.water(); this.host.float(tile, 'Watered', 'info'); this.host.changed(); this.host.did?.('water', tile); }
+        if (r.ok) { waterNear(farm, f); sfx.water(); this.host.float(tile, 'Watered', 'info'); this.host.changed(); this.host.did?.('water', tile); }
         else if (!dragging) this.host.say(r.why);
         return;
       }
@@ -310,6 +313,7 @@ export class Play {
         const panel = p.show('Decorate', decorPanel(farm, (c: DecorChoice) => {
           p.close(panel);
           if (c.kind === 'path') { this.buildSub = 'path'; this.buildChoice = c.id; this.host.say('Tap or drag to lay the path.'); }
+          else if (c.kind === 'channel') { this.buildSub = 'channel'; this.host.say('Tap or drag to dig a channel. Join it to the river or a pond.'); }
           else if (c.kind === 'paint') { this.buildSub = 'paint'; this.buildChoice = c.def; this.host.say('Tap or drag to place them.'); }
           else if (c.kind === 'place') this.startPlacing({ kind: 'decor', def: c.def });
           else if (c.what === 'decor') this.startPlacing({ kind: 'decor', def: c.def });
@@ -343,6 +347,20 @@ export class Play {
         const r = paintPath(farm, tile.x, tile.z, this.buildChoice as number);
         if (r.ok) { sfx.dig(); this.host.changed(); if (!dragging) this.host.toolChanged(); }
         else { if (!dragging) { sfx.nope(); this.host.say(r.why); } if (this.undo.size > snap && !dragging) this.undo.undo(farm); }
+        return;
+      }
+      case 'channel': {
+        const area = areaAt(tile.x, tile.z);
+        if (!area || !farm.unlocked.includes(area)) return;
+        const snap = this.undo.size;
+        save();
+        const r = digChannel(farm, tile.x, tile.z);
+        if (r.ok) {
+          sfx.dig();
+          this.host.changed();
+          if (r.wet && !farm.flags.sawWetChannel) { farm.flags.sawWetChannel = 1; this.host.say('Water flows! Fields beside the channel get watered every morning.'); }
+          if (!dragging) this.host.toolChanged();
+        } else { if (!dragging) { sfx.nope(); this.host.say(r.why); } if (this.undo.size > snap && !dragging) this.undo.undo(farm); }
         return;
       }
       case 'paint': {
@@ -514,6 +532,10 @@ export class Play {
     }
     if (o && isMachine(o)) {
       p.show(MACHINE[o.def]!.name, workshopPanel(farm, o, () => this.host.changed(), t => this.host.say(t)), { keepsTime: true });
+      return;
+    }
+    if (o && isGreenhouse(o)) {
+      p.show(BUILDING[o.def]?.name ?? 'Greenhouse', greenhousePanel(farm, o, () => this.host.changed(), t => this.host.say(t)), { keepsTime: true });
       return;
     }
     if (o?.kind === 'building' && (o.def === 'board' || o.def === 'dock')) { this.openTown(); return; }

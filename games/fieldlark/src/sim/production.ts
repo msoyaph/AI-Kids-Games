@@ -24,8 +24,10 @@ export function machineState(o: OtherObj): MachineState {
   return d as unknown as MachineState;
 }
 
-export const slotsOf = (o: OtherObj) => MACHINE[o.def]!.slots[machineState(o).level - 1]!;
-export const speedOf = (o: OtherObj) => MACHINE[o.def]!.speed[machineState(o).level - 1]!;
+/** Queue slots (the Farm Lab's "Longer lists" adds one everywhere). */
+export const slotsOf = (o: OtherObj, farm?: Farm) => MACHINE[o.def]!.slots[machineState(o).level - 1]! + (farm?.flags['lab:slot'] ? 1 : 0);
+/** Time multiplier (the Farm Lab's gears and tools make every workshop a little faster). */
+export const speedOf = (o: OtherObj, farm?: Farm) => MACHINE[o.def]!.speed[machineState(o).level - 1]! * (farm?.flags['lab:fast1'] ? 0.9 : 1) * (farm?.flags['lab:fast2'] ? 0.9 : 1);
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; why: string };
 
@@ -34,7 +36,7 @@ export function cantStart(farm: Farm, o: OtherObj, rec: RecipeDef): string | nul
   const s = machineState(o);
   if (rec.machine !== o.def) return 'That isn’t made here.';
   if (levelOf(farm) < rec.level) return `${rec.name} comes at farm level ${rec.level}.`;
-  if (s.queue.length >= slotsOf(o)) return 'The queue is full. Upgrade for more slots!';
+  if (s.queue.length >= slotsOf(o, farm)) return 'The queue is full. Upgrade for more slots!';
   const missing = Object.entries(rec.inputs).filter(([id, n]) => count(farm, id) < n);
   if (missing.length) return 'Missing ingredients.';
   return null;
@@ -61,7 +63,7 @@ export function startJob(farm: Farm, o: OtherObj, recipeId: string): Result<{ st
   const avg = stars.reduce((a, b) => a + b, 0) / stars.length;
   const st = Math.min(3, Math.max(1, Math.round(avg - 0.01))) as Stars;
   const s = machineState(o);
-  const job: Job = { recipe: rec.id, stars: st, minutes: rec.minutes * speedOf(o), startedAt: null, endsAt: null };
+  const job: Job = { recipe: rec.id, stars: st, minutes: rec.minutes * speedOf(o, farm), startedAt: null, endsAt: null };
   s.queue.push(job);
   runQueue(o, farm.t);
   return { ok: true, stars: st };

@@ -34,7 +34,7 @@ afterEach(() => { useStorage(undefined); });
 describe('saving', () => {
   it('round-trips a farm', () => {
     const farm = newFarm(42);
-    farm.t = 1234.5; farm.coins = 777; farm.unlocked = ['home', 'meadow']; farm.flags = { tip_pan: 1 };
+    farm.t = 1234.5; farm.coins = 777; farm.unlocked = ['home', 'meadow']; farm.flags = { tip_pan: 1, levelSeen: 1 };
     farm.cam = { x: 30, z: 40, yawStep: 3, zoom: 50 };
     const back = decodeFarm(JSON.parse(JSON.stringify(encodeFarm(farm))));
     expect(back.status).toBe('ok');

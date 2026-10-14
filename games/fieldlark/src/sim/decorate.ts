@@ -17,7 +17,7 @@ export type Result<T = object> = ({ ok: true } & T) | { ok: false; why: string }
 
 export const pathAt = (farm: Farm, x: number, z: number) => Number(farm.paths.charCodeAt(z * W + x) - 48) || 0;
 
-function setPath(farm: Farm, x: number, z: number, id: number) {
+export function setPath(farm: Farm, x: number, z: number, id: number) {
   const i = z * W + x;
   farm.paths = farm.paths.slice(0, i) + String.fromCharCode(48 + id) + farm.paths.slice(i + 1);
 }
@@ -119,6 +119,7 @@ export function placeDecor(farm: Farm, def: string, at: { x: number; z: number; 
   if (!fromStorage) {
     if (d.set && !setEarned(farm, d.set)) return { ok: false, why: `Earn the ${SETS[d.set]!.name} from ${SETS[d.set]!.how}.` };
     if (!d.set && levelOf(farm) < d.level) return { ok: false, why: `${d.name} comes at farm level ${d.level}.` };
+    if (d.chapter !== undefined && farm.story.chapter < d.chapter) return { ok: false, why: `${d.name}s come in chapter ${d.chapter + 1}.` };
   }
   const r = canPlace(occupancy(farm), farm.unlocked, at, { w: d.w, d: d.d });
   if (!r.ok) return { ok: false, why: r.reason === 'taken' ? 'Something is already there.' : r.reason === 'locked' ? 'That land isn’t open yet.' : r.reason === 'uneven' ? 'It needs flat ground.' : 'It can’t go there.' };
@@ -199,7 +200,7 @@ export function beauty(farm: Farm): { score: number; tier: string; next: number 
   let score = 0;
   const kinds = new Set<string>();
   for (const o of farm.objects) {
-    if (o.kind === 'decor') { score += DECOR_BY_ID[o.def]?.beauty ?? 0; kinds.add(o.def); }
+    if (o.kind === 'decor') { score += (DECOR_BY_ID[o.def]?.beauty ?? 0) * (farm.flags['lab:beauty'] && o.def.startsWith('flowers') ? 2 : 1); kinds.add(o.def); }
     else if (o.kind === 'tree' && TREE[o.def]) { score += 1; kinds.add(o.def); }
     else if (o.kind === 'debris' && o.def !== 'mushrooms') { const a = areaAt(o.x, o.z); if (a && farm.unlocked.includes(a)) score -= 0.5; }
   }

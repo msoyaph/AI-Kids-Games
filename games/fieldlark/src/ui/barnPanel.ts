@@ -9,7 +9,7 @@ import { sfx } from '../audio/engine';
 import { barnCap, totalItems, type Stars } from '../sim/inventory';
 import { goodTimeToSell, priceOf, sell } from '../sim/market';
 import type { Farm } from '../sim/state';
-import { spend } from '../sim/world';
+import { barnUpgradeCost, spend } from '../sim/world';
 import { fill, h } from './h';
 import { icon } from './icons';
 import { itemIcon, starsEl } from './itemIcons';
@@ -38,7 +38,7 @@ export function barnPanel(farm: Farm, changed: () => void): HTMLElement {
             : h('small', null, 'For the farm')));
       }
     }
-    const next = farm.barnLevel + 1 < TUNING.barnCap.length ? TUNING.barnUpgrade[farm.barnLevel + 1]! : null;
+    const next = farm.barnLevel + 1 < TUNING.barnCap.length ? barnUpgradeCost(farm) : null;
     fill(root,
       h('div.barn-cap', null, h('span', null, `Space: ${used} of ${cap}`), h('span.bar', null, h('i.bar-fill', { style: `width:${Math.round((used / cap) * 100)}%` }))),
       rows.length ? h('div.barn-list', null, ...rows) : h('p.note', null, 'The barn is empty. Pick some crops!'),

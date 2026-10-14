@@ -9,6 +9,8 @@ import { VARIETY } from '../data/varieties';
 import { SOIL_MAX, SOIL_START } from '../sim/soil';
 import type { Ribbon } from '../sim/state';
 import { JOBS, MAX_HELPERS, type Helper } from '../sim/helpers';
+import { ideasForLevels } from '../sim/lab';
+import { levelForXp } from '../data/tuning';
 import { HELPER_NAMES } from '../data/cast';
 import { RECIPE } from '../data/production';
 import { BUSINESS, type BusinessId } from '../data/businesses';
@@ -145,6 +147,8 @@ export function decodeFarm(input: unknown): DecodeResult {
   const unlocked = Array.isArray(raw.unlocked) ? raw.unlocked.filter((a): a is AreaId => AREA_IDS.includes(a as AreaId)) : [];
   if (!unlocked.includes('home')) unlocked.unshift('home');
   const flags = numRecord(raw.flags);
+  // the last farm level announced (saves from before it was kept: their level, so nothing pops up twice)
+  if (flags.levelSeen === undefined) flags.levelSeen = levelForXp(int(raw.xp, 0, 0));
   // objects: keep every valid one; a save without objects (very old or damaged) gets the starting farm
   let objects: Obj[] = fresh.objects;
   if (Array.isArray(raw.objects)) {
@@ -194,7 +198,7 @@ export function decodeFarm(input: unknown): DecodeResult {
     compostUntil: isNum(raw.compostUntil) ? raw.compostUntil : null,
     freeSeeds: int(raw.freeSeeds, 0, 0, 99),
     ledger,
-    paths: typeof raw.paths === 'string' && raw.paths.length === 56 * 56 && /^[0-3]*$/.test(raw.paths) ? raw.paths : take(fresh.paths, raw.paths === undefined, fresh.paths),
+    paths: typeof raw.paths === 'string' && raw.paths.length === 56 * 56 && /^[0-4]*$/.test(raw.paths) ? raw.paths : take(fresh.paths, raw.paths === undefined, fresh.paths),
     storage: numRecord(raw.storage),
     orders: orderList(raw.orders).slice(0, 6),
     nextOrderAt: isNum(raw.nextOrderAt) ? raw.nextOrderAt : null,
@@ -221,7 +225,8 @@ export function decodeFarm(input: unknown): DecodeResult {
       return { chapter: int(st.chapter, 0, 0, 8), base: numRecord(st.base), introSeen: st.introSeen === true, creditsSeen: st.creditsSeen === true, endless, endlessDone: int(st.endlessDone, 0, 0) };
     })(),
     discovered: Array.isArray(raw.discovered) ? [...new Set(raw.discovered.filter((id): id is string => typeof id === 'string' && !!VARIETY[id] && !VARIETY[id]!.heirloom))] : [],
-    ideas: int(raw.ideas, 0, 0),
+    // saves from before the Farm Lab get the ideas their levels would have brought
+    ideas: isNum(raw.ideas) ? int(raw.ideas, 0, 0) : ideasForLevels(1, levelForXp(int(raw.xp, 0, 0))),
     ribbons: Array.isArray(raw.ribbons) ? raw.ribbons.filter((r): r is Raw => !!r && typeof r === 'object').map(r => ({
       season: int(r.season, 0, 0), cat: String(r.cat), place: int(r.place, 4, 1, 4) as Ribbon['place'], ...(r.grand === true ? { grand: true } : {}),
     })).slice(-RIBBONS_KEPT) : [],

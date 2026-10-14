@@ -16,6 +16,7 @@ import { hiveNear } from './animals';
 import { areaAt } from './map';
 import { canPlace, newField, type FieldObj } from './objects';
 import { soilAfterHarvest, soilAtPlanting, soilCompost } from './soil';
+import { waterAtPlanting } from './water';
 import { crossAtHarvest, seedPrice, varietyChoice } from './varieties';
 import type { Farm } from './state';
 import { raining } from './weather';
@@ -88,6 +89,7 @@ export function plant(farm: Farm, f: FieldObj, cropId: string, isWater: (x: numb
   f.rotation = f.last !== null && f.last !== crop.family;
   soilAtPlanting(f, farm.t);
   f.watered = raining(farm.seed, farm.t);
+  waterAtPlanting(farm, f);
   f.fertilized = false;
   bump(farm, 'planted');
   bump(farm, `planted:${crop.id}`);
@@ -102,6 +104,17 @@ export function water(farm: Farm, f: FieldObj): Done | Fail {
   f.watered = true;
   bump(farm, 'watered');
   return { ok: true };
+}
+
+/** The Farm Lab's wide watering can: also water the dry growing crops right next to this one. */
+export function waterNear(farm: Farm, f: FieldObj): number {
+  if (!farm.flags['lab:widecan']) return 0;
+  let n = 0;
+  for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const g = fieldAt(farm, f.x + dx, f.z + dz);
+    if (g && !g.watered && fieldState(farm, g) === 'growing') { g.watered = true; bump(farm, 'watered'); n++; }
+  }
+  return n;
 }
 
 export function fertilize(farm: Farm, f: FieldObj): Done | Fail {

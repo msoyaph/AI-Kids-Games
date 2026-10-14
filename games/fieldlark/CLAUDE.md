@@ -414,7 +414,7 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 | 9 Soil, weather, breeding, fair categories | done in code (221 unit tests); browser check pending a quiet machine |
 | 10 Farmhands as workers | done in code (232 unit tests); browser check pending a quiet machine |
 | 11 Larkford town square: the farm stand and contracts | done in code (247 unit tests); browser check pending a quiet machine |
-| 12 Channels, sprinklers, greenhouses, the Farm Lab | — |
+| 12 Channels, sprinklers, greenhouses, the Farm Lab | done in code (264 unit tests); browser check pending a quiet machine |
 | 13 The look everywhere, seasons, night, music | — |
 | 14 Save v2, bot and pacing, performance, full QA | — |
 | 15 Site step, trailer, MCP catalog, PR and preview | — |
@@ -485,4 +485,19 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
   `contract`; they don't count as board `orders`. `contract:<id>` counts delivered drops.
 - The content test forbids the word "premium" anywhere in `src`, even in code names.
 
-**Next:** phase 12, channels, sprinklers, greenhouses and the Farm Lab (`docs/PLAN-2.md` §2.5–2.6).
+**Phase 12 notes:**
+- Channels are code 4 in `farm.paths` (`sim/water.ts`). `wetMap` is cached on the paths string (and
+  the culverts idea). Fields are watered by water at dawn (`new-day`) and at planting. Sprinklers are
+  decor `sprinkler` (chapter 5), placed beside a channel (decor can't sit on a path tile).
+- Greenhouses are buildings with `plots`; beds live in `data.plots` (`sim/greenhouse.ts`). Beds are
+  every footprint tile except the 3×3's front middle (`bedTiles`). Glass is a separate see-through
+  instanced layer (`glass:<def>`, `Materials.glassInst`).
+- The Lab (`data/lab.ts`, `sim/lab.ts`) sets `lab:<id>` flags; the effects are read where they act
+  (production slots/speed, compost, barn cost, helper pace and skills, stand shelves, sprinkler reach,
+  culverts, wide channels, greenhouse sizes, warm glass, sunny benches, flower beauty, decor sets).
+- **Bug fixed:** level-ups were only noticed for XP gained inside the clock tick, so harvest XP never
+  showed the level-up card. The tick now compares with `flags.levelSeen` (old saves start at their
+  level, and get the Lab ideas their levels would have earned).
+
+**Next:** phase 13 (the look everywhere, music) needs the GPU; while the machine is busy, phase 14's
+CPU work (save v2, the bot and the pacing sim) can go first.

@@ -6,10 +6,11 @@ import { canOpen, setEarned, stored } from '../sim/decorate';
 import { areaDef } from '../sim/map';
 import type { Farm } from '../sim/state';
 import { levelOf } from '../sim/world';
+import { CHANNEL_COST, waterOpen } from '../sim/water';
 import { h } from './h';
 import { icon } from './icons';
 
-export type DecorChoice = { kind: 'path'; id: number } | { kind: 'paint'; def: string } | { kind: 'place'; def: string } | { kind: 'stored'; what: 'building' | 'tree' | 'decor'; def: string };
+export type DecorChoice = { kind: 'path'; id: number } | { kind: 'channel' } | { kind: 'paint'; def: string } | { kind: 'place'; def: string } | { kind: 'stored'; what: 'building' | 'tree' | 'decor'; def: string };
 
 function swatch(color: number) { return h('span.swatch', { style: `background:#${color.toString(16).padStart(6, '0')}` }); }
 
@@ -25,7 +26,7 @@ export function decorPanel(farm: Farm, choose: (c: DecorChoice) => void): HTMLEl
       const earned = setEarned(farm, d.set) || have > 0;
       return card(d.name, earned ? (have ? `${have} in storage` : 'Earned: free') : `From ${SETS[d.set]!.how}`, d.paint ? swatch(DECOR_COLORS[d.id] ?? 0xcccccc) : icon(earned ? 'star' : 'lock', 32), earned, () => choose({ kind: 'place', def: d.id }), `Beauty +${d.beauty}`);
     }
-    const locked = level < d.level && have === 0;
+    const locked = (level < d.level || (d.chapter !== undefined && farm.story.chapter < d.chapter)) && have === 0;
     return card(d.name, locked ? `Level ${d.level}` : have ? `${have} in storage` : `${d.cost} coins${d.paint ? ' a tile' : ''}`, d.paint ? swatch(DECOR_COLORS[d.id] ?? 0xcccccc) : icon(locked ? 'lock' : 'star', 32), !locked, () => choose(d.paint ? { kind: 'paint', def: d.id } : { kind: 'place', def: d.id }), `Beauty +${d.beauty}`);
   };
   const storedThings = Object.entries(farm.storage).filter(([k, n]) => n > 0 && !k.startsWith('decor:'));
@@ -33,10 +34,16 @@ export function decorPanel(farm: Farm, choose: (c: DecorChoice) => void): HTMLEl
     h('p.note', null, 'Paths, fences and flower beds: choose one, then tap or drag over the farm.'),
     h('h3', null, 'Paths'),
     h('div.seed-grid', null, ...PATHS.map(p => card(p.name, level < p.level ? `Level ${p.level}` : `${p.cost} a tile`, swatch(p.color), level >= p.level, () => choose({ kind: 'path', id: p.id })))),
+    h('h3', null, 'Water'),
+    waterOpen(farm)
+      ? h('div.seed-grid', null,
+        card('Channel', `${CHANNEL_COST} a tile`, swatch(0x5fa8d8), true, () => choose({ kind: 'channel' }), 'Join it to the river or a pond'),
+        ...DECOR.filter(d => d.id === 'sprinkler').map(decorCard))
+      : h('p.note', null, 'Channels and sprinklers come in chapter 5.'),
     h('h3', null, 'Fences and flowers'),
     h('div.seed-grid', null, ...DECOR.filter(d => d.paint).map(decorCard)),
     h('h3', null, 'Decorations'),
-    h('div.seed-grid', null, ...DECOR.filter(d => !d.paint && !d.set).map(decorCard)),
+    h('div.seed-grid', null, ...DECOR.filter(d => !d.paint && !d.set && d.id !== 'sprinkler').map(decorCard)),
     h('h3', null, 'Earned sets'),
     h('div.seed-grid', null, ...DECOR.filter(d => d.set).map(decorCard)),
     storedThings.length ? h('h3', null, 'In storage') : null,

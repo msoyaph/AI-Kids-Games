@@ -18,6 +18,8 @@ export interface DecorDef {
   /** Painted by dragging, like fences and flower beds. */
   paint?: boolean;
   height: number;
+  /** Only from this chapter (0-based) of the story on. */
+  chapter?: number;
 }
 
 export const DECOR: readonly DecorDef[] = [
@@ -39,6 +41,8 @@ export const DECOR: readonly DecorDef[] = [
   { id: 'barrel', name: 'Barrel Planter', w: 1, d: 1, cost: 45, level: 5, beauty: 4, height: 0.6 },
   { id: 'well', name: 'Wishing Well', w: 1, d: 1, cost: 160, level: 10, beauty: 10, height: 1.3 },
   { id: 'gazebo', name: 'Garden Gazebo', w: 2, d: 2, cost: 400, level: 14, beauty: 22, height: 2.0 },
+  // irrigation (src/sim/water.ts): works on or beside a wet channel
+  { id: 'sprinkler', name: 'Sprinkler', w: 1, d: 1, cost: 80, level: 1, beauty: 1, height: 0.5, chapter: 4 },
   // earned sets
   { id: 'bunting', name: 'Fair Bunting', w: 1, d: 1, cost: 0, level: 1, beauty: 6, set: 'fair', height: 1.6 },
   { id: 'ribbonarch', name: 'Ribbon Arch', w: 1, d: 1, cost: 0, level: 1, beauty: 10, set: 'fair', height: 1.7 },
@@ -50,6 +54,12 @@ export const DECOR: readonly DecorDef[] = [
   { id: 'windpump', name: 'Wind Pump', w: 1, d: 1, cost: 0, level: 1, beauty: 12, set: 'country', height: 2.6 },
   { id: 'cart', name: 'Old Farm Cart', w: 2, d: 1, cost: 0, level: 1, beauty: 10, set: 'country', height: 0.9 },
   { id: 'milkcans', name: 'Milk Cans', w: 1, d: 1, cost: 0, level: 1, beauty: 6, set: 'country', height: 0.6 },
+  { id: 'duckstatue', name: 'Duck Statue', w: 1, d: 1, cost: 0, level: 1, beauty: 8, set: 'pond', height: 0.7 },
+  { id: 'lilyplanter', name: 'Lily Planter', w: 1, d: 1, cost: 0, level: 1, beauty: 7, set: 'pond', height: 0.5 },
+  { id: 'paperlanterns', name: 'Paper Lanterns', w: 1, d: 1, cost: 0, level: 1, beauty: 9, set: 'lantern', height: 1.6 },
+  { id: 'lanternpost', name: 'Lantern Post', w: 1, d: 1, cost: 0, level: 1, beauty: 7, set: 'lantern', height: 1.5 },
+  { id: 'gardenmill', name: 'Garden Windmill', w: 1, d: 1, cost: 0, level: 1, beauty: 10, set: 'windmill', height: 1.6 },
+  { id: 'birdhouse', name: 'Birdhouse', w: 1, d: 1, cost: 0, level: 1, beauty: 7, set: 'windmill', height: 1.4 },
   { id: 'snowfolk', name: 'Snow Friend', w: 1, d: 1, cost: 0, level: 1, beauty: 8, set: 'winter', height: 1.1 },
   { id: 'lanterns', name: 'Lantern String', w: 1, d: 1, cost: 0, level: 1, beauty: 8, set: 'winter', height: 1.5 },
   { id: 'pinetree', name: 'Little Pine', w: 1, d: 1, cost: 0, level: 1, beauty: 6, set: 'winter', height: 1.4 },
@@ -64,6 +74,9 @@ export const SETS: Record<string, { name: string; how: string }> = {
   garden: { name: 'Garden Set', how: 'a story chapter' },
   country: { name: 'Country Set', how: 'a gift from the neighbours' },
   winter: { name: 'Winter Set', how: 'the first winter' },
+  pond: { name: 'Pond Set', how: 'the Farm Lab' },
+  lantern: { name: 'Lantern Set', how: 'the Farm Lab' },
+  windmill: { name: 'Windmill Set', how: 'the Farm Lab' },
 };
 
 export interface PathDef { id: number; name: string; cost: number; level: number; color: number; beauty: number }

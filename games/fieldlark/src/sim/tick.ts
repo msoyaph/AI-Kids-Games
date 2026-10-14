@@ -22,6 +22,9 @@ import { brushAll } from './animals';
 import { helpersTick, type HelperEvent } from './helpers';
 import { contractsTick, dropDelivered, type ContractEvent } from './contracts';
 import { standTick, type StandSale } from './stand';
+import { waterAtDawn, waterOpen } from './water';
+import { ideasForLevels } from './lab';
+import { greenhousesCatchUp } from './greenhouse';
 
 export type SimEvent =
   | { type: 'rain-start' }
@@ -35,7 +38,7 @@ export type SimEvent =
   | { type: 'coop-done'; coop: Coop }
   | { type: 'visit'; visit: Visit }
   | { type: 'endless-done'; goals: EndlessGoal[] }
-  | { type: 'new-day'; event: DayEvent | null; hay: boolean; mushrooms: number; firstSnow: boolean }
+  | { type: 'new-day'; event: DayEvent | null; hay: boolean; mushrooms: number; firstSnow: boolean; watered: number }
   | HelperEvent
   | ContractEvent
   | { type: 'stand-sales'; sales: StandSale[] };
@@ -44,7 +47,7 @@ export type SimEvent =
 export function advance(farm: Farm, dt: number): SimEvent[] {
   if (!(dt > 0)) return [];
   const events: SimEvent[] = [];
-  const level0 = levelOf(farm), season0 = seasonOf(farm.t), wasRaining = raining(farm.seed, farm.t), day0 = dayIndex(farm.t);
+  const season0 = seasonOf(farm.t), wasRaining = raining(farm.seed, farm.t), day0 = dayIndex(farm.t);
   farm.t += dt;
   restTrees(farm, dt);
   if (dayIndex(farm.t) !== day0) events.push(newDay(farm));
@@ -79,8 +82,13 @@ export function advance(farm: Farm, dt: number): SimEvent[] {
   const endless = endlessTick(farm);
   if (endless.length) events.push({ type: 'endless-done', goals: endless });
   if (seasonOf(farm.t) !== season0) events.push({ type: 'season', season: seasonOf(farm.t) });
-  const level = levelOf(farm);
-  if (level > level0) events.push({ type: 'level-up', level });
+  // XP comes from the player's own actions too (between ticks), so compare with the last level announced
+  const level = levelOf(farm), seen = farm.flags.levelSeen ?? 1;
+  if (level > seen) {
+    farm.flags.levelSeen = level;
+    farm.ideas += ideasForLevels(seen, level);
+    events.push({ type: 'level-up', level });
+  }
   const net = safetyNet(farm);
   if (net) events.push(net);
   return events;
@@ -97,7 +105,8 @@ function newDay(farm: Farm): SimEvent {
     for (const o of farm.objects) if (isHome(o)) brushAll(farm, o);
   }
   const mushrooms = event === 'misty' ? spawnMushrooms(farm, day) : 0;
-  return { type: 'new-day', event, hay, mushrooms, firstSnow: firstSnow(farm.seed, day) };
+  const watered = waterOpen(farm) ? waterAtDawn(farm) : 0;
+  return { type: 'new-day', event, hay, mushrooms, firstSnow: firstSnow(farm.seed, day), watered };
 }
 
 /** The compost bin turns scraps into a bag of compost, one bag at a time, while it has scraps. */
@@ -112,7 +121,7 @@ function compostTick(farm: Farm, events: SimEvent[]) {
   }
   if (farm.compostUntil === null && farm.scraps >= TUNING.scrapsPerBag) {
     farm.scraps -= TUNING.scrapsPerBag;
-    farm.compostUntil = farm.t + TUNING.compostMin * 60;
+    farm.compostUntil = farm.t + TUNING.compostMin * 60 * (farm.flags['lab:compost'] ? 0.5 : 1);
   }
 }
 
@@ -158,5 +167,6 @@ export function catchUp(farm: Farm, awaySeconds: number): number {
   machinesCatchUp(farm, bonus);
   boatCatchUp(farm, bonus);
   treesCatchUp(farm, bonus);
+  greenhousesCatchUp(farm, bonus);
   return bonus;
 }

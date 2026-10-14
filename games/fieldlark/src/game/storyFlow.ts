@@ -196,6 +196,9 @@ export class StoryFlow {
       ['soil', st('harvest') >= 14 || farm.story.chapter >= 1],
       ['heirloom', farm.story.chapter >= 3],
       ['helpers', helperSlots(farm) > farm.helpers.length],
+      ['channels', farm.story.chapter >= 4],
+      ['greenhouse', farm.story.chapter >= 5],
+      ['lab', farm.story.chapter >= 5 && farm.ideas > 0],
       ['rain', raining(farm.seed, farm.t)],
       ['stars', st('stars3') >= 1],
       ['compost', count(farm, 'fertilizer') >= 1],
@@ -243,6 +246,8 @@ export function tilesFor(farm: Farm, g: Goal): { x: number; z: number }[] {
   if (k === 'orders' || k.startsWith('story:')) return farm.objects.filter(o => o.def === 'board');
   // the stand is down the river on Larkford's square; contract baskets leave from the dock
   if (k === 'stand-sold') return [{ x: 45, z: 65 }];
+  if (k === 'greenhouse-picked') return farm.objects.filter(o => o.kind === 'building' && o.def.startsWith('greenhouse'));
+  if (k === 'channel-wet' || k === 'auto-watered') return fields.filter(f => !f.crop || fieldState(farm, f) === 'growing');
   if (k.startsWith('contract') || k === 'helper:deliveries') return farm.objects.filter(o => o.def === 'dock');
   if (k.startsWith('collect')) return farm.objects.filter(isHome);
   if (k.startsWith('made')) return farm.objects.filter(isMachine);

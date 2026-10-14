@@ -41,6 +41,8 @@ import { forecastPanel } from './ui/forecastPanel';
 import { ribbonsPanel } from './ui/ribbonsPanel';
 import { SoilTags } from './ui/soilTags';
 import { helpersPanel } from './ui/helpersPanel';
+import { labPanel } from './ui/labPanel';
+import { labOpen } from './sim/lab';
 import { helperSlots, JOB_WORKER } from './sim/helpers';
 import { VARIETY } from './data/varieties';
 import { BUSINESS } from './data/businesses';
@@ -349,6 +351,7 @@ function boot() {
       { id: 'book', title: 'Farm Book', text: 'Every crop, tree and animal', icon: 'books', open: openBook },
       { id: 'ledger', title: 'Ledger', text: 'Coins, crops and seasons', icon: 'ledger', open: openLedger },
       { id: 'helpers', title: 'Helpers', text: farm.helpers.length ? `${farm.helpers.length} on the farm` : helperSlots(farm) ? 'Someone is here to help!' : 'Coming in chapter 3', icon: 'farm', open: () => panels.show('Helpers', helpersPanel(farm, () => { dirty = true; }, say), { keepsTime: true }), ...(helperSlots(farm) || farm.helpers.length ? {} : { later: 'Coming in chapter 3' }) },
+      { id: 'lab', title: 'Farm Lab', text: `${farm.ideas} idea${farm.ideas === 1 ? '' : 's'} to try`, icon: 'books', open: () => panels.show('Farm Lab', labPanel(farm, () => { dirty = true; refreshHud(); }, say), { keepsTime: true }), ...(labOpen(farm) ? {} : { later: 'Opens in chapter 6' }) },
       { id: 'goals', title: 'Goals', text: 'What to do next', icon: 'star', open: () => story.openGoals() },
       { id: 'ribbons', title: 'Ribbon wall', text: `${farm.ribbonCount.reduce((a, b) => a + b, 0)} fair ribbons`, icon: 'level', open: () => panels.show('Ribbon wall', ribbonsPanel(farm), { keepsTime: true }) },
     ]), { keepsTime: true });
