@@ -463,6 +463,67 @@
         "bytes": 1156768,
         "sha256": "d1bcc6ee13128406486862b91e8b2061ec0e46ff0429fc71ef57816dd602180d"
       }
+    },
+    {
+      "slug": "fieldlark",
+      "title": "Fieldlark",
+      "tagline": "Wake up the town farm, field by field.",
+      "pitch": "Build and grow a 3D farm from above: plant 30 real crops, raise animals, run workshops, sell at your own farm stand and bring back the town's Harvest Fair.",
+      "minAge": 8,
+      "ageRange": "8–14",
+      "genres": [
+        "Farming",
+        "Strategy",
+        "Cozy"
+      ],
+      "tags": [
+        "3D",
+        "Farming",
+        "Building",
+        "Learning",
+        "Seasons"
+      ],
+      "devices": [
+        "Computer",
+        "Tablet",
+        "Phone"
+      ],
+      "controls": [
+        "Keyboard",
+        "Mouse",
+        "Gamepad",
+        "Touch"
+      ],
+      "orientation": "any",
+      "requirements": [
+        "WebGL 2"
+      ],
+      "playTime": "About 6–8 hours of story, then endless farming",
+      "sessionMinutes": [
+        15,
+        45
+      ],
+      "moods": [
+        "cozy",
+        "creative"
+      ],
+      "embed": "fullscreen",
+      "contentNotes": "Gentle farming with no fighting or scary content. Nothing ever wilts, dies or gets sick, there are no timers outside play, and pricing mistakes only mean selling a little less. Some reading, with read-aloud. The farm saves in this browser.",
+      "quickStart": [
+        "Press Start farming and read Hattie's welcome.",
+        "Tap an empty field and choose seeds, then water them.",
+        "Tap ripe crops to pick them, and fill an order on the board by the dock."
+      ],
+      "version": "1.0.0",
+      "accentColor": "#cfe8b0",
+      "page": "/game/fieldlark",
+      "cover": "/media/fieldlark/cover.svg",
+      "logo": "/media/fieldlark/logo.svg",
+      "build": {
+        "path": "/games/fieldlark/index.html",
+        "bytes": 1114831,
+        "sha256": "46c78f58363349025cd272a8f89031a1c69891defb3f5fef7fd318e53bff3916"
+      }
     }
   ]
 }

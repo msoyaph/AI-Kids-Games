@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+<!-- Fieldlark cover: the keeper's cottage and its fields on a summer morning, the river with the Little Lark, hills behind. Colors from the game (cottage, crops, boat, river). No text. Safe area: top 22% and side 6% are background only. -->
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd0ff"/><stop offset=".55" stop-color="#cdeaff"/><stop offset="1" stop-color="#eaf7ff"/></linearGradient>
+<radialGradient id="sun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff9d8"/><stop offset=".45" stop-color="#ffe9a0" stop-opacity=".8"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/></radialGradient>
+<linearGradient id="river" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7cc8ea"/><stop offset="1" stop-color="#3f9fcf"/></linearGradient>
+<linearGradient id="field" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8774a"/><stop offset="1" stop-color="#8a5a35"/></linearGradient>
+<g id="wheat"><path d="M0 0v-46" stroke="#b9942e" stroke-width="4" stroke-linecap="round"/><ellipse cx="-6" cy="-40" rx="5" ry="9" fill="#f2cf5f" transform="rotate(-25 -6 -40)"/><ellipse cx="6" cy="-34" rx="5" ry="9" fill="#e8c04c" transform="rotate(25 6 -34)"/><ellipse cx="-6" cy="-26" rx="5" ry="9" fill="#f2cf5f" transform="rotate(-25 -6 -26)"/><ellipse cx="0" cy="-52" rx="4.5" ry="8" fill="#f6d86e"/></g>
+<g id="berry"><ellipse cx="0" cy="-10" rx="26" ry="16" fill="#4f9a45"/><ellipse cx="-8" cy="-16" rx="14" ry="8" fill="#6db85a"/><circle cx="-12" cy="-4" r="6" fill="#e8384a"/><circle cx="9" cy="-8" r="6" fill="#d92e40"/><circle cx="1" cy="2" r="5.5" fill="#e8384a"/><circle cx="-13" cy="-6" r="1.6" fill="#fff"/><circle cx="8" cy="-10" r="1.6" fill="#fff"/></g>
+<g id="cab"><circle cx="0" cy="-12" r="17" fill="#8fcf7a"/><circle cx="-3" cy="-15" r="10" fill="#b7e39a"/><path d="M-17 -10q17 12 34 0" fill="none" stroke="#6aa95a" stroke-width="3"/></g>
+<g id="tree"><rect x="-7" y="-24" width="14" height="40" rx="5" fill="#8a5a3b"/><circle cx="0" cy="-52" r="38" fill="#5fa85a"/><circle cx="-14" cy="-62" r="22" fill="#7cc46a"/><circle cx="18" cy="-44" r="20" fill="#4f9a4a"/></g>
+</defs>
+<rect width="1600" height="900" fill="url(#sky)"/>
+<circle cx="1290" cy="150" r="190" fill="url(#sun)"/>
+<circle cx="1290" cy="150" r="58" fill="#fff6c8"/>
+<g fill="#fff" opacity=".9"><ellipse cx="300" cy="150" rx="90" ry="26"/><ellipse cx="350" cy="134" rx="56" ry="30"/><ellipse cx="900" cy="110" rx="70" ry="20"/><ellipse cx="940" cy="98" rx="40" ry="22"/></g>
+<!-- hills -->
+<path d="M0 470 Q220 360 470 420 T980 400 T1600 380 V900 H0Z" fill="#a9db8f"/>
+<path d="M0 520 Q260 440 560 480 T1100 470 T1600 450 V900 H0Z" fill="#8acc72"/>
+<use href="#tree" x="170" y="520"/><use href="#tree" x="250" y="500" transform="scale(1)"/><use href="#tree" x="1430" y="500"/>
+<!-- the river, running down to town -->
+<path d="M1120 450 Q1180 560 1250 640 T1420 900 H1600 V900 L1560 900 Q1420 760 1330 640 T1205 450Z" fill="url(#river)"/>
+<path d="M1150 470 Q1210 570 1275 650 T1440 900" fill="none" stroke="#d6f1ff" stroke-width="5" stroke-dasharray="26 34" opacity=".7"/>
+<!-- the ground of the farm -->
+<path d="M120 900 L240 560 Q600 520 1150 540 L1260 900Z" fill="#7cbf5f"/>
+<path d="M120 900 L240 560 Q600 520 1150 540 L1160 580 Q600 560 260 600 L170 900Z" fill="#6fae55" opacity=".6"/>
+<!-- fields: wheat, strawberries, cabbages -->
+<path d="M380 700 L470 620 H920 L960 700Z" fill="url(#field)"/>
+<path d="M330 790 L380 708 H962 L1000 790Z" fill="url(#field)"/>
+<path d="M280 890 L330 798 H1002 L1040 890Z" fill="url(#field)"/>
+<g stroke="#7a4e2c" stroke-width="3" opacity=".5"><path d="M420 680H940M405 668H930M350 770H980M300 870H1020"/></g>
+<g><use href="#wheat" x="470" y="690"/><use href="#wheat" x="530" y="690"/><use href="#wheat" x="590" y="690"/><use href="#wheat" x="650" y="690"/><use href="#wheat" x="710" y="690"/><use href="#wheat" x="770" y="690"/><use href="#wheat" x="830" y="690"/><use href="#wheat" x="890" y="690"/></g>
+<g><use href="#berry" x="420" y="780"/><use href="#berry" x="500" y="780"/><use href="#berry" x="580" y="780"/><use href="#berry" x="660" y="780"/><use href="#berry" x="740" y="780"/><use href="#berry" x="820" y="780"/><use href="#berry" x="900" y="780"/></g>
+<g><use href="#cab" x="380" y="878"/><use href="#cab" x="460" y="878"/><use href="#cab" x="540" y="878"/><use href="#cab" x="620" y="878"/><use href="#cab" x="700" y="878"/><use href="#cab" x="780" y="878"/><use href="#cab" x="860" y="878"/><use href="#cab" x="940" y="878"/></g>
+<!-- the keeper's cottage -->
+<g>
+<rect x="500" y="470" width="250" height="130" rx="8" fill="#fff2d6"/>
+<rect x="500" y="470" width="250" height="130" rx="8" fill="none" stroke="#e8d3a8" stroke-width="4"/>
+<path d="M480 476 L625 380 L770 476Z" fill="#e0603c"/>
+<path d="M480 476 L625 380 L625 476Z" fill="#c9502f"/>
+<g stroke="#b5432a" stroke-width="3" opacity=".55"><path d="M520 450H730M548 428H702M577 406H673"/></g>
+<rect x="690" y="372" width="30" height="62" rx="4" fill="#c97a5a"/><rect x="684" y="364" width="42" height="12" rx="3" fill="#a8603f"/>
+<circle cx="704" cy="340" r="14" fill="#fff" opacity=".85"/><circle cx="690" cy="312" r="10" fill="#fff" opacity=".7"/><circle cx="700" cy="288" r="7" fill="#fff" opacity=".55"/>
+<rect x="600" y="520" width="50" height="80" rx="6" fill="#3f7f86"/><circle cx="640" cy="560" r="4" fill="#ffd34d"/>
+<rect x="525" y="505" width="52" height="44" rx="5" fill="#a9dcf2"/><path d="M551 505V549M525 527H577" stroke="#fff" stroke-width="4"/><rect x="519" y="545" width="64" height="9" rx="3" fill="#7fae7a"/>
+<rect x="673" y="505" width="52" height="44" rx="5" fill="#a9dcf2"/><path d="M699 505V549M673 527H725" stroke="#fff" stroke-width="4"/><rect x="667" y="545" width="64" height="9" rx="3" fill="#7fae7a"/>
+<g fill="#ff7a8a"><circle cx="530" cy="560" r="7"/><circle cx="548" cy="562" r="6" fill="#ffd34d"/><circle cx="566" cy="560" r="7"/></g>
+</g>
+<!-- a sky-blue hen house on legs, and a hen -->
+<g><rect x="820" y="470" width="110" height="70" rx="6" fill="#7fc4d8"/><path d="M808 474 L875 432 L942 474Z" fill="#e88a3a"/><rect x="862" y="498" width="24" height="30" rx="4" fill="#2f4a5a"/><rect x="830" y="540" width="10" height="34" fill="#8a5a3b"/><rect x="912" y="540" width="10" height="34" fill="#8a5a3b"/>
+<ellipse cx="960" cy="590" rx="22" ry="17" fill="#faf3e6"/><circle cx="978" cy="572" r="10" fill="#faf3e6"/><path d="M986 572l10 3-10 3z" fill="#f0a23a"/><path d="M974 562q4-8 8 0" fill="#e2443a"/></g>
+<!-- a white picket fence -->
+<g fill="#fffaf0"><rect x="250" y="600" width="230" height="10" rx="4"/><rect x="250" y="620" width="230" height="10" rx="4"/><g><rect x="258" y="590" width="12" height="48" rx="4"/><rect x="290" y="590" width="12" height="48" rx="4"/><rect x="322" y="590" width="12" height="48" rx="4"/><rect x="354" y="590" width="12" height="48" rx="4"/><rect x="386" y="590" width="12" height="48" rx="4"/><rect x="418" y="590" width="12" height="48" rx="4"/><rect x="450" y="590" width="12" height="48" rx="4"/></g></g>
+<!-- the Little Lark on the river -->
+<g transform="translate(1395 795) rotate(-32) scale(.9)">
+<path d="M-70 0 H70 L50 34 H-58Z" fill="#e25c4a"/><rect x="-74" y="-8" width="148" height="12" rx="5" fill="#fff2d6"/>
+<rect x="-36" y="-56" width="56" height="48" rx="6" fill="#fff2d6"/><rect x="-42" y="-64" width="68" height="12" rx="4" fill="#3f78a8"/>
+<rect x="-26" y="-46" width="20" height="16" rx="3" fill="#9fd6f0"/><rect x="0" y="-90" width="10" height="30" fill="#5a5f6b"/>
+<rect x="34" y="-28" width="22" height="20" rx="3" fill="#d9a84a"/>
+</g>
+<!-- the dock -->
+<path d="M1090 600 L1180 590 L1200 640 L1110 652Z" fill="#c9965e"/><g stroke="#a8784a" stroke-width="3"><path d="M1102 612L1186 602M1106 626L1192 616M1110 640L1196 630"/></g>
+</svg>

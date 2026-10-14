@@ -28,6 +28,15 @@
       "importedAt": "2026-10-12"
     },
     {
+      "slug": "fieldlark",
+      "version": "1.0.0",
+      "source": "games/fieldlark/dist/index.html",
+      "bytes": 1114831,
+      "sha256": "46c78f58363349025cd272a8f89031a1c69891defb3f5fef7fd318e53bff3916",
+      "inputsSha256": "6228e4b136ed67c2dd649a9600fca84f413d581cee9fca329799ced3ca507cc5",
+      "importedAt": "2026-10-14"
+    },
+    {
       "slug": "light-crossing",
       "version": "2.0.0",
       "source": "games/light-crossing/dist/index.html",

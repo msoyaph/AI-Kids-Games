@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.9.0",
+  "release": "2.10.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.9.0",
+    "release": "2.10.0",
     "date": "2026-10-14",
     "approvedBy": "Owner",
-    "scope": "The AI Kids Games app for AI assistants ships with this release: the website's Privacy page explains exactly what the app receives, For Parents and the FAQ describe it (how to add it as a custom connector at https://ai-kids-games-mcp.vercel.app/mcp until the directories list it), and a new Terms of use page (/terms; footer, sitemap, llms.txt). game.json gains embed, moods and sessionMinutes (not build inputs: every game stays at its current version and build). The MCP server itself deploys from the separate Vercel project ai-kids-games-mcp (apps/mcp, release 1.0.0, its own approval in apps/mcp/DEPLOYMENT.json).",
-    "note": "Owner wrote: \"Ok deploy to production the MCP updates\" (2026-10-14), after the MCP app's plan, build and preview (PR #24; preview https://ai-kids-games-5ha1sf305-real-tours.vercel.app/mcp). Guard: scripts/check-deployment.ts needs this record for 2.9.0, a passing localSuites record for 2.9.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.9.0 in the Production environment of ai-kids-games and ai-kids-games-play, and a build from main."
+    "scope": "Fieldlark 1.0.0, the ninth game: a 3D farm-building and management game for ages 8–14 (games/fieldlark), listed \"Ready to play\" at position 9 with its cover, logo, OG image, previews and 15-second trailer; the storage audit adds its fieldlark. keys. The assistants app adds Fieldlark (full-screen) as MCP app 1.1.0 (its own approval in apps/mcp/DEPLOYMENT.json). All other games stay at their current versions and builds.",
+    "note": "Owner wrote: \"once done and complete, deploy the game to live production. Then create a 1 minute sizzle reel YT 1920×1080 and 1080x1920 video game\" (2026-10-14), after Fieldlark's PR #28 (CI green; preview https://ai-kids-games-git-fieldlark-real-tours.vercel.app). When Shooberry's release (PR #27, then 2.10.0) stalled, the owner chose \"Stop it; Fieldlark first\": Fieldlark ships as 2.10.0 at list position 9, and Shooberry takes 2.11.0 and position 10. Guard: scripts/check-deployment.ts needs this record for 2.10.0, a passing localSuites record for 2.10.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.10.0 in the Production environment of ai-kids-games and ai-kids-games-play, and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
@@ -399,8 +399,8 @@
     }
   ],
   "localSuites": {
-    "release": "2.9.0",
-    "commit": "4ea2d1c",
+    "release": "2.10.0",
+    "commit": "2221afb",
     "suites": [
       {
         "game": "space-sky",
@@ -411,18 +411,18 @@
         "failed": 0,
         "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-14T05:03:47.123Z"
+        "ranAt": "2026-10-14T17:11:08.232Z"
       },
       {
         "game": "light-crossing",
         "version": "2.0.0",
         "inputsSha256": "0d32ecc81e1e11c1d80b41619c3eef1516fac32b7b7d42f09a283f0197922232",
         "command": "npx playwright test --reporter=list,json --workers=2 --retries=1",
-        "passed": 189,
+        "passed": 191,
         "failed": 0,
-        "flaky": 2,
+        "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-14T04:58:33.509Z"
+        "ranAt": "2026-10-14T17:54:37.017Z"
       }
     ]
   }
