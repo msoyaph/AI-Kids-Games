@@ -1,7 +1,7 @@
 {
   "$schema": "../../docs/game.schema.json",
-  "slug": "garden-wip",
-  "title": "Garden Defense (working title)",
+  "slug": "shooberry",
+  "title": "Shooberry",
   "tagline": "Plant friendly defenders and save the picnic snacks.",
   "shortDescription": "Grow a garden of friendly plant helpers to shoo silly critters away from the picnic. A gentle 3D lane-strategy game where nobody gets hurt.",
   "longDescription": "Snails, ants, magpies and other silly critters are sneaking toward the picnic snacks. Plant a garden of friendly helpers in the lanes: plants that gust, splash, flick seeds and tangle feet until every critter poofs into leaves and runs home. Learn real facts about each plant in the Seed Book, plan your garden across five worlds, and try the endless Garden Party, puzzle Challenges and a Daily garden. Nobody gets hurt, and a lost level just means trying again.",
@@ -68,11 +68,11 @@
   ],
   "playTime": "About 5–6 hours of Adventure, plus endless and challenge modes",
   "storage": {
-    "prefix": "gardenwip.",
+    "prefix": "shooberry.",
     "keys": [
-      "gardenwip.save"
+      "shooberry.save"
     ],
-    "probe": "gardenwip.__probe"
+    "probe": "shooberry.__probe"
   },
   "safety": {
     "ads": false,
@@ -83,10 +83,10 @@
   },
   "capture": {
     "route": "?scene=play&seed=7",
-    "script": "apps/site/scripts/capture/garden-wip.ts"
+    "script": "apps/site/scripts/capture/shooberry.ts"
   },
   "license": "MIT",
-  "source": "games/garden-wip",
+  "source": "games/shooberry",
   "site": {
     "featured": false,
     "releaseDate": "2026-10-14",

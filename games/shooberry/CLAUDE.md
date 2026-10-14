@@ -1,6 +1,6 @@
-# Garden Defense (working title): game 9, a 3D lane-defense garden game
+# Shooberry: game 9, a 3D lane-defense garden game (working slug garden-wip until 2026-10-14)
 
-The owner's brief is [docs/prompts/garden-wip.md](../../docs/prompts/garden-wip.md), with its follow-up change
+The owner's brief is [docs/prompts/shooberry.md](../../docs/prompts/shooberry.md), with its follow-up change
 of direction to 3D. The plan was approved on 2026-10-14; it is summarized below, so a new session can resume
 from this file alone.
 
@@ -35,11 +35,11 @@ from this file alone.
   budget; `scripts/check-build.mjs`); the build-only Content Security Policy blocks every request.
 - No network requests, ads, purchases, accounts, chat, analytics, personal data, energy or lives timers,
   streaks or red dots. Read-aloud uses only `localService` speech voices (cloud voices would send text out).
-- Storage: every key starts with `gardenwip.` (`src/config.ts`), never `localStorage.clear()`, never touch
+- Storage: every key starts with `shooberry.` (`src/config.ts`), never `localStorage.clear()`, never touch
   other keys. Saves are versioned with migrations, stay under 100 KB, are written on `pagehide` and
-  `visibilitychange`, and `?quickstart` never overwrites a real save. The prefix changes once, at the rename
-  in phase 8; nothing has ever shipped under it.
-- The test hook (`window.__gardenwip.snapshot()`) only returns copies. Capture routes (`?scene=`) never save.
+  `visibilitychange`, and `?quickstart` never overwrites a real save. Renamed from `gardenwip.` on 2026-10-14
+  before anything shipped or saved under it.
+- The test hook (`window.__shooberry.snapshot()`) only returns copies. Capture routes (`?scene=`) never save.
 - Everything is original and generated in code: no asset files. Every name and design goes through the
   IP log below, and `tests/unit/names.test.ts` lints every name.
 - Dependencies: only packages already in the root lockfile, at the same versions (three **0.186.1** exactly,
@@ -48,11 +48,11 @@ from this file alone.
 ## Commands
 
 ```bash
-npm run dev --workspace games/garden-wip          # http://localhost:5309
-npm test --workspace games/garden-wip             # unit tests (light)
-npm run typecheck --workspace games/garden-wip
-npm run build --workspace games/garden-wip        # dist/index.html, size-checked
-npm run test:e2e --workspace games/garden-wip     # heavy: quiet machine only
+npm run dev --workspace games/shooberry          # http://localhost:5338
+npm test --workspace games/shooberry             # unit tests (light)
+npm run typecheck --workspace games/shooberry
+npm run build --workspace games/shooberry        # dist/index.html, size-checked
+npm run test:e2e --workspace games/shooberry     # heavy: quiet machine only
 ```
 
 ## Art direction (owner, 2026-10-14: "make the lane-defense game look bold, bright and premium")
@@ -153,7 +153,7 @@ stays on the owner's machine (`.reference/`, git-ignored) and nothing is copied 
 - `ui/`, `input/` (tap or drag a card then a tile, long-press for info; keyboard and gamepad grid cursor;
   quick taps latched and used by the next step), `audio/` (synthesized music per world, layers that grow with
   the waves, a limiter), `save/`.
-- **Hooks:** read-only `__gardenwip.snapshot()` (with each tile's on-screen centre and the card rectangles for
+- **Hooks:** read-only `__shooberry.snapshot()` (with each tile's on-screen centre and the card rectangles for
   tests); `?scene=` routes (big wave, boss, planting, world showcase, `stress`); test mode only
   `?testmode=1&speed=N` (the real frame time is clamped before it's multiplied).
 - The starter's Star Catch files (`sim.ts`, `render.ts`, `input.ts`, `audio.ts`, `main.ts`) stay until phases

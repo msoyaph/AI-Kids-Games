@@ -1,6 +1,6 @@
 <!-- The brief as the owner wrote it, with its follow-up change of direction to 3D. Other companies'
 game titles are replaced with a description in [brackets]. The approved plan and its follow-up
-decisions are in games/garden-wip/CLAUDE.md. -->
+decisions are in games/shooberry/CLAUDE.md. -->
 
 # Project: Build "[GAME NAME]", a kid-friendly lane-defense garden game (inspired by [a famous lane-defense garden game])
 

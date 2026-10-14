@@ -1,8 +1,8 @@
 {
-  "name": "garden-wip",
+  "name": "shooberry",
   "private": true,
   "version": "0.1.0",
-  "description": "Garden Defense (working title), a game for AI Kids Games.",
+  "description": "Shooberry, a game for AI Kids Games.",
   "type": "module",
   "license": "MIT",
   "scripts": {

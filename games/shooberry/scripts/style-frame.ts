@@ -29,7 +29,7 @@ async function open(browser: Browser, device: DeviceName, url: string) {
   const context = await browser.newContext({ ...DEVICES[device], reducedMotion: 'no-preference' });
   const page = await context.newPage();
   await page.goto(url);
-  await page.waitForFunction(() => (window as unknown as { __gardenwip?: { snapshot(): { screen: string } } }).__gardenwip?.snapshot().screen === 'play', null, { timeout: 30_000 });
+  await page.waitForFunction(() => (window as unknown as { __shooberry?: { snapshot(): { screen: string } } }).__shooberry?.snapshot().screen === 'play', null, { timeout: 30_000 });
   await page.waitForTimeout(2600);
   return page;
 }
@@ -37,7 +37,7 @@ async function open(browser: Browser, device: DeviceName, url: string) {
 async function shot(browser: Browser, device: DeviceName, url: string, file: string) {
   const page = await open(browser, device, url);
   await page.screenshot({ path: `${out}/${file}` });
-  const snap = await page.evaluate(() => (window as unknown as { __gardenwip: { snapshot(): Record<string, unknown> } }).__gardenwip.snapshot());
+  const snap = await page.evaluate(() => (window as unknown as { __shooberry: { snapshot(): Record<string, unknown> } }).__shooberry.snapshot());
   await page.context().close();
   return snap;
 }
@@ -47,7 +47,7 @@ interface Tile { lane: number; col: number; x: number; y: number }
 async function squint(browser: Browser, device: DeviceName) {
   const page = await open(browser, device, `${after}?scene=squint&quality=high`);
   const full = (await page.screenshot()).toString('base64');
-  const snap = await page.evaluate(() => (window as unknown as { __gardenwip: { snapshot(): { tiles: Tile[] } } }).__gardenwip.snapshot());
+  const snap = await page.evaluate(() => (window as unknown as { __shooberry: { snapshot(): { tiles: Tile[] } } }).__shooberry.snapshot());
   await page.context().close();
   const emptyPage = await open(browser, device, `${after}?scene=squint&empty=1&quality=high`);
   const empty = (await emptyPage.screenshot()).toString('base64');
