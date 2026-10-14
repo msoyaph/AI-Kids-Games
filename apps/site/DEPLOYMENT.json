@@ -399,8 +399,8 @@
     }
   ],
   "localSuites": {
-    "release": "2.9.0",
-    "commit": "4ea2d1c",
+    "release": "2.10.0",
+    "commit": "ae86d99",
     "suites": [
       {
         "game": "space-sky",
@@ -411,18 +411,18 @@
         "failed": 0,
         "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-14T05:03:47.123Z"
+        "ranAt": "2026-10-14T07:10:53.519Z"
       },
       {
         "game": "light-crossing",
         "version": "2.0.0",
         "inputsSha256": "0d32ecc81e1e11c1d80b41619c3eef1516fac32b7b7d42f09a283f0197922232",
         "command": "npx playwright test --reporter=list,json --workers=2 --retries=1",
-        "passed": 189,
+        "passed": 191,
         "failed": 0,
-        "flaky": 2,
+        "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-14T04:58:33.509Z"
+        "ranAt": "2026-10-14T06:58:53.879Z"
       }
     ]
   }
