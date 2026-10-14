@@ -54,6 +54,14 @@
   "orientation": "any",
   "requirements": [],
   "playTime": "1 minute per round",
+  "sessionMinutes": [
+    1,
+    5
+  ],
+  "moods": [
+    "cheerful"
+  ],
+  "embed": "inline",
   "storage": {
     "prefix": "gamestarter.",
     "keys": [

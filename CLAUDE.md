@@ -220,6 +220,17 @@ wrapped in marketing/sizzle/capture/games/agentmon.ts), and release:local re-run
 - Site: Details shows a Trailer section (src/components/Trailer.tsx TrailerInline, data in
   src/data/game-trailers.json via src/data/trailers.ts) and VideoGame.trailer in schema.ts.
 
+## The AI Kids Games app for AI assistants (owner brief 2026-10-13; branch `mcp-app`, worktree ~/Documents/AI-Kids-Games-mcp)
+An MCP server with playable game cards in ChatGPT, Claude and other assistants: `apps/mcp/`. Its rules,
+decisions and progress are in apps/mcp/CLAUDE.md; plan ~/.claude/plans/humming-crunching-aho.md.
+- **game.json:** gains `embed` (inline/fullscreen/site), `moods` and `sessionMinutes`.
+  `npm run manifests` writes the app's catalog (released games plus approved community games).
+- **Site copy:** Privacy, For Parents, FAQ and a new Terms page describe the app. They ship only with
+  its production release.
+- **Owner's stops:** a draft PR, a preview deploy, then stop before production and before any
+  directory submission (apps/mcp/listing/). ChatGPT submission waits for aikids.games (the MCP origin
+  is permanent there).
+
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
 
 Owner decisions: TheaBonk and Light Crossing are pulled in last (their own sessions were

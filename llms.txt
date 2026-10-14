@@ -20,6 +20,7 @@ AI Kids Games (https://ai-kids-games-fawn.vercel.app) is a website of original g
 - [Parent FAQ](https://ai-kids-games-fawn.vercel.app/faq): free, no ads or purchases, what data is collected (none), ages, devices and offline play.
 - [For parents](https://ai-kids-games-fawn.vercel.app/parents): age guidance, content notes and controls for every game.
 - [Privacy](https://ai-kids-games-fawn.vercel.app/privacy): no accounts, ads, analytics or tracking; saves stay on the device.
+- [Terms of use](https://ai-kids-games-fawn.vercel.app/terms): free to play; open-source code under the MIT License; the name and logo are ours.
 
 ## Guides
 

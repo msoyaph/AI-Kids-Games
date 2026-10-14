@@ -32,7 +32,7 @@ test('static metadata, robots, sitemap and icons',async ({ request },info) => {
   expect(game).toMatchObject({ name: 'Cliff Valley',isAccessibleForFree: true,genre: ['Farming','Cozy','Adventure'],audience: { '@type': 'PeopleAudience',suggestedMinAge: 8,suggestedMaxAge: 14 },offers: { '@type': 'Offer',price: '0' } });
   expect(game.url).toMatch(/\/game\/cliff-valley$/); expect(game.image).toMatch(/\/og\/cliff-valley\.jpg$/);
   const sitemap = await (await request.get('/sitemap.xml')).text();
-  for (const path of ['/games','/community','/faq','/guides','/guides/choose-ad-free-games-for-kids','/parents','/privacy','/about','/list-your-game','/game/light-crossing','/game/cliff-valley','/game/tuck-pop','/category/racing','/category/farming']) expect(sitemap).toContain(`${path}</loc>`);
+  for (const path of ['/games','/community','/faq','/guides','/guides/choose-ad-free-games-for-kids','/parents','/privacy','/terms','/about','/list-your-game','/game/light-crossing','/game/cliff-valley','/game/tuck-pop','/category/racing','/category/farming']) expect(sitemap).toContain(`${path}</loc>`);
   expect(sitemap).not.toContain('/play/');
   for (const icon of ['/favicon.ico','/apple-touch-icon.png','/icon-192.png','/icon-512.png','/icon-maskable-512.png','/brand/mark-96.png','/og/site.jpg','/llms.txt','/llms-full.txt']) expect((await request.get(icon)).status(),icon).toBe(200);
   const manifest = await (await request.get('/manifest.webmanifest')).json();

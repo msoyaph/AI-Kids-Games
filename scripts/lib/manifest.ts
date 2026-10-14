@@ -8,6 +8,13 @@ export const GENRES = ['Action','Adventure','Casual','Cozy','Farming','Learning'
 export const CONTROLS = ['Keyboard','Mouse','Gamepad','Touch'] as const;
 export const DEVICES = ['Computer','Tablet','Phone'] as const;
 export const MOTIONS = ['float','bob','twinkle','drift'] as const;
+/**
+ * How the game plays inside AI assistants (apps/mcp): inline in the chat card (light games),
+ * fullscreen only (heavy games, e.g. 3D), or not at all, so the card links to the website (site).
+ */
+export const EMBEDS = ['inline','fullscreen','site'] as const;
+/** How a game feels, for "something calm" or "something exciting" (apps/mcp's find_games). */
+export const MOODS = ['calm','cozy','cheerful','exciting','brainy','creative','curious'] as const;
 /** "In development": validated, but kept off the website, its registry, the README and llms.txt. */
 export const STATUSES = ['Ready to play','Coming soon','In development'] as const;
 export type Genre = typeof GENRES[number];
@@ -15,6 +22,8 @@ export type Status = typeof STATUSES[number];
 export type ControlType = typeof CONTROLS[number];
 export type Device = typeof DEVICES[number];
 export type Motion = typeof MOTIONS[number];
+export type Embed = typeof EMBEDS[number];
+export type Mood = typeof MOODS[number];
 export const SAFETY = ['ads','purchases','chat','accounts','network'] as const;
 export type Safety = Record<typeof SAFETY[number],false>;
 
@@ -24,6 +33,10 @@ export interface Manifest {
   minAge: number; ageRange: string; genres: Genre[]; tags: string[]; keywords: string[]; features: string[]; contentNotes: string;
   controls: { types: ControlType[]; quickStart: string[]; howToPlay: string[] };
   devices: Device[]; orientation: 'any' | 'landscape' | 'portrait'; requirements?: string[]; playTime: string;
+  /** One sitting, in minutes [shortest, typical longest]; playTime is the whole game. */
+  sessionMinutes: [number,number];
+  moods: Mood[];
+  embed: Embed;
   storage: { prefix: string; keys: string[]; probe?: string };
   /** What the game never does; all five must be false (the contract in docs/CREATE-A-GAME.md). */
   safety: Safety;
@@ -43,7 +56,7 @@ const ageText = (m: Manifest) => `Ages ${m.ageRange}`;
 export { ageText };
 
 /** The listing fields first-party and community games share (everything players and parents read). */
-type Listing = Omit<Manifest,'$schema' | 'capture' | 'source' | 'site'>;
+type Listing = Omit<Manifest,'$schema' | 'capture' | 'source' | 'site' | 'sessionMinutes' | 'moods' | 'embed'>;
 type At = (message: string) => void;
 const textCheck = (at: At) => (value: unknown,name: string,min = 1,max = Infinity) => { if (typeof value !== 'string' || value.trim().length < min) at(`${name} is missing or too short.`); else if (value.length > max) at(`${name} is longer than ${max} characters.`); };
 const listCheck = (at: At) => (value: unknown,name: string,min: number,max: number,allowed?: readonly string[]) => {
@@ -97,6 +110,10 @@ export function validateManifest(m: Manifest,folder = m.slug): string[] {
   list(site?.coverLayers,'site.coverLayers',0,4,MOTIONS);
   if (!STATUSES.includes(site?.status)) at(`site.status must be one of ${STATUSES.map(status => `"${status}"`).join(', ')}.`);
   if (site?.order !== undefined && (!Number.isInteger(site.order) || site.order < 1)) at('site.order must be a whole number from 1.');
+  const [shortest,longest] = Array.isArray(m.sessionMinutes) ? m.sessionMinutes : [NaN,NaN];
+  if (m.sessionMinutes?.length !== 2 || !Number.isInteger(shortest) || !Number.isInteger(longest) || shortest < 1 || longest < shortest || longest > 240) at('sessionMinutes must be [shortest, longest] whole minutes for one sitting, from 1 to 240.');
+  list(m.moods,'moods',1,3,MOODS);
+  if (!EMBEDS.includes(m.embed)) at(`embed must be one of ${EMBEDS.map(embed => `"${embed}"`).join(', ')}.`);
   // Never another company's game title or trademark, anywhere in the listing.
   for (const mark of trademarksIn(JSON.stringify({ ...m,$schema: undefined,capture: undefined,storage: undefined,safety: undefined,source: undefined }))) at(trademarkMessage(mark));
   return errors;
@@ -110,6 +127,8 @@ export function readManifest(slug: string): Manifest {
 export const readManifests = () => gameSlugs().map(readManifest);
 /** The games the website lists: every game except those still "In development", which stay off the site. */
 export const listedManifests = () => readManifests().filter(m => m.site.status !== 'In development');
+/** Site order: site.order first (lower first), then featured, newest, and title (stable for diffs). */
+export const bySiteOrder = (a: Manifest,b: Manifest) => (a.site.order ?? 1e9)-(b.site.order ?? 1e9) || Number(b.site.featured)-Number(a.site.featured) || b.site.releaseDate.localeCompare(a.site.releaseDate) || a.title.localeCompare(b.title);
 
 // ---- Community games (community/<slug>/game.json; SUBMITTING.md, docs/community-game.schema.json) ----
 

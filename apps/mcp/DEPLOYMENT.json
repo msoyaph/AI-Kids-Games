@@ -1,0 +1,22 @@
+{
+  "provider": "Vercel",
+  "project": "real-tours/ai-kids-games-mcp",
+  "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/mcp)",
+  "release": "1.0.0",
+  "productionApproval": {
+    "approved": true,
+    "release": "1.0.0",
+    "date": "2026-10-14",
+    "approvedBy": "Owner",
+    "scope": "The AI Kids Games app for AI assistants (PR #24): /mcp on the project's production domain https://ai-kids-games-mcp.vercel.app (aikids.games/mcp once that domain is live), SITE_ORIGIN https://ai-kids-games-fawn.vercel.app. No directory submission.",
+    "note": "Owner wrote: \"Ok deploy to production the MCP updates\" (2026-10-14), after the MCP app's plan, build and preview (PR #24; preview https://ai-kids-games-5ha1sf305-real-tours.vercel.app/mcp). Ships together with website release 2.9.0 (Privacy, For Parents, FAQ, Terms). Guard: this record, AIKG_ALLOW_PRODUCTION=1.0.0 in this project's Production environment, and a build from main."
+  },
+  "note": "Production needs the owner's approval for this exact version here, AIKG_ALLOW_PRODUCTION set to it in this project's Production environment, and a build from main (scripts/check-deployment.ts). The project builds from Git (Root Directory apps/mcp, production branch main); previews of a branch without apps/mcp fail, which is expected.",
+  "preview": {
+    "url": "https://ai-kids-games-5ha1sf305-real-tours.vercel.app",
+    "endpoint": "https://ai-kids-games-5ha1sf305-real-tours.vercel.app/mcp",
+    "commit": "8262ad5",
+    "deployedAt": "2026-10-14",
+    "protection": "Vercel Authentication off on this project only (owner decision, 2026-10-13)"
+  }
+}
