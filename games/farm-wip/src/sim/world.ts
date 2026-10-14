@@ -62,3 +62,8 @@ export function earn(farm: Farm, coins: number, fromCrop?: string) {
 }
 
 export function newId(farm: Farm) { return farm.nextId++; }
+
+/** Lifetime counters (harvests, deliveries, trades…) that story goals and the ledger read. */
+export function bump(farm: Farm, key: string, n = 1) {
+  if (n > 0) farm.stats[key] = (farm.stats[key] ?? 0) + n;
+}

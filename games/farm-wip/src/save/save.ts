@@ -10,6 +10,9 @@ import { AREA_IDS, type AreaId } from '../sim/map';
 import type { FieldObj, Obj, ObjKind } from '../sim/objects';
 import { newFarm, type Farm, type LedgerSeason } from '../sim/state';
 import type { Stack } from '../sim/inventory';
+import type { Order } from '../sim/orders';
+import type { Coop, NeighborState } from '../sim/neighbors';
+import { NEIGHBOR } from '../data/cast';
 import { readJson, writeJson } from './storage';
 
 export const SAVE_KEY = 'save';
@@ -53,6 +56,16 @@ function decodeObj(v: unknown): Obj | null {
 }
 
 /** `savedAt` is the real time of the save (ms), kept beside the farm for the "while you were away" bonus. */
+function decodeOrder(v: unknown): Order | null {
+  if (!v || typeof v !== 'object') return null;
+  const r = v as Raw;
+  if (!isNum(r.id) || typeof r.who !== 'string' || !Array.isArray(r.items)) return null;
+  const items = r.items.filter((x): x is { id: string; n: number } => !!x && typeof x === 'object' && typeof (x as Raw).id === 'string' && !!ITEMS[(x as Raw).id as string] && isNum((x as Raw).n));
+  if (!items.length) return null;
+  return { id: r.id, who: r.who, items: items.map(x => ({ id: x.id, n: Math.max(1, Math.round(x.n)) })), coins: int(r.coins, 0, 0), xp: int(r.xp, 0, 0), ...(typeof r.story === 'string' ? { story: r.story } : {}), ...(typeof r.note === 'string' ? { note: r.note } : {}) };
+}
+const orderList = (v: unknown): Order[] => (Array.isArray(v) ? v.map(decodeOrder).filter((o): o is Order => !!o) : []);
+
 export type DecodeResult = { farm: Farm; status: 'ok' | 'new' | 'repaired' | 'future'; savedAt: number | null };
 
 export function decodeFarm(input: unknown): DecodeResult {
@@ -117,6 +130,37 @@ export function decodeFarm(input: unknown): DecodeResult {
     compostUntil: isNum(raw.compostUntil) ? raw.compostUntil : null,
     freeSeeds: int(raw.freeSeeds, 0, 0, 99),
     ledger,
+    paths: typeof raw.paths === 'string' && raw.paths.length === 56 * 56 && /^[0-3]*$/.test(raw.paths) ? raw.paths : take(fresh.paths, raw.paths === undefined, fresh.paths),
+    storage: numRecord(raw.storage),
+    orders: orderList(raw.orders).slice(0, 6),
+    nextOrderAt: isNum(raw.nextOrderAt) ? raw.nextOrderAt : null,
+    orderSeq: int(raw.orderSeq, 0, 0),
+    boat: (() => {
+      const b = (raw.boat ?? {}) as Raw;
+      return { crates: orderList(b.crates), cargo: orderList(b.cargo), backAt: isNum(b.backAt) ? b.backAt : null, trips: int(b.trips, 0, 0) };
+    })(),
+    neighbors: (() => {
+      const out: Record<string, NeighborState> = {};
+      if (raw.neighbors && typeof raw.neighbors === 'object') for (const [k, v] of Object.entries(raw.neighbors as Raw)) {
+        if (!NEIGHBOR[k] || !v || typeof v !== 'object') continue;
+        const n = v as Raw;
+        out[k] = { hearts: num(n.hearts, 0, 0, 5), tradedDay: int(n.tradedDay, -1), visits: int(n.visits, 0, 0) };
+      }
+      return out;
+    })(),
+    stats: numRecord(raw.stats),
+    story: (() => {
+      const st = (raw.story ?? {}) as Raw;
+      const endless = Array.isArray(st.endless) ? st.endless.filter((g): g is Raw => !!g && typeof g === 'object' && typeof (g as Raw).key === 'string').map(g => ({
+        id: String(g.id), text: String(g.text), key: String(g.key), n: int(g.n, 1, 1), base: num(g.base, 0, 0), coins: int(g.coins, 0, 0),
+      })) : [];
+      return { chapter: int(st.chapter, 0, 0, 8), base: numRecord(st.base), introSeen: st.introSeen === true, creditsSeen: st.creditsSeen === true, endless, endlessDone: int(st.endlessDone, 0, 0) };
+    })(),
+    coop: (() => {
+      const c = raw.coop as Raw | null | undefined;
+      if (!c || typeof c !== 'object' || !NEIGHBOR[c.neighbor as string] || !ITEMS[c.item as string]) return null;
+      return { neighbor: c.neighbor as string, item: c.item as string, need: int(c.need, 1, 1), mine: int(c.mine, 0, 0), theirs: int(c.theirs, 0, 0), coins: int(c.coins, 0, 0), startedAt: num(c.startedAt, 0, 0) } satisfies Coop;
+    })(),
   };
   return { farm, status: repaired ? 'repaired' : 'ok', savedAt: isNum(raw.savedAt) ? raw.savedAt : null };
 }

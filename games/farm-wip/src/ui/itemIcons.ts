@@ -28,7 +28,8 @@ export function itemIcon(id: string, size = 36): SVGSVGElement {
   const leaf = hex(crop?.color.leaf ?? 0x6fbf73);
   const accent = crop?.color.accent !== undefined ? hex(crop.color.accent) : '#ffffff';
   const add = (tag: string, attrs: Record<string, string | number>) => svg.appendChild(el(tag, attrs));
-  const shape: string = crop?.shape ?? (id === 'fertilizer' ? 'sack' : 'round');
+  const SPECIAL: Record<string, string> = { fertilizer: 'sack', egg: 'egg', duckegg: 'egg', milk: 'bottle', goatmilk: 'bottle', wool: 'yarn', honey: 'jar', lemon: 'lemon', almond: 'nut', walnut: 'nut', hazelnut: 'nut' };
+  const shape: string = crop?.shape ?? SPECIAL[id] ?? 'round';
   switch (shape) {
     case 'grain':
     case 'paddy':
@@ -75,6 +76,31 @@ export function itemIcon(id: string, size = 36): SVGSVGElement {
       add('path', { d: 'M8 7l1-3h6l1 3', fill: '#b08452' });
       add('circle', { cx: 12, cy: 15, r: 3.2, fill: main });
       add('path', { d: 'M12 15c0-2 1-3 3-3 0 2-1 3-3 3z', fill: '#6fbf73' });
+      break;
+    case 'egg':
+      add('ellipse', { cx: 12, cy: 13, rx: 7, ry: 9, fill: main, stroke: '#d8c7a8', 'stroke-width': 0.8 });
+      if (id === 'duckegg') add('ellipse', { cx: 10, cy: 10, rx: 2, ry: 3, fill: '#ffffff', opacity: 0.7 });
+      break;
+    case 'bottle':
+      add('path', { d: 'M9.5 2.5h5v3l2.5 3.5v11a2 2 0 01-2 2h-6a2 2 0 01-2-2V9l2.5-3.5z', fill: '#f4f8fb', stroke: '#9fb3c4', 'stroke-width': 1 });
+      add('rect', { x: 9, y: 11, width: 6, height: 6, rx: 1, fill: id === 'goatmilk' ? '#c9a37a' : '#7cc4f2' });
+      break;
+    case 'yarn':
+      add('circle', { cx: 12, cy: 13, r: 8.5, fill: main, stroke: '#c9c2ad', 'stroke-width': 0.8 });
+      add('path', { d: 'M6 9c4 1 8 5 10 11M5 14c5 0 9 3 11 7M9 5c3 3 7 5 11 6', stroke: '#c9c2ad', 'stroke-width': 1.2, fill: 'none' });
+      break;
+    case 'jar':
+      add('rect', { x: 6, y: 7, width: 12, height: 14, rx: 3, fill: main });
+      add('rect', { x: 5.5, y: 4, width: 13, height: 4, rx: 1.5, fill: '#b07a4f' });
+      add('rect', { x: 8, y: 11, width: 8, height: 5, rx: 1, fill: '#fff2d6' });
+      break;
+    case 'lemon':
+      add('ellipse', { cx: 12, cy: 13, rx: 7, ry: 8.5, fill: main, transform: 'rotate(-35 12 13)' });
+      add('path', { d: 'M15 4c3-1 5 0 6 2-2 1-4 1-6-2z', fill: leaf });
+      break;
+    case 'nut':
+      add('path', { d: 'M12 3c5 0 8 4 8 9.5S16.5 21 12 21 4 18 4 12.5 7 3 12 3z', fill: main });
+      add('path', { d: 'M12 4v16M7 8c3 2 7 2 10 0M6.5 14c3.5 2 7.5 2 11 0', stroke: '#6b4a2e', 'stroke-width': 0.9, fill: 'none', opacity: 0.6 });
       break;
     default: // berries, round fruit and veg
       add('circle', { cx: 12, cy: 13.5, r: 8, fill: main });

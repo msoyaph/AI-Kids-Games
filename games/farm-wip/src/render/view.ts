@@ -12,6 +12,8 @@ import { openArea, type Insets } from '../ui/layout';
 import { clampTarget, clampZoom, placeCamera, project, screenRay, YAW_STEP, type View } from './camera';
 import { Lighting } from './lighting';
 import { ObjectView } from './objects';
+import { AnimalView } from './animals';
+import { TownView } from './town';
 import { rim } from './materials';
 import { QUALITY, type QualityTier } from './quality';
 import { Scenery } from './scenery';
@@ -35,6 +37,8 @@ export class FarmView {
   private water: THREE.Mesh;
   private scenery = new Scenery();
   readonly objects = new ObjectView();
+  readonly animals = new AnimalView();
+  readonly town = new TownView();
   private worldKey = '';
   private season: Season = 'spring';
   private highlight: THREE.LineLoop;
@@ -49,7 +53,7 @@ export class FarmView {
     this.renderer.shadowMap.autoUpdate = false;
     this.lighting = new Lighting(this.scene);
     this.water = buildWater();
-    this.scene.add(this.water, this.scenery.group, this.objects.group);
+    this.scene.add(this.water, this.scenery.group, this.objects.group, this.animals.group, this.town.group);
     this.goal = { ...start };
     this.view = { x: start.x, z: start.z, y: 0, yaw: start.yawStep * YAW_STEP, zoom: start.zoom };
     this.view.y = this.groundUnder(start.x, start.z);

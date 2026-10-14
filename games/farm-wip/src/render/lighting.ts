@@ -14,7 +14,7 @@ export interface Sky { top: string; bottom: string }
 
 const DAY = { sun: new THREE.Color(0xfff4dd), sky: new THREE.Color(0xd9f0ff), ground: new THREE.Color(0x9fbf7a), top: new THREE.Color(0x8fd0ff), bottom: new THREE.Color(0xe8f6ff), rim: new THREE.Color(0xfff1d0) };
 const DUSK = { sun: new THREE.Color(0xffb27a), sky: new THREE.Color(0xffd9b8), ground: new THREE.Color(0xb48a6a), top: new THREE.Color(0xf7a07a), bottom: new THREE.Color(0xffe1b0), rim: new THREE.Color(0xffc98a) };
-const NIGHT = { sun: new THREE.Color(0xb9c8ff), sky: new THREE.Color(0x9fb2e8), ground: new THREE.Color(0x56607a), top: new THREE.Color(0x34417a), bottom: new THREE.Color(0x7d86c4), rim: new THREE.Color(0xaec2ff) };
+const NIGHT = { sun: new THREE.Color(0xc4d0ff), sky: new THREE.Color(0xb4c2f0), ground: new THREE.Color(0x6a7494), top: new THREE.Color(0x3d4b8a), bottom: new THREE.Color(0x8f98d4), rim: new THREE.Color(0xbcd0ff) };
 const SEASON_LIGHT: Record<Season, THREE.Color> = {
   spring: new THREE.Color(0xfff6f2), summer: new THREE.Color(0xffffff), autumn: new THREE.Color(0xfff0dc), winter: new THREE.Color(0xf2f6ff),
 };
@@ -63,10 +63,10 @@ export class Lighting {
     this.sun.position.set(W / 2 + Math.cos(angle) * 40, 20 + height * 45, H / 2 + 22 + Math.sin(angle) * 6);
     const tint = SEASON_LIGHT[season];
     this.sun.color.copy(blend('sun', evening, c1)).multiply(tint);
-    this.sun.intensity = 1.75 - evening * 0.75;
+    this.sun.intensity = 1.75 - evening * 0.55;
     this.fill.color.copy(blend('sky', evening, c1));
     this.fill.groundColor.copy(blend('ground', evening, c2));
-    this.fill.intensity = 0.95 - evening * 0.15;
+    this.fill.intensity = 0.95 + evening * 0.1;
     rim.color.value.copy(blend('rim', evening, c1));
     this.sky.top = `#${blend('top', evening, c1).getHexString()}`;
     this.sky.bottom = `#${blend('bottom', evening, c2).getHexString()}`;

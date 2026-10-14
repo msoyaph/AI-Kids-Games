@@ -3,23 +3,24 @@
  * footprint at ground level (so it sits on its tiles like the grid says), facing south (+z).
  */
 import type * as THREE from 'three';
-import { box, cone, cyl, dodec, ico, merge, part } from '../geo';
+import { box, cone, cyl, dodec, ico, merge, part, prism } from '../geo';
 
 const WOOD = 0xb07a4f, WOOD_DARK = 0x8a5a3b, PLANK = 0xd2a26e, CREAM = 0xfff2d6, ROOF = 0xe25c4a, ROOF_DARK = 0xc2463a;
 const STONE = 0xb9b2a6, GLASS = 0x9fd6f0, GREEN = 0x6fbf73;
 
-/** A pitched roof over a w × d box centred at (cx, cz), eaves at height y, ridge along x. */
+/**
+ * A pitched roof over a w × d box centred at (cx, cz), eaves at height y, ridge along x: two thin
+ * coloured slopes with a little overhang, over cream gable ends.
+ */
 export function roof(cx: number, cz: number, w: number, d: number, y: number, color: number, overhang = 0.14): THREE.BufferGeometry[] {
   const pitch = 0.62;
-  const half = d / 2 + overhang;
-  const len = half / Math.cos(pitch);
   const rise = Math.tan(pitch) * (d / 2);
+  const half = d / 2 + overhang, len = half / Math.cos(pitch);
+  const drop = Math.tan(pitch) * overhang;
   return [
-    part(box(w + overhang * 2, 0.08, len), color, { pos: [cx, y + rise / 2, cz - half / 2], rot: [pitch, 0, 0] }),
-    part(box(w + overhang * 2, 0.08, len), color, { pos: [cx, y + rise / 2, cz + half / 2], rot: [-pitch, 0, 0] }),
-    // gable ends
-    part(cone(d / 2 / Math.SQRT1_2 * 0.71, rise, 4), CREAM, { pos: [cx - w / 2 + 0.02, y + rise / 2, cz], rot: [0, Math.PI / 4, 0], scale: [0.04, 1, 1.4] }),
-    part(cone(d / 2 / Math.SQRT1_2 * 0.71, rise, 4), CREAM, { pos: [cx + w / 2 - 0.02, y + rise / 2, cz], rot: [0, Math.PI / 4, 0], scale: [0.04, 1, 1.4] }),
+    part(prism(w, d, rise), CREAM, { pos: [cx, y, cz] }),
+    part(box(w + overhang * 2, 0.08, len), color, { pos: [cx, y - drop + (Math.sin(pitch) * len) / 2 + 0.04, cz - (Math.cos(pitch) * len) / 2], rot: [-pitch, 0, 0] }),
+    part(box(w + overhang * 2, 0.08, len), color, { pos: [cx, y - drop + (Math.sin(pitch) * len) / 2 + 0.04, cz + (Math.cos(pitch) * len) / 2], rot: [pitch, 0, 0] }),
   ];
 }
 
@@ -29,7 +30,7 @@ export function cottage(): THREE.BufferGeometry {
     part(box(2.7, 0.12, 2.5), STONE, { pos: [cx, 0.06, cz] }),
     part(box(2.4, 1.15, 2.1), CREAM, { pos: [cx, 0.69, cz] }),
     ...roof(cx, cz, 2.4, 2.1, 1.26, ROOF),
-    part(box(2.75, 0.1, 0.14), ROOF_DARK, { pos: [cx, 1.26 + Math.tan(0.62) * 1.05 + 0.03, cz] }),
+    part(box(2.75, 0.08, 0.12), ROOF_DARK, { pos: [cx, 1.26 + Math.tan(0.62) * 1.05 + 0.1, cz] }),
     part(box(0.5, 0.78, 0.06), WOOD_DARK, { pos: [cx, 0.51, cz + 1.06] }), // door
     part(box(0.45, 0.4, 0.06), GLASS, { pos: [cx - 0.8, 0.82, cz + 1.06] }),
     part(box(0.45, 0.4, 0.06), GLASS, { pos: [cx + 0.8, 0.82, cz + 1.06] }),

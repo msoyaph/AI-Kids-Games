@@ -2,8 +2,15 @@ import './style.css';
 import { GAME } from './config';
 import { audio, sfx } from './audio/engine';
 import { CROPS } from './data/crops';
+import { NEIGHBOR } from './data/cast';
 import { xpForLevel } from './data/tuning';
 import { Play } from './game/play';
+import { showcaseFarm } from './game/showcase';
+import { itemModel, itemSize } from './game/placing';
+import { Ghost } from './render/ghost';
+import { tileFits } from './sim/build';
+import { occupancy } from './sim/world';
+import { tileAt as tileAtMap } from './sim/map';
 import { Controller } from './input/controller';
 import type { TileRef } from './input/pick';
 import { YAW_STEP, ZOOM } from './render/camera';
@@ -17,7 +24,7 @@ import { seasonName, seasonOf, type Season } from './sim/clock';
 import { newFarm, type Farm } from './sim/state';
 import { advance, catchUp, type SimEvent } from './sim/tick';
 import { levelOf } from './sim/world';
-import { h } from './ui/h';
+import { fill, h } from './ui/h';
 import { Hud } from './ui/hud';
 import { icon } from './ui/icons';
 import { Panels } from './ui/panels';
@@ -25,6 +32,12 @@ import { settingsPanel } from './ui/settingsPanel';
 import { speak, stopSpeaking } from './ui/speech';
 
 declare global { interface Window { __noWebGL2?: boolean } }
+
+/** What a visiting neighbour says, by the farm's beauty rating. */
+const VISIT_LINES: Record<string, string> = {
+  Sleepy: 'So much room to grow here!', Tidy: 'Everything’s so neat and tidy!', Pretty: 'What a pretty farm!',
+  Lovely: 'Lovely! I could stay all day.', 'Picture-perfect': 'Picture-perfect! The whole town should see this.',
+};
 
 /**
  * Capture route for the website's previews and screenshots: ?scene=title|farm (and &seed=N, &t=
@@ -45,11 +58,11 @@ function boot() {
   const uiRoot = $('#ui');
   const settings: Settings = loadSettings();
   const loaded = capture ? null : loadFarm();
-  const farm: Farm = loaded && loaded.status !== 'future' ? loaded.farm : newFarm(capture ? num('seed') ?? 7 : Math.floor(Math.random() * 2 ** 31));
+  const farm: Farm = scene === 'showcase' ? showcaseFarm(num('seed') ?? 7) : loaded && loaded.status !== 'future' ? loaded.farm : newFarm(capture ? num('seed') ?? 7 : Math.floor(Math.random() * 2 ** 31));
   const futureSave = loaded?.status === 'future';
   if (capture) {
     farm.t = num('t') ?? farm.t;
-    farm.cam = { x: num('x') ?? farm.cam.x, z: num('z') ?? farm.cam.z, yawStep: num('yaw') ?? 0, zoom: num('zoom') ?? ZOOM.default };
+    farm.cam = { x: num('x') ?? farm.cam.x, z: num('z') ?? farm.cam.z, yawStep: num('yaw') ?? farm.cam.yawStep, zoom: num('zoom') ?? farm.cam.zoom ?? ZOOM.default };
   }
 
   // quality: the URL, then Settings, then a guess from the device; software WebGL always gets Low
@@ -95,6 +108,32 @@ function boot() {
     toolChanged: () => refreshTools(),
   });
 
+  // --- placing things: the ghost in the farm, and a bar with Turn, Place and Cancel ---
+  const ghost = new Ghost();
+  view.scene.add(ghost.group);
+  const placeBar = h('div.place-bar', { role: 'toolbar', 'aria-label': 'Placing' });
+  placeBar.hidden = true;
+  uiRoot.appendChild(placeBar);
+  let placeKey = '';
+  function refreshPlaceBar() {
+    const p = play.placing;
+    placeBar.hidden = !p;
+    if (!p) { placeKey = ''; return; }
+    const fits = play.placingFits();
+    const key = `${JSON.stringify(p.item)}|${p.at.x},${p.at.z},${p.at.rot}|${fits.ok}|${p.moved}`;
+    if (key === placeKey) return;
+    placeKey = key;
+    const size = itemSize(farm, p.item);
+    const cost = play.placingCost();
+    const moving = p.item.kind === 'move';
+    fill(placeBar,
+      h('span.place-name', null, h('b', null, moving ? `Moving: ${play.placingName()}` : play.placingName()), h('small', null, !p.moved ? 'Tap where it should go' : fits.ok ? 'Tap it again or press Place' : fits.why)),
+      size.w !== size.d || p.item.kind === 'buy' || moving ? h('button', { 'aria-label': 'Turn it (R)', onclick: () => play.turnPlacing() }, icon('turn', 24), 'Turn') : null,
+      h('button.go', { disabled: !fits.ok || !p.moved, onclick: () => play.confirmPlacing() }, icon('check', 24), cost ? `Place · ${cost}` : 'Place'),
+      moving ? h('button', { onclick: () => play.putAwayMoving() }, 'Put away') : null,
+      h('button', { 'aria-label': 'Cancel', onclick: () => play.cancelPlacing() }, icon('close', 22)));
+  }
+
   const hud = new Hud(uiRoot, {
     menu: () => openMenu(),
     turn: dir => { controller.turn(dir); sfx.turn(); },
@@ -103,7 +142,10 @@ function boot() {
     goals: () => panels.show('Goals', h('p', null, 'The story’s goals arrive soon. For now: ', play.hint().toLowerCase(), '.'), { kind: 'card' }),
   });
   hud.visible = false;
-  const refreshTools = () => hud.setTools(play.tools(), play.tool);
+  const refreshTools = () => {
+    hud.setTools(play.tools(), play.building ? (play.buildSub === 'move' ? 'b-move' : play.buildSub === 'erase' ? 'b-erase' : 'b-decor') : play.tool);
+    document.documentElement.classList.toggle('building', play.building);
+  };
   refreshTools();
 
   const controller = new Controller(canvas, view, {
@@ -112,8 +154,11 @@ function boot() {
     paintTile: tile => play.paint(tile),
     paintEnd: () => play.paintEnd(),
     command: name => {
-      if (name === 'menu') { if (!panels.back()) openMenu(); }
-      else if (name === 'back') { if (!panels.back() && play.tool !== 'hand') { play.tool = 'hand'; refreshTools(); } }
+      if (name === 'menu') { if (panels.back()) return; if (play.placing) play.cancelPlacing(); else if (play.building) play.setBuilding(false); else openMenu(); }
+      else if (name === 'back') { if (panels.back()) return; if (play.placing) play.cancelPlacing(); else if (play.building) play.setBuilding(false); else if (play.tool !== 'hand') { play.tool = 'hand'; refreshTools(); } }
+      else if (name === 'build') { if (!panels.open) play.setBuilding(!play.building); }
+      else if (name === 'undo') play.undoBuild();
+      else if (name === 'rotatePiece') play.turnPlacing();
       else if (name.startsWith('tool')) {
         const t = play.tools()[Number(name.slice(4)) - 1];
         if (t) play.pickTool(t.id);
@@ -201,6 +246,26 @@ function boot() {
           h('p', null, `Coins are low, so here are ${e.seeds} free plantings of the cheapest seeds. Plant them, pick them and sell them, and you’re back in business!`)),
         { kind: 'card' });
         break;
+      case 'new-orders': if (!farm.flags.sawOrders) { farm.flags.sawOrders = 1; say('New orders on the board by the dock!'); } break;
+      case 'boat-back': {
+        const coins = e.orders.reduce((s, o) => s + o.coins, 0);
+        sfx.coins();
+        say(`The Little Lark is back from Larkford: +${coins} coins!`);
+        break;
+      }
+      case 'goods-ready': break;
+      case 'coop-done':
+        sfx.levelUp();
+        panels.show('Co-op order done!', h('p', null, `You and ${NEIGHBOR[e.coop.neighbor]?.who ?? 'your neighbour'} filled the big order together: +${e.coop.coins} coins!`), { kind: 'card' });
+        break;
+      case 'visit': {
+        const n = NEIGHBOR[e.visit.neighbor];
+        if (!n) break;
+        view.town.startVisit(n.id, performance.now() / 1000);
+        const line = VISIT_LINES[e.visit.tier] ?? 'What a lovely farm!';
+        say(`${n.who} from ${n.farm} came to visit: “${line}” They left ${e.visit.gift.coins} coins${e.visit.gift.item ? ' and a little gift' : ''}.`);
+        break;
+      }
       case 'level-up': {
         sfx.levelUp();
         const fresh = CROPS.filter(c => c.level === e.level).map(c => c.name);
@@ -252,6 +317,18 @@ function boot() {
     glCard = null;
   });
 
+  // Escape closes the top panel; the arrow keys move between its buttons
+  addEventListener('keydown', e => {
+    if (!panels.open) return;
+    const target = e.target as HTMLElement | null;
+    if (target && /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName) && e.key !== 'Escape') return;
+    if (e.key === 'Escape') { e.preventDefault(); panels.back(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); panels.moveFocus(0, 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); panels.moveFocus(0, -1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); panels.moveFocus(1, 0); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); panels.moveFocus(-1, 0); }
+  });
+
   // --- the gesture that unlocks sound ---
   const unlock = () => audio.unlock();
   addEventListener('pointerdown', unlock, { passive: true });
@@ -298,9 +375,33 @@ function boot() {
     view.setWorld(seasonOf(farm.t), farm.unlocked);
     view.objects.badges = settings.colorblind;
     view.objects.sync(farm, onLockedLand(farm));
+    view.animals.update(farm, now / 1000, view.view.yaw, reduced());
+    view.town.update(farm, now / 1000, reduced());
     const shown = controller.cursor ?? (controller.lastDevice === 'mouse' ? controller.hover : null);
-    if (shown) view.showHighlight(shown);
-    else if (now > flashUntil) view.showHighlight(null);
+    if (play.placing) {
+      // the mouse and the gamepad cursor carry the ghost; touch moves it with taps
+      if (shown) {
+        const p = play.placing;
+        const before = `${p.at.x},${p.at.z}`;
+        play.moveGhost(shown);
+        if (`${p.at.x},${p.at.z}` === before && !p.moved) p.moved = true;
+      }
+      const p = play.placing;
+      const occ = occupancy(farm);
+      if (p.item.kind === 'move') occ.forEach((id, k) => { if (id === (p.item as { id: number }).id) occ.delete(k); });
+      const ax = Math.min(55, Math.max(0, p.at.x)), az = Math.min(55, Math.max(0, p.at.z));
+      const level = tileAtMap(ax, az).level;
+      const model = itemModel(farm, p.item);
+      ghost.show(model.key, model.make, p.at, itemSize(farm, p.item), (x, z) => tileFits(farm, x, z, level, occ));
+      view.objects.hiddenId = p.item.kind === 'move' ? p.item.id : null;
+      view.showHighlight(null);
+    } else {
+      ghost.hide();
+      view.objects.hiddenId = null;
+      if (shown) view.showHighlight(shown);
+      else if (now > flashUntil) view.showHighlight(null);
+    }
+    refreshPlaceBar();
     if (!glLost) {
       view.update(dt, farm.t, reduced());
       document.documentElement.style.setProperty('--sky-top', view.lighting.sky.top);
@@ -335,7 +436,7 @@ function boot() {
 
   $('#boot').classList.add('done');
   setTimeout(() => $('#boot').remove(), 500);
-  if (scene === 'farm') startFarm();
+  if (scene === 'farm' || scene === 'showcase') startFarm();
   else showTitle();
   requestAnimationFrame(frame);
 

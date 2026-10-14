@@ -22,7 +22,10 @@ export function startObjects(): Obj[] {
   const add = (o: Omit<FieldObj, 'id'> | Omit<OtherObj, 'id'>) => { objs.push({ ...o, id: id++ } as Obj); };
   add({ kind: 'building', def: 'cottage', x: 35, z: 37, rot: 0 });
   add({ kind: 'building', def: 'dock', x: 48, z: 43, rot: 0 });
+  add({ kind: 'building', def: 'board', x: 46, z: 42, rot: 0 });
   add({ kind: 'building', def: 'compost', x: 39, z: 44, rot: 0 });
+  // the old keeper's dog stayed with the farm
+  add({ kind: 'building', def: 'kennel', x: 38, z: 40, rot: 0, data: { animals: [{ name: 'Barley', readyAt: 1e12, fed: false, brushed: false }] } });
   for (const [x, z] of START_FIELDS) {
     add({ kind: 'field', def: 'field', x, z, rot: 0, crop: null, plantedAt: 0, readyAt: 0, watered: false, fertilized: false, rotation: false, boost: false, last: null, legumeLeft: false });
   }

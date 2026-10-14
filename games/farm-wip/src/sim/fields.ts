@@ -12,15 +12,13 @@ import { DEBRIS } from '../data/buildings';
 import { TUNING } from '../data/tuning';
 import { seasonOf } from './clock';
 import { add, roomLeft, take, type Stars } from './inventory';
+import { hiveNear } from './animals';
 import { areaAt } from './map';
 import { canPlace, type FieldObj } from './objects';
 import type { Farm } from './state';
 import { raining } from './weather';
-import { earn, ledgerNow, levelOf, newId, objAt, occupancy, spend } from './world';
+import { bump, earn, ledgerNow, levelOf, newId, objAt, occupancy, spend } from './world';
 
-/** Is a hive close enough to help this tile? (Bees arrive in phase 3; until then, never.) */
-export let beesNear: (farm: Farm, x: number, z: number) => boolean = () => false;
-export function setBeesNear(fn: typeof beesNear) { beesNear = fn; }
 
 export type FieldState = 'empty' | 'growing' | 'ready';
 
@@ -56,6 +54,7 @@ export function plow(farm: Farm, x: number, z: number): Done<{ field: FieldObj }
   if (!spend(farm, TUNING.fieldCost)) return { ok: false, why: `A new field costs ${TUNING.fieldCost} coins.` };
   const field: FieldObj = { id: newId(farm), kind: 'field', def: 'field', x, z, rot: 0, crop: null, plantedAt: 0, readyAt: 0, watered: false, fertilized: false, rotation: false, boost: false, last: null, legumeLeft: false };
   farm.objects.push(field);
+  bump(farm, 'ploughed');
   return { ok: true, field };
 }
 
@@ -84,6 +83,8 @@ export function plant(farm: Farm, f: FieldObj, cropId: string, isWater: (x: numb
   f.boost = f.legumeLeft;
   f.watered = raining(farm.seed, farm.t);
   f.fertilized = false;
+  bump(farm, 'planted');
+  if (f.rotation) bump(farm, 'rotation');
   return { ok: true };
 }
 
@@ -91,6 +92,7 @@ export function water(farm: Farm, f: FieldObj): Done | Fail {
   if (fieldState(farm, f) !== 'growing') return { ok: false, why: 'Water growing crops.' };
   if (f.watered) return { ok: false, why: 'Already watered.' };
   f.watered = true;
+  bump(farm, 'watered');
   return { ok: true };
 }
 
@@ -100,13 +102,14 @@ export function fertilize(farm: Farm, f: FieldObj): Done | Fail {
   if (!take(farm, 'fertilizer', 1)) return { ok: false, why: 'No compost yet. The compost bin makes it from scraps.' };
   f.fertilized = true;
   f.readyAt = farm.t + (f.readyAt - farm.t) * (1 - TUNING.compostSpeed);
+  bump(farm, 'composted');
   return { ok: true };
 }
 
 /** The care points a crop has earned so far, and what they add up to. */
 export function care(farm: Farm, f: FieldObj) {
   const crop = f.crop ? CROP[f.crop] : undefined;
-  const bees = !!crop?.flowers && beesNear(farm, f.x, f.z);
+  const bees = !!crop?.flowers && hiveNear(farm, f.x, f.z);
   const points = (f.watered ? 1 : 0) + (f.fertilized ? 1 : 0) + (f.rotation ? 1 : 0) + (f.boost ? 1 : 0) + (bees ? 1 : 0);
   const stars: Stars = points >= TUNING.starCare[1] ? 3 : points >= TUNING.starCare[0] ? 2 : 1;
   return { watered: f.watered, compost: f.fertilized, rotation: f.rotation, nitrogen: f.boost, bees, points, stars };
@@ -124,6 +127,9 @@ export function harvest(farm: Farm, f: FieldObj): Done<{ crop: string; stars: St
   farm.scraps += TUNING.scrapsPerHarvest;
   const page = ledgerNow(farm);
   page.grown[crop.id] = (page.grown[crop.id] ?? 0) + amount;
+  bump(farm, 'harvest', amount);
+  bump(farm, `harvest:${crop.id}`, amount);
+  if (c.stars === 3) bump(farm, 'stars3', amount);
   f.last = crop.family;
   f.legumeLeft = crop.family === 'legume';
   f.crop = null;
@@ -143,6 +149,7 @@ export function clearDebris(farm: Farm, id: number): Done<{ scraps: number; coin
   farm.scraps += d.scraps;
   earn(farm, d.coins);
   farm.xp += 1;
+  bump(farm, 'cleared');
   return { ok: true, scraps: d.scraps, coins: d.coins };
 }
 

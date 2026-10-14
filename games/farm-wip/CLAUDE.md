@@ -123,8 +123,29 @@ drag does with each.
 - `src/audio/engine.ts`: Web Audio, limiter, and interface and farming sounds.
 - `src/main.ts`: boot, the loop, saving, sim events, the test hook and the capture route.
 
+**Phases 3–6 modules**
+- `sim/animals.ts`: homes, feeding, brushing, hearts, products and bees (`hiveNear`, `flowersNear`).
+- `sim/trees.ts`: orchards that rest out of season.
+- `sim/build.ts`: buy and place.
+- `sim/production.ts`: workshop queues, the shelf and upgrades.
+- `sim/decorate.ts`: paths (one character per tile in `farm.paths`), painted fences and flowers,
+  move, put away into `farm.storage`, `UndoStack`, land and beauty.
+- `sim/orders.ts`: the board, `obtainable`, and the boat.
+- `sim/neighbors.ts`: trades, the co-op and visits.
+- `game/placing.ts`: one ghost flow for buying, decorations, storage and moving.
+- `render/`: `animals.ts` (wandering animals, bees, billboard ready-signs), `town.ts` (the Little
+  Lark and visitors), `ghost.ts`, and `models/` (`trees`, `animals`, `workshops`, `decor`, `town`).
+- `ui/`: `homePanel`, `workshopPanel`, `shopPanel`, `buildPanels`, `townPanel`.
+
+**Data:** `data/animals.ts`, `orchard.ts`, `production.ts` (7 workshops, 43 recipes; goods are priced
+from their ingredients in `items.ts`), `decor.ts` (decorations, paths, sets, land, beauty tiers) and
+`cast.ts`.
+
+**Stats:** `farm.stats` holds lifetime counters (`bump` in `world.ts`) that story goals read.
+
 **URL switches** (none of them saves anything unless you play normally):
-- `?scene=title|farm`, with `&seed=&t=&yaw=&zoom=&x=&z=`: capture route, never saves.
+- `?scene=title|farm|showcase`, with `&seed=&t=&yaw=&zoom=&x=&z=`: capture route, never saves.
+  `showcase` is a staged grown-up farm (`game/showcase.ts`).
 - `?quality=low|medium|high`
 - `?speed=N` (1–120): faster farm time, for tests.
 
@@ -167,6 +188,22 @@ drag does with each.
   when coins are below the cheapest seeds and nothing is growing or sellable.
 - 2026-10-13 (phase 2): **the away bonus** is real time since the save, capped at 10 minutes of
   growing. It moves growth timers only; the clock and seasons don't move.
+- 2026-10-13 (phases 3–6):
+  - **Farm panels keep the clock running.** That covers seeds, barn, shop, homes, workshops, town and
+    the field cards. Settings, the menu and story moments stop it.
+  - **Animals never get worse.** Unfed animals take twice as long and give 1-star products; feeding
+    and brushing each add a heart (up to 3 stars).
+  - **Bees** help flowering crops and bee-loving trees within 5 tiles (a care point, +1 to pick),
+    and honey's stars come from flowers near the hive.
+  - **Trees** rest out of season (the timer waits) and are "established" after 3 pickings.
+  - **Workshops** take ingredients best-stars-first, and a good's stars are the average.
+  - **Orders** only ask for `obtainable` things. They never expire and can be swapped for free. The
+    boat takes about 2 minutes of play for a trip, and 2 crates at a time once the Riverside is
+    open.
+  - **Neighbours** (from level 5) offer one fair swap a day each and fill half of a co-op order as
+    time passes; a visit comes about every 1.5 days, with a gift. The first neighbour to reach 3
+    hearts gives the Country Set.
+  - **Undo** in build mode keeps up to 30 snapshots and is cleared when you leave build mode.
 - 2026-10-13 (phase 2): **ghost clicks.** A tap that opens a panel is followed by the browser's own
   click at the same spot, which chose a seed by itself on phones (found by the touch e2e). Panels
   now ignore a click within 24 px of the opening tap for 0.5 s; keyboard and gamepad presses are
@@ -232,10 +269,10 @@ Other companies' games are described here, not named (this is a public repo).
 | 0 Setup and names | done |
 | 1 Engine and world | done (committed with phase 2) |
 | 2 Fields and crops | done (73 unit tests; 44 e2e on Chromium and WebKit × phone, tablet and desktop) |
-| 3 Orchards and animals | — |
-| 4 Production | — |
-| 5 Build mode and land | — |
-| 6 Town and neighbors | — |
+| 3 Orchards and animals | done (committed with 4–6) |
+| 4 Production | done (committed with 3, 5, 6) |
+| 5 Build mode and land | done (committed with 3, 4, 6) |
+| 6 Town and neighbors | done (118 unit tests; 44 e2e) |
 | 7 Story and progression | — |
 | 8 Books and ledger | — |
 | 9 Look and sound | — |
@@ -250,6 +287,22 @@ Other companies' games are described here, not named (this is a public repo).
 - Not done yet (later phases): rain and snow effects, crop sway, a model for the compost bin's
   bags, the cottage and dock doing anything (story and orders), and the Crop Book showing the facts.
 
-**Next:** phase 3, orchards and animals: trees and bushes (data in `src/data/orchard.ts`), 7
-animals and their homes, feed and brush, happiness, bee pollination (`setBeesNear` in
-`src/sim/fields.ts`), the dog, and the first build menu entries for buying them.
+**Phases 3–6 notes:**
+- Build 731 KB.
+- The showcase draws with every system on screen.
+- The story data (`data/chapters.ts`) and the seasonal fair (`sim/fair.ts`) are written ahead for
+  phase 7 and are not wired in yet.
+- Polish noted for phase 9:
+  - made goods need their own icon shapes (flour looks blank on a white card);
+  - the bare-bush snow is a box.
+
+**Next:** phase 7, story and progression:
+- `sim/story.ts`: chapters, goals from `farm.stats`, story requests on the board, the Grand Fair and
+  endless goals;
+- dialogue cards with read-aloud;
+- the seasonal fair UI;
+- onboarding tips and stall hints;
+- the goals panel;
+- the credits;
+- web-check the cast names (Hattie, Tomasz, Amara, Silas, Wendell, Mrs. Penrose, Ingrid, Femi,
+  Mr. Lu).

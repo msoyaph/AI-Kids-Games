@@ -42,6 +42,8 @@ export interface OtherObj extends BaseObj {
 }
 
 export type Obj = FieldObj | OtherObj;
+export type TreeObj = OtherObj & { kind: 'tree' };
+export type BuildingObj = OtherObj & { kind: 'building' };
 
 /** Footprint size before rotation: width (x) and depth (z) in tiles. */
 export type Size = { w: number; d: number };

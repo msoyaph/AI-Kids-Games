@@ -8,6 +8,9 @@ import { START_T } from './clock';
 import type { Stack } from './inventory';
 import type { AreaId } from './map';
 import type { Obj } from './objects';
+import type { BoatState, Order } from './orders';
+import type { NeighborState, Coop } from './neighbors';
+import { newStory, type StoryState } from './story';
 
 export interface CameraSave {
   /** Where the camera looks, in tile units. */
@@ -58,6 +61,20 @@ export interface Farm {
   /** Free plantings from the safety net. */
   freeSeeds: number;
   ledger: LedgerSeason[];
+  /** Paths painted on the ground: one character per tile ('0' none, '1' dirt, '2' stone, '3' brick). */
+  paths: string;
+  /** Things put away in build mode, by `kind:def`, to place again for free. */
+  storage: Record<string, number>;
+  /** The town order board, and when the next empty slot fills. */
+  orders: Order[];
+  nextOrderAt: number | null;
+  orderSeq: number;
+  boat: BoatState;
+  neighbors: Record<string, NeighborState>;
+  coop: Coop | null;
+  /** Lifetime counters: `harvest`, `harvest:wheat`, `orders`, `made:bread`… (see `bump`). */
+  stats: Record<string, number>;
+  story: StoryState;
 }
 
 export const HOME_VIEW: CameraSave = { x: 42, z: 45, yawStep: 0, zoom: 38 };
@@ -82,5 +99,15 @@ export function newFarm(seed: number): Farm {
     compostUntil: null,
     freeSeeds: 0,
     ledger: [],
+    paths: '0'.repeat(56 * 56),
+    storage: {},
+    orders: [],
+    nextOrderAt: null,
+    orderSeq: 0,
+    boat: { crates: [], cargo: [], backAt: null, trips: 0 },
+    neighbors: {},
+    coop: null,
+    stats: {},
+    story: newStory(),
   };
 }

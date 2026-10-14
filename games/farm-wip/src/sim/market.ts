@@ -9,7 +9,7 @@ import { TUNING } from '../data/tuning';
 import { dayIndex, seasonOf, type Season } from './clock';
 import { take, type Stars } from './inventory';
 import type { Farm } from './state';
-import { earn } from './world';
+import { bump, earn } from './world';
 
 /** The market's season factor for an item: under 1 in season, over 1 out of season. */
 export function seasonFactor(id: string, season: Season): number {
@@ -48,5 +48,6 @@ export function sell(farm: Farm, id: string, stars: Stars, n: number): { ok: tru
   if (!take(farm, id, n, stars)) return { ok: false, why: 'You don’t have that many.' };
   const coins = each * n;
   earn(farm, coins, d.kind === 'crop' ? id : undefined);
+  bump(farm, 'sold', n);
   return { ok: true, coins };
 }

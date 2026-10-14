@@ -64,6 +64,25 @@ export function merge(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   return g;
 }
 
+/**
+ * A triangular prism (a pitched roof's shape): base `d` deep at y = 0, apex `h` high at z = 0,
+ * running `w` along x, centred on the origin.
+ */
+export function prism(w: number, d: number, h: number): THREE.BufferGeometry {
+  const x0 = -w / 2, x1 = w / 2, z0 = -d / 2, z1 = d / 2;
+  const A = [x0, 0, z0], B = [x0, 0, z1], C = [x0, h, 0], D = [x1, 0, z0], E = [x1, 0, z1], F = [x1, h, 0];
+  const tri = (...p: number[][]) => p.flat();
+  const pos = [
+    ...tri(A, B, C), ...tri(D, F, E), // gable ends
+    ...tri(B, E, F), ...tri(B, F, C), // south slope
+    ...tri(A, C, F), ...tri(A, F, D), // north slope
+    ...tri(A, D, E), ...tri(A, E, B), // underside
+  ];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  return g;
+}
+
 // Short primitive constructors (low segment counts: the look is faceted and soft-lit).
 export const box = (w: number, h: number, d: number) => new THREE.BoxGeometry(w, h, d);
 export const cyl = (rt: number, rb: number, h: number, seg = 8) => new THREE.CylinderGeometry(rt, rb, h, seg);
