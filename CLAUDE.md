@@ -558,6 +558,12 @@ back.
 ## Tenth game: Shooberry (owner brief 2026-10-14; slug `shooberry`, branch `garden-wip`, worktree ~/Documents/AI-Kids-Games-garden)
 A 3D lane-defense garden game (Three.js 0.186.1, ages 7+): plant friendly helpers, shoo silly critters,
 save the picnic. Rules, decisions, the IP log and status are in games/shooberry/CLAUDE.md.
+**2.11.0 LIVE 2026-10-14** (PR #27, merge commit 0b87233; site dpl_EQBHpQ9DwpUge9saDsmn6o7Ca7gB, play
+dpl_Ep4Tjd9bsFQuuFPihzpBGBFqNr75, MCP app 1.2.0 dpl_52AV4RUz2FtLo7FuqE2QvWE61yLY). Every guard logged the
+owner's approval; the live Shooberry file is byte-identical to the verified build; the site's launch and
+preview tests passed against production (12); hovering plays the new loops for Cliff Valley, Vanex
+Defense, Space Sky and Calex Cart on the live home page; Lighthouse mobile: home 94/100/100/100,
+/game/shooberry 98/100/100/100, /play/shooberry 87 (exempt)/100/100/100; IndexNow 200.
 - **Owner:** approved the look ("Ok good graphics quality"), picked the name Shooberry, then "now finish
   the game end to end and deploy it to production" (replaces the brief's stop before production).
 - **Release 2.11.0, list position 10, with MCP app 1.2.0.** Built as 2.10.0; while it stalled on a stuck

@@ -13,73 +13,59 @@
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
-    "deploymentId": "dpl_J97VpxK1CfqBu1L9ZrVcFWQPvZi1",
-    "deploymentUrl": "https://ai-kids-games-g1ns82cnp-real-tours.vercel.app",
+    "deploymentId": "dpl_EQBHpQ9DwpUge9saDsmn6o7Ca7gB",
+    "deploymentUrl": "https://ai-kids-games-af0oir5wy-real-tours.vercel.app",
     "readyState": "READY",
     "publishedAt": "2026-10-14",
     "public": true,
-    "release": "2.10.0",
-    "commit": "1566b03",
-    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/28",
+    "release": "2.11.0",
+    "commit": "0b87233",
+    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/27",
     "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
-    "guardLog": "Production deployment of release 2.10.0 approved by the owner on 2026-10-14; GPU browser suites passed on 2221afb.",
+    "guardLog": "Production deployment of release 2.11.0 approved by the owner on 2026-10-14; GPU browser suites passed on d58135f.",
     "playOrigin": {
       "project": "real-tours/ai-kids-games-play",
-      "deploymentId": "dpl_4brTNKEVGV6cxWSzRTUNrSKDjnMg",
+      "deploymentId": "dpl_Ep4Tjd9bsFQuuFPihzpBGBFqNr75",
       "url": "https://ai-kids-games-play.vercel.app",
-      "deploymentUrl": "https://ai-kids-games-play-6174xta6m-real-tours.vercel.app",
-      "guardLog": "Production deployment of release 2.10.0 approved by the owner on 2026-10-14; GPU browser suites passed on 2221afb.",
+      "deploymentUrl": "https://ai-kids-games-play-dg4thp3pr-real-tours.vercel.app",
+      "guardLog": "Production deployment of release 2.11.0 approved by the owner on 2026-10-14; GPU browser suites passed on d58135f.",
       "games": 0,
       "note": "Serves no game until the owner approves one; / is a notice page and every other path 404s, with the strict headers (connect-src none, frame-ancestors the site)."
     },
     "mcpApp": {
       "project": "real-tours/ai-kids-games-mcp",
-      "deploymentId": "dpl_HmqBs1KTnMZC5hNnPn8jioQ1Qi4v",
-      "deploymentUrl": "https://ai-kids-games-l95a0r5n8-real-tours.vercel.app",
-      "release": "1.1.0",
-      "guardLog": "Production deployment of MCP app 1.1.0 approved by the owner on 2026-10-14.",
-      "check": "https://ai-kids-games-mcp.vercel.app/mcp: initialize reports version 1.1.0; show_game for fieldlark returns its card with embed fullscreen."
+      "deploymentId": "dpl_52AV4RUz2FtLo7FuqE2QvWE61yLY",
+      "deploymentUrl": "https://ai-kids-games-diftz6pnk-real-tours.vercel.app",
+      "release": "1.2.0",
+      "guardLog": "Production deployment of MCP app 1.2.0 approved by the owner on 2026-10-14.",
+      "check": "https://ai-kids-games-mcp.vercel.app/mcp: initialize reports version 1.2.0; show_game for shooberry returns its card with embed fullscreen."
     },
-    "smokeTest": "Live checks after the merge (the owner's rule for this game: full browser suites run against previews, never production): home, /game/fieldlark, /play/fieldlark, /category/farming, the Fieldlark build, cover, trailer and OG image all 200, an unknown address 404; the live games/fieldlark/index.html is byte-identical to the verified build (SHA-256 46c78f58…3916, BUILD_IMPORTS.json); Fieldlark played on the live site in a browser: Start farming, Hattie's welcome, the farm and its tool bar, no console errors. Before the merge: PR #28's CI green at d0e5e1e (Fieldlark's own Chromium and WebKit suites on software WebGL, every game's suite and the website's), the hosted preview played the same way, and the local site suite on a production build passed 176 with 99 device skips (1 unrelated Calex Cart phone touch warning that passed in CI).",
+    "smokeTest": "Live checks after the merge: /game/shooberry, /play/shooberry, the Shooberry build, its loop, trailer and OG image, and the new loops for Cliff Valley, Vanex Defense, Space Sky and Calex Cart all 200; the live games/shooberry/index.html is byte-identical to the verified build (SHA-256 d28ef307…, BUILD_IMPORTS.json). The site's own browser tests against production: the Shooberry launch test (home → details → play, 20 seconds clean, its save survives a reload) and the preview tests on desktop, tablet and phone, 12 passed (3 device skips). On the live home page, hovering each card plays its loop for Cliff Valley, Vanex Defense, Space Sky, Calex Cart and Shooberry.",
     "lighthouseMobile": {
-      "measuredUnderLoad": "The Mac was busy (load average 17–27) during these runs, so Performance is low and noisy for every page; Accessibility, Best Practices and SEO are 100 everywhere. Re-measure on a quiet machine.",
       "home": {
-        "performance": 84,
+        "performance": 94,
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       },
-      "details": {
-        "performance": 81,
-        "page": "/game/light-crossing",
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "play": {
-        "performance": 66,
-        "performanceExempt": true,
-        "page": "/play/light-crossing",
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "fieldlarkDetails": {
+      "shooberryDetails": {
         "performance": 98,
+        "page": "/game/shooberry",
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       },
-      "fieldlarkPlay": {
-        "performance": 63,
+      "shooberryPlay": {
+        "performance": 87,
         "performanceExempt": true,
+        "page": "/play/shooberry",
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       }
     },
-    "indexNow": "Submitted every page that changed since the last submission (the new /game/fieldlark, every game page, the categories and the lists): 200 received (indexnow-state.json).",
-    "ci": "PR #28 at d0e5e1e: every job green (TheaBonk's 150% display-scaling check had flaked on the commit before, as it has on GitHub's runners before); merged as 1566b03. Space Sky's and Light Crossing's browser suites ran locally for 2.10.0 (localSuites: 42 and 191 passed)."
+    "indexNow": "Submitted every page that changed since the last submission (the new /game/shooberry, every game page, the categories and the lists): 200 received (indexnow-state.json).",
+    "ci": "PR #27 at 6fe5b5a: every job green (the commit before, d58135f, ran every suite: Shooberry's Chromium and WebKit browser tests on software WebGL, the website's and the MCP app's); merged as 0b87233. Space Sky's and Light Crossing's browser suites ran locally for 2.11.0 (localSuites: 42 and 191 passed)."
   },
   "deploymentProtection": {
     "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",
@@ -90,6 +76,76 @@
   "gameCacheControl": "public, max-age=0, must-revalidate",
   "hashedAssetCacheControl": "public, max-age=31536000, immutable",
   "history": [
+    {
+      "url": "https://ai-kids-games-fawn.vercel.app",
+      "deploymentId": "dpl_J97VpxK1CfqBu1L9ZrVcFWQPvZi1",
+      "deploymentUrl": "https://ai-kids-games-g1ns82cnp-real-tours.vercel.app",
+      "readyState": "READY",
+      "publishedAt": "2026-10-14",
+      "public": true,
+      "release": "2.10.0",
+      "commit": "1566b03",
+      "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/28",
+      "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+      "guardLog": "Production deployment of release 2.10.0 approved by the owner on 2026-10-14; GPU browser suites passed on 2221afb.",
+      "playOrigin": {
+        "project": "real-tours/ai-kids-games-play",
+        "deploymentId": "dpl_4brTNKEVGV6cxWSzRTUNrSKDjnMg",
+        "url": "https://ai-kids-games-play.vercel.app",
+        "deploymentUrl": "https://ai-kids-games-play-6174xta6m-real-tours.vercel.app",
+        "guardLog": "Production deployment of release 2.10.0 approved by the owner on 2026-10-14; GPU browser suites passed on 2221afb.",
+        "games": 0,
+        "note": "Serves no game until the owner approves one; / is a notice page and every other path 404s, with the strict headers (connect-src none, frame-ancestors the site)."
+      },
+      "smokeTest": "Live checks after the merge (the owner's rule for this game: full browser suites run against previews, never production): home, /game/fieldlark, /play/fieldlark, /category/farming, the Fieldlark build, cover, trailer and OG image all 200, an unknown address 404; the live games/fieldlark/index.html is byte-identical to the verified build (SHA-256 46c78f58…3916, BUILD_IMPORTS.json); Fieldlark played on the live site in a browser: Start farming, Hattie's welcome, the farm and its tool bar, no console errors. Before the merge: PR #28's CI green at d0e5e1e (Fieldlark's own Chromium and WebKit suites on software WebGL, every game's suite and the website's), the hosted preview played the same way, and the local site suite on a production build passed 176 with 99 device skips (1 unrelated Calex Cart phone touch warning that passed in CI).",
+      "lighthouseMobile": {
+        "measuredUnderLoad": "The Mac was busy (load average 17–27) during these runs, so Performance is low and noisy for every page; Accessibility, Best Practices and SEO are 100 everywhere. Re-measure on a quiet machine.",
+        "home": {
+          "performance": 84,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "details": {
+          "performance": 81,
+          "page": "/game/light-crossing",
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "play": {
+          "performance": 66,
+          "performanceExempt": true,
+          "page": "/play/light-crossing",
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "fieldlarkDetails": {
+          "performance": 98,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "fieldlarkPlay": {
+          "performance": 63,
+          "performanceExempt": true,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        }
+      },
+      "indexNow": "Submitted every page that changed since the last submission (the new /game/fieldlark, every game page, the categories and the lists): 200 received (indexnow-state.json).",
+      "ci": "PR #28 at d0e5e1e: every job green (TheaBonk's 150% display-scaling check had flaked on the commit before, as it has on GitHub's runners before); merged as 1566b03. Space Sky's and Light Crossing's browser suites ran locally for 2.10.0 (localSuites: 42 and 191 passed).",
+      "mcpApp": {
+        "project": "real-tours/ai-kids-games-mcp",
+        "deploymentId": "dpl_HmqBs1KTnMZC5hNnPn8jioQ1Qi4v",
+        "deploymentUrl": "https://ai-kids-games-l95a0r5n8-real-tours.vercel.app",
+        "release": "1.1.0",
+        "guardLog": "Production deployment of MCP app 1.1.0 approved by the owner on 2026-10-14.",
+        "check": "https://ai-kids-games-mcp.vercel.app/mcp: initialize reports version 1.1.0; show_game for fieldlark returns its card with embed fullscreen."
+      }
+    },
     {
       "url": "https://ai-kids-games-fawn.vercel.app",
       "deploymentId": "dpl_FEUS2tzCjouG8MK4URWLjUuxviAM",

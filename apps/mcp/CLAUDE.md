@@ -124,6 +124,12 @@ merge.
      approved in DEPLOYMENT.json, and the guard logged "MCP app 1.1.0 approved by the owner".
      Shooberry follows as MCP app 1.2.0.
 
+7. MCP app 1.2.0 (Shooberry, PR #27): the catalog gains Shooberry (`embed: fullscreen`); its signal reads
+   the game's read-only hook (`__shooberry.snapshot().screen`: `paused` → paused, `result` → ended).
+   - **1.2.0 LIVE 2026-10-14** with website release 2.11.0 (PR #27, merge 0b87233;
+     dpl_52AV4RUz2FtLo7FuqE2QvWE61yLY): the guard logged "MCP app 1.2.0 approved by the owner";
+     initialize reports 1.2.0 and show_game for shooberry returns its card, full-screen.
+
 ## Follow-ups (not in this PR)
 
 - **Cliff Valley:** add `import 'pixi.js/unsafe-eval';` at the top of `src/render/renderer.ts`, as

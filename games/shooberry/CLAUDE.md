@@ -16,7 +16,7 @@ from this file alone.
 | 5 | Interface, Seed and Invader Books, settings, audio | **done** (85b75e8) |
 | 6 | Garden Party, 20 Challenges, Daily, balance and pacing | **done**: reports/balance.md, reports/pacing.md (5.0 h) |
 | 7 | Performance, browser tests, visual review | **done** (34d2a10): 53 browser tests on 6 projects, CI rehearsal (software WebGL) green, reports/perf.md |
-| 8 | Name, site, trailer, PR, **production** (owner: "now finish the game end to end and deploy it to production") | **in progress**: listed, imported, audited, art, previews and trailer done; release **2.11.0** (after Fieldlark's 2.10.0) |
+| 8 | Name, site, trailer, PR, **production** (owner: "now finish the game end to end and deploy it to production") | **done: LIVE** in release **2.11.0** (2026-10-14, PR #27, merge 0b87233), list position 10 |
 
 ## Release 2.11.0 (site) with Shooberry 1.0.0
 
