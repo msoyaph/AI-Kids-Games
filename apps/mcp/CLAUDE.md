@@ -100,7 +100,8 @@ merge.
 ## Follow-ups (not in this PR)
 
 - **Cliff Valley:** add `import 'pixi.js/unsafe-eval';` at the top of `src/render/renderer.ts`, as
-  Vanex Defense, Tuck Pop and Agentmon do. That makes it a new game build: re-import, storage
-  re-audit, its own suites. Then set `embed` to `fullscreen` (findings below).
+  Vanex Defense, Tuck Pop and Agentmon do. A scratch experiment confirmed it is enough: the patched
+  build starts under an assistant-like CSP, where the current one fails (docs/FOLLOW-UPS.md). It is a
+  new game build: re-import, storage re-audit, its own suites. Then set `embed` to `fullscreen`.
 - **aikids.games:** once it is registered, set SITE_ORIGIN on both projects, serve `/mcp` on the brand
   domain, then submit to the directories.

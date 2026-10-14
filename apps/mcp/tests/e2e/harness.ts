@@ -9,7 +9,7 @@ export const ORIGINS = ['127.0.0.1:4330','127.0.0.1:4331','127.0.0.1:4332','127.
  * - WebKit only: Space Sky and Vanex Defense call the Fullscreen API themselves and leave the rejected
  *   promise unhandled (assistant frames have no fullscreen permission; the host's fullscreen mode is used).
  */
-export const KNOWN = [/Content Security Policy directive: "font-src|does not appear in the font-src directive|downloadable font: font load failed .*content blocked/,/Permissions policy violation: (accelerometer|gyroscope|magnetometer) is not allowed/,/Permission policy 'Fullscreen' check failed/];
+export const KNOWN = [/Content Security Policy directive: "font-src|does not appear in the font-src directive|downloadable font: font load failed .*content blocked|blocked the loading of a resource \(font-src\) at data:font/,/Permissions policy violation: (accelerometer|gyroscope|magnetometer) is not allowed/,/Permission policy 'Fullscreen' check failed/];
 export type Harness = { links: string[]; messages: string[]; modes: string[]; reads: string[]; calls: string[]; ready: boolean; error?: string; sizes: number[] };
 
 /** Console errors, uncaught errors and any request to an origin outside the harness, from every frame. */

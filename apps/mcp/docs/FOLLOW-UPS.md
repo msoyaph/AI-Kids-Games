@@ -32,7 +32,20 @@ the spec's default CSP, as assistants use.
    - `npm run manifests`;
    - re-run the harness suite (its gamepad spec then covers Cliff Valley too).
 
-**Experiment:** _(see the result below)_
+**Experiment (2026-10-13; scratch only, the source was restored and nothing was committed):**
+1. Built Cliff Valley with that one line added (`npm run build:only --workspace games/cliff-valley`:
+   one self-contained file, 1,173,203 bytes; its build check passed).
+2. Ran both builds from `srcdoc` under an assistant-like CSP (`script-src 'self' 'unsafe-inline'`, no
+   `'unsafe-eval'`) in Chromium.
+
+| Build | Result |
+|---|---|
+| Current (verified) | "Sorry! Cliff Valley could not start on this device." PixiJS throws "Current environment does not allow unsafe-eval, please use pixi.js/unsafe-eval module to enable support." |
+| With the import | It starts: the title screen ("Start Playing", "Settings"), a WebGL canvas, the `__cliffvalley` hook in `title` mode, and no errors. |
+
+So the official module is enough. No other change to Cliff Valley is needed for it to run in
+assistants. Its saves, storage keys and gameplay are untouched by the import, which only replaces how
+PixiJS compiles shaders and uniform uploads.
 
 ## Calex Cart and Light Crossing: `navigator.getGamepads()` without a guard
 
