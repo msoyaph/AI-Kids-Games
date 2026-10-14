@@ -417,7 +417,7 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 | 12 Channels, sprinklers, greenhouses, the Farm Lab | done in code (264 unit tests); browser-checked in phase 14 (systems.spec) |
 | 13 The look everywhere, seasons, night, music | done, checked on the GPU (day, night, snow, rain, mist, town, greenhouse) |
 | 14 Save v2, bot and pacing, performance, full QA | done (273 unit, 15 sim; e2e 102 passed, 18 device skips, on Chromium and WebKit) |
-| 15 Site step, trailer, MCP catalog, PR and preview | done up to the PR; **stopped before production** |
+| 15 Site step, trailer, MCP catalog, PR and preview | done; **live in production 2026-10-14** (site 2.10.0, PR #28) |
 
 **Phases 1–2 notes:**
 - Build 638 KB.
@@ -572,7 +572,32 @@ production. Then create a 1 minute sizzle reel YT 1920×1080 and 1080x1920 video
 and should excite and wonder kids to play". Shooberry's release had stalled, so the owner chose
 "Stop it; Fieldlark first": site 2.10.0 with Fieldlark at position 9, MCP app 1.1.0 (PR #28).
 
-**Next:** `release:local` on a quiet machine, CI, AIKG_ALLOW_PRODUCTION (ai-kids-games and
-ai-kids-games-play 2.10.0, ai-kids-games-mcp 1.1.0), merge PR #28, production checks and a record PR.
-Then the 60-second reel (`fieldlark-reel` in marketing/sizzle/reel.config.ts; its takes are in
-capture/games/fieldlark.ts), 16:9 and 9:16 for YouTube.
+**2.10.0 LIVE 2026-10-14** (PR #28, merge commit 1566b03; site dpl_J97VpxK1CfqBu1L9ZrVcFWQPvZi1, play
+origin dpl_4brTNKEVGV6cxWSzRTUNrSKDjnMg, MCP app 1.1.0 dpl_HmqBs1KTnMZC5hNnPn8jioQ1Qi4v). The guards logged
+"release 2.10.0 approved by the owner on 2026-10-14; GPU browser suites passed on 2221afb" and "MCP app
+1.1.0 approved by the owner".
+- Live checks (no full suite on production, per the owner's rule for this game): pages 200, unknown 404;
+  the live Fieldlark file is byte-identical to the verified build (46c78f58…3916); played on the live site
+  with no console errors; the MCP app reports 1.1.0 and shows Fieldlark full-screen. IndexNow: 200.
+- Lighthouse ran while the Mac was loaded (load average 17–27): Fieldlark's details page 98/100/100/100;
+  the other pages' Performance was low and noisy, with Accessibility, Best Practices and SEO 100
+  everywhere. Re-measure on a quiet machine.
+- The record PR also carries the 2.8.0 record (#23, which includes 2.7.0's #22). 2.9.0 has no
+  production record yet.
+- Shooberry follows as 2.11.0 at position 10 (#27), with MCP app 1.2.0.
+
+**The 60-second reel** (owner: "a 1 minute sizzle reel YT 1920×1080 and 1080x1920 … exciting"): the cut
+`fieldlark-reel` in marketing/sizzle/reel.config.ts, built from real gameplay in
+capture/games/fieldlark.ts. It runs: a dive from the valley onto the farm, the logo, "A sleepy little
+town farm… Can you wake it up?", then eight beats (plant, grow and pick; animals; helpers; the town
+square; day and night; sun, rain and snow; crops all year; ribbons at the fair), then phones and
+tablets, the promise, the game card and the end card. Rebuild it with `npm run capture -- fieldlark`
+(one take at a time with `--only=`), then `npx tsx music/render.ts`, `compose/build.ts fieldlark-reel`,
+`render/run.ts fieldlark-reel` and `review/run.ts fieldlark-reel`. The masters are
+out/ai-kids-games-fieldlark-reel-16x9.mp4 and -9x16.mp4 (git-ignored).
+- Capture pitfalls: `&t=` sets the farm time at load, and at `&speed=` the clock also runs while the page
+  loads. The fair opens only on a season's last day. The showcase's sheep shed has no sheep. A take now
+  and then comes up at the widest zoom: `ready()` reloads the page when the camera's zoom doesn't match.
+
+**Next:** nothing for this release. Ideas for later: sheep in the showcase, re-measure Lighthouse on a
+quiet machine.

@@ -120,8 +120,9 @@ merge.
    - Its pause signal (widget/src/signals.ts): the game's Menu or Settings is open
      (`section.panel[aria-label="Menu"|"Settings"]`), which is when its farm clock stops; the farm never
      "ends" (endless goals after the credits). tests/widget-logic.test.ts checks the marks in the build.
-   - DEPLOYMENT.json still approves 1.0.0 only, so the guard refuses 1.1.0 in production until the
-     owner approves it with the Fieldlark release.
+   - **1.1.0 LIVE 2026-10-14** with website release 2.10.0 (PR #28; dpl_HmqBs1KTnMZC5hNnPn8jioQ1Qi4v):
+     approved in DEPLOYMENT.json, and the guard logged "MCP app 1.1.0 approved by the owner".
+     Shooberry follows as MCP app 1.2.0.
 
 ## Follow-ups (not in this PR)
 
