@@ -33,7 +33,7 @@ const STRATEGIES: Record<string, Strategy> = {
   'only homes and shops': b => b.collect() || b.zoneStrip(ZONE.home) || b.zoneStrip(ZONE.shop, 4) || b.growRoads(),
   'only one kind of service': b => b.collect() || b.grow() || care(b, ['school'], true) || (b.town.coins > 600 && b.place('school')),
   'no transit': b => b.collect() || b.grow() || care(b, ALL, false),
-  'as many trees as possible': b => b.collect() || b.plantTrees(4) || b.grow(),
+  'as many trees as possible': b => b.collect() || b.plantTrees(4, true) || b.grow(),
   'roads everywhere': b => b.collect() || b.growRoads() || b.grow(),
 };
 

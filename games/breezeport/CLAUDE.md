@@ -167,8 +167,14 @@ npx tsx games/breezeport/scripts/models.mts     # triangles per model (CPU only)
 |---|---|
 | 0 Plan, names, style frame | done; approved 2026-10-14 ("Go, Breezeport") |
 | 1 Setup and name | done: scaffold, rename, Simulation genre, blocklist and site test, brief, docs, engine-drift |
-| 2 Engine and world | in progress |
+| 2–8 Town, sims, story, saves, UI | done (checkpoint commit 1dde1de): the 80 × 80 town, roads and zones, growth, services and happiness, budget and grant, traffic and transit (bus, bike, tram), eco, districts, 9 chapters, projects, endless goals, 3 slots, title, tools, maps, City Hall, music, the festival night, the showcase town |
+| 9 Balance, saves, performance, QA | in progress: pacing tuned with the bot (scratchpad sweeps); unit tests pass; browser suites and the visual review next |
 
 **Style frame, measured** (M3 Pro, `scripts/shots.mjs`): Low on the phone draws 31 calls and 77k triangles at 60 fps; Low on the desktop draws 36 calls and 126k triangles at 60 fps. The full table is in docs/PLAN.md. The build is 817 KB.
 
-**Next:** phase 2: the full 80 × 80 map with its areas, input and picking with the reachability test, the HUD shell with the title, menu and slots, saves and settings, the capture route and the hook.
+**Next:** finish phase 9: `npx vitest run tests/sim` (pacing on 6 seeds, the broke run, strategies) on a quiet machine; then the browser suites (`sh scripts/when-quiet.sh e2e`), the visual review with `scripts/shots.mjs` (style frame and `scene=showcase`), and the performance numbers. Then phase 10: listing, import, storage audit, art, previews, trailer, MCP catalog, PR, release, the sizzle reels.
+
+**Pacing tools:** a scratchpad sweep runs the bot with tuning overrides (`{"growth":{…},"pops":[…],"rewards":[…]}`); the bot reports the town at each chapter's end and where the longest coin wait was. Findings so far:
+- Old Harbor holds about 205 people before Maple Row opens (chapter 5), so chapter 4's goal stays at 185.
+- Late chapters are growth-bound (about 2–3 people a minute), so their population steps stay at 110–160.
+- The bot clears a few small homes to make room (makeRoom, rezone) when a service or zone has nowhere to go, as a kid would.

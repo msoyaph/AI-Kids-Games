@@ -58,11 +58,11 @@ export class Sim {
     return this.census;
   }
 
-  /** Seconds until the next look: a little longer the more the town has grown. */
-  private growthGap(base: number, per: number, max: number) {
+  /** Seconds until the next look: it changes a little with every building (see TUNING.growth). */
+  private growthGap(base: number, per: number, max: number, min: number) {
     const c = this.census, G = TUNING.growth, s = this.town.stats;
     if ((s['built-home'] ?? 0) + (s['built-shop'] ?? 0) + (s['built-work'] ?? 0) < G.quickStart) return G.quickSec;
-    return Math.min(max, base + per * (c.homes.length + c.shops.length + c.works.length));
+    return Math.max(min, Math.min(max, base + per * (c.homes.length + c.shops.length + c.works.length)));
   }
 
   /** Advance town time by `dt` seconds of play (in fixed steps). */
@@ -85,7 +85,7 @@ export class Sim {
     // growth: each zone looks for a lot every few seconds
     for (const zone of ['home', 'shop', 'work'] as const) {
       if (t.t < this.growAt[zone]) continue;
-      this.growAt[zone] = t.t + this.growthGap(TUNING.growth.everySec, TUNING.growth.slowPerBuilding, TUNING.growth.maxEverySec) * (zone === 'home' ? 1 : 1.3);
+      this.growAt[zone] = t.t + this.growthGap(TUNING.growth.everySec, TUNING.growth.slowPerBuilding, TUNING.growth.maxEverySec, TUNING.growth.minEverySec) * (zone === 'home' ? 1 : 1.3);
       const thing = grow(t, this.refresh(true), zone);
       if (thing) {
         out.push({ type: 'built', thing });
@@ -94,7 +94,7 @@ export class Sim {
       }
     }
     if (t.t >= this.levelAt) {
-      this.levelAt = t.t + this.growthGap(TUNING.growth.levelEverySec, TUNING.growth.levelSlowPerBuilding, TUNING.growth.maxLevelEverySec);
+      this.levelAt = t.t + this.growthGap(TUNING.growth.levelEverySec, TUNING.growth.levelSlowPerBuilding, TUNING.growth.maxLevelEverySec, TUNING.growth.minLevelEverySec);
       const e = levelUp(t, this.refresh());
       if (e) { out.push(e); this.refresh(true); }
     }

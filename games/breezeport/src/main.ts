@@ -6,7 +6,8 @@
  *   ?scene=title       the title screen over the style frame
  *   ?scene=town        a brand-new town (&seed=)
  *   ?scene=showcase    a big, grown Breezeport near the end of the story (&seed=; &festival=1 for the
- *                      festival night; &hud=0 hides the interface)
+ *                      festival night; &hud=0 hides the interface; &map=happy|traffic|green|svc:school
+ *                      shows a map)
  *   (&quality=low|medium|high &zoom= &yaw= &x= &z= &t= &season=)
  * ?speed=N (1–120) runs town time faster, for tests.
  */
@@ -486,6 +487,8 @@ function boot() {
     view.marks.cursor(controller.cursor && !play.placing ? controller.cursor : null);
     view.setWorld(seasonOf(town.t));
     view.syncCity(town);
+    // captures keep the music off (trailers have their own soundtrack)
+    music.on = !capture;
     music.mode = screen === 'title' ? 'title' : festivalOn ? 'festival' : 'town';
     music.update(seasonOf(town.t), festivalOn ? 0 : duskAmount(town.t));
     if (!glLost) {
@@ -532,6 +535,9 @@ function boot() {
     enterTown(town, null);
     if (params.get('festival') === '1') { festivalOn = true; view.festival.set(town, true); }
     if (params.get('hud') === '0') { hud.visible = false; play.tray.hidden = true; uiRoot.classList.add('bare'); }
+    // a map over the town for previews (it is drawn on the ground, so the canvas shows it)
+    const map = params.get('map');
+    if (map && /^(happy|traffic|green|svc:[a-z]+)$/.test(map)) view.setOverlay(map, sim.refresh(true), settings.colorblind, sim.traffic);
   }
   else { hud.visible = true; hud.setTools(TOOLS.map(t => t.id), 'look' as ToolId); refreshHud(); hud.setGoal('Open the park', 0.66); }
   requestAnimationFrame(frame);

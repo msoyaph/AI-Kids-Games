@@ -61,8 +61,8 @@ const defs: ThingDef[] = [
   { id: 'offices', name: 'Offices', class: 'work', zone: 'work', level: 3, w: 2, d: 2, height: 3.1, shade: 0.85, looks: OFFICE, blurb: 'A tall glass building full of busy desks.' },
   // --- services (placed) ---
   { id: 'cityhall', name: 'City Hall', class: 'civic', w: 4, d: 3, height: 2.6, shade: 0.8, blurb: 'Where the junior mayor works. Tap it to see the budget.' },
-  { id: 'school', name: 'School', class: 'civic', service: 'school', cost: 570, chapter: 2, w: 3, d: 3, height: 2.2, shade: 0.8, blurb: 'Classrooms, a playground and a bell.' },
-  { id: 'library', name: 'Library', class: 'civic', service: 'library', cost: 480, chapter: 2, w: 4, d: 3, height: 2.4, shade: 0.8, blurb: 'Free books for everyone, and a cosy reading room.' },
+  { id: 'school', name: 'School', class: 'civic', service: 'school', cost: 520, chapter: 2, w: 3, d: 3, height: 2.2, shade: 0.8, blurb: 'Classrooms, a playground and a bell.' },
+  { id: 'library', name: 'Library', class: 'civic', service: 'library', cost: 420, chapter: 2, w: 4, d: 3, height: 2.4, shade: 0.8, blurb: 'Free books for everyone, and a cosy reading room.' },
   { id: 'clinic', name: 'Clinic', class: 'civic', service: 'clinic', cost: 690, chapter: 4, w: 3, d: 2, height: 1.9, shade: 0.8, blurb: 'Doctors and nurses who help people feel better.' },
   { id: 'safety', name: 'Safety station', class: 'civic', service: 'safety', cost: 630, chapter: 4, w: 3, d: 2, height: 1.9, shade: 0.8, blurb: 'The safety crew checks smoke alarms, teaches bike safety and helps cats down from trees.' },
   { id: 'community', name: 'Community center', class: 'civic', service: 'community', cost: 450, chapter: 4, w: 3, d: 3, height: 1.8, shade: 0.8, blurb: 'Clubs, dances and a big kitchen for everyone.' },
@@ -79,14 +79,14 @@ const defs: ThingDef[] = [
   { id: 'fountain', name: 'Fountain', class: 'park', cost: 180, green: 2, w: 2, d: 2, height: 0.9, shade: 0.3, blurb: 'Splashing water to cool the plaza.' },
   { id: 'playground', name: 'Playground', class: 'park', cost: 220, green: 2, w: 2, d: 2, height: 0.8, shade: 0.2, chapter: 1, blurb: 'A slide, swings and a climbing dome.' },
   { id: 'pond', name: 'Duck pond', class: 'park', cost: 140, green: 3, w: 2, d: 2, height: 0.3, shade: 0.1, chapter: 5, blurb: 'Lily pads, reeds and a family of ducks.' },
-  { id: 'skatepark', name: 'Skate park', class: 'park', cost: 360, green: 1, w: 3, d: 3, height: 0.6, shade: 0.15, chapter: 3, blurb: 'Ramps and rails for skaters and scooters.' },
+  { id: 'skatepark', name: 'Skate park', class: 'park', cost: 300, green: 1, w: 3, d: 3, height: 0.6, shade: 0.15, chapter: 3, blurb: 'Ramps and rails for skaters and scooters.' },
   // --- street things (placed; lamps line the sidewalks by themselves) ---
   { id: 'lamp', name: 'Street lamp', class: 'street', w: 1, d: 1, height: 1.1, shade: 0, blurb: 'Lights the way at night.' },
   { id: 'hydrant', name: 'Hydrant', class: 'street', cost: 6, w: 1, d: 1, height: 0.2, shade: 0, blurb: 'A bright red water point.' },
   { id: 'postbox', name: 'Post box', class: 'street', cost: 8, w: 1, d: 1, height: 0.35, shade: 0, blurb: 'Letters to everywhere.' },
   { id: 'bin', name: 'Bin', class: 'street', cost: 5, w: 1, d: 1, height: 0.2, shade: 0, blurb: 'Keeps the streets tidy.' },
   // --- transit (placed beside a road) ---
-  { id: 'busstop', name: 'Bus stop', class: 'transit', cost: 60, chapter: 3, w: 1, d: 1, height: 0.8, shade: 0.2, blurb: 'Wait here for the bus. Join stops into a route.' },
+  { id: 'busstop', name: 'Bus stop', class: 'transit', cost: 40, chapter: 3, w: 1, d: 1, height: 0.8, shade: 0.2, blurb: 'Wait here for the bus. Join stops into a route.' },
   { id: 'tramstop', name: 'Tram stop', class: 'transit', cost: 170, chapter: 7, w: 1, d: 1, height: 0.9, shade: 0.2, blurb: 'The tram stops here.' },
   // --- landmarks (the story opens them) ---
   { id: 'pier', name: 'Harbour pier', class: 'landmark', w: 2, d: 5, height: 0.6, shade: 0, blurb: 'The old wooden pier, where the ferry docks.' },

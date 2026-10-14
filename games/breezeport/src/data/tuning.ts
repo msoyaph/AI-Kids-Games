@@ -11,8 +11,8 @@ export const TUNING = {
     /** Each resident pays the town this much a minute of play (their town fee). */
     feePerResidentPerMin: 0.15,
     /** A business's bubble fills with this much a minute at levels 1–3, when it has all its customers or workers. */
-    shopPerMin: [3, 5, 8],
-    workPerMin: [2.5, 4.5, 7],
+    shopPerMin: [4, 6, 8],
+    workPerMin: [3, 5, 7],
     /** A bubble collects itself when it has filled for this long (one minute of play). */
     autoCollectSec: 60,
     /** Building a road, a bike lane or tram track, per tile. */
@@ -33,21 +33,24 @@ export const TUNING = {
   },
   growth: {
     /**
-     * Seconds of play between the town's looks for a lot to build on (per zone kind): quick for a
-     * little town, a little slower with every building it has (up to maxEverySec).
+     * Seconds of play between the town's looks for a lot to build on (per zone kind). A small town
+     * grows a little slower and a big one a little faster (slowPerBuilding is negative), so every
+     * chapter takes about as long; kept between min and max.
      */
-    everySec: 80,
-    slowPerBuilding: 0.2,
-    maxEverySec: 110,
+    everySec: 135,
+    slowPerBuilding: -0.12,
+    maxEverySec: 135,
+    minEverySec: 85,
     /** The first few buildings the player's zoning grows come quickly (it's the tutorial). */
     quickStart: 8,
     quickSec: 10,
     /** Scaffolding shows for this long before the building pops. */
     buildSec: 14,
     /** Seconds between level-up checks; a building levels up when its area is happy enough. */
-    levelEverySec: 70,
-    levelSlowPerBuilding: 0.2,
-    maxLevelEverySec: 110,
+    levelEverySec: 100,
+    levelSlowPerBuilding: -0.1,
+    maxLevelEverySec: 100,
+    minLevelEverySec: 60,
     levelHappy: [0, 73, 84],
     /** Demand below this builds nothing new. */
     minDemand: 0.12,
