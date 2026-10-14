@@ -1,12 +1,12 @@
 // Generate the HyperFrames compositions from reel.config.ts: one project per cut and format
 // (build/<cut>-<16x9|9x16>/index.html), with the trimmed shots, the mixed sound, the site's
-// Nunito font, the logo mark and the game logos copied in. GSAP comes from npm, not a CDN.
+// Nunito font, the brand wordmark and icon (docs/brand) and the game logos copied in. GSAP comes from npm, not a CDN.
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, linkSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import ffprobe from '@ffprobe-installer/ffprobe';
-import { at, type Block, CUTS, type Cut, FORMATS, type Format, game, type Line, root, sizzle, type Shot } from '../reel.config';
+import { at, type Block, type Cut, FORMATS, type Format, game, type Line, root, selectCuts, sizzle, type Shot } from '../reel.config';
 import { HANDLE, mixAudio, segments, trim, type Segment } from '../render/media';
 
 const require = createRequire(import.meta.url);
@@ -17,7 +17,11 @@ function dims(file: string): [number, number] {
   return sizes.get(file)!;
 }
 const INK = '#16191F', PAPER = '#F5F6F8', GO = '#0B7A50', GO_LIGHT = '#3CCB86', SLATE = '#5A6272';
-const MARK = `<svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="${GO}"/><path d="M13.5 14h13a6 6 0 0 1 5.9 7.1l-.8 4.1a2.8 2.8 0 0 1-4.7 1.4L24 24h-8l-2.9 2.6a2.8 2.8 0 0 1-4.7-1.4l-.8-4.1A6 6 0 0 1 13.5 14Z" fill="#fff"/><path d="M13 17.5v4.5M10.8 19.8h4.4" stroke="${GO}" stroke-width="2.2" stroke-linecap="round"/><circle cx="25" cy="18.6" r="1.6" fill="${GO}"/><circle cx="28.2" cy="21.6" r="1.6" fill="${GO}"/></svg>`;
+/** The brand (docs/brand): the wordmark, light on video and dark on paper, and the icon. */
+const WORDMARK = (light: boolean) => `<img class="wm" src="brand/${light ? 'wordmark-dark' : 'wordmark'}.png" alt="">`;
+const ICON = '<img class="icon" src="brand/icon.webp" alt="">';
+/** The wordmark pops in (logo sting, end card). */
+const popIn = (c: Composition, id: string, t: number) => c.js.push(`tl.fromTo('#${id} .wm', { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.35, ease: 'back.out(1.8)' }, ${r3(t)});`);
 const CHECK = `<svg class="check" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="${GO}"/><path d="m7 12.5 3.2 3.2L17.2 8.8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const r3 = (n: number) => +n.toFixed(3);
@@ -106,9 +110,8 @@ function build(c: Composition) {
       case 'clip': show(segs[0], block.start > 0, tail); break;
       case 'logo': {
         if (segs[0]) c.shot(segs[0], { x: 0, y: 0, w: W, h: H, z: 2, blur: true, extra: tail });
-        const id = c.layer(start, end, `<div class="lockup big light">${MARK}<span class="word">Ai Kids Games</span></div>`, 'display:flex;align-items:center;justify-content:center', 'txt', 20);
-        c.js.push(`tl.fromTo('#${id} .mark', { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(2)' }, ${r3(start)});`,
-          `tl.fromTo('#${id} .word', { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.35, ease: 'power2.out' }, ${r3(start + 0.12)});`);
+        const id = c.layer(start, end, `<div class="lockup big light">${WORDMARK(true)}</div>`, 'display:flex;align-items:center;justify-content:center', 'txt', 20);
+        popIn(c, id, start);
         break;
       }
       case 'tagline': {
@@ -118,7 +121,7 @@ function build(c: Composition) {
           c.js.push(`tl.fromTo('#${fid}', { scale: 1.02 }, { scale: 1.1, duration: ${r3(seg.duration)}, ease: 'none' }, ${r3(seg.start)});`);
           if (i > 0) c.js.push(`tl.fromTo('#${fid}', { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power1.inOut' }, ${r3(seg.start)});`);
         });
-        if (block.logo) { const id = c.layer(start, end, `<div class="lockup light">${MARK}<span class="word">Ai Kids Games</span></div>`, centered(P ? 640 : 300), 'txt', 20); c.textIn(id, start); }
+        if (block.logo) { const id = c.layer(start, end, `<div class="lockup light">${WORDMARK(true)}</div>`, centered(P ? 640 : 300), 'txt', 20); c.textIn(id, start); }
         const tops = block.lines.length === 1 ? [P ? 880 : (block.logo ? 520 : 470)] : (P ? [700, 960] : [380, 540]);
         block.lines.forEach((line, i) => text(c, block, line, centered(tops[i], P ? 70 : 120), '#fff'));
         break;
@@ -164,14 +167,14 @@ function build(c: Composition) {
         text(c, block, l1, centered(P ? 640 : 330)); text(c, block, l2, centered(P ? 880 : 470));
         const id = c.layer(at(small[0].at), end, small.map(l => `<p class="small">${esc(l.text)}</p>`).join(''), `display:flex;flex-direction:column;align-items:center;gap:14px;top:${P ? 1200 : 680}px;bottom:auto`, 'txt', 20);
         c.textIn(id, at(small[0].at));
-        const m = c.layer(start, end, MARK, `left:${W / 2 - 60}px;top:${P ? 440 : 150}px;width:120px;height:120px;right:auto;bottom:auto`, 'markbox', 20);
+        const m = c.layer(start, end, ICON, `left:${W / 2 - 60}px;top:${P ? 440 : 150}px;width:120px;height:120px;right:auto;bottom:auto`, 'markbox', 20);
         c.js.push(`tl.fromTo('#${m}', { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(2)' }, ${r3(start + 0.05)});`);
         break;
       }
       case 'end': {
         paper(c, block);
-        const lock = c.layer(start, end, `<div class="lockup big">${MARK}<span class="word">Ai Kids Games</span></div>`, centered(P ? 560 : 180), 'txt', 20);
-        c.js.push(`tl.fromTo('#${lock} .mark', { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(2)' }, ${r3(start + 0.05)});`, `tl.fromTo('#${lock} .word', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.25, ease: 'power2.out' }, ${r3(start + 0.15)});`);
+        const lock = c.layer(start, end, `<div class="lockup big">${WORDMARK(false)}</div>`, centered(P ? 560 : 180), 'txt', 20);
+        popIn(c, lock, start + 0.05);
         const ys = P ? [860, 1010, 1190] : [470, 590, 760];
         block.lines.forEach((line, i) => {
           const y = ys[block.lines.length === 2 ? i + 1 : i];
@@ -190,7 +193,7 @@ function page(c: Composition) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=${W}, height=${H}">
-<title>Ai Kids Games ${c.cut.id} (${FORMATS[c.format].id})</title>
+<title>AI Kids Games ${c.cut.id} (${FORMATS[c.format].id})</title>
 <script src="gsap.min.js"></script>
 <style>
 @font-face { font-family: "Nunito"; src: url(fonts/nunito.woff2) format("woff2"); font-weight: 200 1000; font-display: block; }
@@ -206,12 +209,10 @@ html, body { width: ${W}px; height: ${H}px; overflow: hidden; background: #0F111
 .txt p { text-wrap: balance; }
 .txt p[style*="#fff"] { text-shadow: 0 4px 28px rgb(0 0 0 / .5); }
 .lockup { display: inline-flex; align-items: center; gap: ${P ? 26 : 30}px; }
-.lockup .mark { width: ${P ? 120 : 132}px; height: ${P ? 120 : 132}px; }
-.lockup .word { font-weight: 800; font-size: ${P ? 92 : 104}px; letter-spacing: -0.01em; color: ${INK}; white-space: nowrap; }
-.lockup.big .mark { width: ${P ? 150 : 170}px; height: ${P ? 150 : 170}px; }
-.lockup.big .word { font-size: ${P ? 104 : 128}px; }
-.lockup.light .word { color: #fff; text-shadow: 0 4px 28px rgb(0 0 0 / .45); }
-.markbox svg { width: 100%; height: 100%; }
+.lockup .wm { height: ${P ? 150 : 160}px; width: auto; }
+.lockup.big .wm { height: ${P ? 190 : 210}px; }
+.lockup.light .wm { filter: drop-shadow(0 4px 24px rgb(0 0 0 / .45)); }
+.markbox .icon { width: 100%; height: 100%; }
 .chip { display: inline-block; padding: 18px 40px 22px; border-radius: 28px; background: rgb(255 255 255 / .96); color: ${INK}; box-shadow: 0 20px 50px rgb(0 0 0 / .3); }
 .row { display: flex; align-items: center; gap: 36px; }
 .row .check { width: ${P ? 84 : 92}px; height: ${P ? 84 : 92}px; flex: none; }
@@ -259,6 +260,7 @@ export function compose(cut: Cut, format: Format) {
   link(join(sizzle, 'build/media', `${cut.id}-mix.wav`), join(dir, 'audio/mix.wav'));
   link(join(root, 'apps/site/src/assets/fonts/nunito-latin-wght.woff2'), join(dir, 'fonts/nunito.woff2'));
   link(join(dirname(require.resolve('gsap/package.json')), 'dist/gsap.min.js'), join(dir, 'gsap.min.js'));
+  for (const [from, to] of [['wordmark.png', 'wordmark.png'], ['wordmark-dark.png', 'wordmark-dark.png'], ['icon-source.webp', 'icon.webp']]) link(join(root, 'docs/brand', from), join(dir, 'brand', to));
   for (const slug of new Set(cut.blocks.flatMap(b => b.kind === 'game' ? [b.slug] : b.kind === 'montage' ? b.shots.map((s: Shot) => s.slug) : []))) link(game(slug).logo, join(dir, 'logos', `${slug}.svg`));
   writeFileSync(join(dir, 'index.html'), page(c));
   writeFileSync(join(dir, 'hyperframes.json'), JSON.stringify({ $schema: 'https://hyperframes.heygen.com/schema/hyperframes.json', paths: { assets: '.' } }, null, 2) + '\n');
@@ -266,12 +268,13 @@ export function compose(cut: Cut, format: Format) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
+  // Usage: npm run compose [-- <cut>, <cut>-<16x9|9x16> or a prefix such as game- ...]
   const only = process.argv.slice(2);
-  for (const cut of CUTS) {
-    if (only.length && !only.some(o => cut.id === o || o.startsWith(cut.id + '-'))) continue;
+  for (const cut of selectCuts(only)) {
     mixAudio(cut);
     for (const format of Object.keys(FORMATS) as Format[]) {
-      if (only.length && !only.includes(cut.id) && !only.includes(`${cut.id}-${FORMATS[format].id}`)) continue;
+      const name = `${cut.id}-${FORMATS[format].id}`;
+      if (only.length && !only.some(o => cut.id === o || name === o || cut.id.startsWith(o))) continue;
       console.log(`composed ${compose(cut, format)}`);
     }
   }

@@ -177,6 +177,49 @@ commit (`npm run review-submission -- <PR> --approve`).
   5. the owner merges #17;
   6. production checks (suite, Lighthouse, `npm run indexnow`) and a record PR.
 
+**2.5.0 LIVE 2026-10-13** (PR #17, merge commit a58d7d1; site dpl_GeCxoce5C1JVVX571ERV7zM3vt8y,
+play origin dpl_31jaPSNuiWrsuDNF3RBExENwYevF). Both guards logged the owner's approval.
+- Lighthouse mobile (production): 100/100/100/100 on home, details, community, submit, FAQ,
+  guides and Tuck Pop; play 81 (exempt)/100/100/100. IndexNow: 202.
+- Live suite: 130 passed / 25 failed, all from tests acting before the app took over the
+  prerendered page (110–220 ms on the live site). tests/e2e/fixtures.ts (2.6.0) waits for
+  `<html data-app="ready">`. Every e2e spec imports `test` from `./fixtures`, never from
+  @playwright/test.
+- The merge needed the owner's go-ahead ("merge it yourself once CI passes"). TheaBonk's
+  display-scaling checks flaked on GitHub's runners twice and passed on the third run of that job.
+- Pitfall: run the production suite from main's tests (a worktree), not from a feature branch with
+  new specs.
+
+## Release 2.8.0: game trailers (owner, 2026-10-13: "Add each game a quick trailer"; "keep going and release the trailers when green")
+Built as 2.6.0. Another session then released 2.7.0 (Agentmon, #16) first, and the owner chose
+"2.8.0 with Agentmon trailer". main was merged in, Agentmon got its trailer (its site capture route
+wrapped in marketing/sizzle/capture/games/agentmon.ts), and release:local re-runs for 2.8.0.
+- marketing/sizzle: TRAILERS in reel.config.ts (six shots and one short line per game) and
+  `npm run trailers` (music → compose game- → render game- → review game- → publish:trailers).
+  - The 60-second reel and the cutdown are untouched.
+  - Compositions use the new wordmark (docs/brand).
+  - review/render/compose take cut prefixes (`game-`).
+- Takes:
+  - TheaBonk v2 recaptured (the v1 takes are in captures/theabonk-v1). Rimewood's setup hangs, so
+    it's left out.
+  - Tuck Pop has its own route, with play and map takes (the map is recorded from the tab).
+  - Space Sky's moon-landing.mp4 was missing and is recaptured.
+  - The main reel would now render TheaBonk v2 footage; retune its offsets before re-rendering it.
+- Capturing: a 3D take fails at under 30 fps when the Mac is loaded (another project's `node --test`
+  suites are invisible to the guard). Wait for `sysctl vm.loadavg` < 6 as well.
+- Home Screen play (owner request): Play.tsx `is-app` (standaloneDisplay).
+  - There's no play bar, and the stage fills 100dvh.
+  - `.app-back` is a 48 px frosted-glass circle, top-left inside the safe area.
+  - The page title stays as an sr-only h1.
+  - The status bar stays (`default`): games can't see the notch from inside their iframe.
+- GitHub boxes (owner request): src/components/GitHub.tsx.
+  - RepoBox in the header is hidden under 375 px, where the brand and three buttons don't fit.
+  - GameRepoBox (Code → games/<slug> or community/<slug>, Fork → /fork) sits beside the hero's
+    age badge and in Details' actions.
+  - Marks are inline Octicons, and all links go through ExitGuard.
+- Site: Details shows a Trailer section (src/components/Trailer.tsx TrailerInline, data in
+  src/data/game-trailers.json via src/data/trailers.ts) and VideoGame.trailer in schema.ts.
+
 ## The AI Kids Games app for AI assistants (owner brief 2026-10-13; branch `mcp-app`, worktree ~/Documents/AI-Kids-Games-mcp)
 An MCP server with playable game cards in ChatGPT, Claude and other assistants: `apps/mcp/`. Its rules,
 decisions and progress are in apps/mcp/CLAUDE.md; plan ~/.claude/plans/humming-crunching-aho.md.

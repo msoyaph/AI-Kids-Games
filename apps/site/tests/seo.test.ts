@@ -101,6 +101,14 @@ describe('structured data (schema.org, with what search engines require)',() => 
     expect(video!.description.length).toBeGreaterThan(100);
     for (const url of [...video!.thumbnailUrl,video!.contentUrl,video!.caption.contentUrl]) expect(existsSync(pub(local(url))),url).toBe(true);
   });
+  it('gives every game page its own trailer as the VideoGame\'s trailer, with its own files',() => {
+    for (const game of games) {
+      const [videoGame] = of(`/game/${game.slug}`,'VideoGame');
+      const video = videoGame!.trailer;
+      expect(video,game.slug).toMatchObject({ '@type': 'VideoObject',name: `${game.title} trailer`,duration: 'PT15S',uploadDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) });
+      for (const url of [...video.thumbnailUrl,video.contentUrl,video.caption.contentUrl]) expect(existsSync(pub(local(url))),url).toBe(true);
+    }
+  });
   it('links only to this site, its profiles, schema.org and the games’ license',() => {
     const allowed = [ORIGIN,...PROFILES,FOUNDER.profile,'https://schema.org','https://opensource.org/licenses/MIT'];
     for (const path of [...sitePaths(),...unlistedPaths()]) {

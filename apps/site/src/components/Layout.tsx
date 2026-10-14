@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { RepoBox } from './GitHub';
 import { Icon } from './Icon';
 import { BRAND } from '../data/site';
 import { usePreferences } from '../lib/preferences';
@@ -27,6 +28,7 @@ export default function Layout() {
         <NavLink to="/parents" className={navClass}>For parents</NavLink>
       </nav>
       <div className="header-actions">
+        <RepoBox />
         <Link className="icon-button" to="/games?focus=search" aria-label="Search games"><Icon name="search" /></Link>
         <button className="icon-button" onClick={() => setDark(!dark)} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}><Icon name={dark ? 'sun' : 'moon'} /></button>
       </div>

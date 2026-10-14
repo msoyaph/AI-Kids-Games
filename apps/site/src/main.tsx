@@ -1,4 +1,4 @@
-import { lazy, Suspense, Component, type ComponentType, type ReactNode } from 'react';
+import { lazy, Suspense, Component, useEffect, type ComponentType, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import ExitGuard from './components/ExitGuard';
@@ -21,6 +21,11 @@ for (const name of Object.keys(loaders) as PageName[]) {
   pages[name] = () => { const Page = ready[name]; return Page ? <Page /> : <Lazy />; };
 }
 
+function AppReady() {
+  useEffect(() => { document.documentElement.dataset.app = 'ready'; },[]);
+  return null;
+}
+
 class FriendlyBoundary extends Component<{ children: ReactNode },{ failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
@@ -32,5 +37,7 @@ class FriendlyBoundary extends Component<{ children: ReactNode },{ failed: boole
 // the same markup in one step, with no loading screen in between.
 const first = pageFor(location.pathname);
 void loaders[first]().then(module => { ready[first] = module.default; },() => {}).finally(() => {
-  createRoot(document.getElementById('root')!).render(<FriendlyBoundary><BrowserRouter><PreferencesProvider><Suspense fallback={<div className="route-loading" role="status">Loading…</div>}><AppRoutes pages={pages} /></Suspense><ExitGuard /></PreferencesProvider></BrowserRouter></FriendlyBoundary>);
+  // The prebuilt HTML is inert until this first render replaces it: <html data-app="ready"> says the
+  // page now answers taps (tests wait for it before pressing anything right after loading).
+  createRoot(document.getElementById('root')!).render(<FriendlyBoundary><AppReady /><BrowserRouter><PreferencesProvider><Suspense fallback={<div className="route-loading" role="status">Loading…</div>}><AppRoutes pages={pages} /></Suspense><ExitGuard /></PreferencesProvider></BrowserRouter></FriendlyBoundary>);
 });

@@ -5,12 +5,13 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import sharp, { type OverlayOptions } from 'sharp';
-import { at, BEAT, checkCut, CUTS, FORMATS, type Format, minSeconds, sizzle } from '../reel.config';
+import { at, BEAT, checkCut, FORMATS, type Format, minSeconds, selectCuts, sizzle } from '../reel.config';
 import { ffmpegPath } from '../render/media';
 
-const out = join(sizzle, 'out'), dir = join(out, 'review');
+// Usage: npm run review [-- <cut id or prefix> ...] (e.g. game- for the games' trailers).
+const only = process.argv.slice(2), out = join(sizzle, 'out'), dir = join(out, 'review');
 mkdirSync(dir, { recursive: true });
-const report: string[] = ['# Sizzle reel review', ''], failures: string[] = [];
+const report: string[] = [only.length ? `# Review: ${only.join(', ')}` : '# Sizzle reel review', ''], failures: string[] = [];
 const fail = (m: string) => { failures.push(m); report.push(`- **FAIL** ${m}`); };
 const ok = (m: string) => report.push(`- ${m}`);
 
@@ -74,7 +75,7 @@ function loudness(file: string) {
   return { I, TP };
 }
 
-for (const cut of CUTS) {
+for (const cut of selectCuts(only)) {
   report.push(`## ${cut.id} (${(cut.beats * BEAT).toFixed(2)} s)`, '');
   const problems = checkCut(cut);
   if (problems.length) problems.forEach(fail); else ok(`Timing and readability: every block on the beat grid; every line on screen at least words ÷ 1.8 + 0.5 s (shortest margin ${Math.min(...cut.blocks.flatMap(b => 'lines' in b ? b.lines.filter(l => l.size !== 'small').map(l => (b.end - l.at) * BEAT - minSeconds(l.text)) : [])).toFixed(2)} s).`);
@@ -103,12 +104,14 @@ for (const cut of CUTS) {
   }
   report.push('');
 }
-for (const web of ['trailer-1080.mp4', 'trailer-1080.webm', 'trailer-720.mp4', 'trailer-720.webm']) {
+const webFiles = only.length ? [] : ['trailer-1080.mp4', 'trailer-1080.webm', 'trailer-720.mp4', 'trailer-720.webm'];
+for (const cut of selectCuts(only).filter(c => c.id.startsWith('game-'))) for (const ext of ['mp4', 'webm']) webFiles.push(`trailers/${cut.id.slice(5)}/trailer-720.${ext}`);
+for (const web of webFiles) {
   const file = join(out, web);
   if (!existsSync(file)) continue;
   const bytes = readFileSync(file).length, { I, TP } = loudness(file);
-  (bytes < 8_000_000 && TP <= -1 ? ok : fail)(`${web}: ${(bytes / 1e6).toFixed(2)} MB (limit 8), ${I.toFixed(1)} LUFS, ${TP.toFixed(1)} dBTP.`);
+  (bytes < (web.startsWith('trailers/') ? 3_000_000 : 8_000_000) && TP <= -1 ? ok : fail)(`${web}: ${(bytes / 1e6).toFixed(2)} MB (limit ${web.startsWith('trailers/') ? 3 : 8}), ${I.toFixed(1)} LUFS, ${TP.toFixed(1)} dBTP.`);
 }
-writeFileSync(join(dir, 'report.md'), report.join('\n') + '\n');
+writeFileSync(join(dir, only.length ? `report-${only.join('_').replace(/[^a-z0-9_-]/gi, '')}.md` : 'report.md'), report.join('\n') + '\n');
 console.log(report.join('\n'));
 if (failures.length) { console.error(`\n${failures.length} check(s) failed.`); process.exit(1); }

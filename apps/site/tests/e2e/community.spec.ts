@@ -1,4 +1,4 @@
-import { expect,test,type Page } from '@playwright/test';
+import { expect,test,type Page } from './fixtures';
 import { guard } from './games';
 
 // Community games (apps/play, scripts/lib/community.ts). CI and local test builds set
