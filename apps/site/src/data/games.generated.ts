@@ -700,6 +700,93 @@ export const generatedGames: Game[] = [
     "license": "MIT"
   },
   {
+    "slug": "fieldlark",
+    "title": "Fieldlark",
+    "tagline": "Wake up the town farm, field by field.",
+    "description": "Build and grow a 3D farm from above: plant 30 real crops, raise animals, run workshops, sell at your own farm stand and bring back the town's Harvest Fair.",
+    "version": "1.0.0",
+    "categories": [
+      "Farming",
+      "Strategy",
+      "Cozy"
+    ],
+    "tags": [
+      "3D",
+      "Farming",
+      "Building",
+      "Learning",
+      "Seasons"
+    ],
+    "keywords": [
+      "farm game",
+      "farm builder",
+      "3d farm",
+      "crops",
+      "kids farming game",
+      "browser game",
+      "offline game",
+      "learning game"
+    ],
+    "ageGuidance": "Ages 8–14",
+    "minAge": 8,
+    "contentNotes": "Gentle farming with no fighting or scary content. Nothing ever wilts, dies or gets sick, there are no timers outside play, and pricing mistakes only mean selling a little less. Some reading, with read-aloud. The farm saves in this browser.",
+    "estimatedPlayTime": "About 6–8 hours of story, then endless farming",
+    "quickStart": [
+      "Press Start farming and read Hattie's welcome.",
+      "Tap an empty field and choose seeds, then water them.",
+      "Tap ripe crops to pick them, and fill an order on the board by the dock."
+    ],
+    "controls": {
+      "types": [
+        "Keyboard",
+        "Mouse",
+        "Gamepad",
+        "Touch"
+      ],
+      "howToPlay": [
+        "Tap or click a tile to use it; drag across fields to plant, water or pick a whole row.",
+        "Drag to move around, pinch or scroll to zoom, and twist two fingers or press Q and E to turn.",
+        "Tap the farmhouse for the Farm Book, the Ledger, helpers and the Farm Lab; tap the date for the weather.",
+        "Keyboard: number keys pick the tools shown on the tool bar, B opens Build mode, T moves into the tool bar, Escape goes back.",
+        "Gamepad: the left stick moves the tile cursor, A uses a tile, the bumpers turn, X opens the tools, Y Build mode, B goes back and Start the menu."
+      ]
+    },
+    "supportedDevices": [
+      "Computer",
+      "Tablet",
+      "Phone"
+    ],
+    "orientation": "any",
+    "requirements": [
+      "WebGL 2"
+    ],
+    "coverLayers": [
+      "float",
+      "twinkle"
+    ],
+    "releaseDate": "2026-10-14",
+    "featured": false,
+    "accentColor": "#cfe8b0",
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "fieldlark.",
+      "keys": [
+        "fieldlark.save",
+        "fieldlark.save.bak",
+        "fieldlark.save.broken",
+        "fieldlark.settings"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
+  },
+  {
     "slug": "shooberry",
     "title": "Shooberry",
     "tagline": "Plant friendly helpers and save the picnic snacks.",

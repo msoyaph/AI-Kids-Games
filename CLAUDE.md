@@ -544,20 +544,26 @@ back.
   - **Lighthouse mobile:** home 99/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
     Tuck Pop details and play 99/100/100/100.
 
-## Ninth game: Shooberry (owner brief 2026-10-14; slug `shooberry`, branch `garden-wip`, worktree ~/Documents/AI-Kids-Games-garden)
+## Tenth game: Shooberry (owner brief 2026-10-14; slug `shooberry`, branch `garden-wip`, worktree ~/Documents/AI-Kids-Games-garden)
 A 3D lane-defense garden game (Three.js 0.186.1, ages 7+): plant friendly helpers, shoo silly critters,
 save the picnic. Rules, decisions, the IP log and status are in games/shooberry/CLAUDE.md.
 - **Owner:** approved the look ("Ok good graphics quality"), picked the name Shooberry, then "now finish
   the game end to end and deploy it to production" (replaces the brief's stop before production).
-- **Release 2.10.0** (2.9.0 was the assistants app, shipped by the MCP session the same day; `main` was
-  merged in). Game 1.0.0; every other game stays at its version.
+- **Release 2.11.0, list position 10, with MCP app 1.2.0.** Built as 2.10.0; while it stalled on a stuck
+  preview capture, the owner chose to ship Fieldlark first (2.10.0, #28, MCP 1.1.0), and `main` was merged
+  in again. Game 1.0.0; every other game stays at its version.
+- **Also in 2.11.0** (owner: "Cliff Valley, Vanex Defense, Space Sky, and Calex Cart preview is not playing
+  the video"): those four games on temporary art get gameplay loops from their current builds (the
+  trailers' takes, `gallery: false`; `loop: true` in apps/site/src/data/temporary-art.ts).
 - **Repo side:** `pvz`, `popcap` and `plants versus` on the trademark blocklist (phase 0). Shooberry is a
-  fullscreen game in the assistants app (its signal reads the hook's `screen`). marketing/sizzle gained
-  `npm run publish:trailers -- <slug>` (publish one game's trailer, keep the others' files and data).
-- **Order:** release commit (2.10.0, DEPLOYMENT.json approval quoting the owner) → `npm run release:local`
-  on a quiet machine → PR, CI green → `AIKG_ALLOW_PRODUCTION=2.10.0` on ai-kids-games and
-  ai-kids-games-play (the MCP project stays at 1.0.0, already allowed) → merge → production checks and
-  a record PR.
+  fullscreen game in the assistants app (its signal reads the hook's `screen`). marketing/sizzle
+  `npm run publish:trailers -- <slug>` publishes one game's trailer (both sessions added it; main's kept).
+- **Order:** merge main → 2.11.0 / MCP 1.2.0 approvals quoting the owner → `npm run release:local` on a quiet
+  machine (in a fresh worktree build games/space-sky first: its suite serves dist/) → CI green →
+  `AIKG_ALLOW_PRODUCTION` 2.11.0 on ai-kids-games and ai-kids-games-play and 1.2.0 on ai-kids-games-mcp →
+  merge → production checks and a record PR.
+- **Pitfall:** a headed capture stalls if the screen locks (rAF stops); the stuck Calex Cart take waited 8
+  hours. Keep the Mac awake and unlocked while capturing.
 
 ## Release 2.7.0: Agentmon (owner, 2026-10-13: "Upload the game to the live Production https://ai-kids-games-fawn.vercel.app/")
 - **Scope:** PR #16 (Agentmon 1.1, which carries the 1.0 PR #13). Game 1.1.0. All other games stay at
@@ -604,6 +610,33 @@ polish across the game, 25 new Agentmon (77 in all) and the post-game Banyan Hol
 at the Agent Base. Game 1.1.0, re-imported; no new storage keys and no save migration (1.0 saves
 load as they are, tested with a real 1.0 save). The PR keeps the site at its current version; the
 owner plays it first, and the release (on its own or together with 1.0) bumps the site then.
+
+## Fieldlark, the farm game (owner brief 2026-10-13; slug `fieldlark`, branch `fieldlark`; working name was Farm WIP / `farm-wip`)
+
+A 3D farm-building and management game for ages 8–14, built in its own worktree
+(~/Documents/FarmerTown/AI-Kids-Games-farm) from origin/main f331dd9. Brief: docs/prompts/fieldlark.md.
+Plan, rules and status: games/fieldlark/CLAUDE.md (plans: games/fieldlark/docs/PLAN.md, then PLAN-2.md).
+
+- **Name:** **Fieldlark**, the owner's pick of five web-checked names (2026-10-14). The working name
+  "Farm WIP" (`farm-wip`, prefix `farmwip.`) was renamed before any player had a save.
+- **Repo side:** the inspiration's title and its publisher join the trademark blocklist, with a site
+  manifest test.
+- **Other sessions:** never run heavy tests alongside another session's
+  (games/fieldlark/scripts/quiet-check.mjs, and respect its exit code).
+- **Release (owner, 2026-10-14, the "finish end to end" brief):**
+  - Finish the game (games/fieldlark/docs/PLAN-2.md), rename it and import it.
+  - Open a PR, get CI green and hand over the preview link. **Stop before production:** the owner
+    plays it and approves the release.
+  - This replaces the earlier "deploy when complete".
+- **Phase 15 (site step):** game 1.0.0 listed "Ready to play" at `site.order` 9, imported, storage audited, art, previews, its 15-second
+  trailer (`npm run publish:trailers -- fieldlark` in marketing/sizzle publishes one game and keeps the
+  others), site tests at 9 games, and the MCP app bumped to 1.1.0 (owner-approved; its production
+  still needs the owner's approval in apps/mcp/DEPLOYMENT.json).
+- **Production (owner, 2026-10-14, in chat):** "once done and complete, deploy the game to live
+  production. Then create a 1 minute sizzle reel YT 1920×1080 and 1080x1920 video game". Shooberry's
+  release (PR #27, 2.10.0) had stalled on a capture for 8 hours, so the owner chose "Stop it; Fieldlark
+  first": Fieldlark ships as site 2.10.0 (position 9) with MCP app 1.1.0, and Shooberry becomes 2.11.0
+  (position 10). PR #28.
 
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),

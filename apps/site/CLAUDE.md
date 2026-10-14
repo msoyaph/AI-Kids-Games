@@ -214,19 +214,45 @@ Trial take is cropped to the room. Loop 7.8 s.
 Tests now count 8 games (age 7: LC, Space Sky, Tuck Pop, Agentmon); the grid is checked at 8 (unit and
 browser); the launch tests start a new Agentmon adventure in slot 1 and continue it after a reload.
 
-## Shooberry, the ninth game (release 2.10.0)
+## Fieldlark, the ninth game (owner's "finish end to end" brief, 2026-10-14; PR, then the owner's approval)
 
-Listed from `games/shooberry/game.json` (Strategy and Casual, ages 7+, order 9, landscape, WebGL 2). Art
+Listed from `games/fieldlark/game.json` (1.0.0, "Ready to play", ages 8–14, Farming / Strategy / Cozy,
+`site.order` 9: Shooberry's release stalled, and the owner chose to ship Fieldlark first, as site 2.10.0). Art in
+`public/media/fieldlark/`: a generated cover (the cottage, fields of wheat, strawberries and cabbages,
+the hen house, the river with the Little Lark at the dock), float (the lark) and twinkle layers, a logo
+("Field" in white, "lark" in butter yellow, outlined green; `scripts/art/logos.ts`), and the OG image
+(only `og/fieldlark.jpg` and the refreshed `og/site.jpg` are kept; `og/agentmon.jpg` came out
+byte-different and was restored). Previews come from `scripts/capture/fieldlark.ts`: the game's own
+`?scene=showcase` route (a staged late-game farm that never saves) with `&t=` for the season and hour
+and `&x=&z=&zoom=` for the view; the canvas is recorded, so the HUD is left out. Loop 8.0 s (farm,
+night, winter, town); stills add a greenhouse close-up. Pitfall: arrow-key pans are fast (about 6 tiles
+a second, and the camera eases on after the key is up), so takes hold them for well under a second.
+Its trailer is `marketing/sizzle/capture/games/fieldlark.ts` (longer takes, a real drag-to-harvest
+and the animals up close); `npm run publish:trailers -- fieldlark` publishes one game's trailer and
+keeps the others' as they are.
+Tests now count 9 games (age 8: 7 games; age 10: 9; Farming: Cliff Valley and Fieldlark); the grid is
+checked at 9 (3 × 3); the launch tests start a new farm ("Start farming", then the story cards) and
+continue it after a reload ("Keep farming"). The storage audit adds `fieldlark.save`, `.save.bak`,
+`.settings` and the rare `.save.broken` (worst case 346 KB, a finished story about 40 KB).
+
+## Shooberry, the tenth game (release 2.11.0)
+
+Listed from `games/shooberry/game.json` (Strategy and Casual, ages 7+, order 10, landscape, WebGL 2; built as 2.10.0, it ships after Fieldlark as
+2.11.0). Art
 in `public/media/shooberry/`: a cover (the meadow picnic: Rowan Flicker flicks a berry at the Snack Snail,
 Comfrey Crumble, an Ant Column, the gingham blanket and basket) with `drift` (clouds) and `twinkle`
 layers, a berry-red logo with the game's ink outline, and the OG image (`og.ts` also re-encoded
-`og/agentmon.jpg` byte-different, so it was restored; `og/site.jpg` now says 9 games). Previews come from
+`og/agentmon.jpg` byte-different, so it was restored; `og/site.jpg` is refreshed). Previews come from
 `scripts/capture/shooberry.ts`: the game's `?scene=` routes, all recorded from the canvas (the HUD is DOM
 and hidden there); loop 7.8 s (wave, boss, dusk, cloud) and six stills. The trailer is in
-`public/trailer/shooberry/`. Tests count 9 games (age 7: Light Crossing, Space Sky, Tuck Pop, Agentmon,
-Shooberry; the grid at 9); the launch tests play Adventure level 1 (seeds, tips, a plant) and, after a
+`public/trailer/shooberry/`. Tests count 10 games (age 7: Light Crossing, Space Sky, Tuck Pop, Agentmon,
+Shooberry; age 8: 8 games; age 10: 10; the grid at 10); the launch tests play Adventure level 1 (seeds, tips, a plant) and, after a
 reload, check that level 1 remembers the seeds and skips the tips. `boot()` turns phones sideways for it,
 as for the other landscape games.
+Release 2.11.0 also gives the four games on temporary art (Cliff Valley, Vanex Defense, Space Sky,
+Calex Cart) a gameplay loop from the builds that ship: `scripts/capture/<slug>.ts` reuses the trailer's
+takes with `gallery: false` (loop and poster only; their screenshot covers and galleries stay), and
+`loop: true` in `src/data/temporary-art.ts` turns the loop on (mediaFor, the registry, media tests).
 
 ## Next: Light Crossing v2.0 (owner request, on hold)
 

@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.10.0",
+  "release": "2.11.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.10.0",
+    "release": "2.11.0",
     "date": "2026-10-14",
     "approvedBy": "Owner",
-    "scope": "Shooberry 1.0.0, the ninth game: a 3D lane-defense garden game for ages 7+ (24 plants, 20 critters, 5 mini-bosses and the Snack Parade float, 50 Adventure levels in five worlds, Garden Party, 20 Challenges, a Daily garden, the Seed and Invader Books). Listed \"Ready to play\" with its cover, logo, OG image, preview loop, six stills and a 15-second trailer; its build is games/shooberry imported unchanged (BUILD_IMPORTS.json). In the AI Kids Games app for assistants it is a fullscreen game: the app's catalog follows the released games (npm run manifests), and the app stays at 1.0.0. Every other game stays at its current version and build.",
-    "note": "Owner wrote: \"Ok good graphics quality, now finish the game end to end and deploy it to production\" (2026-10-14), after approving the look and picking the name Shooberry. This replaces the brief's \"stop before production\" for this release. Guard: scripts/check-deployment.ts needs this record for 2.10.0, a passing localSuites record for 2.10.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.10.0 in the Production environment of ai-kids-games and ai-kids-games-play, and a build from main."
+    "scope": "Shooberry 1.0.0, the tenth game (list position 10): a 3D lane-defense garden game for ages 7+ (24 plants, 20 critters, 5 mini-bosses and the Snack Parade float, 50 Adventure levels in five worlds, Garden Party, 20 Challenges, a Daily garden, the Seed and Invader Books). Listed \"Ready to play\" with its cover, logo, OG image, preview loop, six stills and a 15-second trailer; its build is games/shooberry imported unchanged (BUILD_IMPORTS.json). Also: gameplay preview loops for Cliff Valley, Vanex Defense, Space Sky and Calex Cart, recorded from the builds that ship (they showed only a still); their screenshot covers and galleries stay. In the AI Kids Games app for assistants Shooberry is a fullscreen game (the app's catalog follows the released games). Every game other than Shooberry stays at its current version and build.",
+    "note": "Owner wrote: \"Ok good graphics quality, now finish the game end to end and deploy it to production\" (2026-10-14), then \"Once done and complete, and deploy all changes and games to production\", and reported \"Cliff Valley, Vanex Defense, Space Sky, and Calex Cart preview is not playing the video\". Built as 2.10.0; the owner then chose to ship Fieldlark first as 2.10.0 (#28), so this is 2.11.0 at list position 10. Guard: scripts/check-deployment.ts needs this record for 2.11.0, a passing localSuites record for 2.11.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.11.0 in the Production environment of ai-kids-games and ai-kids-games-play, and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
@@ -400,7 +400,7 @@
   ],
   "localSuites": {
     "release": "2.10.0",
-    "commit": "ae86d99",
+    "commit": "2221afb",
     "suites": [
       {
         "game": "space-sky",
@@ -411,7 +411,7 @@
         "failed": 0,
         "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-14T07:10:53.519Z"
+        "ranAt": "2026-10-14T17:11:08.232Z"
       },
       {
         "game": "light-crossing",
@@ -422,7 +422,7 @@
         "failed": 0,
         "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-14T06:58:53.879Z"
+        "ranAt": "2026-10-14T17:54:37.017Z"
       }
     ]
   }

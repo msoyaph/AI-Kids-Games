@@ -16,13 +16,15 @@ from this file alone.
 | 5 | Interface, Seed and Invader Books, settings, audio | **done** (85b75e8) |
 | 6 | Garden Party, 20 Challenges, Daily, balance and pacing | **done**: reports/balance.md, reports/pacing.md (5.0 h) |
 | 7 | Performance, browser tests, visual review | **done** (34d2a10): 53 browser tests on 6 projects, CI rehearsal (software WebGL) green, reports/perf.md |
-| 8 | Name, site, trailer, PR, **production** (owner: "now finish the game end to end and deploy it to production") | **in progress**: listed, imported, audited, art, previews and trailer done; release **2.10.0** next |
+| 8 | Name, site, trailer, PR, **production** (owner: "now finish the game end to end and deploy it to production") | **in progress**: listed, imported, audited, art, previews and trailer done; release **2.11.0** (after Fieldlark's 2.10.0) |
 
-## Release 2.10.0 (site) with Shooberry 1.0.0
+## Release 2.11.0 (site) with Shooberry 1.0.0
 
 - `main` moved while this was built: the MCP session shipped website **2.9.0** and the AI Kids Games app for
-  assistants (apps/mcp 1.0.0) on 2026-10-14, so Shooberry ships as website **2.10.0**. `origin/main` was
-  merged into `garden-wip` (4da351e; the lockfile conflict was only the new workspace entries).
+  assistants (apps/mcp 1.0.0) on 2026-10-14, so Shooberry was built as website **2.10.0** (merge 4da351e).
+  Then, while it stalled on a stuck preview capture, the owner chose to ship Fieldlark first as 2.10.0
+  (#28), so Shooberry ships as **2.11.0** at list position **10**, with the assistants app **1.2.0** (adding a
+  game bumps it, as Fieldlark's 1.1.0 did). `main` was merged in again; every shared list keeps both games.
 - Manifest fields from 2.9.0: `sessionMinutes` [10, 30], `moods` cheerful/brainy/exciting, `embed` fullscreen
   (a 3D game, like Space Sky). The assistants app's catalog picks Shooberry up from `npm run manifests`; its
   pause/round-end signal reads the hook's `screen` (apps/mcp/widget/src/signals.ts). The game reads gamepads

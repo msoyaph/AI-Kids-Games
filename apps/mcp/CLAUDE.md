@@ -114,6 +114,15 @@ merge.
      CI green; merge #24; production checks; a record PR.
    - No directory submission.
 
+6. MCP app 1.1.0 (Fieldlark branch, owner's go 2026-10-14: "approved to bump the catalog app's version
+   when Fieldlark is added (full-screen). It still goes live only with my production approval."):
+   - The catalog gains Fieldlark (`embed: fullscreen`) from `npm run manifests`.
+   - Its pause signal (widget/src/signals.ts): the game's Menu or Settings is open
+     (`section.panel[aria-label="Menu"|"Settings"]`), which is when its farm clock stops; the farm never
+     "ends" (endless goals after the credits). tests/widget-logic.test.ts checks the marks in the build.
+   - DEPLOYMENT.json still approves 1.0.0 only, so the guard refuses 1.1.0 in production until the
+     owner approves it with the Fieldlark release.
+
 ## Follow-ups (not in this PR)
 
 - **Cliff Valley:** add `import 'pixi.js/unsafe-eval';` at the top of `src/render/renderer.ts`, as
