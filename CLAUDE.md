@@ -495,14 +495,22 @@ back.
   their current versions.
 - **Why 2.7.0:** the other session's 2.6.0 (PR #21, a trailer for every game) was already approved
   and in CI, so Agentmon ships right after it.
-- **Order:**
-  1. release commit (2.7.0, DEPLOYMENT.json approval);
-  2. `npm run release:local` on a quiet machine, and commit localSuites;
-  3. #21 merged, then `main` merged in again;
-  4. CI green;
-  5. `AIKG_ALLOW_PRODUCTION=2.7.0` in both projects' Production environments;
-  6. merge #16;
-  7. production checks (suite, Lighthouse) and a record PR.
+- **What happened:** #21 stayed blocked on a flaky site test, and the owner asked for Agentmon now
+  ("Upload the game to github and make it live in the website now"), so 2.7.0 shipped before it.
+  **#21 now needs a version above 2.7.0**, with its approval and GPU suites recorded for it
+  (AIKG_ALLOW_PRODUCTION is 2.7.0, so a 2.6.0 build is refused).
+  1. release commit 3db0970; `release:local` (Space Sky 42/0 after building its dist in the worktree;
+     Light Crossing 191/0), ac9426b;
+  2. CI green on #16; AIKG_ALLOW_PRODUCTION=2.7.0 in both projects;
+  3. #16 merged (f331dd9); #13 marked merged with it.
+- **2.7.0 LIVE 2026-10-14** (dpl_DDqZnDd92A9dPjpXGhoyWXSmJvmD):
+  - **Guard:** "approved by the owner on 2026-10-13; GPU browser suites passed on 3db0970".
+  - **Production suite:** 131 passed, 30 failed, 97 skips. Every game's launch test passes; the
+    failures are clicks on the prebuilt page before the app takes over (the timing #21's test fix
+    handles) and the grid's local-only mock page. Repeated at a person's pace on production (desktop
+    Chromium, iPhone WebKit), every one of those interactions works with no console errors.
+  - **Lighthouse mobile:** home 98/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
+    Agentmon details 99/100/100/100 and play 86 (exempt)/100/100/100.
 
 ## Eighth game: Agentmon (owner brief 2026-10-13; slug `agentmon`, branch `agentmon`)
 
