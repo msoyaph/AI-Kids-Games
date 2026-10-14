@@ -182,7 +182,7 @@ play origin dpl_31jaPSNuiWrsuDNF3RBExENwYevF). Both guards logged the owner's ap
 - Lighthouse mobile (production): 100/100/100/100 on home, details, community, submit, FAQ,
   guides and Tuck Pop; play 81 (exempt)/100/100/100. IndexNow: 202.
 - Live suite: 130 passed / 25 failed, all from tests acting before the app took over the
-  prerendered page (110–220 ms on the live site). tests/e2e/fixtures.ts (2.6.0) waits for
+  prerendered page (110–220 ms on the live site). tests/e2e/fixtures.ts (shipped in 2.8.0) waits for
   `<html data-app="ready">`. Every e2e spec imports `test` from `./fixtures`, never from
   @playwright/test.
 - The merge needed the owner's go-ahead ("merge it yourself once CI passes"). TheaBonk's
@@ -219,6 +219,17 @@ wrapped in marketing/sizzle/capture/games/agentmon.ts), and release:local re-run
   - Marks are inline Octicons, and all links go through ExitGuard.
 - Site: Details shows a Trailer section (src/components/Trailer.tsx TrailerInline, data in
   src/data/game-trailers.json via src/data/trailers.ts) and VideoGame.trailer in schema.ts.
+
+**2.8.0 LIVE 2026-10-14** (PR #21, merge commit 6a27a80; site dpl_FEUS2tzCjouG8MK4URWLjUuxviAM,
+play origin dpl_DrN8uDfXwxQ5dop6mCkY51he5Dfs). Both guards logged "approved by the owner on
+2026-10-13; GPU browser suites passed on 84be790".
+- Live suite (main's tests, logged out, all six projects): 171 passed, 99 skips, 0 failed, so the
+  `data-app="ready"` fixture fixed every 2.5.0 timing failure. It covers all 8 games' launches, the
+  trailers, the GitHub boxes and Home Screen play.
+- Lighthouse mobile (production): home 98/100/100/100, details 94/100/100/100, play 86
+  (exempt)/100/100/100. IndexNow: all 30 sitemap pages, 200.
+- The record PR merges the Agentmon session's 2.7.0 record (#22) so it lands with this one;
+  DEPLOYMENT.json history now runs 2.7.0, 2.5.0, 2.4.1….
 
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
 
@@ -538,14 +549,22 @@ back.
   their current versions.
 - **Why 2.7.0:** the other session's 2.6.0 (PR #21, a trailer for every game) was already approved
   and in CI, so Agentmon ships right after it.
-- **Order:**
-  1. release commit (2.7.0, DEPLOYMENT.json approval);
-  2. `npm run release:local` on a quiet machine, and commit localSuites;
-  3. #21 merged, then `main` merged in again;
-  4. CI green;
-  5. `AIKG_ALLOW_PRODUCTION=2.7.0` in both projects' Production environments;
-  6. merge #16;
-  7. production checks (suite, Lighthouse) and a record PR.
+- **What happened:** #21 stayed blocked on a flaky site test, and the owner asked for Agentmon now
+  ("Upload the game to github and make it live in the website now"), so 2.7.0 shipped before it.
+  **#21 now needs a version above 2.7.0**, with its approval and GPU suites recorded for it
+  (AIKG_ALLOW_PRODUCTION is 2.7.0, so a 2.6.0 build is refused).
+  1. release commit 3db0970; `release:local` (Space Sky 42/0 after building its dist in the worktree;
+     Light Crossing 191/0), ac9426b;
+  2. CI green on #16; AIKG_ALLOW_PRODUCTION=2.7.0 in both projects;
+  3. #16 merged (f331dd9); #13 marked merged with it.
+- **2.7.0 LIVE 2026-10-14** (dpl_DDqZnDd92A9dPjpXGhoyWXSmJvmD):
+  - **Guard:** "approved by the owner on 2026-10-13; GPU browser suites passed on 3db0970".
+  - **Production suite:** 131 passed, 30 failed, 97 skips. Every game's launch test passes; the
+    failures are clicks on the prebuilt page before the app takes over (the timing #21's test fix
+    handles) and the grid's local-only mock page. Repeated at a person's pace on production (desktop
+    Chromium, iPhone WebKit), every one of those interactions works with no console errors.
+  - **Lighthouse mobile:** home 98/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
+    Agentmon details 99/100/100/100 and play 86 (exempt)/100/100/100.
 
 ## Eighth game: Agentmon (owner brief 2026-10-13; slug `agentmon`, branch `agentmon`)
 
