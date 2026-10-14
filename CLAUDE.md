@@ -590,6 +590,33 @@ at the Agent Base. Game 1.1.0, re-imported; no new storage keys and no save migr
 load as they are, tested with a real 1.0 save). The PR keeps the site at its current version; the
 owner plays it first, and the release (on its own or together with 1.0) bumps the site then.
 
+## Fieldlark, the farm game (owner brief 2026-10-13; slug `fieldlark`, branch `fieldlark`; working name was Farm WIP / `farm-wip`)
+
+A 3D farm-building and management game for ages 8–14, built in its own worktree
+(~/Documents/FarmerTown/AI-Kids-Games-farm) from origin/main f331dd9. Brief: docs/prompts/fieldlark.md.
+Plan, rules and status: games/fieldlark/CLAUDE.md (plans: games/fieldlark/docs/PLAN.md, then PLAN-2.md).
+
+- **Name:** **Fieldlark**, the owner's pick of five web-checked names (2026-10-14). The working name
+  "Farm WIP" (`farm-wip`, prefix `farmwip.`) was renamed before any player had a save.
+- **Repo side:** the inspiration's title and its publisher join the trademark blocklist, with a site
+  manifest test.
+- **Other sessions:** never run heavy tests alongside another session's
+  (games/fieldlark/scripts/quiet-check.mjs, and respect its exit code).
+- **Release (owner, 2026-10-14, the "finish end to end" brief):**
+  - Finish the game (games/fieldlark/docs/PLAN-2.md), rename it and import it.
+  - Open a PR, get CI green and hand over the preview link. **Stop before production:** the owner
+    plays it and approves the release.
+  - This replaces the earlier "deploy when complete".
+- **Phase 15 (site step):** game 1.0.0 listed "Ready to play" at `site.order` 9, imported, storage audited, art, previews, its 15-second
+  trailer (`npm run publish:trailers -- fieldlark` in marketing/sizzle publishes one game and keeps the
+  others), site tests at 9 games, and the MCP app bumped to 1.1.0 (owner-approved; its production
+  still needs the owner's approval in apps/mcp/DEPLOYMENT.json).
+- **Production (owner, 2026-10-14, in chat):** "once done and complete, deploy the game to live
+  production. Then create a 1 minute sizzle reel YT 1920×1080 and 1080x1920 video game". Shooberry's
+  release (PR #27, 2.10.0) had stalled on a capture for 8 hours, so the owner chose "Stop it; Fieldlark
+  first": Fieldlark ships as site 2.10.0 (position 9) with MCP app 1.1.0, and Shooberry becomes 2.11.0
+  (position 10). PR #28.
+
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
    `npm ci`, `npx playwright install chromium webkit`.

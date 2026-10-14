@@ -182,5 +182,28 @@
       "On screen: “77 friends and puzzle Trials.”",
       "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
     ]
+  },
+  "fieldlark": {
+    "seconds": 15,
+    "published": "2026-10-14",
+    "poster": "/trailer/fieldlark/poster.jpg",
+    "posterWebp": "/trailer/fieldlark/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/fieldlark/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/fieldlark/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/fieldlark/trailer.en.vtt",
+    "description": [
+      "Fieldlark gameplay: A busy summer farm with animals, a greenhouse and helpers at work, a row of strawberries and a row of wheat picked by hand, the farm at night with lit windows, Larkford's town square and its farm stand, snow on the roofs in winter, and the hens and cows up close.",
+      "The Fieldlark logo and its pitch: “Wake up the town farm, field by field.” Ages 8–14.",
+      "On screen: “Seasons, helpers and harvest fairs.”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
   }
 }

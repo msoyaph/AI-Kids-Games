@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+<!-- Fieldlark cover layer (float): the lark the game is named after, gliding over the farm. -->
+<g transform="translate(1010 290)">
+<path d="M0 0 C-30 -34 -76 -38 -108 -20 C-74 -22 -44 -8 -18 12Z" fill="#b98a5a"/>
+<path d="M0 0 C34 -40 82 -46 114 -28 C78 -28 46 -12 20 12Z" fill="#c99a68"/>
+<ellipse cx="0" cy="8" rx="34" ry="16" fill="#d9b38a"/>
+<ellipse cx="4" cy="14" rx="20" ry="9" fill="#f2e2c8"/>
+<circle cx="30" cy="0" r="12" fill="#c99a68"/><path d="M40 -2l14 4-14 5z" fill="#e0a23a"/><circle cx="34" cy="-3" r="2.4" fill="#2e2a28"/>
+<path d="M24 -10l4 -12 6 11z" fill="#b98a5a"/>
+<path d="M-32 8l-26 -6 6 12 -6 10z" fill="#a8784a"/>
+</g>
+</svg>

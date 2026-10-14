@@ -214,6 +214,27 @@ Trial take is cropped to the room. Loop 7.8 s.
 Tests now count 8 games (age 7: LC, Space Sky, Tuck Pop, Agentmon); the grid is checked at 8 (unit and
 browser); the launch tests start a new Agentmon adventure in slot 1 and continue it after a reload.
 
+## Fieldlark, the ninth game (owner's "finish end to end" brief, 2026-10-14; PR, then the owner's approval)
+
+Listed from `games/fieldlark/game.json` (1.0.0, "Ready to play", ages 8–14, Farming / Strategy / Cozy,
+`site.order` 9: Shooberry's release stalled, and the owner chose to ship Fieldlark first, as site 2.10.0). Art in
+`public/media/fieldlark/`: a generated cover (the cottage, fields of wheat, strawberries and cabbages,
+the hen house, the river with the Little Lark at the dock), float (the lark) and twinkle layers, a logo
+("Field" in white, "lark" in butter yellow, outlined green; `scripts/art/logos.ts`), and the OG image
+(only `og/fieldlark.jpg` and the refreshed `og/site.jpg` are kept; `og/agentmon.jpg` came out
+byte-different and was restored). Previews come from `scripts/capture/fieldlark.ts`: the game's own
+`?scene=showcase` route (a staged late-game farm that never saves) with `&t=` for the season and hour
+and `&x=&z=&zoom=` for the view; the canvas is recorded, so the HUD is left out. Loop 8.0 s (farm,
+night, winter, town); stills add a greenhouse close-up. Pitfall: arrow-key pans are fast (about 6 tiles
+a second, and the camera eases on after the key is up), so takes hold them for well under a second.
+Its trailer is `marketing/sizzle/capture/games/fieldlark.ts` (longer takes, a real drag-to-harvest
+and the animals up close); `npm run publish:trailers -- fieldlark` publishes one game's trailer and
+keeps the others' as they are.
+Tests now count 9 games (age 8: 7 games; age 10: 9; Farming: Cliff Valley and Fieldlark); the grid is
+checked at 9 (3 × 3); the launch tests start a new farm ("Start farming", then the story cards) and
+continue it after a reload ("Keep farming"). The storage audit adds `fieldlark.save`, `.save.bak`,
+`.settings` and the rare `.save.broken` (worst case 346 KB, a finished story about 40 KB).
+
 ## Next: Light Crossing v2.0 (owner request, on hold)
 
 Owner wants Light Crossing v2.0 imported and released. On 2026-10-11 its project was on

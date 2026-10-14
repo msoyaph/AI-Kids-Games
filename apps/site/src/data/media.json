@@ -25,6 +25,19 @@
     ],
     "capturedAt": "2026-10-11"
   },
+  "fieldlark": {
+    "loopSeconds": 8,
+    "mp4Bytes": 720695,
+    "webmBytes": 715510,
+    "shots": [
+      "A busy summer farm: fields at every stage, animals, a greenhouse and helpers at work",
+      "A warm summer night: lit windows, lanterns and fireflies over the fields",
+      "Snow on the roofs in winter, with crops still growing in the greenhouse",
+      "Larkford square: the bakery, the school, the café and your own farm stand",
+      "A greenhouse grows any crop in any season, with a water channel and a sprinkler beside it"
+    ],
+    "capturedAt": "2026-10-14"
+  },
   "light-crossing": {
     "loopSeconds": 8,
     "mp4Bytes": 725368,
