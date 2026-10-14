@@ -18,7 +18,7 @@ export const at = (beats: number) => +(beats * BEAT).toFixed(6);
 /** A line stays on screen at least words ÷ 1.8 + 0.5 seconds (a 7-year-old's reading pace). */
 export const minSeconds = (text: string) => text.split(/\s+/).filter(Boolean).length / 1.8 + 0.5;
 
-export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop';
+export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop' | 'agentmon';
 
 /** A piece of a recorded take (marketing/sizzle/captures/<slug>/<take>.mp4). */
 export interface Shot {
@@ -39,7 +39,7 @@ export interface Shot {
 const shot = (slug: Slug, take: string, extra: Omit<Shot, 'slug' | 'take'> = {}): Shot => ({ slug, take, ...extra });
 
 /** Each game's three showcase shots in the 60-second reel, in the order they play (one bar each). */
-export const REEL: Record<Exclude<Slug, 'tuck-pop'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
+export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
   'calex-cart': {
     describe: 'Karts drift, boost and glide through snowy, neon and canyon tracks.',
     shots: [
@@ -91,7 +91,7 @@ export const REEL: Record<Exclude<Slug, 'tuck-pop'>, { shots: [Shot, Shot, Shot]
 };
 
 /** Showcase order: racing, action, strategy, space wonder, cozy island, farming. */
-export const ORDER: Exclude<Slug, 'tuck-pop'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
+export const ORDER: Exclude<Slug, 'tuck-pop' | 'agentmon'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
 
 export interface Game { slug: Slug; title: string; tagline: string; ages: string; logo: string }
 export function game(slug: Slug): Game {
@@ -246,10 +246,22 @@ export const TRAILERS: Record<Slug, { shots: [Shot, Shot, Shot, Shot, Shot, Shot
       shot('tuck-pop', 'map', { from: 0.5, zoom: 1.6, focus: [0.5, 0.5] }),
       shot('tuck-pop', 'adventure', { from: 0, zoom: 1.3, focus: [0.5, 0.5] })
     ]
+  },
+  agentmon: {
+    line: '77 friends and puzzle Trials.',
+    describe: 'A friendly creature challenge, a Spark Ring that makes a new friend, the town of Saltwhistle, a puzzle Trial in the canyon, a Mood Match and the Field Guide.',
+    shots: [
+      shot('agentmon', 'battle', { from: 0 }),
+      shot('agentmon', 'spark-ring', { from: 0 }),
+      shot('agentmon', 'town', { from: 0 }),
+      shot('agentmon', 'trial', { from: 0 }),
+      shot('agentmon', 'mood-match', { from: 0 }),
+      shot('agentmon', 'field-guide', { from: 0 })
+    ]
   }
 };
-/** The order of the games' trailers (all seven). */
-export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop'];
+/** The order of the games' trailers (all eight). */
+export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop', 'agentmon'];
 export const trailerId = (slug: Slug) => `game-${slug}`;
 
 function gameCut(slug: Slug): Cut {

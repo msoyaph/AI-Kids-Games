@@ -190,7 +190,10 @@ play origin dpl_31jaPSNuiWrsuDNF3RBExENwYevF). Both guards logged the owner's ap
 - Pitfall: run the production suite from main's tests (a worktree), not from a feature branch with
   new specs.
 
-## Release 2.6.0: game trailers (owner, 2026-10-13: "Add each game a quick trailer"; "keep going and release the trailers when green")
+## Release 2.8.0: game trailers (owner, 2026-10-13: "Add each game a quick trailer"; "keep going and release the trailers when green")
+Built as 2.6.0. Another session then released 2.7.0 (Agentmon, #16) first, and the owner chose
+"2.8.0 with Agentmon trailer". main was merged in, Agentmon got its trailer (its site capture route
+wrapped in marketing/sizzle/capture/games/agentmon.ts), and release:local re-runs for 2.8.0.
 - marketing/sizzle: TRAILERS in reel.config.ts (six shots and one short line per game) and
   `npm run trailers` (music → compose game- → render game- → review game- → publish:trailers).
   - The 60-second reel and the cutdown are untouched.
