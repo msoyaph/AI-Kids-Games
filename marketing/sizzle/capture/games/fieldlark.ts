@@ -8,11 +8,22 @@
 import { scenario as site } from '../../../../apps/site/scripts/capture/fieldlark';
 import type { Device, Scenario, TakeContext } from '../../../../apps/site/scripts/capture/types';
 
-type Hook = { snapshot(): { screen: string }; tileOnScreen(x: number, z: number): { x: number; y: number } };
+type Hook = { snapshot(): { screen: string; camera: { zoom: number } }; tileOnScreen(x: number, z: number): { x: number; y: number } };
 
+/**
+ * Waits until the farm is on screen. Now and then the camera comes up at its widest zoom instead of the
+ * address's `zoom` (seen twice in about 30 takes); the page is then loaded again.
+ */
 async function ready(ctx: TakeContext) {
-  await ctx.page.waitForFunction(() => (window as unknown as { __fieldlark?: Hook }).__fieldlark?.snapshot().screen === 'farm', null, { timeout: 30000 });
-  await ctx.wait(1500);
+  const want = Number(new URL(ctx.page.url()).searchParams.get('zoom') ?? NaN);
+  for (let attempt = 1; ; attempt++) {
+    await ctx.page.waitForFunction(() => (window as unknown as { __fieldlark?: Hook }).__fieldlark?.snapshot().screen === 'farm', null, { timeout: 30000 });
+    await ctx.wait(1500);
+    const zoom = await ctx.run(() => (window as unknown as { __fieldlark: Hook }).__fieldlark.snapshot().camera.zoom);
+    if (!(want > 0) || Math.abs(zoom - want) / want < 0.1 || attempt >= 3) return;
+    ctx.log(`  the camera came up at zoom ${Math.round(zoom)}, not ${want}: loading the page again`);
+    await ctx.page.reload();
+  }
 }
 
 const tile = (ctx: TakeContext, x: number, z: number) => ctx.run(([tx, tz]) => (window as unknown as { __fieldlark: Hook }).__fieldlark.tileOnScreen(tx, tz), [x, z] as [number, number]);
@@ -46,6 +57,8 @@ async function pushIn(ctx: TakeContext, x: number, y: number, ticks: number, eve
 // a warm summer night with fireflies, a snowy winter afternoon, a rainy summer morning, a windy autumn
 // day and a spring morning in the second year (blossom petals).
 const NIGHT = 5256, SNOW = 9897.6, RAIN = 8 * 480 + 150, AUTUMN = 15 * 480 + 170, SPRING = 26 * 480 + 150;
+/** The fair opens on the last day of a season: the last day of summer. */
+const FAIR = 11 * 480 + 120;
 
 const PHONE: Device = { width: 844, height: 390, scale: 2, touch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' };
 const TABLET: Device = { width: 1180, height: 820, scale: 1, touch: true, userAgent: 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' };
@@ -105,10 +118,10 @@ export const scenario: Scenario = {
       query: '?scene=showcase&seed=7&x=43&z=46&zoom=32',
       async setup(ctx) { await ready(ctx); },
       async act(ctx) {
-        const c = await tile(ctx, 42, 43);
+        const c = await tile(ctx, 41, 41);
         await ctx.cut();
-        await pushIn(ctx, c.x, c.y, 16, 170);
-        await ctx.wait(2200);
+        await pushIn(ctx, c.x, c.y, 10, 300, -60);
+        await ctx.wait(2400);
       },
     },
     {
@@ -132,7 +145,7 @@ export const scenario: Scenario = {
     {
       // pick a row, plant strawberries along it, water them, watch them grow (fast time), pick again
       id: 'grow',
-      query: '?scene=showcase&seed=7&x=40&z=49&zoom=150&speed=60',
+      query: '?scene=showcase&seed=7&x=40&z=49&zoom=150&speed=30&t=3322',
       audio: true,
       async setup(ctx) { await ready(ctx); },
       async act(ctx) {
@@ -149,15 +162,29 @@ export const scenario: Scenario = {
         await ctx.wait(200);
         await dragRow(ctx, 47, 40, 44, 800);
         await ctx.page.keyboard.press('Digit1');
-        await ctx.wait(3600);
+        await ctx.wait(4800);
         await pickRow(ctx, 47, 44, 40, 900);
         await ctx.wait(1400);
       },
     },
     {
+      // the hens up close
+      id: 'hens',
+      query: '?scene=showcase&seed=7&x=44.6&z=37.9&zoom=240',
+      async setup(ctx) { await ready(ctx); },
+      async act(ctx) { await ctx.cut(); await ctx.hold(['ArrowRight'], 150); await ctx.wait(4400); },
+    },
+    {
+      // Rufus, the farm dog, by his kennel
+      id: 'dog',
+      query: '?scene=showcase&seed=7&x=38.5&z=40.8&zoom=230',
+      async setup(ctx) { await ready(ctx); },
+      async act(ctx) { await ctx.cut(); await ctx.hold(['ArrowLeft'], 150); await ctx.wait(4400); },
+    },
+    {
       // the sheep shed and the beehives
       id: 'sheep',
-      query: '?scene=showcase&seed=7&x=45.5&z=49&zoom=190',
+      query: '?scene=showcase&seed=7&x=46&z=51.5&zoom=180',
       async setup(ctx) { await ready(ctx); },
       async act(ctx) { await ctx.cut(); await ctx.hold(['ArrowLeft'], 250); await ctx.wait(4400); },
     },
@@ -169,11 +196,11 @@ export const scenario: Scenario = {
       async act(ctx) { await ctx.cut(); await ctx.wait(4800); },
     },
     {
-      // the Little Lark on the river (fast time: a trip takes seconds)
-      id: 'boat',
-      query: '?scene=showcase&seed=7&x=49&z=47&zoom=110&speed=30',
+      // helpers looking after the cows and hens (a little faster than life)
+      id: 'helpers2',
+      query: '?scene=showcase&seed=7&x=42.5&z=39.5&zoom=200&speed=4',
       async setup(ctx) { await ready(ctx); },
-      async act(ctx) { await ctx.cut(); await ctx.wait(5000); },
+      async act(ctx) { await ctx.cut(); await ctx.wait(4800); },
     },
     {
       // fireflies over the fields on a warm night
@@ -190,13 +217,13 @@ export const scenario: Scenario = {
     },
     {
       id: 'autumn',
-      query: `?scene=showcase&seed=7&x=40&z=44&zoom=100&t=${AUTUMN}`,
+      query: `?scene=showcase&seed=7&x=44&z=43&zoom=80&t=${AUTUMN}`,
       async setup(ctx) { await ready(ctx); },
       async act(ctx) { await ctx.cut(); await ctx.hold(['ArrowRight'], 350); await ctx.wait(4400); },
     },
     {
       id: 'spring',
-      query: `?scene=showcase&seed=7&x=42&z=42&zoom=110&t=${SPRING}`,
+      query: `?scene=showcase&seed=7&x=44&z=43&zoom=80&t=${SPRING}`,
       async setup(ctx) { await ready(ctx); },
       async act(ctx) { await ctx.cut(); await ctx.hold(['ArrowRight'], 300); await ctx.wait(4400); },
     },
@@ -210,8 +237,8 @@ export const scenario: Scenario = {
     {
       // the Harvest Fair: one entry in each class, then the results and their ribbons (the panels are DOM)
       id: 'fair',
-      query: '?scene=fair&seed=7&x=42&z=43&zoom=96',
-      source: 'tab',
+      query: `?scene=fair&seed=7&x=42&z=43&zoom=70&t=${FAIR}`,
+      source: 'tab', device: { width: 960, height: 540, scale: 2 },
       async setup(ctx) {
         await ctx.page.locator('.fair .fair-option').first().waitFor({ timeout: 30000 });
         await ctx.wait(1200);
@@ -224,7 +251,7 @@ export const scenario: Scenario = {
           if (await option.count()) { await option.click(); await ctx.wait(550); }
         }
         await ctx.page.getByRole('button', { name: 'Enter the fair!' }).click();
-        await ctx.wait(4200);
+        await ctx.wait(4600);
       },
     },
     {
