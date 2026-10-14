@@ -87,7 +87,9 @@ Before browser tests, make sure no other test run is busy on the machine:
 
 ## Deployment
 
-- **Vercel project:** `ai-kids-games-mcp` (Root Directory `apps/mcp`, Build Output API).
+- **Vercel project:** `ai-kids-games-mcp` (Build Output API). Previews: `npm run deploy:preview
+  --workspace apps/mcp`, which builds, uploads with `--target preview` and records the address in
+  DEPLOYMENT.json. Never run a plain `vercel deploy`: a prebuilt upload skips the production gate.
 - **`SITE_ORIGIN`:** says where the website is. Labels read "aikids.games" only once it is
   `https://aikids.games`.
 - **Production:** needs the owner's approval for the exact version in `DEPLOYMENT.json`, and

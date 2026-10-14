@@ -12,7 +12,11 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import { checkDeployment } from './check-deployment';
 import { siteFrom } from '../src/config';
 
+// Production only past the owner's gate; anything else is a preview. The target also goes into
+// .vercel/output/builds.json, so a prebuilt upload (vercel deploy --prebuilt) can't land in production by
+// default: the first upload of a new project once did, because it skipped this build's gate.
 console.log(checkDeployment());
+const target = (process.env.VERCEL_TARGET_ENV || process.env.VERCEL_ENV) === 'production' ? 'production' : 'preview';
 const here = resolve(import.meta.dirname,'..'), dist = join(here,'dist'), out = join(here,'.vercel/output');
 const site = siteFrom();
 
@@ -48,6 +52,7 @@ await bundle({
 });
 writeFileSync(join(fn,'.vc-config.json'),`${JSON.stringify({ runtime: 'nodejs22.x',handler: 'index.mjs',launcherType: 'Nodejs',shouldAddHelpers: false,supportsResponseStreaming: true,maxDuration: 30 },null,2)}\n`);
 writeFileSync(join(fn,'package.json'),'{ "type": "module" }\n');
+writeFileSync(join(out,'builds.json'),`${JSON.stringify({ '//': 'Written by apps/mcp/scripts/build.ts. Not part of the Build Output API.',target,argv: process.argv,builds: [] },null,2)}\n`);
 const staticOut = join(out,'static');
 mkdirSync(join(staticOut,'.well-known'),{ recursive: true });
 for (const file of ['index.html','404.html','robots.txt','icon-192.png','icon-512.png',...(process.env.OPENAI_APPS_CHALLENGE ? ['.well-known/openai-apps-challenge'] : [])]) copyFileSync(join(statics,file),join(staticOut,file));
@@ -58,4 +63,4 @@ writeFileSync(join(out,'config.json'),`${JSON.stringify({ version: 3,routes: [
   { handle: 'filesystem' },
   { src: '^/.*$',status: 404,dest: '/404.html' }
 ] },null,2)}\n`);
-console.log(`Built the MCP app for ${site.origin}: widget ${(widgetBytes/1024).toFixed(1)} KB, function .vercel/output/functions/mcp.func.`);
+console.log(`Built the MCP app (${target}) for ${site.origin}: widget ${(widgetBytes/1024).toFixed(1)} KB, function .vercel/output/functions/mcp.func.`);

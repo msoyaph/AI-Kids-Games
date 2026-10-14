@@ -77,8 +77,19 @@ merge.
 - **Rate limits:** 120/min per address; 3000/min for Anthropic's and OpenAI's published ranges
   (src/data/egress.json; `npm run refresh-egress`), because all of Claude's traffic comes from one
   range; 12000/min per instance.
-- **Vercel:** Build Output API with a Node adapter (src/node.ts). The preview deploys with
-  `vercel build` + `vercel deploy --prebuilt` from the worktree, not Git-connected until release.
+- **Vercel:** Build Output API with a Node adapter (src/node.ts). Project `ai-kids-games-mcp`
+  (prj_rM7pNnMHXnRmsPNKuPTR8vgzDPgL, team real-tours), not Git-connected until release.
+  - Previews only via `npm run deploy:preview` (build + `vercel deploy --prebuilt --target preview`;
+    it records the address in DEPLOYMENT.json).
+  - The link file `apps/mcp/.vercel/project.json` is written by hand (git-ignored), never with
+    `vercel link`, which can connect Git.
+  - **Incident 2026-10-13:** the very first plain `vercel deploy --prebuilt` of the new project landed
+    in **production** (`ai-kids-games-mcp.vercel.app`). A prebuilt upload skips the build's gate.
+    - It was removed within minutes (`vercel remove`; the alias now answers 404) and redeployed as a
+      preview.
+    - Since then the build writes `.vercel/output/builds.json` with its target, which is
+      `preview` unless the production gate approved.
+    - Never run a plain `vercel deploy` for this project.
 - **CI:** an `mcp` job (typecheck, unit, build, Inspector, harness on Chromium), required by "CI
   passed". what-changed maps apps/mcp to no game.
 

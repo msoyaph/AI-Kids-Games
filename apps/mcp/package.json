@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "inspect": "tsx scripts/inspect.ts",
     "refresh-egress": "tsx scripts/refresh-egress.ts",
-    "harness": "tsx harness/run.ts"
+    "harness": "tsx harness/run.ts",
+    "deploy:preview": "tsx scripts/deploy-preview.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.2.0",
