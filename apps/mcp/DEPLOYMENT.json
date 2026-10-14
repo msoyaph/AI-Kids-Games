@@ -5,5 +5,11 @@
   "release": "0.1.0",
   "productionApproval": null,
   "note": "Production needs the owner's approval for this exact version here, AIKG_ALLOW_PRODUCTION set to it in this project's Production environment, and a build from main (scripts/check-deployment.ts). It ships together with the website release whose Privacy, For Parents and Terms pages describe it.",
-  "preview": null
+  "preview": {
+    "url": "https://ai-kids-games-5ha1sf305-real-tours.vercel.app",
+    "endpoint": "https://ai-kids-games-5ha1sf305-real-tours.vercel.app/mcp",
+    "commit": "8262ad5",
+    "deployedAt": "2026-10-14",
+    "protection": "Vercel Authentication off on this project only (owner decision, 2026-10-13)"
+  }
 }
