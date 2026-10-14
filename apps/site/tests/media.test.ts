@@ -46,6 +46,24 @@ describe('temporary art (until a game is recaptured)',() => {
   });
 });
 
+describe('gameplay loops for games on temporary art (recorded from the current build)',() => {
+  for (const [slug] of Object.entries(temporaryArt).filter(([,art]) => art.loop)) describe(slug,() => {
+    const entry = (media as Record<string,{ loopSeconds: number; shots: string[] }>)[slug];
+    it('has a 6–8 second loop as MP4 and WebM, each under 800 KB, and a poster',() => {
+      expect(entry).toBeDefined();
+      expect(entry.loopSeconds).toBeGreaterThanOrEqual(6);
+      expect(entry.loopSeconds).toBeLessThanOrEqual(8);
+      for (const ext of ['mp4','webm']) expect(statSync(pub(`media/${slug}/loop.${ext}`)).size).toBeLessThan(800_000);
+      for (const ext of ['avif','webp','jpg']) expect(existsSync(pub(`media/${slug}/poster.${ext}`))).toBe(true);
+    });
+    it('keeps its own screenshots as the gallery (no stale captured stills), and has a capture route',() => {
+      expect(entry.shots).toEqual([]);
+      expect(existsSync(pub(`media/${slug}/shot-1.jpg`))).toBe(false);
+      expect(existsSync(resolve('scripts/capture',`${slug}.ts`))).toBe(true);
+    });
+  });
+});
+
 describe('gameplay previews',() => {
   for (const game of games.filter(game => !temporaryArt[game.slug])) describe(game.slug,() => {
     const entry = (media as Record<string,{ loopSeconds: number; shots: string[] }>)[game.slug];

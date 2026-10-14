@@ -15,15 +15,17 @@
   },
   "calex-cart": {
     "loopSeconds": 7.2,
-    "mp4Bytes": 719379,
-    "webmBytes": 744248,
-    "shots": [
-      "Calex glides across the forest gorge on Canyon Run",
-      "Landing back on the track in the canyon",
-      "Calex drifts around a canyon bend with sparks flying",
-      "A Bumper Ball sends a rival kart spinning on the beach"
-    ],
-    "capturedAt": "2026-10-11"
+    "mp4Bytes": 713032,
+    "webmBytes": 743387,
+    "shots": [],
+    "capturedAt": "2026-10-14"
+  },
+  "cliff-valley": {
+    "loopSeconds": 7.2,
+    "mp4Bytes": 743498,
+    "webmBytes": 741142,
+    "shots": [],
+    "capturedAt": "2026-10-14"
   },
   "light-crossing": {
     "loopSeconds": 8,
@@ -52,16 +54,11 @@
     "capturedAt": "2026-10-14"
   },
   "space-sky": {
-    "loopSeconds": 8,
-    "mp4Bytes": 699733,
-    "webmBytes": 744488,
-    "shots": [
-      "Your rocket zooms past Saturn and its rings",
-      "Gently landing the rocket on Mars",
-      "Exploring Zephyra Village with friendly aliens",
-      "Sliding across the ice on Europa"
-    ],
-    "capturedAt": "2026-10-11"
+    "loopSeconds": 7.2,
+    "mp4Bytes": 711381,
+    "webmBytes": 745682,
+    "shots": [],
+    "capturedAt": "2026-10-14"
   },
   "theabonk": {
     "loopSeconds": 8,
@@ -92,16 +89,9 @@
   },
   "vanex-defense": {
     "loopSeconds": 7.2,
-    "mp4Bytes": 740737,
-    "webmBytes": 738780,
-    "shots": [
-      "King Gloop, the wave-10 boss, arrives with his crown",
-      "Towers bombard King Gloop as he marches through the maze",
-      "A full tower maze fires at a big wave",
-      "A steaming combo tower mixes fire and water",
-      "Little towers fire at a wave of Grumblewumps",
-      "A maze of towers guards the crystal castle"
-    ],
-    "capturedAt": "2026-10-11"
+    "mp4Bytes": 704231,
+    "webmBytes": 737424,
+    "shots": [],
+    "capturedAt": "2026-10-14"
   }
 }

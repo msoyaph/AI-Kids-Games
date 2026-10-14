@@ -71,8 +71,8 @@ export async function encode(scenario: Scenario,results: TakeResult[],log: (m: s
   // Gallery stills, in take order.
   // Gallery: loop moments first (strongest), then any stills-only takes.
   const ordered = [...loopTakes,...results.filter(result => !loopTakes.includes(result))];
-  const stills = ordered.flatMap(result => result.stills.map(still => ({ ...still,crop: crop(result.id) }))).slice(0,6);
-  if (stills.length < 4) throw new Error(`${slug}: the gallery needs 4–6 stills, found ${stills.length}.`);
+  const stills = scenario.gallery === false ? [] : ordered.flatMap(result => result.stills.map(still => ({ ...still,crop: crop(result.id) }))).slice(0,6);
+  if (scenario.gallery !== false && stills.length < 4) throw new Error(`${slug}: the gallery needs 4–6 stills, found ${stills.length}.`);
   for (const [index,still] of stills.entries()) {
     if (still.crop) { const cropped = join(work,`still-${index}.png`); ffmpeg(['-i',still.file,'-vf',still.crop.slice(0,-1),cropped]); still.file = cropped; }
     await writeImage(still.file,join(out,`shot-${index+1}`),SHOT.width,SHOT.height);
@@ -83,5 +83,5 @@ export async function encode(scenario: Scenario,results: TakeResult[],log: (m: s
   const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath,'utf8')) : {};
   manifest[slug] = { loopSeconds: Number(seconds.toFixed(2)),mp4Bytes: mp4.bytes,webmBytes: webm.bytes,shots: stills.map(still => still.alt),capturedAt: new Date().toISOString().slice(0,10) };
   writeFileSync(manifestPath,JSON.stringify(Object.fromEntries(Object.entries(manifest).sort()),null,2)+'\n');
-  log(`${slug}: poster and ${stills.length} stills written to public/media/${slug}/`);
+  log(`${slug}: poster${stills.length ? ` and ${stills.length} stills` : ' (no gallery stills: the game keeps its own screenshots)'} written to public/media/${slug}/`);
 }
