@@ -13,78 +13,73 @@
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
-    "deploymentId": "dpl_GeCxoce5C1JVVX571ERV7zM3vt8y",
-    "deploymentUrl": "https://ai-kids-games-i3x7dolhc-real-tours.vercel.app",
+    "deploymentId": "dpl_J97VpxK1CfqBu1L9ZrVcFWQPvZi1",
+    "deploymentUrl": "https://ai-kids-games-g1ns82cnp-real-tours.vercel.app",
     "readyState": "READY",
-    "publishedAt": "2026-10-13",
+    "publishedAt": "2026-10-14",
     "public": true,
-    "release": "2.5.0",
-    "commit": "a58d7d1",
-    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/17",
+    "release": "2.10.0",
+    "commit": "1566b03",
+    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/28",
     "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
-    "guardLog": "Production deployment of release 2.5.0 approved by the owner on 2026-10-13; GPU browser suites passed on 16e3637.",
+    "guardLog": "Production deployment of release 2.10.0 approved by the owner on 2026-10-14; GPU browser suites passed on 2221afb.",
     "playOrigin": {
       "project": "real-tours/ai-kids-games-play",
-      "deploymentId": "dpl_31jaPSNuiWrsuDNF3RBExENwYevF",
+      "deploymentId": "dpl_4brTNKEVGV6cxWSzRTUNrSKDjnMg",
       "url": "https://ai-kids-games-play.vercel.app",
-      "guardLog": "Production deployment of release 2.5.0 approved by the owner on 2026-10-13; GPU browser suites passed on 16e3637.",
+      "deploymentUrl": "https://ai-kids-games-play-6174xta6m-real-tours.vercel.app",
+      "guardLog": "Production deployment of release 2.10.0 approved by the owner on 2026-10-14; GPU browser suites passed on 2221afb.",
       "games": 0,
       "note": "Serves no game until the owner approves one; / is a notice page and every other path 404s, with the strict headers (connect-src none, frame-ancestors the site)."
     },
-    "smokeTest": "Live checks: every page 200 and unknown addresses 404; /community shows \"No community games yet\"; the site CSP frames only 'self'; the IndexNow key is served; the play origin answers with its strict headers. Logged-out Playwright suite against production (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone): 130 passed, 97 intentional device/engine skips, 25 failed. All 25 were the tests acting before the app took over the prebuilt page: since 2.5.0 pages arrive prerendered and the app replaces them 110–220 ms after they show on the live site, while the tests tapped within milliseconds (mock grid cards wiped, filter, theme, favorite and lightbox taps on the inert copy). Fixed in the tests (tests/e2e/fixtures.ts waits for <html data-app=\"ready\">, added in 2.6.0) and re-run against production with 2.6.0.",
+    "mcpApp": {
+      "project": "real-tours/ai-kids-games-mcp",
+      "deploymentId": "dpl_HmqBs1KTnMZC5hNnPn8jioQ1Qi4v",
+      "deploymentUrl": "https://ai-kids-games-l95a0r5n8-real-tours.vercel.app",
+      "release": "1.1.0",
+      "guardLog": "Production deployment of MCP app 1.1.0 approved by the owner on 2026-10-14.",
+      "check": "https://ai-kids-games-mcp.vercel.app/mcp: initialize reports version 1.1.0; show_game for fieldlark returns its card with embed fullscreen."
+    },
+    "smokeTest": "Live checks after the merge (the owner's rule for this game: full browser suites run against previews, never production): home, /game/fieldlark, /play/fieldlark, /category/farming, the Fieldlark build, cover, trailer and OG image all 200, an unknown address 404; the live games/fieldlark/index.html is byte-identical to the verified build (SHA-256 46c78f58…3916, BUILD_IMPORTS.json); Fieldlark played on the live site in a browser: Start farming, Hattie's welcome, the farm and its tool bar, no console errors. Before the merge: PR #28's CI green at d0e5e1e (Fieldlark's own Chromium and WebKit suites on software WebGL, every game's suite and the website's), the hosted preview played the same way, and the local site suite on a production build passed 176 with 99 device skips (1 unrelated Calex Cart phone touch warning that passed in CI).",
     "lighthouseMobile": {
+      "measuredUnderLoad": "The Mac was busy (load average 17–27) during these runs, so Performance is low and noisy for every page; Accessibility, Best Practices and SEO are 100 everywhere. Re-measure on a quiet machine.",
       "home": {
-        "performance": 100,
+        "performance": 84,
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       },
       "details": {
-        "performance": 100,
+        "performance": 81,
+        "page": "/game/light-crossing",
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       },
       "play": {
-        "performance": 81,
+        "performance": 66,
         "performanceExempt": true,
+        "page": "/play/light-crossing",
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       },
-      "community": {
-        "performance": 100,
+      "fieldlarkDetails": {
+        "performance": 98,
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       },
-      "submitAGame": {
-        "performance": 100,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "faq": {
-        "performance": 100,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "guides": {
-        "performance": 100,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "tuckPopDetails": {
-        "performance": 100,
+      "fieldlarkPlay": {
+        "performance": 63,
+        "performanceExempt": true,
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       }
     },
-    "indexNow": "Submitted the live sitemap's changed pages after the checks: 202 received (indexnow-state.json).",
-    "ci": "PR #17 at 908b628: every job green (TheaBonk's own 125%/150% display-scaling checks flaked on GitHub's runners and passed on a re-run of that job; the same sources passed at 16e3637); CI passed. Space Sky's and Light Crossing's browser suites ran locally (localSuites)."
+    "indexNow": "Submitted every page that changed since the last submission (the new /game/fieldlark, every game page, the categories and the lists): 200 received (indexnow-state.json).",
+    "ci": "PR #28 at d0e5e1e: every job green (TheaBonk's 150% display-scaling check had flaked on the commit before, as it has on GitHub's runners before); merged as 1566b03. Space Sky's and Light Crossing's browser suites ran locally for 2.10.0 (localSuites: 42 and 191 passed)."
   },
   "deploymentProtection": {
     "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",
@@ -96,27 +91,183 @@
   "hashedAssetCacheControl": "public, max-age=31536000, immutable",
   "history": [
     {
+      "url": "https://ai-kids-games-fawn.vercel.app",
+      "deploymentId": "dpl_FEUS2tzCjouG8MK4URWLjUuxviAM",
+      "deploymentUrl": "https://ai-kids-games-i1dljnjqd-real-tours.vercel.app",
+      "readyState": "READY",
+      "publishedAt": "2026-10-14",
+      "public": true,
+      "release": "2.8.0",
+      "commit": "6a27a80",
+      "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/21",
+      "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+      "guardLog": "Production deployment of release 2.8.0 approved by the owner on 2026-10-13; GPU browser suites passed on 84be790.",
+      "playOrigin": {
+        "project": "real-tours/ai-kids-games-play",
+        "deploymentId": "dpl_DrN8uDfXwxQ5dop6mCkY51he5Dfs",
+        "url": "https://ai-kids-games-play.vercel.app",
+        "guardLog": "Production deployment of release 2.8.0 approved by the owner on 2026-10-13; GPU browser suites passed on 84be790.",
+        "games": 0,
+        "note": "Serves no game until the owner approves one; / is a notice page and every other path 404s, with the strict headers (connect-src none, frame-ancestors the site).",
+        "deploymentUrl": "https://ai-kids-games-play-nxbw34ig4-real-tours.vercel.app"
+      },
+      "smokeTest": "Logged-out Playwright suite against production (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone), with the tests waiting for <html data-app=\"ready\">: 171 passed, 99 intentional device/engine skips, 0 failed. All 8 games go home → details → play for 20 s clean with durable saves, and keep favorites, recently played and one another's saves; each game page's trailer plays from its poster, muted and captioned, and Home loads nothing from the trailers; the GitHub boxes (header, hero game, game page) leave only through the grown-up check; opened from the Home Screen, the game gets the whole screen with the glass back button (iPad, iPhone, Android tablet and phone); filters, search, favorites, theme, lightbox, Add to Home, previews, the balanced grid and the prebuilt-page takeover all pass.",
+      "lighthouseMobile": {
+        "home": {
+          "performance": 98,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "details": {
+          "performance": 94,
+          "page": "/game/light-crossing (now with its Trailer section)",
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "play": {
+          "performance": 86,
+          "performanceExempt": true,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        }
+      },
+      "indexNow": "Submitted all 30 pages of the live sitemap after the checks (every page changed since 2.5.0; new: /game/agentmon and /category/rpg): 200 received (indexnow-state.json).",
+      "ci": "PR #21 at 2139413: every job green; merged as 6a27a80. Space Sky's and Light Crossing's browser suites ran locally for 2.8.0 (localSuites)."
+    },
+    {
+      "url": "https://ai-kids-games-fawn.vercel.app",
+      "deploymentId": "dpl_DDqZnDd92A9dPjpXGhoyWXSmJvmD",
+      "deploymentUrl": "https://ai-kids-games-d5q933dim-real-tours.vercel.app",
+      "readyState": "READY",
+      "publishedAt": "2026-10-14",
+      "public": true,
       "release": "2.7.0",
       "commit": "f331dd9",
-      "production": {
-        "url": "https://ai-kids-games-fawn.vercel.app",
-        "deploymentId": "dpl_DDqZnDd92A9dPjpXGhoyWXSmJvmD",
-        "readyState": "READY",
-        "publishedAt": "2026-10-13",
-        "public": true,
-        "release": "2.7.0",
-        "commit": "f331dd9",
-        "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/16",
-        "productionApproval": {
-          "approved": true,
-          "release": "2.7.0",
-          "date": "2026-10-13",
-          "approvedBy": "Owner",
-          "scope": "Agentmon, the eighth game (PR #16, which carries PR #13): a creature-befriending pixel RPG for ages 7 to 12, at version 1.1.0: 77 original Agentmon to befriend with a timing or mood game, gentle turn-based sparring, six puzzle Trials, the post-game Banyan Hollow, and pet care at the Agent Base (pet, snacks, Bubble Catch, 12 earned accessories). One self-contained 1,130 KB file; saves only under agentmon. keys (storage audit clean); no ads, purchases, chat, accounts or network. The listing (Ready to play, order 8, not featured), the RPG category, previews, cover, logo and OG image. All other games stay at their current versions.",
-          "note": "Owner wrote: \"Upload the game to the live Production https://ai-kids-games-fawn.vercel.app/\" (after Agentmon 1.0 and 1.1 were built and their PRs opened with \"I'll play it first and then approve\"). Released after 2.6.0 (PR #21, the trailers), so this is 2.7.0. Guard: scripts/check-deployment.ts needs this record for 2.7.0, a passing localSuites record for 2.7.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.7.0 in the Production environment of both Vercel projects (ai-kids-games and ai-kids-games-play), and a build from main."
+      "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/16",
+      "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+      "guardLog": "Production deployment of release 2.7.0 approved by the owner on 2026-10-13; GPU browser suites passed on 3db0970.",
+      "smokeTest": "Logged-out Playwright suite against production (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone): 131 passed, 97 intentional device/engine skips, 30 failed. Every game, Agentmon included, goes home → details → play for 20 s clean with durable saves. The 30 failures are site-wide interactions (filters, search, favorites, theme, the grown-up check, the trailer, Submit a game) clicked on the prebuilt page before the app had taken over (the timing PR #21 fixes in the tests with data-app=\"ready\"), plus the grid tests, which need the local mock page. The same interactions, repeated on production at a person's pace on desktop Chromium and iPhone WebKit, all work with no console errors: 8 games listed, the Racing, RPG and age-7 filters, search, a favorite kept across a reload, dark mode, the grown-up check, and Agentmon's page and game.",
+      "lighthouseMobile": {
+        "home": {
+          "performance": 98,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
         },
-        "note": "Released by the Agentmon session (Agentmon, the eighth game); its production checks are recorded by that session."
-      }
+        "details": {
+          "performance": 99,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "play": {
+          "performance": 91,
+          "performanceExempt": true,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "agentmonDetails": {
+          "performance": 99,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "agentmonPlay": {
+          "performance": 86,
+          "performanceExempt": true,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        }
+      },
+      "productionApproval": {
+        "approved": true,
+        "release": "2.7.0",
+        "date": "2026-10-13",
+        "approvedBy": "Owner",
+        "scope": "Agentmon, the eighth game (PR #16, which carries PR #13): a creature-befriending pixel RPG for ages 7 to 12, at version 1.1.0: 77 original Agentmon to befriend with a timing or mood game, gentle turn-based sparring, six puzzle Trials, the post-game Banyan Hollow, and pet care at the Agent Base (pet, snacks, Bubble Catch, 12 earned accessories). One self-contained 1,130 KB file; saves only under agentmon. keys (storage audit clean); no ads, purchases, chat, accounts or network. The listing (Ready to play, order 8, not featured), the RPG category, previews, cover, logo and OG image. All other games stay at their current versions.",
+        "note": "Owner wrote: \"Upload the game to the live Production https://ai-kids-games-fawn.vercel.app/\", then \"Upload the game to github and make it live in the website now\". It was numbered 2.7.0 because 2.6.0 (PR #21, the trailers) was already approved; #21 then stayed blocked on a flaky site test, so at the owner's request Agentmon shipped first. #21 needs a version above 2.7.0 (and its approval and GPU suites recorded for it). Guard: scripts/check-deployment.ts needs this record for 2.7.0, a passing localSuites record for 2.7.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.7.0 in the Production environment of both Vercel projects (ai-kids-games and ai-kids-games-play), and a build from main."
+      },
+      "note": "Released by the Agentmon session (Agentmon, the eighth game); recorded by that session in PR #22, merged here with the 2.8.0 record."
+    },
+    {
+      "url": "https://ai-kids-games-fawn.vercel.app",
+      "deploymentId": "dpl_GeCxoce5C1JVVX571ERV7zM3vt8y",
+      "deploymentUrl": "https://ai-kids-games-i3x7dolhc-real-tours.vercel.app",
+      "readyState": "READY",
+      "publishedAt": "2026-10-13",
+      "public": true,
+      "release": "2.5.0",
+      "commit": "a58d7d1",
+      "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/17",
+      "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+      "guardLog": "Production deployment of release 2.5.0 approved by the owner on 2026-10-13; GPU browser suites passed on 16e3637.",
+      "playOrigin": {
+        "project": "real-tours/ai-kids-games-play",
+        "deploymentId": "dpl_31jaPSNuiWrsuDNF3RBExENwYevF",
+        "url": "https://ai-kids-games-play.vercel.app",
+        "guardLog": "Production deployment of release 2.5.0 approved by the owner on 2026-10-13; GPU browser suites passed on 16e3637.",
+        "games": 0,
+        "note": "Serves no game until the owner approves one; / is a notice page and every other path 404s, with the strict headers (connect-src none, frame-ancestors the site)."
+      },
+      "smokeTest": "Live checks: every page 200 and unknown addresses 404; /community shows \"No community games yet\"; the site CSP frames only 'self'; the IndexNow key is served; the play origin answers with its strict headers. Logged-out Playwright suite against production (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone): 130 passed, 97 intentional device/engine skips, 25 failed. All 25 were the tests acting before the app took over the prebuilt page: since 2.5.0 pages arrive prerendered and the app replaces them 110–220 ms after they show on the live site, while the tests tapped within milliseconds (mock grid cards wiped, filter, theme, favorite and lightbox taps on the inert copy). Fixed in the tests (tests/e2e/fixtures.ts waits for <html data-app=\"ready\">, added in 2.8.0) and re-run against production with 2.8.0: 171 passed, 0 failed.",
+      "lighthouseMobile": {
+        "home": {
+          "performance": 100,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "details": {
+          "performance": 100,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "play": {
+          "performance": 81,
+          "performanceExempt": true,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "community": {
+          "performance": 100,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "submitAGame": {
+          "performance": 100,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "faq": {
+          "performance": 100,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "guides": {
+          "performance": 100,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "tuckPopDetails": {
+          "performance": 100,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        }
+      },
+      "indexNow": "Submitted the live sitemap's changed pages after the checks: 202 received (indexnow-state.json).",
+      "ci": "PR #17 at 908b628: every job green (TheaBonk's own 125%/150% display-scaling checks flaked on GitHub's runners and passed on a re-run of that job; the same sources passed at 16e3637); CI passed. Space Sky's and Light Crossing's browser suites ran locally (localSuites)."
     },
     {
       "release": "2.4.1",
