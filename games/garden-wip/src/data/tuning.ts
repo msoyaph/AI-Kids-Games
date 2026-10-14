@@ -5,9 +5,14 @@
 export const BOARD = {
   lanes: 5,
   tiles: 9,
-  /** Tile size in world units: deeper than wide, so tiles stay easy to tap at the tilted camera. */
+  /** Tile size in world units: a little deeper than wide, so tiles read square at the tilted camera. */
   tileWidth: 1.0,
-  tileDepth: 1.3,
+  tileDepth: 1.15,
+  /**
+   * The path in: this many tiles of garden path beyond the last column, where critters are seen
+   * coming through the bushes before they reach the beds. Not plantable.
+   */
+  runway: 1.5,
 } as const;
 
 export const SIM = {

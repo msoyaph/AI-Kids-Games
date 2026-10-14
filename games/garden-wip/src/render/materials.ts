@@ -4,15 +4,16 @@
 // the world's lighting sets the colour and Low turns it off. The rim follows farm-wip's
 // render/materials.ts (from Calex Cart's withRim).
 import * as THREE from 'three';
+import { PALETTE } from './palette';
 
 export const rim = {
   color: { value: new THREE.Color(0xfff3d6) },
   strength: { value: 0.32 },
 };
 
-/** Three soft steps of light: shade, mid, lit. */
+/** Three bold steps of light: shade, mid, lit. */
 function toonSteps(): THREE.DataTexture {
-  const data = new Uint8Array([110, 190, 255]);
+  const data = new Uint8Array([120, 200, 255]);
   const t = new THREE.DataTexture(data, data.length, 1, THREE.RedFormat);
   t.minFilter = THREE.NearestFilter;
   t.magFilter = THREE.NearestFilter;
@@ -50,9 +51,20 @@ export const Materials = {
   toon: toon('toon'),
   /** The grass and soil of the diorama base (no rim: it would outline the whole slab). */
   ground: new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: steps }),
-  /** Soft round shadows under things on Low. */
-  blob: new THREE.MeshBasicMaterial({ color: 0x24361a, transparent: true, opacity: 0.26, depthWrite: false }),
+  /** Soft round contact shadows under everything, on every tier. */
+  blob: new THREE.MeshBasicMaterial({ color: 0x1d2a10, transparent: true, opacity: 0.34, depthWrite: false }),
+  /** Outlines: back faces of each model's hull, in the outline colour (instanced and one-off twins). */
+  outlineInst: outline('outline-i'),
+  outline: outline('outline'),
+  /** Unlit things: the sky, glows, sparkles and trails. */
+  basic: new THREE.MeshBasicMaterial({ vertexColors: true }),
 };
+
+function outline(key: string) {
+  const m = new THREE.MeshBasicMaterial({ color: PALETTE.outline, side: THREE.BackSide });
+  m.customProgramCacheKey = () => key;
+  return m;
+}
 Materials.blob.polygonOffset = true;
 Materials.blob.polygonOffsetFactor = -2;
 Materials.blob.polygonOffsetUnits = -2;

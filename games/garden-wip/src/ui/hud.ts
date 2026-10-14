@@ -7,7 +7,7 @@ const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.qu
 
 export interface CardInfo { id: string; cost: number; image: string }
 
-const LEAF_CHIP = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 25c2-6 7-9 13-9s11 3 13 9z" fill="#6f4a2e"/><path d="M16 16c0-6 4-10 10-11-1 6-4 10-10 11z" fill="#6cbc58"/></svg>';
+const COMPOST_ICON = '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="22" r="11" fill="#5e3a22" stroke="#2b1910" stroke-width="3"/><path d="M20 21c-7 0-12-4-13-9 6 0 11 3 13 9zM20 21c7 0 12-4 13-9-6 0-11 3-13 9z" fill="#8fe05a" stroke="#2b1910" stroke-width="2.5" stroke-linejoin="round"/></svg>';
 
 const place = (el: HTMLElement, r: Rect) => {
   el.style.left = `${r.x}px`; el.style.top = `${r.y}px`; el.style.width = `${r.w}px`; el.style.height = `${r.h}px`;
@@ -29,7 +29,7 @@ export class Hud {
       button.dataset.plant = card.id;
       button.setAttribute('role', 'radio');
       button.setAttribute('aria-label', `${plant.name}, ${card.cost} compost. ${plant.does}`);
-      button.innerHTML = `<img alt="" src="${card.image}"><span class="cost">${LEAF_CHIP}${card.cost}</span><span class="name">${plant.name}</span>`;
+      button.innerHTML = `<img alt="" src="${card.image}"><span class="wait"></span><span class="key" aria-hidden="true">${i + 1}</span><span class="cost">${COMPOST_ICON}${card.cost}</span><span class="name">${plant.name}</span>`;
       button.addEventListener('click', () => this.select(i));
       return button;
     }));
@@ -42,6 +42,18 @@ export class Hud {
     this.selected = Math.max(0, Math.min(buttons.length - 1, index));
     buttons.forEach((b, i) => b.setAttribute('aria-checked', String(i === this.selected)));
     this.onSelect(this.selected);
+  }
+
+  /**
+   * A card's state: `wait` is how much of its recharge is left (0 ready, 1 just planted), shown as a
+   * sweep that clears like a clock hand; `afford` is false when there isn't enough compost.
+   */
+  cardState(index: number, wait: number, afford: boolean) {
+    const el = this.cards.children[index] as HTMLElement | undefined;
+    if (!el) return;
+    el.style.setProperty('--cd', `${Math.round(Math.max(0, Math.min(1, wait)) * 360)}deg`);
+    el.classList.toggle('cooling', wait > 0);
+    el.classList.toggle('poor', !afford);
   }
 
   get selectedId() { return (this.cards.children[this.selected] as HTMLElement | undefined)?.dataset.plant ?? ''; }

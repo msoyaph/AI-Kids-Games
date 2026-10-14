@@ -2,7 +2,7 @@
 // colours) and placed with a position, rotation and scale, merged into one geometry per part.
 // Every model is built once per level; nothing here runs per frame.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export type Vec3 = readonly [number, number, number];
 
@@ -12,6 +12,8 @@ export interface Piece {
   at?: Vec3;
   rot?: Vec3;
   scale?: Vec3 | number;
+  /** Drawn with an outline (default true); pupils, highlights and mouths go without. */
+  outline?: boolean;
 }
 
 const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), s = new THREE.Vector3();
@@ -42,16 +44,47 @@ function prepare(piece: Piece): THREE.BufferGeometry {
 
 /** Merges painted pieces into one geometry. */
 export function build(pieces: readonly Piece[]): THREE.BufferGeometry {
-  const parts = pieces.map(prepare);
-  const merged = mergeGeometries(parts, false)!;
+  return buildOutlined(pieces, 0).geo;
+}
+
+/**
+ * Merges painted pieces into one geometry, plus its outline hull: each outlined piece pushed out
+ * `thickness` along smoothed normals (so boxes don't crack at their corners), drawn back-faces only
+ * in the outline colour. Thickness is in the model's units.
+ */
+export function buildOutlined(pieces: readonly Piece[], thickness: number): { geo: THREE.BufferGeometry; hull: THREE.BufferGeometry | null } {
+  const hulls: THREE.BufferGeometry[] = [];
+  const parts = pieces.map(piece => {
+    const g = prepare(piece);
+    if (thickness > 0 && piece.outline !== false) {
+      const shell = new THREE.BufferGeometry();
+      shell.setAttribute('position', g.attributes.position!.clone());
+      const welded = mergeVertices(shell, 1e-4);
+      welded.computeVertexNormals();
+      const pos = welded.attributes.position!, nrm = welded.attributes.normal!;
+      for (let i = 0; i < pos.count; i++) pos.setXYZ(i, pos.getX(i) + nrm.getX(i) * thickness, pos.getY(i) + nrm.getY(i) * thickness, pos.getZ(i) + nrm.getZ(i) * thickness);
+      const flat = welded.toNonIndexed();
+      flat.deleteAttribute('normal');
+      flat.computeVertexNormals();
+      hulls.push(flat);
+      shell.dispose(); welded.dispose();
+    }
+    return g;
+  });
+  const geo = mergeGeometries(parts, false)!;
   for (const g of parts) g.dispose();
-  merged.computeBoundingSphere();
-  return merged;
+  geo.computeBoundingSphere();
+  geo.computeBoundingBox();
+  const hull = hulls.length ? mergeGeometries(hulls, false) : null;
+  for (const g of hulls) g.dispose();
+  return { geo, hull };
 }
 
 // Shapes, sized in world units (a tile is 1 wide). Low segment counts keep the triangle budget small;
 // toon shading makes them read as soft and round.
 export const ball = (r: number, ws = 12, hs = 9) => new THREE.SphereGeometry(r, ws, hs);
+/** The lower half of a ball (a bowl): open mouths. */
+export const bowl = (r: number, ws = 12, hs = 6) => new THREE.SphereGeometry(r, ws, hs, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
 export const capsule = (r: number, len: number, cap = 4, radial = 10) => new THREE.CapsuleGeometry(r, len, cap, radial);
 export const cyl = (rt: number, rb: number, h: number, radial = 10) => new THREE.CylinderGeometry(rt, rb, h, radial);
 export const cone = (r: number, h: number, radial = 10) => new THREE.ConeGeometry(r, h, radial);
@@ -73,6 +106,32 @@ export function softBox(w: number, h: number, d: number, round = 0.35, seg = 10)
   }
   g.computeVertexNormals();
   return g;
+}
+
+/**
+ * A big, expressive face pointing toward +z, centred at `at`: round white eyes with big pupils and a
+ * glint, an open smile with a tongue, and rosy cheeks. Readable from across the garden. `mood`
+ * changes the mouth: 'happy' (open smile), 'grin' (wide closed smile), 'brave' (small smile, brows).
+ */
+export function bigFace(at: Vec3, size = 1, mood: 'happy' | 'grin' | 'brave' = 'happy', eyeGap = 1): Piece[] {
+  const [x, y, z] = at, s = size;
+  const ex = 0.088 * s * eyeGap, er = 0.078 * s;
+  const pieces: Piece[] = [];
+  for (const side of [-1, 1]) {
+    pieces.push({ geo: ball(er, 14, 10), color: 0xffffff, at: [x + side * ex, y, z], scale: [1, 1.12, 0.55] });
+    pieces.push({ geo: ball(er * 0.58, 10, 8), color: 0x1d1410, at: [x + side * ex + side * -0.006 * s, y - 0.006 * s, z + er * 0.42], scale: [1, 1.1, 0.5], outline: false });
+    pieces.push({ geo: ball(er * 0.2, 6, 4), color: 0xffffff, at: [x + side * ex - 0.02 * s, y + 0.026 * s, z + er * 0.62], outline: false });
+    pieces.push({ geo: ball(0.036 * s, 8, 6), color: 0xff9db0, at: [x + side * (ex + 0.055 * s), y - 0.085 * s, z - 0.004 * s], scale: [1.3, 0.8, 0.35], outline: false });
+    if (mood === 'brave') pieces.push({ geo: capsule(0.014 * s, 0.07 * s, 2, 6), color: 0x2a1a12, at: [x + side * ex, y + er * 1.32, z + 0.01 * s], rot: [0, 0, Math.PI / 2 + side * 0.32], outline: false });
+  }
+  if (mood === 'happy') {
+    pieces.push({ geo: bowl(0.062 * s, 12, 6), color: 0x7a1f24, at: [x, y - 0.1 * s, z + 0.005 * s], scale: [1.25, 0.95, 0.45], outline: false });
+    pieces.push({ geo: ball(0.034 * s, 8, 6), color: 0xff7b8a, at: [x, y - 0.135 * s, z + 0.018 * s], scale: [1.4, 0.7, 0.5], outline: false });
+  } else {
+    const wide = mood === 'grin' ? 1.3 : 0.75;
+    pieces.push({ geo: torus(0.05 * s * wide, 0.013 * s, 5, 14, Math.PI), color: 0x3a1a14, at: [x, y - 0.075 * s, z + 0.01 * s], rot: [0, 0, Math.PI], outline: false });
+  }
+  return pieces;
 }
 
 /** Two bead eyes and a tiny smile on a face pointing toward +z, centred at `at`. */

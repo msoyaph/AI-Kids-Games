@@ -9,7 +9,7 @@ from this file alone.
 | Phase | What | State |
 |---|---|---|
 | 0 | Setup, originality, IP log, five names | **done** |
-| 1 | Style frame and engine checks; **stop for the owner's approval of the look** | next |
+| 1 | Style frame and engine checks; **stop for the owner's approval of the look** | **done**: v2 approved ("Ok good graphics quality") |
 | 2 | Simulation core and both bots | |
 | 3 | Vertical slice (World 1, levels 1–3), draft PR to prove CI | |
 | 4 | Content, world by world (24 plants, 20 critters, 6 bosses, 50 levels) | |
@@ -54,6 +54,55 @@ npm run typecheck --workspace games/garden-wip
 npm run build --workspace games/garden-wip        # dist/index.html, size-checked
 npm run test:e2e --workspace games/garden-wip     # heavy: quiet machine only
 ```
+
+## Art direction (owner, 2026-10-14: "make the lane-defense game look bold, bright and premium")
+
+The owner reviewed style frame v1 (phase 1a, commit 9215e9f: soft plush look, units too small,
+camera wasting half the screen, pale colours) and set measurable targets. A screenshot of the
+inspiring series was given as **a quality bar only** (readability, scale, colour punch, polish); it
+stays on the owner's machine (`.reference/`, git-ignored) and nothing is copied from it.
+
+- **Camera** (render/camera.ts): near-orthographic (12° field of view) so back lanes are as big as
+  front ones; the tilt adapts to the screen's shape between 38° and 82° so the playfield fills the
+  play area, and characters lean back toward the camera (seen 27° from above their front at any tilt).
+  The back lane's heads may rise into the top bar's strip (the beds never go under the HUD).
+- **Framing** (tests/unit/framing.test.ts, reports/framing.md): the playfield (beds and the path in)
+  fills at least 85% of the play area's width and height on every phone, tablet and desktop (90–95%
+  in practice); the play area is the screen minus the top bar, the card tray and safe areas. Of the
+  whole screen it's 52–70% (HUD, tray and notches take the rest). Upright tablets are the exception:
+  the board spans the width with sky and garden above and below (45%).
+- **Tray placement** (ui/layout.ts): the card tray goes where it costs the board least, a column
+  beside it (phones, most desktops) or a row below it (4:3 tablets, 16:10 laptops). Cards scale with
+  the screen (66–128 px).
+- **The path in** (owner asked whether the field was too short): 9 plantable columns stay (the
+  genre's proven length; tiles stay big on phones), plus BOARD.runway = 1.5 tiles of garden path on
+  the right where critters come through a gap in the bushes and are seen approaching. Pace (a walker
+  crossing in about 40 s, waves building) is tuned with the bots in phase 2.
+- **Look:** toon shading in three bold bands, a dark outline hull on every character (0.03) and prop
+  (0.018), a warm rim light, soft contact shadows under everything on every tier; outlines and toon
+  stay on Low (only effects and background detail drop). Palette in render/palette.ts: rich dark soil
+  in alternating light/dark columns inside each bed (column bands, never a lawn checkerboard), lush
+  greens, a fresh blue sky.
+- **Characters:** each plant has its own silhouette, signature colour and a big expressive face
+  (geo.ts bigFace): Comfrey lilac (round bud, curled bell stalk), Rowan orange (puffy autumn tree,
+  flicking branch), Boxwood emerald (square hedge with a bobble). Critters are about a tile tall:
+  periwinkle snail with a golden shell, chunky upright coral ants (marching in threes), black-and-white
+  magpie with teal sheen. Animations: idle bounce, squash and stretch on firing and producing, walk,
+  nibble, shooed (recoil), and running home in a poof of leaves and sparkles.
+- **Effects:** compost pickups float and bob in a soft round green-gold glow (no rays); berries have
+  short trails; leaf and sparkle poofs; all listed in render/fx.ts under 3 flashes a second.
+- **Backdrop** (render/backdrop.ts): screen-space, in the strip above the beds: sky, two cloud layers
+  drifting at different speeds, round trees with picnic bunting, a woven willow (wattle) fence.
+- **Interface:** chunky clay-pot cards with a clear cost badge, a cooldown sweep and a "not enough
+  compost" state, number-key hints; a bold wave bar with picnic-flag milestones; a chunky compost
+  counter.
+- **The squint test** (tests/unit/squint.test.ts on every screen; scripts/style-frame.ts in pixels):
+  every unit at least 75% of its tile's height and at least 10 px tall at 25% scale on the smallest
+  phone; each signature fill 3:1 or more against both soil tones and the outline 3:1 against grass;
+  plant hues at least 40° apart.
+- After approval: roll the look out to every plant, critter, world and menu; rerun the full suite,
+  the bot balance (unit sizes must not change gameplay) and a visual review of every world on phone
+  and desktop.
 
 ## The design (approved plan, summarized)
 
@@ -134,6 +183,11 @@ npm run test:e2e --workspace games/garden-wip     # heavy: quiet machine only
    CI green, the preview link. Add the brief's row to `docs/prompts/README.md` then (left out until the game is
    named, to avoid a conflict with farm-wip).
 
+## Name: Shooberry (owner's pick, 2026-10-14)
+
+Then the owner wrote: "Ok good graphics quality, now finish the game end to end and deploy it to
+production" (this replaces the brief's "stop before production" for this release).
+
 ## Five name candidates (web-checked 2026-10-14, for the owner's pick)
 
 Searched each name with "game" and "app"; none is taken by a game or app.
@@ -166,10 +220,18 @@ and publisher are on the trademark blocklist (`scripts/lib/manifest.ts`, tested 
   shells; corn, cabbage or melon lobbers and catapult arms; garlic-style lane switching; clover fans; torches;
   starfruit; kelp; squash; snapdragon fire; moonflower or "shadow" plants; aloe healing; thistle homing; ice
   or freezing slows; fog of any kind; a "huge wave" warning; a bowling mini-game.
-- **Style rules:** no plant shoots from a mouth (shots leave from branches, pods, stalks or flowers); plant
-  faces are small bead eyes and a tiny smile, never big cartoon mouths or snouts; lobs come from swaying stalks
-  or spinning wings, never catapult arms or baskets; plant cards are round clay-pot badges, never paper packets
-  in a top bar; costs sit on a leaf chip, never a sun disc.
+- **Style rules:** no plant shoots from a mouth (shots leave from branches, pods, stalks or flowers); no
+  snouts or tube mouths; lobs come from swaying stalks or spinning wings, never catapult arms or baskets;
+  plant cards are round clay-pot badges in a side column or bottom row, never paper packets in a top bar;
+  costs sit on a compost-ball badge, never a sun disc. Faces changed with the owner's art direction (v2):
+  big round eyes and an open smile or grin, still never a mouth that shoots.
+- **The owner's quality reference (2026-10-14):** a screenshot of the inspiring series, used as a quality
+  bar only (readability, scale, colour punch, polish). Not committed, not traced, no colours sampled.
+  Differences kept on purpose: raised wooden beds with soil in column bands (not a striped or checkered
+  lawn); a woven willow fence with round trees and bunting (not a white picket fence, house or bushes
+  wall); the gingham blanket and lane umbrellas (not mowers); compost pickups are leafy balls in a round
+  glow (not a rayed sun); cards in a side tray (not a seed bar along the top); a footprint-and-flag wave
+  bar of our own.
 
 ### Roster v2 plants: lookalike review
 
@@ -241,6 +303,17 @@ plant stealers) are checked for close copies, and every animal against other fam
 | Seagull (gull) | flyer | Dives for one snack; never says a famous film's "mine" line |
 | Kite Crow (crow) | flyer on updrafts | A diamond kite on a string, never a round balloon (the original has a balloon floater) |
 | Cloud Sheep (lamb) | floater | All-white with a pale face, not a famous stop-motion lamb's black face |
+
+**v2 redesign (bold look), lookalike review of the six style-frame units:**
+
+| Unit | v2 design | Closest thing elsewhere | Why ours is different |
+|---|---|---|---|
+| Comfrey Crumble | lilac round bud with a face, ring of big leaves, curled stalk of nodding bells | the series' producer: a yellow flower with a face in its petals | lilac bud, no petals around the face, the curled bell stalk; makes compost, not sun |
+| Rowan Flicker | puffy orange autumn tree with a face in its crown, berry bunches, a flicking branch | the series' shooters: green heads with tube mouths | a tree; shots leave a branch, never a mouth |
+| Boxwood Block | emerald clipped square hedge with a bobble, brave face | the series' wall: a brown egg-shaped nut with big eyes | square, green, leafy, with a topiary bobble; a blocker with a face is common to the genre |
+| Snack Snail | periwinkle body, eyes on stalks, golden shell with a coral swirl | racing-snail film looks | no stripes or racing gear; colours our own |
+| Ant (of an Ant Column) | chunky upright coral ant, six legs (four walking, two arms), big eyes, marching in threes | an animated film's upright blue and purple ants | coral, six legs, no clothes |
+| Magpie | black and white with white shoulder patches and a teal sheen, long tail | the slingshot game's round wingless birds | a natural long-tailed bird with wings |
 
 **Not used anywhere:** a raccoon/squirrel/tortoise/possum gang (an animated film's cast), a basket-stealing
 bear, sock goblins (from the brief's examples, replaced by real animals), a goose that steals things in a garden.

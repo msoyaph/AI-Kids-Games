@@ -7,8 +7,10 @@
 export const FLASH_LIMIT_HZ = 3;
 
 export const FX = {
-  /** A compost pile's soft shimmer, saying "tap me". */
+  /** A compost pickup's glow, gently breathing to say "tap me". */
   compostShimmerHz: 0.5,
+  /** Sparkles in a poof fade once; this is their twinkle while they last. */
+  sparkleTwinkleHz: 1.2,
   /** The selected plant card's glow breathing. */
   cardGlowHz: 0.6,
   /** A berry's glint in flight. */
@@ -19,6 +21,10 @@ export const FX = {
 
 /** Gentle repeating movement (not brightness). Off with reduced motion. */
 export const MOTION = {
+  /** Plants' idle bounce (a soft breathing squash). */
+  idleBounceHz: 0.9,
+  /** Compost pickups bobbing as they float. */
+  bobHz: 0.6,
   /** Plants swaying in the breeze. */
   swayHz: 0.35,
   /** A critter's walk bob. */

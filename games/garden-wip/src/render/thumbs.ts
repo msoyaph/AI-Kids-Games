@@ -6,12 +6,12 @@ import { ModelLayer } from './instanced';
 
 export function thumbnail(renderer: THREE.WebGLRenderer, model: Model, size = 160): string {
   const scene = new THREE.Scene();
-  scene.add(new THREE.HemisphereLight(0xe4f4ff, 0x6f9a4c, 1.35));
-  const sun = new THREE.DirectionalLight(0xfff0d6, 1.7);
+  scene.add(new THREE.HemisphereLight(0xe6f6ff, 0x7fae4e, 1.15));
+  const sun = new THREE.DirectionalLight(0xfff1d8, 2.2);
   sun.position.set(-2, 5, 6);
   scene.add(sun);
   const layer = new ModelLayer(model, 1);
-  for (const mesh of layer.meshes) { mesh.castShadow = mesh.receiveShadow = false; scene.add(mesh); }
+  for (const mesh of layer.all) { mesh.castShadow = mesh.receiveShadow = false; scene.add(mesh); }
   layer.begin();
   layer.push(0, 0, 0, 0, 1, 1, 1, newPoses(model.parts.length));
   layer.end();
@@ -32,7 +32,7 @@ export function thumbnail(renderer: THREE.WebGLRenderer, model: Model, size = 16
   renderer.setClearAlpha(clear);
   renderer.shadowMap.enabled = shadows;
   target.dispose();
-  for (const mesh of layer.meshes) mesh.dispose();
+  for (const mesh of layer.all) mesh.dispose();
   // the target is upside down compared with a canvas
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;

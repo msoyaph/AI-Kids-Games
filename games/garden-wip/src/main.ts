@@ -21,17 +21,20 @@ import { layout, needsRotate, type Insets } from './ui/layout';
 const params = new URLSearchParams(location.search);
 const sceneParam = params.get('scene');
 const capture = sceneParam !== null;
-const sceneName: SceneName = sceneParam === 'stress' ? 'stress' : 'style';
+const sceneName: SceneName = sceneParam === 'stress' ? 'stress' : sceneParam === 'squint' ? 'squint' : 'style';
 
 type Screen = 'title' | 'play' | 'paused';
 const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 const canvas = $<HTMLCanvasElement>('#game');
 const screens = { title: $('#title'), paused: $('#paused') };
 const soundButton = $<HTMLButtonElement>('#sound');
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// the squint scene stands still, so every unit is measured in its resting pose
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches || sceneName === 'squint';
 const noWebGL2 = (window as unknown as { __noWebGL2?: boolean }).__noWebGL2 === true;
 
-const CARDS: { id: PlantModelId; cost: number }[] = [{ id: 'comfrey', cost: 50 }, { id: 'rowan', cost: 100 }, { id: 'boxwood', cost: 50 }];
+const CARDS: { id: PlantModelId; cost: number; recharge: number }[] = [{ id: 'comfrey', cost: 50, recharge: 5 }, { id: 'rowan', cost: 100, recharge: 5 }, { id: 'boxwood', cost: 75, recharge: 12 }];
+/** The style frame's compost: enough for Comfrey, not for Rowan, while Boxwood recharges. */
+const COMPOST = 85;
 
 let data: Save = capture ? { v: 2, best: 0, plays: 0, sound: true } : load();
 let screen: Screen = 'title';
@@ -45,7 +48,7 @@ function boot() {
   const tier: QualityTier = forced ?? guessTier(navigator, globalThis.screen, gpu);
   const view = new GardenView(canvas, tier, tier !== 'low' && !software);
   const governor = forced || software ? null : new Governor(tier);
-  const show = new Showcase(sceneName);
+  const show = new Showcase(sceneName, 7, sceneName === 'squint' && params.has('empty'));
   const hud = new Hud();
   let cursor: Tile = { lane: 2, col: 2 };
   let highlight: Tile | null = null;
@@ -167,6 +170,8 @@ function boot() {
       t += dt;
       show.update(dt, t);
     }
+    // the style frame's cards: Boxwood's recharge sweeps round and starts again, Rowan waits for compost
+    if (sceneName === 'style') CARDS.forEach((c, i) => hud.cardState(i, c.id === 'boxwood' ? 1 - ((t / c.recharge) % 1) : 0, c.cost <= COMPOST));
     if (!contextLost) {
       view.draw(show.frame(t, reduced, screen === 'play' ? highlight : null));
       view.render();

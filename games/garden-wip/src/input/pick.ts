@@ -9,8 +9,9 @@ import { BOARD_D, BOARD_W, COLS, LANES, tileAt, type Tile } from '../sim/board';
 
 /** How far off the board (world units) a tap still counts for the edge tile. */
 export const EDGE_SLACK = 0.35;
-/** How far (CSS px) a tap snaps to a tile the action can use. */
+/** How far (CSS px) a tap snaps to a tile the action can use: 40 px, or 3/4 of a tile when tiles are bigger. */
 export const SNAP_PX = 40;
+export const snapRadius = (tilePx: number) => Math.max(SNAP_PX, tilePx * 0.75);
 
 /** The tile a ray points at, or null when it's well off the board. */
 export function pickTile(ray: THREE.Ray): Tile | null {

@@ -40,33 +40,54 @@ export function commit(mesh: THREE.InstancedMesh, count: number): void {
   if (mesh.instanceColor) uploadPrefix(mesh.instanceColor, count);
 }
 
-const base = new THREE.Matrix4(), local = new THREE.Matrix4(), out = new THREE.Matrix4(), tmp = new THREE.Matrix4();
+const base = new THREE.Matrix4(), local = new THREE.Matrix4(), out = new THREE.Matrix4(), tmp = new THREE.Matrix4(), leanM = new THREE.Matrix4();
 const q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), s = new THREE.Vector3();
 const color = new THREE.Color();
 
-/** A model drawn many times: one InstancedMesh per part, sharing each instance's base transform. */
+/** An outline twin for an instanced mesh: same matrices (shared buffer), hull geometry, outline colour. */
+function outlineTwin(main: THREE.InstancedMesh, hull: THREE.BufferGeometry, cap: number): THREE.InstancedMesh {
+  const twin = new THREE.InstancedMesh(hull, Materials.outlineInst, cap);
+  twin.instanceMatrix = main.instanceMatrix;
+  twin.count = 0;
+  twin.frustumCulled = false;
+  return twin;
+}
+
+/**
+ * A model drawn many times: one InstancedMesh per part (plus its outline twin), sharing each
+ * instance's base transform. Characters lean back toward the camera by `lean` (radians), around
+ * the point where they stand, so they face the player at a gentle angle whatever the tilt.
+ */
 export class ModelLayer {
   readonly meshes: THREE.InstancedMesh[];
+  readonly hulls: THREE.InstancedMesh[];
   private n = 0;
+  lean = 0;
 
   constructor(readonly model: Model, readonly capacity: number) {
     this.meshes = model.parts.map(part => {
       const mesh = makeInstanced(part.geo, part.twoSided ? Materials.toonInstTwo : Materials.toonInst, capacity);
-      mesh.castShadow = true;
+      mesh.castShadow = false;
       mesh.receiveShadow = true;
       return mesh;
     });
+    this.hulls = model.parts.flatMap((part, i) => (part.hull ? [outlineTwin(this.meshes[i]!, part.hull, capacity)] : []));
   }
 
+  /** Every mesh to add to the scene (fills and outlines). */
+  get all() { return [...this.hulls, ...this.meshes]; }
   get count() { return this.n; }
   begin() { this.n = 0; }
 
-  /** One instance at (x, y, z), turned by `yaw`, scaled (sx, sy, sz), its parts posed by `pose`. */
+  /** One instance standing at (x, y, z), turned by `yaw`, scaled (sx, sy, sz), its parts posed by `pose`. */
   push(x: number, y: number, z: number, yaw: number, sx: number, sy: number, sz: number, pose: Pose) {
     if (this.n >= this.capacity) return;
     e.set(0, yaw, 0);
     q.setFromEuler(e);
-    base.compose(p.set(x, y, z), q, s.set(sx, sy, sz));
+    base.compose(p.set(0, 0, 0), q, s.set(sx, sy, sz));
+    // lean back toward the camera, then stand at (x, y, z)
+    base.premultiply(leanM.makeRotationX(-this.lean));
+    base.premultiply(tmp.makeTranslation(x, y, z));
     const parts = this.model.parts;
     for (let i = 0; i < parts.length; i++) {
       const o = i * POSE_SIZE, [px, py, pz] = parts[i]!.pivot;
@@ -80,24 +101,30 @@ export class ModelLayer {
     this.n++;
   }
 
-  end() { for (const mesh of this.meshes) commit(mesh, this.n); }
+  end() {
+    for (const mesh of this.meshes) commit(mesh, this.n);
+    for (const hull of this.hulls) { hull.count = this.n; hull.visible = this.n > 0; }
+  }
 }
 
-/** A simple instanced thing with no parts (berries, leaves, tufts, shadows), optionally coloured. */
+/** A simple instanced thing with no parts (berries, leaves, tufts, shadows), optionally coloured and outlined. */
 export class SimpleLayer {
   readonly mesh: THREE.InstancedMesh;
+  readonly hull: THREE.InstancedMesh | null;
   private n = 0;
 
-  constructor(geo: THREE.BufferGeometry, mat: THREE.Material, readonly capacity: number, withColor = false) {
+  constructor(geo: THREE.BufferGeometry, mat: THREE.Material, readonly capacity: number, withColor = false, hull: THREE.BufferGeometry | null = null) {
     this.mesh = makeInstanced(geo, mat, capacity, withColor);
+    this.hull = hull ? outlineTwin(this.mesh, hull, capacity) : null;
   }
 
+  get all() { return this.hull ? [this.hull, this.mesh] : [this.mesh]; }
   get count() { return this.n; }
   begin() { this.n = 0; }
 
-  push(x: number, y: number, z: number, yaw: number, roll: number, sx: number, sy: number, sz: number, hex?: number) {
+  push(x: number, y: number, z: number, yaw: number, roll: number, sx: number, sy: number, sz: number, hex?: number, pitch = 0) {
     if (this.n >= this.capacity) return;
-    e.set(0, yaw, roll, 'YXZ');
+    e.set(pitch, yaw, roll, 'YXZ');
     q.setFromEuler(e);
     out.compose(p.set(x, y, z), q, s.set(sx, sy, sz));
     this.mesh.setMatrixAt(this.n, out);
@@ -105,5 +132,10 @@ export class SimpleLayer {
     this.n++;
   }
 
-  end() { commit(this.mesh, this.n); }
+  end() {
+    commit(this.mesh, this.n);
+    if (this.hull) { this.hull.count = this.n; this.hull.visible = this.n > 0; }
+  }
+
+  set visible(on: boolean) { this.mesh.visible = on && this.n > 0; if (this.hull) this.hull.visible = on && this.n > 0; }
 }

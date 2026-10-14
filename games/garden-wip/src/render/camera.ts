@@ -1,40 +1,61 @@
-// The diorama camera: fixed, tilted down at the garden from the front, framing the board (with the
-// umbrella strip on the left and a little of the critters' path on the right) inside the layout's
-// open area. Pure math over a three.js PerspectiveCamera (no WebGL), so the pick test can use it.
-// project/screenRay/rayToPlane follow farm-wip's render/camera.ts.
+// The diorama camera: fixed, looking at the garden from the front and above through a narrow lens
+// (near-orthographic, so back lanes are as big as front ones), framing the board so it fills the
+// layout's open area. Its tilt adapts to the screen's shape: wide phone screens get a lower tilt
+// (the board's depth squeezes to fit), squarer screens a steeper, more top-down one, so the board
+// fills the play area either way. Characters lean back toward the camera by `lean(pitch)`, so they
+// always face the player at about the same gentle angle. Pure math over a three.js camera (no
+// WebGL), so the pick and framing tests use exactly this. project/screenRay/rayToPlane follow
+// farm-wip's render/camera.ts.
 import * as THREE from 'three';
-import { BOARD_D, BOARD_W } from '../sim/board';
-import { openArea, type Insets } from '../ui/layout';
+import { BOARD_D, BOARD_W, RUNWAY, TILE_D } from '../sim/board';
+import { layout, type Insets } from '../ui/layout';
 
-/** Tilt below the horizon. */
-export const PITCH = (55 * Math.PI) / 180;
-/** Vertical field of view, degrees: narrow, so the garden reads like a diorama and far tiles stay big. */
-export const FOV = 22;
-/** What must fit on screen: the tiles, the umbrellas (x < 0), the path in (x > board) and plant tops. */
-export const FIT_BOX = { x0: -0.9, x1: BOARD_W + 0.5, z0: -0.15, z1: BOARD_D + 0.2, y0: 0, y1: 0.6 } as const;
-/** Space kept between the framed box and the open area's edges (CSS px). */
-const MARGIN = 4;
+/** Vertical field of view, degrees: narrow, so the back lanes aren't smaller than the front ones. */
+export const FOV = 12;
+/** The tilt range (degrees below the horizon) the camera may use. */
+export const PITCH_RANGE = [38, 82] as const;
+/** Characters are seen from this many degrees above their front, whatever the tilt. */
+export const VIEW_ANGLE = 27;
+/** Tallest character (world units), for framing the back lane's heads. */
+export const CHARACTER_H = 1.05;
+/** What the board needs around it: the umbrellas on the left, the path in (and its bushes) on the right. */
+export const MARGIN_X = [-0.62, RUNWAY + 0.3] as const;
+
+/** How far characters lean back (radians) at a camera pitch (radians). */
+export const lean = (pitch: number) => Math.max(0, pitch - (VIEW_ANGLE * Math.PI) / 180);
 
 export interface Fit {
+  pitch: number;
   /** Camera distance from the target. */
   distance: number;
-  /** The view offset that centres the box in the open area (CSS px). */
+  /** The view offset that centres the board in the open area (CSS px). */
   ox: number;
   oy: number;
 }
 
-const corners = Array.from({ length: 8 }, (_, i) => new THREE.Vector3(
-  i & 1 ? FIT_BOX.x1 : FIT_BOX.x0, i & 2 ? FIT_BOX.y1 : FIT_BOX.y0, i & 4 ? FIT_BOX.z1 : FIT_BOX.z0));
-const target = new THREE.Vector3((FIT_BOX.x0 + FIT_BOX.x1) / 2, 0, (FIT_BOX.z0 + FIT_BOX.z1) / 2);
+/** The board with its margins: what must fill the open area. */
+function boardPoints(): THREE.Vector3[] {
+  const x0 = MARGIN_X[0], x1 = BOARD_W + MARGIN_X[1];
+  return [new THREE.Vector3(x0, 0, -0.08), new THREE.Vector3(x1, 0, -0.08), new THREE.Vector3(x0, 0, BOARD_D + 0.1), new THREE.Vector3(x1, 0, BOARD_D + 0.1)];
+}
+const BOARD_POINTS = boardPoints();
+
+/** The back lane's tallest heads at a pitch: they may rise into the top bar's strip, never above it. */
+function headPoints(pitch: number): THREE.Vector3[] {
+  const l = lean(pitch), z = TILE_D / 2 - CHARACTER_H * Math.sin(l), y = CHARACTER_H * Math.cos(l);
+  return [new THREE.Vector3(MARGIN_X[0] + 0.3, y, z), new THREE.Vector3(BOARD_W + MARGIN_X[1] - 0.3, y, z)];
+}
+
+const target = new THREE.Vector3(BOARD_W / 2 + (MARGIN_X[0] + MARGIN_X[1]) / 2, 0, BOARD_D / 2);
 const v = new THREE.Vector3();
 
-/** Places the camera at `distance` with view offset (ox, oy) on a w × h CSS px screen. */
+/** Places the camera for a fit on a w × h CSS px screen. */
 export function place(cam: THREE.PerspectiveCamera, w: number, h: number, fit: Fit) {
   cam.fov = FOV;
   cam.aspect = w / Math.max(1, h);
-  cam.near = Math.max(0.1, fit.distance * 0.3);
-  cam.far = fit.distance * 3 + 40;
-  cam.position.set(target.x, target.y + Math.sin(PITCH) * fit.distance, target.z + Math.cos(PITCH) * fit.distance);
+  cam.near = Math.max(0.1, fit.distance * 0.5);
+  cam.far = fit.distance * 2 + 60;
+  cam.position.set(target.x, target.y + Math.sin(fit.pitch) * fit.distance, target.z + Math.cos(fit.pitch) * fit.distance);
   cam.up.set(0, 1, 0);
   cam.lookAt(target);
   cam.setViewOffset(w, h, fit.ox, fit.oy, w, h);
@@ -42,10 +63,9 @@ export function place(cam: THREE.PerspectiveCamera, w: number, h: number, fit: F
   cam.updateMatrixWorld(true);
 }
 
-/** The box's bounds on screen for the camera as placed. */
-function bounds(cam: THREE.PerspectiveCamera, w: number, h: number) {
+function bounds(cam: THREE.PerspectiveCamera, w: number, h: number, points: readonly THREE.Vector3[]) {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const c of corners) {
+  for (const c of points) {
     v.copy(c).project(cam);
     const x = (v.x + 1) * 0.5 * w, y = (1 - v.y) * 0.5 * h;
     x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
@@ -53,24 +73,41 @@ function bounds(cam: THREE.PerspectiveCamera, w: number, h: number) {
   return { x0, y0, x1, y1 };
 }
 
+/** The board's width / height on screen at a pitch. */
+export function boardAspect(cam: THREE.PerspectiveCamera, pitch: number) {
+  place(cam, 1000, 1000, { pitch, distance: 60, ox: 0, oy: 0 });
+  const b = bounds(cam, 1000, 1000, BOARD_POINTS);
+  return (b.x1 - b.x0) / (b.y1 - b.y0);
+}
+
 /**
- * Frames the garden as large as the open area allows and centres it there. A few rounds converge:
- * the picture's size goes as 1 / distance, and the view offset slides it into place.
+ * Frames the board as large as the open area allows: first the tilt whose picture has the open
+ * area's shape (within PITCH_RANGE), then the distance and offset that make it fill and centre.
+ * The back lane's heads may use `headroom` px above the open area (the top bar's strip).
  */
 export function fitCamera(cam: THREE.PerspectiveCamera, w: number, h: number, insets?: Insets): Fit {
-  const open = openArea(w, h, insets);
-  const ow = Math.max(1, open.w - 2 * MARGIN), oh = Math.max(1, open.h - 2 * MARGIN);
+  const lay = layout(w, h, insets), open = lay.open;
+  const headroom = Math.max(0, lay.topBar.h - 10);
+  const ow = Math.max(1, open.w - 4), oh = Math.max(1, open.h - 4);
+  const want = ow / oh;
+  let pitch = (PITCH_RANGE[0] * Math.PI) / 180, best = Infinity;
+  for (let deg = PITCH_RANGE[0]; deg <= PITCH_RANGE[1] + 1e-9; deg += 0.25) {
+    const p = (deg * Math.PI) / 180, miss = Math.abs(Math.log(boardAspect(cam, p) / want));
+    if (miss < best) { best = miss; pitch = p; }
+  }
+  const heads = headPoints(pitch);
   const cx = open.x + open.w / 2, cy = open.y + open.h / 2;
-  const fit: Fit = { distance: 20, ox: w / 2 - cx, oy: h / 2 - cy };
-  for (let round = 0; round < 12; round++) {
+  const fit: Fit = { pitch, distance: 40, ox: w / 2 - cx, oy: h / 2 - cy };
+  for (let round = 0; round < 16; round++) {
     place(cam, w, h, fit);
-    const b = bounds(cam, w, h);
-    const scale = Math.max((b.x1 - b.x0) / ow, (b.y1 - b.y0) / oh);
+    const b = bounds(cam, w, h, BOARD_POINTS), top = bounds(cam, w, h, heads).y0;
+    const scale = Math.max((b.x1 - b.x0) / ow, (b.y1 - b.y0) / oh, (b.y1 - top) / (oh + headroom));
     fit.distance *= scale;
-    // slide the picture so the box's middle lands on the open area's middle
+    // centre the board; if the heads would rise past the headroom, slide it down to make room
+    const dy = Math.max((b.y0 + b.y1) / 2 - cy, Math.min(0, top - (open.y + 2 - headroom)));
     fit.ox += (b.x0 + b.x1) / 2 - cx;
-    fit.oy += (b.y0 + b.y1) / 2 - cy;
-    if (Math.abs(scale - 1) < 1e-4 && Math.abs((b.x0 + b.x1) / 2 - cx) < 0.05 && Math.abs((b.y0 + b.y1) / 2 - cy) < 0.05) break;
+    fit.oy += dy;
+    if (Math.abs(scale - 1) < 1e-4 && Math.abs((b.x0 + b.x1) / 2 - cx) < 0.05 && Math.abs(dy) < 0.05) break;
   }
   place(cam, w, h, fit);
   return fit;
@@ -100,4 +137,10 @@ export function rayToPlane(ray: THREE.Ray, planeY = 0): { x: number; z: number }
   const t = (planeY - ray.origin.y) / ray.direction.y;
   if (t < 0) return null;
   return { x: ray.origin.x + ray.direction.x * t, z: ray.origin.z + ray.direction.z * t };
+}
+
+/** Where a point `h` up a leaned character (standing at x, z) is in the world. */
+export function upLeaned(pitch: number, x: number, z: number, h: number, out = new THREE.Vector3()) {
+  const l = lean(pitch);
+  return out.set(x, h * Math.cos(l), z - h * Math.sin(l));
 }

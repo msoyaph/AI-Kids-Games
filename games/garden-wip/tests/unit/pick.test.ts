@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { SAFETY } from '../../src/data/tuning';
-import { pickNear, pickTile } from '../../src/input/pick';
+import { pickNear, pickTile, snapRadius } from '../../src/input/pick';
 import { fitCamera, project, screenRay } from '../../src/render/camera';
 import { ALL_TILES, colX, laneZ, sameTile, TILE_D, TILE_W, type Tile } from '../../src/sim/board';
 import { layout, SMALLEST_PHONE, SMALLEST_PHONE_TILE_PX, SUPPORTED_VIEWPORTS, type Rect, type Viewport } from '../../src/ui/layout';
@@ -65,7 +65,9 @@ describe('tap picking', () => {
     const sx = a.x + (b.x - a.x) * 0.3, sy = a.y + (b.y - a.y) * 0.3;
     const hit = pickTile(screenRay(cam, w, h, sx, sy));
     expect(hit).toEqual(planted);
-    expect(pickNear(hit, sx, sy, t => sameTile(t, free), screenOf)).toEqual(free);
+    const radius = snapRadius(Math.hypot(b.x - a.x, b.y - a.y));
+    expect(pickNear(hit, sx, sy, t => sameTile(t, free), screenOf, radius)).toEqual(free);
+    expect(pickNear(hit, sx - 4 * radius, sy, t => sameTile(t, free), screenOf, radius)).toBeNull();
     expect(pickNear(hit, sx, sy, () => false, screenOf)).toBeNull();
   });
 });

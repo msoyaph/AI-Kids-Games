@@ -4,6 +4,8 @@ import type { Vec3 } from '../geo';
 /** One separately animated piece of a model (a crown, a wing), drawn as one instanced mesh. */
 export interface Part {
   geo: THREE.BufferGeometry;
+  /** Its outline hull (drawn back-faces only, in the outline colour), if it has one. */
+  hull?: THREE.BufferGeometry | null;
   /** The point it turns and squashes around, in model space. */
   pivot: Vec3;
   /** Thin pieces seen from both sides (wings, leaves in the air). */
@@ -17,6 +19,8 @@ export interface Model {
   shadow: number;
   /** Rough height, for framing card thumbnails. */
   height: number;
+  /** Its signature colour (the main fill the squint test checks against the soil). */
+  fill: number;
 }
 
 /**
@@ -42,7 +46,7 @@ export function rest(p: Pose) {
 export function scaled(model: Model, k: number): Model {
   return {
     ...model,
-    parts: model.parts.map(part => ({ ...part, geo: part.geo.scale(k, k, k), pivot: [part.pivot[0] * k, part.pivot[1] * k, part.pivot[2] * k] as const })),
+    parts: model.parts.map(part => ({ ...part, geo: part.geo.scale(k, k, k), hull: part.hull?.scale(k, k, k) ?? null, pivot: [part.pivot[0] * k, part.pivot[1] * k, part.pivot[2] * k] as const })),
     shadow: model.shadow * k,
     height: model.height * k,
   };

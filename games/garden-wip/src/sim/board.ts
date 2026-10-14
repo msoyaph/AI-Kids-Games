@@ -9,6 +9,9 @@ export const TILE_W = BOARD.tileWidth;
 export const TILE_D = BOARD.tileDepth;
 export const BOARD_W = COLS * TILE_W;
 export const BOARD_D = LANES * TILE_D;
+/** Where the path in begins (the bushes' gap): critters enter here and walk to the beds. */
+export const RUNWAY = BOARD.runway;
+export const ENTRY_X = BOARD_W + RUNWAY;
 
 export interface Tile { lane: number; col: number }
 

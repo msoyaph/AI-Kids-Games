@@ -27,22 +27,33 @@ export interface Layout {
   open: Rect;
 }
 
+/**
+ * The board's width / height on screen across the camera's tilt range (most top-down first). The
+ * framing test checks these against camera.ts, which can't be imported here (it imports this file).
+ */
+export const BOARD_ASPECT = [1.9, 3.25] as const;
+
+/** How much screen the board gets in an open area of w × h (it keeps its shape within BOARD_ASPECT). */
+const boardArea = (w: number, h: number) => {
+  const a = w / Math.max(1, h);
+  return a < BOARD_ASPECT[0] ? (w * w) / BOARD_ASPECT[0] : a > BOARD_ASPECT[1] ? h * h * BOARD_ASPECT[1] : w * h;
+};
+
 export function layout(w: number, h: number, insets: Insets = NONE): Layout {
   const compact = Math.min(w, h) < 500;
   const top = Math.max(insets.top, GAP), left = Math.max(insets.left, GAP), right = Math.max(insets.right, GAP), bottom = Math.max(insets.bottom, GAP);
-  const barH = compact ? 52 : 64;
-  const card = compact ? 64 : 84;
+  const barH = compact ? 52 : 68;
+  // chunky cards: bigger on bigger screens
+  const card = compact ? 66 : Math.max(88, Math.min(128, Math.round(Math.min(w, h) * 0.125)));
   const topBar = { x: left, y: top, w: w - left - right, h: barH };
   const below = top + barH + GAP;
-  if (w >= h) {
-    const colW = card + 8;
-    const cardArea = { x: left, y: below, w: colW, h: h - below - bottom };
-    const ox = left + colW + GAP;
-    return { compact, cards: 'column', topBar, cardArea, card, open: { x: ox, y: below, w: Math.max(0, w - ox - right), h: Math.max(0, h - below - bottom) } };
-  }
-  const rowH = card + 8;
-  const cardArea = { x: left, y: h - bottom - rowH, w: w - left - right, h: rowH };
-  return { compact, cards: 'row', topBar, cardArea, card, open: { x: left, y: below, w: Math.max(0, w - left - right), h: Math.max(0, cardArea.y - GAP - below) } };
+  // the tray (the cards plus its padding and border) goes where it costs the board least: a column
+  // beside it or a row below it
+  const colW = card + 20, rowH = Math.round(card * 1.08) + 20;
+  const column: Layout = { compact, cards: 'column', topBar, card, cardArea: { x: left, y: below, w: colW, h: h - below - bottom }, open: { x: left + colW + GAP, y: below, w: Math.max(0, w - left - colW - GAP - right), h: Math.max(0, h - below - bottom) } };
+  const rowArea = { x: left, y: h - bottom - rowH, w: w - left - right, h: rowH };
+  const row: Layout = { compact, cards: 'row', topBar, card, cardArea: rowArea, open: { x: left, y: below, w: Math.max(0, w - left - right), h: Math.max(0, rowArea.y - GAP - below) } };
+  return boardArea(row.open.w, row.open.h) > boardArea(column.open.w, column.open.h) * 1.02 ? row : column;
 }
 
 export const openArea = (w: number, h: number, insets?: Insets) => layout(w, h, insets).open;
@@ -72,12 +83,13 @@ export const SUPPORTED_VIEWPORTS: readonly Viewport[] = [
 ];
 
 /**
- * Older 4-inch phones (568×320, the first iPhone SE) still play, with tiles a little under the 40 px
- * goal: there isn't room for 40 px tiles and the cards. Taps stay exact and generous there too.
+ * Older 4-inch phones (568×320, the first iPhone SE) still play, with tiles a hair under the 40 px
+ * goal (39.5 px): there isn't quite room for 40 px tiles, the path in and the cards. Taps stay exact
+ * and generous there too.
  */
 export const SMALLEST_PHONE: Viewport = { name: 'small phone sideways', w: 568, h: 320 };
 /** The smallest tile side on SMALLEST_PHONE (CSS px). */
-export const SMALLEST_PHONE_TILE_PX = 34;
+export const SMALLEST_PHONE_TILE_PX = 38;
 
 /** True when the screen is a phone held upright: the game asks to turn it sideways. */
 export const needsRotate = (w: number, h: number) => h > w && w < 500;
