@@ -128,6 +128,12 @@ npx tsx games/breezeport/scripts/models.mts     # triangles per model (CPU only)
   - **Prices and rewards** (from bot playthroughs on six seeds): services 340–520, park pieces a little dearer, bus stops 40, landmarks 3,200–4,800 (they come when the town is rich), projects 300 / 500 / 980; chapter rewards 500, 700, 750, 700, 500, 600, 700, 800, 1,000; a school reaches 14 tiles and a library 13, and chapter 3 asks for 6 in 10 homes near a school (so one or two schools do it); shops and workplaces earn 4/6/8 and 3/5/7 coins a minute, residents 0.15.
   - **Population goals:** 85, 150, 175 (Old Harbor holds about 200 before Maple Row opens), 380, 540, 720, 850 and 1,100.
   - **The pacing test allows 90 minutes a chapter** (the plan said 75): a chapter's length is mostly the town growing while the player builds freely, and towns grow at different speeds (±20 minutes between seeds). The story still averages 6–8 hours.
+- 2026-10-14 (the owner, on the preview: "The UI and text here are so big its not good user experience on mobile view"): **a compact phone UI.**
+  - Under 520 px wide or 500 px tall, text is 0.85 of its size (`--k`; tool names and captions keep at least 12 px), and the cards, menu, City Hall and tray have tighter padding.
+  - Every tap target is still at least 48 px, and the bar sizes layout.ts uses don't change.
+  - The City Hall charts stop at 420 px wide (340 px on phones), so their labels no longer grow with the panel.
+  - On a sideways phone the tray hugs its chips instead of stretching across the screen.
+  - On narrow screens the camera buttons rise above an open tray or placing bar (the tray used to cover zoom-in).
 
 ## Names (phase 0: five proposals, web-checked 2026-10-14; the owner picked **Breezeport**)
 **How they were checked:**
