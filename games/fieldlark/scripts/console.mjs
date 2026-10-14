@@ -11,5 +11,5 @@ page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') { 
 page.on('pageerror', e => console.log(`[pageerror] ${e.message}`));
 await page.goto(`${pathToFileURL(resolve('dist/index.html')).href}?${query}`);
 await page.waitForTimeout(4000);
-console.log('done', JSON.stringify(await page.evaluate(() => { const s = window.__farmwip?.snapshot?.(); return s && { draws: s.drawCalls, tris: s.triangles, programs: s.programs }; })));
+console.log('done', JSON.stringify(await page.evaluate(() => { const s = window.__fieldlark?.snapshot?.(); return s && { draws: s.drawCalls, tris: s.triangles, programs: s.programs }; })));
 await browser.close();

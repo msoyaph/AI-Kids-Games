@@ -590,20 +590,20 @@ at the Agent Base. Game 1.1.0, re-imported; no new storage keys and no save migr
 load as they are, tested with a real 1.0 save). The PR keeps the site at its current version; the
 owner plays it first, and the release (on its own or together with 1.0) bumps the site then.
 
-## Farm game (owner brief 2026-10-13; working slug `farm-wip`, branch `farm-wip`)
+## Fieldlark, the farm game (owner brief 2026-10-13; slug `fieldlark`, branch `fieldlark`; working name was Farm WIP / `farm-wip`)
 
 A 3D farm-building and management game for ages 8–14, built in its own worktree
-(~/Documents/FarmerTown/AI-Kids-Games-farm) from origin/main f331dd9. Brief: docs/prompts/farm-wip.md.
-Plan, rules and status: games/farm-wip/CLAUDE.md (approved plan in games/farm-wip/docs/PLAN.md).
+(~/Documents/FarmerTown/AI-Kids-Games-farm) from origin/main f331dd9. Brief: docs/prompts/fieldlark.md.
+Plan, rules and status: games/fieldlark/CLAUDE.md (plans: games/fieldlark/docs/PLAN.md, then PLAN-2.md).
 
-- **Name:** "Farm WIP" is a working name. The owner picks one of five web-checked names before the
-  site step, and the slug, prefix and hook are renamed then, before any player has a save.
+- **Name:** **Fieldlark**, the owner's pick of five web-checked names (2026-10-14). The working name
+  "Farm WIP" (`farm-wip`, prefix `farmwip.`) was renamed before any player had a save.
 - **Repo side:** the inspiration's title and its publisher join the trademark blocklist, with a site
   manifest test.
 - **Other sessions:** never run heavy tests alongside another session's
-  (games/farm-wip/scripts/quiet-check.mjs, and respect its exit code).
+  (games/fieldlark/scripts/quiet-check.mjs, and respect its exit code).
 - **Release (owner, 2026-10-14, the "finish end to end" brief):**
-  - Finish the game (games/farm-wip/docs/PLAN-2.md), rename it and import it.
+  - Finish the game (games/fieldlark/docs/PLAN-2.md), rename it and import it.
   - Open a PR, get CI green and hand over the preview link. **Stop before production:** the owner
     plays it and approves the release.
   - This replaces the earlier "deploy when complete".

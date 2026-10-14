@@ -4,7 +4,7 @@ import { open, pickAt, PREFIX, snapshot, startFarming, tileOnScreen, watch } fro
 test('boots into a 3D farm, with no errors and no network', async ({ page }) => {
   const problems = watch(page);
   await open(page);
-  await expect(page.getByRole('heading', { name: /Farm WIP/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Fieldlark/ })).toBeVisible();
   await startFarming(page);
   const s = await snapshot(page);
   expect(s.drawCalls).toBeGreaterThan(0);
@@ -103,7 +103,7 @@ test('runs inside a sandboxed iframe like on the website', async ({ page }) => {
   await page.route('**/host.html', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><iframe src="/?quality=low" sandbox="allow-scripts allow-same-origin allow-pointer-lock" allow="fullscreen; gamepad" style="width:960px;height:540px;border:0"></iframe>' }));
   await page.goto('/host.html');
   const frame = page.frameLocator('iframe');
-  await expect(frame.getByRole('heading', { name: /Farm WIP/ })).toBeVisible();
+  await expect(frame.getByRole('heading', { name: /Fieldlark/ })).toBeVisible();
   await frame.getByRole('button', { name: /farming/i }).click();
   await expect(frame.locator('#hud')).toBeVisible();
   expect(problems).toEqual([]);

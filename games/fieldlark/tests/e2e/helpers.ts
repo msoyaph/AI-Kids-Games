@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
-export const HOOK = '__farmwip';
-export const PREFIX = 'farmwip.';
+export const HOOK = '__fieldlark';
+export const PREFIX = 'fieldlark.';
 export const LOW = !!process.env.E2E_LOW;
 
 export interface Snapshot {
@@ -37,7 +37,7 @@ export function watch(page: Page) {
   });
   page.on('request', request => {
     const url = new URL(request.url());
-    if (!['127.0.0.1:4446', ''].includes(url.host) && url.protocol !== 'data:' && url.protocol !== 'blob:') problems.push(`request to ${request.url()}`);
+    if (!['127.0.0.1:4769', ''].includes(url.host) && url.protocol !== 'data:' && url.protocol !== 'blob:') problems.push(`request to ${request.url()}`);
   });
   return problems;
 }

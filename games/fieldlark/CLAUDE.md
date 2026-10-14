@@ -1,15 +1,19 @@
-# Farm WIP — working notes (read this first when resuming)
+# Fieldlark — working notes (read this first when resuming)
 
-A 3D farm-building and management game for ages 8–14, for AI Kids Games. "Farm WIP" (slug `farm-wip`)
+A 3D farm-building and management game for ages 8–14, for AI Kids Games. **Fieldlark** (slug `fieldlark`,
+storage prefix `fieldlark.`, hook `__fieldlark`) is the owner's pick of 2026-10-14; until then it was
+built under the working name "Farm WIP" (slug `farm-wip`, prefix `farmwip.`, no player saves existed).
+The rest of this paragraph is the original note:
 is the **working name**: the owner picks the final name from the five in "Names" before the site step,
-and phase 11 renames everything. Brief: `docs/prompts/farm-wip.md`. Approved plan (2026-10-13):
-`games/farm-wip/docs/PLAN.md`, which holds the full game design, architecture and the 13 phases.
+and phase 11 renames everything. Brief: `docs/prompts/fieldlark.md`. Approved plan (2026-10-13):
+`games/fieldlark/docs/PLAN.md`, which holds the full game design, architecture and the 13 phases.
+The second plan (owner-approved 2026-10-14, phases 7–15 and ten new mechanics) is `docs/PLAN-2.md`.
 
-**Resume:** "Continue Farm WIP from CLAUDE.md" → read this file, then **Progress**, and carry on from
+**Resume:** "Continue the farm game from CLAUDE.md" → read this file, then **Progress**, and carry on from
 "Next".
 
 ## Workspace (other sessions are active)
-- Own git worktree: `~/Documents/FarmerTown/AI-Kids-Games-farm`, branch `farm-wip`, cut from
+- Own git worktree: `~/Documents/FarmerTown/AI-Kids-Games-farm`, branch `fieldlark` (was `farm-wip`), cut from
   `origin/main` f331dd9 (release 2.7.0, Agentmon). The branch has no upstream. Push or open a PR only
   when the owner asks.
 - **Release (owner, 2026-10-14, the "finish end to end" brief; replaces the same day's earlier "deploy
@@ -26,24 +30,24 @@ and phase 11 renames everything. Brief: `docs/prompts/farm-wip.md`. Approved pla
   6. production checks and a record PR.
 - The main checkout `~/Documents/AI-Kids-Games` belongs to another session (branch
   `game-trailers`). Never touch that checkout or other sessions' worktrees.
-- **Heavy runs:** `node games/farm-wip/scripts/quiet-check.mjs` before any browser test, Vitest run,
+- **Heavy runs:** `node games/fieldlark/scripts/quiet-check.mjs` before any browser test, Vitest run,
   capture or long simulation. **Respect its exit code:** 0 means quiet, so go ahead; 1 means busy, so
   wait and don't start; with `--wait`, a non-zero exit after 2 hours means stop and tell the owner.
-  `sh scripts/when-quiet.sh e2e|sim …` (from games/farm-wip) waits, then runs. It exits 75 if the
+  `sh scripts/when-quiet.sh e2e|sim …` (from games/fieldlark) waits, then runs. It exits 75 if the
   machine is still busy after 2 hours. The quiet check counts Vitest as heavy, so unit tests wait too.
   Never run unit and browser tests at the same time, and never run CPU- or GPU-heavy work while
   another session's e2e is running.
 - **Disk:** run `df -h ~` at the start of every phase. Under 2 GB: clean only our own regenerable
   files (test-results, dist, playwright-report). If it is still under, stop and ask.
 - Before every commit: check `git log` for commits this session didn't make. Commit messages are
-  "Farm WIP, phase N: …", with a `Tests:` line and the trailer
+  "Fieldlark, phase N: …", with a `Tests:` line and the trailer
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
 ## Rules that never change
 - One self-contained `dist/index.html` under **3 MiB** (`scripts/check-build.mjs`; aim for about
   1.8 MB). It works from file:// and in the site's sandboxed iframe, with **no network requests**
   (build CSP + check).
-- Storage: only keys starting `farmwip.` (save, settings, probe `farmwip.__probe`). Never
+- Storage: only keys starting `fieldlark.` (save, settings, probe `fieldlark.__probe`). Never
   `localStorage.clear()`, never enumerate other keys. Saves are versioned and migrated. The prefix
   changes once, at the rename in phase 11, before any player has a save.
 - **Kindness rules** (from the brief; tested):
@@ -70,14 +74,14 @@ and phase 11 renames everything. Brief: `docs/prompts/farm-wip.md`. Approved pla
 
 ## Commands (from the repo root of the worktree)
 ```bash
-npm run typecheck --workspace games/farm-wip
-node games/farm-wip/scripts/quiet-check.mjs && npm test --workspace games/farm-wip
-npm run build --workspace games/farm-wip       # typecheck + single-file build + contract check
-(cd games/farm-wip && sh scripts/when-quiet.sh e2e)   # browser tests, once quiet
-npm run dev --workspace games/farm-wip         # http://127.0.0.1:5446
+npm run typecheck --workspace games/fieldlark
+node games/fieldlark/scripts/quiet-check.mjs && npm test --workspace games/fieldlark
+npm run build --workspace games/fieldlark       # typecheck + single-file build + contract check
+(cd games/fieldlark && sh scripts/when-quiet.sh e2e)   # browser tests, once quiet
+npm run dev --workspace games/fieldlark         # http://127.0.0.1:5769
 npm run check                                  # repo hygiene + build sync (root)
 ```
-Ports: dev 5446, preview 4446. They are computed from the slug and don't collide with any other
+Ports: dev 5769, preview 4769 (from the slug `fieldlark`; were 5446/4446 as farm-wip). They don't collide with any other
 game's. Tuck Pop is 4444/5444.
 
 ## Architecture

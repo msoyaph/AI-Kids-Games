@@ -23,11 +23,11 @@ for (const device of devicesArg.split(',')) {
     for (const [suffix, extra] of [['', ''], ['-out', '&zoom=32']]) {
       const page = await ctx.newPage();
       await page.goto(`${file}?${query}${extra}&quality=${tier}`);
-      await page.waitForFunction(() => window.__farmwip?.snapshot?.().screen === 'farm', null, { timeout: 20000 });
+      await page.waitForFunction(() => window.__fieldlark?.snapshot?.().screen === 'farm', null, { timeout: 20000 });
       await page.waitForTimeout(2500);
       // frame rate over two seconds, measured here rather than the game's smoothed number
       const fps = await page.evaluate(() => new Promise(done => { let n = 0; const t0 = performance.now(); const tick = () => { n++; if (performance.now() - t0 < 2000) requestAnimationFrame(tick); else done(Math.round((n * 1000) / (performance.now() - t0))); }; requestAnimationFrame(tick); }));
-      const s = await page.evaluate(() => window.__farmwip.snapshot());
+      const s = await page.evaluate(() => window.__fieldlark.snapshot());
       const heap = await page.evaluate(() => Math.round((performance.memory?.usedJSHeapSize ?? 0) / 1e6));
       const path = `${out}/${device}-${tier}${suffix}.png`;
       await page.screenshot({ path });

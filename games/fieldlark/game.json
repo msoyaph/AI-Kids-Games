@@ -1,7 +1,7 @@
 {
   "$schema": "../../docs/game.schema.json",
-  "slug": "farm-wip",
-  "title": "Farm WIP",
+  "slug": "fieldlark",
+  "title": "Fieldlark",
   "tagline": "Wake up the town farm, one field at a time.",
   "shortDescription": "Build and grow a 3D farm from above: plant 30 real crops, raise animals, run a mill and a bakery, fill orders for the town and bring back the Harvest Fair.",
   "longDescription": "A sleepy community farm needs a new keeper. Plough fields, plant real crops and look after them for better harvests, plant orchards, keep happy animals, and turn your harvest into flour, bread, jam and sweaters. Fill orders for the little river town, trade with friendly neighbour farms, decorate, and win ribbons at the seasonal fairs. There is no energy and nothing ever wilts: farm time only moves while you play.",
@@ -65,13 +65,22 @@
     "WebGL 2"
   ],
   "playTime": "About 6–8 hours of story, then endless farming",
+  "embed": "fullscreen",
+  "moods": [
+    "cozy",
+    "creative"
+  ],
+  "sessionMinutes": [
+    15,
+    45
+  ],
   "storage": {
-    "prefix": "farmwip.",
+    "prefix": "fieldlark.",
     "keys": [
-      "farmwip.save",
-      "farmwip.settings"
+      "fieldlark.save",
+      "fieldlark.settings"
     ],
-    "probe": "farmwip.__probe"
+    "probe": "fieldlark.__probe"
   },
   "safety": {
     "ads": false,
@@ -82,10 +91,10 @@
   },
   "capture": {
     "route": "?scene=farm&seed=7",
-    "script": "apps/site/scripts/capture/farm-wip.ts"
+    "script": "apps/site/scripts/capture/fieldlark.ts"
   },
   "license": "MIT",
-  "source": "games/farm-wip",
+  "source": "games/fieldlark",
   "site": {
     "featured": false,
     "releaseDate": "2026-10-14",

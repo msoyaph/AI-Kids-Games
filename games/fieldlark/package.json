@@ -1,8 +1,8 @@
 {
-  "name": "farm-wip",
+  "name": "fieldlark",
   "private": true,
   "version": "0.1.0",
-  "description": "Farm WIP, a game for AI Kids Games.",
+  "description": "Fieldlark, a game for AI Kids Games.",
   "type": "module",
   "license": "MIT",
   "scripts": {

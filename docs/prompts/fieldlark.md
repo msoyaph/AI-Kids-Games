@@ -1,8 +1,9 @@
 <!-- The brief as the owner wrote it. Other companies' game and company names are replaced with a
 description in [brackets]. The brief ended at "seasonal looks"; for the rest (performance, testing,
 the site step, the definition of done) the owner chose the plan's defaults. The approved plan is in
-games/farm-wip/docs/PLAN.md, and its follow-up decisions are in games/farm-wip/CLAUDE.md. "Farm WIP"
-is the working name until the owner picks the final one. -->
+games/fieldlark/docs/PLAN.md (and docs/PLAN-2.md for the second brief), and its follow-up decisions
+are in games/fieldlark/CLAUDE.md. The game is called Fieldlark (the owner's pick); "Farm WIP" was the
+working name, and "FarmerTown Ville" below is the owner's project label, which never ships. -->
 
 # Project: Build "FarmerTown Ville", a 3D farm-building and management game for ages 8–14 (inspired by [a farm-building social game])
 
