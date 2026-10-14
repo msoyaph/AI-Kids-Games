@@ -530,6 +530,52 @@ back.
   - **Lighthouse mobile:** home 99/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
     Tuck Pop details and play 99/100/100/100.
 
+## Release 2.7.0: Agentmon (owner, 2026-10-13: "Upload the game to the live Production https://ai-kids-games-fawn.vercel.app/")
+- **Scope:** PR #16 (Agentmon 1.1, which carries the 1.0 PR #13). Game 1.1.0. All other games stay at
+  their current versions.
+- **Why 2.7.0:** the other session's 2.6.0 (PR #21, a trailer for every game) was already approved
+  and in CI, so Agentmon ships right after it.
+- **Order:**
+  1. release commit (2.7.0, DEPLOYMENT.json approval);
+  2. `npm run release:local` on a quiet machine, and commit localSuites;
+  3. #21 merged, then `main` merged in again;
+  4. CI green;
+  5. `AIKG_ALLOW_PRODUCTION=2.7.0` in both projects' Production environments;
+  6. merge #16;
+  7. production checks (suite, Lighthouse) and a record PR.
+
+## Eighth game: Agentmon (owner brief 2026-10-13; slug `agentmon`, branch `agentmon`)
+
+Brief: docs/prompts/agentmon.md. Plan, rules and status: games/agentmon/CLAUDE.md (approved plan in
+games/agentmon/docs/PLAN.md). Built in its own worktree (~/Documents/AI-Kids-Games-agentmon) from
+Tuck Pop's phase 0 commit 4e03eae, while the Tuck Pop session worked in this checkout: never run
+heavy tests alongside another session (games/agentmon/scripts/quiet-check.mjs).
+
+**Repo side:** the RPG genre (schema, manifest validator, site Category) and more monster-taming and
+RPG franchise names on the trademark blocklist. `main` (Tuck Pop, 2.4.0) was merged into `agentmon`
+in phase 13; the lockfile is main's plus Agentmon's workspace entries, and `games/blocks-wip` stays
+gone. No change to ci.yml: Agentmon gets the default checks and Chromium + WebKit, and its
+`npm test` includes the sims (the playthrough bot), so CI runs them.
+
+**Phases 0–12 complete; phase 13 (site and PR)** (see games/agentmon/CLAUDE.md): game 1.0.0, listed "Ready to play" (order
+8), imported, storage audited (apps/site/STORAGE_AUDIT.md), previews captured, cover, logo and OG
+image, site tests at 8 games.
+
+**Release plan (owner: "Don't merge and don't release to production; I'll play it first and then
+approve"):** the PR keeps the site at its current version (2.4.0, then 2.4.1 once PR #12 lands and
+`main` is merged in again; TheaBonk stays the hero's first slide, and Agentmon isn't featured, so it
+isn't in the hero). After the owner's approval, the release commit bumps the site to 2.5.0 on top of
+2.4.1, records the approval in DEPLOYMENT.json and runs `npm run release:local` (Space
+Sky and Light Crossing GPU suites); then AIKG_ALLOW_PRODUCTION=2.5.0 in Vercel Production, merge with
+a merge commit, the production smoke test and Lighthouse, and the record PR.
+
+**Agentmon 1.1** (owner brief and approved plan 2026-10-13; plan games/agentmon/docs/PLAN-1.1.md;
+branch `agentmon-1.1`, worktree ~/Documents/AI-Kids-Games-agentmon-1.1, PR stacked on the 1.0 PR):
+polish across the game, 25 new Agentmon (77 in all) and the post-game Banyan Hollow, and pet care
+at the Agent Base. Game 1.1.0, re-imported; no new storage keys and no save migration (1.0 saves
+load as they are, tested with a real 1.0 save). The PR keeps the site at its current version; the
+owner plays it first, and the release (on its own or together with 1.0) bumps the site then.
+
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
    `npm ci`, `npx playwright install chromium webkit`.

@@ -6,7 +6,8 @@ export const launchGames = [
   { slug: 'vanex-defense',title: 'Vanex Defense',key: 'vanex-defense-save',prefix: /^vanex-defense-|^__vanex_probe__$/ },
   { slug: 'space-sky',title: 'Space Sky',key: 'spacesky.slot.0',prefix: /^spacesky\.|^__spacesky_probe__$/ },
   { slug: 'calex-cart',title: 'Calex Cart',key: 'calexcart.slot.1',prefix: /^calexcart\./ },
-  { slug: 'tuck-pop',title: 'Tuck Pop',key: 'tuckpop.run',prefix: /^tuckpop\./ }
+  { slug: 'tuck-pop',title: 'Tuck Pop',key: 'tuckpop.run',prefix: /^tuckpop\./ },
+  { slug: 'agentmon',title: 'Agentmon',key: 'agentmon.slot1',prefix: /^agentmon\./ }
 ];
 export async function press(locator: Locator,touch: boolean) { if (touch) await locator.tap(); else await locator.click(); }
 export async function instrument(page: Page) {
@@ -142,6 +143,15 @@ export async function startGame(page: Page,slug: string,touch: boolean): Promise
       await page.touchscreen.tap(box!.x+s.board.x+s.board.w/2,box!.y+s.board.y+s.board.h/2);
     } else { await f.locator('body').press('Digit1'); await f.locator('body').press('Enter'); }
     await expect.poll(() => f.evaluate(() => (window as any).__tuckpop.snapshot().moves)).toBe(1);
+  } else if (slug === 'agentmon') {
+    // a new adventure in slot 1: your Field Agent, a name, how tricky; it saves as it starts
+    await press(f.getByRole('button',{ name:'Play',exact:true }),touch);
+    await checkAudio(f);
+    await press(f.getByRole('button',{ name:'New adventure' }).first(),touch);
+    await press(f.getByRole('button',{ name:'Next',exact:true }),touch);
+    await press(f.getByRole('button',{ name:/^I'm / }).first(),touch);
+    await press(f.getByRole('button',{ name:'Start!' }),touch);
+    await f.waitForFunction(() => (window as any).__agentmon.snapshot().map === 'home',null,{ timeout: 30000 });
   } else if (slug === 'space-sky') {
     await press(f.getByTestId('btn-play'),touch);
     await checkAudio(f);
@@ -224,6 +234,12 @@ export async function verifySaveReload(f: Frame,slug: string) {
     await f.waitForFunction(() => (window as any).__tuckpop.snapshot().screen === 'play');
     expect(await f.evaluate(() => (window as any).__tuckpop.snapshot().moves)).toBe(1);
     expect(await f.evaluate(() => (window as any).__tuckpop.snapshot().persistent)).toBe(true);
+  } else if (slug === 'agentmon') {
+    await f.getByRole('button',{ name:'Play',exact:true }).click();
+    await expect(f.locator('.slot').first()).toContainText('friends');
+    await expect(f.getByText("This browser can't save")).toHaveCount(0);
+    await f.locator('.slot').first().getByRole('button',{ name:'Continue' }).click();
+    await f.waitForFunction(() => (window as any).__agentmon.snapshot().map === 'home',null,{ timeout: 30000 });
   } else if (slug === 'space-sky') {
     await f.getByTestId('btn-play').click();
     await expect(f.getByTestId('slot-0')).toContainText('LaunchTest');

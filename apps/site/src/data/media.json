@@ -1,4 +1,18 @@
 {
+  "agentmon": {
+    "loopSeconds": 7.8,
+    "mp4Bytes": 599223,
+    "webmBytes": 650575,
+    "shots": [
+      "A friendly spar: a Volt move is super strong against a Tide Agentmon",
+      "Befriending with the Spark Ring: tap when the spark is in the glow",
+      "Saltwhistle, a seaside town with a Rest Stop, a shop and the Lighthouse",
+      "A Trial puzzle: turn the mirrors to bring the light beam to the crystal",
+      "Mood Match, the befriend game with no timing: pick what fits the mood",
+      "The Field Guide, with a real nature fact for every Agentmon"
+    ],
+    "capturedAt": "2026-10-13"
+  },
   "calex-cart": {
     "loopSeconds": 7.2,
     "mp4Bytes": 719379,

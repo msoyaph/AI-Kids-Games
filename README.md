@@ -11,7 +11,7 @@ No ads. No subscriptions. No sign-ups. No tracking. Just play, or build your own
 <p align="center">
   <a href="https://ai-kids-games-fawn.vercel.app"><img alt="Play now, free in your browser" src="https://img.shields.io/badge/play%20now-free%20in%20your%20browser-0B7A50?style=flat-square"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-0B7A50?style=flat-square"></a>
-  <a href="#the-games"><img alt="Games: 7" src="https://img.shields.io/badge/games-7-0B7A50?style=flat-square"></a>
+  <a href="#the-games"><img alt="Games: 8" src="https://img.shields.io/badge/games-8-0B7A50?style=flat-square"></a>
   <img alt="No ads · No tracking" src="https://img.shields.io/badge/no%20ads%20%C2%B7%20no%20tracking-%E2%9C%93-0B7A50?style=flat-square">
 </p>
 
@@ -36,6 +36,7 @@ Kids deserve the same fun as everyone else: racing, building, exploring and defe
 | **Space Sky** | Build your own rocket and fly through the solar system in 3D. Land on planets and moons, meet friendly aliens, learn real space facts and collect space badges. | Ages 6–10 | [games/space-sky](games/space-sky) |
 | **Calex Cart** | Drift, boost and glide through 20 bright tracks in an original 3D kart racer. Win five cups, including the snowy Frost Cup, earn Driving School medals, chase ghosts or race a friend. | Ages 10–14 | [games/calex-cart](games/calex-cart) |
 | **Tuck Pop** | A bright, friendly block puzzle. Drag chunky pieces onto an 8×8 board, fill rows and columns to make them pop, and chain clears into streaks. Classic, Relax, 60 Adventure levels and a Daily puzzle. | Ages 6+ | [games/tuck-pop](games/tuck-pop) |
+| **Agentmon** | Join the Field Agent Academy, make friends with 77 cute creatures and solve puzzle Trials to clear the static fog. A gentle pixel-art adventure where nobody gets hurt. | Ages 7–12 | [games/agentmon](games/agentmon) |
 <!-- GAMES:END -->
 
 ## Why AI Kids Games

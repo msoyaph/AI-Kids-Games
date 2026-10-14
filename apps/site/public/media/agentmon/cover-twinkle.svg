@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <!-- Animated layer (twinkle): sparkles around the relit Beacon and stars in the dusk sky. -->
+  <defs><path id="s" d="M0-14 4-4 14 0 4 4 0 14-4 4-14 0-4-4z"/></defs>
+  <g fill="#fff6c8">
+    <use href="#s" x="1120" y="270"/><use href="#s" x="1300" y="300" transform="translate(1300 300) scale(.7) translate(-1300 -300)"/>
+    <use href="#s" x="1260" y="420" transform="translate(1260 420) scale(.6) translate(-1260 -420)"/><use href="#s" x="1150" y="400" transform="translate(1150 400) scale(.8) translate(-1150 -400)"/>
+  </g>
+  <g fill="#ffffff" opacity=".85">
+    <circle cx="240" cy="70" r="3"/><circle cx="520" cy="40" r="2.5"/><circle cx="760" cy="110" r="3"/><circle cx="1020" cy="60" r="2.5"/><circle cx="1420" cy="90" r="3"/><circle cx="1500" cy="170" r="2"/><circle cx="110" cy="160" r="2"/>
+  </g>
+</svg>
