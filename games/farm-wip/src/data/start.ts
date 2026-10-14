@@ -7,13 +7,13 @@ import { noise } from '../core/rng';
 import { AREAS, tileAt } from '../sim/map';
 import type { FieldObj, Obj, OtherObj } from '../sim/objects';
 
-export const START_FIELDS: [number, number][] = [[41, 47], [42, 47], [43, 47], [41, 48], [42, 48], [43, 48]];
+/** The six old fields, right beside the cottage, so the first view shows the farmhouse and its fields together. */
+export const START_FIELDS: [number, number][] = [[38, 37], [39, 37], [38, 38], [39, 38], [38, 39], [39, 39]];
 
 /** Tiles kept clear of clutter on the home plot (the paths to the dock and around the cottage). */
 const clearZone = (x: number, z: number) =>
-  (x >= 34 && x <= 39 && z >= 36 && z <= 41) || // cottage and its yard
+  (x >= 34 && x <= 40 && z >= 36 && z <= 41) || // cottage, its yard and the old fields
   (x >= 45 && z >= 42 && z <= 46) || // the dock's yard
-  (x >= 40 && x <= 44 && z >= 46 && z <= 49) || // the old fields
   (x >= 38 && x <= 40 && z >= 43 && z <= 45); // the compost bin
 
 export function startObjects(): Obj[] {
@@ -25,7 +25,7 @@ export function startObjects(): Obj[] {
   add({ kind: 'building', def: 'board', x: 46, z: 42, rot: 0 });
   add({ kind: 'building', def: 'compost', x: 39, z: 44, rot: 0 });
   // the old keeper's dog stayed with the farm
-  add({ kind: 'building', def: 'kennel', x: 38, z: 40, rot: 0, data: { animals: [{ name: 'Barley', readyAt: 1e12, fed: false, brushed: false }] } });
+  add({ kind: 'building', def: 'kennel', x: 38, z: 40, rot: 0, data: { animals: [{ name: 'Rufus', readyAt: 1e12, fed: false, brushed: false }] } });
   for (const [x, z] of START_FIELDS) {
     add({ kind: 'field', def: 'field', x, z, rot: 0, crop: null, plantedAt: 0, readyAt: 0, watered: false, fertilized: false, rotation: false, boost: false, last: null, legumeLeft: false });
   }

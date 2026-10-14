@@ -25,6 +25,7 @@
     "vitest": "^5.0.3"
   },
   "dependencies": {
+    "postprocessing": "6.39.5",
     "three": "0.186.1"
   }
 }

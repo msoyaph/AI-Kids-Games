@@ -19,12 +19,14 @@ export interface Settings {
   hints: boolean;
   volume: { master: number; music: number; sfx: number };
   quality: QualitySetting;
+  /** Phones held sideways: the tool rail goes on the left instead of the right. */
+  leftHanded: boolean;
 }
 
 export function defaultSettings(): Settings {
   let reduced = false;
   try { reduced = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { /* no media queries */ }
-  return { v: 1, textSize: 0, readAloud: false, reducedMotion: reduced, colorblind: false, hints: true, volume: { master: 0.8, music: 0.6, sfx: 0.8 }, quality: 'auto' };
+  return { v: 1, textSize: 0, readAloud: false, reducedMotion: reduced, colorblind: false, hints: true, volume: { master: 0.8, music: 0.6, sfx: 0.8 }, quality: 'auto', leftHanded: false };
 }
 
 const clamp01 = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : d);
@@ -43,6 +45,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     hints: r.hints !== false,
     volume: { master: clamp01(vol.master, d.volume.master), music: clamp01(vol.music, d.volume.music), sfx: clamp01(vol.sfx, d.volume.sfx) },
     quality: r.quality === 'low' || r.quality === 'medium' || r.quality === 'high' ? r.quality : 'auto',
+    leftHanded: r.leftHanded === true,
   };
 }
 

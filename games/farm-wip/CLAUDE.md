@@ -12,6 +12,16 @@ and phase 11 renames everything. Brief: `docs/prompts/farm-wip.md`. Approved pla
 - Own git worktree: `~/Documents/FarmerTown/AI-Kids-Games-farm`, branch `farm-wip`, cut from
   `origin/main` f331dd9 (release 2.7.0, Agentmon). The branch has no upstream. Push or open a PR only
   when the owner asks.
+- **Release (owner, 2026-10-14):** "Once the game is complete, deploy it to production and list it in
+  https://ai-kids-games-fawn.vercel.app/". This replaces the plan's "stop before the production
+  release". "Complete" still needs the owner's style-frame approval and title pick (phase 11). Then
+  release by the repo's path (root CLAUDE.md):
+  1. version bump with the DEPLOYMENT.json approval quoting this message;
+  2. `release:local` on a quiet machine;
+  3. CI green;
+  4. AIKG_ALLOW_PRODUCTION in Vercel Production;
+  5. merge to main;
+  6. production checks and a record PR.
 - The main checkout `~/Documents/AI-Kids-Games` belongs to another session (branch
   `game-trailers`). Never touch that checkout or other sessions' worktrees.
 - **Heavy runs:** `node games/farm-wip/scripts/quiet-check.mjs` before any browser test, Vitest run,
@@ -208,6 +218,73 @@ from their ingredients in `items.ts`), `decor.ts` (decorations, paths, sets, lan
   click at the same spot, which chose a seed by itself on phones (found by the touch e2e). Panels
   now ignore a click within 24 px of the opening tap for 0.5 s; keyboard and gamepad presses are
   never blocked.
+- 2026-10-14 (visual pass + camera brief): **the camera starts close.**
+  - **Zoom limits:** 32 to 240 px per tile; the old range was 12 to 72.
+  - **Pitch:** 50° (was 55°), so building fronts and the skyline show.
+  - **Starting view:** a new farm (saved `cam.zoom` 0 means "not set") is framed on the farmhouse
+    and its fields (`game/framing.ts`, `frameView` in `render/camera.ts`), filling 86% of the open
+    area. It never starts below 64 px per tile on phones (short side under 600 CSS px), or below
+    80 px on tablets and computers. It tries the turns 0°, 90° and 270° in that order.
+  - **Phones held sideways** (landscape, at most 500 px tall) use a side layout instead of shrinking
+    the farm. The top row is compact (48 px), the tools move into a slim scrolling rail down the right,
+    and the camera buttons sit in one row beside the rail.
+    - Settings → "Tools on the left" puts the rail on the left (`settings.leftHanded`).
+    - The farm keeps about 80% of the height, so every supported screen shows the farmhouse and all
+      fields at the starting minimum, with the rail on either side.
+    - `ui/layout.ts` (`isSideways`, `TOP_BAR_SIDEWAYS`, `RAIL`, `openArea(…, side)`) matches style.css.
+      Tests: tests/unit/camera.test.ts, plus tests/e2e/camera.spec.ts for the rail and the left side.
+  - **Start fields moved:** the six old fields moved beside the cottage (38–39, 37–39), so the
+    farmhouse and its fields fit one view (`START_FIELDS`). Saves keep the camera they had.
+  - **Zooming eases** in distance, together with the target, so the ground under the cursor stays put
+    (`FarmView.zoomGoalAt`). Pinches follow the fingers exactly; the +/− buttons zoom at the middle.
+  - **"Show me":** tapping the goal pill glides to the fields it talks about (`Play.hintTiles`).
+    Picking a tool whose work is all off screen glides there too (`Play.toolTiles`). Both use
+    `FarmView.glideTo`, which is a cut with reduced motion.
+- 2026-10-14 (visual pass): **the look.**
+  - **Renderer:** ACES tone mapping, like Space Sky. Low tone-maps in the renderer; Medium and High in
+    the post chain (`render/post.ts`), with a colour grade by season and time of day.
+  - **Post effects:** bloom on Medium and High; SSAO and the tilt-shift blur on High only.
+  - **Shadows:** PCF shadows with a radius, because PCFSoftShadowMap is gone in r186. The shadow box
+    follows the view in snapped steps.
+  - **Ground:** a painted shader (`render/ground.ts`) driven by a data texture covering farm land,
+    locked land, worn ground and contact shade.
+  - **The world:** a ring of countryside 26 tiles wide (`render/land.ts`), with round banks from a
+    signed-distance field and a sky dome with haze.
+  - **Surface patterns:** planks, shingles, stone, straw, bark and moss are drawn by the shader from
+    a per-part id (`geo.ts PAT`, `fx.ts PATTERN_GLSL`). There are no textures to load.
+  - **Ambient occlusion:** baked into vertex colours by `merge` on every tier; High adds SSAO on top.
+  - **Life:** farmhands (`render/helpers.ts`, picture only, never change the farm), grass, butterflies,
+    birds, smoke and sparkles. Butterflies, birds and leaves are hidden with reduced motion.
+- 2026-10-14 (owner): **Low's budget is what is drawn, not the scene total.**
+  - **Budget:** about 150k triangles drawn at the starting zoom, and draw calls in Space Sky's Low range
+    (≤ 66).
+  - **What gets cut:** far-away detail and density go first. The farm, the crops and the characters
+    look the same on every tier.
+  - **How:**
+    - Scenery and farm things cull single instances to the view (`InstancedLayer` with `cull`, and
+      `Culler`). They re-cull only when the camera has moved past a margin.
+    - The ground is 4 × 4 chunks culled by their boxes (`cullTerrain`).
+    - Tree looks and wildflower colours are per-instance tints (`fx.ts` `tint`), not extra layers.
+    - Low thins the countryside beyond the farm's edge: cheap trees from 3 tiles out, fewer bushes,
+      reeds and props.
+  - **Measuring:** `npx tsx scripts/drawn.mts` counts draws on the CPU without WebGL.
+    `scripts/shots.mjs` measures in the browser, at the start and at zoom 32, with steady frames and
+    shadow-redraw frames.
+  - **Style frame, measured in the browser** (2026-10-14, M3 Pro, `scripts/shots.mjs`, steady frames;
+    frames that redraw the shadow map add about 30% on Medium and High). Every case ran at 60 fps.
+
+    | Tier | Phone, start | Phone, zoom 32 | Desktop, start | Desktop, zoom 32 |
+    |---|---|---|---|---|
+    | Low | 51 / 68k | 62 / 110k | 54 / 68k | 70 / 176k |
+    | Medium | 62 / 109k | 75 / 167k | 66 / 109k | 85 / 333k |
+    | High | 108 / 238k | 136 / 493k | 116 / 219k | 153 / 893k |
+
+    Each cell is draw calls / triangles. High draws the scene twice, once for SSAO's normal pass;
+    grass, water, particles and the far woods are on the NO_AO layer and skip that pass.
+  - **Low over budget:** only fully zoomed out on a desktop. The farm's own variety, 34 kinds of
+    things in the staged corner, is most of it, and the farm looks the same on every tier.
+  - **Before** (old renderer, same corner): Low 41 / 100k, Medium 72 / 175k, High 72 / 178k on the
+    phone.
 
 ## Names (phase 0: five proposals, web-checked; the owner picks one before the site step)
 **How they were checked (2026-10-13).** Web searches limited to each store's domain: the App Store
@@ -261,7 +338,20 @@ Other companies' games are described here, not named (this is a public repo).
   - Rowhaven and Sowtown: they echo farm-game titles;
   - Patchwork Acres: a famous board game.
 - Neighbor farm "Reedbank" → **Reedmere**: "Reed Bank" is a disputed sea area.
+- 2026-10-14, visual quality pass: the owner shared two screenshots of the inspiration's sequel as a
+  **quality reference only**: how rich, dense, lively and close the view should feel. Nothing was
+  copied, traced or sampled from them: no characters, buildings, crops, props, textures, colours,
+  UI, icons or layout. Every model, pattern and colour is our own and made in code. Comparison
+  images that include the reference stay local (git-ignored `reports/`) and are never committed.
+  Our own takes on the qualities: volunteer farmhands from Larkford (not a player avatar), a
+  butter-yellow clapboard cottage with a terracotta shingle roof, a sky-blue hen house on legs.
 - Boat "the Lark" → **the Little Lark**: "Lark" is a cigarette brand.
+- Cast check (2026-10-13): there were no real clashes for Hattie, Tomasz, Amara, Silas, Wendell, Mrs.
+  Penrose, Ingrid, Femi, Mr. Lu, Larkford, Plumridge Orchard, Nannyberry Farm or Reedmere; only
+  name-only overlaps with different roles. Renamed to stay well clear:
+  - farm dog "Barley" → **Rufus**: a classic farm series has a rancher called Barley;
+  - sheep "Lambkin" → **Dumpling**: a children's TV fire-station show has a lamb called Lambykins;
+  - duck "Waddle" → **Dabble**: a cartoon has a duck called Waddle.
 
 ## Progress
 | Phase | Status |

@@ -40,7 +40,7 @@ export function homePanel(farm: Farm, home: OtherObj, changed: () => void, say: 
     fill(root,
       def.id === 'bee'
         ? h('p', null, `Bees visit flowers up to ${5} tiles away. Flowers near the hive: ${flowersNear(farm, home.x, home.z)}. More flowers make better honey, and bees help flowering crops and fruit trees nearby give more.`)
-        : def.id === 'dog' ? h('p', null, 'Barley looks after the farm and loves a pat. Dogs are always fine on their own.')
+        : def.id === 'dog' ? h('p', null, 'Rufus looks after the farm and loves a pat. Dogs are always fine on their own.')
           : h('p', null, `${list.length} of ${b.cap} ${def.plural.toLowerCase()}. Fed ${def.plural.toLowerCase()} work twice as fast, and feeding and brushing make them happier, for better ${def.productName.toLowerCase()}.`),
       list.length ? h('ul.animal-list', null, ...rows) : h('p.note', null, `No ${def.plural.toLowerCase()} yet.`),
       h('div.card-buttons', null,
@@ -50,7 +50,7 @@ export function homePanel(farm: Farm, home: OtherObj, changed: () => void, say: 
           onclick: () => { const r = feedAll(farm, home); if (r.ok) { sfx.plant(); say(`Fed ${r.fed} with ${CROP[r.feed!]?.name ?? r.feed}`); changed(); } else say(r.why); render(); },
         }, feed ? itemIcon(feed, 24) : null, hungry === 0 ? 'All fed' : feed ? `Feed (${count(farm, feed)} ${CROP[feed]?.name ?? feed})` : `Needs ${def.feeds.map(f => CROP[f]?.name ?? f).join(' or ')}`) : null,
         def.id !== 'bee' && def.id !== 'dog' ? h('button', { disabled: unbrushed === 0, onclick: () => { const r = brushAll(farm, home); if (r.ok) { sfx.clear(); say(`Brushed ${r.brushed}: shiny!`); changed(); } render(); } }, unbrushed === 0 ? 'All brushed' : 'Brush') : null,
-        def.id === 'dog' ? h('button.primary', { onclick: () => { sfx.harvest(3); say('Barley wags happily!'); } }, 'Pat Barley') : null,
+        def.id === 'dog' ? h('button.primary', { onclick: () => { sfx.harvest(3); say('Rufus wags happily!'); } }, 'Pat Rufus') : null,
         canBuy ? h('button', {
           disabled: levelOf(farm) < def.level || farm.coins < def.cost,
           onclick: () => { const r = buyAnimal(farm, home); if (r.ok) { sfx.levelUp(); say(`Welcome, ${r.name}!`); changed(); } else say(r.why); render(); },

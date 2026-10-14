@@ -548,6 +548,10 @@ Plan, rules and status: games/farm-wip/CLAUDE.md (approved plan in games/farm-wi
   manifest test.
 - **Other sessions:** never run heavy tests alongside another session's
   (games/farm-wip/scripts/quiet-check.mjs, and respect its exit code).
+- **Release (owner, 2026-10-14):** "Once the game is complete, deploy it to production and list it in
+  https://ai-kids-games-fawn.vercel.app/". Release it after the owner approves the style frame and
+  picks the title, by the usual path (DEPLOYMENT.json approval, release:local, CI,
+  AIKG_ALLOW_PRODUCTION, merge).
 
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),

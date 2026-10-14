@@ -19,14 +19,17 @@ test('a tap on a tile picks that tile', async ({ page, isMobile }) => {
   const problems = watch(page);
   await open(page);
   await startFarming(page);
-  // open ground in the dock's yard says where it is
-  const p = await tileOnScreen(page, 46, 44);
-  expect(await pickAt(page, p.x, p.y)).toEqual({ x: 46, z: 44 });
+  // the farm starts close: step back a little so the cottage's yard is in view
+  for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'Zoom out' }).click();
+  await page.waitForTimeout(800);
+  // open ground in the cottage's yard says where it is
+  const p = await tileOnScreen(page, 36, 41);
+  expect(await pickAt(page, p.x, p.y)).toEqual({ x: 36, z: 41 });
   if (isMobile) await page.touchscreen.tap(p.x, p.y); else await page.mouse.click(p.x, p.y);
   await expect(page.locator('.toast').last()).toContainText('Home Plot');
   // an empty field opens the seeds, and the tap's own click doesn't choose any
-  const f = await tileOnScreen(page, 42, 47);
-  expect(await pickAt(page, f.x, f.y)).toEqual({ x: 42, z: 47 });
+  const f = await tileOnScreen(page, 39, 38);
+  expect(await pickAt(page, f.x, f.y)).toEqual({ x: 39, z: 38 });
   if (isMobile) await page.touchscreen.tap(f.x, f.y); else await page.mouse.click(f.x, f.y);
   await expect(page.getByRole('dialog', { name: 'Seeds' })).toBeVisible();
   await page.waitForTimeout(600);

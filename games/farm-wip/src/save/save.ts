@@ -119,7 +119,7 @@ export function decodeFarm(input: unknown): DecodeResult {
       x: num(cam.x, fresh.cam.x, 0, 56),
       z: num(cam.z, fresh.cam.z, 0, 56),
       yawStep: int(cam.yawStep, 0, 0, 7),
-      zoom: num(cam.zoom, fresh.cam.zoom, 8, 96),
+      zoom: num(cam.zoom, fresh.cam.zoom, 0, 240), // 0: not set yet (the game frames the farm)
     },
     flags,
     objects,

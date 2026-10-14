@@ -10,11 +10,34 @@ export interface Rect { x: number; y: number; w: number; h: number }
 /** Heights of the HUD bars, in CSS px (without the device's safe-area insets). */
 export const TOP_BAR = 60;
 export const TOOL_BAR = 76;
+/**
+ * Phones held sideways: the top row is compact and the tools move into a slim rail down one side
+ * (the right, or the left for left hands), so the farm keeps nearly the whole height of the screen.
+ */
+export const TOP_BAR_SIDEWAYS = 48;
+export const RAIL = 64;
 /** Every tap target is at least this big (CSS px). */
 export const MIN_TARGET = 48;
 
+export type RailSide = 'right' | 'left';
+let railSide: RailSide = 'right';
+/** Which side the sideways tool rail is on (Settings → "Tools on the left"). */
+export const setRailSide = (side: RailSide) => { railSide = side; };
+export const getRailSide = () => railSide;
+
+/** Phones held sideways (style.css uses the same rule: landscape and at most 500 px tall). */
+export const isSideways = (viewW: number, viewH: number) => viewW > viewH && viewH <= 500;
+
 /** The open middle of the screen, where nothing covers the farm. */
-export function openArea(viewW: number, viewH: number, insets: Insets = { top: 0, right: 0, bottom: 0, left: 0 }): Rect {
+export function openArea(viewW: number, viewH: number, insets: Insets = { top: 0, right: 0, bottom: 0, left: 0 }, side: RailSide = railSide): Rect {
+  if (isSideways(viewW, viewH)) {
+    const top = Math.max(insets.top, 8) + TOP_BAR_SIDEWAYS;
+    const bottom = Math.max(insets.bottom, 8);
+    let left = Math.max(insets.left, 0), right = Math.max(insets.right, 0);
+    if (side === 'right') right = Math.max(insets.right, 8) + RAIL;
+    else left = Math.max(insets.left, 8) + RAIL;
+    return { x: left, y: top, w: Math.max(0, viewW - left - right), h: Math.max(0, viewH - top - bottom) };
+  }
   const top = Math.max(insets.top, 8) + TOP_BAR;
   const bottom = Math.max(insets.bottom, 8) + TOOL_BAR;
   const left = Math.max(insets.left, 0), right = Math.max(insets.right, 0);

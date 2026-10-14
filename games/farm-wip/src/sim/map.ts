@@ -49,6 +49,8 @@ export const RIVER_X0 = 50;
 export const RIVER_X1 = 53;
 /** The pond: an oval of water in the Duck Pond area. */
 export const POND = { cx: 9.5, cz: 44.5, rx: 5.6, rz: 4.4 };
+/** A small farmhouse pond on the home plot, below the cottage. */
+export const HOME_POND = { cx: 36.4, cz: 43.6, rx: 1.95, rz: 1.55 };
 
 export interface Tile {
   zone: Zone;
@@ -77,9 +79,10 @@ function computeTile(x: number, z: number): Tile {
   const area = AREAS.find(a => inArea(ix, iz, a));
   const edge = ix !== x || iz !== z;
   if (area) {
-    if (!edge && area.id === 'pond') {
-      const dx = (x + 0.5 - POND.cx) / POND.rx, dz = (z + 0.5 - POND.cz) / POND.rz;
-      if (dx * dx + dz * dz <= 1) return { zone: 'pond', level: -1, water: true };
+    if (!edge && (area.id === 'pond' || area.id === 'home')) {
+      const p = area.id === 'pond' ? POND : HOME_POND;
+      const dx = (x + 0.5 - p.cx) / p.rx, dz = (z + 0.5 - p.cz) / p.rz;
+      if (dx * dx + dz * dz <= 1) return { zone: area.id, level: -1, water: true };
     }
     return { zone: edge ? 'wild' : area.id, level: area.level, water: false };
   }

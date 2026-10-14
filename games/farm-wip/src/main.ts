@@ -5,7 +5,7 @@ import { CROPS } from './data/crops';
 import { NEIGHBOR } from './data/cast';
 import { xpForLevel } from './data/tuning';
 import { Play } from './game/play';
-import { showcaseFarm } from './game/showcase';
+import { showcaseFarm, styleFrameFarm, styleFramePoints } from './game/showcase';
 import { itemModel, itemSize } from './game/placing';
 import { Ghost } from './render/ghost';
 import { tileFits } from './sim/build';
@@ -13,7 +13,9 @@ import { occupancy } from './sim/world';
 import { tileAt as tileAtMap } from './sim/map';
 import { Controller } from './input/controller';
 import type { TileRef } from './input/pick';
-import { YAW_STEP, ZOOM } from './render/camera';
+import { boxPoints, tileWidthOnScreen, YAW_STEP, ZOOM } from './render/camera';
+import { objPoints, showFrame, startFrame, startPoints } from './game/framing';
+import { openArea, setRailSide } from './ui/layout';
 import { onLockedLand } from './render/objects';
 import { Governor, guessTier, isSoftwareRenderer, urlTier, type QualityTier } from './render/quality';
 import { FarmView } from './render/view';
@@ -58,11 +60,11 @@ function boot() {
   const uiRoot = $('#ui');
   const settings: Settings = loadSettings();
   const loaded = capture ? null : loadFarm();
-  const farm: Farm = scene === 'showcase' ? showcaseFarm(num('seed') ?? 7) : loaded && loaded.status !== 'future' ? loaded.farm : newFarm(capture ? num('seed') ?? 7 : Math.floor(Math.random() * 2 ** 31));
+  const farm: Farm = scene === 'showcase' ? showcaseFarm(num('seed') ?? 7) : scene === 'styleframe' ? styleFrameFarm(num('seed') ?? 7) : loaded && loaded.status !== 'future' ? loaded.farm : newFarm(capture ? num('seed') ?? 7 : Math.floor(Math.random() * 2 ** 31));
   const futureSave = loaded?.status === 'future';
   if (capture) {
     farm.t = num('t') ?? farm.t;
-    farm.cam = { x: num('x') ?? farm.cam.x, z: num('z') ?? farm.cam.z, yawStep: num('yaw') ?? farm.cam.yawStep, zoom: num('zoom') ?? farm.cam.zoom ?? ZOOM.default };
+    farm.cam = { x: num('x') ?? farm.cam.x, z: num('z') ?? farm.cam.z, yawStep: num('yaw') ?? farm.cam.yawStep, zoom: num('zoom') ?? farm.cam.zoom ?? 0 };
   }
 
   // quality: the URL, then Settings, then a guess from the device; software WebGL always gets Low
@@ -87,11 +89,17 @@ function boot() {
   // --- feedback: floating numbers over tiles, and spoken lines ---
   const floats = h('div.floats', { 'aria-hidden': 'true' });
   uiRoot.appendChild(floats);
+  /** Floating labels: readable pills over a tile that rise and fade; several at once stack up instead of overlapping. */
+  const floating: { el: HTMLElement; x: number; y: number; until: number }[] = [];
   function float(tile: TileRef, text: string, kind: 'good' | 'info' = 'good') {
     const p = view.tileOnScreen(tile.x, tile.z);
-    const el = h('span.float', { class: kind, style: `left:${p.x}px;top:${p.y - 30}px` }, text);
+    const now = performance.now();
+    for (let i = floating.length - 1; i >= 0; i--) if (floating[i]!.until < now) floating.splice(i, 1);
+    const stack = floating.filter(f => Math.abs(f.x - p.x) < 90 && Math.abs(f.y - p.y) < 60).length;
+    const el = h('span.float', { class: kind, style: `left:${p.x}px;top:${p.y - 34 - stack * 38}px` }, text);
     floats.appendChild(el);
-    setTimeout(() => el.remove(), 1300);
+    floating.push({ el, x: p.x, y: p.y, until: now + 1600 });
+    setTimeout(() => el.remove(), 1700);
   }
   function say(text: string) {
     panels.toast(text);
@@ -106,6 +114,7 @@ function boot() {
     float,
     say,
     toolChanged: () => refreshTools(),
+    did: (kind, tile) => view.life.helpers.react(kind, tile.x, tile.z, performance.now() / 1000),
   });
 
   // --- placing things: the ghost in the farm, and a bar with Turn, Place and Cancel ---
@@ -138,9 +147,35 @@ function boot() {
     menu: () => openMenu(),
     turn: dir => { controller.turn(dir); sfx.turn(); },
     zoom: dir => { view.goal.zoom = Math.min(ZOOM.max, Math.max(ZOOM.min, view.goal.zoom * (dir > 0 ? 1.3 : 1 / 1.3))); },
-    tool: id => play.pickTool(id),
-    goals: () => panels.show('Goals', h('p', null, 'The story’s goals arrive soon. For now: ', play.hint().toLowerCase(), '.'), { kind: 'card' }),
+    tool: id => { play.pickTool(id); showTool(); },
+    goals: () => { if (!showMe(play.hintTiles())) panels.show('Goals', h('p', null, 'The story’s goals arrive soon. For now: ', play.hint().toLowerCase(), '.'), { kind: 'card' }); },
   });
+  /** "Show me": glide to these tiles unless they are all on screen already. Returns false if there was nothing to show. */
+  function showMe(tiles: { x: number; z: number }[]): boolean {
+    if (!tiles.length) return false;
+    const open = { x0: view.insets.left, y0: 0, x1: view.width - view.insets.right, y1: view.height };
+    const o = view.openCenter();
+    const onScreen = tiles.every(t => {
+      const p = view.tileOnScreen(t.x, t.z);
+      return p.x > open.x0 + 24 && p.x < open.x1 - 24 && Math.abs(p.y - o.y) < (view.height / 2) * 0.62;
+    });
+    if (onScreen) return false;
+    const f = showFrame(tiles, view.goal, view.width, view.height, view.insets);
+    if (f) { view.glideTo(f); sfx.turn(); }
+    return !!f;
+  }
+  /** A tool for something that's off screen: glide there. */
+  function showTool() {
+    if (play.building || play.placing) return;
+    const tiles = play.toolTiles();
+    if (!tiles.length) return;
+    const visible = tiles.some(t => {
+      const p = view.tileOnScreen(t.x, t.z);
+      const o = view.openCenter();
+      return p.x > view.insets.left + 24 && p.x < view.width - view.insets.right - 24 && Math.abs(p.y - o.y) < (view.height / 2) * 0.62;
+    });
+    if (!visible) showMe(tiles);
+  }
   hud.visible = false;
   const refreshTools = () => {
     hud.setTools(play.tools(), play.building ? (play.buildSub === 'move' ? 'b-move' : play.buildSub === 'erase' ? 'b-erase' : 'b-decor') : play.tool);
@@ -175,6 +210,8 @@ function boot() {
     root.style.setProperty('--ts', String([1, 1.15, 1.3][settings.textSize]));
     root.classList.toggle('reduced-motion', settings.reducedMotion);
     root.classList.toggle('colorblind', settings.colorblind);
+    root.classList.toggle('left-handed', settings.leftHanded);
+    setRailSide(settings.leftHanded ? 'left' : 'right');
     audio.setVolumes(settings.volume);
     if (!settings.readAloud) stopSpeaking();
   }
@@ -182,6 +219,7 @@ function boot() {
   function onSettings(s: Settings) {
     Object.assign(settings, s);
     applySettings();
+    resize(); // the open area moves with the tool rail
     if (!capture) saveSettings(settings);
     if (!forced) {
       const want: QualityTier = settings.quality === 'auto' ? governor?.tier ?? guessTier() : settings.quality;
@@ -344,8 +382,20 @@ function boot() {
   }
   addEventListener('resize', resize);
   resize();
+  // a new farm (or a capture without a zoom) starts framed on the farmhouse and its fields
+  if (!(farm.cam.zoom > 0)) {
+    // the style frame shows its whole corner where it fits, otherwise the farmhouse and fields like any start
+    const corner = scene === 'styleframe' ? startFrame(farm, view.width, view.height, view.insets, styleFramePoints(farm), [0]) : null;
+    const home = scene === 'styleframe' ? [...farm.objects.filter(o => o.def === 'cottage' || (o.kind === 'field' && o.x <= 39 && o.z <= 39)).flatMap(objPoints), ...boxPoints(35, 42.5, 38, 44.5, 0, 0)] : undefined;
+    const f = corner?.fits ? corner : startFrame(farm, view.width, view.height, view.insets, home);
+    farm.cam = { x: f.x, z: f.z, yawStep: f.yawStep, zoom: f.zoom };
+    Object.assign(view.goal, farm.cam);
+    view.snapToGoal();
+  }
 
   // --- the loop ---
+  /** Draw calls and triangles of the last frames (the hook reports the steady and the busiest). */
+  const drawnLog: [number, number][] = [];
   let last = performance.now();
   let fps = 60;
   let lastPadA = 0;
@@ -372,9 +422,10 @@ function boot() {
       if (now - hudAt > 200) { hudAt = now; refreshHud(); }
       if (farm.t - lastSaveT > 30 || (dirty && farm.t - lastSaveT > 3)) save();
     }
+    view.setReducedMotion(reduced());
     view.setWorld(seasonOf(farm.t), farm.unlocked);
     view.objects.badges = settings.colorblind;
-    view.objects.sync(farm, onLockedLand(farm));
+    view.syncFarm(farm, onLockedLand(farm));
     view.animals.update(farm, now / 1000, view.view.yaw, reduced());
     view.town.update(farm, now / 1000, reduced());
     const shown = controller.cursor ?? (controller.lastDevice === 'mouse' ? controller.hover : null);
@@ -403,10 +454,11 @@ function boot() {
     }
     refreshPlaceBar();
     if (!glLost) {
-      view.update(dt, farm.t, reduced());
-      document.documentElement.style.setProperty('--sky-top', view.lighting.sky.top);
-      document.documentElement.style.setProperty('--sky-bottom', view.lighting.sky.bottom);
-      view.render();
+      view.update(dt, farm.t);
+      view.render(dt);
+      const st = view.stats();
+      drawnLog.push([st.drawCalls, st.triangles]);
+      if (drawnLog.length > 90) drawnLog.shift();
     }
     if (governor && screen === 'farm') {
       const next = governor.sample(real);
@@ -425,18 +477,28 @@ function boot() {
         fields: farm.objects.filter(o => o.kind === 'field').map(o => ({ x: o.x, z: o.z, crop: o.kind === 'field' ? o.crop : null, ready: o.kind === 'field' && !!o.crop && farm.t >= o.readyAt, watered: o.kind === 'field' && o.watered })),
         camera: { ...view.goal, yaw: view.view.yaw / YAW_STEP }, cursor: controller.cursor, lastDevice: controller.lastDevice,
         quality: view.tier, fps: Math.round(fps), persistent: persistent(), audio: audio.state, ...view.stats(),
+        drawn: drawnLog.length ? {
+          calls: [Math.min(...drawnLog.map(d => d[0])), Math.max(...drawnLog.map(d => d[0]))],
+          triangles: [Math.min(...drawnLog.map(d => d[1])), Math.max(...drawnLog.map(d => d[1]))],
+        } : null,
       }),
       /** Where a tile's middle is on screen (CSS px), for tests that tap it. */
       tileOnScreen: (x: number, z: number) => { const p = view.tileOnScreen(x, z); return { x: p.x, y: p.y }; },
       /** What a tap at (x, y) would pick. */
       pickAt: (x: number, y: number) => view.pick(x, y),
       openArea: () => { const c = view.openCenter(); return { x: c.x, y: c.y }; },
+      /** Where the farmhouse and fields are on screen now, the open area, and how wide a tile is at the target. */
+      startView: () => ({
+        open: openArea(view.width, view.height, view.insets),
+        points: startPoints(farm).map(p => { const s = view.project(p.x, p.y, p.z); return { x: s.x, y: s.y }; }),
+        tilePx: tileWidthOnScreen(view.camera, view.width, view.height, view.view.x, view.view.y, view.view.z),
+      }),
     }),
   });
 
   $('#boot').classList.add('done');
   setTimeout(() => $('#boot').remove(), 500);
-  if (scene === 'farm' || scene === 'showcase') startFarm();
+  if (scene === 'farm' || scene === 'showcase' || scene === 'styleframe') startFarm();
   else showTitle();
   requestAnimationFrame(frame);
 

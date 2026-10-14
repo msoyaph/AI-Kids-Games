@@ -87,7 +87,8 @@ export class Controller {
       wheel: (dy, x, y) => {
         if (!hooks.active()) return;
         this.lastDevice = 'mouse';
-        this.zoomAt(view.goal.zoom * Math.exp(-dy * 0.0016), x, y);
+        // the wheel glides (the ground under the cursor stays put); pinches follow the fingers exactly
+        view.zoomGoalAt(view.goal.zoom * Math.exp(-dy * 0.0016), x, y);
       },
       hover: (x, y) => {
         if (!hooks.active()) { this.hover = null; return; }

@@ -16,12 +16,22 @@ export interface QualitySpec {
   particles: number;
   /** Rim light on models. */
   rim: boolean;
+  /** Post-processing: tone mapping and the colour grade in a pass (Low tone-maps directly). */
+  post: boolean;
+  /** Bloom mip levels (0: none). */
+  bloom: number;
+  /** Screen-space ambient occlusion (High; Low and Medium use AO baked into vertex colours). */
+  ssao: boolean;
+  /** The miniature look: soft blur towards the top and bottom of the screen. */
+  tiltShift: boolean;
+  /** Grass tufts and wildflowers around the view. */
+  grass: number;
 }
 
 export const QUALITY: Record<QualityTier, QualitySpec> = {
-  low: { pixelRatio: 1, shadows: false, shadowMap: 1024, decor: 0.4, particles: 0.4, rim: false },
-  medium: { pixelRatio: 1.5, shadows: true, shadowMap: 2048, decor: 0.75, particles: 0.75, rim: true },
-  high: { pixelRatio: 2, shadows: true, shadowMap: 2048, decor: 1, particles: 1, rim: true },
+  low: { pixelRatio: 1, shadows: false, shadowMap: 1024, decor: 0.45, particles: 0.4, rim: false, post: false, bloom: 0, ssao: false, tiltShift: false, grass: 700 },
+  medium: { pixelRatio: 1.5, shadows: true, shadowMap: 2048, decor: 0.8, particles: 0.75, rim: true, post: true, bloom: 4, ssao: false, tiltShift: false, grass: 2400 },
+  high: { pixelRatio: 2, shadows: true, shadowMap: 2048, decor: 1, particles: 1, rim: true, post: true, bloom: 5, ssao: true, tiltShift: true, grass: 5200 },
 };
 
 /** A sensible first guess for Auto, from what the browser tells us about the device. */

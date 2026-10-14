@@ -77,7 +77,8 @@ export interface Farm {
   story: StoryState;
 }
 
-export const HOME_VIEW: CameraSave = { x: 42, z: 45, yawStep: 0, zoom: 38 };
+/** A new farm's camera. Zoom 0 means "not set yet": the game frames the farmhouse and fields for the screen. */
+export const HOME_VIEW: CameraSave = { x: 37.5, z: 38.5, yawStep: 0, zoom: 0 };
 
 export function newFarm(seed: number): Farm {
   const objects = startObjects();

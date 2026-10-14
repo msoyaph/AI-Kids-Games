@@ -28,6 +28,7 @@ export class Hud {
   private goalText: HTMLElement;
   private goalBar: HTMLElement;
   private tools: HTMLElement;
+  private edges: () => void = () => {};
   private lastDate = '';
   private lastCoins = -1;
 
@@ -42,6 +43,19 @@ export class Hud {
     this.goal = h('button.goal', { 'aria-label': 'Goals', onclick: () => on.goals() },
       icon('star', 26), h('span.goal-body', null, this.goalText, h('span.bar', null, this.goalBar)));
     this.tools = h('nav.toolbar', { 'aria-label': 'Tools' });
+    // soft edges where the bar scrolls: sideways on most screens, up and down in the sideways-phone rail
+    const edges = () => {
+      const t = this.tools;
+      t.classList.toggle('more-left', t.scrollLeft > 4);
+      t.classList.toggle('more-right', t.scrollLeft + t.clientWidth < t.scrollWidth - 4);
+      t.classList.toggle('more-up', t.scrollTop > 4);
+      t.classList.toggle('more-down', t.scrollTop + t.clientHeight < t.scrollHeight - 4);
+    };
+    this.tools.addEventListener('scroll', edges, { passive: true });
+    addEventListener('resize', edges);
+    // the bar is measured when it is laid out (it starts hidden behind the title screen)
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(edges).observe(this.tools);
+    this.edges = edges;
     this.el = h('div#hud', null,
       h('div.topbar', null,
         this.goal,
@@ -59,7 +73,11 @@ export class Hud {
     root.appendChild(this.el);
   }
 
-  set visible(v: boolean) { this.el.hidden = !v; }
+  set visible(v: boolean) {
+    this.el.hidden = !v;
+    // measure the tool bar once it is laid out on screen
+    if (v) requestAnimationFrame(() => requestAnimationFrame(this.edges));
+  }
 
   setDate(t: number) {
     const label = dateLabel(t);
@@ -72,7 +90,10 @@ export class Hud {
   setCoins(n: number) {
     if (n === this.lastCoins) return;
     this.lastCoins = n;
-    this.coins.textContent = n.toLocaleString('en-US');
+    // narrow screens: big numbers in short form (198,906 → 199k), so the goal keeps its room
+    const short = innerWidth <= 520 && n >= 10000;
+    this.coins.textContent = short ? `${Math.round(n / 1000).toLocaleString('en-US')}k` : n.toLocaleString('en-US');
+    this.coins.parentElement?.setAttribute('aria-label', `${n.toLocaleString('en-US')} coins`);
   }
 
   setLevel(level: number, progress: number) {
@@ -94,5 +115,8 @@ export class Hud {
       onclick: () => this.on.tool(t.id),
       dataset: { tool: t.id },
     }, icon(t.icon, 30), h('span', null, t.label))));
+    // keep the chosen tool in view, and show whether the bar scrolls
+    this.tools.querySelector<HTMLElement>('.tool.active')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    requestAnimationFrame(this.edges);
   }
 }

@@ -1,4 +1,4 @@
-/** The Settings panel: sound, text size, read-aloud, colour-blind badges, motion, hints and quality. */
+/** The Settings panel: sound, text size, read-aloud, colour-blind badges, motion, hints, tool side and quality. */
 import type { Settings } from '../save/settings';
 import { h } from './h';
 import { speechAvailable } from './speech';
@@ -48,6 +48,7 @@ export function settingsPanel(s: Settings, onChange: (s: Settings) => void): HTM
     toggle('Shape badges', s.colorblind, v => change({ colorblind: v }), 'Shapes as well as colours for ready crops and stars'),
     toggle('Less motion', s.reducedMotion, v => change({ reducedMotion: v }), 'No camera glides, sways or bouncing'),
     toggle('Hints', s.hints, v => change({ hints: v }), 'A friendly nudge if you seem stuck'),
+    toggle('Tools on the left', s.leftHanded, v => change({ leftHanded: v }), 'For left hands, when a phone is held sideways'),
     choice('Graphics', s.quality, [['auto', 'Auto'], ['low', 'Low'], ['medium', 'Medium'], ['high', 'High']], v => change({ quality: v })),
   );
 }

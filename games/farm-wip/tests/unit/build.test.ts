@@ -16,7 +16,7 @@ describe('build mode', () => {
     expect(paintPath(farm, 46, 44, 2).ok).toBe(true);
     expect(pathAt(farm, 46, 44)).toBe(2);
     expect(paintPath(farm, 46, 44, 2).ok).toBe(false); // already
-    expect(paintPath(farm, 41, 47, 1).ok).toBe(false); // a field is there
+    expect(paintPath(farm, 38, 37, 1).ok).toBe(false); // a field is there
     expect(paintPath(farm, 25, 45, 1).ok).toBe(false); // meadow not open
     expect(erase(farm, 46, 44).ok).toBe(true);
     expect(pathAt(farm, 46, 44)).toBe(0);

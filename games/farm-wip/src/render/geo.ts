@@ -1,11 +1,21 @@
 // Helpers for composing low-poly vertex-coloured geometry from primitives.
-// Adapted from Light Crossing (games/light-crossing/src/render/models/geo.ts).
+// Adapted from Light Crossing (games/light-crossing/src/render/models/geo.ts). Added here: rounded
+// normals for soft blobs (tree canopies, bushes), a painted-pattern id per part (planks, shingles,
+// stone… drawn by the shader, see fx.ts), and ambient occlusion baked into the vertex colours.
 import * as THREE from 'three';
+
+/** Painted patterns (the shader draws them on the part's surfaces). */
+export const PAT = { none: 0, planks: 1, boards: 2, shingles: 3, stone: 4, straw: 5, bark: 6, moss: 7, keep: 8 } as const;
+// (keep: no pattern, and never tinted by the instance colour; see fx.ts `tint`)
 
 export interface PartOpts {
   pos?: [number, number, number];
   rot?: [number, number, number];
   scale?: [number, number, number] | number;
+  /** Soft round shading (normals point out from the part's middle), for leafy blobs. */
+  round?: boolean;
+  /** A painted pattern from PAT. */
+  pattern?: number;
 }
 
 const m4 = new THREE.Matrix4();
@@ -14,8 +24,9 @@ const e = new THREE.Euler();
 const v = new THREE.Vector3();
 const s = new THREE.Vector3();
 const col = new THREE.Color();
+const tmp = new THREE.Vector3();
 
-/** Transform + colour a primitive, returning a non-indexed geometry with position/normal/color. */
+/** Transform + colour a primitive, returning a non-indexed geometry with position/normal/color/pattern. */
 export function part(geo: THREE.BufferGeometry, color: number, o: PartOpts = {}): THREE.BufferGeometry {
   const g = geo.index ? geo.toNonIndexed() : geo.clone();
   g.deleteAttribute('uv');
@@ -28,7 +39,16 @@ export function part(geo: THREE.BufferGeometry, color: number, o: PartOpts = {})
   m4.compose(v, q, s);
   g.applyMatrix4(m4);
   g.computeVertexNormals();
-  const n = g.getAttribute('position').count;
+  const p = g.getAttribute('position');
+  const n = p.count;
+  if (o.round) {
+    const nor = g.getAttribute('normal');
+    for (let i = 0; i < n; i++) {
+      tmp.set(p.getX(i) - v.x, p.getY(i) - v.y, p.getZ(i) - v.z);
+      tmp.set(tmp.x / (s.x * s.x), tmp.y / (s.y * s.y), tmp.z / (s.z * s.z)).normalize();
+      nor.setXYZ(i, tmp.x, tmp.y, tmp.z);
+    }
+  }
   const c = new Float32Array(n * 3);
   col.setHex(color);
   for (let i = 0; i < n; i++) {
@@ -37,29 +57,50 @@ export function part(geo: THREE.BufferGeometry, color: number, o: PartOpts = {})
     c[i * 3 + 2] = col.b;
   }
   g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  g.setAttribute('pattern', new THREE.BufferAttribute(new Float32Array(n).fill(o.pattern ?? 0), 1));
   geo.dispose();
   return g;
 }
 
+export interface MergeOpts {
+  /** Bake ambient occlusion into the colours: darker near the ground and on undersides (default on). */
+  ao?: boolean;
+}
+
 /** Concatenate non-indexed part geometries. */
-export function merge(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
+export function merge(parts: THREE.BufferGeometry[], o: MergeOpts = {}): THREE.BufferGeometry {
   let total = 0;
   for (const p of parts) total += p.getAttribute('position').count;
   const pos = new Float32Array(total * 3);
   const nor = new Float32Array(total * 3);
   const colr = new Float32Array(total * 3);
+  const pat = new Float32Array(total);
   let off = 0;
   for (const p of parts) {
     pos.set(p.getAttribute('position').array as Float32Array, off * 3);
     nor.set(p.getAttribute('normal').array as Float32Array, off * 3);
     colr.set(p.getAttribute('color').array as Float32Array, off * 3);
+    const pa = p.getAttribute('pattern');
+    if (pa) pat.set(pa.array as Float32Array, off);
     off += p.getAttribute('position').count;
     p.dispose();
+  }
+  if (o.ao !== false && total) {
+    let top = 0;
+    for (let i = 0; i < total; i++) top = Math.max(top, pos[i * 3 + 1]!);
+    const reach = Math.min(0.4, Math.max(0.08, top * 0.35));
+    for (let i = 0; i < total; i++) {
+      const y = pos[i * 3 + 1]!, ny = nor[i * 3 + 1]!;
+      const t = Math.min(1, Math.max(0, y / reach));
+      const k = (0.66 + 0.34 * t * t * (3 - 2 * t)) * (0.84 + 0.16 * (ny * 0.5 + 0.5));
+      colr[i * 3] = colr[i * 3]! * k; colr[i * 3 + 1] = colr[i * 3 + 1]! * k; colr[i * 3 + 2] = colr[i * 3 + 2]! * k;
+    }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
   g.setAttribute('color', new THREE.BufferAttribute(colr, 3));
+  g.setAttribute('pattern', new THREE.BufferAttribute(pat, 1));
   g.computeBoundingSphere();
   return g;
 }
@@ -80,6 +121,18 @@ export function prism(w: number, d: number, h: number): THREE.BufferGeometry {
   ];
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  return g;
+}
+
+/** A box with every edge cut at 45° (a soft, chunky look), `b` the bevel size. */
+export function bevelBox(w: number, h: number, d: number, b = 0.03): THREE.BufferGeometry {
+  b = Math.min(b, w / 3, h / 3, d / 3);
+  const x = w / 2 - b, y = h / 2 - b, c = b * 0.7;
+  const shape = new THREE.Shape();
+  shape.moveTo(-x + c, -y); shape.lineTo(x - c, -y); shape.lineTo(x, -y + c); shape.lineTo(x, y - c);
+  shape.lineTo(x - c, y); shape.lineTo(-x + c, y); shape.lineTo(-x, y - c); shape.lineTo(-x, -y + c); shape.closePath();
+  const g = new THREE.ExtrudeGeometry(shape, { depth: d - b * 2, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 1, curveSegments: 1 });
+  g.translate(0, 0, -(d - b * 2) / 2);
   return g;
 }
 

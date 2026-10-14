@@ -28,7 +28,7 @@ describe('animals', () => {
   it('starts with the farm dog, who is always fine', () => {
     const farm = newFarm(1);
     const kennel = farm.objects.find(o => o.kind === 'building' && o.def === 'kennel') as OtherObj;
-    expect(animalsIn(kennel).map(a => a.name)).toEqual(['Barley']);
+    expect(animalsIn(kennel).map(a => a.name)).toEqual(['Rufus']);
     grow(farm, 30);
     expect(isReady(farm, animalsIn(kennel)[0]!)).toBe(false);
   });
@@ -81,7 +81,7 @@ describe('animals', () => {
     const farm = rich();
     const f = farm.objects.find((o): o is FieldObj => o.kind === 'field')!;
     expect(hiveNear(farm, f.x, f.z)).toBe(false);
-    place(farm, 'building', 'beehive', f.x + 3, f.z - 4);
+    place(farm, 'building', 'beehive', f.x + 3, f.z + 3);
     expect(hiveNear(farm, f.x, f.z)).toBe(true);
     plant(farm, f, 'strawberry', isWater);
     expect(care(farm, f).bees).toBe(true);

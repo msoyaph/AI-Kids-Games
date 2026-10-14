@@ -1,42 +1,34 @@
 /**
  * Shared materials: few materials means few shader programs. Everything is vertex-coloured Lambert
- * with a soft rim light (the warm edge glow of the diorama look), adapted from Calex Cart's `withRim`
- * (games/calex-cart/src/render/materials.ts). The rim's colour and strength are shared uniforms: the
- * lighting sets the colour by time of day, and quality Low turns it off.
+ * with the shared effects from fx.ts: drifting cloud shadows everywhere, a soft rim light on
+ * buildings, animals and props, and wind sway on crops, trees and grass. (The rim idea is adapted
+ * from Calex Cart's `withRim`, games/calex-cart/src/render/materials.ts.)
  */
 import * as THREE from 'three';
+import { fxUniforms, patchMaterial } from './fx';
 
-export const rim = {
-  color: { value: new THREE.Color(0xfff1d0) },
-  strength: { value: 0.35 },
-};
+/** Kept for older callers: the rim's colour and strength live in fxUniforms. */
+export const rim = { color: fxUniforms.rimColor, strength: fxUniforms.rimStrength };
 
-function withRim<T extends THREE.MeshLambertMaterial>(m: T, key: string): T {
-  m.onBeforeCompile = sh => {
-    sh.uniforms.rimColor = rim.color;
-    sh.uniforms.rimStrength = rim.strength;
-    sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 rimColor;\nuniform float rimStrength;')
-      .replace(
-        '#include <opaque_fragment>',
-        'outgoingLight += rimColor * pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 2.4) * rimStrength;\n#include <opaque_fragment>',
-      );
-  };
-  m.customProgramCacheKey = () => key;
-  return m;
-}
+const lambert = (o: THREE.MeshLambertMaterialParameters = {}) => new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, ...o });
 
 // Instanced meshes get their own twins: three.js picks shader programs by "instanced or not", so one
 // material shared by both kinds would swap programs on every draw.
 export const Materials = {
-  /** Faceted props, buildings, crops. */
-  flat: withRim(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }), 'rim-flat'),
-  flatInst: withRim(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }), 'rim-flat-i'),
-  /** Smooth-shaded animals and people. */
-  smooth: withRim(new THREE.MeshLambertMaterial({ vertexColors: true }), 'rim-smooth'),
-  smoothInst: withRim(new THREE.MeshLambertMaterial({ vertexColors: true }), 'rim-smooth-i'),
-  /** The ground (no rim: it would outline every terrace). */
-  ground: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
+  /** Faceted props and buildings, with their painted planks, shingles and stone. */
+  flat: patchMaterial(lambert(), { key: 'flat', rim: true, patterns: true }),
+  flatInst: patchMaterial(lambert(), { key: 'flat-i', rim: true, patterns: true }),
+  /** Smooth-shaded animals, people and the boat. */
+  smooth: patchMaterial(lambert({ flatShading: false }), { key: 'smooth', rim: true }),
+  smoothInst: patchMaterial(lambert({ flatShading: false }), { key: 'smooth-i', rim: true }),
+  /** Crops and flowers: they sway in the wind. */
+  plantInst: patchMaterial(lambert(), { key: 'plant-i', rim: true, wind: 'plant' }),
+  /** Trees and bushes: soft round canopies that sway, and bark on the trunks. */
+  treeInst: patchMaterial(lambert({ flatShading: false }), { key: 'tree-i', rim: true, wind: 'tree', patterns: true }),
+  /** The same, with the canopy tinted per instance (two looks of a tree in one layer). */
+  treeTintInst: patchMaterial(lambert({ flatShading: false }), { key: 'tree-ti', rim: true, wind: 'tree', patterns: true, tint: true }),
+  /** Grass tufts and wildflowers around the view. */
+  grassInst: patchMaterial(lambert({ side: THREE.DoubleSide }), { key: 'grass-i', wind: 'grass' }),
   /** Soft round shadows under things when the shadow map is off. */
   blob: new THREE.MeshBasicMaterial({ color: 0x1d2a12, transparent: true, opacity: 0.22, depthWrite: false }),
   /** Unlit vertex colours (highlights, glows). */

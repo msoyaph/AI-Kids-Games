@@ -66,6 +66,8 @@ export interface PlayHost {
   float(tile: TileRef, text: string, kind?: 'good' | 'info'): void;
   say(text: string): void;
   toolChanged(): void;
+  /** The player did some farm work at a tile (the farmhands come over to help). */
+  did?(kind: 'harvest' | 'water' | 'plant', tile: TileRef): void;
 }
 
 export class Play {
@@ -169,14 +171,14 @@ export class Play {
         if (!f) { if (!dragging) this.host.say('Seeds go in fields. Plough a field first.'); return; }
         if (f.crop || !this.seed) { if (!dragging) this.inspect(tile); return; }
         const r = plant(farm, f, this.seed, isWater);
-        if (r.ok) { sfx.plant(); this.host.changed(); }
+        if (r.ok) { sfx.plant(); this.host.changed(); this.host.did?.('plant', tile); }
         else if (!dragging) { sfx.nope(); this.host.say(r.why); }
         return;
       }
       case 'water': {
         if (!f) { if (!dragging) this.host.say('Water growing crops.'); return; }
         const r = water(farm, f);
-        if (r.ok) { sfx.water(); this.host.float(tile, 'Watered', 'info'); this.host.changed(); }
+        if (r.ok) { sfx.water(); this.host.float(tile, 'Watered', 'info'); this.host.changed(); this.host.did?.('water', tile); }
         else if (!dragging) this.host.say(r.why);
         return;
       }
@@ -228,6 +230,7 @@ export class Play {
       sfx.harvest(r.stars);
       this.host.float(tile, `+${r.amount} ${CROP[r.crop]!.name} ${'★'.repeat(r.stars)}`, 'good');
       this.host.changed();
+      this.host.did?.('harvest', tile);
     } else { sfx.nope(); this.host.say(r.why); }
   }
 
@@ -237,6 +240,7 @@ export class Play {
       sfx.harvest(r.stars);
       this.host.float({ x: o.x, z: o.z }, `+${r.amount} ${TREE[o.def]!.fruitName} ${'★'.repeat(r.stars)}`, 'good');
       this.host.changed();
+      this.host.did?.('harvest', { x: o.x, z: o.z });
     } else { sfx.nope(); this.host.say(r.why); }
   }
 
@@ -548,12 +552,35 @@ export class Play {
   }
 
   /** Line for the goal tracker while there's no story yet. */
+  /** The tiles the goal pill is talking about (for "Show me"). */
+  hintTiles(): { x: number; z: number }[] {
+    const farm = this.farm;
+    if (this.placing || this.building) return [];
+    const fields = farm.objects.filter(o => o.kind === 'field');
+    const ready = fields.filter(o => fieldState(farm, o) === 'ready');
+    if (ready.length) return ready;
+    return fields.filter(o => o.kind === 'field' && !o.crop);
+  }
+
+  /** The tiles a tool is for: where it can do something right now. */
+  toolTiles(): { x: number; z: number }[] {
+    const farm = this.farm;
+    const fields = farm.objects.filter(o => o.kind === 'field');
+    switch (this.tool) {
+      case 'hand': return fields.filter(o => fieldState(farm, o) === 'ready');
+      case 'seeds': return fields.filter(o => o.kind === 'field' && !o.crop);
+      case 'water': return fields.filter(o => o.kind === 'field' && !o.watered && fieldState(farm, o) === 'growing');
+      case 'compost': return fields.filter(o => o.kind === 'field' && !o.fertilized && fieldState(farm, o) === 'growing');
+      default: return [];
+    }
+  }
+
   hint(): string {
     const farm = this.farm;
     if (this.placing) return `Placing: ${itemName(this.farm, this.placing.item)}`;
     if (this.building) return this.beautyLine();
     const ready = farm.objects.filter(o => o.kind === 'field' && fieldState(farm, o) === 'ready').length;
-    if (ready) return `${ready} field${ready > 1 ? 's' : ''} ready to pick`;
+    if (ready) return `${ready} field${ready > 1 ? 's' : ''} to pick`;
     const empty = farm.objects.filter(o => o.kind === 'field' && !o.crop).length;
     if (empty) return `Plant your ${empty} empty field${empty > 1 ? 's' : ''}`;
     return 'Your crops are growing';

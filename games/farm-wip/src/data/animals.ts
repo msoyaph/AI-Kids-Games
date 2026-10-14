@@ -43,9 +43,9 @@ export const animalForHome = (home: string) => ANIMALS.find(a => a.home === home
 export const ANIMAL_NAMES: Record<string, string[]> = {
   chicken: ['Speckles', 'Pecky', 'Clementine', 'Nutmeg', 'Saffron', 'Hazel', 'Poppy', 'Ginger'],
   cow: ['Meadow', 'Bluebell', 'Toffee', 'Willow', 'Marigold', 'Rosie'],
-  sheep: ['Fluff', 'Cotton', 'Snowdrop', 'Biscuit', 'Cumulus', 'Lambkin'],
+  sheep: ['Fluff', 'Cotton', 'Snowdrop', 'Biscuit', 'Cumulus', 'Dumpling'],
   goat: ['Hopscotch', 'Juniper', 'Tumble', 'Fig', 'Clove', 'Sorrel'],
-  duck: ['Paddle', 'Splash', 'Lemon', 'Waddle', 'Ripple', 'Sunny'],
+  duck: ['Paddle', 'Splash', 'Lemon', 'Dabble', 'Ripple', 'Sunny'],
   bee: ['The Hive'],
-  dog: ['Barley'],
+  dog: ['Rufus'],
 };

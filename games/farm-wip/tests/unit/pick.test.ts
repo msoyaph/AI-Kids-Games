@@ -70,7 +70,7 @@ describe('tap picking', () => {
     const vw = 390, vh = 844;
     const open = openArea(vw, vh);
     const center = { x: open.x + open.w / 2, y: open.y + open.h / 2 };
-    frame(40, 44, 1, ZOOM.default, vw, vh, center);
+    frame(40, 44, 1, 38, vw, vh, center); // zoomed well out, where generous taps matter most
     const screenOf = (x: number, z: number) => project(cam, vw, vh, x + 0.5, topY(x, z), z + 0.5);
     const target = screenOf(41, 44);
     // tap on the tile next door (40,44), a little towards the wanted one
@@ -85,7 +85,8 @@ describe('tap picking', () => {
   });
 
   it('picks nothing when the tap is on the sky', () => {
-    placeCamera(cam, { x: 28, z: 28, y: 0, yaw: 0, zoom: ZOOM.min }, 1920, 1080);
+    // zoomed all the way out over the north of the farm, the top of the screen is sky
+    placeCamera(cam, { x: 28, z: 6, y: 0, yaw: 0, zoom: ZOOM.min }, 1920, 1080);
     expect(pickTile(screenRay(cam, 1920, 1080, 960, 2))).toBeNull();
   });
 });

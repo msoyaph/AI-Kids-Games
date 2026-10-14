@@ -66,17 +66,26 @@ export class ObjectView {
   badges = false;
   /** Something being moved is drawn as the ghost instead. */
   hiddenId: number | null = null;
+  /** Goes up every time the drawn things change. */
+  version = 0;
+  /** Ready fields (tile corners), for the harvest sparkles. */
+  ready: { x: number; z: number; y: number }[] = [];
   private key = '';
 
   private layer(key: string, make: () => THREE.BufferGeometry, shadow = true) {
     let l = this.layers.get(key);
     if (!l) {
-      l = new InstancedLayer(make(), Materials.flatInst, 16, { shadow, receive: true });
+      // crops sway, trees sway and have round canopies; everything else is a faceted prop
+      const mat = key.startsWith('crop:') ? Materials.plantInst : key.startsWith('tree:') ? Materials.treeInst : Materials.flatInst;
+      l = new InstancedLayer(make(), mat, 16, { shadow, receive: true, cull: true });
       this.layers.set(key, l);
       this.group.add(l.mesh);
     }
     return l;
   }
+
+  /** The layers, for culling to the view (FarmView). */
+  get layerList(): Iterable<InstancedLayer> { return this.layers.values(); }
 
   /** Rebuild if anything visible changed. Cheap to call every frame. */
   sync(farm: Farm, locked: (o: Obj) => boolean) {
@@ -89,8 +98,10 @@ export class ObjectView {
     }
     if (key === this.key) return;
     this.key = key;
+    this.version++;
     for (const l of this.layers.values()) l.begin();
     this.boxes = [];
+    this.ready = [];
     for (const o of farm.objects) {
       if (o.id === this.hiddenId) continue;
       const y = tileAt(o.x, o.z).level * STEP_Y;
@@ -102,7 +113,8 @@ export class ObjectView {
           if (!crop) continue;
           const ready = fieldState(farm, o) === 'ready';
           const stage = stageOf(growth(farm, o), ready);
-          this.layer(`crop:${crop.id}:${stage}`, () => cropModel(crop, stage)).push(cx, y + 0.05, cz, ((o.x * 7 + o.z * 3) % 4) * 0.08);
+          this.layer(`crop:${crop.id}:${stage}`, () => cropModel(crop, stage)).push(cx, y + 0.06, cz, ((o.x * 7 + o.z * 3) % 3 - 1) * 0.04);
+          if (ready) this.ready.push({ x: o.x, z: o.z, y });
           if (ready && this.badges) this.layer('badge', readyBadge, false).push(cx, y + 0.9, cz, 0);
         }
         continue;
@@ -129,8 +141,10 @@ export class ObjectView {
         const def = TREE[o.def];
         if (!def) continue;
         const look = treeLook(farm, o);
-        this.layer(`tree:${def.id}:${look}`, () => treeModel(def, look)).push(o.x + 0.5, y, o.z + 0.5, ((o.x * 5 + o.z * 3) % 7) * 0.4);
-        if (!locked(o)) this.boxes.push({ min: [o.x, y, o.z], max: [o.x + 1, y + (def.kind === 'bush' ? 0.6 : 1.5), o.z + 1], tile: { x: o.x, z: o.z } });
+        // orchard trees stand tall and full (a little over their tile); bushes fit theirs
+        this.layer(`tree:${def.id}:${look}`, () => treeModel(def, look)).push(o.x + 0.5, y, o.z + 0.5, ((o.x * 5 + o.z * 3) % 7) * 0.4, def.kind === 'bush' ? 1.15 : 1.3);
+        if (look === 'ripe') this.ready.push({ x: o.x, z: o.z, y: y + (def.kind === 'bush' ? 0.05 : 0.6) });
+        if (!locked(o)) this.boxes.push({ min: [o.x, y, o.z], max: [o.x + 1, y + (def.kind === 'bush' ? 0.7 : 1.95), o.z + 1], tile: { x: o.x, z: o.z } });
         continue;
       }
       const machine = MACHINE[o.def];

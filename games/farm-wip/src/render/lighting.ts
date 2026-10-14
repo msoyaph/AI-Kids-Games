@@ -1,45 +1,58 @@
 /**
- * Day-to-dusk lighting: a warm sun that crosses the sky, a soft sky/ground fill, and a sky colour
- * behind the diorama. Evening turns everything golden, then a friendly blue lantern night (never
- * dark: the farm always stays easy to see). Seasons tint the light a little.
+ * Light through the day: a warm, low sun that rises in the east, stays a little to the south-east
+ * through the middle of the day (so shadows fall back and to the left, and the fronts of things are
+ * lit) and sets golden in the west; a sky and ground fill; a friendly blue lantern night that is never
+ * dark. Seasons tint everything a little. Also the sky's colours, the haze, the water's colours and the
+ * colour grade for the post-processing pass, and the sun's shadow box, fitted to what's on screen.
  */
 import * as THREE from 'three';
 import { dayFrac, duskAmount, type Season } from '../sim/clock';
-import { H, W } from '../sim/map';
-import { rim } from './materials';
-import { waterUniforms } from './water';
+import { fxUniforms } from './fx';
+import type { Grade } from './post';
 import { SEASON_PALETTES } from './palette';
+import { setWaterColors, waterUniforms } from './water';
 
-export interface Sky { top: string; bottom: string }
+const C = (hex: number) => new THREE.Color(hex);
+interface Look { sun: THREE.Color; sky: THREE.Color; ground: THREE.Color; zenith: THREE.Color; horizon: THREE.Color; rim: THREE.Color; gain: THREE.Color; lift: THREE.Color }
+const DAY: Look = { sun: C(0xffe6c4), sky: C(0xcfe6ff), ground: C(0x9aa86a), zenith: C(0x5fa8e8), horizon: C(0xd6e9ef), rim: C(0xfff0d0), gain: C(0xfff6ea), lift: C(0x0a1020) };
+const DUSK: Look = { sun: C(0xff9c5c), sky: C(0xffc9a8), ground: C(0xa07a5c), zenith: C(0x7a86d0), horizon: C(0xffc58e), rim: C(0xffc080), gain: C(0xffe2c2), lift: C(0x1a0c22) };
+const NIGHT: Look = { sun: C(0xa8b8ff), sky: C(0x9fb0ea), ground: C(0x5a6488), zenith: C(0x28356c), horizon: C(0x5c6a9e), rim: C(0xb8ccff), gain: C(0xdde6ff), lift: C(0x0c1430) };
+const SEASON_TINT: Record<Season, THREE.Color> = { spring: C(0xfff4f2), summer: C(0xffffff), autumn: C(0xfff0dc), winter: C(0xf0f5ff) };
+const SEASON_SAT: Record<Season, number> = { spring: 1.05, summer: 1.06, autumn: 1.1, winter: 0.96 };
 
-const DAY = { sun: new THREE.Color(0xfff4dd), sky: new THREE.Color(0xd9f0ff), ground: new THREE.Color(0x9fbf7a), top: new THREE.Color(0x8fd0ff), bottom: new THREE.Color(0xe8f6ff), rim: new THREE.Color(0xfff1d0) };
-const DUSK = { sun: new THREE.Color(0xffb27a), sky: new THREE.Color(0xffd9b8), ground: new THREE.Color(0xb48a6a), top: new THREE.Color(0xf7a07a), bottom: new THREE.Color(0xffe1b0), rim: new THREE.Color(0xffc98a) };
-const NIGHT = { sun: new THREE.Color(0xc4d0ff), sky: new THREE.Color(0xb4c2f0), ground: new THREE.Color(0x6a7494), top: new THREE.Color(0x3d4b8a), bottom: new THREE.Color(0x8f98d4), rim: new THREE.Color(0xbcd0ff) };
-const SEASON_LIGHT: Record<Season, THREE.Color> = {
-  spring: new THREE.Color(0xfff6f2), summer: new THREE.Color(0xffffff), autumn: new THREE.Color(0xfff0dc), winter: new THREE.Color(0xf2f6ff),
-};
-
-const c1 = new THREE.Color(), c2 = new THREE.Color();
-/** day → dusk → night, by how far into the evening it is (0..1). */
-function blend(key: keyof typeof DAY, amount: number, out: THREE.Color) {
+const c1 = new THREE.Color();
+function blend(key: keyof Look, amount: number, out: THREE.Color) {
   if (amount <= 0.5) return out.copy(DAY[key]).lerp(DUSK[key], amount * 2);
   return out.copy(DUSK[key]).lerp(NIGHT[key], (amount - 0.5) * 2);
 }
 
+/** Where the sun is at a time of day: azimuth from south towards east (radians) and elevation. */
+function sunAngles(f: number): { az: number; el: number } {
+  if (f >= 0.9 || f < 0.04) return { az: 0.5, el: 0.85 }; // a high moon
+  const p = Math.min(1, Math.max(0, (f - 0.04) / 0.86));
+  const az = THREE.MathUtils.lerp(1.75, -1.25, p); // east → a little east of south at noon → west
+  const el = 0.2 + Math.sin(p * Math.PI) * 0.62; // about 11° → 47° → 11°
+  return { az, el };
+}
+
 export class Lighting {
-  readonly sun = new THREE.DirectionalLight(0xffffff, 1.6);
-  readonly fill = new THREE.HemisphereLight(0xffffff, 0x88aa66, 0.9);
-  readonly sky: Sky = { top: '#8fd0ff', bottom: '#e8f6ff' };
-  private lastShadowAt = -1;
+  readonly sun = new THREE.DirectionalLight(0xffffff, 2.4);
+  readonly fill = new THREE.HemisphereLight(0xffffff, 0x88aa66, 1.0);
+  readonly zenith = new THREE.Color(0x5fa8e8);
+  readonly horizon = new THREE.Color(0xd6e9ef);
+  readonly grade: Grade = { lift: new THREE.Color(), gain: new THREE.Color(1, 1, 1), saturation: 1.1, contrast: 1.05 };
+  /** The sun's direction (towards the sun). */
+  readonly dir = new THREE.Vector3(0, 1, 0);
+  private lastStep = -1;
+  private box = { x: 0, z: 0, half: 0 };
 
   constructor(scene: THREE.Scene) {
     this.sun.castShadow = false;
     const s = this.sun.shadow;
-    s.camera.left = -42; s.camera.right = 42; s.camera.top = 42; s.camera.bottom = -42;
-    s.camera.near = 1; s.camera.far = 140;
-    s.bias = -0.0006;
-    s.normalBias = 0.02;
-    this.sun.target.position.set(W / 2, 0, H / 2);
+    s.camera.near = 1; s.camera.far = 160;
+    s.bias = -0.0004;
+    s.normalBias = 0.025;
+    s.radius = 3;
     scene.add(this.sun, this.sun.target, this.fill);
   }
 
@@ -52,30 +65,60 @@ export class Lighting {
     }
   }
 
+  /**
+   * Fit the shadow box around what's on screen: centred on (x, z), `half` tiles each way. Snapped to
+   * steps, so panning redraws the shadow map only now and then. Returns true when it moved.
+   */
+  fitShadows(x: number, z: number, half: number): boolean {
+    const h = Math.max(6, Math.min(56, 2 ** (Math.ceil(Math.log2(half) * 4) / 4)));
+    const step = h / 6;
+    const sx = Math.round(x / step) * step, sz = Math.round(z / step) * step;
+    if (sx === this.box.x && sz === this.box.z && h === this.box.half) return false;
+    this.box = { x: sx, z: sz, half: h };
+    const cam = this.sun.shadow.camera;
+    cam.left = -h; cam.right = h; cam.top = h; cam.bottom = -h;
+    cam.updateProjectionMatrix();
+    this.place();
+    return true;
+  }
+
+  private place() {
+    this.sun.target.position.set(this.box.x, 0, this.box.z);
+    this.sun.position.set(this.box.x + this.dir.x * 70, this.dir.y * 70, this.box.z + this.dir.z * 70);
+    this.sun.target.updateMatrixWorld();
+  }
+
   /** Updates everything for farm time `t`. Returns true when the shadow map should be redrawn. */
   update(t: number, season: Season): boolean {
     const evening = duskAmount(t);
     const f = dayFrac(t);
-    // the sun rises in the east (+x), arcs over the south and sets in the west; at night a low moon
-    const arc = f < 0.9 ? Math.min(1, Math.max(0, (f + 0.04) / 0.92)) : 0.5;
-    const angle = Math.PI * arc;
-    const height = f < 0.9 ? 0.35 + Math.sin(angle) * 0.65 : 0.7;
-    this.sun.position.set(W / 2 + Math.cos(angle) * 40, 20 + height * 45, H / 2 + 22 + Math.sin(angle) * 6);
-    const tint = SEASON_LIGHT[season];
+    const { az, el } = sunAngles(f);
+    this.dir.set(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az));
+    this.place();
+    const tint = SEASON_TINT[season];
     this.sun.color.copy(blend('sun', evening, c1)).multiply(tint);
-    this.sun.intensity = 1.75 - evening * 0.55;
+    this.sun.intensity = THREE.MathUtils.lerp(2.35, 1.0, evening);
     this.fill.color.copy(blend('sky', evening, c1));
-    this.fill.groundColor.copy(blend('ground', evening, c2));
-    this.fill.intensity = 0.95 + evening * 0.1;
-    rim.color.value.copy(blend('rim', evening, c1));
-    this.sky.top = `#${blend('top', evening, c1).getHexString()}`;
-    this.sky.bottom = `#${blend('bottom', evening, c2).getHexString()}`;
+    this.fill.groundColor.copy(blend('ground', evening, c1));
+    this.fill.intensity = THREE.MathUtils.lerp(0.72, 1.05, evening);
+    fxUniforms.rimColor.value.copy(blend('rim', evening, c1));
+    blend('zenith', evening, this.zenith);
+    blend('horizon', evening, this.horizon);
+    if (season === 'winter') this.horizon.lerp(C(0xeef3f8), 0.4 * (1 - evening));
+    fxUniforms.hazeColor.value.copy(this.horizon);
+    // water: the season's colours, cooler at night
     const pal = SEASON_PALETTES[season];
-    waterUniforms.shallow.value.setHex(pal.water).lerp(NIGHT.top, evening * 0.35);
-    waterUniforms.deep.value.setHex(pal.waterDeep).lerp(NIGHT.top, evening * 0.35);
+    setWaterColors(c1.setHex(pal.water).lerp(NIGHT.zenith, evening * 0.4), new THREE.Color(pal.waterDeep).lerp(NIGHT.zenith, evening * 0.45));
+    waterUniforms.sunDir.value.copy(this.dir);
+    waterUniforms.sunColor.value.copy(this.sun.color).multiplyScalar(evening > 0.85 ? 0.5 : 1);
+    // the grade: warm highlights by day, golden at dusk, cool blue at night
+    blend('gain', evening, this.grade.gain);
+    blend('lift', evening, this.grade.lift);
+    this.grade.saturation = SEASON_SAT[season] * (1 - evening * 0.08);
+    this.grade.contrast = 1.05;
     // shadows follow the sun in small steps (redrawing the shadow map every frame is costly)
     const step = Math.round(f * 240);
-    if (step !== this.lastShadowAt) { this.lastShadowAt = step; return true; }
+    if (step !== this.lastStep) { this.lastStep = step; return true; }
     return false;
   }
 }
