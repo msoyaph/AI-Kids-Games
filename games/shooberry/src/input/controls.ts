@@ -135,7 +135,7 @@ export class Pads {
 
   poll(now: number) {
     let pads: (Gamepad | null)[] = [];
-    try { pads = navigator.getGamepads?.() ? [...navigator.getGamepads()] : []; } catch { return; }
+    try { const list = navigator.getGamepads?.(); pads = list ? [...list] : []; } catch { return; }
     const pad = pads.find(p => p && p.connected);
     if (!pad) { this.prev.clear(); return; }
     const pressed = new Set<number>();

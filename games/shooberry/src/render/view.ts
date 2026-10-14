@@ -16,7 +16,7 @@ import { Bloom } from './bloom';
 import { fitCamera, lean, project, screenRay, upLeaned, type Fit } from './camera';
 import { FX, MOTION, wave } from './fx';
 import { BASKET_AT, buildGarden, buildSpecials, decorGeometry, decorSpots, GROUND_Y, laneUmbrellaZ, SLAB, snacks, UMBRELLA_X } from './garden';
-import { torus } from './geo';
+import { box, torus } from './geo';
 import { ModelLayer, SimpleLayer } from './instanced';
 import { blobTexture, Materials, rim } from './materials';
 import { CRITTER_MODELS } from './models/critters';
@@ -88,6 +88,9 @@ export class GardenView {
   private readonly ring: THREE.Mesh;
   private readonly ringOk: THREE.MeshBasicMaterial;
   private readonly ringNo: THREE.MeshBasicMaterial;
+  /** A cross inside the ring on a spot the card can't go (Settings: patterns, so it's not colour alone). */
+  private readonly cross: THREE.Group;
+  patterns = false;
   private readonly squash = { sx: 1, sy: 1 };
   private readonly restPose = newPoses(1);
   private readonly at = new THREE.Vector3();
@@ -141,6 +144,12 @@ export class GardenView {
     this.ring.visible = false;
     this.ring.renderOrder = 5;
     this.scene.add(this.ring);
+    const bar = (a: number) => box(0.56, 0.02, 0.09).rotateY(a);
+    this.cross = new THREE.Group();
+    for (const a of [Math.PI / 4, -Math.PI / 4]) { const m = new THREE.Mesh(bar(a), this.ringNo); m.renderOrder = 5; this.cross.add(m); }
+    this.cross.scale.set(1, 1, 1.15);
+    this.cross.visible = false;
+    this.scene.add(this.cross);
     this.setWorld('meadow');
     this.setQuality(tier);
   }
@@ -340,6 +349,8 @@ export class GardenView {
     this.ring.visible = !!f.highlight;
     this.ring.material = f.highlightOk ? this.ringOk : this.ringNo;
     if (f.highlight) this.ring.position.set(colX(f.highlight.col), 0.03, laneZ(f.highlight.lane));
+    this.cross.visible = !!f.highlight && !f.highlightOk && this.patterns;
+    if (this.cross.visible) this.cross.position.copy(this.ring.position);
     this.backdrop.update(t, f.reduced);
     if (this.bloom) this.bloom.strength = 0.28 + (f.reduced ? 0 : 0.03 * wave(FX.bloomBreatheHz, t));
   }

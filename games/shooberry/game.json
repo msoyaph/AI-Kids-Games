@@ -2,10 +2,10 @@
   "$schema": "../../docs/game.schema.json",
   "slug": "shooberry",
   "title": "Shooberry",
-  "tagline": "Plant friendly defenders and save the picnic snacks.",
-  "shortDescription": "Grow a garden of friendly plant helpers to shoo silly critters away from the picnic. A gentle 3D lane-strategy game where nobody gets hurt.",
-  "longDescription": "Snails, ants, magpies and other silly critters are sneaking toward the picnic snacks. Plant a garden of friendly helpers in the lanes: plants that gust, splash, flick seeds and tangle feet until every critter poofs into leaves and runs home. Learn real facts about each plant in the Seed Book, plan your garden across five worlds, and try the endless Garden Party, puzzle Challenges and a Daily garden. Nobody gets hurt, and a lost level just means trying again.",
-  "version": "0.1.0",
+  "tagline": "Plant friendly helpers and save the picnic snacks.",
+  "shortDescription": "Grow a garden of friendly plant helpers and shoo silly critters away from the picnic. A bright 3D lane-strategy game where nobody gets hurt.",
+  "longDescription": "Snails, ants, magpies, goats and other silly critters are sneaking toward the picnic snacks. Plant a garden of 24 friendly helpers in the lanes: plants that flick berries, spin maple seeds, ring bluebells, block with hedges and slow critters down, until every critter poofs into leaves and runs home. Compost from worms and Comfrey pays for new plants, and each lane has a pop-up picnic umbrella for a last-second save. Play 50 Adventure levels across five worlds, from a meadow picnic to a cloud garden with a giant Snack Parade float, then try the endless Garden Party, 20 Challenges and a new Daily garden. The Seed Book has a real fact for every plant, and nobody ever gets hurt: a lost level just means trying again.",
+  "version": "1.0.0",
   "minAge": 7,
   "ageRange": "7+",
   "genres": [
@@ -17,7 +17,8 @@
     "Lane strategy",
     "Picnic",
     "Plants",
-    "3D"
+    "3D",
+    "Nature facts"
   ],
   "keywords": [
     "lane defense",
@@ -30,14 +31,14 @@
     "offline game"
   ],
   "features": [
-    "Plant 24 friendly garden helpers inspired by real plants",
-    "Shoo 20 silly critters away from the picnic, and nobody gets hurt",
-    "Five garden worlds with 50 Adventure levels",
-    "Endless Garden Party, puzzle Challenges and a Daily garden",
-    "A Seed Book of real plant facts and an Invader Book",
-    "Plays with touch, mouse, keyboard or gamepad"
+    "Plant 24 friendly helpers based on real garden plants",
+    "Shoo 20 silly critters, five mini-bosses and a giant Snack Parade float",
+    "50 Adventure levels in five worlds, each with its own twist",
+    "Endless Garden Party, 20 Challenges and a Daily garden",
+    "A Seed Book with a real fact for every plant, and an Invader Book",
+    "Plays with touch, mouse, keyboard or gamepad, with Low, Medium and High graphics"
   ],
-  "contentNotes": "Silly critters try to sneak picnic snacks, and plants shoo them home with gusts, splashes and seed flicks. Nobody gets hurt: critters poof into leaves and run off, nibbled plants just wilt, and a lost level is simply tried again. Progress saves in this browser.",
+  "contentNotes": "Silly critters try to sneak picnic snacks, and plants shoo them home with berries, seeds, scents and chimes. Nobody gets hurt: critters poof into leaves and run off, nibbled plants just wilt, and a lost level is simply tried again with a hint. No purchases, ads, chat or timers. Some reading, with read-aloud tips. Progress saves in this browser.",
   "controls": {
     "types": [
       "Touch",
@@ -46,15 +47,16 @@
       "Gamepad"
     ],
     "quickStart": [
-      "Pick a plant card.",
-      "Tap a garden tile to plant it.",
-      "Tap compost to collect it, and keep the critters away from the picnic."
+      "Press Play, pick level 1 and press \"Let's grow!\".",
+      "Choose a plant card, then tap a garden spot to plant it.",
+      "Comfrey makes compost to pay for more plants. Keep the critters away from the picnic!"
     ],
     "howToPlay": [
-      "Tap or drag a plant card onto a garden tile to plant it; press and hold a card to read about the plant.",
-      "With a keyboard or gamepad, move the garden cursor, pick plants with the number keys or bumpers, plant with Enter or A and cancel with Escape or B.",
-      "Collect compost by tapping it, or turn on auto-collect in Settings.",
-      "Pause and speed controls are at the top of the screen."
+      "Touch or mouse: tap a plant card, then a garden spot (or drag the card onto the garden). Press and hold a card or a plant to read about it.",
+      "Compost is collected for you; turn that off in Settings and tap the piles yourself. The trowel card digs up a plant to make room.",
+      "Keyboard: arrow keys or WASD move the garden cursor, 1–9 or Q and E choose a plant, Enter or Space plants, T picks the trowel, C collects all compost, F switches speed, Escape or P pauses.",
+      "Gamepad: the stick or d-pad moves the cursor, LB and RB choose a plant, A plants, B cancels, X collects all compost, Y switches speed, Start pauses.",
+      "Each lane has a picnic umbrella that pops open once to send nearby critters back. Three snacks saved means three stars."
     ]
   },
   "devices": [
@@ -66,7 +68,7 @@
   "requirements": [
     "WebGL 2"
   ],
-  "playTime": "About 5–6 hours of Adventure, plus endless and challenge modes",
+  "playTime": "About 5 hours of Adventure, plus endless and challenge modes",
   "storage": {
     "prefix": "shooberry.",
     "keys": [
@@ -82,7 +84,7 @@
     "network": false
   },
   "capture": {
-    "route": "?scene=play&seed=7",
+    "route": "?scene=wave",
     "script": "apps/site/scripts/capture/shooberry.ts"
   },
   "license": "MIT",
@@ -90,8 +92,9 @@
   "site": {
     "featured": false,
     "releaseDate": "2026-10-14",
-    "accentColor": "#d9d4f6",
+    "accentColor": "#ffd0dc",
     "coverLayers": [],
-    "status": "In development"
+    "status": "Ready to play",
+    "order": 9
   }
 }

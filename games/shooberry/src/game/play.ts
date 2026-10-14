@@ -29,6 +29,8 @@ export class Play {
   speed: 1 | 2;
   /** Tests only: run the rules this many times faster (?testmode=1&speed=N). */
   testSpeed = 1;
+  /** Tests only: a bot that plays each step (?testmode=1&bot=good|casual). */
+  autopilot: ((g: GameState) => Command[]) | null = null;
   paused = false;
   readonly leaves: Leaf[] = [];
   readonly sparkles: Sparkle[] = [];
@@ -65,6 +67,7 @@ export class Play {
       while (this.acc >= STEP && steps < 60 * 8 && !this.game.result) {
         const cmds = this.queue.splice(0);
         this.tapsTaken += cmds.length;
+        if (this.autopilot) cmds.push(...this.autopilot(this.game));
         step(this.game, STEP, cmds);
         for (const e of this.game.events) this.handle(e);
         this.game.events.length = 0;

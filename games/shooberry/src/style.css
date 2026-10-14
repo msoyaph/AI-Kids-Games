@@ -75,6 +75,8 @@ h1, h2, h3 { margin: 0; line-height: 1.1; }
 .card .wait { position: absolute; inset: 0; background: conic-gradient(rgba(43, 25, 16, 0.62) var(--cd, 0deg), transparent 0); pointer-events: none; z-index: 1; }
 .card.cooling img, .card.poor img { filter: saturate(0.35) brightness(0.85); }
 .card.poor .cost { background: #ffd6d0; color: #9a1b12; }
+/* Settings → patterns: "not enough compost" is striped and struck through, not just reddish */
+body.patterns .card.poor .cost { background: repeating-linear-gradient(135deg, #ffd6d0 0 5px, #fff8ea 5px 10px); text-decoration: line-through 2px; }
 .card[aria-checked="true"] { transform: translateY(-4px); box-shadow: inset 0 calc(var(--card) * -0.16) 0 #d9733f, inset 0 calc(var(--card) * -0.19) 0 var(--ink), 0 0 0 4px var(--sun), 0 0 0 7px var(--ink), 0 8px 0 var(--ink); }
 #cards.column .card[aria-checked="true"] { transform: translateX(3px); }
 .card.tool { background: radial-gradient(90% 70% at 50% 30%, #f4f8ff 0%, #dfe8f6 70%); box-shadow: inset 0 calc(var(--card) * -0.16) 0 #8fa0b8, inset 0 calc(var(--card) * -0.19) 0 var(--ink), var(--shadow); }

@@ -30,13 +30,15 @@ import * as M from './ui/menus';
 /**
  * Shooberry: plant friendly helpers, shoo the critters, save the picnic. Test and capture routes
  * (never saving over a real save): ?level=<id>[&seeds=a,b], ?quickstart, ?unlockall,
- * ?testmode=1&speed=N, ?quality=low|medium|high, ?scene=title|play|wave|boss|planting|world&w=<id>|stress.
+ * ?testmode=1&speed=N[&bot=good|casual], ?quality=low|medium|high, ?scene=title|play|wave|boss|planting|world&w=<id>|stress.
  */
 const params = new URLSearchParams(location.search);
 const scene = params.get('scene');
 const capture = scene !== null;
 const unlockAll = params.has('unlockall');
-const testSpeed = params.get('testmode') === '1' ? Math.max(1, Math.min(16, Number(params.get('speed')) || 1)) : 1;
+const testMode = params.get('testmode') === '1';
+const testSpeed = testMode ? Math.max(1, Math.min(16, Number(params.get('speed')) || 1)) : 1;
+const testBot = testMode && (params.get('bot') === 'good' || params.get('bot') === 'casual') ? params.get('bot') as 'good' | 'casual' : null;
 const shortcut = capture || params.has('level') || params.has('quickstart');
 const noWebGL2 = (window as unknown as { __noWebGL2?: boolean }).__noWebGL2 === true;
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -92,6 +94,8 @@ function boot() {
     setVolumes(data.settings.music, data.settings.sfx);
     document.body.classList.toggle('large', data.settings.largeText);
     document.body.classList.toggle('calm', data.settings.reducedMotion);
+    document.body.classList.toggle('patterns', data.settings.patterns);
+    view.patterns = data.settings.patterns;
     music.on = data.settings.music > 0;
   };
   applySettings();
@@ -199,6 +203,7 @@ function boot() {
     const seed = (c.mode === 'daily' ? 7 : 1) + (c.spec.id.length * 13);
     play = new Play(c.spec, seeds, { seed, autoCollect: data.settings.autoCollect, speed: data.settings.speed }, music);
     play.testSpeed = testSpeed;
+    if (testBot) play.autopilot = makeBot(testBot, 1);
     play.onEvent = e => { if (e.type === 'won' || e.type === 'lost') window.setTimeout(() => finish(), 900); if (e.type === 'umbrella' && !data.seen.tips.includes('umbrella')) { data.seen.tips.push('umbrella'); store(); play!.banner = { text: 'The picnic umbrella popped open! Each lane has one.', kind: 'wave', until: play!.game.t + 3.5 }; } };
     const kinds = [...seeds, ...(c.spec.prePlanted ?? []).map(p => p.plant), ...new Set(c.spec.waves.flatMap(w => w.spawns.map(s => s.critter)))];
     if (c.spec.waves.flatMap(w => w.spawns).some(s => s.critter === 'grand-snail')) kinds.push('ants');
