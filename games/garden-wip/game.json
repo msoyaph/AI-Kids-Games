@@ -1,0 +1,97 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "garden-wip",
+  "title": "Garden Defense (working title)",
+  "tagline": "Plant friendly defenders and save the picnic snacks.",
+  "shortDescription": "Grow a garden of friendly plant helpers to shoo silly critters away from the picnic. A gentle 3D lane-strategy game where nobody gets hurt.",
+  "longDescription": "Snails, ants, magpies and other silly critters are sneaking toward the picnic snacks. Plant a garden of friendly helpers in the lanes: plants that gust, splash, flick seeds and tangle feet until every critter poofs into leaves and runs home. Learn real facts about each plant in the Seed Book, plan your garden across five worlds, and try the endless Garden Party, puzzle Challenges and a Daily garden. Nobody gets hurt, and a lost level just means trying again.",
+  "version": "0.1.0",
+  "minAge": 7,
+  "ageRange": "7+",
+  "genres": [
+    "Strategy",
+    "Casual"
+  ],
+  "tags": [
+    "Garden",
+    "Lane strategy",
+    "Picnic",
+    "Plants",
+    "3D"
+  ],
+  "keywords": [
+    "lane defense",
+    "garden strategy",
+    "plant defense",
+    "kids strategy game",
+    "garden game",
+    "strategy game for kids",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "Plant 24 friendly garden helpers inspired by real plants",
+    "Shoo 20 silly critters away from the picnic, and nobody gets hurt",
+    "Five garden worlds with 50 Adventure levels",
+    "Endless Garden Party, puzzle Challenges and a Daily garden",
+    "A Seed Book of real plant facts and an Invader Book",
+    "Plays with touch, mouse, keyboard or gamepad"
+  ],
+  "contentNotes": "Silly critters try to sneak picnic snacks, and plants shoo them home with gusts, splashes and seed flicks. Nobody gets hurt: critters poof into leaves and run off, nibbled plants just wilt, and a lost level is simply tried again. Progress saves in this browser.",
+  "controls": {
+    "types": [
+      "Touch",
+      "Mouse",
+      "Keyboard",
+      "Gamepad"
+    ],
+    "quickStart": [
+      "Pick a plant card.",
+      "Tap a garden tile to plant it.",
+      "Tap compost to collect it, and keep the critters away from the picnic."
+    ],
+    "howToPlay": [
+      "Tap or drag a plant card onto a garden tile to plant it; press and hold a card to read about the plant.",
+      "With a keyboard or gamepad, move the garden cursor, pick plants with the number keys or bumpers, plant with Enter or A and cancel with Escape or B.",
+      "Collect compost by tapping it, or turn on auto-collect in Settings.",
+      "Pause and speed controls are at the top of the screen."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "landscape",
+  "requirements": [
+    "WebGL 2"
+  ],
+  "playTime": "About 5–6 hours of Adventure, plus endless and challenge modes",
+  "storage": {
+    "prefix": "gardenwip.",
+    "keys": [
+      "gardenwip.save"
+    ],
+    "probe": "gardenwip.__probe"
+  },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
+  "capture": {
+    "route": "?scene=play&seed=7",
+    "script": "apps/site/scripts/capture/garden-wip.ts"
+  },
+  "license": "MIT",
+  "source": "games/garden-wip",
+  "site": {
+    "featured": false,
+    "releaseDate": "2026-10-14",
+    "accentColor": "#d9d4f6",
+    "coverLayers": [],
+    "status": "In development"
+  }
+}

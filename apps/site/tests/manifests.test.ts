@@ -31,6 +31,12 @@ describe('game manifests (games/<slug>/game.json)',() => {
       expect(validateManifest(m).some(error => error.includes('another company')),text).toBe(true);
     }
   });
+  it('reject the lane-defense franchise that inspired the ninth game, by name',() => {
+    for (const text of ['Like Plants vs. Zombies, for kids.','A PvZ-style garden.','From the PopCap classic.','Plants versus critters!'] as const) {
+      const m = sample(); m.tagline = text;
+      expect(validateManifest(m).some(error => error.includes('another company')),text).toBe(true);
+    }
+  });
   it('reject storage keys outside the game\'s own prefix',() => {
     const m = sample(); m.storage.keys = [...m.storage.keys,'aikg:favorites'];
     expect(validateManifest(m)).toContain('cliff-valley: storage key "aikg:favorites" does not start with the prefix "cliffvalley.".');

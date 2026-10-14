@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Garden Defense (working title)</title>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Garden Defense (working title): the sky where you catch stars"></canvas>
+    <div id="hud" hidden>
+      <span class="pill" aria-label="Stars caught">★ <b id="score">0</b></span>
+      <span class="pill" aria-label="Seconds left">⏱ <b id="time">60</b></span>
+      <button id="pause-button" class="round" aria-label="Pause">❚❚</button>
+    </div>
+    <section id="title" class="screen">
+      <h1>Garden Defense (working title)</h1>
+      <p>Catch as many stars as you can in 60 seconds!</p>
+      <button id="play" class="big">Play</button>
+      <p class="how">Fly with WASD, the arrow keys or a gamepad stick, or hold your finger or the mouse where you want to go.</p>
+      <p>Best: <b id="best">0</b></p>
+      <button id="sound" aria-pressed="true">Sound: on</button>
+      <p id="storage-note" class="note" hidden>This browser can't save progress, so your best score lasts until you close the game.</p>
+    </section>
+    <section id="paused" class="screen" hidden>
+      <h2>Paused</h2>
+      <button id="resume" class="big">Keep playing</button>
+    </section>
+    <section id="results" class="screen" hidden>
+      <h2>Time's up!</h2>
+      <p>You caught <b id="final">0</b> stars.</p>
+      <button id="again" class="big">Play again</button>
+    </section>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
