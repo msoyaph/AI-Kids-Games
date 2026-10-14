@@ -12,10 +12,12 @@ and phase 11 renames everything. Brief: `docs/prompts/farm-wip.md`. Approved pla
 - Own git worktree: `~/Documents/FarmerTown/AI-Kids-Games-farm`, branch `farm-wip`, cut from
   `origin/main` f331dd9 (release 2.7.0, Agentmon). The branch has no upstream. Push or open a PR only
   when the owner asks.
-- **Release (owner, 2026-10-14):** "Once the game is complete, deploy it to production and list it in
-  https://ai-kids-games-fawn.vercel.app/". This replaces the plan's "stop before the production
-  release". "Complete" still needs the owner's style-frame approval and title pick (phase 11). Then
-  release by the repo's path (root CLAUDE.md):
+- **Release (owner, 2026-10-14, the "finish end to end" brief; replaces the same day's earlier "deploy
+  to production when complete"):** finish the game (plan: `docs/PLAN-2.md`), rename it to the owner's
+  pick, import it into the site, open a PR, get CI green and hand over the preview link. **Stop
+  before production:** the owner plays it and approves the release. Run the full browser suites
+  against previews, never production. When the owner later approves, release by the repo's path
+  (root CLAUDE.md):
   1. version bump with the DEPLOYMENT.json approval quoting this message;
   2. `release:local` on a quiet machine;
   3. CI green;
@@ -286,7 +288,24 @@ from their ingredients in `items.ts`), `decor.ts` (decorations, paths, sets, lan
   - **Before** (old renderer, same corner): Low 41 / 100k, Medium 72 / 175k, High 72 / 178k on the
     phone.
 
-## Names (phase 0: five proposals, web-checked; the owner picks one before the site step)
+## The owner's "go" (2026-10-14) for docs/PLAN-2.md
+- **Name:** **Fieldlark** (slug `fieldlark`, storage prefix `fieldlark.`).
+- **Plan:** approved as written, with these notes:
+  1. Merge `main` first, before any building.
+  2. Fix the audit's bugs early in phase 7: keys 7–9, the gamepad X / T key, and a full storage
+     silently stopping saves. A full storage must show a friendly message and never lose or corrupt
+     a save.
+  3. Don't fight Shooberry for list position 9: the first PR to merge takes 9, the other takes the
+     next number. Adjust at merge time.
+  4. MCP catalog: approved to bump the catalog app's version when Fieldlark is added (full-screen).
+     It goes live only with the owner's production approval.
+  5. Trailer: 15 seconds of real Fieldlark gameplay in the approved look, like the other games.
+- **Then:** work autonomously through phases 7–15 to the PR and preview link, and stop before
+  production.
+- **Decision (mine):** the rename to `fieldlark` happens right after the merge, not in phase 15. The
+  name is final, so every new file, the new save format and the tests use it from the start.
+
+## Names (phase 0: five proposals, web-checked; the owner picked Fieldlark on 2026-10-14)
 **How they were checked (2026-10-13).** Web searches limited to each store's domain: the App Store
 (apps.apple.com), Google Play, Steam and itch.io. Then general web searches for any game, app, toy,
 board game, brand or trademark with the same name. My own spot-check searches repeated each
