@@ -1,7 +1,10 @@
 /** Shared helpers for Breezeport's browser tests (adapted from Fieldlark's). */
 import { expect, type Page } from '@playwright/test';
 import { encodeTown } from '../../src/save/codec';
+import { buildable, idx } from '../../src/sim/map';
+import { isRoad } from '../../src/sim/roads';
 import type { Town } from '../../src/sim/state';
+import { isOpen, occupancy } from '../../src/sim/world';
 
 export const HOOK = '__breezeport';
 export const PREFIX = 'breezeport.';
@@ -76,6 +79,58 @@ export async function newStoryTown(page: Page) {
   await page.getByRole('button', { name: 'Become the mayor!' }).click();
   await expect.poll(async () => (await snapshot(page)).screen).toBe('city');
   await readStory(page);
+}
+
+/**
+ * The top-left tile of a free w × h block of open land (no road, nothing standing) nearest the middle
+ * of the part of the screen nothing covers, with every tile of it well inside that part. `town` is the
+ * town on screen (or one laid out the same way: a new town's streets don't depend on its seed).
+ */
+export async function spotNear(page: Page, town: Town, w: number, h: number): Promise<[number, number]> {
+  const area = await page.evaluate(hook => (window as unknown as Record<string, { openArea(): { x: number; y: number; w: number; h: number } }>)[hook]!.openArea(), HOOK);
+  const cx = area.x + area.w / 2, cy = area.y + area.h / 2, m = 30;
+  const occ = occupancy(town);
+  // the bars that float over the town (the tool tray, the placing bar, the camera buttons) cover it too
+  const bars = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.tray, .place-bar, .campad, .toolbar, .topbar')]
+    .filter(el => !el.hidden && el.offsetParent !== null).map(el => { const r = el.getBoundingClientRect(); return { x: r.x - 10, y: r.y - 10, w: r.width + 20, h: r.height + 20 }; }));
+  const covered = (p: { x: number; y: number }) => bars.some(r => p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h);
+  const inside = (p: { x: number; y: number }) => p.x > area.x + m && p.x < area.x + area.w - m && p.y > area.y + m && p.y < area.y + area.h - m && !covered(p);
+  let best: [number, number] | null = null, bestD = Infinity;
+  for (let z = 3; z < 30; z++) for (let x = 27; x < 53; x++) {
+    let free = true;
+    for (let dz = 0; dz < h && free; dz++) for (let dx = 0; dx < w && free; dx++) {
+      const tx = x + dx, tz = z + dz;
+      if (!buildable(tx, tz) || !isOpen(town, tx, tz) || isRoad(town, tx, tz) || occ[idx(tx, tz)]) free = false;
+    }
+    if (!free) continue;
+    const a = await tileOnScreen(page, x, z), b = await tileOnScreen(page, x + w - 1, z + h - 1);
+    if (!inside(a) || !inside(b) || !inside(await tileOnScreen(page, x + w - 1, z)) || !inside(await tileOnScreen(page, x, z + h - 1))) continue;
+    const d = Math.hypot((a.x + b.x) / 2 - cx, (a.y + b.y) / 2 - cy);
+    if (d < bestD) { bestD = d; best = [x, z]; }
+  }
+  if (!best) {
+    const zoom = await page.evaluate(hook => (window as unknown as Record<string, { snapshot(): { camera: { zoom: number; x: number; z: number } } }>)[hook]!.snapshot().camera, HOOK);
+    throw new Error(`no free spot in view (open area ${JSON.stringify(area)}, camera ${JSON.stringify(zoom)})`);
+  }
+  return best;
+}
+
+/**
+ * spotNear, after panning the view a few tiles south (a new town's open land lies south of City Hall;
+ * the arrow keys pan on every device), then zooming out a step at a time until a block fits.
+ */
+export async function spotInView(page: Page, town: Town, w: number, h: number): Promise<[number, number]> {
+  await page.keyboard.down('ArrowDown');
+  await page.waitForTimeout(450);
+  await page.keyboard.up('ArrowDown');
+  await page.waitForTimeout(900);
+  for (let i = 0; ; i++) {
+    try { return await spotNear(page, town, w, h); } catch (e) {
+      if (i >= 3) throw e;
+      await page.getByRole('button', { name: 'Zoom out' }).click();
+      await page.waitForTimeout(900);
+    }
+  }
 }
 
 /** A tool on the tool bar, by its label (its accessible name is "Roads (2)" and so on). */

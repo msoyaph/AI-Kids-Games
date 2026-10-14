@@ -4,19 +4,9 @@
  * friendly no-3D card, and running in the website's sandboxed iframe — with no console errors and no
  * requests anywhere.
  */
-import { expect, test, type Page } from '@playwright/test';
-import { dragTiles, newStoryTown, open, pickAt, PREFIX, snapshot, tileOnScreen, toolButton, watch } from './helpers';
-
-/** Zoom out until every tile is well inside the open part of the screen. */
-async function inView(page: Page, tiles: [number, number][]) {
-  for (let i = 0; i < 4; i++) {
-    const area = await page.evaluate(() => (window as unknown as { __breezeport: { openArea(): { x: number; y: number; w: number; h: number } } }).__breezeport.openArea());
-    const pts = await Promise.all(tiles.map(([x, z]) => tileOnScreen(page, x, z)));
-    if (pts.every(p => p.x > area.x + 24 && p.x < area.x + area.w - 24 && p.y > area.y + 24 && p.y < area.y + area.h - 24)) return;
-    await page.getByRole('button', { name: 'Zoom out' }).click();
-    await page.waitForTimeout(700);
-  }
-}
+import { expect, test } from '@playwright/test';
+import { newTown } from '../../src/sim/newtown';
+import { dragTiles, newStoryTown, open, pickAt, PREFIX, snapshot, spotInView, tileOnScreen, toolButton, watch } from './helpers';
 
 test('boots into a new story town, with no errors and no network', async ({ page }) => {
   const problems = watch(page);
@@ -36,15 +26,16 @@ test('draws a street and zones homes, and a family moves in', async ({ page, has
   const problems = watch(page);
   await open(page, 'speed=30');
   await newStoryTown(page);
-  await inView(page, [[40, 17], [40, 20], [38, 17], [39, 20]]);
+  // a street down the right of a free block in view, and homes zoned two deep on its left
+  const [x, z] = await spotInView(page, newTown(1), 3, 4);
   const before = await snapshot(page);
   await toolButton(page, 'Roads').click();
-  await dragTiles(page, [40, 17], [40, 20], hasTouch);
+  await dragTiles(page, [x + 2, z], [x + 2, z + 3], hasTouch);
   await expect.poll(async () => (await snapshot(page)).roads).toBe(before.roads + 4);
   expect((await snapshot(page)).coins).toBeLessThan(before.coins);
   await toolButton(page, 'Zones').click();
   await page.getByRole('button', { name: 'Homes' }).click();
-  await dragTiles(page, [38, 17], [39, 20], hasTouch);
+  await dragTiles(page, [x, z], [x + 1, z + 3], hasTouch);
   // homes grow on the new lots (town time runs fast here)
   await expect.poll(async () => (await snapshot(page)).things, { timeout: 30_000 }).toBeGreaterThan(before.things);
   expect(problems).toEqual([]);

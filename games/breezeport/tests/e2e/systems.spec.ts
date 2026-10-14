@@ -4,7 +4,7 @@
  */
 import { expect, test } from '@playwright/test';
 import { newTown } from '../../src/sim/newtown';
-import { fakeGamepad, open, readStory, snapshot, tap, tileOnScreen, toolButton, watch, withTown } from './helpers';
+import { fakeGamepad, open, readStory, snapshot, spotInView, tap, tileOnScreen, toolButton, watch, withTown } from './helpers';
 
 /** A story town at chapter 3 (maps, transit and services open), in slot 1. */
 function chapterTown(chapter = 3) {
@@ -58,7 +58,8 @@ test('Creative mode: build anything for free, then remove it', async ({ page, ha
   await page.getByRole('button', { name: /^Tree/ }).first().click();
   expect((await snapshot(page)).placing?.def).toBe('tree');
   const before = (await snapshot(page)).things;
-  const p = await tileOnScreen(page, 36, 14);
+  const [sx, sz] = await spotInView(page, t, 1, 1);
+  const p = await tileOnScreen(page, sx, sz);
   await tap(page, p, hasTouch);
   if (hasTouch) await tap(page, p, true); // a finger moves the ghost first, then places
   await expect.poll(async () => (await snapshot(page)).things).toBe(before + 1);
