@@ -6,6 +6,7 @@ import { copyFileSync, existsSync, linkSync, mkdirSync, rmSync, writeFileSync } 
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import ffprobe from '@ffprobe-installer/ffprobe';
+import { pathToFileURL } from 'node:url';
 import { at, type Block, type Cut, FORMATS, type Format, game, type Line, root, selectCuts, sizzle, type Shot } from '../reel.config';
 import { HANDLE, mixAudio, segments, trim, type Segment } from '../render/media';
 
@@ -268,7 +269,8 @@ export function compose(cut: Cut, format: Format) {
   return dir;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// (compared as URLs, so a checkout path with spaces still runs)
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   // Usage: npm run compose [-- <cut>, <cut>-<16x9|9x16> or a prefix such as game- ...]
   const only = process.argv.slice(2);
   for (const cut of selectCuts(only)) {

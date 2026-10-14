@@ -358,11 +358,11 @@ const breezeportReel: Cut = {
   blocks: [
     { kind: 'clip', start: 0, end: 6, shot: bpDive },
     { kind: 'logo', start: 6, end: 8, slug: 'breezeport', over: { ...bpDive, from: at(6) } },
-    { kind: 'tagline', start: 8, end: 20, bg: [bp('town', { from: 0 }), bp('orbit', { from: 3.2 })], lines: [{ text: 'A sleepy seaside town…', at: 8, size: 'headline' }, { text: 'Be its junior mayor!', at: 12, size: 'headline' }] },
+    { kind: 'tagline', start: 8, end: 20, bg: [bp('town', { from: 0 }), bp('orbit', { from: 2.8 })], lines: [{ text: 'A sleepy seaside town…', at: 8, size: 'headline' }, { text: 'Be its junior mayor!', at: 12, size: 'headline' }] },
     ...BP_FEATURES.map(([text, a, b], i): Block => ({ kind: 'montage', start: 20 + 8 * i, end: 28 + 8 * i, shots: [a, b], lines: [{ text, at: 20.5 + 8 * i, size: 'headline' }] })),
     { kind: 'devices', start: 84, end: 92, phone: bp('phone', { from: 0.3 }), tablet: bp('tablet', { from: 0.3 }), lines: [{ text: 'Phones, tablets and computers', at: 85, size: 'headline' }] },
     { kind: 'promise', start: 92, end: 100, lines: ['Free to play.', 'No ads.', 'Nothing to buy.', 'Nothing ever breaks.'].map((text, i) => ({ text, at: 92 + i, size: 'headline' })) },
-    { kind: 'game', start: 100, end: 112, slug: 'breezeport', textIn: 101, textOut: 111.75, shots: [bp('town', { from: 2.4 }), bp('festival', { from: 1.6 }), bp('dive', { from: 4.4 })] },
+    { kind: 'game', start: 100, end: 112, slug: 'breezeport', textIn: 101, textOut: 111.75, shots: [bp('town', { from: 2.4 }), bp('festival', { from: 1.6 }), bp('orbit', { from: 3.4 })] },
     { kind: 'end', start: 112, end: 124, lines: [
       { text: 'Breezeport is ready to play!', at: 112.5, size: 'line' },
       { text: 'Play free', at: 113, size: 'line' },
