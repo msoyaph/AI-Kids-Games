@@ -37,7 +37,9 @@ Owner decisions:
    the page (long main-thread tasks are the game's, not the site's); its
    Accessibility, Best Practices and SEO must still be 90+.
 5. Balanced grid must work for any count; screenshot-test 1, 4, 6, 7 and 12 games
-   with temporary mock entries.
+   with temporary mock entries. Superseded on desktop (owner, 2026-10-14, release 2.12.0: "make the
+   gallery in 3 Columns on Desktop"): desktop grids are 3 equal columns and the last row may be
+   shorter (left-aligned); tablets keep balanced rows of 2; one game stays a centred card.
 
 Codex commits reviewed (10:24–10:32): 9197120 and 2c433df only recorded preview
 deployments and Sites publishes in docs. c301c6d removed all-caps eyebrows and
@@ -253,6 +255,17 @@ Release 2.11.0 also gives the four games on temporary art (Cliff Valley, Vanex D
 Calex Cart) a gameplay loop from the builds that ship: `scripts/capture/<slug>.ts` reuses the trailer's
 takes with `gallery: false` (loop and poster only; their screenshot covers and galleries stay), and
 `loop: true` in `src/data/temporary-art.ts` turns the loop on (mediaFor, the registry, media tests).
+
+## New games first, 3 columns on desktop (owner, 2026-10-14; release 2.12.0)
+
+"Put our new games on first lines of the "All Games" list. And make the gallery in 3 Columns on
+Desktop." The home page's "All games" list is `newestFirst()` (src/lib/search.ts): games released after
+the first launch day come first, newest first (on the same day, the one added last), then the launch
+games in catalog order (`site.order`). Today that is Shooberry, Fieldlark, Agentmon, Tuck Pop, then Cliff
+Valley … Calex Cart; filters keep the same order. Browse (/games), categories, favorites and the other
+lists keep catalog order. `gridSpans()` (src/lib/grid.ts) gives every card 2 of the 6 desktop tracks, so
+desktop grids everywhere are 3 equal columns; tablets keep balanced rows of 2 (tests/grid.test.ts,
+tests/e2e/grid.spec.ts).
 
 ## Next: Light Crossing v2.0 (owner request, on hold)
 

@@ -123,8 +123,8 @@ small script against a game page while you work out a route.
 `npm run new-game -- <slug>` (repo root) scaffolds a new game from `templates/game-starter`.
 Replace its placeholder art and HTML before launch. Launch categories: Action,
 Adventure, Cozy, Strategy, Racing, Learning. New categories need the Category type
-and scaffolder choices updated. The home page shows one balanced "All games" grid;
-per-category rows appear automatically once there are 12 or more games
+and scaffolder choices updated. The home page shows one "All games" grid, newest games first
+(`newestFirst` in src/lib/search.ts) in 3 columns on desktop; per-category rows appear automatically once there are 12 or more games
 (`CATEGORY_ROWS_FROM` in src/pages/Home.tsx). Browse compares a game's numeric
 minAge with the selected player age; ageGuidance is the display recommendation.
 

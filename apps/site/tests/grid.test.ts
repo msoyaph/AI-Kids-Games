@@ -24,14 +24,11 @@ describe('balanced grid',() => {
       for (let i = 1; i < rows.length; i++) expect(rows[i]).toBeGreaterThanOrEqual(rows[i-1]);
     }
   });
-  it('turns rows into column spans that fill 6 desktop tracks and 2 tablet tracks',() => {
-    expect(gridSpans(5).map(span => span.lg)).toEqual([3,3,2,2,2]);
+  it('puts 3 equal columns on desktop and balanced rows of 2 on tablets',() => {
+    for (const count of [2,4,5,8,9,10,12]) expect(gridSpans(count).map(span => span.lg)).toEqual(Array(count).fill(2));
     expect(gridSpans(5).map(span => span.md)).toEqual([2,1,1,1,1]);
-    expect(gridSpans(8).map(span => span.lg)).toEqual([3,3,2,2,2,2,2,2]);
     expect(gridSpans(8).map(span => span.md)).toEqual([1,1,1,1,1,1,1,1]);
-    expect(gridSpans(9).map(span => span.lg)).toEqual([2,2,2,2,2,2,2,2,2]);
     expect(gridSpans(9).map(span => span.md)).toEqual([2,1,1,1,1,1,1,1,1]);
-    expect(gridSpans(10).map(span => span.lg)).toEqual([3,3,3,3,2,2,2,2,2,2]);
     expect(gridSpans(10).map(span => span.md)).toEqual([1,1,1,1,1,1,1,1,1,1]);
     expect(gridSpans(1)[0]).toEqual({ lg: 6,md: 2,solo: true });
   });

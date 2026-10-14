@@ -8,6 +8,7 @@ import Hero from '../components/Hero';
 import GameGrid from '../components/GameGrid';
 import GameCard from '../components/GameCard';
 import { AgeSelect, CategoryChips, useCatalogFilters } from '../components/Filters';
+import { newestFirst } from '../lib/search';
 
 /** Category rows return automatically once the catalog is big enough to need them. */
 export const CATEGORY_ROWS_FROM = 12;
@@ -29,7 +30,7 @@ export default function Home() {
     <section className="section" aria-labelledby="all-games">
       <div className="section-head"><h2 id="all-games" className="title">All games</h2></div>
       <div className="filters"><CategoryChips selected={category} onSelect={value => set('category',value.toLowerCase())} /><AgeSelect value={playerAge} onChange={value => set('age',value)} /></div>
-      {results.length ? <GameGrid games={results} label="All games" /> : <div className="empty"><h3 className="heading">No games match yet.</h3><p>Try another category or age.</p><button className="button secondary" onClick={reset}>Show all games</button></div>}
+      {results.length ? <GameGrid games={newestFirst(results,games)} label="All games" /> : <div className="empty"><h3 className="heading">No games match yet.</h3><p>Try another category or age.</p><button className="button secondary" onClick={reset}>Show all games</button></div>}
     </section>
     {communityGames.length > 0 && <section className="section" aria-labelledby="community">
       <div className="section-head"><h2 id="community" className="title">Community games</h2><Link className="text-link" to="/community">See all community games</Link></div>
