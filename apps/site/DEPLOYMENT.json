@@ -13,78 +13,30 @@
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
-    "deploymentId": "dpl_GeCxoce5C1JVVX571ERV7zM3vt8y",
-    "deploymentUrl": "https://ai-kids-games-i3x7dolhc-real-tours.vercel.app",
+    "deploymentId": "dpl_2vU8cFt8dK6ErZbt1wyuCG8dqKfG",
+    "deploymentUrl": "https://ai-kids-games-jrpxkkilb-real-tours.vercel.app",
     "readyState": "READY",
-    "publishedAt": "2026-10-13",
+    "publishedAt": "2026-10-14",
     "public": true,
-    "release": "2.5.0",
-    "commit": "a58d7d1",
-    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/17",
+    "release": "2.9.0",
+    "commit": "d693372",
+    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/24",
     "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
-    "guardLog": "Production deployment of release 2.5.0 approved by the owner on 2026-10-13; GPU browser suites passed on 16e3637.",
+    "guardLog": "Production deployment of release 2.9.0 approved by the owner on 2026-10-14; GPU browser suites passed on 4ea2d1c.",
     "playOrigin": {
       "project": "real-tours/ai-kids-games-play",
-      "deploymentId": "dpl_31jaPSNuiWrsuDNF3RBExENwYevF",
-      "url": "https://ai-kids-games-play.vercel.app",
-      "guardLog": "Production deployment of release 2.5.0 approved by the owner on 2026-10-13; GPU browser suites passed on 16e3637.",
-      "games": 0,
-      "note": "Serves no game until the owner approves one; / is a notice page and every other path 404s, with the strict headers (connect-src none, frame-ancestors the site)."
+      "deploymentId": "dpl_4FcR2WnxsR3CqDv3NzGvRApa66b6",
+      "url": "https://ai-kids-games-play-nf801i9ko-real-tours.vercel.app",
+      "guardLog": "Production deployment of release 2.9.0 approved by the owner on 2026-10-14; GPU browser suites passed on 4ea2d1c."
     },
-    "smokeTest": "Live checks: every page 200 and unknown addresses 404; /community shows \"No community games yet\"; the site CSP frames only 'self'; the IndexNow key is served; the play origin answers with its strict headers. Logged-out Playwright suite against production (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone): 130 passed, 97 intentional device/engine skips, 25 failed. All 25 were the tests acting before the app took over the prebuilt page: since 2.5.0 pages arrive prerendered and the app replaces them 110–220 ms after they show on the live site, while the tests tapped within milliseconds (mock grid cards wiped, filter, theme, favorite and lightbox taps on the inert copy). Fixed in the tests (tests/e2e/fixtures.ts waits for <html data-app=\"ready\">, added in 2.6.0) and re-run against production with 2.6.0.",
-    "lighthouseMobile": {
-      "home": {
-        "performance": 100,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "details": {
-        "performance": 100,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "play": {
-        "performance": 81,
-        "performanceExempt": true,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "community": {
-        "performance": 100,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "submitAGame": {
-        "performance": 100,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "faq": {
-        "performance": 100,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "guides": {
-        "performance": 100,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      },
-      "tuckPopDetails": {
-        "performance": 100,
-        "accessibility": 100,
-        "bestPractices": 100,
-        "seo": 100
-      }
+    "mcpApp": {
+      "project": "real-tours/ai-kids-games-mcp",
+      "release": "1.0.0",
+      "deploymentId": "dpl_4YU1RsDvbLvAiFxP1wiyZYhiyava",
+      "endpoint": "https://ai-kids-games-mcp.vercel.app/mcp",
+      "guardLog": "Production deployment of MCP app 1.0.0 approved by the owner on 2026-10-14."
     },
-    "indexNow": "Submitted the live sitemap's changed pages after the checks: 202 received (indexnow-state.json).",
-    "ci": "PR #17 at 908b628: every job green (TheaBonk's own 125%/150% display-scaling checks flaked on GitHub's runners and passed on a re-run of that job; the same sources passed at 16e3637); CI passed. Space Sky's and Light Crossing's browser suites ran locally (localSuites)."
+    "smokeTest": "Short production check only (05:39:06–05:39:54 UTC): Privacy, Terms, For Parents and FAQ carry the new copy; /terms in the sitemap and llms.txt; MCP Inspector against https://ai-kids-games-mcp.vercel.app/mcp 26/26 in both protocol eras (Tuck Pop's build byte-identical through the server); the harness played Tuck Pop through the production endpoint with no errors, reaching only our own hosts. The full suites had passed in CI on the release PR, and the GPU suites locally."
   },
   "deploymentProtection": {
     "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",
@@ -95,6 +47,85 @@
   "gameCacheControl": "public, max-age=0, must-revalidate",
   "hashedAssetCacheControl": "public, max-age=31536000, immutable",
   "history": [
+    {
+      "release": "2.5.0",
+      "commit": "a58d7d1",
+      "production": {
+        "url": "https://ai-kids-games-fawn.vercel.app",
+        "deploymentId": "dpl_GeCxoce5C1JVVX571ERV7zM3vt8y",
+        "deploymentUrl": "https://ai-kids-games-i3x7dolhc-real-tours.vercel.app",
+        "readyState": "READY",
+        "publishedAt": "2026-10-13",
+        "public": true,
+        "release": "2.5.0",
+        "commit": "a58d7d1",
+        "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/17",
+        "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+        "guardLog": "Production deployment of release 2.5.0 approved by the owner on 2026-10-13; GPU browser suites passed on 16e3637.",
+        "playOrigin": {
+          "project": "real-tours/ai-kids-games-play",
+          "deploymentId": "dpl_31jaPSNuiWrsuDNF3RBExENwYevF",
+          "url": "https://ai-kids-games-play.vercel.app",
+          "guardLog": "Production deployment of release 2.5.0 approved by the owner on 2026-10-13; GPU browser suites passed on 16e3637.",
+          "games": 0,
+          "note": "Serves no game until the owner approves one; / is a notice page and every other path 404s, with the strict headers (connect-src none, frame-ancestors the site)."
+        },
+        "smokeTest": "Live checks: every page 200 and unknown addresses 404; /community shows \"No community games yet\"; the site CSP frames only 'self'; the IndexNow key is served; the play origin answers with its strict headers. Logged-out Playwright suite against production (Chromium desktop/tablet/phone + WebKit desktop/iPad/iPhone): 130 passed, 97 intentional device/engine skips, 25 failed. All 25 were the tests acting before the app took over the prebuilt page: since 2.5.0 pages arrive prerendered and the app replaces them 110–220 ms after they show on the live site, while the tests tapped within milliseconds (mock grid cards wiped, filter, theme, favorite and lightbox taps on the inert copy). Fixed in the tests (tests/e2e/fixtures.ts waits for <html data-app=\"ready\">, added in 2.6.0) and re-run against production with 2.6.0.",
+        "lighthouseMobile": {
+          "home": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "details": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "play": {
+            "performance": 81,
+            "performanceExempt": true,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "community": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "submitAGame": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "faq": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "guides": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          },
+          "tuckPopDetails": {
+            "performance": 100,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100
+          }
+        },
+        "indexNow": "Submitted the live sitemap's changed pages after the checks: 202 received (indexnow-state.json).",
+        "ci": "PR #17 at 908b628: every job green (TheaBonk's own 125%/150% display-scaling checks flaked on GitHub's runners and passed on a re-run of that job; the same sources passed at 16e3637); CI passed. Space Sky's and Light Crossing's browser suites ran locally (localSuites)."
+      }
+    },
     {
       "release": "2.7.0",
       "commit": "f331dd9",
@@ -425,5 +456,44 @@
         "ranAt": "2026-10-14T04:58:33.509Z"
       }
     ]
-  }
+  },
+  "productionTests": [
+    {
+      "release": "2.0.0",
+      "kind": "full",
+      "from": "2026-10-11T00:00:00Z",
+      "to": "2026-10-11T23:59:59Z",
+      "note": "Full production suites (and Lighthouse) ran this day; exact times weren't recorded."
+    },
+    {
+      "release": "2.1.0–2.3.0",
+      "kind": "full",
+      "from": "2026-10-12T00:00:00Z",
+      "to": "2026-10-12T23:59:59Z",
+      "note": "Full production suites (and Lighthouse) ran this day; exact times weren't recorded."
+    },
+    {
+      "release": "2.4.0–2.7.0",
+      "kind": "full",
+      "from": "2026-10-13T00:00:00Z",
+      "to": "2026-10-13T23:59:59Z",
+      "note": "Full production suites (and Lighthouse) ran this day; exact times weren't recorded."
+    },
+    {
+      "release": "2.8.0",
+      "kind": "full",
+      "from": "2026-10-14T00:00:00Z",
+      "to": "2026-10-14T23:59:59Z",
+      "note": "Full production suites (and Lighthouse) ran this day; exact times weren't recorded."
+    },
+    {
+      "release": "2.9.0",
+      "kind": "smoke",
+      "url": "https://ai-kids-games-fawn.vercel.app",
+      "from": "2026-10-14T05:39:06Z",
+      "to": "2026-10-14T05:39:54Z",
+      "result": "passed",
+      "note": "Page checks, MCP Inspector against the production endpoint, one Tuck Pop play through it."
+    }
+  ]
 }
