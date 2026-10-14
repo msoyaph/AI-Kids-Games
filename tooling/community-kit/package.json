@@ -10,7 +10,7 @@
     "obscenity": "0.4.6",
     "pixi.js": "8.22.0",
     "three": "0.186.1",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "vite": "8.3.4",
     "vite-plugin-singlefile": "2.3.3",
     "vitest": "5.0.3"
