@@ -12,6 +12,8 @@ import type { BoatState, Order } from './orders';
 import type { NeighborState, Coop } from './neighbors';
 import { newStory, type StoryState } from './story';
 import type { Helper } from './helpers';
+import type { Contract } from './contracts';
+import { newStand, type StandState } from './stand';
 
 export interface CameraSave {
   /** Where the camera looks, in tile units. */
@@ -85,6 +87,10 @@ export interface Farm {
   ribbonCount: [gold: number, silver: number, bronze: number, thanks: number];
   /** Farmhands and their jobs (src/sim/helpers.ts). */
   helpers: Helper[];
+  /** The farm stand on the town square (src/sim/stand.ts). */
+  stand: StandState;
+  /** One contract per open business (src/sim/contracts.ts). */
+  contracts: Contract[];
 }
 
 /** A ribbon from a fair: which fair (by season), which category, and the place (1–4; 4 is "thank you for coming"). */
@@ -128,5 +134,7 @@ export function newFarm(seed: number): Farm {
     ribbons: [],
     ribbonCount: [0, 0, 0, 0],
     helpers: [],
+    stand: newStand(),
+    contracts: [],
   };
 }

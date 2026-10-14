@@ -19,6 +19,7 @@ import { Lighting } from './lighting';
 import { ObjectView } from './objects';
 import { AnimalView } from './animals';
 import { TownView } from './town';
+import { TownSquare } from './square';
 import { PostChain } from './post';
 import { QUALITY, type QualityTier } from './quality';
 import { Scenery } from './scenery';
@@ -52,6 +53,7 @@ export class FarmView {
   readonly objects = new ObjectView();
   readonly animals = new AnimalView();
   readonly town = new TownView();
+  readonly square = new TownSquare();
   readonly life = new Life();
   private post: PostChain | null = null;
   private worldKey = '';
@@ -80,7 +82,7 @@ export class FarmView {
     this.water = buildWater();
     // no ambient occlusion on the sky, water, grass and little bits of life (see NO_AO)
     for (const g of [this.sky.mesh, this.water, this.grass.group, this.life.group]) g.traverse(o => o.layers.set(NO_AO));
-    this.scene.add(this.sky.mesh, this.terrain, this.water, this.scenery.group, this.grass.group, this.objects.group, this.animals.group, this.town.group, this.life.group);
+    this.scene.add(this.sky.mesh, this.terrain, this.water, this.scenery.group, this.grass.group, this.objects.group, this.animals.group, this.town.group, this.square.group, this.life.group);
     this.goal = { ...start };
     this.view = { x: start.x, z: start.z, y: 0, yaw: start.yawStep * YAW_STEP, zoom: clampZoom(start.zoom || 64) };
     this.view.y = this.groundUnder(start.x, start.z);

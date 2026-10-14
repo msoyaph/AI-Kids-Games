@@ -18,6 +18,8 @@ export const Materials = {
   /** Faceted props and buildings, with their painted planks, shingles and stone. */
   flat: patchMaterial(lambert(), { key: 'flat', rim: true, patterns: true }),
   flatInst: patchMaterial(lambert(), { key: 'flat-i', rim: true, patterns: true }),
+  /** The same, with unpatterned parts tinted per instance (produce on the farm stand). */
+  flatTintInst: patchMaterial(lambert(), { key: 'flat-ti', rim: true, patterns: true, tint: true }),
   /** Smooth-shaded animals, people and the boat. */
   smooth: patchMaterial(lambert({ flatShading: false }), { key: 'smooth', rim: true }),
   smoothInst: patchMaterial(lambert({ flatShading: false }), { key: 'smooth-i', rim: true }),

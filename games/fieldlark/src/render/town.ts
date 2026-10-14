@@ -1,17 +1,19 @@
 /**
- * The river traffic and visitors: the Little Lark at the dock or sailing to Larkford and back (it
- * rocks gently on the water), and a neighbour walking up from the dock when they visit.
+ * The river traffic and visitors: the Little Lark at the dock, or sailing down the river to Larkford's
+ * jetty, waiting there a little while, and sailing home (it rocks gently on the water), and a
+ * neighbour walking up from the dock when they visit.
  */
 import * as THREE from 'three';
 import { NEIGHBOR } from '../data/cast';
 import { boatTrip } from '../sim/orders';
-import { H, WATER_Y } from '../sim/map';
+import { WATER_Y } from '../sim/map';
 import type { Farm } from '../sim/state';
 import { Materials } from './materials';
 import { boat, person } from './models/town';
 
-/** Where the boat ties up, beside the dock. */
+/** Where the boat ties up, beside the dock, and beside Larkford's jetty. */
 export const MOORING = { x: 51.6, z: 44.6 };
+export const JETTY = { x: 51.9, z: 64.3 };
 const DOCK_STEP = { x: 47.5, z: 44.5 }, YARD = { x: 41.5, z: 42.5 };
 
 export class TownView {
@@ -46,11 +48,15 @@ export class TownView {
       this.boat.position.set(MOORING.x, WATER_Y + 0.05 + bob, MOORING.z);
       this.boat.rotation.set(0, 0, reduced ? 0 : Math.sin(now * 0.9) * 0.02);
     } else {
+      // down to town (0–0.4), tied up at the jetty (0.4–0.6), and home again (0.6–1)
       const out = trip < 0.5;
-      const k = out ? Math.min(1, trip / 0.35) : Math.min(1, (1 - trip) / 0.35);
-      const z = MOORING.z + k * (H + 3 - MOORING.z);
-      this.boat.visible = z < H - 0.6; // past the diorama's edge it is on its way to town
-      this.boat.position.set(MOORING.x + (out ? 0.3 : -0.3), WATER_Y + 0.05 + bob, z);
+      const ease = (k: number) => k * k * (3 - 2 * k);
+      const k = trip < 0.4 ? ease(trip / 0.4) : trip < 0.6 ? 1 : ease((1 - trip) / 0.4);
+      const z = MOORING.z + k * (JETTY.z - MOORING.z);
+      // keep to one side of the river on the way out and the other on the way back
+      const lane = (out ? 0.3 : -0.3) * Math.sin(Math.PI * k);
+      this.boat.visible = true;
+      this.boat.position.set(MOORING.x + k * (JETTY.x - MOORING.x) + lane, WATER_Y + 0.05 + bob, z);
       this.boat.rotation.set(0, out ? 0 : Math.PI, 0);
     }
     // a visitor walks from the dock to the yard, looks around, and walks back

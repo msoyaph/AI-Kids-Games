@@ -11,6 +11,9 @@ import type { Ribbon } from '../sim/state';
 import { JOBS, MAX_HELPERS, type Helper } from '../sim/helpers';
 import { HELPER_NAMES } from '../data/cast';
 import { RECIPE } from '../data/production';
+import { BUSINESS, type BusinessId } from '../data/businesses';
+import type { Contract } from '../sim/contracts';
+import { newStand, PRICE_MAX, PRICE_MIN, SHELF_MAX, type StandState } from '../sim/stand';
 import { ITEMS } from '../data/items';
 import { AREA_IDS, type AreaId } from '../sim/map';
 import type { FieldObj, Obj, ObjKind } from '../sim/objects';
@@ -67,6 +70,40 @@ function decodeObj(v: unknown): Obj | null {
   return o;
 }
 
+const isItemList = (v: unknown): v is { id: string; n: number }[] => Array.isArray(v) && v.length > 0 && v.every(x => !!x && typeof x === 'object' && !!ITEMS[(x as Raw).id as string] && isNum((x as Raw).n));
+
+function decodeStand(v: unknown): StandState {
+  const st = newStand();
+  if (!v || typeof v !== 'object') return st;
+  const r = v as Raw;
+  if (Array.isArray(r.slots)) st.slots = r.slots.slice(0, 10).map(x => {
+    const o = (x ?? {}) as Raw;
+    const item = typeof o.item === 'string' && ITEMS[o.item]?.sellable ? o.item : null;
+    return { item, stars: int(o.stars, 1, 1, 3) as 1 | 2 | 3, n: item ? int(o.n, 0, 0, SHELF_MAX) : 0, price: Math.round(num(o.price, 1, PRICE_MIN, PRICE_MAX) * 10) / 10, keep: int(o.keep, 6, 0, SHELF_MAX) };
+  });
+  st.nextShopperAt = num(r.nextShopperAt, 0, 0);
+  if (Array.isArray(r.days)) st.days = r.days.filter((d): d is Raw => !!d && typeof d === 'object').slice(-4).map(d => ({
+    day: int(d.day, 0, 0),
+    sold: Object.fromEntries(Object.entries((d.sold ?? {}) as Raw).filter(([id, x]) => !!ITEMS[id] && !!x && typeof x === 'object').map(([id, x]) => {
+      const o = x as Raw;
+      return [id, { n: int(o.n, 0, 0), coins: int(o.coins, 0, 0), price: num(o.price, 1, PRICE_MIN, PRICE_MAX), left: int(o.left, 0, 0) }];
+    })),
+  }));
+  return st;
+}
+
+function decodeContract(v: unknown): Contract | null {
+  if (!v || typeof v !== 'object') return null;
+  const r = v as Raw;
+  if (typeof r.business !== 'string' || !(r.business in BUSINESS) || !isItemList(r.basket)) return null;
+  const drops = int(r.drops, 3, 1, 9);
+  return {
+    business: r.business as BusinessId, basket: r.basket.map(x => ({ id: x.id, n: Math.max(1, Math.round(x.n)) })), drops,
+    done: int(r.done, 0, 0, drops), sent: int(r.sent, 0, 0, drops), wantedAt: num(r.wantedAt, 0, 0),
+    coinsPerDrop: int(r.coinsPerDrop, 0, 0), bonus: int(r.bonus, 0, 0), round: int(r.round, 0, 0),
+  };
+}
+
 /** A farmhand: name by their place in the list, a known job, and fresh task timing (they look around again on load). */
 function decodeHelper(r: Raw, i: number, t: number): Helper {
   const job = (JOBS as readonly string[]).includes(r.job as string) || r.job === 'rest' ? (r.job as Helper['job']) : 'rest';
@@ -89,7 +126,7 @@ function decodeOrder(v: unknown): Order | null {
   if (!isNum(r.id) || typeof r.who !== 'string' || !Array.isArray(r.items)) return null;
   const items = r.items.filter((x): x is { id: string; n: number } => !!x && typeof x === 'object' && typeof (x as Raw).id === 'string' && !!ITEMS[(x as Raw).id as string] && isNum((x as Raw).n));
   if (!items.length) return null;
-  return { id: r.id, who: r.who, items: items.map(x => ({ id: x.id, n: Math.max(1, Math.round(x.n)) })), coins: int(r.coins, 0, 0), xp: int(r.xp, 0, 0), ...(typeof r.story === 'string' ? { story: r.story } : {}), ...(typeof r.note === 'string' ? { note: r.note } : {}) };
+  return { id: r.id, who: r.who, items: items.map(x => ({ id: x.id, n: Math.max(1, Math.round(x.n)) })), coins: int(r.coins, 0, 0), xp: int(r.xp, 0, 0), ...(typeof r.story === 'string' ? { story: r.story } : {}), ...(typeof r.note === 'string' ? { note: r.note } : {}), ...(typeof r.contract === 'string' && r.contract in BUSINESS ? { contract: r.contract } : {}) };
 }
 const orderList = (v: unknown): Order[] => (Array.isArray(v) ? v.map(decodeOrder).filter((o): o is Order => !!o) : []);
 
@@ -189,6 +226,8 @@ export function decodeFarm(input: unknown): DecodeResult {
       season: int(r.season, 0, 0), cat: String(r.cat), place: int(r.place, 4, 1, 4) as Ribbon['place'], ...(r.grand === true ? { grand: true } : {}),
     })).slice(-RIBBONS_KEPT) : [],
     ribbonCount: Array.isArray(raw.ribbonCount) && raw.ribbonCount.length === 4 ? raw.ribbonCount.map(n => int(n, 0, 0)) as Farm['ribbonCount'] : [0, 0, 0, 0],
+    stand: decodeStand(raw.stand),
+    contracts: Array.isArray(raw.contracts) ? raw.contracts.map(decodeContract).filter((c): c is Contract => !!c).filter((c, i, all) => all.findIndex(x => x.business === c.business) === i) : [],
     helpers: Array.isArray(raw.helpers) ? raw.helpers.filter((x): x is Raw => !!x && typeof x === 'object').slice(0, MAX_HELPERS).map((x, i) => decodeHelper(x, i, num(raw.t, 0, 0))) : [],
     coop: (() => {
       const c = raw.coop as Raw | null | undefined;

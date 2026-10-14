@@ -47,6 +47,15 @@ export const areaDef = (id: AreaId) => AREAS.find(a => a.id === id)!;
 /** The river runs north to south along these columns; the boat sails south, off the map, to town. */
 export const RIVER_X0 = 50;
 export const RIVER_X1 = 53;
+/**
+ * Larkford's square, downstream on the river's west bank, south of the farm (world units; it is not
+ * part of the farm grid, so nothing there is a tile). The camera may pan down to it.
+ */
+export const SQUARE = { x0: 37, z0: 58.4, x1: 49.6, z1: 70 };
+export const inSquare = (x: number, z: number, margin = 0) => x >= SQUARE.x0 - margin && x <= SQUARE.x1 + margin && z >= SQUARE.z0 - margin && z <= SQUARE.z1 + margin;
+/** How far south the camera may look (down to the square). */
+export const VIEW_Z_MAX = SQUARE.z1;
+
 /** The pond: an oval of water in the Duck Pond area. */
 export const POND = { cx: 9.5, cz: 44.5, rx: 5.6, rz: 4.4 };
 /** A small farmhouse pond on the home plot, below the cottage. */

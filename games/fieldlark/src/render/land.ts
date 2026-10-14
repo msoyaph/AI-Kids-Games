@@ -10,7 +10,7 @@
  */
 import * as THREE from 'three';
 import { noise } from '../core/rng';
-import { areaAt, H, HOME_POND, POND, RIVER_X0, RIVER_X1, STEP_Y, tileAt, W, type Zone } from '../sim/map';
+import { areaAt, H, HOME_POND, inSquare, POND, RIVER_X0, RIVER_X1, SQUARE, STEP_Y, tileAt, W, type Zone } from '../sim/map';
 
 /** Tiles of countryside drawn around the farm on every side. */
 export const RING = 26;
@@ -48,10 +48,19 @@ export function vnoise(x: number, z: number, seed: number) {
 export function hill(x: number, z: number): number {
   const d = outside(x, z);
   if (d <= 0) return 0;
+  // Larkford's square sits flat on the valley floor
+  const sq = squareDistance(x, z);
+  if (sq <= 0) return 0;
   const valley = Math.min(1, Math.max(0, (Math.abs(x - (RIVER_X0 + RIVER_X1 + 1) / 2) - 3.5) / 7));
   const amp = 0.8 + 2.8 * vnoise(x * 0.07, z * 0.07, 91) + 1.2 * vnoise(x * 0.16, z * 0.16, 92);
   const rise = smooth(Math.min(1, Math.max(0, (d - 1.5) / 15)));
-  return rise * amp * (0.25 + 0.75 * valley);
+  return rise * amp * (0.25 + 0.75 * valley) * smooth(Math.min(1, sq / 4));
+}
+
+/** How far a point is from Larkford's square (0 inside it, and a tile around it). */
+export function squareDistance(x: number, z: number): number {
+  const dx = Math.max(0, SQUARE.x0 - 1 - x, x - SQUARE.x1 - 1), dz = Math.max(0, SQUARE.z0 - 1 - z, z - SQUARE.z1 - 1);
+  return Math.hypot(dx, dz);
 }
 
 /** Small bumps on wild ground. */
@@ -178,7 +187,7 @@ function isBumpable(x: number, z: number): boolean {
   let b = bumpable.get(key);
   if (b === undefined) {
     const t = landTile(x, z);
-    b = !t.water && (t.zone === 'wild' || t.zone === 'ring' || t.zone === 'bank') && waterSdf(x + 0.5, z + 0.5) > 2.6;
+    b = !t.water && (t.zone === 'wild' || t.zone === 'ring' || t.zone === 'bank') && waterSdf(x + 0.5, z + 0.5) > 2.6 && !inSquare(x + 0.5, z + 0.5, 1.5);
     if (b) for (let dz = -1; dz <= 1 && b; dz++) for (let dx = -1; dx <= 1 && b; dx++) if (landTile(x + dx, z + dz).level !== t.level) b = false;
     bumpable.set(key, b);
   }

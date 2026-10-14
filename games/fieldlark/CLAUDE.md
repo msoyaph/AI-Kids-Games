@@ -413,7 +413,7 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 | 8 Books, ledger and the farmhouse hub | done in code (195 unit tests); browser check pending a quiet machine |
 | 9 Soil, weather, breeding, fair categories | done in code (221 unit tests); browser check pending a quiet machine |
 | 10 Farmhands as workers | done in code (232 unit tests); browser check pending a quiet machine |
-| 11 Larkford town square: the farm stand and contracts | — |
+| 11 Larkford town square: the farm stand and contracts | done in code (247 unit tests); browser check pending a quiet machine |
 | 12 Channels, sprinklers, greenhouses, the Farm Lab | — |
 | 13 The look everywhere, seasons, night, music | — |
 | 14 Save v2, bot and pacing, performance, full QA | — |
@@ -473,4 +473,16 @@ Plan 1 (`docs/PLAN.md`) phases 0–6 and the visual pass are done. The rest foll
 - The 3D figures: hands 0–5 are Fen…Moss (`HELPER_LOOK` in `data/cast.ts`). A hired helper's figure
   follows their sim task; volunteers without a job keep pottering and reacting to the player.
 
-**Next:** phase 11, the Larkford town square, the farm stand and contracts (`docs/PLAN-2.md` §2.3–2.4).
+**Phase 11 notes:**
+- Larkford's square (`render/square.ts`, `models/square.ts`) is drawn south of the farm at
+  `SQUARE` (`sim/map.ts`, world units, not farm tiles). The camera may pan down to it
+  (`VIEW_Z_MAX`); the land there is flat and scenery and grass keep off it. The boat now sails to
+  its jetty and back.
+- Stand (`sim/stand.ts`): a fair stand price is the market price × 1.4 (`STAND_MARKUP`); the slider
+  goes 0.6–1.6 of that. A sold-out shelf remembers its item so helpers on Deliveries can top it up to
+  its "keep" level. Sales count towards `sold` and `stand-sold`.
+- Contracts (`sim/contracts.ts`, `data/businesses.ts`): drops ride the boat as crates tagged
+  `contract`; they don't count as board `orders`. `contract:<id>` counts delivered drops.
+- The content test forbids the word "premium" anywhere in `src`, even in code names.
+
+**Next:** phase 12, channels, sprinklers, greenhouses and the Farm Lab (`docs/PLAN-2.md` §2.5–2.6).

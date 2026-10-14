@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { hashInts } from '../core/rng';
 import type { Season } from '../sim/clock';
-import { H, W } from '../sim/map';
+import { H, inSquare, W } from '../sim/map';
 import { patchMaterial } from './fx';
 import { GROUND_GLSL, groundUniforms } from './ground';
 import { InstancedLayer, NO_AO } from './instanced';
@@ -137,7 +137,7 @@ export class Grass {
         const u = (h & 0xffff) / 65536, v = ((h >>> 16) & 0xffff) / 65536;
         const x = (ix + 0.15 + u * 0.7) * CELL, z = (iz + 0.15 + v * 0.7) * CELL;
         const d = Math.hypot(x - ccx, z - ccz);
-        if (d > r) continue;
+        if (d > r || inSquare(x, z, 0.2)) continue;
         if (x < WORLD0 || z < WORLD0 || x >= WORLD0 + SPAN || z >= WORLD0 + SPAN) continue;
         const tx = Math.floor(x), tz = Math.floor(z);
         const inMap = tx >= 0 && tz >= 0 && tx < W && tz < H;

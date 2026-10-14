@@ -416,3 +416,17 @@ html.reduced-motion *, html.reduced-motion *::before, html.reduced-motion *::aft
 .skills { display: flex; flex-wrap: wrap; gap: 6px; }
 .skill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: var(--paper); font-size: calc(14px * var(--ts)); }
 .skill small { color: var(--ink-soft); }
+.tabs.wrap { flex-wrap: wrap; }
+.tabs.wrap button { flex: 1 1 120px; }
+.shelves { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.shelf { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 16px; background: var(--paper-2); }
+.shelf.empty { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; color: var(--ink-soft); }
+.shelf-head { display: flex; align-items: center; gap: 10px; }
+.shelf-head > div { display: flex; flex-direction: column; }
+.shelf-head small { display: inline-flex; align-items: center; gap: 3px; color: var(--ink-soft); font-size: calc(14px * var(--ts)); }
+.price-row { display: flex; align-items: center; gap: 8px; }
+.price-row > button { width: 52px; padding: 0; font-size: calc(24px * var(--ts)); }
+.price-word { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.price-word small { display: inline-flex; align-items: center; gap: 3px; color: var(--ink-soft); font-size: calc(14px * var(--ts)); }
+.stand-today { font-size: calc(18px * var(--ts)); }
+.order.locked { opacity: 0.7; }

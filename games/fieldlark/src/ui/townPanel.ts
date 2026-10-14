@@ -1,6 +1,7 @@
 /**
  * Town: the order board (deliver an order or swap it for a new one, free), where the Little Lark is,
- * and the neighbours (today's swap, the co-op order, and friendship hearts).
+ * the farm stand, contracts with the shops, and the neighbours (today's swap, the co-op order, and
+ * friendship hearts).
  */
 import { BOAT_TITLE, NEIGHBOR, NEIGHBORS, PERSON, TOWN } from '../data/cast';
 import { itemDef } from '../data/items';
@@ -12,7 +13,11 @@ import { boatCapacity, canFill, deliver, skipOrder, type Order } from '../sim/or
 import type { Farm } from '../sim/state';
 import { levelOf } from '../sim/world';
 import { fill, h } from './h';
-import { icon } from './icons';
+import { icon, type IconName } from './icons';
+import { standSection } from './standPanel';
+import { contractsSection } from './contractsPanel';
+import { standOpen } from '../sim/stand';
+import { contractsOpen } from '../sim/contracts';
 import { itemIcon } from './itemIcons';
 
 const hearts = (n: number) => '♥'.repeat(Math.floor(n)) + (n % 1 >= 0.5 ? '♡' : '') || '♡';
@@ -24,9 +29,11 @@ function itemsRow(farm: Farm, items: { id: string; n: number }[]) {
   }));
 }
 
-export function townPanel(farm: Farm, changed: () => void, say: (t: string) => void): HTMLElement {
+export type TownTab = 'orders' | 'stand' | 'contracts' | 'neighbours';
+
+export function townPanel(farm: Farm, changed: () => void, say: (t: string) => void, start: TownTab = 'orders'): HTMLElement {
   const root = h('div.town');
-  let tab: 'orders' | 'neighbours' = 'orders';
+  let tab: TownTab = start;
   const render = () => {
     const b = farm.boat;
     const boatLine = b.backAt === null
@@ -72,16 +79,23 @@ export function townPanel(farm: Farm, changed: () => void, say: (t: string) => v
           : h('button', { disabled: levelOf(farm) < NEIGHBOR_LEVEL + 1, onclick: () => { const r = startCoop(farm); if (r) { sfx.open(); say(`${NEIGHBOR[r.neighbor]!.who} wants to fill a big order together!`); changed(); } render(); } }, levelOf(farm) < NEIGHBOR_LEVEL + 1 ? `Co-op orders at level ${NEIGHBOR_LEVEL + 1}` : 'Start a co-op order'),
       ];
     };
+    const tabBtn = (id: TownTab, label: string, ic: IconName) => h('button', { role: 'tab', 'aria-selected': String(tab === id), onclick: () => { tab = id; render(); } }, icon(ic, 22), label);
+    if (tab === 'stand' && !standOpen(farm)) tab = 'orders';
+    if (tab === 'contracts' && !contractsOpen(farm).length) tab = 'orders';
     fill(root,
-      h('div.tabs', { role: 'tablist' },
-        h('button', { role: 'tab', 'aria-selected': String(tab === 'orders'), onclick: () => { tab = 'orders'; render(); } }, icon('orders', 22), 'Orders'),
-        h('button', { role: 'tab', 'aria-selected': String(tab === 'neighbours'), onclick: () => { tab = 'neighbours'; render(); } }, icon('farm', 22), 'Neighbours')),
+      h('div.tabs.wrap', { role: 'tablist' },
+        tabBtn('orders', 'Orders', 'orders'),
+        standOpen(farm) ? tabBtn('stand', 'Stand', 'shop') : null,
+        contractsOpen(farm).length ? tabBtn('contracts', 'Contracts', 'ledger') : null,
+        tabBtn('neighbours', 'Neighbours', 'farm')),
       tab === 'orders'
         ? [
           h('p.boat-line', null, icon('boat', 22), boatLine, boatCapacity(farm) > 1 ? h('small', null, ` (carries ${boatCapacity(farm)} crates)`) : null),
           farm.orders.length ? h('div.orders', null, ...farm.orders.map(order)) : h('p.note', null, 'New orders arrive soon. Keep farming!'),
         ]
-        : neighbours());
+        : tab === 'stand' ? standSection(farm, changed, say)
+          : tab === 'contracts' ? contractsSection(farm, changed, say)
+            : neighbours());
   };
   render();
   return root;

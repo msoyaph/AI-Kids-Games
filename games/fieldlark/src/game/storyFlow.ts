@@ -241,6 +241,9 @@ export function tilesFor(farm: Farm, g: Goal): { x: number; z: number }[] {
   if (k === 'watered' || k === 'composted') return fields.filter(f => fieldState(farm, f) === 'growing' && !(k === 'watered' ? f.watered : f.fertilized));
   if (k === 'harvest' || k === 'stars3' || k === 'rotation') return fields.filter(f => fieldState(farm, f) === 'ready');
   if (k === 'orders' || k.startsWith('story:')) return farm.objects.filter(o => o.def === 'board');
+  // the stand is down the river on Larkford's square; contract baskets leave from the dock
+  if (k === 'stand-sold') return [{ x: 45, z: 65 }];
+  if (k.startsWith('contract') || k === 'helper:deliveries') return farm.objects.filter(o => o.def === 'dock');
   if (k.startsWith('collect')) return farm.objects.filter(isHome);
   if (k.startsWith('made')) return farm.objects.filter(isMachine);
   return [];

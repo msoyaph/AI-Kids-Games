@@ -6,7 +6,7 @@
  * Pure math over a three.js PerspectiveCamera (no WebGL), so the tap-picking tests can use it.
  */
 import * as THREE from 'three';
-import { H, W } from '../sim/map';
+import { VIEW_Z_MAX, W } from '../sim/map';
 
 /** Tilt above the horizon: low enough to see the fronts of buildings and the trees on the skyline. */
 export const PITCH = (50 * Math.PI) / 180;
@@ -44,7 +44,8 @@ export interface View {
 
 export const clampZoom = (z: number) => Math.min(ZOOM.max, Math.max(ZOOM.min, z));
 /** The target may go anywhere over the land, so every tile can be brought to the middle. */
-export const clampTarget = (x: number, z: number): [number, number] => [Math.min(W, Math.max(0, x)), Math.min(H, Math.max(0, z))];
+/** The camera looks at the farm, and may pan south down the river to Larkford's square. */
+export const clampTarget = (x: number, z: number): [number, number] => [Math.min(W, Math.max(0, x)), Math.min(VIEW_Z_MAX - 2, Math.max(0, z))];
 
 /** Camera distance from the target that gives `zoom` pixels per world unit on a `viewH` px tall view. */
 export function distanceFor(zoom: number, viewH: number) {

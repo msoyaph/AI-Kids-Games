@@ -7,7 +7,8 @@
  * - Harvesting: ready crops and ripe fruit trees, in their patch (to the barn).
  * - Animals: their chosen homes: collect what's ready, feed from the barn, brush.
  * - Workshop: one workshop and one recipe: keep its queue filled while ingredients last, and collect.
- * - Deliveries: send board orders the barn can fill (not story requests: those are yours to send).
+ * - Deliveries: send wanted contract baskets and board orders the barn can fill (not story requests:
+ *   those are yours to send), and top up the farm stand's shelves.
  *
  * Skills grow with practice (levels at 20, 60, 140 and 300 tasks of a job), and a skilled farmhand
  * works faster: a task every 6 seconds at level 1, every 3 at level 5. There are no wages, no
@@ -26,6 +27,8 @@ import { roomLeft } from './inventory';
 import { areaAt, type AreaId } from './map';
 import type { Obj, OtherObj } from './objects';
 import { canFill } from './orders';
+import { canSendDrop } from './contracts';
+import { restockTask } from './stand';
 import { cantStart, isMachine, machineState, slotsOf } from './production';
 import type { Farm } from './state';
 import { isTree, treeRipe } from './trees';
@@ -160,9 +163,15 @@ export function findTask(farm: Farm, h: Helper): Task | null {
       return null;
     }
     case 'deliver': {
-      const o = farm.orders.find(x => !x.story && canFill(farm, x));
       const dock = farm.objects.find(x => x.def === 'dock');
-      return o && dock ? { action: { type: 'deliver', order: o.id }, x: dock.x, z: dock.z } : null;
+      if (!dock) return null;
+      const c = farm.contracts.find(x => canSendDrop(farm, x));
+      if (c) return { action: { type: 'sendDrop', business: c.business }, x: dock.x, z: dock.z };
+      const o = farm.orders.find(x => !x.story && canFill(farm, x));
+      if (o) return { action: { type: 'deliver', order: o.id }, x: dock.x, z: dock.z };
+      const slot = restockTask(farm);
+      // the stand is in town, down the river: they set off from the dock
+      return slot !== null ? { action: { type: 'restock', slot }, x: dock.x, z: dock.z } : null;
     }
     case 'rest': return null;
   }

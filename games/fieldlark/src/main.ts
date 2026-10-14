@@ -3,7 +3,7 @@ import { GAME } from './config';
 import { audio, sfx } from './audio/engine';
 import { CROPS } from './data/crops';
 import { CHAPTERS } from './data/chapters';
-import { NEIGHBOR } from './data/cast';
+import { NEIGHBOR, PERSON } from './data/cast';
 import { xpForLevel } from './data/tuning';
 import { Play } from './game/play';
 import { showcaseFarm, styleFrameFarm, styleFramePoints } from './game/showcase';
@@ -43,6 +43,9 @@ import { SoilTags } from './ui/soilTags';
 import { helpersPanel } from './ui/helpersPanel';
 import { helperSlots, JOB_WORKER } from './sim/helpers';
 import { VARIETY } from './data/varieties';
+import { BUSINESS } from './data/businesses';
+import { itemDef } from './data/items';
+import { shelves } from './sim/stand';
 import { speak, stopSpeaking } from './ui/speech';
 
 declare global { interface Window { __noWebGL2?: boolean } }
@@ -380,6 +383,23 @@ function boot() {
         break;
       }
       case 'goods-ready': break;
+      case 'stand-sales': {
+        sfx.coins();
+        const coins = e.sales.reduce((n, x) => n + x.coins, 0);
+        if (!farm.flags.firstStandSale) { farm.flags.firstStandSale = 1; say(`Your first sale at the farm stand: +${coins} coins!`); break; }
+        for (const x of e.sales) if (!shelves(farm).some(sh => sh.item === x.item && sh.n > 0)) say(`${itemDef(x.item).name} sold out at your stand!`);
+        break;
+      }
+      case 'contract-done': {
+        sfx.levelUp();
+        const b = BUSINESS[e.business];
+        const who = PERSON[b.owner];
+        panels.show('Contract done!', h('div', null,
+          h('p', null, h('b', null, b.name), ': every basket arrived.'),
+          h('p', null, `“${b.thanks}” says ${who?.name ?? 'the owner'}.`),
+          h('p', null, `Bonus: ${e.bonus} coins and 2 Lab ideas. ${b.name} will send a new contract soon.`)), { kind: 'card', keepsTime: true });
+        break;
+      }
       case 'helper-skill': say(`${e.name} is now a level ${e.level} ${JOB_WORKER[e.job]}!`); break;
       case 'helper-found': showDiscovery(e.variety, e.name); break;
       case 'new-day':
@@ -547,6 +567,7 @@ function boot() {
     view.syncFarm(farm, onLockedLand(farm));
     view.animals.update(farm, now / 1000, view.view.yaw, reduced());
     view.town.update(farm, now / 1000, reduced());
+    view.square.update(farm, dt, reduced());
     const shown = controller.cursor ?? (controller.lastDevice === 'mouse' ? controller.hover : null);
     if (play.placing) {
       // the mouse and the gamepad cursor carry the ghost; touch moves it with taps

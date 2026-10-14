@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { noise } from '../core/rng';
 import type { Season } from '../sim/clock';
-import { areaAt, H, POND, HOME_POND, W } from '../sim/map';
+import { areaAt, H, inSquare, POND, HOME_POND, W } from '../sim/map';
 import { InstancedLayer, NO_AO } from './instanced';
 import { groundY, landTile, outside, SPAN, waterSdf, WORLD0 } from './land';
 import { Materials } from './materials';
@@ -82,6 +82,8 @@ export class Scenery {
           if (dk < -0.4 && dk > -2.6 && noise(x, z, 20 + k) < 0.45 * density + 0.25) (noise(x, z, 30 + k) < 0.3 ? pads[1] : pads[0])!.push(ox, -0.17, oz, rot + k * 2, 0.75 + noise(x, z, 40 + k) * 0.6);
         }
         if (t.water) continue;
+        // the town square stays clear (its own trees and planters are part of it)
+        if (inSquare(x + 0.5, z + 0.5, 1.2)) continue;
         // Low keeps the farm and its edges as they are and thins the far countryside
         const out0 = outside(x + 0.5, z + 0.5);
         if (d < 0.7 && d > -0.15) {

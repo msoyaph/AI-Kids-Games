@@ -20,6 +20,8 @@ import { dayIndex } from './clock';
 import { firstSnow, hayTied, HAY_XP, SNOW_XP, spawnMushrooms, SUNNY_BOOST, tidyHay, todaysEvent, type DayEvent } from './forecast';
 import { brushAll } from './animals';
 import { helpersTick, type HelperEvent } from './helpers';
+import { contractsTick, dropDelivered, type ContractEvent } from './contracts';
+import { standTick, type StandSale } from './stand';
 
 export type SimEvent =
   | { type: 'rain-start' }
@@ -34,7 +36,9 @@ export type SimEvent =
   | { type: 'visit'; visit: Visit }
   | { type: 'endless-done'; goals: EndlessGoal[] }
   | { type: 'new-day'; event: DayEvent | null; hay: boolean; mushrooms: number; firstSnow: boolean }
-  | HelperEvent;
+  | HelperEvent
+  | ContractEvent
+  | { type: 'stand-sales'; sales: StandSale[] };
 
 /** Moves the farm clock on by `dt` seconds of play and returns what happened. */
 export function advance(farm: Farm, dt: number): SimEvent[] {
@@ -61,8 +65,14 @@ export function advance(farm: Farm, dt: number): SimEvent[] {
   events.push(...helpersTick(farm));
   const fresh = refillBoard(farm);
   if (fresh) events.push({ type: 'new-orders', count: fresh });
+  contractsTick(farm);
   const back = boatTick(farm);
-  if (back.length) events.push({ type: 'boat-back', orders: back });
+  if (back.length) {
+    events.push({ type: 'boat-back', orders: back });
+    for (const o of back) if (o.contract) { const e = dropDelivered(farm, o.contract as never); if (e) events.push(e); }
+  }
+  const sales = standTick(farm);
+  if (sales.length) events.push({ type: 'stand-sales', sales });
   const nb = neighborsTick(farm);
   if (nb.coopDone) events.push({ type: 'coop-done', coop: nb.coopDone });
   if (nb.visit) events.push({ type: 'visit', visit: nb.visit });

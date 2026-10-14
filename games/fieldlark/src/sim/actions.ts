@@ -18,6 +18,9 @@ import type { Farm } from './state';
 import { compostTree, isTree, pickTree } from './trees';
 import { objById, spend } from './world';
 import { TUNING } from '../data/tuning';
+import type { BusinessId } from '../data/businesses';
+import { restock, setPrice, stock, unstock } from './stand';
+import { sendDrop } from './contracts';
 
 export type Action =
   | { type: 'plow'; x: number; z: number }
@@ -45,7 +48,12 @@ export type Action =
   | { type: 'skipOrder'; order: number }
   | { type: 'trade'; neighbor: string }
   | { type: 'startCoop' }
-  | { type: 'giveCoop'; n: number };
+  | { type: 'giveCoop'; n: number }
+  | { type: 'stock'; slot: number; item: string; stars: Stars; n: number }
+  | { type: 'unstock'; slot: number }
+  | { type: 'setPrice'; slot: number; price: number }
+  | { type: 'restock'; slot: number }
+  | { type: 'sendDrop'; business: BusinessId };
 
 export type ActResult = { ok: true; [k: string]: unknown } | { ok: false; why: string };
 
@@ -98,5 +106,10 @@ export function act(farm: Farm, a: Action): ActResult {
     case 'trade': { const t = tradeOffer(farm, a.neighbor); return t ? acceptTrade(farm, t) : no('No swap today.'); }
     case 'startCoop': return startCoop(farm) ? { ok: true } : no('No co-op order right now.');
     case 'giveCoop': return { ok: true, gave: giveToCoop(farm, a.n) };
+    case 'stock': return stock(farm, a.slot, a.item, a.stars, a.n);
+    case 'unstock': return unstock(farm, a.slot);
+    case 'setPrice': return setPrice(farm, a.slot, a.price) ? { ok: true } : no('No such shelf.');
+    case 'restock': return restock(farm, a.slot);
+    case 'sendDrop': return sendDrop(farm, a.business);
   }
 }

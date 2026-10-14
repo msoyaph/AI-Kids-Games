@@ -4,7 +4,8 @@
  * with their numbers and the two kinds differ in pattern as well as colour.
  */
 import { itemDef } from '../data/items';
-import { seasonCount } from '../sim/clock';
+import { DAY_SEC, dayIndex, dayOfSeason, seasonCount, seasonName, seasonOf } from '../sim/clock';
+import { priceWord, standOpen, standTip } from '../sim/stand';
 import { cropLines, pageLabel, pages, topOf } from '../sim/ledger';
 import type { Farm, LedgerSeason } from '../sim/state';
 import { fill, h } from './h';
@@ -56,14 +57,30 @@ function countList(title: string, counts: Record<string, number>, empty: string)
 
 export function ledgerPanel(farm: Farm): HTMLElement {
   const root = h('div.ledger');
-  let tab: 'seasons' | 'crops' = 'seasons';
+  let tab: 'seasons' | 'crops' | 'stand' = 'seasons';
   let sortBy: 'minute' | 'harvest' = 'minute';
   const render = () => {
     const list = pages(farm, seasonCount(farm.t));
     const now = list.at(-1)!;
-    const tabs = h('div.tabs', { role: 'tablist' },
+    const tabs = h('div.tabs.wrap', { role: 'tablist' },
       h('button', { role: 'tab', 'aria-selected': String(tab === 'seasons'), onclick: () => { tab = 'seasons'; render(); } }, icon('ledger', 22), 'Seasons'),
-      h('button', { role: 'tab', 'aria-selected': String(tab === 'crops'), onclick: () => { tab = 'crops'; render(); } }, icon('seeds', 22), 'Profit per crop'));
+      h('button', { role: 'tab', 'aria-selected': String(tab === 'crops'), onclick: () => { tab = 'crops'; render(); } }, icon('seeds', 22), 'Profit per crop'),
+      standOpen(farm) ? h('button', { role: 'tab', 'aria-selected': String(tab === 'stand'), onclick: () => { tab = 'stand'; render(); } }, icon('shop', 22), 'Stand') : null);
+    if (tab === 'stand') {
+      const days = [...farm.stand.days].reverse();
+      const kinds = new Set(farm.stand.slots.filter(sl => sl.item && sl.n > 0).map(sl => sl.item)).size;
+      fill(root, tabs,
+        h('p', null, 'How your farm stand did. Prices are a choice: cheaper sells faster, dearer earns more for each one.'),
+        days.length ? h('div.ledger-boxes', null, ...days.map(d => {
+          const rows = Object.entries(d.sold).sort((a, b) => b[1].coins - a[1].coins);
+          const tip = standTip(d, kinds);
+          return h('div.ledger-box', null,
+            h('b', null, d.day === dayIndex(farm.t) ? 'Today' : d.day === dayIndex(farm.t) - 1 ? 'Yesterday' : `${seasonName(seasonOf(d.day * DAY_SEC + 1))}, day ${dayOfSeason(d.day * DAY_SEC + 1)}`),
+            rows.length ? h('ul.ledger-top', null, ...rows.map(([id, r]) => h('li', null, itemIcon(id, 28), h('span', null, `${itemDef(id).name} at “${priceWord(r.price)}”`), h('b', null, `× ${r.n} · ${r.coins}`)))) : h('p.note', null, 'Nothing sold.'),
+            tip ? h('small', null, tip) : null);
+        })) : h('p.note', null, 'No sales yet. Open Town, then Stand, to put things out.'));
+      return;
+    }
     if (tab === 'seasons') {
       const net = now.earned - now.spent;
       fill(root, tabs,

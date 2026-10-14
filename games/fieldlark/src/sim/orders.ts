@@ -17,7 +17,7 @@ import type { Farm } from './state';
 import { bump, earn, levelOf, roll } from './world';
 
 export interface OrderItem { id: string; n: number }
-export interface Order { id: number; who: string; items: OrderItem[]; coins: number; xp: number; story?: string; note?: string }
+export interface Order { id: number; who: string; items: OrderItem[]; coins: number; xp: number; story?: string; note?: string; /** A contract drop (src/sim/contracts.ts), not a board order. */ contract?: string }
 export interface BoatState { crates: Order[]; cargo: Order[]; backAt: number | null; trips: number }
 
 export const BOARD_SLOTS = 6;
@@ -109,6 +109,12 @@ export function deliver(farm: Farm, orderId: number): { ok: true } | { ok: false
   return { ok: true };
 }
 
+/** A crate for the boat that isn't from the board (a contract drop): it sails with the next trip. */
+export function queueCrate(farm: Farm, o: Order) {
+  farm.boat.crates.push(o);
+  sail(farm);
+}
+
 /** Swap an order for a new one, free (a fresh one arrives soon). Story requests stay. */
 export function skipOrder(farm: Farm, orderId: number): boolean {
   const i = farm.orders.findIndex(o => o.id === orderId && !o.story);
@@ -138,7 +144,7 @@ export function boatTick(farm: Farm): Order[] {
   for (const o of done) {
     earn(farm, o.coins);
     farm.xp += o.xp;
-    bump(farm, 'orders');
+    if (!o.contract) bump(farm, 'orders');
     if (o.story) bump(farm, `story:${o.story}`);
   }
   b.cargo = [];
