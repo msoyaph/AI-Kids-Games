@@ -61,12 +61,12 @@ const defs: ThingDef[] = [
   { id: 'offices', name: 'Offices', class: 'work', zone: 'work', level: 3, w: 2, d: 2, height: 3.1, shade: 0.85, looks: OFFICE, blurb: 'A tall glass building full of busy desks.' },
   // --- services (placed) ---
   { id: 'cityhall', name: 'City Hall', class: 'civic', w: 4, d: 3, height: 2.6, shade: 0.8, blurb: 'Where the junior mayor works. Tap it to see the budget.' },
-  { id: 'school', name: 'School', class: 'civic', service: 'school', cost: 520, chapter: 2, w: 3, d: 3, height: 2.2, shade: 0.8, blurb: 'Classrooms, a playground and a bell.' },
-  { id: 'library', name: 'Library', class: 'civic', service: 'library', cost: 420, chapter: 2, w: 4, d: 3, height: 2.4, shade: 0.8, blurb: 'Free books for everyone, and a cosy reading room.' },
-  { id: 'clinic', name: 'Clinic', class: 'civic', service: 'clinic', cost: 690, chapter: 4, w: 3, d: 2, height: 1.9, shade: 0.8, blurb: 'Doctors and nurses who help people feel better.' },
-  { id: 'safety', name: 'Safety station', class: 'civic', service: 'safety', cost: 630, chapter: 4, w: 3, d: 2, height: 1.9, shade: 0.8, blurb: 'The safety crew checks smoke alarms, teaches bike safety and helps cats down from trees.' },
-  { id: 'community', name: 'Community center', class: 'civic', service: 'community', cost: 450, chapter: 4, w: 3, d: 3, height: 1.8, shade: 0.8, blurb: 'Clubs, dances and a big kitchen for everyone.' },
-  { id: 'recycling', name: 'Recycling center', class: 'civic', service: 'recycling', cost: 720, chapter: 5, w: 3, d: 3, height: 1.6, shade: 0.8, blurb: 'Old cans, jars and paper become new things.' },
+  { id: 'school', name: 'School', class: 'civic', service: 'school', cost: 420, chapter: 2, w: 3, d: 3, height: 2.2, shade: 0.8, blurb: 'Classrooms, a playground and a bell.' },
+  { id: 'library', name: 'Library', class: 'civic', service: 'library', cost: 360, chapter: 2, w: 4, d: 3, height: 2.4, shade: 0.8, blurb: 'Free books for everyone, and a cosy reading room.' },
+  { id: 'clinic', name: 'Clinic', class: 'civic', service: 'clinic', cost: 480, chapter: 4, w: 3, d: 2, height: 1.9, shade: 0.8, blurb: 'Doctors and nurses who help people feel better.' },
+  { id: 'safety', name: 'Safety station', class: 'civic', service: 'safety', cost: 450, chapter: 4, w: 3, d: 2, height: 1.9, shade: 0.8, blurb: 'The safety crew checks smoke alarms, teaches bike safety and helps cats down from trees.' },
+  { id: 'community', name: 'Community center', class: 'civic', service: 'community', cost: 340, chapter: 4, w: 3, d: 3, height: 1.8, shade: 0.8, blurb: 'Clubs, dances and a big kitchen for everyone.' },
+  { id: 'recycling', name: 'Recycling center', class: 'civic', service: 'recycling', cost: 520, chapter: 5, w: 3, d: 3, height: 1.6, shade: 0.8, blurb: 'Old cans, jars and paper become new things.' },
   // --- parks and trees (placed) ---
   { id: 'tree', name: 'Tree', class: 'tree', cost: 10, green: 1, w: 1, d: 1, height: 1.4, shade: 0.45, blurb: 'Shade for hot days, homes for birds.' },
   { id: 'blossom', name: 'Blossom tree', class: 'tree', cost: 14, green: 1, w: 1, d: 1, height: 1.4, shade: 0.45, blurb: 'Pink blossom every spring.' },

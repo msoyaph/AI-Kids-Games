@@ -85,7 +85,7 @@ export const CHAPTERS: readonly Chapter[] = [
       { who: 'teodor', text: 'The lighthouse is shining again! Ships can see Breezeport from far away.' },
       { who: 'marisol', text: 'You’re a natural, Mayor. Main Street is buzzing.' },
     ],
-    reward: 550,
+    reward: 700,
   },
   {
     title: 'School Bells',
@@ -100,7 +100,7 @@ export const CHAPTERS: readonly Chapter[] = [
       { id: 'c2-work', kind: 'count', cls: 'work', n: 3, text: 'Have 3 workplaces', hint: 'Zone workplaces on a road that joins your homes.' },
       { id: 'c2-pop', kind: 'pop', n: 150, text: 'Grow to 150 people' },
       { id: 'c2-grow', kind: 'count', cls: 'home', level: 2, n: 9, text: 'Help 9 homes grow bigger' },
-      { id: 'c2-cover', kind: 'cover', service: 'school', pct: 70, text: 'Reach 7 in 10 homes with a school', hint: 'Open Maps and pick School to see where its circle reaches.' },
+      { id: 'c2-cover', kind: 'cover', service: 'school', pct: 60, text: 'Reach 6 in 10 homes with a school', hint: 'Open Maps and pick School to see where its circle reaches.' },
       { id: 'c2-maps', kind: 'flag', flag: 'openedMaps', text: 'Look at the town’s maps', hint: 'Pick Maps on the tool bar.' },
     ],
     outro: [
@@ -119,7 +119,7 @@ export const CHAPTERS: readonly Chapter[] = [
     goals: [
       { id: 'c3-stops', kind: 'count', def: 'busstop', n: 5, text: 'Build 5 bus stops', who: 'kofi' },
       { id: 'c3-route', kind: 'routes', n: 2, text: 'Start 2 bus routes', who: 'kofi', hint: 'In Transit, tap New bus route, then tap your stops in order.' },
-      { id: 'c3-pop', kind: 'pop', n: 185, text: 'Grow to 185 people' },
+      { id: 'c3-pop', kind: 'pop', n: 175, text: 'Grow to 175 people' },
       { id: 'c3-grow', kind: 'count', cls: 'home', level: 2, n: 20, text: 'Help 20 homes grow bigger' },
       { id: 'c3-skate', kind: 'count', def: 'skatepark', n: 1, text: 'Build a skate park', who: 'ozzie' },
       { id: 'c3-clock', kind: 'project', project: 'clocktower', text: 'Put a clock on City Hall', hint: 'Fund it at City Hall.' },
@@ -143,7 +143,7 @@ export const CHAPTERS: readonly Chapter[] = [
       { id: 'c4-clinic', kind: 'count', def: 'clinic', n: 1, text: 'Build a clinic', who: 'lin' },
       { id: 'c4-safety', kind: 'count', def: 'safety', n: 1, text: 'Build a safety station', who: 'dalia' },
       { id: 'c4-community', kind: 'count', def: 'community', n: 1, text: 'Build a community center' },
-      { id: 'c4-pop', kind: 'pop', n: 400, text: 'Grow to 400 people' },
+      { id: 'c4-pop', kind: 'pop', n: 380, text: 'Grow to 380 people' },
       { id: 'c4-level', kind: 'count', cls: 'home', level: 2, n: 8, text: 'Have 8 homes grow bigger', hint: 'Homes grow bigger when they’re happy. Tap one to see what it needs.' },
       { id: 'c4-hall', kind: 'flag', flag: 'openedCityHall', text: 'Check the budget at City Hall', hint: 'Pick City Hall on the tool bar.' },
     ],
@@ -167,7 +167,7 @@ export const CHAPTERS: readonly Chapter[] = [
       { id: 'c5-trees', kind: 'stat', stat: 'placed-tree', n: 30, text: 'Plant 30 trees in all' },
       { id: 'c5-glass', kind: 'count', def: 'glasshouse', n: 1, text: 'Build the glasshouse', who: 'gemma' },
       { id: 'c5-eco', kind: 'eco', n: 3, text: 'Reach 3 eco leaves' },
-      { id: 'c5-pop', kind: 'pop', n: 560, text: 'Grow to 560 people' },
+      { id: 'c5-pop', kind: 'pop', n: 540, text: 'Grow to 540 people' },
     ],
     outro: [
       { who: 'gemma', text: 'Three leaves! The air smells like flowers and the sea. You did it!' },

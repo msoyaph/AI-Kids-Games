@@ -84,7 +84,7 @@ export const TUNING = {
     eco: 5,
   },
   services: {
-    radius: { school: 12, library: 12, clinic: 14, safety: 14, community: 10, recycling: 16 },
+    radius: { school: 14, library: 13, clinic: 14, safety: 14, community: 10, recycling: 16 },
     /** Upkeep a minute of play. */
     upkeep: { school: 3.5, library: 2.5, clinic: 4, safety: 3.5, community: 2.5, recycling: 3, bus: 2.5, tram: 7, park: 0.25 },
   },

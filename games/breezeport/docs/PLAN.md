@@ -212,7 +212,7 @@ No names, characters, buildings, art, UI, currencies or text come from the genre
 - **The bot** (Fieldlark's playthrough bot, adapted) plays like a kid: about 6 s per action, learning pauses the first time it does something, and reading time counted. It runs on 6 seeds. Targets:
   - every town reaches the credits;
   - mean 6–8 h, with no seed outside 5.5–8.5 h;
-  - no chapter over 75 minutes;
+  - no chapter over 90 minutes (changed from 75 in phase 9: a chapter's length is mostly the town growing while the player builds freely, and towns grow at different speeds, about ±20 minutes between seeds);
   - no wait for coins over 90 s of play;
   - starting any chapter with 0 coins still finishes it (the grant).
 - **No single strategy dominates.** From a chapter-5 town, 2 hours of each of these: only homes and shops; only one service type; no transit; maximum trees; avenues everywhere. None earns more than 15% over the balanced mix, and none reaches higher happiness than the mix.

@@ -28,8 +28,9 @@ export interface BotRun {
   total: number;
   /** Longest wait for coins (seconds of play spent only waiting for money). */
   coinWait: number;
-  /** The chapter of the longest wait for coins. */
+  /** The chapter of the longest wait for coins, and what the coins were for. */
   coinWaitAt: number;
+  coinWaitFor: string;
   /** The town when each chapter was finished: people, happiness and coins. */
   marks: { pop: number; happy: number; coins: number }[];
   stuck: string | null;
@@ -47,8 +48,9 @@ export class Bot {
   extra = 0;
   actions = 0;
   coinWait = 0;
-  /** This step, something the bot wanted to do was too dear (so any wait now is a wait for coins). */
+  /** This step, something the bot wanted to do was too dear (so any wait now is a wait for coins), and what. */
   short = false;
+  shortFor = '';
 
   constructor(seed: number, town?: Town) {
     this.town = town ?? newTown(seed);
@@ -85,7 +87,7 @@ export class Bot {
   private do(kind: string, a: Parameters<typeof act>[1]): boolean {
     const r = act(this.town, a);
     if (r.ok) { this.sim.refresh(true); this.did(kind); }
-    else if (/coins/.test(r.why)) this.short = true;
+    else if (/coins/.test(r.why)) { this.short = true; this.shortFor = kind; }
     return r.ok;
   }
 
@@ -137,7 +139,7 @@ export class Bot {
     }
     if (!best) return false;
     const cost = best.filter(([x, z]) => !isRoad(t, x, z)).length * 8;
-    if (t.coins < cost) { this.short = true; return false; }
+    if (t.coins < cost) { this.short = true; this.shortFor = 'road'; return false; }
     return this.do('road', { type: 'road', tiles: best });
   }
 
@@ -177,7 +179,7 @@ export class Bot {
     const t = this.town;
     const d = THING[def]!;
     if (!thingOpen(t, def)) return false;
-    if (t.mode !== 'creative' && t.coins < (d.cost ?? 0)) { this.short = true; return false; }
+    if (t.mode !== 'creative' && t.coins < (d.cost ?? 0)) { this.short = true; this.shortFor = def; return false; }
     const c = this.sim.census;
     let target = near;
     if (!target) {
@@ -254,6 +256,7 @@ export class Bot {
   step(): boolean {
     const t = this.town;
     this.short = false;
+    this.shortFor = '';
     const c = this.sim.census;
     const goals = currentGoals(t).filter(g => !progress(t, c, this.sim.trips, g).done);
     // always: collect a big bubble now and then (a kid taps them)
@@ -309,6 +312,7 @@ export class Bot {
       case 'project': {
         if (fundProject(t, g.project).ok) { this.did('project'); return true; }
         this.short = true;
+        this.shortFor = `project ${g.project}`;
         return false;
       }
       case 'lanes': return this.paintLane(g.lane);
@@ -437,7 +441,7 @@ export function playthrough(seed: number, opts: PlayOptions = {}): BotRun {
   bot.extra += CHAPTERS[0]!.intro.length * READ_SEC_PER_LINE;
   const chapters: number[] = [];
   const marks: BotRun['marks'] = [];
-  let lastChapter = 0, idle = 0, coinIdle = 0, coinWaitAt = -1, stuck: string | null = null;
+  let lastChapter = 0, idle = 0, coinIdle = 0, coinWaitAt = -1, coinWaitFor = '', stuck: string | null = null;
   if (opts.broke) t.coins = 0;
   while (t.story.chapter < until && t.t < limit) {
     const acted = bot.step();
@@ -445,7 +449,7 @@ export function playthrough(seed: number, opts: PlayOptions = {}): BotRun {
     if (!acted) {
       bot.wait(6); idle += 6;
       coinIdle = bot.short ? coinIdle + 6 : 0;
-      if (coinIdle > bot.coinWait) { bot.coinWait = coinIdle; coinWaitAt = t.story.chapter; }
+      if (coinIdle > bot.coinWait) { bot.coinWait = coinIdle; coinWaitAt = t.story.chapter; coinWaitFor = bot.shortFor; }
     }
     else idle = coinIdle = 0;
     if (t.story.chapter !== lastChapter) {
@@ -457,5 +461,5 @@ export function playthrough(seed: number, opts: PlayOptions = {}): BotRun {
     if (idle > 1800) { stuck = `chapter ${t.story.chapter}: nothing to do for 30 minutes (${currentGoals(t).filter(g => !progress(t, bot.sim.census, bot.sim.trips, g).done).map(g => g.id).join(', ')})`; break; }
   }
   if (t.story.chapter < until && !stuck) stuck = `chapter ${t.story.chapter} not finished in ${limit / 3600} h: ${currentGoals(t).filter(g => !progress(t, bot.sim.census, bot.sim.trips, g).done).map(g => g.id).join(', ')}`;
-  return { town: t, chapters, total: t.t + bot.extra, coinWait: bot.coinWait, coinWaitAt, stuck, actions: bot.actions, marks };
+  return { town: t, chapters, total: t.t + bot.extra, coinWait: bot.coinWait, coinWaitAt, coinWaitFor, stuck, actions: bot.actions, marks };
 }

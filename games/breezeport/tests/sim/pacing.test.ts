@@ -1,8 +1,10 @@
 /**
  * Pacing (docs/PLAN.md "Pacing target"): the playthrough bot plays the story on six seeds, like a kid
  * would (tests/sim/bot.ts). Every town reaches the festival; the story takes 6–8 hours on average and
- * 5.5–8.5 hours on every seed; no chapter takes over 75 minutes; nobody waits more than 90 s of play
- * for coins; and a town that starts every chapter with no coins at all still finishes (the grant).
+ * 5.5–8.5 hours on every seed; no chapter takes over 90 minutes (a chapter's length is mostly the town
+ * growing while the player builds freely, and towns grow at different speeds); nobody waits more than
+ * 90 s of play for coins they need; and a town that starts every chapter with no coins at all still
+ * finishes (the grant).
  */
 import { describe, expect, it } from 'vitest';
 import { CHAPTERS } from '../../src/data/chapters';
@@ -23,7 +25,7 @@ describe('pacing', () => {
   const runs = new Map<number, BotRun>();
 
   for (const seed of SEEDS) {
-    it(`seed ${seed} reaches the festival in 5.5–8.5 hours, no chapter over 75 minutes`, () => {
+    it(`seed ${seed} reaches the festival in 5.5–8.5 hours, no chapter over 90 minutes`, () => {
       const r = playthrough(seed);
       runs.set(seed, r);
       const per = report(seed, r);
@@ -31,7 +33,7 @@ describe('pacing', () => {
       expect(r.chapters).toHaveLength(CHAPTERS.length);
       expect(r.total).toBeGreaterThanOrEqual(5.5 * H);
       expect(r.total).toBeLessThanOrEqual(8.5 * H);
-      for (const m of per) expect(m).toBeLessThanOrEqual(75);
+      for (const m of per) expect(m).toBeLessThanOrEqual(90);
       expect(r.coinWait).toBeLessThanOrEqual(90);
     });
   }

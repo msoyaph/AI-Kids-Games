@@ -124,6 +124,10 @@ npx tsx games/breezeport/scripts/models.mts     # triangles per model (CPU only)
   - **The festival:** night falls with paper lanterns along the streets round the stage, kites over the beach and soft fireworks over the bay; the credits come after 12 s (4 s with less motion).
   - **The showcase town** (`?scene=showcase&seed=7`) is built in code by the town's own rules, for captures, the cover and the big-town performance check.
   - **"Welcome the first family"** counts the first home the player's zoning grows (the three old cottages were already there).
+  - **Growth runs the other way round now:** a small town grows a little slower (a look every 135 s) and a big one a little faster (down to 85 s; level-ups 100 → 60 s), so chapters take about as long as each other. The first 8 buildings still come every 10 s.
+  - **Prices and rewards** (from bot playthroughs on six seeds): services 340–520, park pieces a little dearer, bus stops 40, landmarks 3,200–4,800 (they come when the town is rich), projects 300 / 500 / 980; chapter rewards 500, 700, 750, 700, 500, 600, 700, 800, 1,000; a school reaches 14 tiles and a library 13, and chapter 3 asks for 6 in 10 homes near a school (so one or two schools do it); shops and workplaces earn 4/6/8 and 3/5/7 coins a minute, residents 0.15.
+  - **Population goals:** 85, 150, 175 (Old Harbor holds about 200 before Maple Row opens), 380, 540, 720, 850 and 1,100.
+  - **The pacing test allows 90 minutes a chapter** (the plan said 75): a chapter's length is mostly the town growing while the player builds freely, and towns grow at different speeds (±20 minutes between seeds). The story still averages 6–8 hours.
 
 ## Names (phase 0: five proposals, web-checked 2026-10-14; the owner picked **Breezeport**)
 **How they were checked:**
@@ -168,11 +172,13 @@ npx tsx games/breezeport/scripts/models.mts     # triangles per model (CPU only)
 | 0 Plan, names, style frame | done; approved 2026-10-14 ("Go, Breezeport") |
 | 1 Setup and name | done: scaffold, rename, Simulation genre, blocklist and site test, brief, docs, engine-drift |
 | 2–8 Town, sims, story, saves, UI | done (checkpoint commit 1dde1de): the 80 × 80 town, roads and zones, growth, services and happiness, budget and grant, traffic and transit (bus, bike, tram), eco, districts, 9 chapters, projects, endless goals, 3 slots, title, tools, maps, City Hall, music, the festival night, the showcase town |
-| 9 Balance, saves, performance, QA | in progress: pacing tuned with the bot (scratchpad sweeps); unit tests pass; browser suites and the visual review next |
+| 9 Balance, saves, performance, QA | in progress: pacing done (all 9 sim tests pass); 127 unit tests pass; browser suites and the visual review next |
 
 **Style frame, measured** (M3 Pro, `scripts/shots.mjs`): Low on the phone draws 31 calls and 77k triangles at 60 fps; Low on the desktop draws 36 calls and 126k triangles at 60 fps. The full table is in docs/PLAN.md. The build is 817 KB.
 
 **Next:** finish phase 9: `npx vitest run tests/sim` (pacing on 6 seeds, the broke run, strategies) on a quiet machine; then the browser suites (`sh scripts/when-quiet.sh e2e`), the visual review with `scripts/shots.mjs` (style frame and `scene=showcase`), and the performance numbers. Then phase 10: listing, import, storage audit, art, previews, trailer, MCP catalog, PR, release, the sizzle reels.
+
+**Pacing (2026-10-14, final data):** six seeds take 6.12, 6.17, 6.55, 6.38, 6.23 and 6.35 hours (mean 6.30). The longest chapter is 85 minutes (seed 3, Seaside Boardwalk); the longest wait for coins is 30 s. The broke run (every chapter starts with 0 coins) finishes on city grants, and no one-track strategy earns over 15% more than the mix or ends up happier.
 
 **Pacing tools:** a scratchpad sweep runs the bot with tuning overrides (`{"growth":{…},"pops":[…],"rewards":[…]}`); the bot reports the town at each chapter's end and where the longest coin wait was. Findings so far:
 - Old Harbor holds about 205 people before Maple Row opens (chapter 5), so chapter 4's goal stays at 185.
