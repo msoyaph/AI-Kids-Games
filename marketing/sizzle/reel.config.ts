@@ -295,15 +295,15 @@ function gameCut(slug: Slug): Cut {
  * card and the end card. Every shot is real gameplay from marketing/sizzle/capture/games/fieldlark.ts.
  */
 const fl = (take: string, extra: Omit<Shot, 'slug' | 'take'> = {}) => shot('fieldlark', take, extra);
-const FL_FEATURES: [string, Shot, Shot][] = [
-  ['Plant, grow and pick!', fl('grow', { from: 0.2, focus: [0.7, 0.3], sfx: 0.5, sound: 'harvest pops' }), fl('grow', { from: 5.6, focus: [0.7, 0.3], sfx: 0.5, sound: 'planting and watering' })],
-  ['Raise happy animals', fl('animals', { from: 0.4, focus: [0.4, 0.5] }), fl('sheep', { from: 0.4 })],
-  ['Helpers lend a hand', fl('helpers', { from: 0.3 }), fl('boat', { from: 0.5 })],
-  ['Sell in the town square', fl('town', { from: 0.4 }), fl('town', { from: 2.6 })],
+const FL_FEATURES: [string, ...Shot[]][] = [
+  ['Plant, grow and pick!', fl('grow', { from: 0.3, focus: [0.7, 0.3], sfx: 0.5, sound: 'harvest pops' }), fl('grow', { from: 2.2, focus: [0.7, 0.3], sfx: 0.5, sound: 'planting and watering' }), fl('grow', { from: 8.3, focus: [0.7, 0.3], sfx: 0.5, sound: 'harvest pops' })],
+  ['Raise happy animals', fl('animals', { from: 0.4, focus: [0.4, 0.5] }), fl('hens', { from: 0.3 }), fl('dog', { from: 0.3 })],
+  ['Helpers lend a hand', fl('helpers', { from: 0.3 }), fl('helpers2', { from: 0.5 })],
+  ['Sell in the town square', fl('town', { from: 0.3 }), fl('town', { from: 2.2 })],
   ['Farm by day and night', fl('timelapse', { from: 2.2 }), fl('fireflies', { from: 0.4 })],
   ['Sun, rain and snow', fl('rain', { from: 0.4 }), fl('winter', { from: 0.6 })],
   ['Grow crops all year round', fl('greenhouse', { from: 0.4 }), fl('spring', { from: 0.4 })],
-  ['Win ribbons at the fair!', fl('fair', { from: 0.6, focus: [0.5, 0.5] }), fl('fair', { from: 4.4, focus: [0.5, 0.5] })]
+  ['Win ribbons at the fair!', fl('fair', { from: 0, focus: [0.3, 0.6] }), fl('fair', { from: 2.6, focus: [0.55, 0.6] })]
 ];
 const dive = fl('dive', { from: 0 });
 const fieldlarkReel: Cut = {
@@ -312,7 +312,7 @@ const fieldlarkReel: Cut = {
     { kind: 'clip', start: 0, end: 6, shot: dive },
     { kind: 'logo', start: 6, end: 8, slug: 'fieldlark', over: { ...dive, from: at(6) } },
     { kind: 'tagline', start: 8, end: 20, bg: [fl('timelapse', { from: 0 }), fl('orbit', { from: 0.3 })], lines: [{ text: 'A sleepy little town farm…', at: 8, size: 'headline' }, { text: 'Can you wake it up?', at: 12, size: 'headline' }] },
-    ...FL_FEATURES.map(([text, a, b], i): Block => ({ kind: 'montage', start: 20 + 8 * i, end: 28 + 8 * i, shots: [a, b], lines: [{ text, at: 20.5 + 8 * i, size: 'headline' }] })),
+    ...FL_FEATURES.map(([text, ...shots], i): Block => ({ kind: 'montage', start: 20 + 8 * i, end: 28 + 8 * i, shots, lines: [{ text, at: 20.5 + 8 * i, size: 'headline' }] })),
     { kind: 'devices', start: 84, end: 92, phone: fl('phone', { from: 0.3 }), tablet: fl('tablet', { from: 0.3 }), lines: [{ text: 'Phones, tablets and computers', at: 85, size: 'headline' }] },
     { kind: 'promise', start: 92, end: 100, lines: ['Free to play.', 'No ads.', 'Nothing to buy.', 'Nothing ever wilts.'].map((text, i) => ({ text, at: 92 + i, size: 'headline' })) },
     { kind: 'game', start: 100, end: 112, slug: 'fieldlark', textIn: 101, textOut: 111.75, shots: [fl('farm', { from: 0.2 }), fl('autumn', { from: 0.4 }), fl('orbit', { from: 3.2 })] },
