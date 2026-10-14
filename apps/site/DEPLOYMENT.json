@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.8.0",
+  "release": "2.9.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.8.0",
-    "date": "2026-10-13",
+    "release": "2.9.0",
+    "date": "2026-10-14",
     "approvedBy": "Owner",
-    "scope": "Game trailers: a 15-second trailer for each of the eight games (Agentmon included), made from real gameplay with marketing/sizzle (npm run trailers: an original soundtrack per cut, HyperFrames renders, the flash, readability, loudness and beat-grid review). On each game page: a Trailer section that loads only its poster until someone presses play (muted, captioned, with a text description), a \"Watch the 15-second trailer\" link, and the trailer in the VideoGame structured data. The compositions use the new AI Kids Games wordmark. GitHub boxes: an outlined GitHub box in the header (the whole project; from 375 px wide), and beside each game's age in the hero and on its page a Code (its own folder) | Fork box; drawn inline, nothing loads from GitHub, every link behind the grown-up check. Home Screen play: opened from the Home Screen, the play page drops its top bar so the game fills the screen, with a frosted-glass circle back button. Also: the site marks <html data-app=\"ready\"> once the app has taken over the prebuilt page, and the browser tests wait for it; the 2.5.0 production record. All eight games stay at their current versions (Agentmon 1.1.0 as released in 2.7.0).",
-    "note": "Owner wrote: \"Add each game a quick trailer\", \"keep going and release the trailers when green\", asked for the GitHub boxes in the header and beside each game's age and for a full-screen Home Screen player with a glass back button, and then \"Once complete, update everything including all the games to live production.\" When 2.7.0 (Agentmon) went live first, the owner chose \"2.8.0 with Agentmon trailer\". Guard: scripts/check-deployment.ts needs this record for 2.6.0, a passing localSuites record for 2.6.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.6.0 in the Production environment of both Vercel projects, and a build from main."
+    "scope": "The AI Kids Games app for AI assistants ships with this release: the website's Privacy page explains exactly what the app receives, For Parents and the FAQ describe it (how to add it as a custom connector at https://ai-kids-games-mcp.vercel.app/mcp until the directories list it), and a new Terms of use page (/terms; footer, sitemap, llms.txt). game.json gains embed, moods and sessionMinutes (not build inputs: every game stays at its current version and build). The MCP server itself deploys from the separate Vercel project ai-kids-games-mcp (apps/mcp, release 1.0.0, its own approval in apps/mcp/DEPLOYMENT.json).",
+    "note": "Owner wrote: \"Ok deploy to production the MCP updates\" (2026-10-14), after the MCP app's plan, build and preview (PR #24; preview https://ai-kids-games-5ha1sf305-real-tours.vercel.app/mcp). Guard: scripts/check-deployment.ts needs this record for 2.9.0, a passing localSuites record for 2.9.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.9.0 in the Production environment of ai-kids-games and ai-kids-games-play, and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",

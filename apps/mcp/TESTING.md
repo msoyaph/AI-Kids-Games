@@ -3,8 +3,8 @@
 The automated checks run with `npm test`, `npm run inspect` and `npm run test:e2e` (in `apps/mcp`).
 This guide is for trying the app in real assistants.
 
-- **Endpoint:** the preview's address ends in `/mcp`. The current one is in `DEPLOYMENT.json`
-  (`preview.endpoint`), and the release adds the production address.
+- **Endpoint:** production is `https://ai-kids-games-mcp.vercel.app/mcp`. The latest preview is in
+  `DEPLOYMENT.json` (`preview.endpoint`).
 - **Menus change often:** these steps follow each product's docs as of 2026-10-13
   ([docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)). If a menu has moved, the linked help page has the
   current path.

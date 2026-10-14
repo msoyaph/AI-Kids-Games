@@ -106,7 +106,13 @@ merge.
      - Agentmon's data: fonts are blocked by host CSPs;
      - Calex's accelerometer;
      - WebKit: Space Sky's and Vanex's own fullscreen requests are rejected without a handler.
-4. NEXT: preview deploy, then stop before production and any directory submission.
+4. COMPLETE: preview deploy (DEPLOYMENT.json `preview`).
+5. IN PROGRESS: release. Owner, 2026-10-14: "Ok deploy to production the MCP updates".
+   - Versions: MCP app 1.0.0, website 2.9.0 (Privacy, For Parents, FAQ, Terms).
+   - Steps: approvals in both DEPLOYMENT.json files; `release:local`; Git-connect the project
+     (Root Directory apps/mcp, production branch main); AIKG_ALLOW_PRODUCTION on all three projects;
+     CI green; merge #24; production checks; a record PR.
+   - No directory submission.
 
 ## Follow-ups (not in this PR)
 

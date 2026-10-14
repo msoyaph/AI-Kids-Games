@@ -8,8 +8,8 @@ are the exact, verified builds from the website.
 Those assistants are for teens and adults (ChatGPT 13+, Claude 18+), so the app speaks to the
 grown-up and never invites children to chat with the assistant.
 
-- **Endpoint:** `https://aikids.games/mcp` once released. The preview's address is in
-  [DEPLOYMENT.json](DEPLOYMENT.json).
+- **Endpoint:** `https://ai-kids-games-mcp.vercel.app/mcp`. It moves to `https://aikids.games/mcp`
+  once that domain is live. Previews are recorded in [DEPLOYMENT.json](DEPLOYMENT.json).
 - **Sign-in:** none. No accounts, no cookies.
 - **How to add it:** [TESTING.md](TESTING.md) has the steps for Claude, ChatGPT and other assistants.
 

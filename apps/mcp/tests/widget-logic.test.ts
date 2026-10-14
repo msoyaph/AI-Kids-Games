@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdtempSync,readFileSync,writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join,resolve } from 'node:path';
 import { describe,expect,it } from 'vitest';
 import { catalog } from '../src/catalog';
 import { checkDeployment } from '../scripts/check-deployment';
@@ -34,9 +35,27 @@ describe('pause and round-end signals',() => {
 });
 
 describe('the production gate',() => {
-  it('lets previews through and refuses production without the owner\'s approval',() => {
-    expect(checkDeployment({ VERCEL_ENV: 'preview' })).toMatch(/Not a production build/);
-    expect(() => checkDeployment({ VERCEL_ENV: 'production',AIKG_ALLOW_PRODUCTION: '0.1.0' })).toThrow(/no recorded owner approval/);
-    expect(() => checkDeployment({ VERCEL_TARGET_ENV: 'production' })).toThrow(/no recorded owner approval/);
+  const fixture = (approval: object | null) => {
+    const dir = mkdtempSync(join(tmpdir(),'aikg-mcp-gate-'));
+    writeFileSync(join(dir,'package.json'),JSON.stringify({ version: '1.0.0' }));
+    writeFileSync(join(dir,'DEPLOYMENT.json'),JSON.stringify({ productionApproval: approval }));
+    return dir;
+  };
+  const approved = fixture({ approved: true,release: '1.0.0',date: '2026-10-14' });
+  it('lets previews and local builds through',() => {
+    expect(checkDeployment({ VERCEL_ENV: 'preview' },approved)).toMatch(/Not a production build/);
+    expect(checkDeployment({},approved)).toMatch(/Not a production build/);
+  });
+  it('refuses production without the owner\'s approval for this exact version',() => {
+    expect(() => checkDeployment({ VERCEL_ENV: 'production',AIKG_ALLOW_PRODUCTION: '1.0.0' },fixture(null))).toThrow(/no recorded owner approval/);
+    expect(() => checkDeployment({ VERCEL_TARGET_ENV: 'production',AIKG_ALLOW_PRODUCTION: '1.0.0' },fixture({ approved: true,release: '0.9.0' }))).toThrow(/no recorded owner approval/);
+  });
+  it('refuses production without AIKG_ALLOW_PRODUCTION for this version, or from a branch other than main',() => {
+    expect(() => checkDeployment({ VERCEL_ENV: 'production' },approved)).toThrow(/AIKG_ALLOW_PRODUCTION/);
+    expect(() => checkDeployment({ VERCEL_ENV: 'production',AIKG_ALLOW_PRODUCTION: '0.1.0' },approved)).toThrow(/AIKG_ALLOW_PRODUCTION/);
+    expect(() => checkDeployment({ VERCEL_ENV: 'production',AIKG_ALLOW_PRODUCTION: '1.0.0',VERCEL_GIT_COMMIT_REF: 'mcp-app' },approved)).toThrow(/only from main/);
+  });
+  it('allows production with both keys, from main',() => {
+    expect(checkDeployment({ VERCEL_ENV: 'production',AIKG_ALLOW_PRODUCTION: '1.0.0',VERCEL_GIT_COMMIT_REF: 'main' },approved)).toMatch(/approved by the owner on 2026-10-14/);
   });
 });

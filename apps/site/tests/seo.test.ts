@@ -6,7 +6,7 @@ import { categories,games } from '../src/data/games';
 import { faq } from '../src/data/faq';
 import { guides } from '../src/data/guides';
 import { guideBodies } from '../src/data/guide-bodies';
-import { FOUNDER,INDEXNOW_KEY,PROFILES } from '../src/data/site';
+import { FOUNDER,INDEXNOW_KEY,MCP_ENDPOINT,PROFILES } from '../src/data/site';
 import { INLINE,type Block } from '../src/lib/rich-text';
 import { pageFor } from '../src/routes';
 import { llmsFullText,llmsText } from '../src/seo/llms';
@@ -109,8 +109,8 @@ describe('structured data (schema.org, with what search engines require)',() => 
       for (const url of [...video.thumbnailUrl,video.contentUrl,video.caption.contentUrl]) expect(existsSync(pub(local(url))),url).toBe(true);
     }
   });
-  it('links only to this site, its profiles, schema.org and the games’ license',() => {
-    const allowed = [ORIGIN,...PROFILES,FOUNDER.profile,'https://schema.org','https://opensource.org/licenses/MIT'];
+  it('links only to this site, its profiles, its app for AI assistants, schema.org and the games’ license',() => {
+    const allowed = [ORIGIN,...PROFILES,FOUNDER.profile,MCP_ENDPOINT,'https://schema.org','https://opensource.org/licenses/MIT'];
     for (const path of [...sitePaths(),...unlistedPaths()]) {
       const urls = JSON.stringify(structuredData(path,ORIGIN)).match(/https?:\/\/[^"]+/g) ?? [];
       for (const url of urls) expect(allowed.some(prefix => url.startsWith(prefix)),`${path}: ${url}`).toBe(true);
