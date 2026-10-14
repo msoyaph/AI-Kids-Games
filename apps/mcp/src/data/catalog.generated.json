@@ -581,8 +581,8 @@
       "logo": "/media/breezeport/logo.svg",
       "build": {
         "path": "/games/breezeport/index.html",
-        "bytes": 988848,
-        "sha256": "2911f114792f7851646f488e3db529ef388cccb0c057dd51c3719f3098fc2d28"
+        "bytes": 989238,
+        "sha256": "1487ad3a72d9f19257b09238de702ab461617afd8d273c5aafbceacb831e1639"
       }
     }
   ]

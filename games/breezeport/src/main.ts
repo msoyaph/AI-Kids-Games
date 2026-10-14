@@ -122,7 +122,10 @@ function boot() {
     life.load = sim.traffic;
     view.setLife(life);
   }
-  const styleTown = town;
+  // the style frame behind the title screen; a capture of a real town (scene=town or showcase) keeps
+  // its own style frame apart, so that town's clock and story run like a player's
+  const styleTown: Town = scene === 'town' || scene === 'showcase' ? styleFrameCity(num('seed') ?? 7) : town;
+  if (styleTown !== town) styleTown.t = DAY_SEC * 0.38 + SEASON_DAYS * DAY_SEC + DAY_SEC;
 
   // --- feedback: floating numbers over tiles, and spoken lines ---
   const floats = h('div.floats', { 'aria-hidden': 'true' });
@@ -480,7 +483,7 @@ function boot() {
     const playing = screen === 'town' && town !== styleTown && !panels.stopsTime && !document.hidden && !glLost;
     if (playing) for (const e of sim.advance(dt * speed)) onEvent(e);
     if (screen === 'town') {
-      if (now - hudAt > 200) { hudAt = now; refreshHud(); refreshLife(); if (town !== styleTown && !panels.open) story.tick(); }
+      if (now - hudAt > 200) { hudAt = now; refreshHud(); refreshLife(); if (town !== styleTown && !panels.open && scene !== 'showcase') story.tick(); }
       save();
     }
     play.hover(controller.cursor ?? (controller.lastDevice === 'mouse' ? controller.hover : null));

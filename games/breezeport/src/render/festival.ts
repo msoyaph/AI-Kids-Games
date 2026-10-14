@@ -32,6 +32,7 @@ export class FestivalView {
   private rng = new Rng(2026);
   private t = 0;
   private nextBurst = 0;
+  private burstCount = 0;
   private key = '';
   on = false;
 
@@ -59,7 +60,7 @@ export class FestivalView {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(this.sparkPos, 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('color', new THREE.BufferAttribute(this.sparkCol, 3).setUsage(THREE.DynamicDrawUsage));
-    this.sparks = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.22, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    this.sparks = new THREE.Points(g, new THREE.PointsMaterial({ size: 3, map: glowDot(), vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
     this.sparks.frustumCulled = false;
     for (const m of [this.lanterns, this.halos, this.kites, this.tails]) m.frustumCulled = false;
     this.group.add(this.lanterns, this.halos, this.kites, this.tails, this.sparks);
@@ -145,16 +146,19 @@ export class FestivalView {
         const u = this.rng.float() * 2 - 1, a = this.rng.float() * Math.PI * 2, r = Math.sqrt(1 - u * u);
         dirs[i * 3] = r * Math.cos(a); dirs[i * 3 + 1] = u; dirs[i * 3 + 2] = r * Math.sin(a);
       }
-      const color = new THREE.Color(LANTERN_COLORS[Math.floor(this.rng.float() * LANTERN_COLORS.length)]!);
-      // over the shore in front of the view, high enough to bloom above the roofs
-      this.bursts.push({ x: center.x - 8 + this.rng.float() * 16, y: 5 + this.rng.float() * 2.5, z: Math.min(1, center.z - 7) - this.rng.float() * 4, t: 0, color, dirs });
+      // spread across the view in turn, each a different colour
+      const k = this.burstCount++;
+      const color = new THREE.Color(LANTERN_COLORS[k % LANTERN_COLORS.length]!);
+      const across = [-6, 3, -1.5, 6.5, -4, 1][k % 6]! + (this.rng.float() - 0.5) * 2;
+      // over the town between the stage and the beach, high enough to bloom above the roofs
+      this.bursts.push({ x: center.x + across, y: 5.5 + this.rng.float() * 2, z: center.z + 1 - this.rng.float() * 5, t: 0, color, dirs });
       if (this.bursts.length > BURSTS) this.bursts.shift();
     }
     this.sparkPos.fill(0);
     this.sparkCol.fill(0);
     this.bursts.forEach((b, k) => {
       b.t += dt;
-      const r = 2.2 * (1 - Math.exp(-b.t * 2.2)), fall = 0.35 * b.t * b.t, fade = Math.max(0, 1 - b.t / 2.4);
+      const r = 4 * (1 - Math.exp(-b.t * 2.4)), fall = 0.3 * b.t * b.t, fade = Math.max(0, 1 - b.t / 2.4) * 1.6;
       for (let i = 0; i < SPARKS; i++) {
         const o = (k * SPARKS + i) * 3;
         this.sparkPos[o] = b.x + b.dirs[i * 3]! * r;
@@ -167,4 +171,19 @@ export class FestivalView {
     (g.attributes.position as THREE.BufferAttribute).needsUpdate = true;
     (g.attributes.color as THREE.BufferAttribute).needsUpdate = true;
   }
+}
+
+/** A soft round dot for the sparks (made in code: a radial falloff in a tiny texture). */
+function glowDot(): THREE.DataTexture {
+  const n = 32, data = new Uint8Array(n * n * 4);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const d = Math.hypot(x + 0.5 - n / 2, y + 0.5 - n / 2) / (n / 2);
+    const a = Math.max(0, 1 - d) ** 2;
+    const o = (y * n + x) * 4;
+    data[o] = data[o + 1] = data[o + 2] = 255;
+    data[o + 3] = Math.round(a * 255);
+  }
+  const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
+  t.needsUpdate = true;
+  return t;
 }

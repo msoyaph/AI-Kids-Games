@@ -13,9 +13,9 @@
       "slug": "breezeport",
       "version": "1.0.0",
       "source": "games/breezeport/dist/index.html",
-      "bytes": 988848,
-      "sha256": "2911f114792f7851646f488e3db529ef388cccb0c057dd51c3719f3098fc2d28",
-      "inputsSha256": "6d7db3b6ae3e96cfaefae0b8b42b912c186e1804c6cf5466bad919dd3be50cb8",
+      "bytes": 989238,
+      "sha256": "1487ad3a72d9f19257b09238de702ab461617afd8d273c5aafbceacb831e1639",
+      "inputsSha256": "1a93d6053be42389a456a3c5be1e4a25fc83ac021aecc6fecfb4d11f8ba7c196",
       "importedAt": "2026-10-14"
     },
     {
