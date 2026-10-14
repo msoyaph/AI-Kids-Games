@@ -20,6 +20,10 @@ Commands (root): `npm run dev | build | test | test:e2e` (site), `npm run import
   clears, no touching another owner's keys. Re-audit storage on every import.
 - Kid safety: no ads, tracking, analytics, accounts, chat or requests to other origins, in the
   site or any game. The website collects no data; listing requests go through GitHub.
+  - Note (owner, 2026-10-14): reading our host's own request totals per path isn't analytics (Vercel
+    Observability, `npm run plays`). No script, no cookies, nothing new collected or sent, and never
+    IPs, browsers or unique visitors. Vercel Web Analytics and Speed Insights are off; don't add them
+    without a new decision from the owner.
 - Never use other companies' game titles or trademarks in names, descriptions, topics, tags or
   keywords. A game README may carry an "Inspirations" line with "not affiliated with or
   endorsed by" wording.
@@ -27,6 +31,12 @@ Commands (root): `npm run dev | build | test | test:e2e` (site), `npm run import
   worktrees, and never a self-hosted runner (`scripts/check-repo.ts` enforces this).
 - Production deploys only from `main` with CI green and the release's approval recorded in
   apps/site/DEPLOYMENT.json (`apps/site/scripts/check-deployment.ts`).
+- Test traffic (owner, 2026-10-14): run the full browser suites and Lighthouse against the
+  release's **preview** deployment, before the merge:
+  `AIKG_BASE_URL=<preview> AIKG_VERCEL_BYPASS=<secret> npm run test:e2e`.
+  After a production release, run only `npm run test:smoke` against production. It records its
+  time window in DEPLOYMENT.json `productionTests`, so `npm run plays` can say which days include
+  test plays.
 - Before every commit, check `git log` for commits this session did not make; if any appear,
   stop and tell the owner. Don't rewrite history.
 
@@ -230,6 +240,17 @@ decisions and progress are in apps/mcp/CLAUDE.md; plan ~/.claude/plans/humming-c
 - **Owner's stops:** a draft PR, a preview deploy, then stop before production and before any
   directory submission (apps/mcp/listing/). ChatGPT submission waits for aikids.games (the MCP origin
   is permanent there).
+- **LIVE 2026-10-14 as release 2.9.0 + MCP app 1.0.0** (owner: "Ok deploy to production the MCP
+  updates"):
+  - PR #24, merge commit d693372.
+  - Site dpl_2vU8cFt8dK6ErZbt1wyuCG8dqKfG, play dpl_4FcR2WnxsR3CqDv3NzGvRApa66b6, MCP
+    dpl_4YU1RsDvbLvAiFxP1wiyZYhiyava.
+  - Endpoint: https://ai-kids-games-mcp.vercel.app/mcp.
+  - All three guards logged the owner's approval.
+  - The `ai-kids-games-mcp` project is now Git-connected (Root Directory apps/mcp, production branch
+    main), with AIKG_ALLOW_PRODUCTION=1.0.0.
+  - Checks: CI green; GPU suites local (Space Sky 42/0; Light Crossing 189/0, 2 flaky). Production
+    got only a short smoke: pages, MCP Inspector 26/26, one play through the harness.
 
 ## Consolidation and aikids.games launch (release 2.1.0) — progress
 
