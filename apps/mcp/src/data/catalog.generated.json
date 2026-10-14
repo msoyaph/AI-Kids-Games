@@ -52,7 +52,7 @@
       "version": "1.0.0",
       "accentColor": "#d8ecc4",
       "page": "/game/cliff-valley",
-      "cover": "/media/cliff-valley/temp/cover.webp",
+      "cover": "/media/cliff-valley/poster.jpg",
       "logo": "/media/cliff-valley/logo.svg"
     },
     {
@@ -107,7 +107,7 @@
       "version": "2.0.0",
       "accentColor": "#c7f1dd",
       "page": "/game/light-crossing",
-      "cover": "/media/light-crossing/cover.svg",
+      "cover": "/media/light-crossing/poster.jpg",
       "logo": "/media/light-crossing/logo.svg",
       "build": {
         "path": "/games/light-crossing/index.html",
@@ -163,7 +163,7 @@
       "version": "2.0.0",
       "accentColor": "#e1dafa",
       "page": "/game/theabonk",
-      "cover": "/media/theabonk/cover.svg",
+      "cover": "/media/theabonk/poster.jpg",
       "logo": "/media/theabonk/logo.svg",
       "build": {
         "path": "/games/theabonk/index.html",
@@ -221,7 +221,7 @@
       "version": "2.0.0",
       "accentColor": "#dbe7c8",
       "page": "/game/vanex-defense",
-      "cover": "/media/vanex-defense/temp/cover.webp",
+      "cover": "/media/vanex-defense/poster.jpg",
       "logo": "/media/vanex-defense/logo.svg",
       "build": {
         "path": "/games/vanex-defense/index.html",
@@ -282,7 +282,7 @@
       "version": "2.0.0",
       "accentColor": "#d9d4f6",
       "page": "/game/space-sky",
-      "cover": "/media/space-sky/temp/cover.webp",
+      "cover": "/media/space-sky/poster.jpg",
       "logo": "/media/space-sky/logo.svg",
       "build": {
         "path": "/games/space-sky/index.html",
@@ -340,7 +340,7 @@
       "version": "0.2.0",
       "accentColor": "#f7e3ac",
       "page": "/game/calex-cart",
-      "cover": "/media/calex-cart/temp/cover.webp",
+      "cover": "/media/calex-cart/poster.jpg",
       "logo": "/media/calex-cart/logo.svg",
       "build": {
         "path": "/games/calex-cart/index.html",
@@ -397,7 +397,7 @@
       "version": "1.0.0",
       "accentColor": "#ffe0b8",
       "page": "/game/tuck-pop",
-      "cover": "/media/tuck-pop/cover.svg",
+      "cover": "/media/tuck-pop/poster.jpg",
       "logo": "/media/tuck-pop/logo.svg",
       "build": {
         "path": "/games/tuck-pop/index.html",
@@ -456,7 +456,7 @@
       "version": "1.1.0",
       "accentColor": "#ffcf5c",
       "page": "/game/agentmon",
-      "cover": "/media/agentmon/cover.svg",
+      "cover": "/media/agentmon/poster.jpg",
       "logo": "/media/agentmon/logo.svg",
       "build": {
         "path": "/games/agentmon/index.html",
@@ -517,7 +517,7 @@
       "version": "1.0.0",
       "accentColor": "#cfe8b0",
       "page": "/game/fieldlark",
-      "cover": "/media/fieldlark/cover.svg",
+      "cover": "/media/fieldlark/poster.jpg",
       "logo": "/media/fieldlark/logo.svg",
       "build": {
         "path": "/games/fieldlark/index.html",
@@ -579,7 +579,7 @@
       "version": "1.0.0",
       "accentColor": "#ffd0dc",
       "page": "/game/shooberry",
-      "cover": "/media/shooberry/cover.svg",
+      "cover": "/media/shooberry/poster.jpg",
       "logo": "/media/shooberry/logo.svg",
       "build": {
         "path": "/games/shooberry/index.html",

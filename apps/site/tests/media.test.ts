@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { games } from '../src/data/games';
 import media from '../src/data/media.json';
 import { temporaryArt } from '../src/data/temporary-art';
+import { mediaFor } from '../src/lib/media';
 
 const pub = (path: string) => resolve('public',path);
 const imports = JSON.parse(readFileSync('BUILD_IMPORTS.json','utf8')) as { games: { slug: string; bytes: number; sha256: string }[] };
@@ -54,7 +55,7 @@ describe('gameplay loops for games on temporary art (recorded from the current b
       expect(entry.loopSeconds).toBeGreaterThanOrEqual(6);
       expect(entry.loopSeconds).toBeLessThanOrEqual(8);
       for (const ext of ['mp4','webm']) expect(statSync(pub(`media/${slug}/loop.${ext}`)).size).toBeLessThan(800_000);
-      for (const ext of ['avif','webp','jpg']) expect(existsSync(pub(`media/${slug}/poster.${ext}`))).toBe(true);
+      for (const name of ['poster','poster-thumb']) for (const ext of ['avif','webp','jpg']) expect(existsSync(pub(`media/${slug}/${name}.${ext}`))).toBe(true);
     });
     it('keeps its own screenshots as the gallery (no stale captured stills), and has a capture route',() => {
       expect(entry.shots).toEqual([]);
@@ -77,8 +78,10 @@ describe('gameplay previews',() => {
         expect(statSync(file).size).toBeLessThan(800_000);
       }
     });
-    it('has a poster in AVIF, WebP and JPG',() => {
-      for (const ext of ['avif','webp','jpg']) expect(existsSync(pub(`media/${game.slug}/poster.${ext}`))).toBe(true);
+    it('has a poster and its tile copy in AVIF, WebP and JPG: the cover is real gameplay',() => {
+      for (const name of ['poster','poster-thumb']) for (const ext of ['avif','webp','jpg']) expect(existsSync(pub(`media/${game.slug}/${name}.${ext}`))).toBe(true);
+      expect(mediaFor(game).cover).toBe(`/media/${game.slug}/poster.jpg`);
+      expect(mediaFor(game).layers).toEqual([]);
     });
     it('has 4–6 gallery screenshots with thumbnails and alt text',() => {
       expect(entry.shots.length).toBeGreaterThanOrEqual(4);

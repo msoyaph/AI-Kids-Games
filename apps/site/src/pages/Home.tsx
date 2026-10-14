@@ -37,7 +37,7 @@ export default function Home() {
       <p className="section-note">Made by kids and families, checked and approved by AI Kids Games.</p>
       <GameGrid games={communityGames} label="Community games" /></section>}
     {played.length > 0 && <section className="section" aria-labelledby="play-again"><div className="section-head"><h2 id="play-again" className="title">Play again</h2></div>
-      <ul className="play-again">{played.map(game => <li key={game.slug}><Link className="tile" to={`/play/${game.slug}`}><img src={mediaFor(game).cover} alt="" width={85} height={48} loading="lazy" />{game.title}</Link></li>)}</ul></section>}
+      <ul className="play-again">{played.map(game => <li key={game.slug}><Link className="tile" to={`/play/${game.slug}`}><img src={mediaFor(game).thumb} alt="" width={85} height={48} loading="lazy" />{game.title}</Link></li>)}</ul></section>}
     {games.length >= CATEGORY_ROWS_FROM && categories.map(name => <section key={name} className="section" aria-labelledby={`row-${name}`}>
       <div className="section-head"><h2 id={`row-${name}`} className="title">{name}</h2><Link className="text-link" to={`/category/${name.toLowerCase()}`}>See all {name.toLowerCase()} games</Link></div>
       <div className="row">{games.filter(game => game.categories.includes(name)).map(game => <GameCard key={game.slug} game={game} />)}</div>

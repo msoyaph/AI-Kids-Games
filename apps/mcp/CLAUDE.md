@@ -130,6 +130,9 @@ merge.
      dpl_52AV4RUz2FtLo7FuqE2QvWE61yLY): the guard logged "MCP app 1.2.0 approved by the owner";
      initialize reports 1.2.0 and show_game for shooberry returns its card, full-screen.
 
+8. MCP app 1.3.0 (with website 2.12.0): every card's cover is real gameplay, the game's poster
+   (`/media/<slug>/poster.jpg`), from the site's `mediaFor()` through `npm run manifests`.
+
 ## Follow-ups (not in this PR)
 
 - **Cliff Valley:** add `import 'pixi.js/unsafe-eval';` at the top of `src/render/renderer.ts`, as

@@ -267,6 +267,17 @@ lists keep catalog order. `gridSpans()` (src/lib/grid.ts) gives every card 2 of 
 desktop grids everywhere are 3 equal columns; tablets keep balanced rows of 2 (tests/grid.test.ts,
 tests/e2e/grid.spec.ts).
 
+## Real gameplay covers, OG and meta images (owner, 2026-10-14; release 2.12.0)
+
+"Change the preview image cover to really depicts the game graphics not just SVG", "also update OG
+images, Meta Images etc". `mediaFor()` (src/lib/media.ts): once a game has a captured loop, `cover`,
+`coverImage` and `thumb` are its poster (`poster.*`, the loop's first frame) and `poster-thumb.*`
+(480×270), with no idle layers. Cards use `Preview still="poster"` (so hover fades into the same frame);
+tiles (Play again, the hero's picks, the parents' table, GameStrip) use `thumb`; the play page's
+loading screen uses `Cover` (now a picture of the poster). `scripts/art/og.ts` builds every OG/Twitter
+image from the poster (all 11 regenerated; og/site.jpg leads with `newestFirst`). The MCP catalog's
+`cover` follows (MCP app 1.3.0). The drawn covers stay in each folder as the pre-capture fallback.
+
 ## Next: Light Crossing v2.0 (owner request, on hold)
 
 Owner wants Light Crossing v2.0 imported and released. On 2026-10-11 its project was on

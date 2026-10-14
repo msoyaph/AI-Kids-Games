@@ -25,8 +25,8 @@ export function validateRegistry(registry: readonly Game[], fileExists: (path: s
       // Temporary art (src/data/temporary-art.ts): the game's own screenshots, until it is recaptured.
       ? [`media/${game.slug}/temp/cover.webp`,`media/${game.slug}/logo.svg`,`og/${game.slug}.jpg`,...temporary.shots.flatMap((_,i) => [`media/${game.slug}/temp/shot-${i+1}.jpg`,`media/${game.slug}/temp/shot-${i+1}-thumb.jpg`])]
       : [`media/${game.slug}/cover.svg`,`media/${game.slug}/logo.svg`,...(Array.isArray(game.coverLayers) ? game.coverLayers : []).map(motion => `media/${game.slug}/cover-${motion}.svg`)];
-    if (game.status === 'Ready to play' && temporary?.loop) art.push(`media/${game.slug}/loop.mp4`,`media/${game.slug}/loop.webm`,`media/${game.slug}/poster.jpg`);
-    if (game.status === 'Ready to play' && !temporary) art.push(`media/${game.slug}/loop.mp4`,`media/${game.slug}/loop.webm`,`media/${game.slug}/poster.jpg`,`og/${game.slug}.jpg`);
+    if (game.status === 'Ready to play' && temporary?.loop) art.push(`media/${game.slug}/loop.mp4`,`media/${game.slug}/loop.webm`,`media/${game.slug}/poster.jpg`,`media/${game.slug}/poster-thumb.jpg`);
+    if (game.status === 'Ready to play' && !temporary) art.push(`media/${game.slug}/loop.mp4`,`media/${game.slug}/loop.webm`,`media/${game.slug}/poster.jpg`,`media/${game.slug}/poster-thumb.jpg`,`og/${game.slug}.jpg`);
     for (const asset of art) if (!fileExists(asset)) errors.push(`${label}: public/${asset} does not exist.`);
   }
   return errors;

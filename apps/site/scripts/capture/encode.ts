@@ -7,13 +7,13 @@ import { captureDir, root, type TakeResult } from './lib';
 import type { Scenario } from './types';
 
 export const LOOP = { width: 960, height: 540, fps: 30, fade: 0.4, maxBytes: 800_000, targetBytes: 740_000 };
-export const POSTER = { width: 1280, height: 720 };
+export const POSTER = { width: 1280, height: 720, thumbWidth: 480, thumbHeight: 270 };
 export const SHOT = { width: 1600, height: 900, thumbWidth: 640, thumbHeight: 360 };
 
 const ffmpeg = (args: string[]) => execFileSync(ffmpegPath as unknown as string,['-hide_banner','-loglevel','error','-y',...args],{ stdio: ['ignore','inherit','inherit'] });
 
 /** Write AVIF, WebP and JPG versions of one image. */
-async function writeImage(input: string | Buffer,base: string,width: number,height: number) {
+export async function writeImage(input: string | Buffer,base: string,width: number,height: number) {
   const image = () => sharp(input).resize(width,height,{ fit: 'cover' });
   await image().avif({ quality: 52,effort: 7 }).toFile(`${base}.avif`);
   await image().webp({ quality: 78,effort: 6 }).toFile(`${base}.webp`);
@@ -68,6 +68,8 @@ export async function encode(scenario: Scenario,results: TakeResult[],log: (m: s
   const posterPng = join(work,'poster.png');
   ffmpeg(['-ss',(loopTakes[0].cut+T).toFixed(3),'-i',loopTakes[0].file,'-frames:v','1',...(crop(loopTakes[0].id) ? ['-vf',crop(loopTakes[0].id).slice(0,-1)] : []),posterPng]);
   await writeImage(posterPng,join(out,'poster'),POSTER.width,POSTER.height);
+  // The game's cover everywhere on the site is real gameplay: this poster, and a small copy for tiles.
+  await writeImage(posterPng,join(out,'poster-thumb'),POSTER.thumbWidth,POSTER.thumbHeight);
   // Gallery stills, in take order.
   // Gallery: loop moments first (strongest), then any stills-only takes.
   const ordered = [...loopTakes,...results.filter(result => !loopTakes.includes(result))];

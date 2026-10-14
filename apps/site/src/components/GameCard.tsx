@@ -23,7 +23,7 @@ export default function GameCard({ game,eager = false,span }: { game: Game; eage
   return <article className={`card${span?.solo ? ' solo' : ''}`} style={style}>
     <Link to={`/game/${game.slug}`} className="card-link game-card-link" onPointerEnter={event => { if (event.pointerType === 'mouse') setActive(true); }} onPointerLeave={() => setActive(false)} onFocus={() => setActive(true)} onBlur={() => setActive(false)}>
       <div className="card-media">
-        <Preview game={game} still="cover" active={active} eager={eager} />
+        <Preview game={game} still="poster" active={active} eager={eager} sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw" />
         <span className="card-badge">{game.ageGuidance}</span>
         {game.community && <span className="card-community">{game.community.preview ? 'Preview' : 'Community'}</span>}
       </div>

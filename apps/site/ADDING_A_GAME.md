@@ -66,6 +66,13 @@ use clear in-game saving guidance. The site owns only `aikg:favorites` and
 
 ## Cover art, logo and Open Graph image
 
+**The cover people see is real gameplay** (owner, 2026-10-14): once a game has a captured loop, the
+site shows its poster (the loop's first frame, `poster.*`) on cards, the hero and details, the
+loading screen and the OG images, and a 480×270 copy (`poster-thumb.*`, written by the capture
+encoder; `npx tsx scripts/art/poster-thumbs.ts` for older posters) in small tiles. The drawn
+cover below is still made for each game: it is the fallback before a capture and the art for
+marketing, but the site doesn't show it once a loop exists.
+
 Each game owns its art files in `public/media/<slug>/`, so any one can be redone alone:
 
 - `cover.svg`: a 1600×900 illustration in the site's shared style (flat shapes with soft
@@ -79,8 +86,8 @@ Each game owns its art files in `public/media/<slug>/`, so any one can be redone
 - `logo.svg`: the transparent title logo, outlined from Nunito Black. Add the game's
   style to `scripts/art/logos.ts` (colors from its title screen) and run
   `npx tsx scripts/art/logos.ts <slug>`.
-- `public/og/<slug>.jpg`: 1200×630, made from the cover and logo by
-  `npx tsx scripts/art/og.ts` (which also refreshes `public/og/site.jpg`).
+- `public/og/<slug>.jpg`: 1200×630, made from the gameplay poster and logo by
+  `npx tsx scripts/art/og.ts` (which also refreshes `public/og/site.jpg`, newest games first).
 
 `npx tsx scripts/art/render.ts <out-dir> [slug]` renders covers with the badge, heart and
 safe-area guides for review. `npm test` checks every file exists and covers carry no text.
