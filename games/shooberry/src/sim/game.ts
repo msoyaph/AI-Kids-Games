@@ -332,7 +332,7 @@ function reachBlanket(s: GameState, c: Critter) {
   if (s.spec.cartEvery && lane !== s.cartLane) return;
   s.snacks--;
   s.stats.snacksLost++;
-  s.events.push({ type: 'snack', lane, left: s.snacks });
+  s.events.push({ type: 'snack', lane, left: s.snacks, kind: c.kind });
   if (s.snacks <= 0) { s.result = 'lost'; s.events.push({ type: 'lost' }); }
 }
 

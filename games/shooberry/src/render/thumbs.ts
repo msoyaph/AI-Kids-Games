@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { newPoses, type Model } from './models/types';
 import { ModelLayer } from './instanced';
 
-export function thumbnail(renderer: THREE.WebGLRenderer, model: Model, size = 160): string {
+export function thumbnail(renderer: THREE.WebGLRenderer, model: Model, size = 160, yaw = 0): string {
   const scene = new THREE.Scene();
   scene.add(new THREE.HemisphereLight(0xe6f6ff, 0x7fae4e, 1.15));
   const sun = new THREE.DirectionalLight(0xfff1d8, 2.2);
@@ -13,7 +13,7 @@ export function thumbnail(renderer: THREE.WebGLRenderer, model: Model, size = 16
   const layer = new ModelLayer(model, 1);
   for (const mesh of layer.all) { mesh.castShadow = mesh.receiveShadow = false; scene.add(mesh); }
   layer.begin();
-  layer.push(0, 0, 0, 0, 1, 1, 1, newPoses(model.parts.length));
+  layer.push(0, 0, 0, yaw, 1, 1, 1, newPoses(model.parts.length));
   layer.end();
   const cam = new THREE.PerspectiveCamera(26, 1, 0.1, 50);
   const h = model.height;

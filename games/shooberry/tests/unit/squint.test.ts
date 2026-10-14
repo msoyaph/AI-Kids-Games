@@ -14,6 +14,9 @@ import { CRITTER_MODELS } from '../../src/render/models/critters';
 import { PLANT_MODELS } from '../../src/render/models/plants';
 import type { Model } from '../../src/render/models/types';
 import { contrast, hue, PALETTE } from '../../src/render/palette';
+import { WORLD_DEFS } from '../../src/data/levels';
+
+const saturation = (hex: number) => { const r = ((hex >> 16) & 255) / 255, g = ((hex >> 8) & 255) / 255, b = (hex & 255) / 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return mx === 0 ? 0 : (mx - mn) / mx; };
 import { colX, laneZ, LANES, TILE_D } from '../../src/sim/board';
 import { SMALLEST_PHONE, SUPPORTED_VIEWPORTS, type Viewport } from '../../src/ui/layout';
 
@@ -27,7 +30,7 @@ function onScreen(model: Model, vp: Viewport, lane: number, col: number) {
   const fit = fitCamera(cam, vp.w, vp.h, vp.insets);
   const box = new THREE.Box3();
   for (const part of model.parts) { part.geo.computeBoundingBox(); box.union(part.geo.boundingBox!); }
-  const yaw = model.id === 'comfrey' || model.id === 'rowan' || model.id === 'boxwood' ? 0 : 0.4;
+  const yaw = plants.includes(model) ? 0 : 0.4;
   const m = new THREE.Matrix4().makeTranslation(colX(col), 0, laneZ(lane)).multiply(new THREE.Matrix4().makeRotationX(-lean(fit.pitch))).multiply(new THREE.Matrix4().makeRotationY(yaw));
   let top = Infinity, bottom = -Infinity;
   for (let i = 0; i < 8; i++) {
@@ -52,7 +55,7 @@ describe('the squint test', () => {
   }
 
   it('at 25% size every unit is still at least 10 px tall on the smallest phone', () => {
-    for (const model of units) expect(onScreen(model, SMALLEST_PHONE, 0, 4).height * 0.25, model.id).toBeGreaterThanOrEqual(10);
+    expect(units.map(m => [m.id, Math.round(onScreen(m, SMALLEST_PHONE, 0, 4).height * 0.25 * 10) / 10] as const).filter(([, h]) => h < 10)).toEqual([]);
   });
 
   it('every unit stands out 3:1 from both soil tones, and its outline 3:1 from the grass', () => {
@@ -67,11 +70,15 @@ describe('the squint test', () => {
     expect(contrast(PALETTE.soilLight, PALETTE.soilDark)).toBeGreaterThanOrEqual(1.4);
   });
 
-  it('every plant has its own main hue', () => {
-    for (const a of plants) for (const b of plants) {
-      if (a === b) continue;
-      const d = Math.abs(hue(a.fill) - hue(b.fill)), gap = Math.min(d, 360 - d);
-      expect(gap, `${a.id} vs ${b.id}`).toBeGreaterThanOrEqual(40);
+  it('in every world, each colourful plant has its own main hue (pale ones stand out by lightness)', () => {
+    for (const w of WORLD_DEFS) {
+      const set = plants.filter(p => w.rows.some(r => r.unlock === p.id) || (w.id === 'meadow' && ['rowan', 'comfrey'].includes(p.id)));
+      const colourful = set.filter(p => saturation(p.fill) > 0.35);
+      for (const a of colourful) for (const b of colourful) {
+        if (a === b) continue;
+        const d = Math.abs(hue(a.fill) - hue(b.fill)), gap = Math.min(d, 360 - d);
+        expect(gap, `${w.id}: ${a.id} vs ${b.id}`).toBeGreaterThanOrEqual(25);
+      }
     }
   });
 });

@@ -144,7 +144,7 @@ export type GameEvent =
   | { type: 'pickup'; pickup: number; lane: number; x: number; from: Pickup['from'] }
   | { type: 'collect'; pickup: number; worth: number; lane: number; x: number }
   | { type: 'umbrella'; lane: number }
-  | { type: 'snack'; lane: number; left: number }
+  | { type: 'snack'; lane: number; left: number; kind: CritterId }
   | { type: 'wave'; index: number; flag: boolean; final: boolean }
   | { type: 'molehill'; lane: number; x: number }
   | { type: 'swap'; lane: number; col: number; plant: PlantId; to: 'pebble' | 'borrow' }
