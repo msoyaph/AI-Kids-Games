@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.9.0",
+  "release": "2.10.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.9.0",
+    "release": "2.10.0",
     "date": "2026-10-14",
     "approvedBy": "Owner",
-    "scope": "The AI Kids Games app for AI assistants ships with this release: the website's Privacy page explains exactly what the app receives, For Parents and the FAQ describe it (how to add it as a custom connector at https://ai-kids-games-mcp.vercel.app/mcp until the directories list it), and a new Terms of use page (/terms; footer, sitemap, llms.txt). game.json gains embed, moods and sessionMinutes (not build inputs: every game stays at its current version and build). The MCP server itself deploys from the separate Vercel project ai-kids-games-mcp (apps/mcp, release 1.0.0, its own approval in apps/mcp/DEPLOYMENT.json).",
-    "note": "Owner wrote: \"Ok deploy to production the MCP updates\" (2026-10-14), after the MCP app's plan, build and preview (PR #24; preview https://ai-kids-games-5ha1sf305-real-tours.vercel.app/mcp). Guard: scripts/check-deployment.ts needs this record for 2.9.0, a passing localSuites record for 2.9.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.9.0 in the Production environment of ai-kids-games and ai-kids-games-play, and a build from main."
+    "scope": "Shooberry 1.0.0, the ninth game: a 3D lane-defense garden game for ages 7+ (24 plants, 20 critters, 5 mini-bosses and the Snack Parade float, 50 Adventure levels in five worlds, Garden Party, 20 Challenges, a Daily garden, the Seed and Invader Books). Listed \"Ready to play\" with its cover, logo, OG image, preview loop, six stills and a 15-second trailer; its build is games/shooberry imported unchanged (BUILD_IMPORTS.json). In the AI Kids Games app for assistants it is a fullscreen game: the app's catalog follows the released games (npm run manifests), and the app stays at 1.0.0. Every other game stays at its current version and build.",
+    "note": "Owner wrote: \"Ok good graphics quality, now finish the game end to end and deploy it to production\" (2026-10-14), after approving the look and picking the name Shooberry. This replaces the brief's \"stop before production\" for this release. Guard: scripts/check-deployment.ts needs this record for 2.10.0, a passing localSuites record for 2.10.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.10.0 in the Production environment of ai-kids-games and ai-kids-games-play, and a build from main."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
