@@ -159,5 +159,28 @@
       "On screen: “60 levels and daily puzzles.”",
       "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
     ]
+  },
+  "agentmon": {
+    "seconds": 15,
+    "published": "2026-10-14",
+    "poster": "/trailer/agentmon/poster.jpg",
+    "posterWebp": "/trailer/agentmon/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/agentmon/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/agentmon/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/agentmon/trailer.en.vtt",
+    "description": [
+      "Agentmon gameplay: A friendly creature challenge, a Spark Ring that makes a new friend, the town of Saltwhistle and a puzzle Trial in the canyon.",
+      "The Agentmon logo and its pitch: “Befriend creatures and relight the six Beacons.” Ages 7–12.",
+      "On screen: “77 friends and puzzle Trials.”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
   }
 }

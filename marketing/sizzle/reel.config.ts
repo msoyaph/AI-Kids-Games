@@ -249,14 +249,14 @@ export const TRAILERS: Record<Slug, { shots: [Shot, Shot, Shot, Shot, Shot, Shot
   },
   agentmon: {
     line: '77 friends and puzzle Trials.',
-    describe: 'A friendly creature challenge, a Spark Ring that makes a new friend, the town of Saltwhistle, a puzzle Trial in the canyon, a Mood Match and the Field Guide.',
+    describe: 'A friendly creature challenge, a Spark Ring that makes a new friend, the town of Saltwhistle and a puzzle Trial in the canyon.',
     shots: [
       shot('agentmon', 'battle', { from: 0 }),
       shot('agentmon', 'spark-ring', { from: 0 }),
       shot('agentmon', 'town', { from: 0 }),
-      shot('agentmon', 'trial', { from: 0 }),
-      shot('agentmon', 'mood-match', { from: 0 }),
-      shot('agentmon', 'field-guide', { from: 0 })
+      shot('agentmon', 'battle', { from: 1.6 }),
+      shot('agentmon', 'spark-ring', { from: 1.5 }),
+      shot('agentmon', 'trial', { from: 0.3 })
     ]
   }
 };
