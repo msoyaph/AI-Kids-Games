@@ -13,7 +13,7 @@ export default function Parents() {
   return <div className="container page">
     <div className="page-head"><h1 className="display">For parents</h1><p className="muted">The games kids love. None of the stuff parents don’t.</p></div>
     <ul className="promises">
-      <li><Icon name="check" /><div><strong>No ads or tracking</strong><p className="muted">No advertising, analytics, tracking pixels or outside scripts. Everything loads from this site.</p></div></li>
+      <li><Icon name="check" /><div><strong>No ads or tracking</strong><p className="muted">No advertising, analytics, tracking pixels or outside scripts. Everything loads from this site. We only look at our host’s totals of how often each game is loaded, to see which games families enjoy.</p></div></li>
       <li><Icon name="check" /><div><strong>No accounts or chat</strong><p className="muted">No sign-ups, messages, uploads or online players. Kids pick a game and play.</p></div></li>
       <li><Icon name="check" /><div><strong>Progress stays on this device</strong><p className="muted">Game saves, favorites and recently played live in this browser. We never receive them. Read the <Link to="/privacy">privacy page</Link>.</p></div></li>
     </ul>

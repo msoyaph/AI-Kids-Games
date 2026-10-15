@@ -18,5 +18,20 @@
     "commit": "8262ad5",
     "deployedAt": "2026-10-14",
     "protection": "Vercel Authentication off on this project only (owner decision, 2026-10-13)"
+  },
+  "production": {
+    "url": "https://ai-kids-games-mcp.vercel.app",
+    "endpoint": "https://ai-kids-games-mcp.vercel.app/mcp",
+    "deploymentId": "dpl_4YU1RsDvbLvAiFxP1wiyZYhiyava",
+    "deploymentUrl": "https://ai-kids-games-lek0mjhv2-real-tours.vercel.app",
+    "readyState": "READY",
+    "publishedAt": "2026-10-14",
+    "release": "1.0.0",
+    "commit": "d693372",
+    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/24",
+    "productionBranch": "main (Vercel Git integration, Root Directory apps/mcp)",
+    "siteOrigin": "https://ai-kids-games-fawn.vercel.app",
+    "guardLog": "Production deployment of MCP app 1.0.0 approved by the owner on 2026-10-14.",
+    "checks": "MCP Inspector 26/26 (both eras) against the production endpoint; one Tuck Pop play through the harness with no errors, reaching only our own hosts (2026-10-14 05:39 UTC)."
   }
 }

@@ -107,7 +107,9 @@ merge.
      - Calex's accelerometer;
      - WebKit: Space Sky's and Vanex's own fullscreen requests are rejected without a handler.
 4. COMPLETE: preview deploy (DEPLOYMENT.json `preview`).
-5. IN PROGRESS: release. Owner, 2026-10-14: "Ok deploy to production the MCP updates".
+5. COMPLETE: release, LIVE 2026-10-14 (PR #24, d693372; production
+   https://ai-kids-games-mcp.vercel.app/mcp). Owner, 2026-10-14: "Ok deploy to production the MCP
+   updates".
    - Versions: MCP app 1.0.0, website 2.9.0 (Privacy, For Parents, FAQ, Terms).
    - Steps: approvals in both DEPLOYMENT.json files; `release:local`; Git-connect the project
      (Root Directory apps/mcp, production branch main); AIKG_ALLOW_PRODUCTION on all three projects;

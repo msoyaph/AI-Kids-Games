@@ -9,6 +9,11 @@
 // browser suites CI can't run (local-suites.ts) must have passed on the release machine for this
 // version and for exactly the game sources this release ships (DEPLOYMENT.json localSuites, whose
 // build-inputs hashes must match BUILD_IMPORTS.json).
+// The rest of the release checklist isn't checked here:
+// - Full browser suites and Lighthouse run against the release's preview deployment before the merge.
+// - After the release, production gets only the short smoke test (npm run test:smoke). It records its
+//   time window in DEPLOYMENT.json productionTests, so our host's request totals (npm run plays) can
+//   be read with test traffic in mind.
 import { readFileSync } from 'node:fs';
 import { LOCAL_SUITES,type LocalSuites } from './local-suites';
 

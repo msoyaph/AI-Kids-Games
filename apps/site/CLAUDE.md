@@ -15,6 +15,14 @@ Build generates static route metadata/sitemap. Host routing must serve existing 
 - Keep favorites, recently played (aikg: keys, legacy migration), the age filter,
   iframe sandbox/permissions, storage keys, cache headers and kid-safety rules:
   no tracking, no accounts, no requests to other origins.
+- Vercel Web Analytics and Speed Insights are switched off on this project (owner, 2026-10-14). Never
+  add their scripts (@vercel/analytics, @vercel/speed-insights, /_vercel/insights) or turn them back
+  on without a new decision from the owner.
+  - Which games families play comes from our host's own request totals per game file:
+    `npm run plays`, with `--save` to keep a month in the git-ignored plays-history.csv.
+  - That is totals only, never IPs, browsers or unique visitors.
+- Browser tests: full suites against the preview; against production only `npm run test:smoke`,
+  which records its time in DEPLOYMENT.json `productionTests`.
 - Before every commit, check `git log` for commits this session did not make; if
   any appear, stop and tell the owner. Don't rewrite history.
 - Stop and ask the owner only if something would change a game build, break saves,

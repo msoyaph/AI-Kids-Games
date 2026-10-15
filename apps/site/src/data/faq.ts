@@ -28,7 +28,7 @@ export function faq(games: Game[]): Question[] {
     { id: 'data',question: 'What data do you collect?',answer: [
       { p: 'Nothing about you or your child. The site has no analytics, tracking, cookies or outside scripts, and the games never send anything anywhere.' },
       { p: 'Game progress, settings, favorites and recently played are saved in your browser’s storage on this device. They are never sent to us.' },
-      { p: 'Like any website, our host (Vercel) processes standard request data, such as IP addresses, to deliver the pages and keep them secure. We don’t use it to identify or track anyone. The details are on the [privacy page](/privacy).' }
+      { p: 'Like any website, our host (Vercel) processes standard request data, such as IP addresses, to deliver the pages and keep them secure. We don’t use it to identify or track anyone. We look only at its totals of how many times each game is loaded, to see which games families enjoy. The details are on the [privacy page](/privacy).' }
     ] },
     { id: 'assistants',question: 'Can I use AI Kids Games in ChatGPT or Claude?',answer: [
       { p: 'Yes. The AI Kids Games app lets an AI assistant find a game by age, kind of game, device, time or mood, show it as a card with its ages and content notes, and let you try it together in the chat.' },

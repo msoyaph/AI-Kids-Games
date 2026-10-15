@@ -147,6 +147,37 @@
       }
     },
     {
+      "release": "2.9.0",
+      "commit": "d693372",
+      "production": {
+        "url": "https://ai-kids-games-fawn.vercel.app",
+        "deploymentId": "dpl_2vU8cFt8dK6ErZbt1wyuCG8dqKfG",
+        "deploymentUrl": "https://ai-kids-games-jrpxkkilb-real-tours.vercel.app",
+        "readyState": "READY",
+        "publishedAt": "2026-10-14",
+        "public": true,
+        "release": "2.9.0",
+        "commit": "d693372",
+        "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/24",
+        "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+        "guardLog": "Production deployment of release 2.9.0 approved by the owner on 2026-10-14; GPU browser suites passed on 4ea2d1c.",
+        "playOrigin": {
+          "project": "real-tours/ai-kids-games-play",
+          "deploymentId": "dpl_4FcR2WnxsR3CqDv3NzGvRApa66b6",
+          "url": "https://ai-kids-games-play-nf801i9ko-real-tours.vercel.app",
+          "guardLog": "Production deployment of release 2.9.0 approved by the owner on 2026-10-14; GPU browser suites passed on 4ea2d1c."
+        },
+        "mcpApp": {
+          "project": "real-tours/ai-kids-games-mcp",
+          "release": "1.0.0",
+          "deploymentId": "dpl_4YU1RsDvbLvAiFxP1wiyZYhiyava",
+          "endpoint": "https://ai-kids-games-mcp.vercel.app/mcp",
+          "guardLog": "Production deployment of MCP app 1.0.0 approved by the owner on 2026-10-14."
+        },
+        "smokeTest": "Short production check only (05:39:06–05:39:54 UTC): Privacy, Terms, For Parents and FAQ carry the new copy; /terms in the sitemap and llms.txt; MCP Inspector against https://ai-kids-games-mcp.vercel.app/mcp 26/26 in both protocol eras (Tuck Pop's build byte-identical through the server); the harness played Tuck Pop through the production endpoint with no errors, reaching only our own hosts. The full suites had passed in CI on the release PR, and the GPU suites locally."
+      }
+    },
+    {
       "url": "https://ai-kids-games-fawn.vercel.app",
       "deploymentId": "dpl_FEUS2tzCjouG8MK4URWLjUuxviAM",
       "deploymentUrl": "https://ai-kids-games-i1dljnjqd-real-tours.vercel.app",
@@ -632,5 +663,44 @@
         "ranAt": "2026-10-14T22:29:33.070Z"
       }
     ]
-  }
+  },
+  "productionTests": [
+    {
+      "release": "2.0.0",
+      "kind": "full",
+      "from": "2026-10-11T00:00:00Z",
+      "to": "2026-10-11T23:59:59Z",
+      "note": "Full production suites (and Lighthouse) ran this day; exact times weren't recorded."
+    },
+    {
+      "release": "2.1.0–2.3.0",
+      "kind": "full",
+      "from": "2026-10-12T00:00:00Z",
+      "to": "2026-10-12T23:59:59Z",
+      "note": "Full production suites (and Lighthouse) ran this day; exact times weren't recorded."
+    },
+    {
+      "release": "2.4.0–2.7.0",
+      "kind": "full",
+      "from": "2026-10-13T00:00:00Z",
+      "to": "2026-10-13T23:59:59Z",
+      "note": "Full production suites (and Lighthouse) ran this day; exact times weren't recorded."
+    },
+    {
+      "release": "2.8.0",
+      "kind": "full",
+      "from": "2026-10-14T00:00:00Z",
+      "to": "2026-10-14T23:59:59Z",
+      "note": "Full production suites (and Lighthouse) ran this day; exact times weren't recorded."
+    },
+    {
+      "release": "2.9.0",
+      "kind": "smoke",
+      "url": "https://ai-kids-games-fawn.vercel.app",
+      "from": "2026-10-14T05:39:06Z",
+      "to": "2026-10-14T05:39:54Z",
+      "result": "passed",
+      "note": "Page checks, MCP Inspector against the production endpoint, one Tuck Pop play through it."
+    }
+  ]
 }
