@@ -132,6 +132,8 @@ merge.
 
 8. MCP app 1.3.0 (with website 2.12.0): every card's cover is real gameplay, the game's poster
    (`/media/<slug>/poster.jpg`), from the site's `mediaFor()` through `npm run manifests`.
+   - **1.3.0 LIVE 2026-10-14** with website 2.12.0 (PR #33, merge 16efb69; dpl_Hd4Y3Zks9r6Ps3ncSKTydfeV5AKp),
+     together with Breezeport in the catalog (its pause signal); initialize reports 1.3.0.
 
 ## Follow-ups (not in this PR)
 

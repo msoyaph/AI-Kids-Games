@@ -555,6 +555,15 @@ back.
   - **Lighthouse mobile:** home 99/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
     Tuck Pop details and play 99/100/100/100.
 
+## Release 2.12.0: Breezeport, newest games first, 3 columns, gameplay covers (owner, 2026-10-14)
+**2.12.0 LIVE 2026-10-14** (PR #33, merge commit 16efb69; site dpl_7xfu7AvSnJNhMQWz7Cg25LqY4PHw, play
+dpl_3CLTu4rsU13QkwNHdAWjPr9QRpW6, MCP app 1.3.0 dpl_Hd4Y3Zks9r6Ps3ncSKTydfeV5AKp). One release for two
+sessions' work: Breezeport (#32, the City session) shipped inside #33 at the owner's word ("deploy the
+changes to live production including Breeze Port Game"), since both PRs claimed 2.12.0 / MCP 1.3.0; #32
+was closed with a note. Also: "All games" newest first, 3 desktop columns, every cover and OG/Twitter
+image from gameplay posters. Live checks, 15 production tests, Lighthouse home 99, /game/breezeport 98,
+/play/breezeport 70 (exempt); IndexNow 200. Details: apps/site/DEPLOYMENT.json and apps/site/CLAUDE.md.
+
 ## Tenth game: Shooberry (owner brief 2026-10-14; slug `shooberry`, branch `garden-wip`, worktree ~/Documents/AI-Kids-Games-garden)
 A 3D lane-defense garden game (Three.js 0.186.1, ages 7+): plant friendly helpers, shoo silly critters,
 save the picnic. Rules, decisions, the IP log and status are in games/shooberry/CLAUDE.md.
