@@ -32,7 +32,7 @@ export default function Hero({ games }: { games: Game[] }) {
       <div className="hero-meta"><span className="badge">{game.ageGuidance}</span><GameRepoBox game={game} /></div>
       <div className="hero-actions"><Link to={`/play/${game.slug}`} className="button primary play"><Icon name="play" filled size={20} />Play</Link><AddToHome /></div>
       <div className="hero-controls">
-        <div className="slide-picks" role="group" aria-label="Choose a featured game">{games.map((item,i) => <button key={item.slug} className="slide-pick" aria-label={`Show ${item.title}`} aria-current={i === index} onClick={() => setIndex(i)}><img src={mediaFor(item).cover} alt="" width={64} height={36} loading="lazy" /></button>)}</div>
+        <div className="slide-picks" role="group" aria-label="Choose a featured game">{games.map((item,i) => <button key={item.slug} className="slide-pick" aria-label={`Show ${item.title}`} aria-current={i === index} onClick={() => setIndex(i)}><img src={mediaFor(item).thumb} alt="" width={64} height={36} loading="lazy" /></button>)}</div>
         {!reduced && games.length > 1 && <button className="icon-button" onClick={() => setPaused(!paused)} aria-label={paused ? 'Play featured games' : 'Pause featured games'}><Icon name={paused ? 'play' : 'pause'} filled={paused} /></button>}
       </div>
     </div>

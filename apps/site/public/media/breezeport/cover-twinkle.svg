@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+<!-- Breezeport cover layer (twinkle): sunlight glinting on the bay, the lighthouse lamp and City Hall's clock. -->
+<g fill="#ffffff">
+<path d="M520 404 l5 -14 l5 14 l14 5 l-14 5 l-5 14 l-5 -14 l-14 -5Z" opacity=".9"/>
+<path d="M760 450 l4 -11 l4 11 l11 4 l-11 4 l-4 11 l-4 -11 l-11 -4Z" opacity=".8"/>
+<path d="M1060 412 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5Z" opacity=".85"/>
+<path d="M1450 460 l4 -11 l4 11 l11 4 l-11 4 l-4 11 l-4 -11 l-11 -4Z" opacity=".75"/>
+<path d="M140 470 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4Z" opacity=".7"/>
+</g>
+<circle cx="250" cy="259" r="20" fill="#fff6c8" opacity=".7"/>
+<path d="M250 238 l4 -13 l4 13 l13 4 l-13 4 l-4 13 l-4 -13 l-13 -4Z" fill="#ffffff"/>
+<path d="M800 408 l3 -10 l3 10 l10 3 l-10 3 l-3 10 l-3 -10 l-10 -3Z" fill="#ffffff" opacity=".9"/>
+</svg>

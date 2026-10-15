@@ -19,7 +19,7 @@ export default function Parents() {
     </ul>
     <section className="section" aria-labelledby="the-games"><h2 id="the-games" className="title" style={{ marginBottom: 16 }}>The games</h2>
       <table className="games-table"><thead><tr><th scope="col">Game</th><th scope="col">Age</th><th scope="col">What to expect</th></tr></thead>
-        <tbody>{games.map(game => <tr key={game.slug}><th scope="row"><Link to={`/game/${game.slug}`}><img src={mediaFor(game).cover} alt="" width={96} height={54} loading="lazy" />{game.title}</Link></th><td className="age">{game.ageGuidance}</td><td>{game.contentNotes}</td></tr>)}</tbody></table>
+        <tbody>{games.map(game => <tr key={game.slug}><th scope="row"><Link to={`/game/${game.slug}`}><img src={mediaFor(game).thumb} alt="" width={96} height={54} loading="lazy" />{game.title}</Link></th><td className="age">{game.ageGuidance}</td><td>{game.contentNotes}</td></tr>)}</tbody></table>
     </section>
     <section className="section prose" aria-labelledby="tips"><h2 id="tips" className="title">Tips for grown-ups</h2>
       <p>Ages are our suggestion, not an official rating. Try a game together and decide what feels right. Take breaks, and help younger players with the controls.</p>

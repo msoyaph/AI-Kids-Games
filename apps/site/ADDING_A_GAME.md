@@ -66,6 +66,13 @@ use clear in-game saving guidance. The site owns only `aikg:favorites` and
 
 ## Cover art, logo and Open Graph image
 
+**The cover people see is real gameplay** (owner, 2026-10-14): once a game has a captured loop, the
+site shows its poster (the loop's first frame, `poster.*`) on cards, the hero and details, the
+loading screen and the OG images, and a 480×270 copy (`poster-thumb.*`, written by the capture
+encoder; `npx tsx scripts/art/poster-thumbs.ts` for older posters) in small tiles. The drawn
+cover below is still made for each game: it is the fallback before a capture and the art for
+marketing, but the site doesn't show it once a loop exists.
+
 Each game owns its art files in `public/media/<slug>/`, so any one can be redone alone:
 
 - `cover.svg`: a 1600×900 illustration in the site's shared style (flat shapes with soft
@@ -79,8 +86,8 @@ Each game owns its art files in `public/media/<slug>/`, so any one can be redone
 - `logo.svg`: the transparent title logo, outlined from Nunito Black. Add the game's
   style to `scripts/art/logos.ts` (colors from its title screen) and run
   `npx tsx scripts/art/logos.ts <slug>`.
-- `public/og/<slug>.jpg`: 1200×630, made from the cover and logo by
-  `npx tsx scripts/art/og.ts` (which also refreshes `public/og/site.jpg`).
+- `public/og/<slug>.jpg`: 1200×630, made from the gameplay poster and logo by
+  `npx tsx scripts/art/og.ts` (which also refreshes `public/og/site.jpg`, newest games first).
 
 `npx tsx scripts/art/render.ts <out-dir> [slug]` renders covers with the badge, heart and
 safe-area guides for review. `npm test` checks every file exists and covers carry no text.
@@ -97,6 +104,8 @@ Every game needs real gameplay previews. They are produced the same way for ever
    its own production hooks, URL params and real UI/keys; never edit the build.
    `continues: true` keeps playing in the previous take's page (e.g. to reach a boss);
    `crop` zooms into part of the frame; `loopOrder` picks the loop order and poster.
+   `gallery: false` records only the loop and poster, for a game on temporary art that keeps its
+   own screenshots as the gallery (`loop: true` in `src/data/temporary-art.ts`).
 2. Run `npm run capture-previews -- <slug>`. It serves `public/`, opens the game in
    full Chromium with the real GPU (Metal flags, 1920×1080, headed — headless gives no
    smooth capture) and records each take from the game canvas at 60 fps, so DOM
@@ -121,8 +130,8 @@ small script against a game page while you work out a route.
 `npm run new-game -- <slug>` (repo root) scaffolds a new game from `templates/game-starter`.
 Replace its placeholder art and HTML before launch. Launch categories: Action,
 Adventure, Cozy, Strategy, Racing, Learning. New categories need the Category type
-and scaffolder choices updated. The home page shows one balanced "All games" grid;
-per-category rows appear automatically once there are 12 or more games
+and scaffolder choices updated. The home page shows one "All games" grid, newest games first
+(`newestFirst` in src/lib/search.ts) in 3 columns on desktop; per-category rows appear automatically once there are 12 or more games
 (`CATEGORY_ROWS_FROM` in src/pages/Home.tsx). Browse compares a game's numeric
 minAge with the selected player age; ageGuidance is the display recommendation.
 

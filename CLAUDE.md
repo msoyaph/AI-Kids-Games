@@ -192,7 +192,7 @@ play origin dpl_31jaPSNuiWrsuDNF3RBExENwYevF). Both guards logged the owner's ap
 - Lighthouse mobile (production): 100/100/100/100 on home, details, community, submit, FAQ,
   guides and Tuck Pop; play 81 (exempt)/100/100/100. IndexNow: 202.
 - Live suite: 130 passed / 25 failed, all from tests acting before the app took over the
-  prerendered page (110–220 ms on the live site). tests/e2e/fixtures.ts (2.6.0) waits for
+  prerendered page (110–220 ms on the live site). tests/e2e/fixtures.ts (shipped in 2.8.0) waits for
   `<html data-app="ready">`. Every e2e spec imports `test` from `./fixtures`, never from
   @playwright/test.
 - The merge needed the owner's go-ahead ("merge it yourself once CI passes"). TheaBonk's
@@ -229,6 +229,17 @@ wrapped in marketing/sizzle/capture/games/agentmon.ts), and release:local re-run
   - Marks are inline Octicons, and all links go through ExitGuard.
 - Site: Details shows a Trailer section (src/components/Trailer.tsx TrailerInline, data in
   src/data/game-trailers.json via src/data/trailers.ts) and VideoGame.trailer in schema.ts.
+
+**2.8.0 LIVE 2026-10-14** (PR #21, merge commit 6a27a80; site dpl_FEUS2tzCjouG8MK4URWLjUuxviAM,
+play origin dpl_DrN8uDfXwxQ5dop6mCkY51he5Dfs). Both guards logged "approved by the owner on
+2026-10-13; GPU browser suites passed on 84be790".
+- Live suite (main's tests, logged out, all six projects): 171 passed, 99 skips, 0 failed, so the
+  `data-app="ready"` fixture fixed every 2.5.0 timing failure. It covers all 8 games' launches, the
+  trailers, the GitHub boxes and Home Screen play.
+- Lighthouse mobile (production): home 98/100/100/100, details 94/100/100/100, play 86
+  (exempt)/100/100/100. IndexNow: all 30 sitemap pages, 200.
+- The record PR merges the Agentmon session's 2.7.0 record (#22) so it lands with this one;
+  DEPLOYMENT.json history now runs 2.7.0, 2.5.0, 2.4.1….
 
 ## The AI Kids Games app for AI assistants (owner brief 2026-10-13; branch `mcp-app`, worktree ~/Documents/AI-Kids-Games-mcp)
 An MCP server with playable game cards in ChatGPT, Claude and other assistants: `apps/mcp/`. Its rules,
@@ -565,19 +576,54 @@ back.
   - **Lighthouse mobile:** home 99/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
     Tuck Pop details and play 99/100/100/100.
 
+## Tenth game: Shooberry (owner brief 2026-10-14; slug `shooberry`, branch `garden-wip`, worktree ~/Documents/AI-Kids-Games-garden)
+A 3D lane-defense garden game (Three.js 0.186.1, ages 7+): plant friendly helpers, shoo silly critters,
+save the picnic. Rules, decisions, the IP log and status are in games/shooberry/CLAUDE.md.
+**2.11.0 LIVE 2026-10-14** (PR #27, merge commit 0b87233; site dpl_EQBHpQ9DwpUge9saDsmn6o7Ca7gB, play
+dpl_Ep4Tjd9bsFQuuFPihzpBGBFqNr75, MCP app 1.2.0 dpl_52AV4RUz2FtLo7FuqE2QvWE61yLY). Every guard logged the
+owner's approval; the live Shooberry file is byte-identical to the verified build; the site's launch and
+preview tests passed against production (12); hovering plays the new loops for Cliff Valley, Vanex
+Defense, Space Sky and Calex Cart on the live home page; Lighthouse mobile: home 94/100/100/100,
+/game/shooberry 98/100/100/100, /play/shooberry 87 (exempt)/100/100/100; IndexNow 200.
+- **Owner:** approved the look ("Ok good graphics quality"), picked the name Shooberry, then "now finish
+  the game end to end and deploy it to production" (replaces the brief's stop before production).
+- **Release 2.11.0, list position 10, with MCP app 1.2.0.** Built as 2.10.0; while it stalled on a stuck
+  preview capture, the owner chose to ship Fieldlark first (2.10.0, #28, MCP 1.1.0), and `main` was merged
+  in again. Game 1.0.0; every other game stays at its version.
+- **Also in 2.11.0** (owner: "Cliff Valley, Vanex Defense, Space Sky, and Calex Cart preview is not playing
+  the video"): those four games on temporary art get gameplay loops from their current builds (the
+  trailers' takes, `gallery: false`; `loop: true` in apps/site/src/data/temporary-art.ts).
+- **Repo side:** `pvz`, `popcap` and `plants versus` on the trademark blocklist (phase 0). Shooberry is a
+  fullscreen game in the assistants app (its signal reads the hook's `screen`). marketing/sizzle
+  `npm run publish:trailers -- <slug>` publishes one game's trailer (both sessions added it; main's kept).
+- **Order:** merge main → 2.11.0 / MCP 1.2.0 approvals quoting the owner → `npm run release:local` on a quiet
+  machine (in a fresh worktree build games/space-sky first: its suite serves dist/) → CI green →
+  `AIKG_ALLOW_PRODUCTION` 2.11.0 on ai-kids-games and ai-kids-games-play and 1.2.0 on ai-kids-games-mcp →
+  merge → production checks and a record PR.
+- **Pitfall:** a headed capture stalls if the screen locks (rAF stops); the stuck Calex Cart take waited 8
+  hours. Keep the Mac awake and unlocked while capturing.
+
 ## Release 2.7.0: Agentmon (owner, 2026-10-13: "Upload the game to the live Production https://ai-kids-games-fawn.vercel.app/")
 - **Scope:** PR #16 (Agentmon 1.1, which carries the 1.0 PR #13). Game 1.1.0. All other games stay at
   their current versions.
 - **Why 2.7.0:** the other session's 2.6.0 (PR #21, a trailer for every game) was already approved
   and in CI, so Agentmon ships right after it.
-- **Order:**
-  1. release commit (2.7.0, DEPLOYMENT.json approval);
-  2. `npm run release:local` on a quiet machine, and commit localSuites;
-  3. #21 merged, then `main` merged in again;
-  4. CI green;
-  5. `AIKG_ALLOW_PRODUCTION=2.7.0` in both projects' Production environments;
-  6. merge #16;
-  7. production checks (suite, Lighthouse) and a record PR.
+- **What happened:** #21 stayed blocked on a flaky site test, and the owner asked for Agentmon now
+  ("Upload the game to github and make it live in the website now"), so 2.7.0 shipped before it.
+  **#21 now needs a version above 2.7.0**, with its approval and GPU suites recorded for it
+  (AIKG_ALLOW_PRODUCTION is 2.7.0, so a 2.6.0 build is refused).
+  1. release commit 3db0970; `release:local` (Space Sky 42/0 after building its dist in the worktree;
+     Light Crossing 191/0), ac9426b;
+  2. CI green on #16; AIKG_ALLOW_PRODUCTION=2.7.0 in both projects;
+  3. #16 merged (f331dd9); #13 marked merged with it.
+- **2.7.0 LIVE 2026-10-14** (dpl_DDqZnDd92A9dPjpXGhoyWXSmJvmD):
+  - **Guard:** "approved by the owner on 2026-10-13; GPU browser suites passed on 3db0970".
+  - **Production suite:** 131 passed, 30 failed, 97 skips. Every game's launch test passes; the
+    failures are clicks on the prebuilt page before the app takes over (the timing #21's test fix
+    handles) and the grid's local-only mock page. Repeated at a person's pace on production (desktop
+    Chromium, iPhone WebKit), every one of those interactions works with no console errors.
+  - **Lighthouse mobile:** home 98/100/100/100, details 99/100/100/100, play 91 (exempt)/100/100/100,
+    Agentmon details 99/100/100/100 and play 86 (exempt)/100/100/100.
 
 ## Eighth game: Agentmon (owner brief 2026-10-13; slug `agentmon`, branch `agentmon`)
 
@@ -610,6 +656,69 @@ polish across the game, 25 new Agentmon (77 in all) and the post-game Banyan Hol
 at the Agent Base. Game 1.1.0, re-imported; no new storage keys and no save migration (1.0 saves
 load as they are, tested with a real 1.0 save). The PR keeps the site at its current version; the
 owner plays it first, and the release (on its own or together with 1.0) bumps the site then.
+
+## Fieldlark, the farm game (owner brief 2026-10-13; slug `fieldlark`, branch `fieldlark`; working name was Farm WIP / `farm-wip`)
+
+A 3D farm-building and management game for ages 8–14, built in its own worktree
+(~/Documents/FarmerTown/AI-Kids-Games-farm) from origin/main f331dd9. Brief: docs/prompts/fieldlark.md.
+Plan, rules and status: games/fieldlark/CLAUDE.md (plans: games/fieldlark/docs/PLAN.md, then PLAN-2.md).
+
+- **Name:** **Fieldlark**, the owner's pick of five web-checked names (2026-10-14). The working name
+  "Farm WIP" (`farm-wip`, prefix `farmwip.`) was renamed before any player had a save.
+- **Repo side:** the inspiration's title and its publisher join the trademark blocklist, with a site
+  manifest test.
+- **Other sessions:** never run heavy tests alongside another session's
+  (games/fieldlark/scripts/quiet-check.mjs, and respect its exit code).
+- **Release (owner, 2026-10-14, the "finish end to end" brief):**
+  - Finish the game (games/fieldlark/docs/PLAN-2.md), rename it and import it.
+  - Open a PR, get CI green and hand over the preview link. **Stop before production:** the owner
+    plays it and approves the release.
+  - This replaces the earlier "deploy when complete".
+- **Phase 15 (site step):** game 1.0.0 listed "Ready to play" at `site.order` 9, imported, storage audited, art, previews, its 15-second
+  trailer (`npm run publish:trailers -- fieldlark` in marketing/sizzle publishes one game and keeps the
+  others), site tests at 9 games, and the MCP app bumped to 1.1.0 (owner-approved; its production
+  still needs the owner's approval in apps/mcp/DEPLOYMENT.json).
+- **Production (owner, 2026-10-14, in chat):** "once done and complete, deploy the game to live
+  production. Then create a 1 minute sizzle reel YT 1920×1080 and 1080x1920 video game". Shooberry's
+  release (PR #27, 2.10.0) had stalled on a capture for 8 hours, so the owner chose "Stop it; Fieldlark
+  first": Fieldlark ships as site 2.10.0 (position 9) with MCP app 1.1.0, and Shooberry becomes 2.11.0
+  (position 10). PR #28.
+**2.10.0 LIVE 2026-10-14** (PR #28, merge commit 1566b03; site dpl_J97VpxK1CfqBu1L9ZrVcFWQPvZi1, play
+origin dpl_4brTNKEVGV6cxWSzRTUNrSKDjnMg, MCP app 1.1.0 dpl_HmqBs1KTnMZC5hNnPn8jioQ1Qi4v). The guards logged
+"release 2.10.0 approved by the owner on 2026-10-14; GPU browser suites passed on 2221afb" and "MCP app
+1.1.0 approved by the owner".
+- Live checks (no full suite on production, per the owner's rule for this game): pages 200, unknown 404;
+  the live Fieldlark file is byte-identical to the verified build (46c78f58…3916); played on the live site
+  with no console errors; the MCP app reports 1.1.0 and shows Fieldlark full-screen. IndexNow: 200.
+- Lighthouse ran while the Mac was loaded (load average 17–27): Fieldlark's details page 98/100/100/100;
+  the other pages' Performance was low and noisy, with Accessibility, Best Practices and SEO 100
+  everywhere. Re-measure on a quiet machine.
+- The record PR also carries the 2.8.0 record (#23, which includes 2.7.0's #22). 2.9.0 has no
+  production record yet.
+- Shooberry follows as 2.11.0 at position 10 (#27), with MCP app 1.2.0.
+
+## Breezeport, the city builder (owner brief 2026-10-14; slug `breezeport`, branch `breezeport`)
+A 3D seaside city builder for ages 8–14, built in its own worktree (`~/Documents/AI City Builders/AI-Kids-Games-city`)
+from origin/main d693372. Brief: docs/prompts/breezeport.md. Plan, rules and status: games/breezeport/CLAUDE.md
+(approved plan: games/breezeport/docs/PLAN.md).
+- **Name:** **Breezeport**, the owner's pick of five web-checked names (2026-10-14). The working name was "City WIP";
+  "Agent City Builders" is the owner's project label and never ships.
+- **Engine:** copied and adapted from Fieldlark's (provenance header on each file; `scripts/engine-drift.mjs`), not a
+  shared package, so Fieldlark's verified build stays untouched. Fieldlark (#28, release 2.10.0) was merged into
+  `breezeport` on 2026-10-14 (a merge, never a rebase); `node games/breezeport/scripts/engine-drift.mjs` shows no drift
+  beyond provenance lines. Shooberry (#27, release 2.11.0) was merged in the same way after it landed.
+- **Repo side:** the Simulation genre (schema, manifest validator, the site's Category, the MCP catalog's list); the
+  inspiring city builders and their publisher on the trademark blocklist, with a site manifest test.
+- **Release (owner, 2026-10-14):** "Go, Breezeport. Once done and complete, deploy the game to live production. Then
+  create a 1 minute sizzle reel YT 1920×1080 and 1080x1920." That replaces the brief's stop before production.
+  - **Release 2.12.0, list position 11, with MCP app 1.3.0** (PR #32). Game 1.0.0; every other game stays at its
+    version.
+  - **Order:** merge main → 2.12.0 / MCP 1.3.0 approvals quoting the owner → `npm run release:local` on a quiet
+    machine (build games/space-sky first: its suite serves dist/) → CI green → `AIKG_ALLOW_PRODUCTION` 2.12.0 on
+    ai-kids-games and ai-kids-games-play and 1.3.0 on ai-kids-games-mcp → merge → production checks and a record PR.
+  - **Then the reels:** `breezeport-reel` in marketing/sizzle (60 s, 16:9 and 9:16), like Fieldlark's.
+- **Other sessions:** never run heavy work alongside another session's (games/breezeport/scripts/quiet-check.mjs, and
+  respect its exit code).
 
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),

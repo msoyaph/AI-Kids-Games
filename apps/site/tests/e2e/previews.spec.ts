@@ -15,9 +15,9 @@ test('previews never play or download under reduced motion',async ({ page },info
     expect(await page.locator('video source').count(),path).toBe(0);
   }
   expect(requests).toEqual([]);
-  // The still is shown instead: the hero's poster (or cover, for a game with temporary art), cover art for cards.
+  // The still is shown instead: each game's gameplay poster, in the hero and on the cards.
   await page.goto('/'); await expect(page.locator('.hero-media img').first()).toBeVisible();
-  await expect(page.locator('.card .cover img').first()).toBeVisible();
+  await expect(page.locator('.card .preview picture img').first()).toBeVisible();
 });
 
 test('Save-Data keeps previews as stills',async ({ page }) => {
@@ -35,7 +35,7 @@ test('no preview downloads before it is needed',async ({ page },info) => {
   const heroVideo = page.locator('.hero video');
   const hero = await heroVideo.count() ? await heroVideo.first().getAttribute('data-game') : null;
   expect(requests.every(url => !!hero && url.includes(`/media/${hero}/`))).toBe(true);
-  // A card with a captured loop (games with temporary art show a still instead).
+  // A card with a captured loop (every game has one; games on temporary art keep a screenshot cover).
   const card = page.locator('.card-link').filter({ has: page.locator('video[data-game="theabonk"]') }).first();
   await card.hover();
   await expect.poll(() => playing(page),{ timeout: 10000 }).toEqual(['theabonk']);
@@ -47,7 +47,7 @@ test('no preview downloads before it is needed',async ({ page },info) => {
 test('only one preview plays at a time on touch devices',async ({ page },info) => {
   test.skip(!info.project.use.hasTouch,'Touch devices play the preview that is mostly in view.');
   await page.goto('/');
-  // the first featured game may show a still (temporary art), so at most one plays at the top
+  // at most one plays at the top
   await expect.poll(async () => (await playing(page)).length <= 1,{ timeout: 10000 }).toBe(true);
   // Sweep the page: never more than one preview at a time.
   const height = await page.evaluate(() => document.body.scrollHeight);

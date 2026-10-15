@@ -10,6 +10,15 @@
       "importedAt": "2026-10-13"
     },
     {
+      "slug": "breezeport",
+      "version": "1.0.0",
+      "source": "games/breezeport/dist/index.html",
+      "bytes": 991282,
+      "sha256": "f5c9bd0b5228bf3a2aa34502fdd7800d99977fe38ef9b89359136d2e9713a7a2",
+      "inputsSha256": "42ffd0043af596381e2271d58a9537ccbb088811155bbf580a12a3221f85416f",
+      "importedAt": "2026-10-14"
+    },
+    {
       "slug": "calex-cart",
       "version": "0.2.0",
       "source": "games/calex-cart/dist/index.html",
@@ -28,6 +37,15 @@
       "importedAt": "2026-10-12"
     },
     {
+      "slug": "fieldlark",
+      "version": "1.0.0",
+      "source": "games/fieldlark/dist/index.html",
+      "bytes": 1114831,
+      "sha256": "46c78f58363349025cd272a8f89031a1c69891defb3f5fef7fd318e53bff3916",
+      "inputsSha256": "6228e4b136ed67c2dd649a9600fca84f413d581cee9fca329799ced3ca507cc5",
+      "importedAt": "2026-10-14"
+    },
+    {
       "slug": "light-crossing",
       "version": "2.0.0",
       "source": "games/light-crossing/dist/index.html",
@@ -35,6 +53,15 @@
       "sha256": "7730e932006a60cc50f2112548c387a97f26ceb650fb7cf279360abea8b732c8",
       "inputsSha256": "0d32ecc81e1e11c1d80b41619c3eef1516fac32b7b7d42f09a283f0197922232",
       "importedAt": "2026-10-12"
+    },
+    {
+      "slug": "shooberry",
+      "version": "1.0.0",
+      "source": "games/shooberry/dist/index.html",
+      "bytes": 744942,
+      "sha256": "d28ef30782dd4732e8c3a968b88633928dda2342bbaa1ed70fa08c20d729efd3",
+      "inputsSha256": "7c2b74ea294f39dcd9a446fd39e1912ebb89077a1e14388a9273100816375196",
+      "importedAt": "2026-10-14"
     },
     {
       "slug": "space-sky",

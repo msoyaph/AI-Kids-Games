@@ -1,0 +1,7 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+captures/
+# the owner's quality reference stays on this machine, never committed
+.reference/

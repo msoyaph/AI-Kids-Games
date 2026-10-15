@@ -1,6 +1,6 @@
-# Shared-origin storage audit (Agentmon 1.1.0, 2026-10-13)
+# Shared-origin storage audit (Fieldlark 1.0.0, Shooberry 1.0.0 and Breezeport 1.0.0, 2026-10-14)
 
-Result: **CLEAN.** All eight games and the website keep their data under their own keys. No build
+Result: **CLEAN.** All eleven games and the website keep their data under their own keys. No build
 calls `localStorage.clear()`, uses sessionStorage, IndexedDB, cookies or Cache Storage, or reads,
 changes or deletes another owner's keys. Every build is the exact file recorded in
 `BUILD_IMPORTS.json` (`npm run check:builds`).
@@ -22,6 +22,9 @@ read by hand.
 | Cliff Valley 1.0.0 | `cliffvalley.slot.1`–`slot.3`, `cliffvalley.settings` | `cliffvalley.playtest` (`?playtest=1`) | `cliffvalley.__probe` |
 | Tuck Pop 1.0.0 | `tuckpop.save` (profile), `tuckpop.run` (the Classic, Relax and Daily games in progress) | none (its capture route never reads or writes storage) | `tuckpop.__probe` |
 | Agentmon 1.1.0 | `agentmon.slot1`–`slot3`, `agentmon.settings`, `agentmon.records` (the Challenge Tower's best floor), `agentmon.slot1.bak`–`slot3.bak` (written once when an older save is upgraded) | none (its capture routes never save; the `?quickstart` test shortcut saves only into an empty slot 3) | `agentmon.__probe` |
+| Fieldlark 1.0.0 | `fieldlark.save` (the farm), `fieldlark.save.bak` (a backup copy, written every 5 minutes of play after a successful save), `fieldlark.settings` | `fieldlark.save.broken` (only if a save can't be read: the unreadable text is kept aside before anything else happens) | `fieldlark.__probe` |
+| Shooberry 1.0.0 | `shooberry.save` (settings, stars, the Garden Party best, the last 30 Dailies, what the player has met, last seeds per level) | none (its capture routes never save; the `?level` and `?quickstart` test shortcuts never write over an existing save) | `shooberry.__probe` |
+| Breezeport 1.0.0 | `breezeport.slot1`–`slot3` (three towns), `breezeport.bak` (a copy of the slot saved last, written every 5 minutes of play after that slot's own save worked), `breezeport.settings` | `breezeport.broken` (only if a save can't be read: the unreadable text is kept aside before anything else happens) | `breezeport.__probe` |
 
 The site never adds `?playtest=1` or similar to a game's address, so the special-mode keys only
 appear when someone opens a game file directly with that option.
@@ -67,8 +70,32 @@ game.
   300 KB slot limit or a full store keeps the previous save and tells the player; blocked storage
   keeps play going from memory with a one-time note. Its unit tests check each of these and that only
   `agentmon.` keys are touched; a browser test checks the keys after a save and reload.
+- **Fieldlark:** `src/save/storage.ts` prefixes every access with `fieldlark.` (from `src/config.ts`)
+  and never enumerates, removes or clears. The backup is written only after the main save worked, so
+  one of the two copies is always whole. An unreadable save is copied to `fieldlark.save.broken` and
+  the backup takes over; if that copy can't be made, the game never overwrites the save. A full store
+  keeps the last good save, shows one friendly "Out of room to save" card and keeps play going. Its
+  unit tests check the budget, the backup, the broken copy and full storage; a browser test checks
+  that only `fieldlark.` keys exist after a save and reload. The capture route (`?scene=`) never saves.
+- **Shooberry:** one key. `src/save/storage.ts` prefixes every access with `shooberry.` (from
+  `src/config.ts`) and never enumerates or clears; "Start over" removes only `shooberry.save`. A save
+  over 100 KB is refused (enforced) and a full store keeps the previous save; blocked storage keeps play
+  going from memory and the title says progress lasts until the game closes. Its unit tests check the
+  prefix, that nothing else is listed or cleared, blocked storage and the size of a complete save;
+  browser tests check that only `shooberry.save` exists after play and that test shortcuts leave a real
+  save untouched.
+- **Breezeport:** `src/save/storage.ts` prefixes every access with `breezeport.` (from `src/config.ts`)
+  and never enumerates or clears; it removes only its own slot (Delete a town) and that slot's backup.
+  A town over its 28 KB cap is never written (the sim's caps keep every town under it). The backup is
+  written only after the slot's own save worked, so one of the two is always whole. An unreadable
+  save is copied to `breezeport.broken` and the backup takes over; if that copy can't be made, the
+  slot is never written over. A full store keeps the last good save, shows one friendly "Out of room
+  to save" card and keeps play going. Its unit tests check the prefix (with a fake store that throws
+  on clear, key and length), the budget, the backup, the broken copy and full storage; a browser test
+  checks that only `breezeport.` keys exist after a save and reload. The capture routes (`?scene=`)
+  never read or write a save.
 
-## Worst case for all eight games plus the site
+## Worst case for all eleven games plus the site
 
 Sizes are in characters (localStorage counts string length; 1 KB = 1,024 characters). Browsers
 allow about 5 MB (5,242,880 characters) per origin.
@@ -84,11 +111,14 @@ allow about 5 MB (5,242,880 characters) per origin.
 | Cliff Valley 1.0.0 | 1,051 KB | 100 KB | 300 KB budget per slot, playtest ≤ 150 KB; a year-one finale save measured 32 KB |
 | Tuck Pop 1.0.0 | 53 KB | 7 KB | the profile is refused over 50 KB (enforced) and a maximal one is under 4 KB (tested); the games in progress are at most about 0.8 KB each, three at once |
 | Agentmon 1.1.0 | 139 KB | 42 KB | every collection in a slot is bounded (6 on the team, 240 in the Agent Base, the story's flags and quests, what each friend wears), so a maximal slot is 27.5 KB (measured with the real codec; 1.0's was 18.3 KB: dressing all 246 friends adds about 8 KB), plus a one-time backup of an older slot (at most 18.3 KB; 1.1 needs no migration, so 1.0 saves are not rewritten); a finished story is about 14 KB per slot; settings and records under 1 KB. Slots over 300 KB are refused (enforced), far above what play can reach |
-| **Total** | **≈ 3.7 MB** | **≈ 1.2 MB** | |
+| Fieldlark 1.0.0 | 346 KB | 40 KB | save format 2 (compact): the biggest farm a player could build (every free tile planted, every building, animal, decoration and system in use) is 115 KB a copy (measured with the real codec; the storage test holds it under 140 KB), so the save, its backup and a kept broken copy at most 345 KB, plus settings under 1 KB; a farm at the credits is about 20 KB a copy (measured on bot playthroughs), 40 KB with its backup |
+| Shooberry 1.0.0 | 98 KB | 9 KB | the save is refused over 100,000 characters (enforced); a complete one (every level and Challenge at 3 stars with 8 seeds remembered for each, 30 Dailies, every plant, critter and tip met) is 11.8 KB, measured with the real save code |
+| Breezeport 1.0.0 | 141 KB | 40 KB | three town slots, the backup and a kept broken copy at 28 KB each (the cap is enforced, and the sim's own limits of 900 buildings and 1,500 decorations keep the biggest possible town, measured with the real codec, under it; the storage test holds every key at its biggest under 150 KB), plus settings under 1 KB; a town at the festival is about 10 KB a copy (the 560-building showcase town is 10.4 KB), so three finished towns and the backup are about 40 KB |
+| **Total** | **≈ 4.3 MB** | **≈ 1.3 MB** | |
 
 Even with every key of every game at its cap (which no real player reaches: Light Crossing's and
 Cliff Valley's slot caps are about 10 times their largest real saves), the origin stays about
-1.3 MB under the 5 MB limit. Heavy normal play uses about a quarter of it, and most of that is
+0.7 MB under the 5 MB limit. Heavy normal play uses about a quarter of it, and most of that is
 Calex Cart's optional time-trial ghosts. If a browser ever runs out of room, every game keeps the
 previous save intact and tells the player (Calex Cart first frees its own playtest log).
 

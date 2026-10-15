@@ -26,6 +26,12 @@ const styles: Record<string,LogoStyle> = {
   'calex-cart': { lines: [[...'CALEX'].map((text,i) => ({ text,fill: ['#ffd23f','#4ce0d2','#ff6fae','#8cff6b'][i % 4] })),[...'CART'].map((text,i) => ({ text,fill: ['#ff6fae','#8cff6b','#ffd23f','#4ce0d2'][i % 4] }))],outline: '#2a2140',outlineWidth: 14,shadow: '#2a2140',depth: 15,tracking: 6,lineGap: -18 },
   // In game: big golden letters with a dark plum outline (the title screen), "mon" in Spark Ring pink.
   agentmon: { lines: [[{ text: 'Agent',fill: ['#fff3b0','#ffcf5c'] },{ text: 'mon',fill: ['#ffd2ec','#ff7ac0'] }]],outline: '#2a1f3d',outlineWidth: 16,shadow: '#1b1530',depth: 12 },
+  // white and sage like the game's title screen, with "lark" in the butter yellow of its buttons
+  fieldlark: { lines: [[{ text: 'Field',fill: ['#ffffff','#e3f4d6'] },{ text: 'lark',fill: ['#fff1b0','#ffc94d'] }]],outline: '#3f8f4f',outlineWidth: 15,shadow: '#2a5f34',depth: 11,tilt: -2 },
+  // In game: berry-red letters with the garden's ink-brown outline and drop, tilted up a little.
+  shooberry: { lines: [[{ text: 'Shooberry',fill: ['#ff8a7a','#ff5a4c'] }]],outline: '#2b1910',outlineWidth: 16,shadow: '#2b1910',depth: 11,tilt: -3 },
+  // white letters with the sea's teal edge like the game's title screen, "port" in its coral buttons
+  breezeport: { lines: [[{ text: 'Breeze',fill: ['#ffffff','#dff6f4'] },{ text: 'port',fill: ['#ffc2b4','#ff8a72'] }]],outline: '#1f7d88',outlineWidth: 15,shadow: '#145a63',depth: 11,tilt: -2 },
 };
 
 const woff = readFileSync(createRequire(import.meta.url).resolve('@fontsource/nunito/files/nunito-latin-900-normal.woff'));
@@ -44,7 +50,7 @@ function layout(text: string,x: number,y: number) {
   });
   return { path,advance: cursor-x };
 }
-const titles: Record<string,string> = { agentmon: 'Agentmon',theabonk: 'TheaBonk','light-crossing': 'Light Crossing','vanex-defense': 'Vanex Defense','space-sky': 'Space Sky','calex-cart': 'Calex Cart','cliff-valley': 'Cliff Valley','tuck-pop': 'Tuck Pop' };
+const titles: Record<string,string> = { breezeport: 'Breezeport',fieldlark: 'Fieldlark',agentmon: 'Agentmon',shooberry: 'Shooberry',theabonk: 'TheaBonk','light-crossing': 'Light Crossing','vanex-defense': 'Vanex Defense','space-sky': 'Space Sky','calex-cart': 'Calex Cart','cliff-valley': 'Cliff Valley','tuck-pop': 'Tuck Pop' };
 
 function build(slug: string,style: LogoStyle) {
   const shapes: { d: string; fill: Segment['fill'] }[] = [];

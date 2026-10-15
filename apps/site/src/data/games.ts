@@ -1,6 +1,6 @@
 import { generatedGames } from './games.generated';
 
-export type Category = 'Action' | 'Adventure' | 'Casual' | 'Cozy' | 'Farming' | 'Learning' | 'Puzzle' | 'Racing' | 'RPG' | 'Strategy';
+export type Category = 'Action' | 'Adventure' | 'Casual' | 'Cozy' | 'Farming' | 'Learning' | 'Puzzle' | 'Racing' | 'RPG' | 'Simulation' | 'Strategy';
 export type Device = 'Computer' | 'Tablet' | 'Phone';
 export type Control = 'Keyboard' | 'Mouse' | 'Gamepad' | 'Touch';
 /** Idle animations for cover layers: public/media/<slug>/cover-<motion>.svg, drawn over cover.svg. */

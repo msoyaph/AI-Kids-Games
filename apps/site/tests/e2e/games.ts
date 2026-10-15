@@ -7,7 +7,10 @@ export const launchGames = [
   { slug: 'space-sky',title: 'Space Sky',key: 'spacesky.slot.0',prefix: /^spacesky\.|^__spacesky_probe__$/ },
   { slug: 'calex-cart',title: 'Calex Cart',key: 'calexcart.slot.1',prefix: /^calexcart\./ },
   { slug: 'tuck-pop',title: 'Tuck Pop',key: 'tuckpop.run',prefix: /^tuckpop\./ },
-  { slug: 'agentmon',title: 'Agentmon',key: 'agentmon.slot1',prefix: /^agentmon\./ }
+  { slug: 'agentmon',title: 'Agentmon',key: 'agentmon.slot1',prefix: /^agentmon\./ },
+  { slug: 'fieldlark',title: 'Fieldlark',key: 'fieldlark.save',prefix: /^fieldlark\./ },
+  { slug: 'shooberry',title: 'Shooberry',key: 'shooberry.save',prefix: /^shooberry\./ },
+  { slug: 'breezeport',title: 'Breezeport',key: 'breezeport.slot1',prefix: /^breezeport\./ }
 ];
 export async function press(locator: Locator,touch: boolean) { if (touch) await locator.tap(); else await locator.click(); }
 export async function instrument(page: Page) {
@@ -48,7 +51,7 @@ export async function pastTouchGate(page: Page) {
 export async function boot(page: Page,slug: string) {
   const size = page.viewportSize();
   // These finished games intentionally require landscape on touch screens.
-  if (size && size.height > size.width && ['space-sky','calex-cart','theabonk'].includes(slug) && await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) await page.setViewportSize({ width:size.height,height:size.width });
+  if (size && size.height > size.width && ['space-sky','calex-cart','theabonk','shooberry'].includes(slug) && await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) await page.setViewportSize({ width:size.height,height:size.width });
   await page.goto(`/play/${slug}`);
   await pastTouchGate(page);
   await expect(page.locator('.game-loading')).toBeHidden({ timeout: 30000 });
@@ -143,6 +146,21 @@ export async function startGame(page: Page,slug: string,touch: boolean): Promise
       await page.touchscreen.tap(box!.x+s.board.x+s.board.w/2,box!.y+s.board.y+s.board.h/2);
     } else { await f.locator('body').press('Digit1'); await f.locator('body').press('Enter'); }
     await expect.poll(() => f.evaluate(() => (window as any).__tuckpop.snapshot().moves)).toBe(1);
+  } else if (slug === 'breezeport') {
+    // a new story town in slot 1 (Play, New town, Story, its name), then Marisol's welcome; it saves as it starts
+    await press(f.getByRole('button',{ name:'Play',exact:true }),touch);
+    await press(f.getByRole('button',{ name:'New town' }).first(),touch);
+    await press(f.getByRole('button',{ name:/^Story/ }),touch);
+    await press(f.getByRole('button',{ name:'Become the mayor!' }),touch);
+    await checkAudio(f);
+    for (let i = 0; i < 10 && await f.locator('.story-card button.primary').count(); i++) await press(f.locator('.story-card button.primary'),touch);
+    await f.waitForFunction(() => (window as any).__breezeport.snapshot().screen === 'city');
+  } else if (slug === 'fieldlark') {
+    // a new farm: Hattie's welcome (the clock waits while she talks), then the farm saves as the chapter begins
+    await press(f.getByRole('button',{ name:'Start farming' }),touch);
+    await checkAudio(f);
+    for (let i = 0; i < 10 && await f.locator('.story-card button.primary').count(); i++) await press(f.locator('.story-card button.primary'),touch);
+    await f.waitForFunction(() => (window as any).__fieldlark.snapshot().screen === 'farm');
   } else if (slug === 'agentmon') {
     // a new adventure in slot 1: your Field Agent, a name, how tricky; it saves as it starts
     await press(f.getByRole('button',{ name:'Play',exact:true }),touch);
@@ -152,6 +170,23 @@ export async function startGame(page: Page,slug: string,touch: boolean): Promise
     await press(f.getByRole('button',{ name:/^I'm / }).first(),touch);
     await press(f.getByRole('button',{ name:'Start!' }),touch);
     await f.waitForFunction(() => (window as any).__agentmon.snapshot().map === 'home',null,{ timeout: 30000 });
+  } else if (slug === 'shooberry') {
+    // Adventure level 1: the seeds, the tips (saved as seen), then the first card planted in the open lane
+    await press(f.getByRole('button',{ name:'Play',exact:true }),touch);
+    await checkAudio(f);
+    await press(f.getByRole('button',{ name:'Level 1, 0 of 3 stars' }),touch);
+    await press(f.getByRole('button',{ name:"Let's grow!" }),touch);
+    for (let i = 0; i < 4 && await f.evaluate(() => (window as any).__shooberry.snapshot().screen) === 'tip'; i++) await press(f.getByRole('button',{ name:'Got it!' }),touch);
+    await f.waitForFunction(() => (window as any).__shooberry.snapshot().screen === 'play');
+    if (touch) {
+      // tap the card, then the tile (frame coordinates plus the iframe's place on the page)
+      const s = await f.evaluate(() => (window as any).__shooberry.snapshot());
+      const box = await page.locator('iframe').boundingBox();
+      const card = s.cards[0],tile = s.tiles.find((t: { lane: number; col: number }) => t.lane === 2 && t.col === 1);
+      await page.touchscreen.tap(box!.x+card.x+card.w/2,box!.y+card.y+card.h/2);
+      await page.touchscreen.tap(box!.x+tile.x,box!.y+tile.y);
+    } else { await f.locator('body').press('Digit1'); await f.locator('body').press('Enter'); }
+    await expect.poll(() => f.evaluate(() => (window as any).__shooberry.snapshot().plants.length)).toBe(1);
   } else if (slug === 'space-sky') {
     await press(f.getByTestId('btn-play'),touch);
     await checkAudio(f);
@@ -234,12 +269,32 @@ export async function verifySaveReload(f: Frame,slug: string) {
     await f.waitForFunction(() => (window as any).__tuckpop.snapshot().screen === 'play');
     expect(await f.evaluate(() => (window as any).__tuckpop.snapshot().moves)).toBe(1);
     expect(await f.evaluate(() => (window as any).__tuckpop.snapshot().persistent)).toBe(true);
+  } else if (slug === 'breezeport') {
+    // the town is kept: Continue <name>, and Marisol's welcome doesn't play again
+    await f.getByRole('button',{ name:/^Continue / }).click();
+    await f.waitForFunction(() => (window as any).__breezeport.snapshot().screen === 'city');
+    await expect(f.locator('.story-card')).toHaveCount(0);
+    expect(await f.evaluate(() => (window as any).__breezeport.snapshot().persistent)).toBe(true);
+  } else if (slug === 'fieldlark') {
+    // the farm is kept: Keep farming, and the story carries on without Hattie's welcome again
+    await f.getByRole('button',{ name:'Keep farming' }).click();
+    await f.waitForFunction(() => (window as any).__fieldlark.snapshot().screen === 'farm');
+    await expect(f.locator('.story-card')).toHaveCount(0);
+    expect(await f.evaluate(() => (window as any).__fieldlark.snapshot().persistent)).toBe(true);
   } else if (slug === 'agentmon') {
     await f.getByRole('button',{ name:'Play',exact:true }).click();
     await expect(f.locator('.slot').first()).toContainText('friends');
     await expect(f.getByText("This browser can't save")).toHaveCount(0);
     await f.locator('.slot').first().getByRole('button',{ name:'Continue' }).click();
     await f.waitForFunction(() => (window as any).__agentmon.snapshot().map === 'home',null,{ timeout: 30000 });
+  } else if (slug === 'shooberry') {
+    // the seeds and the tips were saved: level 1 remembers the seeds and skips the tips it has shown
+    await f.getByRole('button',{ name:'Play',exact:true }).click();
+    await expect(f.getByText("This browser can't save")).toBeHidden();
+    await f.getByRole('button',{ name:'Level 1, 0 of 3 stars' }).click();
+    await f.getByRole('button',{ name:"Let's grow!" }).click();
+    await f.waitForFunction(() => (window as any).__shooberry.snapshot().screen === 'play');
+    expect(await f.evaluate(() => (window as any).__shooberry.snapshot().persistent)).toBe(true);
   } else if (slug === 'space-sky') {
     await f.getByTestId('btn-play').click();
     await expect(f.getByTestId('slot-0')).toContainText('LaunchTest');

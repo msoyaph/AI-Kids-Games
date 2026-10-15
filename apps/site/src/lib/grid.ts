@@ -11,11 +11,13 @@ export function balancedRows(count: number,columns: number): number[] {
 }
 
 /**
- * Column spans for each card: the desktop grid has 6 tracks (rows of up to 3 cards),
- * the tablet grid 2 tracks (rows of up to 2). Phones are one column.
+ * Column spans for each card. Desktop (6 tracks): 3 equal columns, row after row, so the last row
+ * may be shorter and starts at the left (owner, 2026-10-14: "make the gallery in 3 Columns on
+ * Desktop"). Tablet (2 tracks): balanced rows of up to 2. Phones are one column. A single game is a
+ * wide card centred on every screen.
  */
 export function gridSpans(count: number): { lg: number; md: number; solo: boolean }[] {
   const expand = (rows: number[],tracks: number) => rows.flatMap(size => Array(size).fill(tracks/size) as number[]);
-  const lgRows = balancedRows(count,3), md = expand(balancedRows(count,2),2), lg = expand(lgRows,6);
-  return lg.map((span,index) => ({ lg: span,md: md[index],solo: count === 1 }));
+  const md = expand(balancedRows(count,2),2);
+  return md.map(span => ({ lg: count === 1 ? 6 : 2,md: span,solo: count === 1 }));
 }

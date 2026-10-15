@@ -698,5 +698,261 @@ export const generatedGames: Game[] = [
       "network": false
     },
     "license": "MIT"
+  },
+  {
+    "slug": "fieldlark",
+    "title": "Fieldlark",
+    "tagline": "Wake up the town farm, field by field.",
+    "description": "Build and grow a 3D farm from above: plant 30 real crops, raise animals, run workshops, sell at your own farm stand and bring back the town's Harvest Fair.",
+    "version": "1.0.0",
+    "categories": [
+      "Farming",
+      "Strategy",
+      "Cozy"
+    ],
+    "tags": [
+      "3D",
+      "Farming",
+      "Building",
+      "Learning",
+      "Seasons"
+    ],
+    "keywords": [
+      "farm game",
+      "farm builder",
+      "3d farm",
+      "crops",
+      "kids farming game",
+      "browser game",
+      "offline game",
+      "learning game"
+    ],
+    "ageGuidance": "Ages 8–14",
+    "minAge": 8,
+    "contentNotes": "Gentle farming with no fighting or scary content. Nothing ever wilts, dies or gets sick, there are no timers outside play, and pricing mistakes only mean selling a little less. Some reading, with read-aloud. The farm saves in this browser.",
+    "estimatedPlayTime": "About 6–8 hours of story, then endless farming",
+    "quickStart": [
+      "Press Start farming and read Hattie's welcome.",
+      "Tap an empty field and choose seeds, then water them.",
+      "Tap ripe crops to pick them, and fill an order on the board by the dock."
+    ],
+    "controls": {
+      "types": [
+        "Keyboard",
+        "Mouse",
+        "Gamepad",
+        "Touch"
+      ],
+      "howToPlay": [
+        "Tap or click a tile to use it; drag across fields to plant, water or pick a whole row.",
+        "Drag to move around, pinch or scroll to zoom, and twist two fingers or press Q and E to turn.",
+        "Tap the farmhouse for the Farm Book, the Ledger, helpers and the Farm Lab; tap the date for the weather.",
+        "Keyboard: number keys pick the tools shown on the tool bar, B opens Build mode, T moves into the tool bar, Escape goes back.",
+        "Gamepad: the left stick moves the tile cursor, A uses a tile, the bumpers turn, X opens the tools, Y Build mode, B goes back and Start the menu."
+      ]
+    },
+    "supportedDevices": [
+      "Computer",
+      "Tablet",
+      "Phone"
+    ],
+    "orientation": "any",
+    "requirements": [
+      "WebGL 2"
+    ],
+    "coverLayers": [
+      "float",
+      "twinkle"
+    ],
+    "releaseDate": "2026-10-14",
+    "featured": false,
+    "accentColor": "#cfe8b0",
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "fieldlark.",
+      "keys": [
+        "fieldlark.save",
+        "fieldlark.save.bak",
+        "fieldlark.save.broken",
+        "fieldlark.settings"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
+  },
+  {
+    "slug": "shooberry",
+    "title": "Shooberry",
+    "tagline": "Plant friendly helpers and save the picnic snacks.",
+    "description": "Grow a garden of friendly plant helpers and shoo silly critters away from the picnic. A bright 3D lane-strategy game where nobody gets hurt.",
+    "version": "1.0.0",
+    "categories": [
+      "Strategy",
+      "Casual"
+    ],
+    "tags": [
+      "Garden",
+      "Lane strategy",
+      "Picnic",
+      "Plants",
+      "3D",
+      "Nature facts"
+    ],
+    "keywords": [
+      "lane defense",
+      "garden strategy",
+      "plant defense",
+      "kids strategy game",
+      "garden game",
+      "strategy game for kids",
+      "browser game",
+      "offline game"
+    ],
+    "ageGuidance": "Ages 7+",
+    "minAge": 7,
+    "contentNotes": "Silly critters try to sneak picnic snacks, and plants shoo them home with berries, seeds, scents and chimes. Nobody gets hurt: critters poof into leaves and run off, nibbled plants just wilt, and a lost level is simply tried again with a hint. No purchases, ads, chat or timers. Some reading, with read-aloud tips. Progress saves in this browser.",
+    "estimatedPlayTime": "About 5 hours of Adventure, plus endless and challenge modes",
+    "quickStart": [
+      "Press Play, pick level 1 and press \"Let's grow!\".",
+      "Choose a plant card, then tap a garden spot to plant it.",
+      "Comfrey makes compost to pay for more plants. Keep the critters away from the picnic!"
+    ],
+    "controls": {
+      "types": [
+        "Touch",
+        "Mouse",
+        "Keyboard",
+        "Gamepad"
+      ],
+      "howToPlay": [
+        "Touch or mouse: tap a plant card, then a garden spot (or drag the card onto the garden). Press and hold a card or a plant to read about it.",
+        "Compost is collected for you; turn that off in Settings and tap the piles yourself. The trowel card digs up a plant to make room.",
+        "Keyboard: arrow keys or WASD move the garden cursor, 1–9 or Q and E choose a plant, Enter or Space plants, T picks the trowel, C collects all compost, F switches speed, Escape or P pauses.",
+        "Gamepad: the stick or d-pad moves the cursor, LB and RB choose a plant, A plants, B cancels, X collects all compost, Y switches speed, Start pauses.",
+        "Each lane has a picnic umbrella that pops open once to send nearby critters back. Three snacks saved means three stars."
+      ]
+    },
+    "supportedDevices": [
+      "Computer",
+      "Tablet",
+      "Phone"
+    ],
+    "orientation": "landscape",
+    "requirements": [
+      "WebGL 2"
+    ],
+    "coverLayers": [],
+    "releaseDate": "2026-10-14",
+    "featured": false,
+    "accentColor": "#ffd0dc",
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "shooberry.",
+      "keys": [
+        "shooberry.save"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
+  },
+  {
+    "slug": "breezeport",
+    "title": "Breezeport",
+    "tagline": "Grow a seaside town into a happy city.",
+    "description": "Be the junior mayor of a seaside town in 3D: draw roads, zone homes and shops, build parks, schools and clinics, run buses and a tram, and keep your citizens happy.",
+    "version": "1.0.0",
+    "categories": [
+      "Simulation",
+      "Strategy"
+    ],
+    "tags": [
+      "3D",
+      "Building",
+      "City",
+      "Planning",
+      "Learning"
+    ],
+    "keywords": [
+      "city builder",
+      "city planning",
+      "3d city game",
+      "town builder",
+      "kids city game",
+      "mayor game",
+      "browser game",
+      "offline game"
+    ],
+    "ageGuidance": "Ages 8–14",
+    "minAge": 8,
+    "contentNotes": "Gentle city building with no fighting, fires, disasters or crime. A missing service only makes people a little less happy, and the town can never go broke. Some reading, with read-aloud. The town saves in this browser.",
+    "estimatedPlayTime": "About 6–8 hours of story, then endless building",
+    "quickStart": [
+      "Press New town and meet Marisol, the city planner.",
+      "Pick Roads and drag along the grid to draw a street.",
+      "Pick Zones, paint homes beside the street, and watch the first family move in."
+    ],
+    "controls": {
+      "types": [
+        "Keyboard",
+        "Mouse",
+        "Gamepad",
+        "Touch"
+      ],
+      "howToPlay": [
+        "Tap or click to look at anything; drag with a tool to draw roads or paint zones.",
+        "Drag to move around, pinch or scroll to zoom, and twist two fingers or press Q and E to turn.",
+        "Tap a citizen to see what they wish for; tap a shop's coin bubble to collect.",
+        "Keyboard: number keys pick the tools on the tool bar, M opens the maps, Ctrl or Cmd + Z undoes, Escape goes back.",
+        "Gamepad: the left stick moves the tile cursor, A uses a tile (press A at the start and end of a road), the bumpers turn, X opens the tools, Y the maps, B goes back and Start the menu."
+      ]
+    },
+    "supportedDevices": [
+      "Computer",
+      "Tablet",
+      "Phone"
+    ],
+    "orientation": "any",
+    "requirements": [
+      "WebGL 2"
+    ],
+    "coverLayers": [
+      "drift",
+      "twinkle"
+    ],
+    "releaseDate": "2026-10-14",
+    "featured": false,
+    "accentColor": "#bfe9ec",
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "breezeport.",
+      "keys": [
+        "breezeport.slot1",
+        "breezeport.slot2",
+        "breezeport.slot3",
+        "breezeport.bak",
+        "breezeport.broken",
+        "breezeport.settings"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
   }
 ];

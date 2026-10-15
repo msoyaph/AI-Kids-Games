@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+<!-- Breezeport cover layer (drift): soft clouds and a little sailboat crossing the bay. -->
+<g fill="#ffffff" opacity=".9">
+<path d="M330 150 a46 46 0 0 1 86 -18 a36 36 0 0 1 60 22 a30 30 0 0 1 -4 58 H342 a30 30 0 0 1 -12 -62Z"/>
+<path d="M880 96 a40 40 0 0 1 74 -14 a30 30 0 0 1 52 18 a26 26 0 0 1 -4 50 H890 a26 26 0 0 1 -10 -54Z" opacity=".85"/>
+</g>
+<g transform="translate(470 458) scale(.7)"><path d="M-36 0 H36 L26 16 H-26Z" fill="#e25c4a"/><path d="M0 -4 V-74 L34 -8Z" fill="#fdfbf5"/><path d="M-3 -6 V-56 L-30 -8Z" fill="#ffd34d"/></g>
+</svg>

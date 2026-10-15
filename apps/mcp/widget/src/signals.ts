@@ -12,7 +12,11 @@ export const SIGNALS: Record<string,(w: Win,d: Document) => GameState> = {
   'light-crossing': (_w,d) => has(d,'.panel.pause') ? 'paused' : 'playing',
   'space-sky': (_w,d) => has(d,'[data-testid="race-result"],[data-testid="complete-stats"]') ? 'ended' : has(d,'[data-testid="pause-menu"]') ? 'paused' : 'playing',
   theabonk: w => ['dead','won'].includes(w.__theabonk?.world?.state) ? 'ended' : w.__theabonk?.paused ? 'paused' : 'playing',
-  'vanex-defense': w => { const s = w.__vanexTest?.state?.(); return !s ? 'playing' : s.state && s.state !== 'playing' ? 'ended' : s.paused || s.modal ? 'paused' : 'playing'; }
+  fieldlark: (_w,d) => has(d,'section.panel[aria-label="Menu"],section.panel[aria-label="Settings"]') ? 'paused' : 'playing',
+  // Breezeport: the town's clock stops on the title screen and while its Menu or Settings is open
+  breezeport: (w,d) => w.__breezeport?.snapshot?.()?.screen === 'title' || has(d,'section.panel[aria-label="Menu"],section.panel[aria-label="Settings"]') ? 'paused' : 'playing',
+  'vanex-defense': w => { const s = w.__vanexTest?.state?.(); return !s ? 'playing' : s.state && s.state !== 'playing' ? 'ended' : s.paused || s.modal ? 'paused' : 'playing'; },
+  shooberry: w => { const screen = w.__shooberry?.snapshot?.()?.screen; return screen === 'result' ? 'ended' : screen === 'paused' ? 'paused' : 'playing'; }
 };
 
 /** The game's state, or 'playing' when it can't be read (a game without a signal, or a frame mid-load). */

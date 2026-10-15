@@ -18,7 +18,7 @@ export const at = (beats: number) => +(beats * BEAT).toFixed(6);
 /** A line stays on screen at least words ÷ 1.8 + 0.5 seconds (a 7-year-old's reading pace). */
 export const minSeconds = (text: string) => text.split(/\s+/).filter(Boolean).length / 1.8 + 0.5;
 
-export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop' | 'agentmon';
+export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport';
 
 /** A piece of a recorded take (marketing/sizzle/captures/<slug>/<take>.mp4). */
 export interface Shot {
@@ -39,7 +39,7 @@ export interface Shot {
 const shot = (slug: Slug, take: string, extra: Omit<Shot, 'slug' | 'take'> = {}): Shot => ({ slug, take, ...extra });
 
 /** Each game's three showcase shots in the 60-second reel, in the order they play (one bar each). */
-export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
+export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
   'calex-cart': {
     describe: 'Karts drift, boost and glide through snowy, neon and canyon tracks.',
     shots: [
@@ -91,7 +91,7 @@ export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon'>, { shots: [Shot
 };
 
 /** Showcase order: racing, action, strategy, space wonder, cozy island, farming. */
-export const ORDER: Exclude<Slug, 'tuck-pop' | 'agentmon'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
+export const ORDER: Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
 
 export interface Game { slug: Slug; title: string; tagline: string; ages: string; logo: string }
 export function game(slug: Slug): Game {
@@ -104,7 +104,7 @@ export interface Line { text: string; at: number; size: 'headline' | 'line' | 's
 
 export type Block =
   | { kind: 'clip'; start: number; end: number; shot: Shot }
-  | { kind: 'logo'; start: number; end: number; over?: Shot }
+  | { kind: 'logo'; start: number; end: number; over?: Shot; /** A game's own logo instead of the brand's. */ slug?: Slug }
   | { kind: 'tagline'; start: number; end: number; lines: Line[]; bg: Shot[]; logo?: boolean }
   | { kind: 'game'; start: number; end: number; slug: Slug; textIn: number; textOut: number; shots: Shot[] }
   | { kind: 'montage'; start: number; end: number; shots: Shot[]; lines: Line[] }
@@ -258,10 +258,46 @@ export const TRAILERS: Record<Slug, { shots: [Shot, Shot, Shot, Shot, Shot, Shot
       shot('agentmon', 'spark-ring', { from: 1.5 }),
       shot('agentmon', 'trial', { from: 0.3 })
     ]
+  },
+  fieldlark: {
+    line: 'Seasons, helpers and harvest fairs.',
+    describe: 'A busy summer farm with animals, a greenhouse and helpers at work, a row of strawberries and a row of wheat picked by hand, the farm at night with lit windows, Larkford\'s town square and its farm stand, snow on the roofs in winter, and the hens and cows up close.',
+    shots: [
+      shot('fieldlark', 'farm', { from: 0.2 }),
+      shot('fieldlark', 'harvest', { from: 0, focus: [0.7, 0.3], sfx: 0.5, sound: 'harvest pops' }),
+      shot('fieldlark', 'night', { from: 0.4 }),
+      shot('fieldlark', 'town', { from: 0.4 }),
+      shot('fieldlark', 'winter', { from: 0.6 }),
+      shot('fieldlark', 'animals', { from: 0.5 })
+    ]
+  },
+  shooberry: {
+    line: 'Plant helpers. Save the picnic!',
+    describe: 'Rowan Flickers and Maple Twirlers shoo an Ant Column in the Meadow Picnic, the Grand Snail boss slides in, then gardens in the Pumpkin Patch at dusk, the Glass Greenhouse, the Cactus Garden and the Cloud Garden.',
+    shots: [
+      shot('shooberry', 'wave', { from: 0.2 }),
+      shot('shooberry', 'boss', { from: 0.3 }),
+      shot('shooberry', 'dusk', { from: 0.2 }),
+      shot('shooberry', 'greenhouse', { from: 0.3 }),
+      shot('shooberry', 'desert', { from: 0.2 }),
+      shot('shooberry', 'cloud', { from: 0.3 })
+    ]
+  },
+  breezeport: {
+    line: 'Buses, trams and a festival!',
+    describe: 'A busy seaside town by the bay, a new street drawn and homes zoned until the first family moves in, the tram and buses on Main Street, lit windows and street lamps at night, the Bay Festival with lanterns, kites and fireworks, and snowy roofs in winter.',
+    shots: [
+      shot('breezeport', 'town', { from: 0.2 }),
+      shot('breezeport', 'build', { from: 0.4, focus: [0.5, 0.5], sfx: 0.5, sound: 'a road laid and a new home popping up' }),
+      shot('breezeport', 'street', { from: 0.4 }),
+      shot('breezeport', 'night', { from: 0.4 }),
+      shot('breezeport', 'festival', { from: 0.6 }),
+      shot('breezeport', 'winter', { from: 0.5 })
+    ]
   }
 };
-/** The order of the games' trailers (all eight). */
-export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop', 'agentmon'];
+/** The order of the games' trailers (all eleven). */
+export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop', 'agentmon', 'fieldlark', 'shooberry', 'breezeport'];
 export const trailerId = (slug: Slug) => `game-${slug}`;
 
 function gameCut(slug: Slug): Cut {
@@ -277,7 +313,77 @@ function gameCut(slug: Slug): Cut {
   };
 }
 
-export const CUTS = [reel60, reel15, ...TRAILER_ORDER.map(gameCut)];
+/**
+ * Fieldlark's own 60-second reel (124 beats) for YouTube, 16:9 and 9:16: a dive onto the farm, the logo,
+ * eight things to do (one short line over two shots each), phones and tablets, the promise, the game
+ * card and the end card. Every shot is real gameplay from marketing/sizzle/capture/games/fieldlark.ts.
+ */
+const fl = (take: string, extra: Omit<Shot, 'slug' | 'take'> = {}) => shot('fieldlark', take, extra);
+const FL_FEATURES: [string, ...Shot[]][] = [
+  ['Plant, grow and pick!', fl('grow', { from: 0.3, focus: [0.7, 0.3], sfx: 0.5, sound: 'harvest pops' }), fl('grow', { from: 2.2, focus: [0.7, 0.3], sfx: 0.5, sound: 'planting and watering' }), fl('grow', { from: 8.3, focus: [0.7, 0.3], sfx: 0.5, sound: 'harvest pops' })],
+  ['Raise happy animals', fl('animals', { from: 0.4, focus: [0.4, 0.5] }), fl('hens', { from: 0.3 }), fl('dog', { from: 0.3 })],
+  ['Helpers lend a hand', fl('helpers', { from: 0.3 }), fl('helpers2', { from: 0.5 })],
+  ['Sell in the town square', fl('town', { from: 0.3 }), fl('town', { from: 2.2 })],
+  ['Farm by day and night', fl('timelapse', { from: 2.2 }), fl('fireflies', { from: 0.4 })],
+  ['Sun, rain and snow', fl('rain', { from: 0.4 }), fl('winter', { from: 0.6 })],
+  ['Grow crops all year round', fl('greenhouse', { from: 0.4 }), fl('spring', { from: 0.4 })],
+  ['Win ribbons at the fair!', fl('fair', { from: 0, focus: [0.3, 0.6] }), fl('fair', { from: 2.6, focus: [0.55, 0.6] })]
+];
+const dive = fl('dive', { from: 0 });
+const fieldlarkReel: Cut = {
+  id: 'fieldlark-reel', beats: 124,
+  blocks: [
+    { kind: 'clip', start: 0, end: 6, shot: dive },
+    { kind: 'logo', start: 6, end: 8, slug: 'fieldlark', over: { ...dive, from: at(6) } },
+    { kind: 'tagline', start: 8, end: 20, bg: [fl('timelapse', { from: 0 }), fl('orbit', { from: 0.3 })], lines: [{ text: 'A sleepy little town farm…', at: 8, size: 'headline' }, { text: 'Can you wake it up?', at: 12, size: 'headline' }] },
+    ...FL_FEATURES.map(([text, ...shots], i): Block => ({ kind: 'montage', start: 20 + 8 * i, end: 28 + 8 * i, shots, lines: [{ text, at: 20.5 + 8 * i, size: 'headline' }] })),
+    { kind: 'devices', start: 84, end: 92, phone: fl('phone', { from: 0.3 }), tablet: fl('tablet', { from: 0.3 }), lines: [{ text: 'Phones, tablets and computers', at: 85, size: 'headline' }] },
+    { kind: 'promise', start: 92, end: 100, lines: ['Free to play.', 'No ads.', 'Nothing to buy.', 'Nothing ever wilts.'].map((text, i) => ({ text, at: 92 + i, size: 'headline' })) },
+    { kind: 'game', start: 100, end: 112, slug: 'fieldlark', textIn: 101, textOut: 111.75, shots: [fl('farm', { from: 0.2 }), fl('autumn', { from: 0.4 }), fl('orbit', { from: 3.2 })] },
+    { kind: 'end', start: 112, end: 124, lines: [
+      { text: 'Fieldlark is ready to play!', at: 112.5, size: 'line' },
+      { text: 'Play free', at: 113, size: 'line' },
+      { text: 'No ads. No sign-ups. No tracking.', at: 113.5, size: 'small' }
+    ] }
+  ]
+};
+
+/**
+ * Breezeport's own 60-second reel (124 beats) for YouTube, 16:9 and 9:16: a dive onto the town, the
+ * logo, eight things to do (one short line over two shots each), phones and tablets, the promise, the
+ * game card and the end card. Every shot is real gameplay from marketing/sizzle/capture/games/breezeport.ts.
+ */
+const bp = (take: string, extra: Omit<Shot, 'slug' | 'take'> = {}) => shot('breezeport', take, extra);
+const BP_FEATURES: [string, Shot, Shot][] = [
+  ['Draw roads. Watch it grow!', bp('build', { from: 0.3, focus: [0.5, 0.5], sfx: 0.5, sound: 'a road laid' }), bp('build', { from: 3.6, focus: [0.5, 0.5], sfx: 0.5, sound: 'new homes pop up' })],
+  ['Homes, shops and parks', bp('orbit', { from: 0.3 }), bp('greenway', { from: 0.4 })],
+  ['Buses, bikes and a tram', bp('tram', { from: 0.3 }), bp('street', { from: 0.4 })],
+  ['Make everyone happy', bp('maps', { from: 0.6, focus: [0.5, 0.5] }), bp('maps', { from: 3.0, focus: [0.5, 0.5] })],
+  ['Day, night and snow', bp('timelapse', { from: 1.5 }), bp('winter', { from: 0.6 })],
+  ['Relight the lighthouse', bp('night', { from: 0.4 }), bp('ferry', { from: 0.6 })],
+  ['Aquarium and Ferris wheel', bp('boardwalk', { from: 0.4 }), bp('hilltop', { from: 0.4 })],
+  ['Throw the Bay Festival!', bp('festival', { from: 0.5 }), bp('festival', { from: 3.2 })]
+];
+const bpDive = bp('dive', { from: 0 });
+const breezeportReel: Cut = {
+  id: 'breezeport-reel', beats: 124,
+  blocks: [
+    { kind: 'clip', start: 0, end: 6, shot: bpDive },
+    { kind: 'logo', start: 6, end: 8, slug: 'breezeport', over: { ...bpDive, from: at(6) } },
+    { kind: 'tagline', start: 8, end: 20, bg: [bp('town', { from: 0 }), bp('orbit', { from: 2.8 })], lines: [{ text: 'A sleepy seaside town…', at: 8, size: 'headline' }, { text: 'Be its junior mayor!', at: 12, size: 'headline' }] },
+    ...BP_FEATURES.map(([text, a, b], i): Block => ({ kind: 'montage', start: 20 + 8 * i, end: 28 + 8 * i, shots: [a, b], lines: [{ text, at: 20.5 + 8 * i, size: 'headline' }] })),
+    { kind: 'devices', start: 84, end: 92, phone: bp('phone', { from: 0.3 }), tablet: bp('tablet', { from: 0.3 }), lines: [{ text: 'Phones, tablets and computers', at: 85, size: 'headline' }] },
+    { kind: 'promise', start: 92, end: 100, lines: ['Free to play.', 'No ads.', 'Nothing to buy.', 'Nothing ever breaks.'].map((text, i) => ({ text, at: 92 + i, size: 'headline' })) },
+    { kind: 'game', start: 100, end: 112, slug: 'breezeport', textIn: 101, textOut: 111.75, shots: [bp('town', { from: 2.4 }), bp('festival', { from: 1.6 }), bp('orbit', { from: 3.4 })] },
+    { kind: 'end', start: 112, end: 124, lines: [
+      { text: 'Breezeport is ready to play!', at: 112.5, size: 'line' },
+      { text: 'Play free', at: 113, size: 'line' },
+      { text: 'No ads. No sign-ups. No tracking.', at: 113.5, size: 'small' }
+    ] }
+  ]
+};
+
+export const CUTS = [reel60, reel15, ...TRAILER_ORDER.map(gameCut), fieldlarkReel, breezeportReel];
 /** The cuts named on the command line (a cut id, or a prefix such as "game-"); all when none are. */
 export const selectCuts = (names: string[]) => names.length ? CUTS.filter(cut => names.some(name => cut.id === name || cut.id.startsWith(name) || name.startsWith(`${cut.id}-`))) : CUTS;
 
