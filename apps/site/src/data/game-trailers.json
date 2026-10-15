@@ -228,5 +228,28 @@
       "On screen: “Plant helpers. Save the picnic!”",
       "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
     ]
+  },
+  "breezeport": {
+    "seconds": 15,
+    "published": "2026-10-14",
+    "poster": "/trailer/breezeport/poster.jpg",
+    "posterWebp": "/trailer/breezeport/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/breezeport/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/breezeport/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/breezeport/trailer.en.vtt",
+    "description": [
+      "Breezeport gameplay: A busy seaside town by the bay, a new street drawn and homes zoned until the first family moves in, the tram and buses on Main Street, lit windows and street lamps at night, the Bay Festival with lanterns, kites and fireworks, and snowy roofs in winter.",
+      "The Breezeport logo and its pitch: “Grow a seaside town into a happy city.” Ages 8–14.",
+      "On screen: “Buses, trams and a festival!”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
   }
 }

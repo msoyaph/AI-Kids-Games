@@ -4,7 +4,7 @@ import { existsSync,readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { communityDir,communitySlugs,gameDir,gameSlugs,SLUG } from './repo';
 
-export const GENRES = ['Action','Adventure','Casual','Cozy','Farming','Learning','Puzzle','Racing','RPG','Strategy'] as const;
+export const GENRES = ['Action','Adventure','Casual','Cozy','Farming','Learning','Puzzle','Racing','RPG','Simulation','Strategy'] as const;
 export const CONTROLS = ['Keyboard','Mouse','Gamepad','Touch'] as const;
 export const DEVICES = ['Computer','Tablet','Phone'] as const;
 export const MOTIONS = ['float','bob','twinkle','drift'] as const;
@@ -50,7 +50,7 @@ export interface Manifest {
  * manifest (names, descriptions, tags or keywords). A game's own README may name inspirations
  * with "not affiliated with or endorsed by" wording; manifests may not.
  */
-export const TRADEMARKS = ['minecraft','roblox','fortnite','mario','luigi','nintendo','zelda','pokemon','pokémon','kirby','sonic','sega','playstation','xbox','steam deck','animal crossing','stardew','harvest moon','story of seasons','vampire survivors','survivors-like','brotato','bloons','kingdom rush','plants vs','plants versus','pvz','popcap','angry birds','among us','fall guys','rocket league','crash team','splatoon','terraria','lego','disney','pixar','marvel','star wars','hello kitty','peppa','paw patrol','bluey','tetris','pac-man','pacman','candy crush','subway surfers','temple run','fruit ninja','clash of clans','clash royale','brawl stars','genshin','overwatch','league of legends','dota','halo','call of duty','gta','sims','block blast','blockblast','woodoku','blockudoku','1010!','digimon','coromon','temtem','yo-kai','palworld','monster rancher','nexomon','cassette beasts','monster hunter','dragon quest','final fantasy','farmville','zynga'];
+export const TRADEMARKS = ['minecraft','roblox','fortnite','mario','luigi','nintendo','zelda','pokemon','pokémon','kirby','sonic','sega','playstation','xbox','steam deck','animal crossing','stardew','harvest moon','story of seasons','vampire survivors','survivors-like','brotato','bloons','kingdom rush','plants vs','plants versus','pvz','popcap','angry birds','among us','fall guys','rocket league','crash team','splatoon','terraria','lego','disney','pixar','marvel','star wars','hello kitty','peppa','paw patrol','bluey','tetris','pac-man','pacman','candy crush','subway surfers','temple run','fruit ninja','clash of clans','clash royale','brawl stars','genshin','overwatch','league of legends','dota','halo','call of duty','gta','sims','block blast','blockblast','woodoku','blockudoku','1010!','digimon','coromon','temtem','yo-kai','palworld','monster rancher','nexomon','cassette beasts','monster hunter','dragon quest','final fantasy','farmville','zynga','cityville','simcity','cities skylines','cities: skylines','megapolis','townscaper'];
 
 const ageText = (m: Manifest) => `Ages ${m.ageRange}`;
 export { ageText };

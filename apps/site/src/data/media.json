@@ -13,6 +13,20 @@
     ],
     "capturedAt": "2026-10-13"
   },
+  "breezeport": {
+    "loopSeconds": 8,
+    "mp4Bytes": 719979,
+    "webmBytes": 742992,
+    "shots": [
+      "A busy seaside town: homes, shops, offices and parks by the bay",
+      "Up close: flats with roof gardens, shops, parks and a tram stop",
+      "Lit windows and street lamps on a summer night by the bay",
+      "The Bay Festival: lanterns, kites and fireworks over the bay",
+      "Snowy roofs and bare trees in winter",
+      "The happiness map shows where people love living, and where they need a park or a clinic"
+    ],
+    "capturedAt": "2026-10-14"
+  },
   "calex-cart": {
     "loopSeconds": 7.2,
     "mp4Bytes": 713032,

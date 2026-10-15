@@ -1,4 +1,4 @@
-// Generates 1200×630 Open Graph images from the cover art and logos:
+// Generates 1200×630 Open Graph images from each game's cover (real gameplay) and logo:
 // public/og/<slug>.jpg for each game (with the brand mark) and public/og/site.jpg for the home page
 // (the owner's wordmark, docs/brand/wordmark.png, from scripts/art/icons.ts). Run icons.ts first.
 // Usage: npx tsx scripts/art/og.ts
@@ -10,6 +10,7 @@ import sharp from 'sharp';
 import { games,type Game } from '../../src/data/games';
 import { BRAND,TAGLINE } from '../../src/data/site';
 import { mediaFor } from '../../src/lib/media';
+import { newestFirst } from '../../src/lib/search';
 import { serve } from '../capture/lib';
 
 const out = resolve(import.meta.dirname,'../../public/og'); mkdirSync(out,{ recursive: true });
@@ -17,7 +18,7 @@ const { server,origin } = await serve();
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1200,height: 630 },deviceScaleFactor: 1 });
 const font = `@font-face{font-family:Nunito;src:url(${origin}/og-font.woff2)}`;
-// A game's cover: the drawn cover and its layers, or the game's own screenshot while it has temporary art.
+// A game's cover: real gameplay (its poster) once captured; before that, the drawn cover and its layers.
 const cover = (game: Game) => { const media = mediaFor(game); return [media.cover,...media.layers.map(layer => layer.src)].map(src => `<img src="${origin}${src}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`).join(''); };
 const brand = `<div style="position:absolute;left:28px;bottom:24px;display:flex;align-items:center;gap:12px;padding:8px 20px 8px 8px;border-radius:999px;background:#fff;color:#16191F;font:800 26px Nunito;box-shadow:0 4px 16px #16191f33"><img src="${origin}/brand/mark-96.png" width="44" height="44" style="border-radius:11px">${BRAND}</div>`;
 
@@ -51,5 +52,5 @@ await shoot(`<div style="position:relative;width:1200px;height:630px;background:
   <img src="${wordmark}" style="position:absolute;left:44px;top:150px;width:540px">
   <div style="position:absolute;left:56px;top:300px;width:520px;font:800 31px/1.3 Nunito">${TAGLINE}</div>
   <div style="position:absolute;left:56px;top:404px;width:520px;font:700 23px/1.45 Nunito;color:#5A6272">${games.length} free games for phones, tablets<br>and computers. No ads, purchases or tracking.</div>
-  ${games.slice(0,6).map((game,index) => tile(game,620+(index % 2)*286,71+Math.floor(index/2)*168)).join('')}</div>`,resolve(out,'site.jpg'));
+  ${newestFirst(games).slice(0,6).map((game,index) => tile(game,620+(index % 2)*286,71+Math.floor(index/2)*168)).join('')}</div>`,resolve(out,'site.jpg'));
 await browser.close(); server.close();

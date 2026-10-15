@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games-mcp",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/mcp)",
-  "release": "1.2.0",
+  "release": "1.3.0",
   "productionApproval": {
     "approved": true,
-    "release": "1.2.0",
+    "release": "1.3.0",
     "date": "2026-10-14",
     "approvedBy": "Owner",
-    "scope": "MCP app 1.2.0: the catalog adds Shooberry (embed fullscreen), with its pause and round-end signal (the game's read-only hook reports the paused and result screens). Ships with website release 2.11.0. No directory submission.",
-    "note": "Owner wrote: \"Ok good graphics quality, now finish the game end to end and deploy it to production\" and \"Once done and complete, and deploy all changes and games to production\" (2026-10-14) for Shooberry (PR #27). As with Fieldlark (1.1.0), adding a game to the catalog bumps the app's version. Guard: this record, AIKG_ALLOW_PRODUCTION=1.2.0 in this project's Production environment, and a build from main."
+    "scope": "MCP app 1.3.0, with website release 2.12.0: the catalog adds Breezeport (embed fullscreen), with its pause signal (paused on the title screen, read from the game's read-only hook, and while its Menu or Settings is open); and every game card's cover is real gameplay (the game's poster, /media/<slug>/poster.jpg) instead of drawn art. No directory submission.",
+    "note": "Breezeport: Owner wrote: \"Go, Breezeport\" and \"once done and complete, deploy the game to live production. Then create a 1 minute sizzle reel YT 1920×1080 and 1080x1920 video game\" (2026-10-14), which replaces the brief's stop before production. As with Fieldlark (1.1.0) and Shooberry (1.2.0), adding a game to the catalog bumps the app's version. Guard: this record, AIKG_ALLOW_PRODUCTION=1.3.0 in this project's Production environment, and a build from main. Covers: Owner wrote: \"change the preview image cover to really depects the game graphics not just SVG\" and \"also update OG images, Meta Images etc\" (2026-10-14), after \"keep going and deploy to production when green\". The catalog's covers come from the site's media (npm run manifests). Guard: this record, AIKG_ALLOW_PRODUCTION=1.3.0 in this project's Production environment, and a build from main."
   },
   "note": "Production needs the owner's approval for this exact version here, AIKG_ALLOW_PRODUCTION set to it in this project's Production environment, and a build from main (scripts/check-deployment.ts). The project builds from Git (Root Directory apps/mcp, production branch main); previews of a branch without apps/mcp fail, which is expected.",
   "preview": {

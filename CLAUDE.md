@@ -558,6 +558,12 @@ back.
 ## Tenth game: Shooberry (owner brief 2026-10-14; slug `shooberry`, branch `garden-wip`, worktree ~/Documents/AI-Kids-Games-garden)
 A 3D lane-defense garden game (Three.js 0.186.1, ages 7+): plant friendly helpers, shoo silly critters,
 save the picnic. Rules, decisions, the IP log and status are in games/shooberry/CLAUDE.md.
+**2.11.0 LIVE 2026-10-14** (PR #27, merge commit 0b87233; site dpl_EQBHpQ9DwpUge9saDsmn6o7Ca7gB, play
+dpl_Ep4Tjd9bsFQuuFPihzpBGBFqNr75, MCP app 1.2.0 dpl_52AV4RUz2FtLo7FuqE2QvWE61yLY). Every guard logged the
+owner's approval; the live Shooberry file is byte-identical to the verified build; the site's launch and
+preview tests passed against production (12); hovering plays the new loops for Cliff Valley, Vanex
+Defense, Space Sky and Calex Cart on the live home page; Lighthouse mobile: home 94/100/100/100,
+/game/shooberry 98/100/100/100, /play/shooberry 87 (exempt)/100/100/100; IndexNow 200.
 - **Owner:** approved the look ("Ok good graphics quality"), picked the name Shooberry, then "now finish
   the game end to end and deploy it to production" (replaces the brief's stop before production).
 - **Release 2.11.0, list position 10, with MCP app 1.2.0.** Built as 2.10.0; while it stalled on a stuck
@@ -669,6 +675,29 @@ origin dpl_4brTNKEVGV6cxWSzRTUNrSKDjnMg, MCP app 1.1.0 dpl_HmqBs1KTnMZC5hNnPn8ji
 - The record PR also carries the 2.8.0 record (#23, which includes 2.7.0's #22). 2.9.0 has no
   production record yet.
 - Shooberry follows as 2.11.0 at position 10 (#27), with MCP app 1.2.0.
+
+## Breezeport, the city builder (owner brief 2026-10-14; slug `breezeport`, branch `breezeport`)
+A 3D seaside city builder for ages 8–14, built in its own worktree (`~/Documents/AI City Builders/AI-Kids-Games-city`)
+from origin/main d693372. Brief: docs/prompts/breezeport.md. Plan, rules and status: games/breezeport/CLAUDE.md
+(approved plan: games/breezeport/docs/PLAN.md).
+- **Name:** **Breezeport**, the owner's pick of five web-checked names (2026-10-14). The working name was "City WIP";
+  "Agent City Builders" is the owner's project label and never ships.
+- **Engine:** copied and adapted from Fieldlark's (provenance header on each file; `scripts/engine-drift.mjs`), not a
+  shared package, so Fieldlark's verified build stays untouched. Fieldlark (#28, release 2.10.0) was merged into
+  `breezeport` on 2026-10-14 (a merge, never a rebase); `node games/breezeport/scripts/engine-drift.mjs` shows no drift
+  beyond provenance lines. Shooberry (#27, release 2.11.0) was merged in the same way after it landed.
+- **Repo side:** the Simulation genre (schema, manifest validator, the site's Category, the MCP catalog's list); the
+  inspiring city builders and their publisher on the trademark blocklist, with a site manifest test.
+- **Release (owner, 2026-10-14):** "Go, Breezeport. Once done and complete, deploy the game to live production. Then
+  create a 1 minute sizzle reel YT 1920×1080 and 1080x1920." That replaces the brief's stop before production.
+  - **Release 2.12.0, list position 11, with MCP app 1.3.0** (PR #32). Game 1.0.0; every other game stays at its
+    version.
+  - **Order:** merge main → 2.12.0 / MCP 1.3.0 approvals quoting the owner → `npm run release:local` on a quiet
+    machine (build games/space-sky first: its suite serves dist/) → CI green → `AIKG_ALLOW_PRODUCTION` 2.12.0 on
+    ai-kids-games and ai-kids-games-play and 1.3.0 on ai-kids-games-mcp → merge → production checks and a record PR.
+  - **Then the reels:** `breezeport-reel` in marketing/sizzle (60 s, 16:9 and 9:16), like Fieldlark's.
+- **Other sessions:** never run heavy work alongside another session's (games/breezeport/scripts/quiet-check.mjs, and
+  respect its exit code).
 
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),

@@ -37,7 +37,9 @@ Owner decisions:
    the page (long main-thread tasks are the game's, not the site's); its
    Accessibility, Best Practices and SEO must still be 90+.
 5. Balanced grid must work for any count; screenshot-test 1, 4, 6, 7 and 12 games
-   with temporary mock entries.
+   with temporary mock entries. Superseded on desktop (owner, 2026-10-14, release 2.12.0: "make the
+   gallery in 3 Columns on Desktop"): desktop grids are 3 equal columns and the last row may be
+   shorter (left-aligned); tablets keep balanced rows of 2; one game stays a centred card.
 
 Codex commits reviewed (10:24–10:32): 9197120 and 2c433df only recorded preview
 deployments and Sites publishes in docs. c301c6d removed all-caps eyebrows and
@@ -253,6 +255,46 @@ Release 2.11.0 also gives the four games on temporary art (Cliff Valley, Vanex D
 Calex Cart) a gameplay loop from the builds that ship: `scripts/capture/<slug>.ts` reuses the trailer's
 takes with `gallery: false` (loop and poster only; their screenshot covers and galleries stay), and
 `loop: true` in `src/data/temporary-art.ts` turns the loop on (mediaFor, the registry, media tests).
+
+## Breezeport, the city builder (owner's "Go, Breezeport", 2026-10-14; release 2.12.0 after Shooberry's 2.11.0)
+
+Listed from `games/breezeport/game.json` (1.0.0, "Ready to play", ages 8–14, Simulation / Strategy,
+`site.order` 11, after Shooberry's 10). Simulation is a new category (its filter chip and
+/category route come from the games). Art in `public/media/breezeport/`: a cover (City Hall with its
+clock, pastel clapboard houses and shops, the coral tram and the teal bus, the Ferris wheel, and the
+striped lighthouse on its islet in the bay), drift (clouds and a sailboat) and twinkle layers, a logo
+("Breeze" white, "port" coral, teal edge; `scripts/art/logos.ts`) and the OG image (only
+`og/breezeport.jpg` and the refreshed `og/site.jpg` are kept; `og/agentmon.jpg` came out
+byte-different again and was restored). Previews come from `scripts/capture/breezeport.ts`: the
+game's own `?scene=showcase` route (a grown town built in code that never saves) with `&t=` for the
+season and hour, `&festival=1` for the Bay Festival's night, `&map=` for a map and `&hud=0`; the
+canvas is recorded, so the HUD is left out. Its trailer and 60-second reel takes are in
+`marketing/sizzle/capture/games/breezeport.ts`. Tests count 11 games (age 8: 9 games; age 10: 11;
+Simulation: Breezeport; the grid at 11); the launch tests start a new story town (Play, New town, Story,
+"Become the mayor!", Marisol's lines) and continue it after a reload ("Continue <name>"). The storage
+audit adds `breezeport.slot1`–`slot3`, `.bak`, `.settings` and the rare `.broken` (worst case 141 KB).
+
+## New games first, 3 columns on desktop (owner, 2026-10-14; release 2.12.0)
+
+"Put our new games on first lines of the "All Games" list. And make the gallery in 3 Columns on
+Desktop." The home page's "All games" list is `newestFirst()` (src/lib/search.ts): games released after
+the first launch day come first, newest first (on the same day, the one added last), then the launch
+games in catalog order (`site.order`). Today that is Shooberry, Fieldlark, Agentmon, Tuck Pop, then Cliff
+Valley … Calex Cart; filters keep the same order. Browse (/games), categories, favorites and the other
+lists keep catalog order. `gridSpans()` (src/lib/grid.ts) gives every card 2 of the 6 desktop tracks, so
+desktop grids everywhere are 3 equal columns; tablets keep balanced rows of 2 (tests/grid.test.ts,
+tests/e2e/grid.spec.ts).
+
+## Real gameplay covers, OG and meta images (owner, 2026-10-14; release 2.12.0)
+
+"Change the preview image cover to really depicts the game graphics not just SVG", "also update OG
+images, Meta Images etc". `mediaFor()` (src/lib/media.ts): once a game has a captured loop, `cover`,
+`coverImage` and `thumb` are its poster (`poster.*`, the loop's first frame) and `poster-thumb.*`
+(480×270), with no idle layers. Cards use `Preview still="poster"` (so hover fades into the same frame);
+tiles (Play again, the hero's picks, the parents' table, GameStrip) use `thumb`; the play page's
+loading screen uses `Cover` (now a picture of the poster). `scripts/art/og.ts` builds every OG/Twitter
+image from the poster (all 11 regenerated; og/site.jpg leads with `newestFirst`). The MCP catalog's
+`cover` follows (MCP app 1.3.0). The drawn covers stay in each folder as the pre-capture fallback.
 
 ## Next: Light Crossing v2.0 (owner request, on hold)
 

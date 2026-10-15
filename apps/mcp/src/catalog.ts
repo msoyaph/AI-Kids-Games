@@ -6,7 +6,7 @@ import type { GameView } from './schemas';
 import { BUILD_URI } from './shared';
 
 /** The same lists as scripts/lib/manifest.ts (tests/text.test.ts keeps them in step). */
-export const GENRES = ['Action','Adventure','Casual','Cozy','Farming','Learning','Puzzle','Racing','RPG','Strategy'] as const;
+export const GENRES = ['Action','Adventure','Casual','Cozy','Farming','Learning','Puzzle','Racing','RPG','Simulation','Strategy'] as const;
 export const DEVICES = ['Computer','Tablet','Phone'] as const;
 export const MOODS = ['calm','cozy','cheerful','exciting','brainy','creative','curious'] as const;
 export type Genre = typeof GENRES[number];

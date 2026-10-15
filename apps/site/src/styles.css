@@ -111,7 +111,7 @@ main { min-height: 70vh; }
 
 /* Cover art: base illustration plus slow idle layers (only while visible, never with reduced motion). */
 .cover { position: relative; overflow: hidden; background: var(--mist); }
-.cover > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cover[data-animate="true"] .layer-float { animation: cover-float 7s ease-in-out infinite; }
 .cover[data-animate="true"] .layer-bob { animation: cover-bob 2.8s ease-in-out infinite; }
 .cover[data-animate="true"] .layer-twinkle { animation: cover-twinkle 3.2s ease-in-out infinite; }

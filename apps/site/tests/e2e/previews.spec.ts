@@ -15,9 +15,9 @@ test('previews never play or download under reduced motion',async ({ page },info
     expect(await page.locator('video source').count(),path).toBe(0);
   }
   expect(requests).toEqual([]);
-  // The still is shown instead: the hero's poster, cover art for cards.
+  // The still is shown instead: each game's gameplay poster, in the hero and on the cards.
   await page.goto('/'); await expect(page.locator('.hero-media img').first()).toBeVisible();
-  await expect(page.locator('.card .cover img').first()).toBeVisible();
+  await expect(page.locator('.card .preview picture img').first()).toBeVisible();
 });
 
 test('Save-Data keeps previews as stills',async ({ page }) => {
