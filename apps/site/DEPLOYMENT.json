@@ -13,59 +13,59 @@
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
-    "deploymentId": "dpl_EQBHpQ9DwpUge9saDsmn6o7Ca7gB",
-    "deploymentUrl": "https://ai-kids-games-af0oir5wy-real-tours.vercel.app",
+    "deploymentId": "dpl_7xfu7AvSnJNhMQWz7Cg25LqY4PHw",
+    "deploymentUrl": "https://ai-kids-games-pmzpk8rf4-real-tours.vercel.app",
     "readyState": "READY",
     "publishedAt": "2026-10-14",
     "public": true,
-    "release": "2.11.0",
-    "commit": "0b87233",
-    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/27",
+    "release": "2.12.0",
+    "commit": "16efb69",
+    "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/33",
     "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
-    "guardLog": "Production deployment of release 2.11.0 approved by the owner on 2026-10-14; GPU browser suites passed on d58135f.",
+    "guardLog": "Production deployment of release 2.12.0 approved by the owner on 2026-10-14; GPU browser suites passed on 20acf59.",
     "playOrigin": {
       "project": "real-tours/ai-kids-games-play",
-      "deploymentId": "dpl_Ep4Tjd9bsFQuuFPihzpBGBFqNr75",
+      "deploymentId": "dpl_3CLTu4rsU13QkwNHdAWjPr9QRpW6",
       "url": "https://ai-kids-games-play.vercel.app",
-      "deploymentUrl": "https://ai-kids-games-play-dg4thp3pr-real-tours.vercel.app",
-      "guardLog": "Production deployment of release 2.11.0 approved by the owner on 2026-10-14; GPU browser suites passed on d58135f.",
+      "deploymentUrl": "https://ai-kids-games-play-8sjrwjion-real-tours.vercel.app",
+      "guardLog": "Production deployment of release 2.12.0 approved by the owner on 2026-10-14; GPU browser suites passed on 20acf59.",
       "games": 0,
       "note": "Serves no game until the owner approves one; / is a notice page and every other path 404s, with the strict headers (connect-src none, frame-ancestors the site)."
     },
     "mcpApp": {
       "project": "real-tours/ai-kids-games-mcp",
-      "deploymentId": "dpl_52AV4RUz2FtLo7FuqE2QvWE61yLY",
-      "deploymentUrl": "https://ai-kids-games-diftz6pnk-real-tours.vercel.app",
-      "release": "1.2.0",
-      "guardLog": "Production deployment of MCP app 1.2.0 approved by the owner on 2026-10-14.",
-      "check": "https://ai-kids-games-mcp.vercel.app/mcp: initialize reports version 1.2.0; show_game for shooberry returns its card with embed fullscreen."
+      "deploymentId": "dpl_Hd4Y3Zks9r6Ps3ncSKTydfeV5AKp",
+      "deploymentUrl": "https://ai-kids-games-oo8kwec2e-real-tours.vercel.app",
+      "release": "1.3.0",
+      "guardLog": "Production deployment of MCP app 1.3.0 approved by the owner on 2026-10-14.",
+      "check": "https://ai-kids-games-mcp.vercel.app/mcp: initialize reports version 1.3.0; show_game for breezeport returns its card, full-screen, with its gameplay poster as the cover."
     },
-    "smokeTest": "Live checks after the merge: /game/shooberry, /play/shooberry, the Shooberry build, its loop, trailer and OG image, and the new loops for Cliff Valley, Vanex Defense, Space Sky and Calex Cart all 200; the live games/shooberry/index.html is byte-identical to the verified build (SHA-256 d28ef307…, BUILD_IMPORTS.json). The site's own browser tests against production: the Shooberry launch test (home → details → play, 20 seconds clean, its save survives a reload) and the preview tests on desktop, tablet and phone, 12 passed (3 device skips). On the live home page, hovering each card plays its loop for Cliff Valley, Vanex Defense, Space Sky, Calex Cart and Shooberry.",
+    "smokeTest": "Live checks after the merge (#33, which carried Breezeport's #32): og/site.jpg, og/breezeport.jpg, og/shooberry.jpg, og/light-crossing.jpg, games/breezeport/index.html and Breezeport's poster-thumb are byte-identical to the repo; /game/breezeport, /play/breezeport and /category/simulation 200; /game/breezeport's og:image and twitter:image are its new gameplay OG image. On the live home page (desktop): All games runs Breezeport, Shooberry, Fieldlark, Agentmon, Tuck Pop, then Cliff Valley to Calex Cart; rows of 3, 3, 3, 2; every card shows its gameplay poster. Breezeport boots on the play page with no errors. The site's launch and preview tests against production: 15 passed (3 device skips), including Breezeport's and Shooberry's start and reload.",
     "lighthouseMobile": {
       "home": {
-        "performance": 94,
+        "performance": 99,
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       },
-      "shooberryDetails": {
+      "breezeportDetails": {
         "performance": 98,
-        "page": "/game/shooberry",
+        "page": "/game/breezeport",
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       },
-      "shooberryPlay": {
-        "performance": 87,
+      "breezeportPlay": {
+        "performance": 70,
         "performanceExempt": true,
-        "page": "/play/shooberry",
+        "page": "/play/breezeport",
         "accessibility": 100,
         "bestPractices": 100,
         "seo": 100
       }
     },
-    "indexNow": "Submitted every page that changed since the last submission (the new /game/shooberry, every game page, the categories and the lists): 200 received (indexnow-state.json).",
-    "ci": "PR #27 at 6fe5b5a: every job green (the commit before, d58135f, ran every suite: Shooberry's Chromium and WebKit browser tests on software WebGL, the website's and the MCP app's); merged as 0b87233. Space Sky's and Light Crossing's browser suites ran locally for 2.11.0 (localSuites: 42 and 191 passed)."
+    "indexNow": "Submitted the 27 pages that changed since the last submission (the new /game/breezeport, /category/simulation, every game page and the lists): 200 received (indexnow-state.json).",
+    "ci": "PR #33 at 7007ab6: every job green (Breezeport's own suites, every game's, the website's and the MCP app's); merged as 16efb69. #32 (Breezeport) shipped inside #33 and was closed; its one unmerged commit, 1e4b4cc, was an equivalent 2.12.0 release:local record. Space Sky's and Light Crossing's browser suites ran locally for 2.12.0 (localSuites: 42 and 191 passed)."
   },
   "deploymentProtection": {
     "vercelAuthentication": "Standard Protection (prod_deployment_urls_and_all_previews): previews and per-deployment URLs require Vercel sign-in; the production domain is public",
@@ -76,6 +76,62 @@
   "gameCacheControl": "public, max-age=0, must-revalidate",
   "hashedAssetCacheControl": "public, max-age=31536000, immutable",
   "history": [
+    {
+      "url": "https://ai-kids-games-fawn.vercel.app",
+      "deploymentId": "dpl_EQBHpQ9DwpUge9saDsmn6o7Ca7gB",
+      "deploymentUrl": "https://ai-kids-games-af0oir5wy-real-tours.vercel.app",
+      "readyState": "READY",
+      "publishedAt": "2026-10-14",
+      "public": true,
+      "release": "2.11.0",
+      "commit": "0b87233",
+      "pullRequest": "https://github.com/msoyaph/AI-Kids-Games/pull/27",
+      "productionBranch": "main (Vercel Git integration, Root Directory apps/site)",
+      "guardLog": "Production deployment of release 2.11.0 approved by the owner on 2026-10-14; GPU browser suites passed on d58135f.",
+      "playOrigin": {
+        "project": "real-tours/ai-kids-games-play",
+        "deploymentId": "dpl_Ep4Tjd9bsFQuuFPihzpBGBFqNr75",
+        "url": "https://ai-kids-games-play.vercel.app",
+        "deploymentUrl": "https://ai-kids-games-play-dg4thp3pr-real-tours.vercel.app",
+        "guardLog": "Production deployment of release 2.11.0 approved by the owner on 2026-10-14; GPU browser suites passed on d58135f.",
+        "games": 0,
+        "note": "Serves no game until the owner approves one; / is a notice page and every other path 404s, with the strict headers (connect-src none, frame-ancestors the site)."
+      },
+      "mcpApp": {
+        "project": "real-tours/ai-kids-games-mcp",
+        "deploymentId": "dpl_52AV4RUz2FtLo7FuqE2QvWE61yLY",
+        "deploymentUrl": "https://ai-kids-games-diftz6pnk-real-tours.vercel.app",
+        "release": "1.2.0",
+        "guardLog": "Production deployment of MCP app 1.2.0 approved by the owner on 2026-10-14.",
+        "check": "https://ai-kids-games-mcp.vercel.app/mcp: initialize reports version 1.2.0; show_game for shooberry returns its card with embed fullscreen."
+      },
+      "smokeTest": "Live checks after the merge: /game/shooberry, /play/shooberry, the Shooberry build, its loop, trailer and OG image, and the new loops for Cliff Valley, Vanex Defense, Space Sky and Calex Cart all 200; the live games/shooberry/index.html is byte-identical to the verified build (SHA-256 d28ef307…, BUILD_IMPORTS.json). The site's own browser tests against production: the Shooberry launch test (home → details → play, 20 seconds clean, its save survives a reload) and the preview tests on desktop, tablet and phone, 12 passed (3 device skips). On the live home page, hovering each card plays its loop for Cliff Valley, Vanex Defense, Space Sky, Calex Cart and Shooberry.",
+      "lighthouseMobile": {
+        "home": {
+          "performance": 94,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "shooberryDetails": {
+          "performance": 98,
+          "page": "/game/shooberry",
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        },
+        "shooberryPlay": {
+          "performance": 87,
+          "performanceExempt": true,
+          "page": "/play/shooberry",
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100
+        }
+      },
+      "indexNow": "Submitted every page that changed since the last submission (the new /game/shooberry, every game page, the categories and the lists): 200 received (indexnow-state.json).",
+      "ci": "PR #27 at 6fe5b5a: every job green (the commit before, d58135f, ran every suite: Shooberry's Chromium and WebKit browser tests on software WebGL, the website's and the MCP app's); merged as 0b87233. Space Sky's and Light Crossing's browser suites ran locally for 2.11.0 (localSuites: 42 and 191 passed)."
+    },
     {
       "url": "https://ai-kids-games-fawn.vercel.app",
       "deploymentId": "dpl_J97VpxK1CfqBu1L9ZrVcFWQPvZi1",
