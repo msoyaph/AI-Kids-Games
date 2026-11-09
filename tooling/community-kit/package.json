@@ -6,13 +6,13 @@
   "type": "module",
   "license": "MIT",
   "devDependencies": {
-    "@types/three": "0.186.0",
+    "@types/three": "0.187.0",
     "obscenity": "0.4.6",
     "pixi.js": "8.22.0",
-    "three": "0.186.1",
-    "typescript": "5.9.3",
-    "vite": "8.3.4",
-    "vite-plugin-singlefile": "2.3.3",
-    "vitest": "5.0.3"
+    "three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.6",
+    "vite-plugin-singlefile": "2.3.4",
+    "vitest": "5.1.0"
   }
 }
