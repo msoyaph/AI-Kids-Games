@@ -31,13 +31,20 @@ function render(project: string, file: string) {
   console.log(`  rendered ${file} in ${((Date.now() - started) / 1000).toFixed(0)} s`);
 }
 
-/** Two-pass x264 at the bitrate that fits `limit` (sound included). */
+/**
+ * Two-pass x264 at the bitrate that fits `limit` (sound included). A busy picture can land a hair
+ * over the target (Counter Call's first encode was 0.08% over), so one more try aims lower by as much.
+ */
 function h264Web(src: string, dst: string, height: number, fps: number, limit: number, mix: string, seconds: number) {
-  const audio = 96_000, video = Math.floor((limit * 8) / seconds - audio - 20_000);
-  const log = join(renders, 'x264-pass');
+  const audio = 96_000, log = join(renders, 'x264-pass');
   const vf = `scale=-2:${height}:flags=lanczos,fps=${fps},format=yuv420p`;
-  ffmpeg(['-i', src, '-an', '-vf', vf, '-c:v', 'libx264', '-preset', 'slow', '-b:v', String(video), '-pass', '1', '-passlogfile', log, '-f', 'null', '/dev/null']);
-  ffmpeg(['-i', src, '-i', mix, '-map', '0:v', '-map', '1:a', '-vf', vf, '-c:v', 'libx264', '-preset', 'slow', '-b:v', String(video), '-maxrate', String(video * 2), '-bufsize', String(video * 4), '-pass', '2', '-passlogfile', log, '-profile:v', 'high', '-c:a', 'aac_at', '-b:a', String(audio), '-movflags', '+faststart', '-t', seconds.toFixed(3), dst]);
+  let video = Math.floor((limit * 8) / seconds - audio - 20_000);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    ffmpeg(['-i', src, '-an', '-vf', vf, '-c:v', 'libx264', '-preset', 'slow', '-b:v', String(video), '-pass', '1', '-passlogfile', log, '-f', 'null', '/dev/null']);
+    ffmpeg(['-i', src, '-i', mix, '-map', '0:v', '-map', '1:a', '-vf', vf, '-c:v', 'libx264', '-preset', 'slow', '-b:v', String(video), '-maxrate', String(video * 2), '-bufsize', String(video * 4), '-pass', '2', '-passlogfile', log, '-profile:v', 'high', '-c:a', 'aac_at', '-b:a', String(audio), '-movflags', '+faststart', '-t', seconds.toFixed(3), dst]);
+    if (size(dst) <= limit) break;
+    video = Math.floor(video * (limit / size(dst)) * 0.985);
+  }
 }
 
 /** AV1 in WebM (SVT-AV1, one pass at the bitrate that fits `limit`). */

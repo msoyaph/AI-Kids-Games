@@ -32,6 +32,8 @@ const styles: Record<string,LogoStyle> = {
   shooberry: { lines: [[{ text: 'Shooberry',fill: ['#ff8a7a','#ff5a4c'] }]],outline: '#2b1910',outlineWidth: 16,shadow: '#2b1910',depth: 11,tilt: -3 },
   // white letters with the sea's teal edge like the game's title screen, "port" in its coral buttons
   breezeport: { lines: [[{ text: 'Breeze',fill: ['#ffffff','#dff6f4'] },{ text: 'port',fill: ['#ffc2b4','#ff8a72'] }]],outline: '#1f7d88',outlineWidth: 15,shadow: '#145a63',depth: 11,tilt: -2 },
+  // coral like the title screen and the diner's sign, with the hosts' mint for the second word
+  'counter-call': { lines: [[{ text: 'Counter',fill: ['#ff9a8a','#ff6f5e'] },{ text: ' Call',fill: ['#ffffff','#d5f4ee'] }]],outline: '#2c3e57',outlineWidth: 15,shadow: '#1f2c40',depth: 11,tilt: -2 },
 };
 
 const woff = readFileSync(createRequire(import.meta.url).resolve('@fontsource/nunito/files/nunito-latin-900-normal.woff'));
@@ -50,7 +52,7 @@ function layout(text: string,x: number,y: number) {
   });
   return { path,advance: cursor-x };
 }
-const titles: Record<string,string> = { breezeport: 'Breezeport',fieldlark: 'Fieldlark',agentmon: 'Agentmon',shooberry: 'Shooberry',theabonk: 'TheaBonk','light-crossing': 'Light Crossing','vanex-defense': 'Vanex Defense','space-sky': 'Space Sky','calex-cart': 'Calex Cart','cliff-valley': 'Cliff Valley','tuck-pop': 'Tuck Pop' };
+const titles: Record<string,string> = { breezeport: 'Breezeport','counter-call': 'Counter Call',fieldlark: 'Fieldlark',agentmon: 'Agentmon',shooberry: 'Shooberry',theabonk: 'TheaBonk','light-crossing': 'Light Crossing','vanex-defense': 'Vanex Defense','space-sky': 'Space Sky','calex-cart': 'Calex Cart','cliff-valley': 'Cliff Valley','tuck-pop': 'Tuck Pop' };
 
 function build(slug: string,style: LogoStyle) {
   const shapes: { d: string; fill: Segment['fill'] }[] = [];

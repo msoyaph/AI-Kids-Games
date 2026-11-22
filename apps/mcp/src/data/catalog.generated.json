@@ -646,6 +646,65 @@
         "bytes": 991282,
         "sha256": "f5c9bd0b5228bf3a2aa34502fdd7800d99977fe38ef9b89359136d2e9713a7a2"
       }
+    },
+    {
+      "slug": "counter-call",
+      "title": "Counter Call",
+      "tagline": "Cook, carry and serve hungry friends.",
+      "pitch": "Run a cozy 3D diner as one of six hosts. Friends call out their orders at the counter; cook at the stations, load your tray and serve them before their patience runs out.",
+      "minAge": 6,
+      "ageRange": "6+",
+      "genres": [
+        "Cozy",
+        "Casual",
+        "Simulation"
+      ],
+      "tags": [
+        "Restaurant",
+        "Cooking",
+        "Chibi",
+        "3D"
+      ],
+      "devices": [
+        "Computer",
+        "Tablet",
+        "Phone"
+      ],
+      "controls": [
+        "Mouse",
+        "Touch",
+        "Keyboard"
+      ],
+      "orientation": "any",
+      "requirements": [
+        "WebGL"
+      ],
+      "playTime": "1 to 2 minutes per day, 3 to 5 for Endless Rush",
+      "sessionMinutes": [
+        2,
+        20
+      ],
+      "moods": [
+        "cheerful",
+        "cozy"
+      ],
+      "embed": "fullscreen",
+      "contentNotes": "Gentle time-management play with no fighting or scary content. Friends who wait too long leave politely. Coins are earned only by playing and spent only in the in-game shop; nothing costs real money. Short hint sentences on the first days need a little reading. Progress saves in this browser.",
+      "quickStart": [
+        "Press Play.",
+        "Tap a station to cook, and tap it again when it dings to pick up the food.",
+        "Tap a friend to serve them before their bar runs out."
+      ],
+      "version": "1.0.0",
+      "accentColor": "#bdeee6",
+      "page": "/game/counter-call",
+      "cover": "/media/counter-call/poster.jpg",
+      "logo": "/media/counter-call/logo.svg",
+      "build": {
+        "path": "/games/counter-call/index.html",
+        "bytes": 662811,
+        "sha256": "5f0a7a9c23a26c78c311e5299fdecb5980c1a09d8038dbf40096778b394a9ac8"
+      }
     }
   ]
 }

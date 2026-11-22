@@ -18,7 +18,7 @@ export const at = (beats: number) => +(beats * BEAT).toFixed(6);
 /** A line stays on screen at least words ÷ 1.8 + 0.5 seconds (a 7-year-old's reading pace). */
 export const minSeconds = (text: string) => text.split(/\s+/).filter(Boolean).length / 1.8 + 0.5;
 
-export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport';
+export type Slug = 'calex-cart' | 'theabonk' | 'vanex-defense' | 'space-sky' | 'light-crossing' | 'cliff-valley' | 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport' | 'counter-call';
 
 /** A piece of a recorded take (marketing/sizzle/captures/<slug>/<take>.mp4). */
 export interface Shot {
@@ -39,7 +39,7 @@ export interface Shot {
 const shot = (slug: Slug, take: string, extra: Omit<Shot, 'slug' | 'take'> = {}): Shot => ({ slug, take, ...extra });
 
 /** Each game's three showcase shots in the 60-second reel, in the order they play (one bar each). */
-export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
+export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport' | 'counter-call'>, { shots: [Shot, Shot, Shot]; describe: string }> = {
   'calex-cart': {
     describe: 'Karts drift, boost and glide through snowy, neon and canyon tracks.',
     shots: [
@@ -91,7 +91,7 @@ export const REEL: Record<Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 
 };
 
 /** Showcase order: racing, action, strategy, space wonder, cozy island, farming. */
-export const ORDER: Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
+export const ORDER: Exclude<Slug, 'tuck-pop' | 'agentmon' | 'fieldlark' | 'shooberry' | 'breezeport' | 'counter-call'>[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley'];
 
 export interface Game { slug: Slug; title: string; tagline: string; ages: string; logo: string }
 export function game(slug: Slug): Game {
@@ -294,10 +294,22 @@ export const TRAILERS: Record<Slug, { shots: [Shot, Shot, Shot, Shot, Shot, Shot
       shot('breezeport', 'festival', { from: 0.6 }),
       shot('breezeport', 'winter', { from: 0.5 })
     ]
+  },
+  'counter-call': {
+    line: 'Cook, carry and serve!',
+    describe: 'Minty hurries between the cooking stations while friends wait at the counter of her diner, the six hosts wave hello in a row (Single Scoop, Vanilla, Minty, Cookie Cream, Raspberry and Double Scoop), Cookie Cream serves a full house with all five stations open, Single Scoop keeps up with Endless Rush as friends walk in, then Vanilla and Raspberry each run the counter on a busy day.',
+    shots: [
+      shot('counter-call', 'counter', { from: 0.2 }),
+      shot('counter-call', 'cast', { from: 0.3 }),
+      shot('counter-call', 'feast', { from: 0.3 }),
+      shot('counter-call', 'rush', { from: 0.2 }),
+      shot('counter-call', 'bake', { from: 0.2 }),
+      shot('counter-call', 'berry', { from: 0.3 })
+    ]
   }
 };
-/** The order of the games' trailers (all eleven). */
-export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop', 'agentmon', 'fieldlark', 'shooberry', 'breezeport'];
+/** The order of the games' trailers (all twelve). */
+export const TRAILER_ORDER: Slug[] = ['calex-cart', 'theabonk', 'vanex-defense', 'space-sky', 'light-crossing', 'cliff-valley', 'tuck-pop', 'agentmon', 'fieldlark', 'shooberry', 'breezeport', 'counter-call'];
 export const trailerId = (slug: Slug) => `game-${slug}`;
 
 function gameCut(slug: Slug): Cut {
