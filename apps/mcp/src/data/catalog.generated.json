@@ -702,8 +702,8 @@
       "logo": "/media/counter-call/logo.svg",
       "build": {
         "path": "/games/counter-call/index.html",
-        "bytes": 662811,
-        "sha256": "5f0a7a9c23a26c78c311e5299fdecb5980c1a09d8038dbf40096778b394a9ac8"
+        "bytes": 662793,
+        "sha256": "318e3e7e47c97e80b4494d02fbc0289530ffc318fdb9b2faa0fa6b2442736654"
       }
     }
   ]

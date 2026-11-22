@@ -40,9 +40,9 @@
       "slug": "counter-call",
       "version": "1.0.0",
       "source": "games/counter-call/dist/index.html",
-      "bytes": 662811,
-      "sha256": "5f0a7a9c23a26c78c311e5299fdecb5980c1a09d8038dbf40096778b394a9ac8",
-      "inputsSha256": "b3e9ab904fdecff10ac1978928adb09e63ae9a596e650d37047364d256e46cc7",
+      "bytes": 662793,
+      "sha256": "318e3e7e47c97e80b4494d02fbc0289530ffc318fdb9b2faa0fa6b2442736654",
+      "inputsSha256": "68d38dcb76b1987352360333dcc7d788e033c1fa1781bec906ab9f1fd2c69157",
       "importedAt": "2026-11-22"
     },
     {
