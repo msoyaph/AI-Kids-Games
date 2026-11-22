@@ -317,6 +317,9 @@ day 1 and the juice bar by tap or key and, after a reload, check the host is sti
   on 2026-11-22. Its primary domain is https://aikidsgames.xyz (ai-kids-games-ecru.vercel.app redirects
   to it) and `SITE_ORIGIN` is set to that there, so this build's canonical links name aikidsgames.xyz.
   fawn stays on 2.12.0 until the owner sets `AIKG_ALLOW_PRODUCTION` 2.13.0 on real-tours/ai-kids-games.
+- **2.13.0 LIVE 2026-11-22** on open-stories/ai-kids-games (https://aikidsgames.xyz), deployment
+  dpl_6AeAQTN7De1Nct9ZWvED7c82HDib from cc1f9b1 (#40). The details and what was not checked are in the
+  root CLAUDE.md.
 - **Order (owner, 2026-11-22: "Counter Call first"):** 2.13.0 lands before the release that makes
   aikidsgames.xyz the repo's main address (branch `xyz-main-address`, prepared as 2.12.1 in another
   session), which merges main afterwards.
