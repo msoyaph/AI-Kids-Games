@@ -33,14 +33,15 @@ test('every game preserves favorites, recent history and one another’s saves',
   }
   await page.reload();
   const lists = await page.evaluate(() => ({ favorites:JSON.parse(localStorage.getItem('aikg:favorites')!),recent:JSON.parse(localStorage.getItem('aikg:recent')!) }));
-  expect(lists.favorites).toEqual(launchGames.map(g => g.slug)); expect(lists.recent).toEqual(launchGames.map(g => g.slug).reverse());
+  // "Play again" remembers the ten games played last (addRecent in src/lib/storage.ts), newest first
+  expect(lists.favorites).toEqual(launchGames.map(g => g.slug)); expect(lists.recent).toEqual(launchGames.map(g => g.slug).reverse().slice(0,10));
   await page.goto('/parents'); await page.getByRole('button',{ name:'Clear saved lists' }).click();
   for (const [key,value] of saved) expect(await page.evaluate(key => localStorage.getItem(key),key)).toBe(value);
   expect(checks.errors).toEqual([]); expect(checks.external).toEqual([]);
 });
 test('age filtering and new categories',async ({ page }) => {
   await page.goto('/games'); await page.getByLabel('Player age').selectOption('6');
-  await expect(page.locator('.game-grid h3')).toHaveText(['Light Crossing','Space Sky','Tuck Pop']);
+  await expect(page.locator('.game-grid h3')).toHaveText(['Light Crossing','Space Sky','Tuck Pop','Counter Call']);
   await page.reload(); await expect(page.getByLabel('Player age')).toHaveValue('6');
   await page.getByLabel('Player age').selectOption('10'); await expect(page.locator('.game-grid h3')).toHaveCount(launchGames.length);
   for (const name of ['Strategy','Racing','Learning','Cozy','Farming','Puzzle','Casual','RPG']) await expect(page.getByRole('button',{ name,exact:true })).toBeVisible();

@@ -37,6 +37,15 @@
       "importedAt": "2026-10-12"
     },
     {
+      "slug": "counter-call",
+      "version": "1.0.0",
+      "source": "games/counter-call/dist/index.html",
+      "bytes": 662793,
+      "sha256": "318e3e7e47c97e80b4494d02fbc0289530ffc318fdb9b2faa0fa6b2442736654",
+      "inputsSha256": "68d38dcb76b1987352360333dcc7d788e033c1fa1781bec906ab9f1fd2c69157",
+      "importedAt": "2026-11-22"
+    },
+    {
       "slug": "fieldlark",
       "version": "1.0.0",
       "source": "games/fieldlark/dist/index.html",

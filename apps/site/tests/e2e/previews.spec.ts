@@ -56,14 +56,16 @@ test('only one preview plays at a time on touch devices',async ({ page },info) =
     expect((await playing(page)).length,`at scroll ${y}`).toBeLessThanOrEqual(1);
   }
   // Scroll each card with a captured loop to the middle: exactly one preview plays, from that card's
-  // row (cards side by side on a tablet tie on height; the one nearest the centre plays).
-  const videos = page.locator('.card video[data-game]');
+  // row (cards side by side on a tablet tie on height; the one nearest the centre plays). From twelve
+  // games on, the home page repeats the games in category rows, so this walks the "All games" grid only.
+  const grid = page.getByRole('region',{ name: 'All games',exact: true });
+  const videos = grid.locator('.card video[data-game]');
   const slugs = await videos.evaluateAll(list => list.map(video => (video as HTMLVideoElement).dataset.game!));
   expect(slugs.length).toBeGreaterThan(1);
-  const rowOf = (slug: string) => page.locator(`.card video[data-game="${slug}"]`).evaluate(video => Math.round(video.closest('.preview')!.getBoundingClientRect().top));
+  const rowOf = (slug: string) => grid.locator(`.card video[data-game="${slug}"]`).evaluate(video => Math.round(video.closest('.preview')!.getBoundingClientRect().top));
   const played = new Set<string>();
   for (const slug of slugs) {
-    await page.locator(`.card video[data-game="${slug}"]`).evaluate(video => video.closest('.preview')!.scrollIntoView({ block: 'center' }));
+    await grid.locator(`.card video[data-game="${slug}"]`).evaluate(video => video.closest('.preview')!.scrollIntoView({ block: 'center' }));
     await expect.poll(async () => {
       const now = await playing(page);
       if (now.length !== 1) return `${now.length} playing`;

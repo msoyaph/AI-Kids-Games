@@ -16,7 +16,9 @@ export const SIGNALS: Record<string,(w: Win,d: Document) => GameState> = {
   // Breezeport: the town's clock stops on the title screen and while its Menu or Settings is open
   breezeport: (w,d) => w.__breezeport?.snapshot?.()?.screen === 'title' || has(d,'section.panel[aria-label="Menu"],section.panel[aria-label="Settings"]') ? 'paused' : 'playing',
   'vanex-defense': w => { const s = w.__vanexTest?.state?.(); return !s ? 'playing' : s.state && s.state !== 'playing' ? 'ended' : s.paused || s.modal ? 'paused' : 'playing'; },
-  shooberry: w => { const screen = w.__shooberry?.snapshot?.()?.screen; return screen === 'result' ? 'ended' : screen === 'paused' ? 'paused' : 'playing'; }
+  shooberry: w => { const screen = w.__shooberry?.snapshot?.()?.screen; return screen === 'result' ? 'ended' : screen === 'paused' ? 'paused' : 'playing'; },
+  // Counter Call: the day only runs on its play screen; its menus, the shop and Paused stop it, and a finished day shows its results
+  'counter-call': w => { const screen = w.__countercall?.snapshot?.()?.screen; return screen === 'results' ? 'ended' : !screen || screen === 'play' ? 'playing' : 'paused'; }
 };
 
 /** The game's state, or 'playing' when it can't be read (a game without a signal, or a frame mid-load). */

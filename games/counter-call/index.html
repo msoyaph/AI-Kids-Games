@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Counter Call</title>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Counter Call: the diner, seen from behind the counter"></canvas>
+    <div id="overlay" hidden></div>
+
+    <div id="hud" hidden>
+      <span class="pill" id="day-pill">Day 1</span>
+      <span class="pill" aria-label="Coins"><i class="coin" aria-hidden="true"></i><b id="coins">0</b></span>
+      <span class="pill" aria-label="Happy friends"><i class="heart" aria-hidden="true"></i><b id="happy">0</b><span id="of">/<span id="total">6</span></span></span>
+      <span class="pill" id="lives" role="img" aria-label="3 of 3 chances left" hidden></span>
+      <span class="pill" id="streak" hidden>Streak ×<b>2</b></span>
+      <div id="tray" role="group" aria-label="Your tray. Tap food to put it back.">
+        <span class="tray-label">Tray</span>
+      </div>
+      <button id="pause-button" class="round" type="button" aria-label="Pause">❚❚</button>
+    </div>
+    <p id="coach" hidden></p>
+
+    <section id="title" class="screen hero">
+      <div class="card">
+        <h1>Counter Call</h1>
+        <p class="tag">Friends are hungry! Cook, carry and serve.</p>
+        <div id="hosts" role="group" aria-label="Pick who you play as"></div>
+        <p id="perk" class="note"></p>
+        <div id="days" role="group" aria-label="Pick a day"></div>
+        <button id="play" class="big" type="button">Play</button>
+        <div class="row">
+          <button id="endless" type="button">Endless Rush</button>
+          <button id="shop-button" type="button">Shop</button>
+        </div>
+        <div class="row">
+          <button id="how-button" type="button">How to play</button>
+          <button id="sound" type="button" aria-pressed="true">Sound: on</button>
+          <button id="music" type="button" aria-pressed="true">Music: on</button>
+        </div>
+        <p id="storage-note" class="note" hidden>This browser can't save progress, so your stars last until you close the game.</p>
+      </div>
+    </section>
+
+    <section id="how" class="screen" hidden>
+      <div class="card">
+        <h2>How to play</h2>
+        <ol class="steps">
+          <li><b>Look</b> at the bubble over a friend to see what they want.</li>
+          <li><b>Tap a station</b> to start cooking. It dings when the food is ready.</li>
+          <li><b>Tap the station again</b> to put the food on your tray.</li>
+          <li><b>Tap the friend</b> to serve them before their bar runs out.</li>
+        </ol>
+        <p class="note">You can line up four taps in a row. Bring a whole order at once, and keep friends happy in a row, for bonus coins.</p>
+        <p class="note">Ring the bell to call the next friend in sooner. Tap the cake stand to share free cake when friends get restless. Tap food on the tray to put it back.</p>
+        <p class="note keys-note">Keyboard: 1 to 5 for stations, Q W E for friends, B for the bell, C for cake, Backspace to put food back, P to pause.</p>
+        <button id="how-back" class="big" type="button">Got it</button>
+      </div>
+    </section>
+
+    <section id="shop" class="screen" hidden>
+      <div class="card">
+        <h2>Shop</h2>
+        <p>You have <i class="coin" aria-hidden="true"></i><b id="shop-coins">0</b> coins.</p>
+        <div id="upgrades"></div>
+        <button id="shop-back" class="big" type="button">Done</button>
+      </div>
+    </section>
+
+    <section id="paused" class="screen" hidden>
+      <div class="card">
+        <h2>Paused</h2>
+        <button id="resume" class="big" type="button">Keep playing</button>
+        <button id="quit" type="button">Back to the menu</button>
+      </div>
+    </section>
+
+    <section id="results" class="screen hero" hidden>
+      <div class="card">
+        <h2 id="results-title">Day done!</h2>
+        <div id="stars" role="img" aria-label="0 of 3 stars"></div>
+        <p id="r-main"></p>
+        <p>Coins today: <b id="r-coins">0</b></p>
+        <p id="r-note" class="note"></p>
+        <button id="next" class="big" type="button">Next day</button>
+        <div class="row">
+          <button id="again" type="button">Play again</button>
+          <button id="shop-results" type="button">Shop</button>
+          <button id="menu" type="button">Menu</button>
+        </div>
+      </div>
+    </section>
+    <section id="no-3d" class="screen" hidden>
+      <div class="card">
+        <h2>Oh no!</h2>
+        <p>Counter Call needs 3D graphics (WebGL), and this browser has them turned off. Try another browser or device.</p>
+      </div>
+    </section>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

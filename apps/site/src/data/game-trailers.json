@@ -251,5 +251,28 @@
       "On screen: “Buses, trams and a festival!”",
       "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
     ]
+  },
+  "counter-call": {
+    "seconds": 15,
+    "published": "2026-11-22",
+    "poster": "/trailer/counter-call/poster.jpg",
+    "posterWebp": "/trailer/counter-call/poster.webp",
+    "sources": [
+      {
+        "src": "/trailer/counter-call/trailer-720.webm",
+        "type": "video/webm; codecs=\"av01.0.05M.08, opus\""
+      },
+      {
+        "src": "/trailer/counter-call/trailer-720.mp4",
+        "type": "video/mp4"
+      }
+    ],
+    "captions": "/trailer/counter-call/trailer.en.vtt",
+    "description": [
+      "Counter Call gameplay: Minty hurries between the cooking stations while friends wait at the counter of her diner, the six hosts wave hello in a row (Single Scoop, Vanilla, Minty, Cookie Cream, Raspberry and Double Scoop), Cookie Cream serves a full house with all five stations open, Single Scoop keeps up with Endless Rush as friends walk in, then Vanilla and Raspberry each run the counter on a busy day.",
+      "The Counter Call logo and its pitch: “Cook, carry and serve hungry friends.” Ages 6+.",
+      "On screen: “Cook, carry and serve!”",
+      "The end card: the AI Kids Games logo, “Play free” and “No ads. No sign-ups. No tracking.”"
+    ]
   }
 }

@@ -296,6 +296,31 @@ loading screen uses `Cover` (now a picture of the poster). `scripts/art/og.ts` b
 image from the poster (all 11 regenerated; og/site.jpg leads with `newestFirst`). The MCP catalog's
 `cover` follows (MCP app 1.3.0). The drawn covers stay in each folder as the pre-capture fallback.
 
+## Counter Call, the twelfth game (owner, 2026-11-22: "now make the game live"; release 2.13.0)
+
+Listed from `games/counter-call/game.json` (Cozy, Casual and Simulation, ages 6+, order 12, any
+orientation, WebGL). Art in `public/media/counter-call/`: a cover (the six hosts, Single Scoop, Vanilla,
+Minty, Cookie Cream, Raspberry and Double Scoop, wave in front of the diner counter; the menu on two wall shelves; no
+layers), a coral and mint logo with the game's ink outline, and the OG image (`og.ts` re-encoded every
+other game's image byte-different, so those were restored; `og/site.jpg` is refreshed and says 12 games).
+Previews come from `scripts/capture/counter-call.ts`: the game's `?scene=` routes, all recorded from the
+canvas (the HUD, order bubbles and station buttons are DOM and left out); loop 7.8 s (the counter, the
+cast, The Big Feast, Endless Rush) and six stills. `?scene=cast` (all six hosts in a row) and `&clean=1`
+(one host, menu card hidden) exist for this. The trailer is in `public/trailer/counter-call/`.
+Tests count 12 games (age 6: Light Crossing, Space Sky, Tuck Pop, Counter Call; age 7 adds Agentmon and
+Shooberry; age 8: 10; age 10: 12); the launch tests pick Single Scoop (the choice saves at once), start
+day 1 and the juice bar by tap or key and, after a reload, check the host is still chosen.
+- **Twelve games turns on the category rows** under "All games" on the home page
+  (`CATEGORY_ROWS_FROM = 12` in `src/pages/Home.tsx`), as they were built to. Watch the home page's
+  weight and Lighthouse numbers at the next production check.
+- **Which project:** the owner named open-stories/ai-kids-games, a second project for this site added
+  on 2026-11-22. Its primary domain is https://aikidsgames.xyz (ai-kids-games-ecru.vercel.app redirects
+  to it) and `SITE_ORIGIN` is set to that there, so this build's canonical links name aikidsgames.xyz.
+  fawn stays on 2.12.0 until the owner sets `AIKG_ALLOW_PRODUCTION` 2.13.0 on real-tours/ai-kids-games.
+- **Order (owner, 2026-11-22: "Counter Call first"):** 2.13.0 lands before the release that makes
+  aikidsgames.xyz the repo's main address (branch `xyz-main-address`, prepared as 2.12.1 in another
+  session), which merges main afterwards.
+
 ## Next: Light Crossing v2.0 (owner request, on hold)
 
 Owner wants Light Crossing v2.0 imported and released. On 2026-10-11 its project was on

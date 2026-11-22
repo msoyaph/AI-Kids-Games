@@ -41,6 +41,20 @@
     "shots": [],
     "capturedAt": "2026-10-14"
   },
+  "counter-call": {
+    "loopSeconds": 7.8,
+    "mp4Bytes": 735836,
+    "webmBytes": 680015,
+    "shots": [
+      "Minty hurries between the cooking stations while friends wait at the counter of her diner",
+      "The six hosts wave hello: Single Scoop, Vanilla, Minty, Cookie Cream, Raspberry and Double Scoop",
+      "Cookie Cream serves The Big Feast with all five stations open: ice cream, burgers, juice, fries and pizza",
+      "Single Scoop keeps up with Endless Rush as more friends walk in from the door",
+      "Vanilla, the quick cook, runs the counter on Busy Lunch with four stations open",
+      "Raspberry, with her big red bow, runs the counter on Festival Eve"
+    ],
+    "capturedAt": "2026-11-22"
+  },
   "fieldlark": {
     "loopSeconds": 8,
     "mp4Bytes": 720695,

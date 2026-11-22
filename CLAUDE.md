@@ -699,6 +699,47 @@ from origin/main d693372. Brief: docs/prompts/breezeport.md. Plan, rules and sta
 - **Other sessions:** never run heavy work alongside another session's (games/breezeport/scripts/quiet-check.mjs, and
   respect its exit code).
 
+## Counter Call, the diner game (owner brief 2026-11-22; slug `counter-call`, branch `counter-call`)
+A 3D restaurant game for ages 6+ (Three.js): friends call their orders at the counter and Minty cooks, carries and
+serves. Owner brief (2026-11-22): "We will create a restaurant game in addition to" this repo, using its character
+registry pattern, "cute big head chibi" characters and 3D with three.js, with the owner's hand-drawn character sheet
+(front view) as the host. Notes, layout and status: games/counter-call/CLAUDE.md.
+- **Built standalone first** (~/Documents/Counter-call), then copied in from origin/main 16efb69 with the ports
+  `new-game` would give the slug (4342 / 5342), storage prefix `countercall.` and hook `window.__countercall`.
+- **Second sheet (owner, 2026-11-22: "add this 2 new character player options. Add more game mechanics and
+  gameplay"):** Single Scoop and Double Scoop join Minty as hosts to play as, each with a perk. Added with them: a
+  shop of upgrades bought with coins earned in play, bonuses for a whole order at once and for runs of happy
+  friends, free cake from the cake stand, and Endless Rush. Save version 2 (version 1 migrates). Game 0.2.0.
+- **Third sheet (owner, 2026-11-22: "add this 2 new character"):** Vanilla and Raspberry, named on the sheet, make
+  five hosts. Vanilla cooks faster; Raspberry has one more round of free cake. The owner also asked to "fix the eye
+  of minty": her first sheet's arch-and-smile pair read as a mistake, so she has two teal arches like the others.
+- **Fourth sheet (owner, 2026-11-22: "add this last character"):** Cookie Cream, named on the sheet, makes six
+  hosts: clouds of cream hair with cookie crumbs, a cookie bun with two wafer sticks and a crumb-spotted coat. Her
+  friends tip one more coin.
+- **Names:** "Single Scoop", "Vanilla", "Raspberry" and "Cookie Cream" are written on the sheets; the owner confirmed "Double Scoop"
+  (2026-11-22), whose label was cut off in the photo. Minty's name is a placeholder the owner has not changed.
+- **Open with the owner:** the hosts' colors. The sheets are pen and pencil: Minty's teal, Single Scoop's strawberry
+  pink, Double Scoop's chocolate brown, Vanilla's gold, Raspberry's red and Cookie Cream's cream and cookie brown are
+  readings of them. Only front views
+  were used.
+- **Release 2.13.0 (owner, 2026-11-22: "now make the game live in https://vercel.com/open-stories/ai-kids-games"):**
+  Counter Call 1.0.0, list position 12, "Ready to play", with its cover, logo, OG image, preview loop, six stills
+  and trailer. Notes: apps/site/CLAUDE.md.
+  - **Which project:** the owner named open-stories/ai-kids-games (primary domain https://aikidsgames.xyz, added
+    2026-11-22; Root Directory apps/site, production branch main). The owner chose "Counter Call first", ahead of
+    the aikidsgames.xyz main-address release on branch `xyz-main-address`. Only that project gets
+    `AIKG_ALLOW_PRODUCTION` 2.13.0. real-tours/ai-kids-games (fawn) and
+    real-tours/ai-kids-games-play keep 2.12.0, so their builds of main are refused until the owner sets the key.
+  - **MCP app 1.4.0** is bumped (the catalog gains the game) but NOT approved: the owner's go named the website
+    project only. apps/mcp/DEPLOYMENT.json says so, and the guard refuses its production build.
+  - **Order:** release commit (2.13.0, the approval quoting the owner) → `npm run release:local` (build
+    games/space-sky first) and commit localSuites → CI green → `AIKG_ALLOW_PRODUCTION` 2.13.0 on
+    open-stories/ai-kids-games → merge → production checks and a record PR.
+  - **Twelve games** turns on the home page's per-category rows (`CATEGORY_ROWS_FROM`), as built.
+  - The trailer encoder (marketing/sizzle/render/run.ts) now retries once a little lower when a web encode lands
+    over its limit: Counter Call's first H.264 was 0.08% over 3 MB. `beats.json` also gained Breezeport's entries,
+    which 2.12.0 had not committed.
+
 ## Setting up on another computer
 1. `git clone https://github.com/msoyaph/AI-Kids-Games && cd AI-Kids-Games`, Node 24 (`.nvmrc`),
    `npm ci`, `npx playwright install chromium webkit`.

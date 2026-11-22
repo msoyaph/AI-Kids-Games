@@ -2,14 +2,14 @@
   "provider": "Vercel",
   "project": "real-tours/ai-kids-games",
   "repository": "https://github.com/msoyaph/AI-Kids-Games (Root Directory apps/site)",
-  "release": "2.12.0",
+  "release": "2.13.0",
   "productionApproval": {
     "approved": true,
-    "release": "2.12.0",
-    "date": "2026-10-14",
+    "release": "2.13.0",
+    "date": "2026-11-22",
     "approvedBy": "Owner",
-    "scope": "Two parts ship together as 2.12.0. (1) Breezeport 1.0.0, the eleventh game (list position 11, the new Simulation category): a 3D seaside city builder for ages 8–14 (roads, homes, shops and workplaces that grow, services, parks, buses, bike lanes and a tram, nine story chapters with three town projects and the Bay Festival, endless goals and Creative mode; three save slots). Listed \"Ready to play\" with its cover, logo, OG image, preview loop, six stills and a 15-second trailer; its build is games/breezeport imported unchanged (BUILD_IMPORTS.json). In the AI Kids Games app for assistants Breezeport is a fullscreen game. Every game other than Breezeport stays at its current version and build. (2) The home page's \"All games\" list shows the newest games first (games released after the first launch day, newest first: Shooberry, Fieldlark, Agentmon, Tuck Pop, then the launch games in catalog order), and game grids are 3 equal columns on desktop (tablets keep balanced rows of 2, phones one column). Every game's cover is real gameplay instead of drawn art: cards, tiles (Play again, the hero's picks, the parents' table, the game strip), the play page's loading screen, the Open Graph and Twitter images (og/<slug>.jpg, regenerated; og/site.jpg leads with the new games) and the assistants app's cards (MCP app 1.3.0) all use the poster, the first frame of the game's gameplay loop.",
-    "note": "Breezeport: Owner wrote: \"Go, Breezeport\" and \"once done and complete, deploy the game to live production. Then create a 1 minute sizzle reel YT 1920×1080 and 1080x1920 video game\" (2026-10-14), which replaces the brief's stop before production. Home and covers: Owner wrote: \"Put our new games on first lines of the \"All Games\" list. And make the gallery in 3 Columns on Desktop\", \"change the preview image cover to really depects the game graphics not just SVG\" and \"also update OG images, Meta Images etc\" (2026-10-14), after \"keep going and deploy to production when green\". Then: \"ok deploy the changes to live production including Breeze Port Game when done\", so both ship as one release (#33 carries #32). Guard: scripts/check-deployment.ts needs this record for 2.12.0, a passing localSuites record for 2.12.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.12.0 in the Production environment of ai-kids-games and ai-kids-games-play, and a build from main."
+    "scope": "Counter Call 1.0.0, the twelfth game (list position 12; Cozy, Casual and Simulation; ages 6+): a 3D diner seen from behind the counter, where one of six hosts (Minty, Single Scoop, Double Scoop, Vanilla, Raspberry and Cookie Cream, all from the owner's hand-drawn sheets, each with a perk) cooks at five stations, carries a tray and serves friends before their patience runs out; eight days, Endless Rush, a shop of upgrades bought with coins earned in play, bonuses for a whole order at once and for runs of happy friends, and free cake from the cake stand. Listed \"Ready to play\" with its cover, logo, OG image, preview loop, six stills and a 15-second trailer; its build is games/counter-call imported unchanged (BUILD_IMPORTS.json). Every other game stays at its current version and build. With twelve games the home page shows its per-category rows under \"All games\", as it was built to (CATEGORY_ROWS_FROM in src/pages/Home.tsx). og/site.jpg says 12 games and leads with Counter Call.",
+    "note": "Owner wrote: \"We will create a restaurant game in addition to https://github.com/msoyaph/AI-Kids-Games\", then \"Yes, add it\" to adding it to this repo as games/counter-call, and \"now make the game live in https://vercel.com/open-stories/ai-kids-games\" (2026-11-22). That names one project: open-stories/ai-kids-games (primary domain https://aikidsgames.xyz, which ai-kids-games-ecru.vercel.app redirects to; SITE_ORIGIN is set to it there; Root Directory apps/site, production branch main), added on 2026-11-22 beside real-tours/ai-kids-games. The owner also chose the order: asked whether release 2.12.1 (aikidsgames.xyz as the main address, in preparation on branch xyz-main-address) should go out first, they answered \"Counter Call first\". Guard: scripts/check-deployment.ts needs this record for 2.13.0, a passing localSuites record for 2.13.0 matching the shipped Space Sky and Light Crossing sources, AIKG_ALLOW_PRODUCTION=2.13.0 in the project's Production environment, and a build from main. The key is set on open-stories/ai-kids-games only. real-tours/ai-kids-games (https://ai-kids-games-fawn.vercel.app) and real-tours/ai-kids-games-play keep their 2.12.0 keys, so their builds of main are refused and they stay on 2.12.0 until the owner sets 2.13.0 there. The assistants app's 1.4.0 (apps/mcp) is not approved in this release."
   },
   "production": {
     "url": "https://ai-kids-games-fawn.vercel.app",
@@ -606,8 +606,8 @@
     }
   ],
   "localSuites": {
-    "release": "2.12.0",
-    "commit": "20acf59",
+    "release": "2.13.0",
+    "commit": "9afdbdc",
     "suites": [
       {
         "game": "space-sky",
@@ -618,7 +618,7 @@
         "failed": 0,
         "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-14T21:31:54.661Z"
+        "ranAt": "2026-11-22T12:18:29.512Z"
       },
       {
         "game": "light-crossing",
@@ -629,7 +629,7 @@
         "failed": 0,
         "flaky": 0,
         "skipped": 0,
-        "ranAt": "2026-10-14T22:29:33.070Z"
+        "ranAt": "2026-11-22T13:02:25.104Z"
       }
     ]
   }

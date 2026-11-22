@@ -954,5 +954,81 @@ export const generatedGames: Game[] = [
       "network": false
     },
     "license": "MIT"
+  },
+  {
+    "slug": "counter-call",
+    "title": "Counter Call",
+    "tagline": "Cook, carry and serve hungry friends.",
+    "description": "Run a cozy 3D diner as one of six hosts. Friends call out their orders at the counter; cook at the stations, load your tray and serve them before their patience runs out.",
+    "version": "1.0.0",
+    "categories": [
+      "Cozy",
+      "Casual",
+      "Simulation"
+    ],
+    "tags": [
+      "Restaurant",
+      "Cooking",
+      "Chibi",
+      "3D"
+    ],
+    "keywords": [
+      "restaurant game",
+      "cooking game",
+      "diner game",
+      "time management",
+      "kids game",
+      "browser game",
+      "offline game"
+    ],
+    "ageGuidance": "Ages 6+",
+    "minAge": 6,
+    "contentNotes": "Gentle time-management play with no fighting or scary content. Friends who wait too long leave politely. Coins are earned only by playing and spent only in the in-game shop; nothing costs real money. Short hint sentences on the first days need a little reading. Progress saves in this browser.",
+    "estimatedPlayTime": "1 to 2 minutes per day, 3 to 5 for Endless Rush",
+    "quickStart": [
+      "Press Play.",
+      "Tap a station to cook, and tap it again when it dings to pick up the food.",
+      "Tap a friend to serve them before their bar runs out."
+    ],
+    "controls": {
+      "types": [
+        "Mouse",
+        "Touch",
+        "Keyboard"
+      ],
+      "howToPlay": [
+        "Tap a station or its round button to start cooking; tap it again when the food is ready to put it on the tray.",
+        "Tap a friend or their order bubble to serve them. Ring the bell to call the next friend in sooner, and tap the cake stand to share free cake when friends get restless. Tap food on the tray to put it back.",
+        "Keyboard: 1 to 5 for stations, Q W E for friends, B for the bell, C for cake, Backspace to put food back, P or Escape to pause."
+      ]
+    },
+    "supportedDevices": [
+      "Computer",
+      "Tablet",
+      "Phone"
+    ],
+    "orientation": "any",
+    "requirements": [
+      "WebGL"
+    ],
+    "coverLayers": [],
+    "releaseDate": "2026-11-22",
+    "featured": false,
+    "accentColor": "#bdeee6",
+    "status": "Ready to play",
+    "storage": {
+      "prefix": "countercall.",
+      "keys": [
+        "countercall.save"
+      ]
+    },
+    "safety": {
+      "ads": false,
+      "purchases": false,
+      "chat": false,
+      "accounts": false,
+      "network": false
+    },
+    "license": "MIT"
   }
 ];

@@ -10,7 +10,8 @@ export const launchGames = [
   { slug: 'agentmon',title: 'Agentmon',key: 'agentmon.slot1',prefix: /^agentmon\./ },
   { slug: 'fieldlark',title: 'Fieldlark',key: 'fieldlark.save',prefix: /^fieldlark\./ },
   { slug: 'shooberry',title: 'Shooberry',key: 'shooberry.save',prefix: /^shooberry\./ },
-  { slug: 'breezeport',title: 'Breezeport',key: 'breezeport.slot1',prefix: /^breezeport\./ }
+  { slug: 'breezeport',title: 'Breezeport',key: 'breezeport.slot1',prefix: /^breezeport\./ },
+  { slug: 'counter-call',title: 'Counter Call',key: 'countercall.save',prefix: /^countercall\./ }
 ];
 export async function press(locator: Locator,touch: boolean) { if (touch) await locator.tap(); else await locator.click(); }
 export async function instrument(page: Page) {
@@ -170,6 +171,16 @@ export async function startGame(page: Page,slug: string,touch: boolean): Promise
     await press(f.getByRole('button',{ name:/^I'm / }).first(),touch);
     await press(f.getByRole('button',{ name:'Start!' }),touch);
     await f.waitForFunction(() => (window as any).__agentmon.snapshot().map === 'home',null,{ timeout: 30000 });
+  } else if (slug === 'counter-call') {
+    // pick who to play as (saved at once), start day 1, then start the juice bar: a tap on its button, or its key
+    await press(f.getByRole('button',{ name:/^Play as Single Scoop/ }),touch);
+    await checkAudio(f);
+    await press(f.getByRole('button',{ name:'Play Day 1' }),touch);
+    await f.waitForFunction(() => (window as any).__countercall.snapshot().screen === 'play');
+    // the station buttons float over the scene while the camera settles, so tap where the button is now
+    if (touch) await f.getByRole('button',{ name:/^juice bar:/ }).tap({ force:true });
+    else await f.locator('body').press('Digit3');
+    await expect.poll(() => f.evaluate(() => (window as any).__countercall.snapshot().stations[2].phase)).not.toBe('idle');
   } else if (slug === 'shooberry') {
     // Adventure level 1: the seeds, the tips (saved as seen), then the first card planted in the open lane
     await press(f.getByRole('button',{ name:'Play',exact:true }),touch);
@@ -287,6 +298,10 @@ export async function verifySaveReload(f: Frame,slug: string) {
     await expect(f.getByText("This browser can't save")).toHaveCount(0);
     await f.locator('.slot').first().getByRole('button',{ name:'Continue' }).click();
     await f.waitForFunction(() => (window as any).__agentmon.snapshot().map === 'home',null,{ timeout: 30000 });
+  } else if (slug === 'counter-call') {
+    // the chosen host is kept
+    await expect(f.getByRole('button',{ name:/^Play as Single Scoop/ })).toHaveAttribute('aria-pressed','true');
+    expect(await f.evaluate(() => (window as any).__countercall.snapshot().persistent)).toBe(true);
   } else if (slug === 'shooberry') {
     // the seeds and the tips were saved: level 1 remembers the seeds and skips the tips it has shown
     await f.getByRole('button',{ name:'Play',exact:true }).click();

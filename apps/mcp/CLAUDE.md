@@ -132,6 +132,12 @@ merge.
 
 8. MCP app 1.3.0 (with website 2.12.0): every card's cover is real gameplay, the game's poster
    (`/media/<slug>/poster.jpg`), from the site's `mediaFor()` through `npm run manifests`.
+9. MCP app 1.4.0 (with website 2.13.0), NOT APPROVED YET: the catalog gains Counter Call
+   (`embed: fullscreen`); its signal reads the game's hook (`__countercall.snapshot().screen`: playing
+   on `play`, ended on `results`, paused on the menus, the shop and Paused). The owner's go for 2.13.0
+   (2026-11-22) named the open-stories website project only, so DEPLOYMENT.json records 1.4.0 as not
+   approved and production stays at 1.3.0 until the owner approves it and sets
+   `AIKG_ALLOW_PRODUCTION=1.4.0` on ai-kids-games-mcp.
 
 ## Follow-ups (not in this PR)
 

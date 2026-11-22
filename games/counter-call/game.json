@@ -1,0 +1,105 @@
+{
+  "$schema": "../../docs/game.schema.json",
+  "slug": "counter-call",
+  "title": "Counter Call",
+  "tagline": "Cook, carry and serve hungry friends.",
+  "shortDescription": "Run a cozy 3D diner as one of six hosts. Friends call out their orders at the counter; cook at the stations, load your tray and serve them before their patience runs out.",
+  "longDescription": "Counter Call is a gentle time-management game seen from behind the counter of a little diner. Big-headed chibi friends walk in and call out what they would like. Tap a station to start cooking, tap it again to pick up the food, and tap a friend to serve them. You can line up a few taps in a row to plan ahead, ring the bell to call the next friend in sooner, and share free cake when friends get restless. Pick one of six hosts (Minty, Single Scoop, Double Scoop, Vanilla, Raspberry or Cookie Cream), each with a perk of their own, spend the coins you earn on upgrades for the diner, and keep friends happy in a row for bonus coins. Eight days add burgers, ice cream and pizza, longer orders and busier lunches, and Endless Rush keeps going for as long as you can keep up. Nobody gets hurt: a friend who waits too long just says \"Next time!\"",
+  "version": "1.0.0",
+  "minAge": 6,
+  "ageRange": "6+",
+  "genres": [
+    "Cozy",
+    "Casual",
+    "Simulation"
+  ],
+  "tags": [
+    "Restaurant",
+    "Cooking",
+    "Chibi",
+    "3D"
+  ],
+  "keywords": [
+    "restaurant game",
+    "cooking game",
+    "diner game",
+    "time management",
+    "kids game",
+    "browser game",
+    "offline game"
+  ],
+  "features": [
+    "Six hosts to play as, each with a perk",
+    "Eight days with five cooking stations to open, plus Endless Rush",
+    "A shop of diner upgrades bought with coins earned in play",
+    "Sixteen original chibi characters built from one character registry",
+    "Plays with mouse, touch or keyboard",
+    "Remembers your stars, coins and upgrades on this device",
+    "One self-contained HTML file that works offline"
+  ],
+  "contentNotes": "Gentle time-management play with no fighting or scary content. Friends who wait too long leave politely. Coins are earned only by playing and spent only in the in-game shop; nothing costs real money. Short hint sentences on the first days need a little reading. Progress saves in this browser.",
+  "controls": {
+    "types": [
+      "Mouse",
+      "Touch",
+      "Keyboard"
+    ],
+    "quickStart": [
+      "Press Play.",
+      "Tap a station to cook, and tap it again when it dings to pick up the food.",
+      "Tap a friend to serve them before their bar runs out."
+    ],
+    "howToPlay": [
+      "Tap a station or its round button to start cooking; tap it again when the food is ready to put it on the tray.",
+      "Tap a friend or their order bubble to serve them. Ring the bell to call the next friend in sooner, and tap the cake stand to share free cake when friends get restless. Tap food on the tray to put it back.",
+      "Keyboard: 1 to 5 for stations, Q W E for friends, B for the bell, C for cake, Backspace to put food back, P or Escape to pause."
+    ]
+  },
+  "devices": [
+    "Computer",
+    "Tablet",
+    "Phone"
+  ],
+  "orientation": "any",
+  "requirements": [
+    "WebGL"
+  ],
+  "playTime": "1 to 2 minutes per day, 3 to 5 for Endless Rush",
+  "sessionMinutes": [
+    2,
+    20
+  ],
+  "moods": [
+    "cheerful",
+    "cozy"
+  ],
+  "embed": "fullscreen",
+  "storage": {
+    "prefix": "countercall.",
+    "keys": [
+      "countercall.save"
+    ],
+    "probe": "countercall.__probe"
+  },
+  "safety": {
+    "ads": false,
+    "purchases": false,
+    "chat": false,
+    "accounts": false,
+    "network": false
+  },
+  "capture": {
+    "route": "?scene=play&day=4&seed=7",
+    "script": "apps/site/scripts/capture/counter-call.ts"
+  },
+  "license": "MIT",
+  "source": "games/counter-call",
+  "site": {
+    "featured": false,
+    "releaseDate": "2026-11-22",
+    "accentColor": "#bdeee6",
+    "coverLayers": [],
+    "status": "Ready to play",
+    "order": 12
+  }
+}

@@ -1,6 +1,6 @@
-# Shared-origin storage audit (Fieldlark 1.0.0, Shooberry 1.0.0 and Breezeport 1.0.0, 2026-10-14)
+# Shared-origin storage audit (Fieldlark 1.0.0, Shooberry 1.0.0, Breezeport 1.0.0 and Counter Call 1.0.0, 2026-11-22)
 
-Result: **CLEAN.** All eleven games and the website keep their data under their own keys. No build
+Result: **CLEAN.** All twelve games and the website keep their data under their own keys. No build
 calls `localStorage.clear()`, uses sessionStorage, IndexedDB, cookies or Cache Storage, or reads,
 changes or deletes another owner's keys. Every build is the exact file recorded in
 `BUILD_IMPORTS.json` (`npm run check:builds`).
@@ -25,6 +25,7 @@ read by hand.
 | Fieldlark 1.0.0 | `fieldlark.save` (the farm), `fieldlark.save.bak` (a backup copy, written every 5 minutes of play after a successful save), `fieldlark.settings` | `fieldlark.save.broken` (only if a save can't be read: the unreadable text is kept aside before anything else happens) | `fieldlark.__probe` |
 | Shooberry 1.0.0 | `shooberry.save` (settings, stars, the Garden Party best, the last 30 Dailies, what the player has met, last seeds per level) | none (its capture routes never save; the `?level` and `?quickstart` test shortcuts never write over an existing save) | `shooberry.__probe` |
 | Breezeport 1.0.0 | `breezeport.slot1`–`slot3` (three towns), `breezeport.bak` (a copy of the slot saved last, written every 5 minutes of play after that slot's own save worked), `breezeport.settings` | `breezeport.broken` (only if a save can't be read: the unreadable text is kept aside before anything else happens) | `breezeport.__probe` |
+| Counter Call 1.0.0 | `countercall.save` (sound and music settings, stars and coins per day, the coins in the piggy bank, shop upgrade levels, the chosen host, the best Endless Rush) | none (its capture routes `?scene=` and `?auto=1` never save) | `countercall.__probe` |
 
 The site never adds `?playtest=1` or similar to a game's address, so the special-mode keys only
 appear when someone opens a game file directly with that option.
@@ -94,8 +95,16 @@ game.
   on clear, key and length), the budget, the backup, the broken copy and full storage; a browser test
   checks that only `breezeport.` keys exist after a save and reload. The capture routes (`?scene=`)
   never read or write a save.
+- **Counter Call:** one key. `src/storage.ts` prefixes every access with `countercall.` (from
+  `src/config.ts`) and never enumerates, removes or clears anything but its own probe. Saves carry a
+  version: a version 1 save (no host, upgrades or Endless Rush best) is migrated and nothing is lost,
+  and whatever is read is cleaned into a valid save. Blocked storage keeps play going from memory and
+  the title says progress lasts until the game closes. Its unit tests check the prefix with a fake
+  store that throws on clear, blocked storage, broken saves and the migration; browser tests check
+  that `countercall.save` is the only key after a finished day and survives a reload, and that the
+  capture route leaves storage empty.
 
-## Worst case for all eleven games plus the site
+## Worst case for all twelve games plus the site
 
 Sizes are in characters (localStorage counts string length; 1 KB = 1,024 characters). Browsers
 allow about 5 MB (5,242,880 characters) per origin.
@@ -114,6 +123,7 @@ allow about 5 MB (5,242,880 characters) per origin.
 | Fieldlark 1.0.0 | 346 KB | 40 KB | save format 2 (compact): the biggest farm a player could build (every free tile planted, every building, animal, decoration and system in use) is 115 KB a copy (measured with the real codec; the storage test holds it under 140 KB), so the save, its backup and a kept broken copy at most 345 KB, plus settings under 1 KB; a farm at the credits is about 20 KB a copy (measured on bot playthroughs), 40 KB with its backup |
 | Shooberry 1.0.0 | 98 KB | 9 KB | the save is refused over 100,000 characters (enforced); a complete one (every level and Challenge at 3 stars with 8 seeds remembered for each, 30 Dailies, every plant, critter and tip met) is 11.8 KB, measured with the real save code |
 | Breezeport 1.0.0 | 141 KB | 40 KB | three town slots, the backup and a kept broken copy at 28 KB each (the cap is enforced, and the sim's own limits of 900 buildings and 1,500 decorations keep the biggest possible town, measured with the real codec, under it; the storage test holds every key at its biggest under 150 KB), plus settings under 1 KB; a town at the festival is about 10 KB a copy (the 560-building showcase town is 10.4 KB), so three finished towns and the backup are about 40 KB |
+| Counter Call 1.0.0 | 3 KB | 1 KB | one key; the save code keeps at most 64 day records and 32 upgrade levels, so the biggest save it can ever write is under 3 KB; a finished game (all eight days, every upgrade, an Endless Rush best) is about 0.4 KB |
 | **Total** | **≈ 4.3 MB** | **≈ 1.3 MB** | |
 
 Even with every key of every game at its cap (which no real player reaches: Light Crossing's and
