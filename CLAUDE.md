@@ -725,9 +725,10 @@ registry pattern, "cute big head chibi" characters and 3D with three.js, with th
 - **Release 2.13.0 (owner, 2026-11-22: "now make the game live in https://vercel.com/open-stories/ai-kids-games"):**
   Counter Call 1.0.0, list position 12, "Ready to play", with its cover, logo, OG image, preview loop, six stills
   and trailer. Notes: apps/site/CLAUDE.md.
-  - **Which project:** the owner named open-stories/ai-kids-games (https://ai-kids-games-ecru.vercel.app, added
-    2026-11-22; Root Directory apps/site, production branch main). Only that project gets
-    `AIKG_ALLOW_PRODUCTION` 2.13.0. real-tours/ai-kids-games (fawn, still the canonical address) and
+  - **Which project:** the owner named open-stories/ai-kids-games (primary domain https://aikidsgames.xyz, added
+    2026-11-22; Root Directory apps/site, production branch main). The owner chose "Counter Call first", ahead of
+    the aikidsgames.xyz main-address release on branch `xyz-main-address`. Only that project gets
+    `AIKG_ALLOW_PRODUCTION` 2.13.0. real-tours/ai-kids-games (fawn) and
     real-tours/ai-kids-games-play keep 2.12.0, so their builds of main are refused until the owner sets the key.
   - **MCP app 1.4.0** is bumped (the catalog gains the game) but NOT approved: the owner's go named the website
     project only. apps/mcp/DEPLOYMENT.json says so, and the guard refuses its production build.

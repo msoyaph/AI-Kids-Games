@@ -313,10 +313,13 @@ day 1 and the juice bar by tap or key and, after a reload, check the host is sti
 - **Twelve games turns on the category rows** under "All games" on the home page
   (`CATEGORY_ROWS_FROM = 12` in `src/pages/Home.tsx`), as they were built to. Watch the home page's
   weight and Lighthouse numbers at the next production check.
-- **Which project:** the owner named open-stories/ai-kids-games (https://ai-kids-games-ecru.vercel.app),
-  a second project for this site added on 2026-11-22. `SITE_ORIGIN` is not set there, so its canonical
-  links still point at fawn; the owner chose to keep fawn as the main address. fawn stays on 2.12.0 until
-  the owner sets `AIKG_ALLOW_PRODUCTION` 2.13.0 on real-tours/ai-kids-games.
+- **Which project:** the owner named open-stories/ai-kids-games, a second project for this site added
+  on 2026-11-22. Its primary domain is https://aikidsgames.xyz (ai-kids-games-ecru.vercel.app redirects
+  to it) and `SITE_ORIGIN` is set to that there, so this build's canonical links name aikidsgames.xyz.
+  fawn stays on 2.12.0 until the owner sets `AIKG_ALLOW_PRODUCTION` 2.13.0 on real-tours/ai-kids-games.
+- **Order (owner, 2026-11-22: "Counter Call first"):** 2.13.0 lands before the release that makes
+  aikidsgames.xyz the repo's main address (branch `xyz-main-address`, prepared as 2.12.1 in another
+  session), which merges main afterwards.
 
 ## Next: Light Crossing v2.0 (owner request, on hold)
 
