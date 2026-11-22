@@ -735,6 +735,25 @@ registry pattern, "cute big head chibi" characters and 3D with three.js, with th
   - **Order:** release commit (2.13.0, the approval quoting the owner) → `npm run release:local` (build
     games/space-sky first) and commit localSuites → CI green → `AIKG_ALLOW_PRODUCTION` 2.13.0 on
     open-stories/ai-kids-games → merge → production checks and a record PR.
+  - **2.13.0 LIVE on open-stories/ai-kids-games, 2026-11-22.** PR #40 squash-merged as cc1f9b1 after CI green
+    (Website, MCP app, Repo checks, the counter-call game job) and the owner's "merge it and go live when the suites
+    pass". Deployment dpl_6AeAQTN7De1Nct9ZWvED7c82HDib (ai-kids-games-7ovko41ct-open-stories.vercel.app), aliased
+    to https://aikidsgames.xyz and www. Guard log: "Production deployment of release 2.13.0 approved by the owner
+    on 2026-11-22; GPU browser suites passed on 9afdbdc." (Space Sky 42 passed, Light Crossing 191 passed).
+    - **Checked live:** all 12 game builds return 200 with the byte counts in BUILD_IMPORTS.json; Counter Call's
+      build is the recorded sha256 (318e3e7e…, 662,793 bytes); /game/counter-call, /play/counter-call, its poster,
+      trailer and OG image return 200; the canonical link is https://aikidsgames.xyz/game/counter-call.
+    - **Not done:** Lighthouse, `npm run indexnow` and a played-through check on the live address; DEPLOYMENT.json's
+      `production` block (the aikidsgames.xyz release on branch `xyz-main-address` restructures it and carries
+      this deployment forward).
+    - **Environment:** `AIKG_ALLOW_PRODUCTION` on that project was overwritten with `vercel env add --force`, which
+      stored it as type Secret (hidden in the dashboard) instead of Config. `SITE_ORIGIN` was not touched.
+    - **Left as they were:** real-tours/ai-kids-games (fawn), ai-kids-games-play and ai-kids-games-mcp keep their
+      old keys, so they stay on 2.12.0 and MCP 1.3.0.
+    - **Known failing, not in CI:** the phone run of launch.spec.ts "every game preserves favorites, recent history
+      and one another's saves" times out in Breezeport's start-up ("Become the mayor!" never appears), before it
+      reaches Counter Call, and repeats when run alone. The site suite on the release build was otherwise 191
+      passed, 99 skipped.
   - **Twelve games** turns on the home page's per-category rows (`CATEGORY_ROWS_FROM`), as built.
   - The trailer encoder (marketing/sizzle/render/run.ts) now retries once a little lower when a web encode lands
     over its limit: Counter Call's first H.264 was 0.08% over 3 MB. `beats.json` also gained Breezeport's entries,
